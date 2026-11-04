@@ -14,6 +14,7 @@ Documentation fonctionnelle : [`docs/modules/lecture-fichiers.md`](../../../docs
 | --- | --- |
 | `index.ts` | **Interface publique** (ce que les autres modules ont le droit d'utiliser) et déclaration du module |
 | `lecture.ts` | `readVaultFile` : lit un fichier du coffre, rend le texte ou la raison de l'échec |
+| `catalogue.ts` | **Catalogue des formats** montré dans les réglages : intégré, en développement (avec l'étape), prévu |
 | `i18n.ts` | Textes français et anglais, clés `lecture-fichiers.*` |
 | `readers/fileText.ts` | Aiguilleur : extension → lecteur ; liste des extensions lisibles ; mise en Markdown |
 | `readers/pdfRead.ts` | PDF : objets, flux, polices, positions du texte |
@@ -43,10 +44,13 @@ leurs fichiers.
    (`DecompressionStream`, `crypto.subtle`, `TextDecoder`).
 2. Le brancher dans `readers/fileText.ts` : ajouter l'extension à `READABLE_EXTENSIONS`
    et le cas dans `fileText`.
-3. Si d'autres modules en ont besoin directement, l'exporter dans `index.ts`.
-4. Tests : `readers/<format>Read.test.ts` ; si possible un fichier produit par l'outil
+3. Dans `catalogue.ts`, passer le format à `'available'` (ou l'ajouter), avec ses
+   libellés dans `i18n.ts` ; le test du catalogue échoue tant que la vitrine et le code
+   ne disent pas la même chose.
+4. Si d'autres modules en ont besoin directement, l'exporter dans `index.ts`.
+5. Tests : `readers/<format>Read.test.ts` ; si possible un fichier produit par l'outil
    d'origine dans `test/fixtures/dce-exemple/`, et un cas dans `test/dce.test.ts`.
-5. Mettre à jour le tableau des formats dans `docs/modules/lecture-fichiers.md`.
+6. Mettre à jour le tableau des formats dans `docs/modules/lecture-fichiers.md`.
 
 ## Corriger un lecteur
 

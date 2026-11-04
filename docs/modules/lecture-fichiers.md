@@ -22,6 +22,21 @@ colonnes** — c'est là que sont souvent les exigences et les prix.
 aussi les modules qui en dépendent (l'analyse d'appels d'offres passe à l'état
 « Module requis indisponible »).
 
+**Cliquer sur le nom du module** (ou sur la flèche à droite) ouvre le détail **Formats de
+fichiers** : une ligne par famille (PDF, traitement de texte, tableurs, présentations,
+web et texte, messagerie, images, archives et échanges), un bloc par format, avec ses
+extensions, une précision, et son état :
+
+| Couleur | État | Signification |
+| --- | --- | --- |
+| 🟩 vert | **Lecture intégrée** | lu aujourd'hui |
+| 🟧 orange | **En développement · Étape N** | prévu à l'étape N du plan |
+| ⬜ gris | **Prévu** | à venir, sans date |
+
+Ce détail vient de `catalogue.ts`. Un test garantit que les formats annoncés « Lecture
+intégrée » sont exactement ceux que le module lit : la vitrine ne peut ni promettre plus
+que le code, ni oublier un format qu'il sait lire.
+
 Commande provisoire **« Lire un fichier du coffre (provisoire) »** : choisir un fichier
 lisible (le fichier ouvert est proposé en premier, puis les plus récents) ; son texte
 extrait s'affiche avec le format, le nombre de caractères et de lignes, le temps de

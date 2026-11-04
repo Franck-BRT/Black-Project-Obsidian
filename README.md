@@ -13,11 +13,11 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.2.1 — étape 1 du [plan d'intégration](docs/plan-integration.md) : la
+**Version 0.2.2 — étape 1 du [plan d'intégration](docs/plan-integration.md) : la
 lecture de fichiers.** Le module *Lecture de fichiers* lit les pièces d'un dossier de
 consultation — PDF, Word (`.docx`, `.doc`), RTF, Excel (`.xlsx`, `.xls`), PowerPoint,
-HTML, Markdown, texte — sans aucune dépendance externe ; une commande provisoire permet
-de l'essayer dans Obsidian. Le module *Analyse d'appels d'offres* s'en servira à partir
+HTML, Markdown, texte — sans aucune dépendance externe ; ses réglages montrent les formats
+lus et à venir, et une commande provisoire permet de l'essayer dans Obsidian. Le module *Analyse d'appels d'offres* s'en servira à partir
 de l'étape 2.
 
 ## Documentation

@@ -13,8 +13,13 @@ Déposer dans un coffre de test les pièces de `test/fixtures/dce-exemple/`, pui
 
 - [ ] **Réglages → Modules** : « Lecture de fichiers · 0.2.0 » et « Analyse d'appels
       d'offres · 0.1.0 » (Nécessite : Lecture de fichiers), tous deux **Actif**
+- [ ] Cliquer sur **Lecture de fichiers** (nom ou flèche) : le détail **Formats de
+      fichiers** s'ouvre ; un résumé « Lecture intégrée : 13 · En développement : 4 ·
+      Prévu : 6 » ; une ligne par famille ; « PDF avec texte natif » en vert,
+      « PDF sans texte (scan) » en orange « En développement · Étape 6 » ; un second clic
+      le referme
 - [ ] Commande **Lire un fichier du coffre (provisoire)** : la liste ne propose que des
-      fichiers lisibles ; le fichier ouvert vient en premier
+      fichiers lisibles (pas les images) ; le fichier ouvert vient en premier
 - [ ] `CCTP.pdf`, `CCTP.docx`, `CCTP.doc`, `CCTP.rtf` : le texte, les titres et le
       tableau des exigences EX-SOL-001 / EX-SOL-002 s'affichent ; la ligne du haut donne
       le format, les caractères, les lignes et le temps de lecture

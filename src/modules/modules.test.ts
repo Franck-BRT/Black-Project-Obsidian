@@ -25,6 +25,24 @@ describe('catalogue des modules', () => {
         for (const key of Object.keys(module.texts.fr)) expect(key.startsWith(`${module.id}.`)).toBe(true)
       })
 
+      it('a tous les textes de son détail, dans les deux langues', () => {
+        const details = module.details
+        if (!details) return
+        const keys = [
+          details.titleKey,
+          ...(details.introKey ? [details.introKey] : []),
+          ...Object.values(details.statusKeys ?? {}),
+          ...details.sections.flatMap((section) => [
+            section.titleKey,
+            ...section.features.flatMap((feature) => [feature.labelKey, ...(feature.noteKey ? [feature.noteKey] : [])])
+          ])
+        ]
+        for (const key of keys) {
+          expect(module.texts.fr[key], key).toBeTruthy()
+          expect(module.texts.en[key], key).toBeTruthy()
+        }
+      })
+
       it('ne requiert que des modules du catalogue', () => {
         for (const required of module.requires) expect(MODULES.some((m) => m.id === required)).toBe(true)
       })

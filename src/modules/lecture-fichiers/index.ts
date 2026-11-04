@@ -15,7 +15,8 @@
 import type { BlackModule } from '../../core/modules/module'
 import { lectureEn, lectureFr } from './i18n'
 import { nameOf, readVaultFile } from './lecture'
-import { READABLE_EXTENSIONS } from './readers/fileText'
+import { FORMATS_CATALOGUE } from './catalogue'
+import { TEXT_EXTENSIONS } from './readers/fileText'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { extensionOf, nameOf, readVaultFile, type ReadOutcome } from './lecture'
@@ -28,6 +29,7 @@ export {
   isReadable,
   plainText,
   READABLE_EXTENSIONS,
+  TEXT_EXTENSIONS,
   type FileProblem
 } from './readers/fileText'
 export { readDocx, type DocxReadBlock } from './readers/docxRead'
@@ -50,6 +52,7 @@ export const lectureFichiersModule: BlackModule = {
   version: '0.2.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
+  details: FORMATS_CATALOGUE,
   activate({ platform, i18n, commands }) {
     // Provisoire : de quoi essayer les lecteurs dans Obsidian avant que l'analyse
     // d'appels d'offres ne s'en serve. À retirer quand l'étape 2 sera livrée.
@@ -58,7 +61,7 @@ export const lectureFichiersModule: BlackModule = {
       nameKey: 'lecture-fichiers.command.read',
       async run() {
         const path = await platform.ui.pickFile({
-          extensions: READABLE_EXTENSIONS,
+          extensions: TEXT_EXTENSIONS,
           placeholder: i18n.t('lecture-fichiers.pick.placeholder')
         })
         if (path === null) return

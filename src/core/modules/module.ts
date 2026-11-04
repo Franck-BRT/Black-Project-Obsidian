@@ -15,6 +15,45 @@ import type { Dictionary, I18n } from '../i18n'
 import type { Platform } from '../ports'
 import type { Language } from '../settings'
 
+/**
+ * Où en est une fonction d'un module : disponible, en cours de développement (prévue à
+ * une étape du plan), ou prévue plus tard.
+ */
+export type FeatureStatus = 'available' | 'in-progress' | 'planned'
+
+export const FEATURE_STATUSES: readonly FeatureStatus[] = ['available', 'in-progress', 'planned']
+
+/** Une fonction d'un module, telle que les réglages la montrent : un petit bloc. */
+export interface ModuleFeature {
+  readonly labelKey: string
+  /** Une précision sous le libellé : ce qui est lu, ce qui ne l'est pas, comment. */
+  readonly noteKey?: string
+  /** Étiquettes courtes affichées dans le bloc : les extensions d'un format, par exemple. */
+  readonly tags?: readonly string[]
+  readonly status: FeatureStatus
+  /** L'étape du plan d'intégration qui l'apporte, quand elle est connue. */
+  readonly step?: number
+}
+
+/** Une ligne de blocs : une famille de fonctions (les PDF, les tableurs…). */
+export interface ModuleDetailSection {
+  readonly titleKey: string
+  readonly features: readonly ModuleFeature[]
+}
+
+/**
+ * Ce que les réglages montrent quand on clique sur un module : ce qu'il sait faire, et ce
+ * qui arrive. Écrit par le module, dessiné par la plateforme.
+ */
+export interface ModuleDetails {
+  /** Le libellé du bouton qui ouvre le détail : « Formats de fichiers », par exemple. */
+  readonly titleKey: string
+  readonly introKey?: string
+  /** Le libellé de chaque état dans ce module ; à défaut, ceux du cœur. */
+  readonly statusKeys?: Partial<Record<FeatureStatus, string>>
+  readonly sections: readonly ModuleDetailSection[]
+}
+
 /** Ce qu'on sait d'un module sans l'activer. */
 export interface ModuleDescriptor {
   /** Identifiant stable, en minuscules : `ao`, `planning`… Préfixe de ses clés de texte. */
@@ -31,6 +70,8 @@ export interface ModuleDescriptor {
    * doivent pouvoir nommer un module désactivé.
    */
   readonly texts: Readonly<Record<Language, Dictionary>>
+  /** Le détail montré dans les réglages, s'il y en a un. */
+  readonly details?: ModuleDetails
 }
 
 /** Une action que l'utilisateur lance, depuis la palette de commandes par exemple. */

@@ -79,6 +79,12 @@ export const READABLE_EXTENSIONS = new Set([
   ...Object.keys(IMAGES)
 ])
 
+/** The extensions whose text is read here, pictures aside — they wait for a model that sees. */
+export const TEXT_EXTENSIONS: ReadonlySet<string> = new Set([...READABLE_EXTENSIONS].filter((ext) => !(ext in IMAGES)))
+
+/** The extensions read as plain text, as they are. */
+export const PLAIN_EXTENSIONS: ReadonlySet<string> = PLAIN
+
 export function isReadable(extension: string): boolean {
   return READABLE_EXTENSIONS.has(extension.toLowerCase())
 }
