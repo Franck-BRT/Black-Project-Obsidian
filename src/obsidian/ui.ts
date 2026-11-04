@@ -3,7 +3,7 @@
 
 /** Le port `Ui` du cœur, dessiné avec les fenêtres d'Obsidian. */
 
-import { FuzzySuggestModal, Modal, Notice, type App, type TFile } from 'obsidian'
+import { FuzzySuggestModal, Modal, Notice, setTooltip, type App, type TFile } from 'obsidian'
 import type { I18n } from '../core/i18n'
 import type { FilePickOptions, TextView, Ui } from '../core/ports'
 
@@ -59,6 +59,7 @@ class TextModal extends Modal {
     const bar = contentEl.createDiv({ cls: 'bp-text-modal-bar' })
     if (view.subtitle) bar.createSpan({ text: view.subtitle, cls: 'bp-text-modal-subtitle' })
     const copy = bar.createEl('button', { text: i18n.t('ui.copy') })
+    setTooltip(copy, i18n.t('tip.copy'))
     copy.addEventListener('click', () => {
       void navigator.clipboard.writeText(view.text).then(() => new Notice(i18n.t('ui.copied')))
     })
@@ -91,6 +92,9 @@ export function obsidianUi(app: App, i18n: I18n): Ui {
     },
     showText(view) {
       new TextModal(app, view, i18n).open()
+    },
+    async openNote(path) {
+      await app.workspace.openLinkText(path, '', false)
     }
   }
 }

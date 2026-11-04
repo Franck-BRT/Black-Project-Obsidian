@@ -12,6 +12,8 @@
 
 import type { BlackModule } from '../../core/modules/module'
 import { LECTURE_FICHIERS } from '../lecture-fichiers'
+import { fillTemplate } from '../../core/docs'
+import page from "./doc/Analyse d'appels d'offres.md"
 import { aoEn, aoFr } from './i18n'
 
 export const aoModule: BlackModule = {
@@ -22,6 +24,7 @@ export const aoModule: BlackModule = {
   // Les pièces du dossier sont lues par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: aoFr, en: aoEn },
+  docs: ({ folder }) => [{ path: "Modules/Analyse d'appels d'offres.md", content: fillTemplate(page, folder) }],
   activate() {
     // Rien encore : les fonctions arrivent à partir de l'étape 2.
   }

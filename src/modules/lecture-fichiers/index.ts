@@ -24,6 +24,7 @@ import {
   validateAlias
 } from './aliases'
 import { formatsCatalogue } from './catalogue'
+import { lectureDocs } from './doc'
 import { lectureEn, lectureFr } from './i18n'
 import { nameOf, readVaultFile } from './lecture'
 import { fileText as rawFileText, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
@@ -81,6 +82,12 @@ const aliasesField: MappingField = {
   placeholderKey: 'lecture-fichiers.alias.placeholder',
   prefix: '.',
   connectorKey: 'lecture-fichiers.alias.connector',
+  tooltipKeys: {
+    from: 'lecture-fichiers.alias.tip.from',
+    to: 'lecture-fichiers.alias.tip.to',
+    add: 'lecture-fichiers.alias.tip.add',
+    remove: 'lecture-fichiers.alias.tip.remove'
+  },
   options: aliasTargets,
   defaultOption: 'txt',
   normalize: normalizeExtension,
@@ -99,6 +106,7 @@ export const lectureFichiersModule: BlackModule = {
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings)),
   settingsFields: [aliasesField],
+  docs: lectureDocs,
   activate({ platform, i18n, commands, settings }) {
     configureAliases(readAliases(settings.get()))
     unsubscribe = settings.onChange((values) => configureAliases(readAliases(values)))

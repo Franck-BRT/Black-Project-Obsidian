@@ -4,6 +4,15 @@
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  plugins: [
+    {
+      // Les pages de documentation (*.md) importées comme du texte, comme au build.
+      name: 'markdown-text',
+      transform(code, id) {
+        return id.endsWith('.md') ? { code: `export default ${JSON.stringify(code)}`, map: null } : null
+      }
+    }
+  ],
   test: {
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
     environment: 'node'

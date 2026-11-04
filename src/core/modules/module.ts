@@ -11,6 +11,7 @@
  * tourner dans Obsidian comme, plus tard, dans l'application de bureau.
  */
 
+import type { DocInput, DocPage } from '../docs'
 import type { Dictionary, I18n, Vars } from '../i18n'
 import type { Platform } from '../ports'
 import type { Language } from '../settings'
@@ -77,8 +78,13 @@ export interface ModuleDescriptor {
    * du module, pour montrer aussi ce que l'utilisateur a ajouté.
    */
   readonly details?: (settings: Readonly<Record<string, unknown>>) => ModuleDetails
-  /** Les réglages propres au module, que la plateforme dessine sous sa ligne. */
+  /** Les réglages propres au module, dessinés en tête de sa fenêtre. */
   readonly settingsFields?: readonly ModuleSettingField[]
+  /**
+   * Ses pages de documentation, écrites dans le coffre à la demande. Leur texte vit dans
+   * le répertoire du module (`doc/`), pour se maintenir avec son code.
+   */
+  readonly docs?: (input: DocInput) => readonly DocPage[]
 }
 
 /** Une erreur de saisie, à montrer à l'utilisateur. */
@@ -103,6 +109,8 @@ export interface MappingField {
   readonly prefix?: string
   /** Le mot entre les deux : « lu comme ». */
   readonly connectorKey: string
+  /** Les infobulles du champ de saisie, du menu, du bouton d'ajout et de la corbeille. */
+  readonly tooltipKeys?: { readonly from?: string; readonly to?: string; readonly add?: string; readonly remove?: string }
   /** Les valeurs possibles à droite. */
   options(): readonly string[]
   /** La valeur proposée d'abord ; à défaut, la première. */

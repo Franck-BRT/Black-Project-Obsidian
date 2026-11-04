@@ -1,11 +1,14 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
-/** L'onglet de réglages : langue, modules et licence. */
+/**
+ * L'onglet de réglages : langue, documentation, modules et licence. Chaque réglage,
+ * bouton et état porte une infobulle qui dit à quoi il sert.
+ */
 
-import { PluginSettingTab, Setting, type App } from 'obsidian'
+import { PluginSettingTab, Setting, setTooltip, type App } from 'obsidian'
 import type { ModuleState } from '../core/modules/registry'
-import { LANGUAGES, moduleSettings, withModuleEnabled, type Language } from '../core/settings'
+import { cleanFolder, DEFAULT_DOCS_FOLDER, LANGUAGES, moduleSettings, withModuleEnabled, type Language } from '../core/settings'
 import type BlackProjectsPlugin from './main'
 import { ModuleDetailsModal } from './moduleDetailsModal'
 
@@ -31,12 +34,14 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
     const t = plugin.i18n.t.bind(plugin.i18n)
     containerEl.empty()
 
+    // ── Général ──────────────────────────────────────────────────────────────────
     new Setting(containerEl).setName(t('settings.general')).setHeading()
     new Setting(containerEl)
       .setName(t('settings.language'))
       .setDesc(t('settings.language.desc'))
       .addDropdown((dropdown) => {
         for (const language of LANGUAGES) dropdown.addOption(language, t(`settings.language.${language}`))
+        setTooltip(dropdown.selectEl, t('tip.language'))
         dropdown.setValue(plugin.config.language).onChange(async (value) => {
           plugin.config = { ...plugin.config, language: value as Language }
           await plugin.saveSettings()
@@ -44,6 +49,31 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
         })
       })
 
+    // ── Documentation ────────────────────────────────────────────────────────────
+    new Setting(containerEl).setName(t('settings.docs')).setHeading()
+    new Setting(containerEl)
+      .setName(t('settings.docs.folder'))
+      .setDesc(t('settings.docs.folder.desc'))
+      .addText((text) => {
+        text.setPlaceholder(DEFAULT_DOCS_FOLDER).setValue(plugin.config.docsFolder)
+        setTooltip(text.inputEl, t('tip.docs.folder'))
+        text.onChange(async (value) => {
+          plugin.config = { ...plugin.config, docsFolder: cleanFolder(value) || DEFAULT_DOCS_FOLDER }
+          await plugin.saveSettings()
+        })
+      })
+    new Setting(containerEl)
+      .setName(t('settings.docs.create'))
+      .setDesc(t('settings.docs.create.desc'))
+      .addButton((button) =>
+        button
+          .setButtonText(t('settings.docs.button'))
+          .setCta()
+          .setTooltip(t('tip.docs.create'))
+          .onClick(() => plugin.createDocumentation())
+      )
+
+    // ── Modules ──────────────────────────────────────────────────────────────────
     new Setting(containerEl).setName(t('settings.modules')).setHeading().setDesc(t('settings.modules.desc'))
     const list = containerEl.createDiv({ cls: 'bp-modules-list' })
     for (const status of plugin.registry.list()) {
@@ -56,7 +86,8 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
           const required = plugin.registry.status(id)?.module
           return required ? t(required.nameKey) : id
         })
-        description.createDiv({ text: t('settings.modules.requires', { modules: names.join(', ') }) })
+        const requires = description.createDiv({ text: t('settings.modules.requires', { modules: names.join(', ') }) })
+        setTooltip(requires, t('tip.module.requires'))
       }
       const stateText =
         status.state === 'failed' && status.error
@@ -64,7 +95,11 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
           : status.state === 'missing-dependency' && status.missing.length > 0
             ? `${t('module.state.missing-dependency')} : ${status.missing.join(', ')}`
             : t(`module.state.${status.state}`)
-      description.createDiv({ text: stateText, cls: ['bp-module-state', STATE_CLASS[status.state]].filter(Boolean) })
+      const state = description.createDiv({
+        text: stateText,
+        cls: ['bp-module-state', STATE_CLASS[status.state]].filter(Boolean)
+      })
+      setTooltip(state, t(`tip.module.state.${status.state}`))
 
       const details = module.details?.(moduleSettings(plugin.config, module.id))
       if (details) {
@@ -72,7 +107,7 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
         setting.nameEl.addClass('bp-module-name-link')
         setting.nameEl.setAttr('role', 'button')
         setting.nameEl.setAttr('tabindex', '0')
-        setting.nameEl.setAttr('aria-label', t('module.details.open', { title: t(details.titleKey) }))
+        setTooltip(setting.nameEl, t('module.details.open', { title: t(details.titleKey) }))
         setting.nameEl.addEventListener('click', openDetails)
         setting.nameEl.addEventListener('keydown', (event) => {
           if (event.key === 'Enter' || event.key === ' ') {
@@ -80,19 +115,28 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
             openDetails()
           }
         })
-        setting.addButton((button) => button.setButtonText(t(details.titleKey)).onClick(openDetails))
+        setting.addButton((button) =>
+          button.setButtonText(t(details.titleKey)).setTooltip(t('tip.module.details')).onClick(openDetails)
+        )
       }
 
+      const enabled = !plugin.config.disabledModules.includes(module.id)
       setting.addToggle((toggle) =>
-        toggle.setValue(!plugin.config.disabledModules.includes(module.id)).onChange(async (enabled) => {
-          plugin.config = withModuleEnabled(plugin.config, module.id, enabled)
-          await plugin.saveSettings()
-          plugin.platform.notifier.notify(t('settings.modules.reload'))
-        })
+        toggle
+          .setValue(enabled)
+          .setTooltip(t(enabled ? 'tip.module.toggle.on' : 'tip.module.toggle.off'))
+          .onChange(async (value) => {
+            plugin.config = withModuleEnabled(plugin.config, module.id, value)
+            await plugin.saveSettings()
+            toggle.setTooltip(t(value ? 'tip.module.toggle.on' : 'tip.module.toggle.off'))
+            plugin.platform.notifier.notify(t('settings.modules.reload'))
+          })
       )
     }
 
+    // ── Licence ──────────────────────────────────────────────────────────────────
     new Setting(containerEl).setName(t('settings.licence')).setHeading()
-    new Setting(containerEl).setName(plugin.describeLicence()).setDesc(t('settings.licence.owner'))
+    const licence = new Setting(containerEl).setName(plugin.describeLicence()).setDesc(t('settings.licence.owner'))
+    setTooltip(licence.nameEl, t('tip.licence'))
   }
 }

@@ -16,7 +16,9 @@ Documentation fonctionnelle : [`docs/modules/lecture-fichiers.md`](../../../docs
 | `lecture.ts` | `readVaultFile` : lit un fichier du coffre, rend le texte ou la raison de l'échec |
 | `aliases.ts` | **Extensions équivalentes** (`.tot` lu comme `.xml`) : validation, lecture des réglages, application à toute lecture |
 | `catalogue.ts` | **Catalogue des formats**, ouvert depuis les réglages dans sa propre fenêtre : intégré, en développement (avec l'étape), prévu |
-| `i18n.ts` | Textes français et anglais, clés `lecture-fichiers.*` |
+| `i18n.ts` | Textes français et anglais, clés `lecture-fichiers.*`, infobulles comprises |
+| `doc/Lecture de fichiers.md` | **Page de documentation écrite dans le coffre** de l'utilisateur |
+| `doc.ts` | Remplit cette page : tableaux des formats tirés du catalogue, extensions équivalentes déclarées |
 | `readers/fileText.ts` | Aiguilleur : extension → lecteur ; liste des extensions lisibles ; mise en Markdown |
 | `readers/pdfRead.ts` | PDF : objets, flux, polices, positions du texte |
 | `readers/pdfText.ts` | PDF : positions → lignes, paragraphes, titres, tableaux |
@@ -49,9 +51,11 @@ leurs fichiers.
    libellés dans `i18n.ts` ; le test du catalogue échoue tant que la vitrine et le code
    ne disent pas la même chose.
 4. Si d'autres modules en ont besoin directement, l'exporter dans `index.ts`.
-5. Tests : `readers/<format>Read.test.ts` ; si possible un fichier produit par l'outil
+5. La page `doc/Lecture de fichiers.md` reprend le catalogue d'elle-même ; y compléter
+   le texte si le format demande une explication.
+6. Tests : `readers/<format>Read.test.ts` ; si possible un fichier produit par l'outil
    d'origine dans `test/fixtures/dce-exemple/`, et un cas dans `test/dce.test.ts`.
-6. Mettre à jour le tableau des formats dans `docs/modules/lecture-fichiers.md`.
+7. Mettre à jour le tableau des formats dans `docs/modules/lecture-fichiers.md`.
 
 ## Corriger un lecteur
 

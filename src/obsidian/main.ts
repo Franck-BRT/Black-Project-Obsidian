@@ -12,6 +12,7 @@ import { describeEntitlements, EVALUATION, type Entitlements } from '../core/lic
 import type { BlackModule, ModuleCommand, ModuleContext } from '../core/modules/module'
 import { ModuleRegistry } from '../core/modules/registry'
 import type { Platform, SettingsStorage } from '../core/ports'
+import { docModules, documentationPages, writeDocumentation } from '../core/docs'
 import { moduleSettings, readSettings, type CoreSettings } from '../core/settings'
 import { MODULES } from '../modules'
 import { obsidianPlatform, pluginSettingsStorage } from './platform'
@@ -43,6 +44,11 @@ export default class BlackProjectsPlugin extends Plugin {
       id: 'about',
       name: this.i18n.t('command.about'),
       callback: () => this.showAbout()
+    })
+    this.addCommand({
+      id: 'documentation',
+      name: this.i18n.t('command.docs'),
+      callback: () => void this.createDocumentation()
     })
     this.addSettingTab(new BlackProjectsSettingTab(this.app, this))
 
@@ -76,6 +82,42 @@ export default class BlackProjectsPlugin extends Plugin {
       } catch (error) {
         console.error(`[Black Projects] réglages du module ${moduleId}`, error)
       }
+    }
+  }
+
+  /**
+   * Écrit la documentation de Black Projects et de ses modules dans le dossier choisi,
+   * puis ouvre l'accueil. Les notes de l'utilisateur au même endroit ne sont jamais
+   * remplacées.
+   */
+  async createDocumentation(): Promise<void> {
+    const t = (key: string, vars?: Readonly<Record<string, string | number>>) => this.i18n.t(key, vars)
+    const folder = this.config.docsFolder
+    const version = this.manifest.version
+    try {
+      const modules = docModules(this.registry.list(), {
+        version,
+        folder,
+        t,
+        settingsFor: (id) => moduleSettings(this.config, id)
+      })
+      const report = await writeDocumentation(this.platform.fs, folder, documentationPages({ version, folder, modules }))
+      this.platform.notifier.notify(
+        t('docs.done', {
+          folder,
+          created: report.created.length,
+          updated: report.updated.length,
+          unchanged: report.unchanged.length
+        }),
+        8000
+      )
+      if (report.kept.length > 0) {
+        this.platform.notifier.notify(t('docs.kept', { count: report.kept.length, files: report.kept.join(', ') }), 12000)
+      }
+      await this.platform.ui.openNote(`${folder}/Accueil.md`)
+    } catch (error) {
+      console.error('[Black Projects] documentation', error)
+      this.platform.notifier.notify(t('docs.failed', { error: error instanceof Error ? error.message : String(error) }), 10000)
     }
   }
 

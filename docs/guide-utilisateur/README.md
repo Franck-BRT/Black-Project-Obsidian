@@ -12,7 +12,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.2.5)
+## Aujourd'hui (version 0.2.6)
+
+- **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**
+  (ou la commande « Créer ou mettre à jour la documentation ») écrit l'accueil, la prise
+  en main et une page par module dans `Black Projects/Documentation` (dossier
+  modifiable), puis ouvre l'accueil. Vos propres notes ne sont jamais remplacées.
+- **Infobulles** : survoler un réglage, un bouton, un état ou un bloc explique à quoi il
+  sert.
 
 - **Réglages → Général → Langue** : français ou anglais, appliqué au prochain chargement.
 - **Réglages → Modules** : l'état de chaque module ; l'interrupteur l'active ou le

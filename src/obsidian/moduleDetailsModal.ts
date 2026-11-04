@@ -9,7 +9,7 @@
  * que le dessiner, et se redessine quand un réglage change.
  */
 
-import { Modal, Setting, type App } from 'obsidian'
+import { Modal, Setting, setTooltip, type App } from 'obsidian'
 import {
   FEATURE_STATUSES,
   type FeatureStatus,
@@ -91,6 +91,7 @@ export class ModuleDetailsModal extends Modal {
       .addText((text) => {
         text.setPlaceholder(`${prefix}${field.placeholderKey ? t(field.placeholderKey) : ''}`)
         text.onChange((value) => (typed = value))
+        if (field.tooltipKeys?.from) setTooltip(text.inputEl, t(field.tooltipKeys.from))
         text.inputEl.addEventListener('keydown', (event) => {
           if (event.key === 'Enter') {
             event.preventDefault()
@@ -101,8 +102,15 @@ export class ModuleDetailsModal extends Modal {
       .addDropdown((dropdown) => {
         for (const option of options) dropdown.addOption(option, `${t(field.connectorKey)} ${prefix}${option}`)
         dropdown.setValue(target).onChange((value) => (target = value))
+        if (field.tooltipKeys?.to) setTooltip(dropdown.selectEl, t(field.tooltipKeys.to))
       })
-      .addButton((button) => button.setButtonText(t('settings.mapping.add')).setCta().onClick(add))
+      .addButton((button) =>
+        button
+          .setButtonText(t('settings.mapping.add'))
+          .setCta()
+          .setTooltip(t(field.tooltipKeys?.add ?? 'tip.mapping.add'))
+          .onClick(add)
+      )
 
     const pairs = Object.entries(current).sort(([a], [b]) => a.localeCompare(b))
     if (pairs.length === 0) block.createDiv({ text: t('settings.mapping.empty'), cls: 'bp-mapping-empty' })
@@ -113,7 +121,7 @@ export class ModuleDetailsModal extends Modal {
         .addExtraButton((button) =>
           button
             .setIcon('trash-2')
-            .setTooltip(t('settings.mapping.remove'))
+            .setTooltip(t(field.tooltipKeys?.remove ?? 'tip.mapping.remove'))
             .onClick(async () => {
               const next = { ...current }
               delete next[from]
@@ -135,7 +143,8 @@ export class ModuleDetailsModal extends Modal {
     for (const status of FEATURE_STATUSES) {
       const count = features.filter((feature) => feature.status === status).length
       if (count === 0) continue
-      legend.createSpan({ text: `${statusLabel(status)} : ${count}`, cls: ['bp-feature-badge', `is-${status}`] })
+      const badge = legend.createSpan({ text: `${statusLabel(status)} : ${count}`, cls: ['bp-feature-badge', `is-${status}`] })
+      setTooltip(badge, t(`tip.feature.${status}`))
     }
 
     for (const section of details.sections) {
@@ -154,7 +163,8 @@ export class ModuleDetailsModal extends Modal {
           feature.step !== undefined && feature.status !== 'available'
             ? `${statusLabel(feature.status)} · ${t('module.feature.step', { step: feature.step })}`
             : statusLabel(feature.status)
-        card.createSpan({ text: status, cls: ['bp-feature-badge', `is-${feature.status}`] })
+        const badge = card.createSpan({ text: status, cls: ['bp-feature-badge', `is-${feature.status}`] })
+        setTooltip(badge, t(`tip.feature.${feature.status}`))
       }
     }
   }

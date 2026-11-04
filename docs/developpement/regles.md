@@ -37,5 +37,14 @@
 
 ## Documentation
 
-Chaque étape livre sa documentation avec son code : page du module dans
-`docs/modules/`, chapitre du guide utilisateur, cahier de recette.
+Deux documentations, à tenir à jour avec le code :
+
+- **Pour l'utilisateur, dans son coffre** : `src/core/doc/*.md` (accueil, prise en main)
+  et `src/modules/<id>/doc/*.md` (une page par module), écrites par la commande « Créer
+  ou mettre à jour la documentation ». Un test vérifie qu'aucun gabarit ni clé de texte
+  n'y reste.
+- **Pour le projet, dans `docs/`** : plan, architecture, page technique de chaque module,
+  guide, cahiers de recette, règles.
+
+Chaque étape livre les deux avec son code. Tout nouveau réglage, bouton ou état reçoit
+son infobulle.

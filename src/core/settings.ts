@@ -21,13 +21,18 @@ export interface CoreSettings {
   disabledModules: string[]
   /** Réglages propres à chaque module, rangés sous son identifiant. */
   modules: Record<string, Record<string, unknown>>
+  /** Le dossier du coffre où la documentation est créée. */
+  docsFolder: string
 }
+
+export const DEFAULT_DOCS_FOLDER = 'Black Projects/Documentation'
 
 export const DEFAULT_SETTINGS: CoreSettings = Object.freeze({
   format: 1 as const,
   language: 'fr' as const,
   disabledModules: [],
-  modules: {}
+  modules: {},
+  docsFolder: DEFAULT_DOCS_FOLDER
 })
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -53,7 +58,23 @@ export function readSettings(raw: unknown): CoreSettings {
     }
   }
 
-  return { format: 1, language, disabledModules, modules }
+  const docsFolder =
+    typeof source.docsFolder === 'string' && cleanFolder(source.docsFolder) !== ''
+      ? cleanFolder(source.docsFolder)
+      : DEFAULT_DOCS_FOLDER
+
+  return { format: 1, language, disabledModules, modules, docsFolder }
+}
+
+/** Un dossier du coffre tel qu'on le saisit : sans « / » au début ni à la fin, ni doubles. */
+export function cleanFolder(folder: string): string {
+  return folder
+    .trim()
+    .replace(/\\/g, '/')
+    .split('/')
+    .map((part) => part.trim())
+    .filter((part) => part !== '' && part !== '.' && part !== '..')
+    .join('/')
 }
 
 /** Les réglages d'un module, ou un objet vide. */

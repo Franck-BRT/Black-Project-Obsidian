@@ -1,0 +1,60 @@
+// Copyright © 2026 Black Room Technologies. Tous droits réservés.
+// Logiciel propriétaire — voir le fichier LICENSE.
+
+/** La documentation complète, telle que la commande l'écrit, avec les vrais modules. */
+
+import { describe, expect, it } from 'vitest'
+import { docModules, documentationPages, writeDocumentation } from '../core/docs'
+import { createI18n } from '../core/i18n'
+import { memoryPlatform } from '../core/testing/memoryPlatform'
+import { MODULES } from '.'
+
+function build(settings: Record<string, Record<string, unknown>> = {}) {
+  const i18n = createI18n('fr')
+  for (const module of MODULES) i18n.register('fr', module.texts.fr)
+  const folder = 'Black Projects/Documentation'
+  const modules = docModules(
+    MODULES.map((module) => ({ module, state: 'active' })),
+    { version: '0.2.6', folder, t: (key, vars) => i18n.t(key, vars), settingsFor: (id) => settings[id] ?? {} }
+  )
+  return documentationPages({ version: '0.2.6', folder, modules })
+}
+
+describe('documentation des modules', () => {
+  it('a une page par module, sans gabarit ni clé de texte oubliés', () => {
+    const pages = build()
+    expect(pages.map((page) => page.path)).toEqual([
+      'Accueil.md',
+      'Prise en main.md',
+      'Modules/Lecture de fichiers.md',
+      "Modules/Analyse d'appels d'offres.md"
+    ])
+    for (const page of pages) {
+      expect(page.content, page.path).not.toMatch(/\{\{|\}\}/)
+      expect(page.content, page.path).not.toMatch(/lecture-fichiers\.|module\.feature\.|\bao\.\w/)
+    }
+  })
+
+  it('décrit les formats tels qu’ils sont, et les extensions équivalentes déclarées', () => {
+    const page = build({ 'lecture-fichiers': { aliases: { tot: 'xml' } } }).find((each) => each.path === 'Modules/Lecture de fichiers.md')
+    const content = page?.content ?? ''
+    expect(content).toContain('| PDF avec texte natif | `.pdf` | 🟩 Lecture intégrée |')
+    expect(content).toContain('| PDF sans texte (scan) | `.pdf` | 🟧 En développement · Étape 6 |')
+    expect(content).toContain('- `.tot` lu comme `.xml`')
+    expect(content).toContain('| Fichiers .tot | `.tot` | 🟩 Lecture intégrée | Lus comme .xml')
+    expect(build().find((each) => each.path === 'Modules/Lecture de fichiers.md')?.content).toContain('*Aucune pour le moment.*')
+  })
+
+  it('relie les pages entre elles dans le dossier choisi', () => {
+    const ao = build().find((each) => each.path === "Modules/Analyse d'appels d'offres.md")?.content ?? ''
+    expect(ao).toContain('[[Black Projects/Documentation/Modules/Lecture de fichiers|Lecture de fichiers]]')
+    expect(ao).toContain('[[Black Projects/Documentation/Accueil|← Accueil]]')
+  })
+
+  it('s’écrit dans le coffre', async () => {
+    const platform = memoryPlatform()
+    const report = await writeDocumentation(platform.fs, 'Black Projects/Documentation', build())
+    expect(report.created).toHaveLength(4)
+    expect(await platform.fs.exists('Black Projects/Documentation/Modules/Lecture de fichiers.md')).toBe(true)
+  })
+})

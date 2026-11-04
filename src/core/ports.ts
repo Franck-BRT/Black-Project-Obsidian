@@ -82,6 +82,8 @@ export interface Ui {
   pickFile(options: FilePickOptions): Promise<VaultPath | null>
   /** Montre un texte long, avec de quoi le copier. */
   showText(view: TextView): void
+  /** Ouvre une note du coffre. */
+  openNote(path: VaultPath): Promise<void>
 }
 
 /** Ce que la plateforme sait d'elle-même. */

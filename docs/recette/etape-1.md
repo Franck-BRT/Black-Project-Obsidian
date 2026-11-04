@@ -38,6 +38,26 @@ Déposer dans un coffre de test les pièces de `test/fixtures/dce-exemple/`, pui
       l'analyse d'appels d'offres passe à « Module requis indisponible : Lecture de
       fichiers » ; réactiver, recharger : tout revient
 
+## Documentation et infobulles (v0.2.6)
+
+- [ ] Réglages → **Documentation** : le dossier `Black Projects/Documentation` ;
+      **Créer / mettre à jour** écrit 4 pages (Accueil, Prise en main, Modules/Lecture de
+      fichiers, Modules/Analyse d'appels d'offres) et ouvre l'accueil
+- [ ] L'accueil liste les modules dans un tableau, chacun avec un lien vers sa page ;
+      les liens entre pages fonctionnent
+- [ ] La page Lecture de fichiers donne les formats en tableaux (🟩 🟧 ⬜) et vos
+      extensions équivalentes
+- [ ] Relancer : « 4 inchangée(s) » ; ajouter une extension équivalente puis relancer :
+      la page Lecture de fichiers est mise à jour
+- [ ] Remplacer le contenu d'une page par une note à vous (sans l'en-tête `bp-doc`),
+      relancer : un message dit qu'elle n'a pas été remplacée, et elle ne l'est pas
+- [ ] Changer le dossier (par exemple `Docs/BP`), relancer : la documentation y est
+      créée, et ses liens pointent vers ce dossier
+- [ ] Infobulles au survol : langue, dossier, bouton de documentation, nom et bouton
+      d'un module, état, interrupteur, « Nécessite », licence ; dans la fenêtre Formats de
+      fichiers : champ, menu, Ajouter, corbeille, compteurs et pastilles d'état ; bouton
+      Copier de la commande de lecture
+
 ## Sur un vrai dossier (à faire avec le CNES)
 
 Avec la commande, ou par les tests en déposant les pièces dans `test/fixtures/`, pour

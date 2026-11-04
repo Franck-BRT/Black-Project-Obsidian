@@ -16,6 +16,7 @@ export interface MemoryPlatform extends Platform {
   /** La réponse que donnera le prochain `pickFile`, et les options qu'il a reçues. */
   nextPick: string | null
   picks: FilePickOptions[]
+  opened: string[]
 }
 
 export function memoryPlatform(files: Record<string, string | Uint8Array> = {}): MemoryPlatform {
@@ -30,6 +31,7 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
     shown: [],
     nextPick: null,
     picks: [],
+    opened: [],
     info: { name: 'test', version: '0.0.0' },
     fs: {
       exists: async (path) => store.has(path),
@@ -59,7 +61,8 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
         platform.picks.push(options)
         return platform.nextPick
       },
-      showText: (view) => void platform.shown.push(view)
+      showText: (view) => void platform.shown.push(view),
+      openNote: async (path) => void platform.opened.push(path)
     }
   }
   return platform

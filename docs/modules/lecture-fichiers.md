@@ -49,7 +49,9 @@ aussitôt.
   format non lu ; un message explique pourquoi.
 - La corbeille retire une équivalence.
 
-Ce détail vient de `catalogue.ts`. Un test garantit que les formats annoncés « Lecture
+Ce détail vient de `catalogue.ts`. La page **Lecture de fichiers** de la documentation
+écrite dans le coffre (`doc/Lecture de fichiers.md`) reprend les mêmes formats en
+tableaux, et les équivalences déclarées. Un test garantit que les formats annoncés « Lecture
 intégrée » sont exactement ceux que le module lit : la vitrine ne peut ni promettre plus
 que le code, ni oublier un format qu'il sait lire.
 

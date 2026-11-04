@@ -40,6 +40,18 @@ d'ajout (exemple : les extensions équivalentes). Le module dit ce qui est permi
 (`normalize`, `validate`, `options`) ; la plateforme dessine et enregistre. Un module
 apprend qu'un réglage a changé par `context.settings.onChange`.
 
+Facultatif : `docs`, les pages de documentation du module, écrites dans le coffre par la
+commande « Créer ou mettre à jour la documentation ». Leur texte est dans
+`src/modules/<id>/doc/*.md`, embarqué dans le plugin au build : la documentation d'un
+module se maintient dans son répertoire, avec son code. Gabarits : `{{nom}}` pour une
+valeur, `{{link:Chemin|Libellé}}` pour un lien vers une autre page de la documentation.
+
+## Infobulles
+
+Chaque réglage, bouton, état et bloc porte une infobulle (`setTooltip` d'Obsidian), dont
+le texte est dans les traductions : `tip.*` pour le cœur, `<id>.….tip.*` pour un module
+(par exemple les `tooltipKeys` d'un réglage `mapping`).
+
 ## Le registre (`src/core/modules/registry.ts`)
 
 | État | Signification |

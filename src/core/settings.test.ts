@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, moduleSettings, readSettings, withModuleEnabled } from './settings'
+import { cleanFolder, DEFAULT_DOCS_FOLDER, DEFAULT_SETTINGS, moduleSettings, readSettings, withModuleEnabled } from './settings'
 
 describe('réglages', () => {
   it('donne les réglages par défaut quand rien n’est enregistré', () => {
@@ -34,5 +34,13 @@ describe('réglages', () => {
 
   it('rend un objet vide pour un module sans réglages', () => {
     expect(moduleSettings(DEFAULT_SETTINGS, 'ao')).toEqual({})
+  })
+
+  it('nettoie le dossier de la documentation, et revient au dossier par défaut s’il est vide', () => {
+    expect(cleanFolder(' /Notes//BP\\Doc/ ')).toBe('Notes/BP/Doc')
+    expect(cleanFolder('../Doc')).toBe('Doc')
+    expect(readSettings({ docsFolder: '/Mes docs/' }).docsFolder).toBe('Mes docs')
+    expect(readSettings({ docsFolder: ' / ' }).docsFolder).toBe(DEFAULT_DOCS_FOLDER)
+    expect(readSettings({}).docsFolder).toBe(DEFAULT_DOCS_FOLDER)
   })
 })

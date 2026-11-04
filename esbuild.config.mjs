@@ -29,6 +29,8 @@ const context = await esbuild.context({
     ...builtinModules,
     ...builtinModules.map((name) => `node:${name}`)
   ],
+  // Les pages de documentation (*.md) sont embarquées comme du texte.
+  loader: { '.md': 'text' },
   logLevel: 'info',
   sourcemap: production ? false : 'inline',
   minify: production,

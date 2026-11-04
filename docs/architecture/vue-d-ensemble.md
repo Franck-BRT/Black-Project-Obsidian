@@ -41,7 +41,7 @@ Ce que le cœur attend de la plateforme :
 | `FileSystem` | lire, écrire, lister les fichiers du coffre | `app.vault.adapter` |
 | `Http` | appels réseau (serveur d'IA) | `requestUrl`, qui passe les restrictions d'origine |
 | `Notifier` | messages brefs à l'utilisateur | `Notice` |
-| `Ui` | choisir un fichier, montrer un texte long | `FuzzySuggestModal`, `Modal` |
+| `Ui` | choisir un fichier, montrer un texte long, ouvrir une note | `FuzzySuggestModal`, `Modal`, `openLinkText` |
 | `SettingsStorage` | réglages du plugin | `loadData` / `saveData` |
 
 Les tests implémentent ces ports en mémoire ; l'application de bureau les implémentera
@@ -54,6 +54,14 @@ avec Tauri.
 3. Activation par le [registre](modules.md) : ordre des dépendances, modules désactivés,
    droits de licence, isolation des pannes.
 4. Branchement des commandes déclarées par les modules.
+
+## La documentation dans le coffre
+
+`src/core/docs.ts` assemble l'accueil et la prise en main (`src/core/doc/*.md`) et les
+pages des modules (`src/modules/<id>/doc/*.md`), puis les écrit dans le dossier choisi
+dans les réglages (par défaut `Black Projects/Documentation`). Chaque page porte
+`bp-doc: true` dans son en-tête : elle est remplacée à chaque mise à jour, et une note de
+l'utilisateur au même endroit, sans cette marque, n'est jamais écrasée.
 
 ## Les données
 
