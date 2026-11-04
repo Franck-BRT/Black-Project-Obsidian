@@ -7,7 +7,7 @@
 | Identifiant | `ao` |
 | Version | 0.1.0 |
 | Requiert | — |
-| État | Déclaré ; fonctions à partir de l'étape 1 |
+| État | Déclaré ; les lecteurs de documents du cœur sont prêts (étape 1), fonctions du module à partir de l'étape 2 |
 
 ## Ce que le module fera
 

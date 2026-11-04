@@ -23,6 +23,8 @@ une application de bureau autonome.
 | Premier module | Analyse d'appels d'offres (AO), module interne du plugin |
 | Modèle économique | Gratuit pour l'évaluation ; un point d'accroche permet d'activer une licence payante plus tard sans rien refaire |
 | Application autonome | Plus tard, avec Tauri (Rust + interface web), **sans embarquer Obsidian** (interdit par ses conditions d'utilisation) |
+| Position d'analyse | **Les deux** : émetteur (relire son propre dossier avant publication) et répondant / évaluateur (analyser un dossier reçu, ou une offre face au dossier) |
+| Serveur d'IA | **Sidonie**, le serveur d'IA du CNES, compatible OpenAI ; le client IA repris de `module-obsidian` a été écrit pour lui |
 
 ### Règles de provenance du code
 
@@ -81,7 +83,7 @@ code.
 **Jalon :** le plugin se charge dans Obsidian ; ses réglages listent les modules et
 l'état de la licence.
 
-### Étape 1 — Lecteurs de documents (`src/core/readers/`)
+### Étape 1 — Lecteurs de documents (`src/core/readers/`) ✅ *terminée (v0.2.0)*
 
 Repris de `module-obsidian` (code Black Room), dans cet ordre :
 
@@ -92,7 +94,13 @@ Repris de `module-obsidian` (code Black Room), dans cet ordre :
 
 Tests et fichiers d'essai repris. Pas d'interface. ≈ 4 500 lignes.
 
-**Jalon :** tests verts sur un dossier de consultation réel anonymisé.
+Réalisé : briques dans `src/core/formats/`, lecteurs et `fileText` dans
+`src/core/readers/`, et les générateurs `docx`, `xlsx`, `pptx` dans `src/core/writers/`
+(avancés de l'étape 7 : les tests des lecteurs fabriquent leurs fichiers avec). Doc :
+[modules/lecteurs.md](modules/lecteurs.md).
+
+**Jalon :** tests verts sur un dossier de consultation fictif produit par LibreOffice
+et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du CNES.
 
 ### Étape 2 — Dossier de consultation (module AO)
 
@@ -142,8 +150,9 @@ Tests et fichiers d'essai repris. Pas d'interface. ≈ 4 500 lignes.
 
 - Repris : `llm/protocol`, `llm/client` (types réécrits), `promptTemplate`,
   `reqQualityLlm`, `reqAdvice`, `ReqEmbeddings`, la partie utile de `translate`
-- Réglages de connexion : adresse, modèle, clé dans le trousseau d'Obsidian (jamais
-  dans le coffre), bouton « Tester la connexion »
+- Réglages de connexion à **Sidonie** (CNES) : adresse, modèle, clé dans le trousseau
+  d'Obsidian (jamais dans le coffre), bouton « Tester la connexion » ; tout serveur
+  compatible OpenAI reste utilisable
 - Calendrier de l'AO (`deadlines`) : date limite de remise, validité de l'offre, délais,
   avec la phrase source
 - « Interroger le dossier » (`libraryRetrieval`, `eachDocument`) avec un questionnaire
@@ -156,8 +165,14 @@ Tests et fichiers d'essai repris. Pas d'interface. ≈ 4 500 lignes.
 
 - Repris : générateurs `xlsx` et `docx`, `reqXlsx`, `reqDocx`
 - Matrice de conformité (Excel), rapport d'analyse (Word)
-- Fiche de synthèse, adaptée de `visaSheet` — son contenu dépend de la question
-  ouverte « émetteur ou répondant »
+- Deux modes d'analyse, choisis à la création de l'analyse :
+  - **émetteur** : relecture de son propre dossier avant publication — qualité des
+    exigences, cohérence entre pièces (CCTP, CCAP, RC, BPU), clauses manquantes,
+    ambiguïtés qui feraient poser des questions aux candidats ;
+  - **répondant / évaluateur** : analyse d'un dossier reçu (go / no go, risques,
+    exigences à satisfaire) et d'une offre face au dossier — matrice de conformité,
+    fiche d'analyse adaptée de `visaSheet`, avis motivé
+- Fiche de synthèse propre à chaque mode
 - Registre des risques de l'AO (`risk`)
 - Comparaison de deux versions du dossier, avis rectificatif (`reqDiff`)
 
@@ -198,9 +213,9 @@ lignes écrites pour le socle, les vues et les réglages.
 
 ## 7. Questions ouvertes
 
-1. **Émetteur ou répondant ?** Le CNES analyse-t-il son propre dossier avant
-   publication, ou évalue-t-il des offres reçues ? Nécessaire avant l'étape 7.
-2. **Serveur d'IA interne compatible OpenAI ?** Nécessaire avant l'étape 6 ; sans lui,
-   la démo s'arrête à l'étape 5 plus l'étape 7.
-3. **Texte de la licence** à faire valider par un juriste (voir
+1. **Texte de la licence** à faire valider par un juriste (voir
    [architecture/propriete-et-licences.md](architecture/propriete-et-licences.md)).
+2. **Accès à Sidonie** pour les essais : adresse, modèles disponibles (texte,
+   embeddings, vision), et conditions d'accès depuis le poste de démonstration.
+
+Tranchées : position d'analyse (les deux), serveur d'IA (Sidonie).

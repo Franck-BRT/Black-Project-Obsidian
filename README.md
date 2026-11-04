@@ -13,10 +13,11 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.1.0 — étape 0 du [plan d'intégration](docs/plan-integration.md) : le socle.**
-Le plugin se charge, déclare ses modules et affiche leur état et la licence dans ses
-réglages. Le module *Analyse d'appels d'offres* est déclaré ; ses fonctions arrivent à
-partir de l'étape 1.
+**Version 0.2.0 — étape 1 du [plan d'intégration](docs/plan-integration.md) : les
+lecteurs de documents.** Le cœur lit les pièces d'un dossier de consultation — PDF,
+Word (`.docx`, `.doc`), RTF, Excel (`.xlsx`, `.xls`), PowerPoint, HTML, Markdown, texte —
+sans aucune dépendance externe. Le module *Analyse d'appels d'offres* s'en servira à
+partir de l'étape 2.
 
 ## Documentation
 
