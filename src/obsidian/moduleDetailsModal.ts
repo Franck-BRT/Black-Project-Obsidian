@@ -2,33 +2,132 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * La fenêtre qui montre le détail d'un module : ce qu'il sait faire et ce qui arrive,
- * une ligne par famille, un petit bloc par fonction, coloré selon son état. Le contenu
- * vient du module (`details`) ; cette fenêtre ne fait que le dessiner.
+ * La fenêtre d'un module, ouverte depuis les réglages : ses réglages propres en tête
+ * (les extensions équivalentes, pour la lecture de fichiers), puis ce qu'il sait faire et
+ * ce qui arrive — une ligne par famille, un petit bloc par fonction, coloré selon son
+ * état. Le contenu vient du module (`settingsFields`, `details`) ; cette fenêtre ne fait
+ * que le dessiner, et se redessine quand un réglage change.
  */
 
-import { Modal, type App } from 'obsidian'
-import type { I18n } from '../core/i18n'
-import { FEATURE_STATUSES, type FeatureStatus, type ModuleDetails } from '../core/modules/module'
+import { Modal, Setting, type App } from 'obsidian'
+import {
+  FEATURE_STATUSES,
+  type FeatureStatus,
+  type MappingField,
+  type ModuleDescriptor,
+  type ModuleDetails
+} from '../core/modules/module'
+import { moduleSettings } from '../core/settings'
+import type BlackProjectsPlugin from './main'
 
 export class ModuleDetailsModal extends Modal {
   constructor(
     app: App,
-    private readonly i18n: I18n,
-    private readonly moduleName: string,
-    private readonly details: ModuleDetails
+    private readonly plugin: BlackProjectsPlugin,
+    private readonly module: ModuleDescriptor
   ) {
     super(app)
   }
 
-  override onOpen(): void {
-    const { contentEl, details } = this
-    const t = this.i18n.t.bind(this.i18n)
-    const statusLabel = (status: FeatureStatus) => t(details.statusKeys?.[status] ?? `module.feature.${status}`)
+  private t(key: string, vars?: Readonly<Record<string, string | number>>): string {
+    return this.plugin.i18n.t(key, vars)
+  }
 
+  private settings(): Readonly<Record<string, unknown>> {
+    return moduleSettings(this.plugin.config, this.module.id)
+  }
+
+  override onOpen(): void {
     this.modalEl.addClass('bp-details-modal')
-    this.setTitle(`${this.moduleName} — ${t(details.titleKey)}`)
-    const panel = contentEl.createDiv({ cls: 'bp-module-details' })
+    this.render()
+  }
+
+  override onClose(): void {
+    this.contentEl.empty()
+  }
+
+  private render(): void {
+    const { contentEl, module } = this
+    const details = module.details?.(this.settings())
+    contentEl.empty()
+    this.setTitle(details ? `${this.t(module.nameKey)} — ${this.t(details.titleKey)}` : this.t(module.nameKey))
+    for (const field of module.settingsFields ?? []) this.renderMapping(contentEl.createDiv(), field)
+    if (details) this.renderDetails(contentEl.createDiv(), details)
+  }
+
+  /**
+   * Un réglage fait de paires « .tot lu comme .xml » : le formulaire d'ajout, puis les
+   * paires enregistrées, chacune avec de quoi la retirer. Ce qui est permis, c'est le
+   * module qui le dit (`validate`) ; ici, on ne fait que dessiner et enregistrer.
+   */
+  private renderMapping(block: HTMLElement, field: MappingField): void {
+    const { plugin, module } = this
+    const t = this.t.bind(this)
+    const prefix = field.prefix ?? ''
+    const current = field.read(this.settings())
+    const save = async (pairs: Record<string, string>) => {
+      await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: pairs })
+      this.render()
+    }
+
+    block.addClass('bp-module-settings')
+    block.createDiv({ text: t(field.nameKey), cls: 'bp-module-settings-title' })
+    if (field.descKey) block.createDiv({ text: t(field.descKey), cls: 'bp-module-settings-desc' })
+
+    const options = field.options()
+    let typed = ''
+    let target = field.defaultOption && options.includes(field.defaultOption) ? field.defaultOption : (options[0] ?? '')
+    const add = async () => {
+      const from = field.normalize(typed)
+      const error = field.validate(from, target, current)
+      if (error) {
+        plugin.platform.notifier.notify(t(error.key, error.vars), 6000)
+        return
+      }
+      await save({ ...current, [from]: target })
+    }
+    new Setting(block)
+      .setClass('bp-mapping-add')
+      .addText((text) => {
+        text.setPlaceholder(`${prefix}${field.placeholderKey ? t(field.placeholderKey) : ''}`)
+        text.onChange((value) => (typed = value))
+        text.inputEl.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            void add()
+          }
+        })
+      })
+      .addDropdown((dropdown) => {
+        for (const option of options) dropdown.addOption(option, `${t(field.connectorKey)} ${prefix}${option}`)
+        dropdown.setValue(target).onChange((value) => (target = value))
+      })
+      .addButton((button) => button.setButtonText(t('settings.mapping.add')).setCta().onClick(add))
+
+    const pairs = Object.entries(current).sort(([a], [b]) => a.localeCompare(b))
+    if (pairs.length === 0) block.createDiv({ text: t('settings.mapping.empty'), cls: 'bp-mapping-empty' })
+    for (const [from, to] of pairs) {
+      new Setting(block)
+        .setClass('bp-mapping-pair')
+        .setName(`${prefix}${from}  ${t(field.connectorKey)}  ${prefix}${to}`)
+        .addExtraButton((button) =>
+          button
+            .setIcon('trash-2')
+            .setTooltip(t('settings.mapping.remove'))
+            .onClick(async () => {
+              const next = { ...current }
+              delete next[from]
+              await save(next)
+            })
+        )
+    }
+  }
+
+  /** Le détail : un résumé, puis une ligne par famille et un petit bloc par fonction. */
+  private renderDetails(panel: HTMLElement, details: ModuleDetails): void {
+    const t = this.t.bind(this)
+    const statusLabel = (status: FeatureStatus) => t(details.statusKeys?.[status] ?? `module.feature.${status}`)
+    panel.addClass('bp-module-details')
     if (details.introKey) panel.createDiv({ text: t(details.introKey), cls: 'bp-module-details-intro' })
 
     const features = details.sections.flatMap((section) => section.features)
@@ -58,9 +157,5 @@ export class ModuleDetailsModal extends Modal {
         card.createSpan({ text: status, cls: ['bp-feature-badge', `is-${feature.status}`] })
       }
     }
-  }
-
-  override onClose(): void {
-    this.contentEl.empty()
   }
 }

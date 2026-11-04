@@ -86,7 +86,7 @@ code.
 **Jalon :** le plugin se charge dans Obsidian ; ses réglages listent les modules et
 l'état de la licence.
 
-### Étape 1 — Lecteurs de documents (module `lecture-fichiers`) ✅ *terminée (v0.2.4)*
+### Étape 1 — Lecteurs de documents (module `lecture-fichiers`) ✅ *terminée (v0.2.5)*
 
 Repris de `module-obsidian` (code Black Room), dans cet ordre :
 
@@ -105,8 +105,8 @@ Les générateurs `docx`, `xlsx`, `pptx` sont dans `src/core/writers/` (avancés
 l'étape 7 : les tests des lecteurs fabriquent leurs fichiers avec). Commande provisoire
 « Lire un fichier du coffre » pour essayer dans Obsidian. En v0.2.3, un clic sur le
 module dans les réglages ouvre une fenêtre avec le catalogue des formats : intégrés (vert), en
-développement avec leur étape (orange), prévus (gris). En v0.2.4, des **extensions équivalentes**
-déclarées dans les réglages (`.tot` lu comme `.xml`). Doc :
+développement avec leur étape (orange), prévus (gris). En v0.2.4-0.2.5, des **extensions
+équivalentes** déclarées en tête de cette fenêtre (`.tot` lu comme `.xml`). Doc :
 [modules/lecture-fichiers.md](modules/lecture-fichiers.md).
 
 **Jalon :** tests verts sur un dossier de consultation fictif produit par LibreOffice

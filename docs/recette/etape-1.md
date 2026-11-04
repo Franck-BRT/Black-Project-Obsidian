@@ -26,8 +26,9 @@ Déposer dans un coffre de test les pièces de `test/fixtures/dce-exemple/`, pui
 - [ ] `BPU.xlsx`, `BPU.xls` : le tableau des prix ; `Presentation.pptx` : les
       diapositives ; `RC.html` : la date limite de remise
 - [ ] **Copier** copie le texte
-- [ ] **Extensions équivalentes** : ajouter `.tot` lu comme `.xml` ; il apparaît dans la
-      liste et dans la fenêtre Formats de fichiers (ligne « Extensions ajoutées ») ; la
+- [ ] **Extensions équivalentes**, en tête de la fenêtre Formats de fichiers : ajouter
+      `.tot` lu comme `.xml` ; il apparaît dans la liste et, aussitôt, dans la ligne
+      « Extensions ajoutées » de la même fenêtre ; la
       commande propose `Essais/banc.tot` et l'affiche « TOT lu comme XML »
 - [ ] Ajouter `.pdf` : refusé (« déjà lus par un lecteur intégré ») ; ajouter `.tot` une
       seconde fois : refusé ; la corbeille retire l'équivalence ; fermer et rouvrir le

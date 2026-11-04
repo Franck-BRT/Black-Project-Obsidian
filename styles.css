@@ -175,12 +175,24 @@
   margin-top: auto;
 }
 
-/* Réglages propres à un module (extensions équivalentes…), sous sa ligne. */
+/* Réglages propres à un module (extensions équivalentes…), en tête de sa fenêtre. */
 
 .bp-module-settings {
-  margin: 0 0 var(--size-4-3) var(--size-4-4);
-  padding: 0 var(--size-4-3) var(--size-4-2);
-  border-left: 2px solid var(--background-modifier-border);
+  margin-bottom: var(--size-4-4);
+  padding: var(--size-4-3);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+}
+
+.bp-module-settings-title {
+  font-weight: var(--font-semibold);
+}
+
+.bp-module-settings-desc {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  margin: var(--size-2-2) 0 var(--size-4-1);
 }
 
 .bp-module-settings .setting-item {
@@ -196,7 +208,10 @@
 .bp-mapping-empty {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
-  padding-bottom: var(--size-4-2);
+}
+
+.bp-mapping-add {
+  border-top: none;
 }
 
 .bp-mapping-add .setting-item-info {

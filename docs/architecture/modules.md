@@ -33,7 +33,8 @@ Le module écrit le contenu, la plateforme le dessine. Exemple : le catalogue de
 de `lecture-fichiers`. `details` reçoit les réglages du module, pour montrer aussi ce que
 l'utilisateur a ajouté.
 
-Facultatif : `settingsFields`, les réglages propres au module, dessinés sous sa ligne.
+Facultatif : `settingsFields`, les réglages propres au module, dessinés en tête de sa
+fenêtre (celle qu'ouvre `details`).
 Aujourd'hui un type : `mapping`, une liste de paires « ceci → cela » avec un formulaire
 d'ajout (exemple : les extensions équivalentes). Le module dit ce qui est permis
 (`normalize`, `validate`, `options`) ; la plateforme dessine et enregistre. Un module

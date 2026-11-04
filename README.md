@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.2.4 — étape 1 du [plan d'intégration](docs/plan-integration.md) : la
+**Version 0.2.5 — étape 1 du [plan d'intégration](docs/plan-integration.md) : la
 lecture de fichiers.** Le module *Lecture de fichiers* lit les pièces d'un dossier de
 consultation — PDF, Word (`.docx`, `.doc`), RTF, Excel (`.xlsx`, `.xls`), PowerPoint,
 HTML, Markdown, texte — sans aucune dépendance externe ; ses réglages montrent les formats

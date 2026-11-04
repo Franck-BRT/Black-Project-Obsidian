@@ -35,9 +35,11 @@ extensions, une précision, et son état :
 
 ### Extensions équivalentes
 
-Sous la ligne du module, le réglage **Extensions équivalentes** permet de lire des
-fichiers dont l'extension n'est pas connue mais qui sont d'un format lu : par exemple des
-fichiers `.tot` qui sont du XML. Saisir l'extension, choisir « lu comme .xml », **Ajouter**.
+En tête de la fenêtre **Formats de fichiers**, la section **Extensions équivalentes**
+permet de lire des fichiers dont l'extension n'est pas connue mais qui sont d'un format
+lu : par exemple des fichiers `.tot` qui sont du XML. Saisir l'extension, choisir
+« lu comme .xml », **Ajouter** (ou Entrée). Les blocs de la fenêtre se mettent à jour
+aussitôt.
 
 - Les fichiers `.tot` sont alors lus partout : par la commande (« TOT lu comme XML »),
   et par tout module qui lit des documents.

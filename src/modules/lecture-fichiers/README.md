@@ -62,7 +62,7 @@ leurs fichiers.
 
 ## Extensions équivalentes
 
-L'utilisateur déclare dans les réglages qu'une extension inconnue est d'un format lu
+L'utilisateur déclare, dans la fenêtre Formats de fichiers, qu'une extension inconnue est d'un format lu
 (`.tot` → `.xml`). `aliases.ts` refuse de redéfinir une extension déjà lue et n'accepte
 comme cible qu'un format intégré. Les équivalences sont appliquées par `readVaultFile`,
 et par `fileText` / `isReadable` **de l'interface publique** (`index.ts`) ; les fonctions
