@@ -2,7 +2,7 @@
 
 > Copyright © 2026 Black Room Technologies. Tous droits réservés.
 
-Sur un coffre de test. Le coffre de test fourni contient `À importer/DCE Station sol.zip`.
+Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station sol.zip`.
 
 ## Créer une analyse
 
@@ -59,7 +59,7 @@ Sur un coffre de test. Le coffre de test fourni contient `À importer/DCE Statio
       « Dossier des analyses », et les fonctions (5 disponibles, 10 en développement)
 - [ ] Changer le dossier des analyses : la prochaine analyse y est créée
 - [ ] Extensions équivalentes : déclarer `.tot` lu comme `.xml`, puis importer
-      `À importer/Essais/banc.tot` : pièce lue
+      `A importer/Essais/banc.tot` : pièce lue
 - [ ] Ajouter une note à soi dans la section **Notes** de l'analyse, réimporter : la note
       est intacte
 - [ ] **Créer / mettre à jour la documentation** : la page *Analyse d'appels d'offres*
