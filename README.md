@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.3.1 — étape 2 du [plan d'intégration](docs/plan-integration.md) : le
+**Version 0.3.2 — étape 2 du [plan d'intégration](docs/plan-integration.md) : le
 dossier de consultation.** Créer une analyse d'appel d'offres (candidat ou émetteur),
 importer les pièces du dossier — ZIP compris — ou les déposer à la main ; chaque pièce
 est lue, typée (RC, CCTP, CCAP, BPU…) et décrite par une note, et la note de l'analyse

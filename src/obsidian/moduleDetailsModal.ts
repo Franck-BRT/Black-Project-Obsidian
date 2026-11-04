@@ -69,6 +69,10 @@ export class ModuleDetailsModal extends Modal {
     const t = this.t.bind(this)
     const prefix = field.prefix ?? ''
     const current = field.read(this.settings())
+    const optionText = (option: string) => {
+      const key = field.optionLabelKey?.(option)
+      return key ? `${prefix}${option} — ${t(key)}` : `${prefix}${option}`
+    }
     const save = async (pairs: Record<string, string>) => {
       await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: pairs })
       this.render()
@@ -104,7 +108,7 @@ export class ModuleDetailsModal extends Modal {
         })
       })
       .addDropdown((dropdown) => {
-        for (const option of options) dropdown.addOption(option, `${t(field.connectorKey)} ${prefix}${option}`)
+        for (const option of options) dropdown.addOption(option, `${t(field.connectorKey)} ${optionText(option)}`)
         dropdown.setValue(target).onChange((value) => (target = value))
         if (field.tooltipKeys?.to) setTooltip(dropdown.selectEl, t(field.tooltipKeys.to))
       })
@@ -121,7 +125,7 @@ export class ModuleDetailsModal extends Modal {
     for (const [from, to] of pairs) {
       new Setting(block)
         .setClass('bp-mapping-pair')
-        .setName(`${prefix}${from}  ${t(field.connectorKey)}  ${prefix}${to}`)
+        .setName(`${prefix}${from}  ${t(field.connectorKey)}  ${optionText(to)}`)
         .addExtraButton((button) =>
           button
             .setIcon('trash-2')

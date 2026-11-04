@@ -115,14 +115,39 @@ export function keywordIn(keyword: string, folded: string): boolean {
 }
 
 /**
+ * Les mots-clés ajoutés par l'utilisateur, chacun vers un type : ceux du nom du fichier,
+ * ceux du titre du document.
+ */
+export interface CustomKeywords {
+  readonly names: Readonly<Record<string, string>>
+  readonly titles: Readonly<Record<string, string>>
+}
+
+export const NO_CUSTOM_KEYWORDS: CustomKeywords = { names: {}, titles: {} }
+
+function customMatch(keywords: Readonly<Record<string, string>>, folded: string): string | null {
+  for (const [keyword, code] of Object.entries(keywords)) if (keywordIn(keyword, folded)) return code
+  return null
+}
+
+/**
  * Le type d'une pièce, d'après le nom de son fichier (sans le chemin ni l'extension) et
  * le début de son texte s'il est connu.
+ *
+ * Dans cet ordre : les mots-clés de l'utilisateur pour le nom, ceux du module pour le
+ * nom, puis ceux de l'utilisateur pour le titre, ceux du module pour le titre. Les mots de
+ * l'utilisateur passent devant : ils disent ce qu'il sait de ses propres dossiers.
  */
-export function classifyPiece(fileName: string, text = ''): string {
+export function classifyPiece(fileName: string, text = '', custom: CustomKeywords = NO_CUSTOM_KEYWORDS): string {
   const base = fileName.slice(fileName.lastIndexOf('/') + 1).replace(/\.[^.]+$/, '')
   const name = fold(base)
+  const byName = customMatch(custom.names, name)
+  if (byName) return byName
   for (const each of PIECE_TYPES) if (each.names.some((keyword) => keywordIn(keyword, name))) return each.code
   const head = fold(text.slice(0, 1500))
-  if (head) for (const each of PIECE_TYPES) if (each.titles.some((keyword) => keywordIn(keyword, head))) return each.code
+  if (!head) return OTHER
+  const byTitle = customMatch(custom.titles, head)
+  if (byTitle) return byTitle
+  for (const each of PIECE_TYPES) if (each.titles.some((keyword) => keywordIn(keyword, head))) return each.code
   return OTHER
 }

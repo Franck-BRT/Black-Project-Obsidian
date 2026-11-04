@@ -64,9 +64,16 @@ Chaque pièce est **lue**, **typée** et **décrite par une note** dans `Pièces
   tenir compte des accents, de la casse ni de la ponctuation (« CCTP_v3 » et « cctp v3 »
   se valent) ; terminé par « … », il vaut aussi pour les mots qui le prolongent
   (« annexe… » trouve « Annexes »). La même liste est dans Paramètres → Black Projects →
-  **Fonctions**.
+  **Fonctions**. Les mots-clés marqués *(ajouté)* sont les vôtres (voir plus bas).
 
 {{types}}
+
+  **Vos propres mots-clés** : en tête de la fenêtre **Fonctions**, deux listes —
+  « nom du fichier » et « titre du document » — où ajouter un mot ou une expression vers
+  un type (« SPEC » → CCTP, « grille de prix » → BPU). Ils sont cherchés **avant** ceux
+  du module, et valent pour les prochains imports ; pour une pièce déjà importée,
+  utilisez **Changer le type de la pièce**. Un mot-clé déjà déclaré, ou déjà connu du
+  module pour ce type, est refusé avec un message.
 
 - son **état de lecture** :
 

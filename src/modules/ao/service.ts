@@ -30,7 +30,7 @@ import {
   type PieceRow,
   type ReadingState
 } from './notes'
-import { classifyPiece, OTHER, PIECE_TYPES } from './pieces'
+import { classifyPiece, NO_CUSTOM_KEYWORDS, OTHER, PIECE_TYPES, type CustomKeywords } from './pieces'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -41,6 +41,8 @@ export interface Services {
   root: string
   /** La date du jour, AAAA-MM-JJ. */
   today: () => string
+  /** Les mots-clés ajoutés par l'utilisateur à la reconnaissance des types. */
+  keywords?: CustomKeywords
 }
 
 export function localToday(): string {
@@ -156,7 +158,7 @@ async function notePiece(services: Services, analysis: Analysis, original: strin
   const { fs, t } = services
   const name = original.slice(original.lastIndexOf('/') + 1)
   const { state, text } = await readPiece(name, bytes)
-  const type = classifyPiece(name, text)
+  const type = classifyPiece(name, text, services.keywords ?? NO_CUSTOM_KEYWORDS)
   // « CCTP.md » ; si le nom est pris par la même pièce dans un autre format, « CCTP (pdf).md » ;
   // ensuite seulement des numéros.
   const stem = name.replace(/\.[^.]+$/, '') || name

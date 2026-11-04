@@ -74,8 +74,8 @@ describe('reconnaissance des pièces', () => {
 })
 
 describe('types de pièces dans la fenêtre « Fonctions »', async () => {
-  const { AO_FEATURES } = await import('.')
-  const section = AO_FEATURES.sections.find((each) => each.titleKey === 'ao.types.section')
+  const { aoFeatures } = await import('.')
+  const section = aoFeatures().sections.find((each) => each.titleKey === 'ao.types.section')
 
   it('montre un bloc de référence par type, dans l’ordre où ils sont essayés, avec leurs mots-clés', () => {
     expect(section?.kind).toBe('reference')

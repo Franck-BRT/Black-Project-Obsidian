@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.3.0 |
+| Version | 0.3.2 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -54,8 +54,16 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
   par « … », il vaut aussi pour les mots qui le prolongent. Ces listes sont la source
   unique : la reconnaissance les applique, la fenêtre **Fonctions** (section « Types de
   pièces et leur détection ») et la page de documentation du coffre les affichent telles
-  quelles. Pour ajouter un mot-clé : l'écrire dans `pieces.ts`, ajouter un cas dans
-  `pieces.test.ts`.
+  quelles. Pour ajouter un mot-clé du module : l'écrire dans `pieces.ts`, ajouter un cas
+  dans `pieces.test.ts`.
+- **Mots-clés personnalisés** (v0.3.2, `keywords.ts`) : l'utilisateur ajoute ses paires
+  « mot-clé → type » en tête de la fenêtre **Fonctions**, une liste pour le nom du
+  fichier (réglage `motsClesNom`), une pour le titre (`motsClesTitre`). Ordre de la
+  reconnaissance : mots de l'utilisateur pour le nom, du module pour le nom, de
+  l'utilisateur pour le titre, du module pour le titre. Refusés : vide, plus de 60
+  caractères, type inconnu ou AUTRE, mot déjà déclaré, mot déjà connu du module pour ce
+  type. Ils s'appliquent aux prochains imports, et apparaissent dans les fiches des types
+  (« Ajoutés par vous ») et dans la documentation du coffre (« ajouté »).
 
 ## Organisation du code
 
@@ -65,6 +73,7 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
 | `service.ts` | Créer, lister, importer, mettre à jour, changer le type — sans fenêtre, testé sur un coffre en mémoire |
 | `notes.ts` | Forme des notes et des dossiers ; tableau des pièces |
 | `pieces.ts` | Types de pièces, leurs mots-clés, et la reconnaissance |
+| `keywords.ts` | Mots-clés personnalisés : saisie, validation, lecture des réglages |
 | `typesDoc.ts` | Le tableau des types et de leurs mots-clés pour la documentation du coffre |
 | `i18n.ts` | Textes, infobulles comprises |
 | `doc/` | Page de documentation écrite dans le coffre |

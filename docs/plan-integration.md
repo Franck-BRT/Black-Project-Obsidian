@@ -115,7 +115,7 @@ répertoire de chaque module). Doc :
 **Jalon :** tests verts sur un dossier de consultation fictif produit par LibreOffice
 et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du CNES.
 
-### Étape 2 — Dossier de consultation (module AO) ✅ *terminée (v0.3.1)*
+### Étape 2 — Dossier de consultation (module AO) ✅ *terminée (v0.3.2)*
 
 - Retrait de la commande provisoire « Lire un fichier du coffre »
 - Commande « Nouvelle analyse d'appel d'offres » : formulaire (nom, position candidat /
@@ -134,7 +134,8 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
 - Fenêtre « Fonctions » du module (fait / en développement, par étape) et réglage du
   dossier des analyses ; en v0.3.1, la section « Types de pièces et leur détection » :
   chaque type avec les mots-clés cherchés dans le nom et dans le titre, tirés de la liste
-  même que la reconnaissance applique
+  même que la reconnaissance applique ; en v0.3.2, les **mots-clés personnalisés** de
+  l'utilisateur (nom du fichier, titre du document), cherchés avant ceux du module
 - Doc : [modules/ao.md](modules/ao.md) ; recette : [recette/etape-2.md](recette/etape-2.md)
 
 **Jalon de démo n° 1 :** « je dépose le ZIP du dossier, toutes les pièces sont lues »

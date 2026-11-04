@@ -61,6 +61,17 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
       par type (AVIS, RC… AUTRE), dans l'ordre où ils sont essayés, avec les mots-clés
       cherchés « Dans le nom du fichier » et « Dans le titre du document » ; pas de
       pastille d'état ; les compteurs restent 5 / 10
+- [ ] **Mots-clés personnalisés** (v0.3.2), en tête de la fenêtre **Fonctions** :
+      ajouter `SPEC` → CCTP dans « nom du fichier » ; il apparaît dans la liste et dans la
+      fiche CCTP (« Ajoutés par vous — nom du fichier ») ; importer un fichier
+      `SPEC_essai.pdf` : type CCTP
+- [ ] Ajouter `cctp` → CCTP : refusé (déjà un mot-clé du module) ; ajouter `spec` → BPU :
+      refusé (déjà déclaré) ; la corbeille retire un mot-clé ; fermer et rouvrir le
+      coffre : les mots-clés sont conservés
+- [ ] Ajouter `dossier technique de référence` → CCTP dans « titre du document »,
+      importer un fichier au nom quelconque dont le texte commence par ce titre : CCTP
+- [ ] **Créer / mettre à jour la documentation** : vos mots-clés apparaissent dans le
+      tableau des types, marqués *(ajouté)*
 - [ ] Renommer un fichier avec un mot-clé affiché (par exemple `Spécifications
       techniques.pdf`) et l'importer : le type correspond à la fiche (CCTP)
 - [ ] Changer le dossier des analyses : la prochaine analyse y est créée

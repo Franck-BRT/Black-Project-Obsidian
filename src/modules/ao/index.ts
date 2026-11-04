@@ -12,12 +12,22 @@
 
 import { cleanFolder } from '../../core/settings'
 import { fillTemplate } from '../../core/docs'
-import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
+import type { BlackModule, MappingField, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import { LECTURE_FICHIERS } from '../lecture-fichiers'
 import page from "./doc/Analyse d'appels d'offres.md"
 import { aoEn, aoFr } from './i18n'
 import { ORIGINALS, PIECES, POSITIONS, safeName, type Analysis, type Position } from './notes'
-import { OTHER, PIECE_TYPES } from './pieces'
+import {
+  keywordTargets,
+  NAME_KEYWORDS_KEY,
+  normalizeKeyword,
+  readCustomKeywords,
+  readNameKeywords,
+  readTitleKeywords,
+  TITLE_KEYWORDS_KEY,
+  validateKeyword
+} from './keywords'
+import { NO_CUSTOM_KEYWORDS, OTHER, PIECE_TYPES, pieceType, type CustomKeywords } from './pieces'
 import { typesMarkdown } from './typesDoc'
 import {
   AnalysisExists,
@@ -63,6 +73,32 @@ const rootField: TextField = {
   normalize: cleanFolder
 }
 
+/** Un réglage « mot-clé → type » : pour le nom du fichier, ou pour le titre du document. */
+function keywordsField(where: 'names' | 'titles'): MappingField {
+  const name = where === 'names'
+  return {
+    kind: 'mapping',
+    key: name ? NAME_KEYWORDS_KEY : TITLE_KEYWORDS_KEY,
+    nameKey: name ? 'ao.keywords.names' : 'ao.keywords.titles',
+    descKey: name ? 'ao.keywords.names.desc' : 'ao.keywords.titles.desc',
+    placeholderKey: name ? 'ao.keywords.names.placeholder' : 'ao.keywords.titles.placeholder',
+    prefix: '',
+    connectorKey: 'ao.keywords.connector',
+    tooltipKeys: {
+      from: 'ao.keywords.tip.from',
+      to: 'ao.keywords.tip.to',
+      add: 'ao.keywords.tip.add',
+      remove: 'ao.keywords.tip.remove'
+    },
+    options: keywordTargets,
+    defaultOption: 'CCTP',
+    optionLabelKey: (code) => pieceType(code).labelKey,
+    normalize: normalizeKeyword,
+    validate: (keyword, code, current) => validateKeyword(where, keyword, code, current),
+    read: name ? readNameKeywords : readTitleKeywords
+  }
+}
+
 const feature = (key: string, status: ModuleFeature['status'], step?: number): ModuleFeature => ({
   labelKey: `ao.feature.${key}`,
   noteKey: `ao.feature.${key}.note`,
@@ -70,8 +106,14 @@ const feature = (key: string, status: ModuleFeature['status'], step?: number): M
   ...(step === undefined ? {} : { step })
 })
 
-/** Ce que le module sait faire, et ce qui arrive : la fenêtre « Fonctions ». */
-export const AO_FEATURES: ModuleDetails = {
+/**
+ * Ce que le module sait faire, et ce qui arrive : la fenêtre « Fonctions ». Les types de
+ * pièces y montrent aussi les mots-clés ajoutés par l'utilisateur.
+ */
+export function aoFeatures(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): ModuleDetails {
+  const added = (keywords: Readonly<Record<string, string>>, code: string) =>
+    Object.keys(keywords).filter((keyword) => keywords[keyword] === code)
+  return {
   titleKey: 'ao.details.title',
   introKey: 'ao.details.intro',
   sections: [
@@ -98,7 +140,9 @@ export const AO_FEATURES: ModuleDetails = {
         status: 'available' as const,
         tagGroups: [
           { labelKey: 'ao.types.byName', tags: each.names },
-          { labelKey: 'ao.types.byTitle', tags: each.titles }
+          { labelKey: 'ao.types.byTitle', tags: each.titles },
+          { labelKey: 'ao.types.addedName', tags: added(custom.names, each.code) },
+          { labelKey: 'ao.types.addedTitle', tags: added(custom.titles, each.code) }
         ],
         ...(each.code === OTHER ? { noteKey: 'ao.types.other' } : {})
       }))
@@ -121,6 +165,7 @@ export const AO_FEATURES: ModuleDetails = {
       ]
     }
   ]
+  }
 }
 
 function rootOf(settings: Readonly<Record<string, unknown>>): string {
@@ -133,7 +178,8 @@ function servicesFor(context: ModuleContext): Services {
     fs: context.platform.fs,
     t: (key, vars) => context.i18n.t(key, vars),
     root: rootOf(context.settings.get()),
-    today: localToday
+    today: localToday,
+    keywords: readCustomKeywords(context.settings.get())
   }
 }
 
@@ -185,14 +231,17 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.3.0',
+  version: '0.3.2',
   // Les pièces du dossier sont lues par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: aoFr, en: aoEn },
-  details: () => AO_FEATURES,
-  settingsFields: [rootField],
-  docs: ({ folder, t }) => [
-    { path: "Modules/Analyse d'appels d'offres.md", content: fillTemplate(page, folder, { types: typesMarkdown(t) }) }
+  details: (settings) => aoFeatures(readCustomKeywords(settings)),
+  settingsFields: [rootField, keywordsField('names'), keywordsField('titles')],
+  docs: ({ folder, t, settings }) => [
+    {
+      path: "Modules/Analyse d'appels d'offres.md",
+      content: fillTemplate(page, folder, { types: typesMarkdown(t, readCustomKeywords(settings)) })
+    }
   ],
   activate(context) {
     const { commands, platform, i18n } = context

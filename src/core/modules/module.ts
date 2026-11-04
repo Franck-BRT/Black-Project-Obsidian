@@ -129,6 +129,8 @@ export interface MappingField {
   options(): readonly string[]
   /** La valeur proposée d'abord ; à défaut, la première. */
   readonly defaultOption?: string
+  /** La clé du libellé d'une valeur de droite, affiché après elle : « CCTP — Cahier des… ». */
+  optionLabelKey?(option: string): string
   /** La saisie de gauche, nettoyée : « .TOT » devient « tot ». */
   normalize(input: string): string
   /** `null` si la paire est acceptable, sinon pourquoi elle ne l'est pas. */
