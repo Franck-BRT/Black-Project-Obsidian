@@ -25,6 +25,10 @@ export const en: Record<string, string> = {
   'settings.modules.reload': 'The change applies the next time the plugin loads.',
   'settings.modules.requires': 'Requires: {modules}',
 
+  'settings.mapping.add': 'Add',
+  'settings.mapping.remove': 'Remove',
+  'settings.mapping.empty': 'None yet.',
+
   'settings.licence': 'Licence',
   'settings.licence.evaluation': 'Evaluation version: every module is available.',
   'settings.licence.licensed': 'Licensed to {holder}.',

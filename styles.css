@@ -174,3 +174,36 @@
 .bp-feature .bp-feature-badge {
   margin-top: auto;
 }
+
+/* Réglages propres à un module (extensions équivalentes…), sous sa ligne. */
+
+.bp-module-settings {
+  margin: 0 0 var(--size-4-3) var(--size-4-4);
+  padding: 0 var(--size-4-3) var(--size-4-2);
+  border-left: 2px solid var(--background-modifier-border);
+}
+
+.bp-module-settings .setting-item {
+  padding: var(--size-4-2) 0;
+}
+
+.bp-mapping-pair .setting-item-name {
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-small);
+  white-space: pre;
+}
+
+.bp-mapping-empty {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  padding-bottom: var(--size-4-2);
+}
+
+.bp-mapping-add .setting-item-info {
+  display: none;
+}
+
+.bp-mapping-add .setting-item-control {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}

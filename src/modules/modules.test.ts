@@ -26,7 +26,7 @@ describe('catalogue des modules', () => {
       })
 
       it('a tous les textes de son détail, dans les deux langues', () => {
-        const details = module.details
+        const details = module.details?.({})
         if (!details) return
         const keys = [
           details.titleKey,

@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.2.3)
+## Aujourd'hui (version 0.2.4)
 
 - **Réglages → Général → Langue** : français ou anglais, appliqué au prochain chargement.
 - **Réglages → Modules** : l'état de chaque module ; l'interrupteur l'active ou le
@@ -20,6 +20,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 - **Cliquer sur « Lecture de fichiers »** (ou sur son bouton **Formats de fichiers**) :
   une fenêtre montre les formats lus (en vert), en développement (en orange, avec
   l'étape) et prévus (en gris).
+- **Extensions équivalentes** (sous « Lecture de fichiers ») : lire par exemple les
+  fichiers `.tot` comme du XML ; voir [Lecture de fichiers](../modules/lecture-fichiers.md).
 - **Réglages → Licence** : les droits d'usage.
 - Commande **À propos de Black Projects** : version, modules actifs, licence.
 - Commande **Lire un fichier du coffre (provisoire)** : choisir un PDF, Word, Excel,

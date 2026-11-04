@@ -10,11 +10,22 @@
  */
 
 import type { FileSystem, VaultPath } from '../../core/ports'
+import { currentAliases, resolveExtension } from './aliases'
 import { fileText, FileReadError, isReadable, type FileProblem } from './readers/fileText'
 
+/**
+ * `extension` est celle du fichier ; `readAs` celle du format avec lequel il a été lu —
+ * la même, sauf pour une extension équivalente (`.tot` lu comme `xml`).
+ */
 export type ReadOutcome =
-  | { ok: true; path: VaultPath; extension: string; text: string; ms: number }
-  | { ok: false; path: VaultPath; extension: string; problem: FileProblem }
+  | { ok: true; path: VaultPath; extension: string; readAs: string; text: string; ms: number }
+  | { ok: false; path: VaultPath; extension: string; readAs: string; problem: FileProblem }
+
+export interface ReadOptions {
+  /** Les extensions équivalentes ; par défaut, celles des réglages du module. */
+  aliases?: Readonly<Record<string, string>>
+  now?: () => number
+}
 
 export function extensionOf(path: VaultPath): string {
   const name = path.slice(path.lastIndexOf('/') + 1)
@@ -27,16 +38,18 @@ export function nameOf(path: VaultPath): string {
 }
 
 /** Le texte d'un fichier du coffre, ou la raison pour laquelle il n'y en a pas. */
-export async function readVaultFile(fs: FileSystem, path: VaultPath, now: () => number = Date.now): Promise<ReadOutcome> {
+export async function readVaultFile(fs: FileSystem, path: VaultPath, options: ReadOptions = {}): Promise<ReadOutcome> {
+  const now = options.now ?? Date.now
   const extension = extensionOf(path)
-  if (!isReadable(extension)) return { ok: false, path, extension, problem: 'unsupported' }
+  const readAs = resolveExtension(extension, options.aliases ?? currentAliases())
+  if (!isReadable(readAs)) return { ok: false, path, extension, readAs, problem: 'unsupported' }
   const started = now()
   try {
     const bytes = new Uint8Array(await fs.readBinary(path))
-    const text = await fileText(extension, bytes)
-    return { ok: true, path, extension, text, ms: now() - started }
+    const text = await fileText(readAs, bytes)
+    return { ok: true, path, extension, readAs, text, ms: now() - started }
   } catch (error) {
     const problem = error instanceof FileReadError ? error.problem : 'unreadable'
-    return { ok: false, path, extension, problem }
+    return { ok: false, path, extension, readAs, problem }
   }
 }

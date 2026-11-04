@@ -30,7 +30,14 @@ réglages — des
 sections (une ligne chacune) de fonctions (un bloc chacune), avec un état
 `available` (vert), `in-progress` (orange, avec l'étape du plan) ou `planned` (gris).
 Le module écrit le contenu, la plateforme le dessine. Exemple : le catalogue des formats
-de `lecture-fichiers`.
+de `lecture-fichiers`. `details` reçoit les réglages du module, pour montrer aussi ce que
+l'utilisateur a ajouté.
+
+Facultatif : `settingsFields`, les réglages propres au module, dessinés sous sa ligne.
+Aujourd'hui un type : `mapping`, une liste de paires « ceci → cela » avec un formulaire
+d'ajout (exemple : les extensions équivalentes). Le module dit ce qui est permis
+(`normalize`, `validate`, `options`) ; la plateforme dessine et enregistre. Un module
+apprend qu'un réglage a changé par `context.settings.onChange`.
 
 ## Le registre (`src/core/modules/registry.ts`)
 

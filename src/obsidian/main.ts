@@ -25,6 +25,7 @@ export default class BlackProjectsPlugin extends Plugin {
   /** Les droits d'usage. Le jour où une licence existe, c'est ici qu'elle est lue. */
   entitlements: Entitlements = EVALUATION
   private storage!: SettingsStorage
+  private readonly settingsListeners = new Map<string, Set<(values: Readonly<Record<string, unknown>>) => void>>()
 
   override async onload(): Promise<void> {
     this.storage = pluginSettingsStorage(this)
@@ -64,6 +65,20 @@ export default class BlackProjectsPlugin extends Plugin {
     await this.storage.save(this.config)
   }
 
+  /** Enregistre les réglages d'un module et prévient le module. */
+  async saveModuleSettings(moduleId: string, values: Record<string, unknown>): Promise<void> {
+    this.config = { ...this.config, modules: { ...this.config.modules, [moduleId]: { ...values } } }
+    await this.saveSettings()
+    const current = moduleSettings(this.config, moduleId)
+    for (const listener of this.settingsListeners.get(moduleId) ?? []) {
+      try {
+        listener(current)
+      } catch (error) {
+        console.error(`[Black Projects] réglages du module ${moduleId}`, error)
+      }
+    }
+  }
+
   describeLicence(): string {
     return describeEntitlements(this.entitlements, (key, vars) => this.i18n.t(key, vars))
   }
@@ -88,9 +103,12 @@ export default class BlackProjectsPlugin extends Plugin {
       i18n: this.i18n,
       settings: {
         get: () => moduleSettings(this.config, module.id),
-        save: async (values) => {
-          this.config = { ...this.config, modules: { ...this.config.modules, [module.id]: { ...values } } }
-          await this.saveSettings()
+        save: (values) => this.saveModuleSettings(module.id, values),
+        onChange: (listener) => {
+          const listeners = this.settingsListeners.get(module.id) ?? new Set()
+          listeners.add(listener)
+          this.settingsListeners.set(module.id, listeners)
+          return () => listeners.delete(listener)
         }
       },
       commands: {

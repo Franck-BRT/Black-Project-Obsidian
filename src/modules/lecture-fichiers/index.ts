@@ -12,21 +12,30 @@
  * Voir README.md dans ce répertoire pour la maintenance.
  */
 
-import type { BlackModule } from '../../core/modules/module'
+import type { BlackModule, MappingField } from '../../core/modules/module'
+import {
+  ALIASES_KEY,
+  aliasTargets,
+  configureAliases,
+  currentAliases,
+  normalizeExtension,
+  readAliases,
+  resolveExtension,
+  validateAlias
+} from './aliases'
+import { formatsCatalogue } from './catalogue'
 import { lectureEn, lectureFr } from './i18n'
 import { nameOf, readVaultFile } from './lecture'
-import { FORMATS_CATALOGUE } from './catalogue'
-import { TEXT_EXTENSIONS } from './readers/fileText'
+import { fileText as rawFileText, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
-export { extensionOf, nameOf, readVaultFile, type ReadOutcome } from './lecture'
+export { extensionOf, nameOf, readVaultFile, type ReadOptions, type ReadOutcome } from './lecture'
+export { currentAliases, resolveExtension } from './aliases'
 export {
   blocksText,
-  fileText,
   FileReadError,
   imageDataUrl,
   isImage,
-  isReadable,
   plainText,
   READABLE_EXTENSIONS,
   TEXT_EXTENSIONS,
@@ -42,8 +51,44 @@ export { readMarkdown } from './readers/markdownRead'
 export { unzip } from './formats/unzip'
 export { parseXml, type XmlNode } from './formats/xmlParse'
 
+/**
+ * Le texte d'un fichier, d'après son extension et ses octets — en tenant compte des
+ * extensions équivalentes déclarées dans les réglages (`.tot` lu comme du XML).
+ */
+export function fileText(extension: string, bytes: Uint8Array): Promise<string> {
+  return rawFileText(resolveExtension(extension), bytes)
+}
+
+/** L'extension est-elle lue — par un lecteur intégré ou comme équivalente d'un format lu ? */
+export function isReadable(extension: string): boolean {
+  return rawIsReadable(resolveExtension(extension))
+}
+
+/** Les extensions dont le texte est lu : les formats intégrés et les équivalences déclarées. */
+export function readableExtensions(): Set<string> {
+  return new Set([...TEXT_EXTENSIONS, ...Object.keys(currentAliases())])
+}
+
 // ── Le module ─────────────────────────────────────────────────────────────────────
 export const LECTURE_FICHIERS = 'lecture-fichiers'
+
+/** Le réglage « Extensions équivalentes », dessiné par la plateforme. */
+const aliasesField: MappingField = {
+  kind: 'mapping',
+  key: ALIASES_KEY,
+  nameKey: 'lecture-fichiers.alias.setting',
+  descKey: 'lecture-fichiers.alias.setting.desc',
+  placeholderKey: 'lecture-fichiers.alias.placeholder',
+  prefix: '.',
+  connectorKey: 'lecture-fichiers.alias.connector',
+  options: aliasTargets,
+  defaultOption: 'txt',
+  normalize: normalizeExtension,
+  validate: validateAlias,
+  read: readAliases
+}
+
+let unsubscribe: (() => void) | null = null
 
 export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
@@ -52,8 +97,12 @@ export const lectureFichiersModule: BlackModule = {
   version: '0.2.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
-  details: FORMATS_CATALOGUE,
-  activate({ platform, i18n, commands }) {
+  details: (settings) => formatsCatalogue(readAliases(settings)),
+  settingsFields: [aliasesField],
+  activate({ platform, i18n, commands, settings }) {
+    configureAliases(readAliases(settings.get()))
+    unsubscribe = settings.onChange((values) => configureAliases(readAliases(values)))
+
     // Provisoire : de quoi essayer les lecteurs dans Obsidian avant que l'analyse
     // d'appels d'offres ne s'en serve. À retirer quand l'étape 2 sera livrée.
     commands.register({
@@ -61,7 +110,7 @@ export const lectureFichiersModule: BlackModule = {
       nameKey: 'lecture-fichiers.command.read',
       async run() {
         const path = await platform.ui.pickFile({
-          extensions: TEXT_EXTENSIONS,
+          extensions: readableExtensions(),
           placeholder: i18n.t('lecture-fichiers.pick.placeholder')
         })
         if (path === null) return
@@ -78,7 +127,13 @@ export const lectureFichiersModule: BlackModule = {
         platform.ui.showText({
           title: name,
           subtitle: i18n.t('lecture-fichiers.result.subtitle', {
-            format: outcome.extension.toUpperCase(),
+            format:
+              outcome.readAs === outcome.extension
+                ? outcome.extension.toUpperCase()
+                : i18n.t('lecture-fichiers.result.alias', {
+                    format: outcome.extension.toUpperCase(),
+                    target: outcome.readAs.toUpperCase()
+                  }),
             characters: outcome.text.length.toLocaleString(i18n.language),
             lines: outcome.text.split('\n').length.toLocaleString(i18n.language),
             ms: outcome.ms
@@ -87,5 +142,10 @@ export const lectureFichiersModule: BlackModule = {
         })
       }
     })
+  },
+  deactivate() {
+    unsubscribe?.()
+    unsubscribe = null
+    configureAliases({})
   }
 }

@@ -14,6 +14,7 @@ Documentation fonctionnelle : [`docs/modules/lecture-fichiers.md`](../../../docs
 | --- | --- |
 | `index.ts` | **Interface publique** (ce que les autres modules ont le droit d'utiliser) et déclaration du module |
 | `lecture.ts` | `readVaultFile` : lit un fichier du coffre, rend le texte ou la raison de l'échec |
+| `aliases.ts` | **Extensions équivalentes** (`.tot` lu comme `.xml`) : validation, lecture des réglages, application à toute lecture |
 | `catalogue.ts` | **Catalogue des formats**, ouvert depuis les réglages dans sa propre fenêtre : intégré, en développement (avec l'étape), prévu |
 | `i18n.ts` | Textes français et anglais, clés `lecture-fichiers.*` |
 | `readers/fileText.ts` | Aiguilleur : extension → lecteur ; liste des extensions lisibles ; mise en Markdown |
@@ -58,6 +59,14 @@ leurs fichiers.
 2. Corriger dans le lecteur concerné.
 3. `pnpm run check` : tous les lecteurs ont leurs tests, et `test/dce.test.ts` relit un
    dossier complet.
+
+## Extensions équivalentes
+
+L'utilisateur déclare dans les réglages qu'une extension inconnue est d'un format lu
+(`.tot` → `.xml`). `aliases.ts` refuse de redéfinir une extension déjà lue et n'accepte
+comme cible qu'un format intégré. Les équivalences sont appliquées par `readVaultFile`,
+et par `fileText` / `isReadable` **de l'interface publique** (`index.ts`) ; les fonctions
+de même nom dans `readers/fileText.ts` restent brutes, sans équivalences.
 
 ## Règles
 

@@ -35,7 +35,7 @@ function context(m: BlackModule): ModuleContext {
     moduleId: m.id,
     platform,
     i18n: createI18n('fr'),
-    settings: { get: () => ({}), save: async () => {} },
+    settings: { get: () => ({}), save: async () => {}, onChange: () => () => {} },
     commands: { register: () => {} }
   }
 }

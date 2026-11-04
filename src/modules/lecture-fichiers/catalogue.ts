@@ -98,7 +98,32 @@ export const FORMATS_CATALOGUE: ModuleDetails = {
   ]
 }
 
-/** Toutes les extensions annoncées « Lecture intégrée ». */
+/**
+ * Le catalogue tel que les réglages le montrent : les formats du module, puis une ligne
+ * « Extensions ajoutées » avec les équivalences déclarées par l'utilisateur.
+ */
+export function formatsCatalogue(aliases: Readonly<Record<string, string>>): ModuleDetails {
+  const added = Object.entries(aliases).sort(([a], [b]) => a.localeCompare(b))
+  if (added.length === 0) return FORMATS_CATALOGUE
+  return {
+    ...FORMATS_CATALOGUE,
+    sections: [
+      ...FORMATS_CATALOGUE.sections,
+      {
+        titleKey: 'lecture-fichiers.alias.section',
+        features: added.map(([from, to]) => ({
+          labelKey: 'lecture-fichiers.alias.label',
+          noteKey: 'lecture-fichiers.alias.note',
+          tags: [from],
+          status: 'available' as const,
+          vars: { from, to }
+        }))
+      }
+    ]
+  }
+}
+
+/** Toutes les extensions annoncées « Lecture intégrée » par le module lui-même. */
 export function availableExtensions(details: ModuleDetails = FORMATS_CATALOGUE): Set<string> {
   return new Set(
     details.sections.flatMap((section) =>

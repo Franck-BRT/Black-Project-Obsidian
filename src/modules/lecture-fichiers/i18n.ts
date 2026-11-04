@@ -75,6 +75,21 @@ export const lectureFr: Record<string, string> = {
   'lecture-fichiers.format.reqif': 'ReqIF (DOORS et outils d’exigences)',
   'lecture-fichiers.format.reqif.note': 'Exigences importées avec leurs attributs.',
 
+  'lecture-fichiers.alias.setting': 'Extensions équivalentes',
+  'lecture-fichiers.alias.setting.desc':
+    'Des fichiers dont l’extension n’est pas connue, mais qui sont d’un format lu : par exemple des fichiers .tot qui sont du XML. Ils sont alors lus avec le lecteur de ce format.',
+  'lecture-fichiers.alias.placeholder': 'tot',
+  'lecture-fichiers.alias.connector': 'lu comme',
+  'lecture-fichiers.alias.section': 'Extensions ajoutées',
+  'lecture-fichiers.alias.label': 'Fichiers .{from}',
+  'lecture-fichiers.alias.note': 'Lus comme .{to} — ajouté dans les réglages.',
+  'lecture-fichiers.alias.error.invalid':
+    '« {from} » n’est pas une extension valable : lettres, chiffres, tiret ou souligné, 16 caractères au plus.',
+  'lecture-fichiers.alias.error.native': 'Les fichiers .{from} sont déjà lus par un lecteur intégré.',
+  'lecture-fichiers.alias.error.target': '.{to} n’est pas un format lu.',
+  'lecture-fichiers.alias.error.exists': 'Les fichiers .{from} sont déjà lus comme .{to} : retirez d’abord cette équivalence.',
+  'lecture-fichiers.result.alias': '{format} lu comme {target}',
+
   'lecture-fichiers.command.read': 'Lire un fichier du coffre (provisoire)',
   'lecture-fichiers.pick.placeholder': 'Choisis un fichier à lire…',
   'lecture-fichiers.reading': 'Lecture de « {name} »…',
@@ -157,6 +172,21 @@ export const lectureEn: Record<string, string> = {
   'lecture-fichiers.format.zip.note': 'Each document in the archive read with its reader.',
   'lecture-fichiers.format.reqif': 'ReqIF (DOORS and requirements tools)',
   'lecture-fichiers.format.reqif.note': 'Requirements imported with their attributes.',
+
+  'lecture-fichiers.alias.setting': 'Equivalent extensions',
+  'lecture-fichiers.alias.setting.desc':
+    'Files whose extension is unknown but which are in a format that is read: .tot files that are XML, for example. They are then read with that format’s reader.',
+  'lecture-fichiers.alias.placeholder': 'tot',
+  'lecture-fichiers.alias.connector': 'read as',
+  'lecture-fichiers.alias.section': 'Added extensions',
+  'lecture-fichiers.alias.label': '.{from} files',
+  'lecture-fichiers.alias.note': 'Read as .{to} — added in the settings.',
+  'lecture-fichiers.alias.error.invalid':
+    '“{from}” is not a valid extension: letters, digits, dash or underscore, 16 characters at most.',
+  'lecture-fichiers.alias.error.native': '.{from} files are already read by a built-in reader.',
+  'lecture-fichiers.alias.error.target': '.{to} is not a format that is read.',
+  'lecture-fichiers.alias.error.exists': '.{from} files are already read as .{to}: remove that equivalence first.',
+  'lecture-fichiers.result.alias': '{format} read as {target}',
 
   'lecture-fichiers.command.read': 'Read a file from the vault (preview)',
   'lecture-fichiers.pick.placeholder': 'Pick a file to read…',

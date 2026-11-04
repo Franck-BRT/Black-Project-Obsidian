@@ -45,12 +45,12 @@ export class ModuleDetailsModal extends Modal {
       const row = block.createDiv({ cls: 'bp-feature-row' })
       for (const feature of section.features) {
         const card = row.createDiv({ cls: ['bp-feature', `is-${feature.status}`] })
-        card.createDiv({ text: t(feature.labelKey), cls: 'bp-feature-label' })
+        card.createDiv({ text: t(feature.labelKey, feature.vars), cls: 'bp-feature-label' })
         if (feature.tags && feature.tags.length > 0) {
           const tags = card.createDiv({ cls: 'bp-feature-tags' })
           for (const tag of feature.tags) tags.createSpan({ text: `.${tag}`, cls: 'bp-feature-tag' })
         }
-        if (feature.noteKey) card.createDiv({ text: t(feature.noteKey), cls: 'bp-feature-note' })
+        if (feature.noteKey) card.createDiv({ text: t(feature.noteKey, feature.vars), cls: 'bp-feature-note' })
         const status =
           feature.step !== undefined && feature.status !== 'available'
             ? `${statusLabel(feature.status)} · ${t('module.feature.step', { step: feature.step })}`

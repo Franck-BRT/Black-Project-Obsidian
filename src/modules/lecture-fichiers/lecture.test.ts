@@ -12,11 +12,12 @@ describe('readVaultFile', () => {
   it('rend le texte d’un fichier du coffre, et le temps mis à le lire', async () => {
     const platform = memoryPlatform({ 'AO/RC.md': '# Règlement\n\nRemise le 15 janvier 2027.' })
     let clock = 1000
-    const outcome = await readVaultFile(platform.fs, 'AO/RC.md', () => (clock += 5))
+    const outcome = await readVaultFile(platform.fs, 'AO/RC.md', { now: () => (clock += 5) })
     expect(outcome).toEqual({
       ok: true,
       path: 'AO/RC.md',
       extension: 'md',
+      readAs: 'md',
       text: '# Règlement\n\nRemise le 15 janvier 2027.',
       ms: 5
     })
@@ -53,7 +54,7 @@ describe('commande « Lire un fichier du coffre »', () => {
       moduleId: lectureFichiersModule.id,
       platform,
       i18n,
-      settings: { get: () => ({}), save: async () => {} },
+      settings: { get: () => ({}), save: async () => {}, onChange: () => () => {} },
       commands: { register: (each) => void commands.push(each) }
     }
     await lectureFichiersModule.activate(context)

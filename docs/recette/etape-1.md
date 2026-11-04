@@ -26,6 +26,12 @@ Déposer dans un coffre de test les pièces de `test/fixtures/dce-exemple/`, pui
 - [ ] `BPU.xlsx`, `BPU.xls` : le tableau des prix ; `Presentation.pptx` : les
       diapositives ; `RC.html` : la date limite de remise
 - [ ] **Copier** copie le texte
+- [ ] **Extensions équivalentes** : ajouter `.tot` lu comme `.xml` ; il apparaît dans la
+      liste et dans la fenêtre Formats de fichiers (ligne « Extensions ajoutées ») ; la
+      commande propose `Essais/banc.tot` et l'affiche « TOT lu comme XML »
+- [ ] Ajouter `.pdf` : refusé (« déjà lus par un lecteur intégré ») ; ajouter `.tot` une
+      seconde fois : refusé ; la corbeille retire l'équivalence ; fermer et rouvrir le
+      coffre : les équivalences sont conservées
 - [ ] Une image ou un fichier vide : un message dit pourquoi il ne se lit pas
 - [ ] Désactiver « Lecture de fichiers », recharger le plugin : la commande disparaît et
       l'analyse d'appels d'offres passe à « Module requis indisponible : Lecture de

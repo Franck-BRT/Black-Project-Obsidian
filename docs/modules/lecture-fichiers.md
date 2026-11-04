@@ -33,6 +33,20 @@ extensions, une précision, et son état :
 | 🟧 orange | **En développement · Étape N** | prévu à l'étape N du plan |
 | ⬜ gris | **Prévu** | à venir, sans date |
 
+### Extensions équivalentes
+
+Sous la ligne du module, le réglage **Extensions équivalentes** permet de lire des
+fichiers dont l'extension n'est pas connue mais qui sont d'un format lu : par exemple des
+fichiers `.tot` qui sont du XML. Saisir l'extension, choisir « lu comme .xml », **Ajouter**.
+
+- Les fichiers `.tot` sont alors lus partout : par la commande (« TOT lu comme XML »),
+  et par tout module qui lit des documents.
+- Ils apparaissent dans la fenêtre **Formats de fichiers**, dans une ligne
+  « Extensions ajoutées ».
+- On ne peut pas redéfinir une extension déjà lue (`.pdf`, `.docx`…), ni viser un
+  format non lu ; un message explique pourquoi.
+- La corbeille retire une équivalence.
+
 Ce détail vient de `catalogue.ts`. Un test garantit que les formats annoncés « Lecture
 intégrée » sont exactement ceux que le module lit : la vitrine ne peut ni promettre plus
 que le code, ni oublier un format qu'il sait lire.
