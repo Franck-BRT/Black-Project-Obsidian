@@ -3,13 +3,14 @@
 
 import { describe, expect, it } from 'vitest'
 import { availableExtensions, FORMATS_CATALOGUE } from './catalogue'
+import { ARCHIVE_EXTENSIONS } from './archive'
 import { isReadable, TEXT_EXTENSIONS } from './readers/fileText'
 
 const features = FORMATS_CATALOGUE.sections.flatMap((section) => section.features)
 
 describe('catalogue des formats', () => {
   it('annonce « Lecture intégrée » pour exactement les extensions que le module lit', () => {
-    expect([...availableExtensions()].sort()).toEqual([...TEXT_EXTENSIONS].sort())
+    expect([...availableExtensions()].sort()).toEqual([...TEXT_EXTENSIONS, ...ARCHIVE_EXTENSIONS].sort())
   })
 
   it('n’annonce à venir que des extensions non lues, hormis les cas particuliers du PDF', () => {
@@ -17,7 +18,7 @@ describe('catalogue des formats', () => {
     // encore ce cas-là. Les autres extensions à venir ne sont vraiment pas lues.
     const future = features.filter((feature) => feature.status !== 'available')
     for (const feature of future) {
-      const shared = (feature.tags ?? []).filter((tag) => TEXT_EXTENSIONS.has(tag))
+      const shared = (feature.tags ?? []).filter((tag) => TEXT_EXTENSIONS.has(tag) || ARCHIVE_EXTENSIONS.has(tag))
       if (shared.length > 0) expect(shared).toEqual(['pdf'])
     }
   })

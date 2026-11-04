@@ -26,12 +26,12 @@ import {
 import { formatsCatalogue } from './catalogue'
 import { lectureDocs } from './doc'
 import { lectureEn, lectureFr } from './i18n'
-import { nameOf, readVaultFile } from './lecture'
 import { fileText as rawFileText, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { extensionOf, nameOf, readVaultFile, type ReadOptions, type ReadOutcome } from './lecture'
 export { currentAliases, resolveExtension } from './aliases'
+export { ARCHIVE_EXTENSIONS, ArchiveError, isArchive, readArchive, type ArchiveEntry } from './archive'
 export {
   blocksText,
   FileReadError,
@@ -101,55 +101,15 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.2.0',
+  version: '0.3.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings)),
   settingsFields: [aliasesField],
   docs: lectureDocs,
-  activate({ platform, i18n, commands, settings }) {
+  activate({ settings }) {
     configureAliases(readAliases(settings.get()))
     unsubscribe = settings.onChange((values) => configureAliases(readAliases(values)))
-
-    // Provisoire : de quoi essayer les lecteurs dans Obsidian avant que l'analyse
-    // d'appels d'offres ne s'en serve. À retirer quand l'étape 2 sera livrée.
-    commands.register({
-      id: 'lire-fichier',
-      nameKey: 'lecture-fichiers.command.read',
-      async run() {
-        const path = await platform.ui.pickFile({
-          extensions: readableExtensions(),
-          placeholder: i18n.t('lecture-fichiers.pick.placeholder')
-        })
-        if (path === null) return
-        const name = nameOf(path)
-        platform.notifier.notify(i18n.t('lecture-fichiers.reading', { name }), 2000)
-        const outcome = await readVaultFile(platform.fs, path)
-        if (!outcome.ok) {
-          platform.notifier.notify(
-            i18n.t(`lecture-fichiers.problem.${outcome.problem}`, { name, format: outcome.extension || '—' }),
-            8000
-          )
-          return
-        }
-        platform.ui.showText({
-          title: name,
-          subtitle: i18n.t('lecture-fichiers.result.subtitle', {
-            format:
-              outcome.readAs === outcome.extension
-                ? outcome.extension.toUpperCase()
-                : i18n.t('lecture-fichiers.result.alias', {
-                    format: outcome.extension.toUpperCase(),
-                    target: outcome.readAs.toUpperCase()
-                  }),
-            characters: outcome.text.length.toLocaleString(i18n.language),
-            lines: outcome.text.split('\n').length.toLocaleString(i18n.language),
-            ms: outcome.ms
-          }),
-          text: outcome.text
-        })
-      }
-    })
   },
   deactivate() {
     unsubscribe?.()

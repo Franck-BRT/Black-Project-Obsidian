@@ -35,8 +35,9 @@ l'utilisateur a ajouté.
 
 Facultatif : `settingsFields`, les réglages propres au module, dessinés en tête de sa
 fenêtre (celle qu'ouvre `details`).
-Aujourd'hui un type : `mapping`, une liste de paires « ceci → cela » avec un formulaire
-d'ajout (exemple : les extensions équivalentes). Le module dit ce qui est permis
+Deux types : `mapping`, une liste de paires « ceci → cela » avec un formulaire
+d'ajout (exemple : les extensions équivalentes) ; `text`, un texte comme un dossier
+(exemple : le dossier des analyses). Le module dit ce qui est permis
 (`normalize`, `validate`, `options`) ; la plateforme dessine et enregistre. Un module
 apprend qu'un réglage a changé par `context.settings.onChange`.
 
@@ -78,7 +79,7 @@ l'autre est actif. Exemple : `ao` requiert `lecture-fichiers`.
 | Module | Rôle | Requiert |
 | --- | --- | --- |
 | `lecture-fichiers` | Lire le texte des documents ; réutilisable par tout module | — |
-| `ao` | Analyse d'appels d'offres | `lecture-fichiers` |
+| `ao` | Analyse d'appels d'offres : analyses, import du dossier, pièces | `lecture-fichiers` |
 
 ## Ajouter un module
 

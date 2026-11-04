@@ -8,7 +8,7 @@
  * dans Obsidian. L'application de bureau fournira les mêmes interfaces à sa façon.
  */
 
-import { normalizePath, Notice, requestUrl, type App, type Plugin } from 'obsidian'
+import { normalizePath, Notice, requestUrl, TFile, TFolder, type App, type Plugin } from 'obsidian'
 import type { I18n } from '../core/i18n'
 import type { FileSystem, FolderListing, Http, Notifier, Platform, SettingsStorage } from '../core/ports'
 import { obsidianUi } from './ui'
@@ -18,6 +18,11 @@ function parentOf(path: string): string {
   return index <= 0 ? '' : path.slice(0, index)
 }
 
+/**
+ * Les fichiers du coffre. Les lectures passent par l'adaptateur ; les écritures par l'API
+ * du coffre (`vault.create`, `vault.modify`…), qui tient l'index d'Obsidian à jour sur-le-
+ * champ : une note écrite puis ouverte aussitôt est bien celle qu'on vient d'écrire.
+ */
 export class ObsidianFileSystem implements FileSystem {
   constructor(private readonly app: App) {}
 
@@ -39,14 +44,20 @@ export class ObsidianFileSystem implements FileSystem {
 
   async writeText(path: string, content: string): Promise<void> {
     const target = normalizePath(path)
+    const existing = this.app.vault.getAbstractFileByPath(target)
+    if (existing instanceof TFile) return this.app.vault.modify(existing, content)
     await this.ensureFolder(parentOf(target))
-    await this.adapter.write(target, content)
+    if (await this.adapter.exists(target)) return this.adapter.write(target, content)
+    await this.app.vault.create(target, content)
   }
 
   async writeBinary(path: string, content: ArrayBuffer): Promise<void> {
     const target = normalizePath(path)
+    const existing = this.app.vault.getAbstractFileByPath(target)
+    if (existing instanceof TFile) return this.app.vault.modifyBinary(existing, content)
     await this.ensureFolder(parentOf(target))
-    await this.adapter.writeBinary(target, content)
+    if (await this.adapter.exists(target)) return this.adapter.writeBinary(target, content)
+    await this.app.vault.createBinary(target, content)
   }
 
   async ensureFolder(path: string): Promise<void> {
@@ -55,7 +66,14 @@ export class ObsidianFileSystem implements FileSystem {
     let current = ''
     for (const segment of segments) {
       current = current ? `${current}/${segment}` : segment
-      if (!(await this.adapter.exists(current))) await this.adapter.mkdir(current)
+      if (this.app.vault.getAbstractFileByPath(current) instanceof TFolder) continue
+      if (await this.adapter.exists(current)) continue
+      try {
+        await this.app.vault.createFolder(current)
+      } catch (error) {
+        // Créé entre-temps : c'est ce qu'on voulait.
+        if (!(await this.adapter.exists(current))) throw error
+      }
     }
   }
 

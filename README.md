@@ -13,12 +13,12 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.2.6 — étape 1 du [plan d'intégration](docs/plan-integration.md) : la
-lecture de fichiers.** Le module *Lecture de fichiers* lit les pièces d'un dossier de
-consultation — PDF, Word (`.docx`, `.doc`), RTF, Excel (`.xlsx`, `.xls`), PowerPoint,
-HTML, Markdown, texte — sans aucune dépendance externe ; ses réglages montrent les formats
-lus et à venir, et une commande provisoire permet de l'essayer dans Obsidian. Le module *Analyse d'appels d'offres* s'en servira à partir
-de l'étape 2.
+**Version 0.3.0 — étape 2 du [plan d'intégration](docs/plan-integration.md) : le
+dossier de consultation.** Créer une analyse d'appel d'offres (candidat ou émetteur),
+importer les pièces du dossier — ZIP compris — ou les déposer à la main ; chaque pièce
+est lue, typée (RC, CCTP, CCAP, BPU…) et décrite par une note, et la note de l'analyse
+tient le tableau des pièces. La documentation s'écrit dans le coffre ; des infobulles
+expliquent chaque réglage.
 
 ## Documentation
 

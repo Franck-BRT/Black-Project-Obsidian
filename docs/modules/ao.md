@@ -5,25 +5,69 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.1.0 |
+| Version | 0.3.0 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
-| État | Déclaré ; la lecture des pièces est prête dans le module Lecture de fichiers (étape 1), fonctions propres à partir de l'étape 2 |
+| Emplacement | `src/modules/ao/` |
+| Interface publique | `src/modules/ao/index.ts` |
+| État | Étape 2 livrée : analyses, import du dossier (ZIP compris), typage et notes des pièces |
 
-## Ce que le module fera
+Documentation utilisateur (écrite dans le coffre) :
+`src/modules/ao/doc/Analyse d'appels d'offres.md`.
 
-| Fonction | Étape |
+## Ce que fait le module (étape 2)
+
+| Commande | Rôle |
 | --- | --- |
-| Lire toutes les pièces du dossier (PDF, Word, Excel, PowerPoint, HTML, RTF, ZIP…) | 1-2 |
-| Typer les pièces (RC, CCTP, CCAP, AE, BPU, DPGF, annexes) | 2 |
-| Extraire les exigences (Word, Excel, PDF, ReqIF/DOORS), tracées à leur pièce | 3-4 |
-| Mesurer la qualité des exigences (règles, score ISO/IEC/IEEE 29148, doublons) | 5 |
-| Relecture et conseils par l'IA locale, doublons de sens | 6 |
-| Calendrier de l'AO : dates limites, délais, avec la phrase source | 6 |
-| Interroger tout le dossier, réponses sourcées | 6 |
-| Matrice de conformité (Excel), rapport (Word), fiche de synthèse, risques | 7 |
-| Comparer deux versions du dossier (avis rectificatif) | 7 |
+| Nouvelle analyse d'appel d'offres | Formulaire (nom, position candidat / émetteur, acheteur, référence) ; crée le dossier et la note ; propose ensuite d'importer, de déposer, ou plus tard |
+| Importer des pièces dans une analyse (ZIP compris) | Fichiers de l'ordinateur ; un ZIP est ouvert (sous-dossiers gardés, archive imbriquée ouverte, fichiers parasites écartés, noms Windows en page 437 relus) |
+| Mettre à jour l'analyse (pièces déposées à la main) | Lit les fichiers de `Pièces/Originaux` qui n'ont pas de note ; réécrit le tableau |
+| Changer le type de la pièce | Sur la note d'une pièce ; le tableau suit |
+
+Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
+
+## Dans le coffre
+
+```
+<dossier des analyses>/<Nom>/            (« Appels d'offres » par défaut, réglable)
+├── <Nom>.md        bp-type: ao-analyse ; position, acheteur, référence, date ;
+│                   tableau des pièces entre <!-- bp:pieces:debut --> et <!-- bp:pieces:fin -->
+├── Pièces/
+│   ├── Originaux/  les fichiers tels que reçus
+│   └── <pièce>.md  bp-type: ao-piece ; type, fichier, format, lecture, caracteres,
+│                   importee ; texte extrait (titres descendus de deux niveaux)
+├── Exigences/      (étape 3)
+└── Analyse/        (étapes 5 à 7)
+```
+
+- **Noms des notes** : `CCTP.md` ; si une autre pièce porte déjà ce nom dans un autre
+  format, `CCTP (pdf).md` ; ensuite des numéros.
+- **Doublons** : un fichier identique à un original déjà présent n'est pas réimporté ;
+  un fichier différent du même nom devient `RC (2).pdf`.
+- **États de lecture** : `lue`, `sans-texte` (scan), `image`, `non-lue` (format non
+  lu), `illisible` (abîmé ou mot de passe).
+- **Types** (`pieces.ts`) : AVIS, RC, AE, CCAP, CCAG, CCTP, CCTG, BPU, DPGF, DQE,
+  MEMOIRE, FORMULAIRE, QR, PLANNING, ANNEXE, AUTRE — devinés par le nom du fichier, puis
+  par le titre du texte ; le tableau suit cet ordre.
 
 ## Organisation du code
 
-- `src/modules/ao/` : la logique, en TypeScript pur.
-- `src/obsidian/` : ses vues et commandes dans Obsidian (à partir de l'étape 2).
+| Fichier | Rôle |
+| --- | --- |
+| `index.ts` | Interface publique, déclaration du module, commandes, réglage du dossier, fenêtre « Fonctions » |
+| `service.ts` | Créer, lister, importer, mettre à jour, changer le type — sans fenêtre, testé sur un coffre en mémoire |
+| `notes.ts` | Forme des notes et des dossiers ; tableau des pièces |
+| `pieces.ts` | Types de pièces et reconnaissance |
+| `i18n.ts` | Textes, infobulles comprises |
+| `doc/` | Page de documentation écrite dans le coffre |
+
+Le module s'appuie sur l'interface publique de `lecture-fichiers` (`readArchive`,
+`fileText`, `isReadable`, `isImage`) et sur `core/frontmatter.ts` pour lire et modifier
+l'en-tête des notes.
+
+## Tests
+
+- `pieces.test.ts` : reconnaissance des types (noms réels de pièces, titres).
+- `service.test.ts` : création, import, ZIP, doublons, mise à jour, changement de type,
+  noms des notes, ordre du tableau.
+- `test/ao-dce.test.ts` : le dossier d'exemple compressé en ZIP, importé, chaque pièce
+  lue et typée.

@@ -14,6 +14,7 @@ Documentation fonctionnelle : [`docs/modules/lecture-fichiers.md`](../../../docs
 | --- | --- |
 | `index.ts` | **Interface publique** (ce que les autres modules ont le droit d'utiliser) et déclaration du module |
 | `lecture.ts` | `readVaultFile` : lit un fichier du coffre, rend le texte ou la raison de l'échec |
+| `archive.ts` | `readArchive` : ouvre un ZIP (dossier de consultation), sans les fichiers parasites |
 | `aliases.ts` | **Extensions équivalentes** (`.tot` lu comme `.xml`) : validation, lecture des réglages, application à toute lecture |
 | `catalogue.ts` | **Catalogue des formats**, ouvert depuis les réglages dans sa propre fenêtre : intégré, en développement (avec l'étape), prévu |
 | `i18n.ts` | Textes français et anglais, clés `lecture-fichiers.*`, infobulles comprises |

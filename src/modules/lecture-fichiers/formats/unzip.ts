@@ -24,6 +24,26 @@ export interface UnzippedEntry {
   data: Uint8Array
 }
 
+/**
+ * The IBM PC code page (437) above 127: how Windows' own « Compress » and many older tools
+ * write a name with accents, without the flag that says « UTF-8 ». Read as UTF-8, « Pièces »
+ * would come out « Pi�ces ».
+ */
+const CP437_HIGH =
+  'ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■\u00a0'
+
+/** An entry's name: UTF-8 when flagged or when it reads as UTF-8, else code page 437. */
+export function entryName(raw: Uint8Array, utf8Flag: boolean): string {
+  if (utf8Flag) return new TextDecoder().decode(raw)
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(raw)
+  } catch {
+    let out = ''
+    for (const byte of raw) out += byte < 128 ? String.fromCharCode(byte) : CP437_HIGH[byte - 128]
+    return out
+  }
+}
+
 const END_OF_DIRECTORY = 0x06054b50
 const DIRECTORY_ENTRY = 0x02014b50
 const LOCAL_HEADER = 0x04034b50
@@ -56,13 +76,13 @@ export async function unzip(
   const end = findEnd(view)
   const count = view.getUint16(end + 10, true)
   let at = view.getUint32(end + 16, true)
-  const decoder = new TextDecoder()
   const out: UnzippedEntry[] = []
 
   for (let index = 0; index < count; index++) {
     if (at + 46 > bytes.length || view.getUint32(at, true) !== DIRECTORY_ENTRY) {
       throw new ZipError('damaged central directory')
     }
+    const flags = view.getUint16(at + 8, true)
     const method = view.getUint16(at + 10, true)
     const crc = view.getUint32(at + 16, true)
     const packedSize = view.getUint32(at + 20, true)
@@ -71,7 +91,7 @@ export async function unzip(
     const extraLength = view.getUint16(at + 30, true)
     const commentLength = view.getUint16(at + 32, true)
     const local = view.getUint32(at + 42, true)
-    const name = decoder.decode(bytes.subarray(at + 46, at + 46 + nameLength))
+    const name = entryName(bytes.subarray(at + 46, at + 46 + nameLength), (flags & 0x0800) !== 0)
     at += 46 + nameLength + extraLength + commentLength
 
     if (name.endsWith('/') || !wanted(name)) continue

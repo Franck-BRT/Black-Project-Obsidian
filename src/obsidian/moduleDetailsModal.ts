@@ -14,6 +14,7 @@ import {
   FEATURE_STATUSES,
   type FeatureStatus,
   type MappingField,
+  type TextField,
   type ModuleDescriptor,
   type ModuleDetails
 } from '../core/modules/module'
@@ -51,7 +52,10 @@ export class ModuleDetailsModal extends Modal {
     const details = module.details?.(this.settings())
     contentEl.empty()
     this.setTitle(details ? `${this.t(module.nameKey)} — ${this.t(details.titleKey)}` : this.t(module.nameKey))
-    for (const field of module.settingsFields ?? []) this.renderMapping(contentEl.createDiv(), field)
+    for (const field of module.settingsFields ?? []) {
+      if (field.kind === 'mapping') this.renderMapping(contentEl.createDiv(), field)
+      else this.renderText(contentEl.createDiv(), field)
+    }
     if (details) this.renderDetails(contentEl.createDiv(), details)
   }
 
@@ -129,6 +133,24 @@ export class ModuleDetailsModal extends Modal {
             })
         )
     }
+  }
+
+  /** Un réglage fait d'un texte, enregistré à chaque saisie ; vide, il revient à sa valeur par défaut. */
+  private renderText(block: HTMLElement, field: TextField): void {
+    const { plugin, module } = this
+    const t = this.t.bind(this)
+    const stored = this.settings()[field.key]
+    block.addClass('bp-module-settings')
+    const setting = new Setting(block).setName(t(field.nameKey))
+    if (field.descKey) setting.setDesc(t(field.descKey))
+    setting.addText((text) => {
+      text.setPlaceholder(field.defaultValue).setValue(typeof stored === 'string' ? stored : field.defaultValue)
+      if (field.tooltipKey) setTooltip(text.inputEl, t(field.tooltipKey))
+      text.onChange(async (value) => {
+        const clean = field.normalize(value) || field.defaultValue
+        await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: clean })
+      })
+    })
   }
 
   /** Le détail : un résumé, puis une ligne par famille et un petit bloc par fonction. */

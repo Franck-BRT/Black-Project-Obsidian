@@ -38,10 +38,10 @@ Ce que le cœur attend de la plateforme :
 
 | Port | Rôle | Implémentation Obsidian |
 | --- | --- | --- |
-| `FileSystem` | lire, écrire, lister les fichiers du coffre | `app.vault.adapter` |
+| `FileSystem` | lire, écrire, lister les fichiers du coffre | lectures par `app.vault.adapter`, écritures par l'API du coffre (`create`, `modify`…) pour que l'index d'Obsidian suive sur-le-champ |
 | `Http` | appels réseau (serveur d'IA) | `requestUrl`, qui passe les restrictions d'origine |
 | `Notifier` | messages brefs à l'utilisateur | `Notice` |
-| `Ui` | choisir un fichier, montrer un texte long, ouvrir une note | `FuzzySuggestModal`, `Modal`, `openLinkText` |
+| `Ui` | choisir un fichier ou une option, formulaire, fichiers de l'ordinateur, montrer un texte, ouvrir la note voulue, connaître la note ouverte | `FuzzySuggestModal`, `SuggestModal`, `Modal`, `<input type=file>`, `getLeaf().openFile` |
 | `SettingsStorage` | réglages du plugin | `loadData` / `saveData` |
 
 Les tests implémentent ces ports en mémoire ; l'application de bureau les implémentera
@@ -54,6 +54,12 @@ avec Tauri.
 3. Activation par le [registre](modules.md) : ordre des dépendances, modules désactivés,
    droits de licence, isolation des pannes.
 4. Branchement des commandes déclarées par les modules.
+
+## L'en-tête des notes
+
+`src/core/frontmatter.ts` lit et écrit l'en-tête YAML des notes que Black Projects crée
+(`clé: valeur` sur une ligne) ; une ligne qu'il ne comprend pas est gardée telle quelle.
+Écrit pour Black Projects, sans analyseur YAML externe.
 
 ## La documentation dans le coffre
 

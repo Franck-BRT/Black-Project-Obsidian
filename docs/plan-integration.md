@@ -115,20 +115,28 @@ répertoire de chaque module). Doc :
 **Jalon :** tests verts sur un dossier de consultation fictif produit par LibreOffice
 et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du CNES.
 
-### Étape 2 — Dossier de consultation (module AO)
+### Étape 2 — Dossier de consultation (module AO) ✅ *terminée (v0.3.0)*
 
 - Retrait de la commande provisoire « Lire un fichier du coffre »
-- Commande « Nouvelle analyse d'appel d'offres » : dossier `AO/<nom>/` avec `pièces/`,
-  `exigences/`, `analyse/`
-- Import des pièces par glisser-déposer ou depuis le ZIP du dossier
-- Typage des pièces (RC, CCTP, CCAP, AE, BPU, DPGF, annexes), corrigeable
-- Une note par pièce : texte extrait, type, état de lecture (lue, scan illisible,
-  format inconnu)
-- Lecture par le module `lecture-fichiers` (`readVaultFile`) ; repris : la partie utile
-  de `libraryDoc` et `docText`, allégés
-- Vue « Dossier »
+- Commande « Nouvelle analyse d'appel d'offres » : formulaire (nom, position candidat /
+  émetteur, acheteur, référence) ; dossier `<dossier des analyses>/<nom>/` (« Appels
+  d'offres » par défaut, réglable) avec `Pièces/Originaux/`, `Exigences/`, `Analyse/`
+- Import des pièces depuis l'ordinateur, ou du ZIP du dossier (ouvert par le module
+  Lecture de fichiers : sous-dossiers, archive imbriquée, noms Windows) ; dépôt à la main
+  dans `Pièces/Originaux` puis « Mettre à jour l'analyse »
+- Typage des pièces (AVIS, RC, AE, CCAP, CCAG, CCTP, CCTG, BPU, DPGF, DQE, mémoire,
+  formulaires, questions-réponses, planning, annexes), par le nom puis par le titre ;
+  commande « Changer le type de la pièce »
+- Une note par pièce : type, état de lecture (lue, sans texte, image, format non lu,
+  illisible), texte extrait
+- La note de l'analyse, avec le tableau des pièces tenu à jour, à la place d'une vue
+  dédiée : lisible dans Obsidian comme dans la future application de bureau
+- Fenêtre « Fonctions » du module (fait / en développement, par étape) et réglage du
+  dossier des analyses
+- Doc : [modules/ao.md](modules/ao.md) ; recette : [recette/etape-2.md](recette/etape-2.md)
 
-**Jalon de démo n° 1 :** « je dépose le ZIP du dossier, toutes les pièces sont lues ».
+**Jalon de démo n° 1 :** « je dépose le ZIP du dossier, toutes les pièces sont lues »
+— vérifié sur le dossier d'exemple (`test/ao-dce.test.ts`).
 
 ### Étape 3 — Socle des exigences (`src/core/requirements/`)
 

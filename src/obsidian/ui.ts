@@ -3,9 +3,9 @@
 
 /** Le port `Ui` du cœur, dessiné avec les fenêtres d'Obsidian. */
 
-import { FuzzySuggestModal, Modal, Notice, setTooltip, type App, type TFile } from 'obsidian'
+import { FuzzySuggestModal, Modal, Notice, Setting, SuggestModal, TFile, setTooltip, type App } from 'obsidian'
 import type { I18n } from '../core/i18n'
-import type { FilePickOptions, TextView, Ui } from '../core/ports'
+import type { Choice, ExternalFile, FilePickOptions, FormView, TextView, Ui } from '../core/ports'
 
 /** Les fichiers du coffre, le fichier ouvert d'abord, puis les plus récents. */
 class FilePickerModal extends FuzzySuggestModal<TFile> {
@@ -41,6 +41,149 @@ class FilePickerModal extends FuzzySuggestModal<TFile> {
       if (!this.chosen) this.done(null)
     }, 0)
   }
+}
+
+/** Un choix dans une liste, avec une précision sous chaque libellé. */
+class ChoiceModal extends SuggestModal<Choice> {
+  private chosen = false
+
+  constructor(
+    app: App,
+    private readonly choices: readonly Choice[],
+    placeholder: string | undefined,
+    private readonly done: (value: string | null) => void
+  ) {
+    super(app)
+    if (placeholder) this.setPlaceholder(placeholder)
+  }
+
+  getSuggestions(query: string): Choice[] {
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+    return this.choices.filter((choice) => {
+      const text = `${choice.label} ${choice.description ?? ''}`.toLowerCase()
+      return words.every((word) => text.includes(word))
+    })
+  }
+
+  renderSuggestion(choice: Choice, el: HTMLElement): void {
+    el.createDiv({ text: choice.label })
+    if (choice.description) el.createEl('small', { text: choice.description, cls: 'bp-choice-description' })
+  }
+
+  onChooseSuggestion(choice: Choice): void {
+    this.chosen = true
+    this.done(choice.value)
+  }
+
+  override onClose(): void {
+    window.setTimeout(() => {
+      if (!this.chosen) this.done(null)
+    }, 0)
+  }
+}
+
+/** Un formulaire : un réglage par champ, puis le bouton qui valide. */
+class FormModal extends Modal {
+  private readonly values: Record<string, string> = {}
+  private submitted = false
+
+  constructor(
+    app: App,
+    private readonly form: FormView,
+    private readonly done: (values: Record<string, string> | null) => void
+  ) {
+    super(app)
+    for (const field of form.fields) {
+      this.values[field.key] = field.value ?? (field.kind === 'choice' ? (field.options[0]?.value ?? '') : '')
+    }
+  }
+
+  override onOpen(): void {
+    const { contentEl, form } = this
+    this.modalEl.addClass('bp-form-modal')
+    this.setTitle(form.title)
+    if (form.intro) contentEl.createEl('p', { text: form.intro, cls: 'bp-form-intro' })
+    let first: HTMLInputElement | null = null
+    for (const field of form.fields) {
+      const setting = new Setting(contentEl).setName(field.label)
+      if (field.description) setting.setDesc(field.description)
+      if (field.kind === 'text') {
+        setting.addText((text) => {
+          text.setValue(this.values[field.key] ?? '').onChange((value) => (this.values[field.key] = value))
+          if (field.placeholder) text.setPlaceholder(field.placeholder)
+          if (field.tooltip) setTooltip(text.inputEl, field.tooltip)
+          text.inputEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              this.submit()
+            }
+          })
+          first ??= text.inputEl
+        })
+      } else {
+        setting.addDropdown((dropdown) => {
+          for (const option of field.options) dropdown.addOption(option.value, option.label)
+          dropdown.setValue(this.values[field.key] ?? '').onChange((value) => (this.values[field.key] = value))
+          if (field.tooltip) setTooltip(dropdown.selectEl, field.tooltip)
+        })
+      }
+    }
+    new Setting(contentEl).addButton((button) => {
+      button.setButtonText(form.submit).setCta().onClick(() => this.submit())
+      if (form.submitTooltip) button.setTooltip(form.submitTooltip)
+    })
+    window.setTimeout(() => first?.focus(), 0)
+  }
+
+  private submit(): void {
+    for (const field of this.form.fields) {
+      if (field.kind === 'text' && field.required && !(this.values[field.key] ?? '').trim()) {
+        new Notice(`${field.label} ?`)
+        return
+      }
+    }
+    const error = this.form.validate?.(this.values)
+    if (error) {
+      new Notice(error, 6000)
+      return
+    }
+    this.submitted = true
+    this.done({ ...this.values })
+    this.close()
+  }
+
+  override onClose(): void {
+    this.contentEl.empty()
+    if (!this.submitted) this.done(null)
+  }
+}
+
+/** Des fichiers pris sur l'ordinateur, par la fenêtre de sélection du système. */
+function pickExternal(options: { accept?: readonly string[]; multiple?: boolean }): Promise<ExternalFile[]> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.multiple = options.multiple ?? true
+    if (options.accept && options.accept.length > 0) input.accept = options.accept.map((ext) => `.${ext}`).join(',')
+    let settled = false
+    const finish = (files: ExternalFile[]) => {
+      if (settled) return
+      settled = true
+      input.remove()
+      resolve(files)
+    }
+    input.addEventListener('cancel', () => finish([]))
+    input.addEventListener('change', () => {
+      const chosen = [...(input.files ?? [])]
+      void Promise.all(chosen.map(async (file) => ({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) }))).then(
+        finish,
+        () => finish([])
+      )
+    })
+    input.style.display = 'none'
+    document.body.appendChild(input)
+    input.click()
+  })
 }
 
 class TextModal extends Modal {
@@ -94,7 +237,40 @@ export function obsidianUi(app: App, i18n: I18n): Ui {
       new TextModal(app, view, i18n).open()
     },
     async openNote(path) {
-      await app.workspace.openLinkText(path, '', false)
+      // Jamais par le texte d'un lien : un lien vers une note encore inconnue de l'index
+      // en créerait une vide. On attend que la note soit indexée, puis on l'ouvre.
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const file = app.vault.getAbstractFileByPath(path)
+        if (file instanceof TFile) {
+          await app.workspace.getLeaf(false).openFile(file)
+          return
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 100))
+      }
+    },
+    activeNote() {
+      return app.workspace.getActiveFile()?.path ?? null
+    },
+    pickOption(choices, placeholder) {
+      return new Promise((resolve) => {
+        let settled = false
+        new ChoiceModal(app, choices, placeholder, (value) => {
+          if (settled) return
+          settled = true
+          resolve(value)
+        }).open()
+      })
+    },
+    pickExternalFiles: pickExternal,
+    askForm(form) {
+      return new Promise((resolve) => {
+        let settled = false
+        new FormModal(app, form, (values) => {
+          if (settled) return
+          settled = true
+          resolve(values)
+        }).open()
+      })
     }
   }
 }

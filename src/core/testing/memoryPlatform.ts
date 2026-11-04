@@ -7,7 +7,7 @@
  * ici, il le fait de la même façon dans Obsidian.
  */
 
-import type { FilePickOptions, Platform, TextView } from '../ports'
+import type { Choice, ExternalFile, FilePickOptions, FormView, Platform, TextView } from '../ports'
 
 export interface MemoryPlatform extends Platform {
   files: Map<string, Uint8Array>
@@ -17,6 +17,15 @@ export interface MemoryPlatform extends Platform {
   nextPick: string | null
   picks: FilePickOptions[]
   opened: string[]
+  /** La note « ouverte ». */
+  active: string | null
+  /** Les réponses des prochains choix, formulaires et sélections de fichiers, dans l'ordre. */
+  choices: (string | null)[]
+  forms: (Record<string, string> | null)[]
+  externalFiles: ExternalFile[][]
+  /** Ce qui a été proposé. */
+  offered: Choice[][]
+  asked: FormView[]
 }
 
 export function memoryPlatform(files: Record<string, string | Uint8Array> = {}): MemoryPlatform {
@@ -25,6 +34,17 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
     store.set(path, typeof content === 'string' ? new TextEncoder().encode(content) : content)
   }
   const missing = (path: string) => new Error(`Fichier introuvable : ${path}`)
+  // Les dossiers : ceux créés explicitement, et ceux qui contiennent un fichier.
+  const folders = new Set<string>()
+  const addFolders = (path: string) => {
+    const parts = path.split('/')
+    for (let index = 1; index < parts.length; index++) folders.add(parts.slice(0, index).join('/'))
+  }
+  for (const path of store.keys()) addFolders(path)
+  const put = (path: string, bytes: Uint8Array) => {
+    store.set(path, bytes)
+    addFolders(path)
+  }
   const platform: MemoryPlatform = {
     files: store,
     notices: [],
@@ -32,9 +52,15 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
     nextPick: null,
     picks: [],
     opened: [],
+    active: null,
+    choices: [],
+    forms: [],
+    externalFiles: [],
+    offered: [],
+    asked: [],
     info: { name: 'test', version: '0.0.0' },
     fs: {
-      exists: async (path) => store.has(path),
+      exists: async (path) => store.has(path) || folders.has(path),
       readText: async (path) => {
         const bytes = store.get(path)
         if (!bytes) throw missing(path)
@@ -45,13 +71,15 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
         if (!bytes) throw missing(path)
         return bytes.slice().buffer
       },
-      writeText: async (path, content) => void store.set(path, new TextEncoder().encode(content)),
-      writeBinary: async (path, content) => void store.set(path, new Uint8Array(content)),
-      ensureFolder: async () => {},
+      writeText: async (path, content) => put(path, new TextEncoder().encode(content)),
+      writeBinary: async (path, content) => put(path, new Uint8Array(content)),
+      ensureFolder: async (path) => {
+        if (path) addFolders(`${path}/x`)
+      },
       list: async (folder) => {
         const prefix = folder ? `${folder}/` : ''
-        const files = [...store.keys()].filter((path) => path.startsWith(prefix) && !path.slice(prefix.length).includes('/'))
-        return { files, folders: [] }
+        const direct = (path: string) => path.startsWith(prefix) && !path.slice(prefix.length).includes('/')
+        return { files: [...store.keys()].filter(direct), folders: [...folders].filter(direct) }
       }
     },
     http: { request: async () => ({ status: 404, text: '' }) },
@@ -62,7 +90,22 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
         return platform.nextPick
       },
       showText: (view) => void platform.shown.push(view),
-      openNote: async (path) => void platform.opened.push(path)
+      openNote: async (path) => void platform.opened.push(path),
+      activeNote: () => platform.active,
+      pickOption: async (choices) => {
+        platform.offered.push([...choices])
+        return platform.choices.shift() ?? null
+      },
+      pickExternalFiles: async () => platform.externalFiles.shift() ?? [],
+      askForm: async (form) => {
+        platform.asked.push(form)
+        const answer = platform.forms.shift() ?? null
+        if (answer && form.validate) {
+          const error = form.validate(answer)
+          if (error) throw new Error(`Formulaire refusé : ${error}`)
+        }
+        return answer
+      }
     }
   }
   return platform

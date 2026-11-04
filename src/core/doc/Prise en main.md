@@ -11,8 +11,9 @@
   crée ou la met à jour.
 - **Modules** : chaque module avec sa version et son état. L'interrupteur l'active ou le
   désactive au prochain chargement du plugin ; vos données ne sont jamais supprimées.
-  Certains modules ont un bouton qui ouvre leur fenêtre : pour la lecture de fichiers,
-  **Formats de fichiers**.
+  Certains modules ont un bouton qui ouvre leur fenêtre : **Formats de fichiers** pour la
+  lecture de fichiers, **Fonctions** pour l'analyse d'appels d'offres (avec le dossier
+  des analyses).
 - **Licence** : vos droits d'usage.
 
 Survolez un réglage, un bouton ou un bloc : une infobulle explique à quoi il sert.
@@ -35,7 +36,10 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | --- | --- |
 | À propos de Black Projects | version, modules actifs, licence |
 | Créer ou mettre à jour la documentation | écrit cette documentation dans le coffre |
-| Lire un fichier du coffre (provisoire) | montre le texte qu'en tire Black Projects ; voir {{link:Modules/Lecture de fichiers|Lecture de fichiers}} |
+| Nouvelle analyse d'appel d'offres | crée une analyse et propose d'y mettre les pièces ; voir {{link:Modules/Analyse d'appels d'offres|Analyse d'appels d'offres}} |
+| Importer des pièces dans une analyse (ZIP compris) | importe des fichiers de l'ordinateur, ou le ZIP du dossier |
+| Mettre à jour l'analyse (pièces déposées à la main) | lit les fichiers déposés dans `Pièces/Originaux`, réécrit le tableau des pièces |
+| Changer le type de la pièce | sur la note d'une pièce : RC, CCTP, CCAP, BPU… |
 
 ## Vos données
 

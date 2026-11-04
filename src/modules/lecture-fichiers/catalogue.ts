@@ -91,7 +91,7 @@ export const FORMATS_CATALOGUE: ModuleDetails = {
     {
       titleKey: k('section.exchange'),
       features: [
-        format('zip', 'in-progress', ['zip'], { step: 2 }),
+        format('zip', 'available', ['zip']),
         format('reqif', 'in-progress', ['reqif', 'reqifz'], { step: 4 })
       ]
     }
@@ -123,7 +123,7 @@ export function formatsCatalogue(aliases: Readonly<Record<string, string>>): Mod
   }
 }
 
-/** Toutes les extensions annoncées « Lecture intégrée » par le module lui-même. */
+/** Toutes les extensions annoncées « Lecture intégrée » par le module lui-même : textes et archives. */
 export function availableExtensions(details: ModuleDetails = FORMATS_CATALOGUE): Set<string> {
   return new Set(
     details.sections.flatMap((section) =>

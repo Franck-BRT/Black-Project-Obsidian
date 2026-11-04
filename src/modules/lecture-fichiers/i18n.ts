@@ -71,7 +71,7 @@ export const lectureFr: Record<string, string> = {
 
   'lecture-fichiers.format.section.exchange': 'Archives et échanges',
   'lecture-fichiers.format.zip': 'Archive ZIP du dossier de consultation',
-  'lecture-fichiers.format.zip.note': 'Chaque pièce de l’archive lue avec son lecteur.',
+  'lecture-fichiers.format.zip.note': 'Ouverte à l’import d’un dossier de consultation ; chaque pièce lue avec son lecteur.',
   'lecture-fichiers.format.reqif': 'ReqIF (DOORS et outils d’exigences)',
   'lecture-fichiers.format.reqif.note': 'Exigences importées avec leurs attributs.',
 
@@ -92,12 +92,7 @@ export const lectureFr: Record<string, string> = {
   'lecture-fichiers.alias.error.native': 'Les fichiers .{from} sont déjà lus par un lecteur intégré.',
   'lecture-fichiers.alias.error.target': '.{to} n’est pas un format lu.',
   'lecture-fichiers.alias.error.exists': 'Les fichiers .{from} sont déjà lus comme .{to} : retirez d’abord cette équivalence.',
-  'lecture-fichiers.result.alias': '{format} lu comme {target}',
 
-  'lecture-fichiers.command.read': 'Lire un fichier du coffre (provisoire)',
-  'lecture-fichiers.pick.placeholder': 'Choisis un fichier à lire…',
-  'lecture-fichiers.reading': 'Lecture de « {name} »…',
-  'lecture-fichiers.result.subtitle': '{format} · {characters} caractères · {lines} lignes · lu en {ms} ms',
   'lecture-fichiers.problem.unsupported': '« {name} » : le format {format} n’est pas lu.',
   'lecture-fichiers.problem.empty': '« {name} » ne contient aucun texte à lire : un scan, ou un document vide.',
   'lecture-fichiers.problem.unreadable':
@@ -173,7 +168,7 @@ export const lectureEn: Record<string, string> = {
 
   'lecture-fichiers.format.section.exchange': 'Archives and exchange',
   'lecture-fichiers.format.zip': 'ZIP archive of the tender package',
-  'lecture-fichiers.format.zip.note': 'Each document in the archive read with its reader.',
+  'lecture-fichiers.format.zip.note': 'Opened when a tender package is imported; each document read with its reader.',
   'lecture-fichiers.format.reqif': 'ReqIF (DOORS and requirements tools)',
   'lecture-fichiers.format.reqif.note': 'Requirements imported with their attributes.',
 
@@ -194,12 +189,7 @@ export const lectureEn: Record<string, string> = {
   'lecture-fichiers.alias.error.native': '.{from} files are already read by a built-in reader.',
   'lecture-fichiers.alias.error.target': '.{to} is not a format that is read.',
   'lecture-fichiers.alias.error.exists': '.{from} files are already read as .{to}: remove that equivalence first.',
-  'lecture-fichiers.result.alias': '{format} read as {target}',
 
-  'lecture-fichiers.command.read': 'Read a file from the vault (preview)',
-  'lecture-fichiers.pick.placeholder': 'Pick a file to read…',
-  'lecture-fichiers.reading': 'Reading “{name}”…',
-  'lecture-fichiers.result.subtitle': '{format} · {characters} characters · {lines} lines · read in {ms} ms',
   'lecture-fichiers.problem.unsupported': '“{name}”: the {format} format is not read.',
   'lecture-fichiers.problem.empty': '“{name}” holds no text to read: a scan, or an empty document.',
   'lecture-fichiers.problem.unreadable': '“{name}” could not be read: damaged, or protected by a password.'

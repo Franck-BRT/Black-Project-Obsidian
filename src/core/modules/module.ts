@@ -123,7 +123,20 @@ export interface MappingField {
   read(settings: Readonly<Record<string, unknown>>): Record<string, string>
 }
 
-export type ModuleSettingField = MappingField
+/** Un réglage fait d'un texte : un dossier, par exemple. */
+export interface TextField {
+  readonly kind: 'text'
+  readonly key: string
+  readonly nameKey: string
+  readonly descKey?: string
+  readonly tooltipKey?: string
+  /** La valeur quand rien n'est enregistré. */
+  readonly defaultValue: string
+  /** La saisie nettoyée ; une valeur vide revient à la valeur par défaut. */
+  normalize(input: string): string
+}
+
+export type ModuleSettingField = MappingField | TextField
 
 /** Une action que l'utilisateur lance, depuis la palette de commandes par exemple. */
 export interface ModuleCommand {

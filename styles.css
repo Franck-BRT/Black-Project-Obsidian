@@ -222,3 +222,20 @@
   justify-content: flex-start;
   flex-wrap: wrap;
 }
+
+/* Fenêtres : choix dans une liste, formulaire. */
+
+.bp-choice-description {
+  display: block;
+  color: var(--text-muted);
+}
+
+.bp-form-modal {
+  width: min(620px, 92vw);
+}
+
+.bp-form-intro {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  margin-top: 0;
+}

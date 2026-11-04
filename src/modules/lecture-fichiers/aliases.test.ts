@@ -3,7 +3,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../../core/i18n'
-import type { ModuleCommand, ModuleContext } from '../../core/modules/module'
+import type { ModuleContext } from '../../core/modules/module'
 import { memoryPlatform } from '../../core/testing/memoryPlatform'
 import { aliasTargets, configureAliases, normalizeExtension, readAliases, resolveExtension, validateAlias } from './aliases'
 import { formatsCatalogue } from './catalogue'
@@ -84,7 +84,6 @@ describe('le module et ses réglages', () => {
     let stored: Record<string, unknown> = { aliases: { tot: 'xml' } }
     const listeners: ((values: Record<string, unknown>) => void)[] = []
     const platform = memoryPlatform({ 'banc.tot': TOT, 'banc.res': 'Résultat : conforme' })
-    const commands: ModuleCommand[] = []
     const context: ModuleContext = {
       moduleId: lectureFichiersModule.id,
       platform,
@@ -100,7 +99,7 @@ describe('le module et ses réglages', () => {
           return () => listeners.splice(listeners.indexOf(listener), 1)
         }
       },
-      commands: { register: (command) => void commands.push(command) }
+      commands: { register: () => {} }
     }
     context.i18n.register('fr', lectureFichiersModule.texts.fr)
     await lectureFichiersModule.activate(context)
@@ -110,11 +109,7 @@ describe('le module et ses réglages', () => {
     await context.settings.save({ aliases: { tot: 'xml', res: 'txt' } })
     expect(isReadable('res')).toBe(true)
 
-    // La commande propose les fichiers ajoutés, et dit comment elle les a lus.
-    platform.nextPick = 'banc.tot'
-    await commands[0]?.run()
-    expect([...(platform.picks[0]?.extensions ?? [])]).toContain('tot')
-    expect(platform.shown[0]?.subtitle).toMatch(/^TOT lu comme XML · /)
+    expect(await readVaultFile(platform.fs, 'banc.res')).toMatchObject({ ok: true, readAs: 'txt' })
 
     await lectureFichiersModule.deactivate?.()
     expect(isReadable('tot')).toBe(false)

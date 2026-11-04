@@ -55,11 +55,14 @@ tableaux, et les équivalences déclarées. Un test garantit que les formats ann
 intégrée » sont exactement ceux que le module lit : la vitrine ne peut ni promettre plus
 que le code, ni oublier un format qu'il sait lire.
 
-Commande provisoire **« Lire un fichier du coffre (provisoire) »** : choisir un fichier
-lisible (le fichier ouvert est proposé en premier, puis les plus récents) ; son texte
-extrait s'affiche avec le format, le nombre de caractères et de lignes, le temps de
-lecture, et un bouton **Copier**. Si le fichier ne se lit pas, un message dit pourquoi.
-Elle sera retirée quand l'étape 2 apportera l'import du dossier de consultation.
+La commande provisoire « Lire un fichier du coffre », livrée à l'étape 1, a été retirée à
+l'étape 2 : la lecture se fait désormais à l'import des pièces d'une analyse d'appel
+d'offres.
+
+**Archives** (v0.3.0) : `readArchive` ouvre un ZIP — fichiers avec leur chemin, archive
+imbriquée ouverte sur deux niveaux, fichiers parasites écartés (`__MACOSX`, `.DS_Store`,
+`Thumbs.db`, fichiers cachés), noms écrits par Windows en page de code 437 relus
+correctement.
 
 ## Pour les autres modules
 

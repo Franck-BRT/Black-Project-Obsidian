@@ -6,13 +6,20 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 
 | Chapitre | Étape |
 | --- | --- |
-| 01 — Importer un dossier de consultation | 2 |
+| 01 — Importer un dossier de consultation | 2 ✅ (page *Analyse d'appels d'offres* dans le coffre) |
 | 02 — Extraire les exigences | 3-4 |
 | 03 — Analyser la qualité | 5 |
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.2.6)
+## Aujourd'hui (version 0.3.0)
+
+- **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
+  les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
+  jour l'analyse » ; chaque pièce est lue, typée et décrite par une note ; la note de
+  l'analyse tient le tableau des pièces. Voir la page *Analyse d'appels d'offres* de la
+  documentation écrite dans le coffre.
+
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**
   (ou la commande « Créer ou mettre à jour la documentation ») écrit l'accueil, la prise
@@ -31,7 +38,3 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   fichiers `.tot` comme du XML ; voir [Lecture de fichiers](../modules/lecture-fichiers.md).
 - **Réglages → Licence** : les droits d'usage.
 - Commande **À propos de Black Projects** : version, modules actifs, licence.
-- Commande **Lire un fichier du coffre (provisoire)** : choisir un PDF, Word, Excel,
-  PowerPoint, RTF, HTML, Markdown ou texte du coffre et voir le texte qu'en tire
-  Black Projects, avec un bouton **Copier**. Voir [Lecture de
-  fichiers](../modules/lecture-fichiers.md).

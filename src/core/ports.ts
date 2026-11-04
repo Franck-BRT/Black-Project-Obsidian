@@ -76,6 +76,51 @@ export interface TextView {
   text: string
 }
 
+/** Un choix dans une liste. */
+export interface Choice {
+  value: string
+  label: string
+  /** Une précision sous le libellé. */
+  description?: string
+}
+
+/** Un fichier pris sur l'ordinateur, hors du coffre. */
+export interface ExternalFile {
+  name: string
+  bytes: Uint8Array
+}
+
+export type FormField =
+  | {
+      kind: 'text'
+      key: string
+      label: string
+      description?: string
+      placeholder?: string
+      tooltip?: string
+      required?: boolean
+      value?: string
+    }
+  | {
+      kind: 'choice'
+      key: string
+      label: string
+      description?: string
+      tooltip?: string
+      options: readonly Choice[]
+      value?: string
+    }
+
+export interface FormView {
+  title: string
+  intro?: string
+  fields: readonly FormField[]
+  submit: string
+  submitTooltip?: string
+  /** `null` si les valeurs sont acceptables, sinon le message à montrer. */
+  validate?(values: Readonly<Record<string, string>>): string | null
+}
+
 /** Les fenêtres dont un module a besoin, sans savoir comment la plateforme les dessine. */
 export interface Ui {
   /** Fait choisir un fichier du coffre ; `null` si l'utilisateur renonce. */
@@ -84,6 +129,14 @@ export interface Ui {
   showText(view: TextView): void
   /** Ouvre une note du coffre. */
   openNote(path: VaultPath): Promise<void>
+  /** La note ouverte, s'il y en a une. */
+  activeNote(): VaultPath | null
+  /** Fait choisir dans une liste ; `null` si l'utilisateur renonce. */
+  pickOption(choices: readonly Choice[], placeholder?: string): Promise<string | null>
+  /** Fait choisir des fichiers sur l'ordinateur ; liste vide si l'utilisateur renonce. */
+  pickExternalFiles(options: { accept?: readonly string[]; multiple?: boolean }): Promise<ExternalFile[]>
+  /** Un formulaire ; les valeurs saisies, ou `null` si l'utilisateur renonce. */
+  askForm(form: FormView): Promise<Record<string, string> | null>
 }
 
 /** Ce que la plateforme sait d'elle-même. */
