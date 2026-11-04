@@ -7,56 +7,81 @@
  * D'abord par le nom du fichier — c'est là que les acheteurs l'écrivent, « 02_CCTP_v3.pdf »
  * —, puis, si le nom ne dit rien, par le titre en tête du texte. L'utilisateur corrige
  * ensuite ce qui a été mal deviné : la reconnaissance propose, elle ne décide pas.
+ *
+ * Les mots-clés sont écrits comme un utilisateur les lit, et c'est d'eux que la
+ * reconnaissance est tirée : la fenêtre « Fonctions » et la documentation montrent
+ * exactement ce que le code cherche. Un mot-clé est cherché comme mot entier, sans tenir
+ * compte des accents, de la casse ni de la ponctuation (« CCTP_v3 », « cctp-v3 » et
+ * « CCTP v3 » se valent) ; terminé par « … », il vaut aussi pour les mots qui le
+ * prolongent (« annexe… » trouve « annexes »).
  */
 
 export interface PieceType {
   readonly code: string
   /** Clé du libellé long : « Cahier des clauses techniques particulières ». */
   readonly labelKey: string
-  /** Motifs cherchés dans le nom, sans accents, en minuscules, séparateurs en espaces. */
-  readonly names: readonly RegExp[]
-  /** Motifs cherchés dans le début du texte, quand le nom ne dit rien. */
-  readonly titles: readonly RegExp[]
+  /** Les mots-clés cherchés dans le nom du fichier. */
+  readonly names: readonly string[]
+  /** Les mots-clés cherchés dans le début du texte, quand le nom ne dit rien. */
+  readonly titles: readonly string[]
 }
 
-const type = (code: string, names: RegExp[], titles: RegExp[] = []): PieceType => ({
+const type = (code: string, names: string[], titles: string[] = []): PieceType => ({
   code,
   labelKey: `ao.piece.${code.toLowerCase()}`,
   names,
   titles
 })
 
-/** Dans l'ordre où ils sont essayés : le plus précis d'abord. */
+/** Dans l'ordre où ils sont essayés : le plus précis d'abord ; le premier qui correspond l'emporte. */
 export const PIECE_TYPES: readonly PieceType[] = [
-  type('AVIS', [/\baapc\b/, /avis d appel/, /avis de marche/, /\bboamp\b/], [/avis d appel public/, /avis de marche/]),
-  type('RC', [/\brc\b/, /reglement (de la |du )?consultation/, /\brdc\b/], [/reglement (de la |du )?consultation/]),
-  type('AE', [/\bae\b/, /acte d ?engagement/, /\batti\b/], [/acte d engagement/]),
-  type('CCAP', [/\bccap\b/, /clauses administratives particulieres/], [/clauses administratives particulieres/]),
-  type('CCAG', [/\bccag\b/, /clauses administratives generales/], [/clauses administratives generales/]),
+  type('AVIS', ['AAPC', 'avis d’appel', 'avis de marché', 'BOAMP'], ['avis d’appel public', 'avis de marché']),
+  type(
+    'RC',
+    ['RC', 'RDC', 'règlement de consultation', 'règlement de la consultation'],
+    ['règlement de la consultation', 'règlement de consultation']
+  ),
+  type('AE', ['AE', 'ATTRI1', 'acte d’engagement'], ['acte d’engagement']),
+  type('CCAP', ['CCAP', 'clauses administratives particulières'], ['clauses administratives particulières']),
+  type('CCAG', ['CCAG', 'clauses administratives générales'], ['clauses administratives générales']),
   type(
     'CCTP',
     [
-      /\bcctp\b/,
-      /clauses techniques particulieres/,
-      /cahier des charges/,
-      /\bcdc\b/,
-      /\bstb\b/,
-      /specifications? techniques?/,
-      /expression (fonctionnelle )?des besoins/,
-      /\bsow\b/,
-      /statement of work/
+      'CCTP',
+      'clauses techniques particulières',
+      'cahier des charges',
+      'CDC',
+      'STB',
+      'spécification technique',
+      'spécifications techniques',
+      'expression des besoins',
+      'expression fonctionnelle des besoins',
+      'SOW',
+      'statement of work'
     ],
-    [/clauses techniques particulieres/, /cahier des charges/, /specification technique de besoin/, /statement of work/]
+    ['clauses techniques particulières', 'cahier des charges', 'spécification technique de besoin', 'statement of work']
   ),
-  type('CCTG', [/\bcctg\b/, /clauses techniques generales/], [/clauses techniques generales/]),
-  type('BPU', [/\bbpu\b/, /bordereau (des )?prix/], [/bordereau (des )?prix/]),
-  type('DPGF', [/\bdpgf\b/, /decomposition (du )?prix global/], [/decomposition (du )?prix global/]),
-  type('DQE', [/\bdqe\b/, /detail quantitatif/], [/detail quantitatif/]),
-  type('MEMOIRE', [/cadre de (reponse|memoire)/, /memoire technique/, /\bcrt\b/, /\bcmt\b/], [/cadre de (reponse|memoire)/, /memoire technique/]),
-  type('FORMULAIRE', [/\bdc ?[1-4]\b/, /\bdume\b/, /formulaire/, /attestation/, /declaration sur l honneur/]),
-  type('QR', [/questions? (et )?reponses?/, /\bfaq\b/, /\bq ?r\b/], [/questions? (et )?reponses?/]),
-  type('PLANNING', [/planning/, /calendrier/, /\bgantt\b/]),
-  type('ANNEXE', [/\bannexe/, /\bappendix\b/, /\bapp \d/]),
+  type('CCTG', ['CCTG', 'clauses techniques générales'], ['clauses techniques générales']),
+  type('BPU', ['BPU', 'bordereau des prix', 'bordereau de prix'], ['bordereau des prix', 'bordereau de prix']),
+  type(
+    'DPGF',
+    ['DPGF', 'décomposition du prix global', 'décomposition prix global'],
+    ['décomposition du prix global', 'décomposition prix global']
+  ),
+  type('DQE', ['DQE', 'détail quantitatif'], ['détail quantitatif']),
+  type(
+    'MEMOIRE',
+    ['cadre de réponse', 'cadre de mémoire', 'mémoire technique', 'CRT', 'CMT'],
+    ['cadre de réponse', 'cadre de mémoire', 'mémoire technique']
+  ),
+  type('FORMULAIRE', ['DC1', 'DC2', 'DC3', 'DC4', 'DUME', 'formulaire…', 'attestation…', 'déclaration sur l’honneur']),
+  type(
+    'QR',
+    ['questions réponses', 'questions et réponses', 'question réponse', 'FAQ', 'Q/R', 'QR'],
+    ['questions et réponses', 'questions réponses']
+  ),
+  type('PLANNING', ['planning', 'calendrier', 'Gantt']),
+  type('ANNEXE', ['annexe…', 'appendix']),
   type('AUTRE', [])
 ]
 
@@ -77,6 +102,18 @@ export function fold(text: string): string {
     .trim()
 }
 
+const PREFIX = '…'
+
+/** Le mot-clé se trouve-t-il, comme mot entier (ou début de mot s'il finit par « … »), dans un texte déjà replié ? */
+export function keywordIn(keyword: string, folded: string): boolean {
+  const prefix = keyword.endsWith(PREFIX)
+  const phrase = fold(prefix ? keyword.slice(0, -PREFIX.length) : keyword)
+  if (!phrase) return false
+  const padded = ` ${folded} `
+  if (!prefix) return padded.includes(` ${phrase} `)
+  return padded.includes(` ${phrase}`)
+}
+
 /**
  * Le type d'une pièce, d'après le nom de son fichier (sans le chemin ni l'extension) et
  * le début de son texte s'il est connu.
@@ -84,8 +121,8 @@ export function fold(text: string): string {
 export function classifyPiece(fileName: string, text = ''): string {
   const base = fileName.slice(fileName.lastIndexOf('/') + 1).replace(/\.[^.]+$/, '')
   const name = fold(base)
-  for (const each of PIECE_TYPES) if (each.names.some((pattern) => pattern.test(name))) return each.code
+  for (const each of PIECE_TYPES) if (each.names.some((keyword) => keywordIn(keyword, name))) return each.code
   const head = fold(text.slice(0, 1500))
-  if (head) for (const each of PIECE_TYPES) if (each.titles.some((pattern) => pattern.test(head))) return each.code
+  if (head) for (const each of PIECE_TYPES) if (each.titles.some((keyword) => keywordIn(keyword, head))) return each.code
   return OTHER
 }

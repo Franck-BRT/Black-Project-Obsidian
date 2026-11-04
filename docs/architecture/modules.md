@@ -33,6 +33,11 @@ Le module écrit le contenu, la plateforme le dessine. Exemple : le catalogue de
 de `lecture-fichiers`. `details` reçoit les réglages du module, pour montrer aussi ce que
 l'utilisateur a ajouté.
 
+Une section de `details` peut être de type `reference` : des fiches sans état ni
+couleur, hors du résumé, avec des groupes d'étiquettes titrés (`tagGroups`) — c'est ainsi
+que la fenêtre **Fonctions** de l'analyse d'appels d'offres montre les types de pièces et
+les mots-clés qui les font reconnaître.
+
 Facultatif : `settingsFields`, les réglages propres au module, dessinés en tête de sa
 fenêtre (celle qu'ouvre `details`).
 Deux types : `mapping`, une liste de paires « ceci → cela » avec un formulaire

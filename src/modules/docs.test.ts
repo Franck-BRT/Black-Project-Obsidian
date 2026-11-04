@@ -58,3 +58,13 @@ describe('documentation des modules', () => {
     expect(await platform.fs.exists('Black Projects/Documentation/Modules/Lecture de fichiers.md')).toBe(true)
   })
 })
+
+describe('types de pièces dans la documentation', () => {
+  it('donne chaque type avec les mots-clés que la reconnaissance cherche', () => {
+    const ao = build().find((each) => each.path === "Modules/Analyse d'appels d'offres.md")?.content ?? ''
+    expect(ao).toContain('| Type | Pièce | Dans le nom du fichier | Dans le titre du document |')
+    expect(ao).toContain('| RC | Règlement de la consultation | `RC`, `RDC`, `règlement de consultation`, `règlement de la consultation` |')
+    expect(ao).toContain('| ANNEXE | Annexe | `annexe…`, `appendix` | — |')
+    expect(ao).toContain('| AUTRE | Autre pièce | — | — |')
+  })
+})

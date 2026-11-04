@@ -48,6 +48,14 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
 - **Types** (`pieces.ts`) : AVIS, RC, AE, CCAP, CCAG, CCTP, CCTG, BPU, DPGF, DQE,
   MEMOIRE, FORMULAIRE, QR, PLANNING, ANNEXE, AUTRE — devinés par le nom du fichier, puis
   par le titre du texte ; le tableau suit cet ordre.
+- **Détection** (v0.3.1) : chaque type a deux listes de mots-clés écrits comme un
+  utilisateur les lit (`names` pour le nom du fichier, `titles` pour le début du texte).
+  Un mot-clé est cherché comme mot entier, sans accents, casse ni ponctuation ; terminé
+  par « … », il vaut aussi pour les mots qui le prolongent. Ces listes sont la source
+  unique : la reconnaissance les applique, la fenêtre **Fonctions** (section « Types de
+  pièces et leur détection ») et la page de documentation du coffre les affichent telles
+  quelles. Pour ajouter un mot-clé : l'écrire dans `pieces.ts`, ajouter un cas dans
+  `pieces.test.ts`.
 
 ## Organisation du code
 
@@ -56,7 +64,8 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
 | `index.ts` | Interface publique, déclaration du module, commandes, réglage du dossier, fenêtre « Fonctions » |
 | `service.ts` | Créer, lister, importer, mettre à jour, changer le type — sans fenêtre, testé sur un coffre en mémoire |
 | `notes.ts` | Forme des notes et des dossiers ; tableau des pièces |
-| `pieces.ts` | Types de pièces et reconnaissance |
+| `pieces.ts` | Types de pièces, leurs mots-clés, et la reconnaissance |
+| `typesDoc.ts` | Le tableau des types et de leurs mots-clés pour la documentation du coffre |
 | `i18n.ts` | Textes, infobulles comprises |
 | `doc/` | Page de documentation écrite dans le coffre |
 

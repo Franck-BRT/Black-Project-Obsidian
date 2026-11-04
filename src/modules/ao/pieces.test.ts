@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 import { describe, expect, it } from 'vitest'
-import { classifyPiece, fold, PIECE_TYPES } from './pieces'
+import { classifyPiece, fold, keywordIn, PIECE_TYPES } from './pieces'
 
 describe('reconnaissance des pièces', () => {
   it.each([
@@ -10,6 +10,9 @@ describe('reconnaissance des pièces', () => {
     ['Règlement de la consultation.docx', 'RC'],
     ['01 - Acte d’engagement.pdf', 'AE'],
     ['AE_lot1.docx', 'AE'],
+    ['ATTRI1 - Acte d’engagement.pdf', 'AE'],
+    ['Annexes techniques.pdf', 'ANNEXE'],
+    ['Q-R_2.pdf', 'QR'],
     ['02_CCAP.pdf', 'CCAP'],
     ['03_CCTP_v3.docx', 'CCTP'],
     ['Cahier des charges technique.pdf', 'CCTP'],
@@ -50,5 +53,35 @@ describe('reconnaissance des pièces', () => {
   it('a un libellé pour chaque type', () => {
     expect(new Set(PIECE_TYPES.map((each) => each.code)).size).toBe(PIECE_TYPES.length)
     expect(fold('Pièce_n°2 — Acte d’engagement')).toBe('piece n 2 acte d engagement')
+  })
+
+  it('cherche un mot-clé comme mot entier, ou comme début de mot s’il finit par « … »', () => {
+    expect(keywordIn('RC', fold('00_RC_v2'))).toBe(true)
+    expect(keywordIn('RC', fold('Marche'))).toBe(false)
+    expect(keywordIn('annexe…', fold('Annexes 1 à 3'))).toBe(true)
+    expect(keywordIn('annexe', fold('Annexes 1 à 3'))).toBe(false)
+    expect(keywordIn('acte d’engagement', fold("Acte d'engagement"))).toBe(true)
+    expect(keywordIn('Q/R', fold('Q R 2'))).toBe(true)
+  })
+
+  it('n’a que des mots-clés qui se trouvent eux-mêmes : la liste affichée est bien celle qui est cherchée', () => {
+    for (const each of PIECE_TYPES) {
+      for (const keyword of [...each.names, ...each.titles]) {
+        expect(keywordIn(keyword, fold(keyword.replace(/…$/, ''))), `${each.code} : ${keyword}`).toBe(true)
+      }
+    }
+  })
+})
+
+describe('types de pièces dans la fenêtre « Fonctions »', async () => {
+  const { AO_FEATURES } = await import('.')
+  const section = AO_FEATURES.sections.find((each) => each.titleKey === 'ao.types.section')
+
+  it('montre un bloc de référence par type, dans l’ordre où ils sont essayés, avec leurs mots-clés', () => {
+    expect(section?.kind).toBe('reference')
+    expect(section?.features.map((feature) => feature.prefix)).toEqual(PIECE_TYPES.map((each) => each.code))
+    const cctp = section?.features.find((feature) => feature.prefix === 'CCTP')
+    expect(cctp?.tagGroups?.[0]?.tags).toContain('STB')
+    expect(cctp?.tagGroups?.[1]?.tags).toContain('cahier des charges')
   })
 })

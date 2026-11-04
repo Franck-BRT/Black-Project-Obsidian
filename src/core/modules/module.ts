@@ -26,6 +26,8 @@ export const FEATURE_STATUSES: readonly FeatureStatus[] = ['available', 'in-prog
 
 /** Une fonction d'un module, telle que les réglages la montrent : un petit bloc. */
 export interface ModuleFeature {
+  /** Un texte court affiché tel quel devant le libellé : un code (« RC »), par exemple. */
+  readonly prefix?: string
   readonly labelKey: string
   /** Une précision sous le libellé : ce qui est lu, ce qui ne l'est pas, comment. */
   readonly noteKey?: string
@@ -36,11 +38,23 @@ export interface ModuleFeature {
   readonly step?: number
   /** Les variables du libellé et de la précision : `{from}`, `{to}`… */
   readonly vars?: Vars
+  /** Des groupes d'étiquettes, chacun avec son titre : les mots-clés cherchés dans le nom, dans le titre… */
+  readonly tagGroups?: readonly { readonly labelKey: string; readonly tags: readonly string[] }[]
 }
 
 /** Une ligne de blocs : une famille de fonctions (les PDF, les tableurs…). */
 export interface ModuleDetailSection {
   readonly titleKey: string
+  /** Une phrase sous le titre de la ligne. */
+  readonly introKey?: string
+  /**
+   * `status` (par défaut) : des fonctions, chacune avec son état coloré, comptées dans le
+   * résumé. `reference` : des fiches de référence (les types de pièces et leur
+   * détection), sans état ni couleur, hors du résumé.
+   */
+  readonly kind?: 'status' | 'reference'
+  /** Ce qui précède chaque étiquette de `tags` : « . » pour une extension (par défaut), rien sinon. */
+  readonly tagPrefix?: string
   readonly features: readonly ModuleFeature[]
 }
 

@@ -17,7 +17,8 @@ import { LECTURE_FICHIERS } from '../lecture-fichiers'
 import page from "./doc/Analyse d'appels d'offres.md"
 import { aoEn, aoFr } from './i18n'
 import { ORIGINALS, PIECES, POSITIONS, safeName, type Analysis, type Position } from './notes'
-import { PIECE_TYPES } from './pieces'
+import { OTHER, PIECE_TYPES } from './pieces'
+import { typesMarkdown } from './typesDoc'
 import {
   AnalysisExists,
   analysisOf,
@@ -83,6 +84,24 @@ export const AO_FEATURES: ModuleDetails = {
         feature('classify', 'available'),
         feature('notes', 'available')
       ]
+    },
+    {
+      // Les types de pièces et ce qui les fait reconnaître, tirés de la liste même que la
+      // reconnaissance applique.
+      titleKey: 'ao.types.section',
+      introKey: 'ao.types.intro',
+      kind: 'reference',
+      tagPrefix: '',
+      features: PIECE_TYPES.map((each) => ({
+        prefix: each.code,
+        labelKey: each.labelKey,
+        status: 'available' as const,
+        tagGroups: [
+          { labelKey: 'ao.types.byName', tags: each.names },
+          { labelKey: 'ao.types.byTitle', tags: each.titles }
+        ],
+        ...(each.code === OTHER ? { noteKey: 'ao.types.other' } : {})
+      }))
     },
     {
       titleKey: 'ao.feature.section.requirements',
@@ -172,7 +191,9 @@ export const aoModule: BlackModule = {
   texts: { fr: aoFr, en: aoEn },
   details: () => AO_FEATURES,
   settingsFields: [rootField],
-  docs: ({ folder }) => [{ path: "Modules/Analyse d'appels d'offres.md", content: fillTemplate(page, folder) }],
+  docs: ({ folder, t }) => [
+    { path: "Modules/Analyse d'appels d'offres.md", content: fillTemplate(page, folder, { types: typesMarkdown(t) }) }
+  ],
   activate(context) {
     const { commands, platform, i18n } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)

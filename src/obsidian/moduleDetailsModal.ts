@@ -160,7 +160,7 @@ export class ModuleDetailsModal extends Modal {
     panel.addClass('bp-module-details')
     if (details.introKey) panel.createDiv({ text: t(details.introKey), cls: 'bp-module-details-intro' })
 
-    const features = details.sections.flatMap((section) => section.features)
+    const features = details.sections.filter((section) => section.kind !== 'reference').flatMap((section) => section.features)
     const legend = panel.createDiv({ cls: 'bp-feature-legend' })
     for (const status of FEATURE_STATUSES) {
       const count = features.filter((feature) => feature.status === status).length
@@ -170,17 +170,28 @@ export class ModuleDetailsModal extends Modal {
     }
 
     for (const section of details.sections) {
-      const block = panel.createDiv({ cls: 'bp-feature-section' })
+      const reference = section.kind === 'reference'
+      const tagPrefix = section.tagPrefix ?? '.'
+      const block = panel.createDiv({ cls: ['bp-feature-section', ...(reference ? ['is-reference'] : [])] })
       block.createDiv({ text: t(section.titleKey), cls: 'bp-feature-section-title' })
+      if (section.introKey) block.createDiv({ text: t(section.introKey), cls: 'bp-feature-section-intro' })
       const row = block.createDiv({ cls: 'bp-feature-row' })
       for (const feature of section.features) {
-        const card = row.createDiv({ cls: ['bp-feature', `is-${feature.status}`] })
-        card.createDiv({ text: t(feature.labelKey, feature.vars), cls: 'bp-feature-label' })
+        const card = row.createDiv({ cls: ['bp-feature', reference ? 'is-reference' : `is-${feature.status}`] })
+        const label = t(feature.labelKey, feature.vars)
+        card.createDiv({ text: feature.prefix ? `${feature.prefix} — ${label}` : label, cls: 'bp-feature-label' })
         if (feature.tags && feature.tags.length > 0) {
           const tags = card.createDiv({ cls: 'bp-feature-tags' })
-          for (const tag of feature.tags) tags.createSpan({ text: `.${tag}`, cls: 'bp-feature-tag' })
+          for (const tag of feature.tags) tags.createSpan({ text: `${tagPrefix}${tag}`, cls: 'bp-feature-tag' })
+        }
+        for (const group of feature.tagGroups ?? []) {
+          if (group.tags.length === 0) continue
+          card.createDiv({ text: t(group.labelKey), cls: 'bp-feature-group' })
+          const tags = card.createDiv({ cls: 'bp-feature-tags' })
+          for (const tag of group.tags) tags.createSpan({ text: `${tagPrefix}${tag}`, cls: 'bp-feature-tag' })
         }
         if (feature.noteKey) card.createDiv({ text: t(feature.noteKey, feature.vars), cls: 'bp-feature-note' })
+        if (reference) continue
         const status =
           feature.step !== undefined && feature.status !== 'available'
             ? `${statusLabel(feature.status)} · ${t('module.feature.step', { step: feature.step })}`

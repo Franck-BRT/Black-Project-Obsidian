@@ -57,6 +57,12 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
       demande dans quelle analyse
 - [ ] Réglages → ligne « Analyse d'appels d'offres » → **Fonctions** : le réglage
       « Dossier des analyses », et les fonctions (5 disponibles, 10 en développement)
+- [ ] Même fenêtre, section **Types de pièces et leur détection** (v0.3.1) : une fiche
+      par type (AVIS, RC… AUTRE), dans l'ordre où ils sont essayés, avec les mots-clés
+      cherchés « Dans le nom du fichier » et « Dans le titre du document » ; pas de
+      pastille d'état ; les compteurs restent 5 / 10
+- [ ] Renommer un fichier avec un mot-clé affiché (par exemple `Spécifications
+      techniques.pdf`) et l'importer : le type correspond à la fiche (CCTP)
 - [ ] Changer le dossier des analyses : la prochaine analyse y est créée
 - [ ] Extensions équivalentes : déclarer `.tot` lu comme `.xml`, puis importer
       `A importer/Essais/banc.tot` : pièce lue

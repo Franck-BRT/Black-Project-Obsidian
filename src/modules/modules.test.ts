@@ -34,7 +34,12 @@ describe('catalogue des modules', () => {
           ...Object.values(details.statusKeys ?? {}),
           ...details.sections.flatMap((section) => [
             section.titleKey,
-            ...section.features.flatMap((feature) => [feature.labelKey, ...(feature.noteKey ? [feature.noteKey] : [])])
+            ...(section.introKey ? [section.introKey] : []),
+            ...section.features.flatMap((feature) => [
+              feature.labelKey,
+              ...(feature.noteKey ? [feature.noteKey] : []),
+              ...(feature.tagGroups ?? []).map((group) => group.labelKey)
+            ])
           ])
         ]
         for (const key of keys) {

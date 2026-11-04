@@ -58,26 +58,15 @@ laquelle.
 
 Chaque pièce est **lue**, **typée** et **décrite par une note** dans `Pièces/` :
 
-- son **type**, deviné d'après le nom du fichier, puis d'après le titre de son texte :
+- son **type**, deviné d'abord d'après le nom du fichier, puis, si le nom ne dit rien,
+  d'après le titre en tête de son texte. Les types sont essayés dans l'ordre du tableau ;
+  le premier qui correspond l'emporte. Un mot-clé est cherché comme mot entier, sans
+  tenir compte des accents, de la casse ni de la ponctuation (« CCTP_v3 » et « cctp v3 »
+  se valent) ; terminé par « … », il vaut aussi pour les mots qui le prolongent
+  (« annexe… » trouve « Annexes »). La même liste est dans Paramètres → Black Projects →
+  **Fonctions**.
 
-| Type | Pièce |
-| --- | --- |
-| AVIS | Avis d'appel public à la concurrence |
-| RC | Règlement de la consultation |
-| AE | Acte d'engagement |
-| CCAP | Cahier des clauses administratives particulières |
-| CCAG | Cahier des clauses administratives générales |
-| CCTP | Cahier des clauses techniques particulières (aussi : cahier des charges, STB, SOW) |
-| CCTG | Cahier des clauses techniques générales |
-| BPU | Bordereau des prix unitaires |
-| DPGF | Décomposition du prix global et forfaitaire |
-| DQE | Détail quantitatif estimatif |
-| MEMOIRE | Cadre de réponse / mémoire technique |
-| FORMULAIRE | DC1 à DC4, DUME, attestations |
-| QR | Questions et réponses |
-| PLANNING | Planning, calendrier |
-| ANNEXE | Annexe |
-| AUTRE | Autre pièce |
+{{types}}
 
 - son **état de lecture** :
 
