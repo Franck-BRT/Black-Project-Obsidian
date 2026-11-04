@@ -41,7 +41,8 @@ les mots-clés qui les font reconnaître.
 Facultatif : `settingsFields`, les réglages propres au module, dessinés en tête de sa
 fenêtre (celle qu'ouvre `details`).
 Deux types : `mapping`, une liste de paires « ceci → cela » avec un formulaire
-d'ajout (exemple : les extensions équivalentes) ; `text`, un texte comme un dossier
+d'ajout, la valeur choisie dans un menu (exemple : les extensions équivalentes) ou saisie
+librement (`valueKind: 'text'`, exemple : les types de pièces personnalisés) ; `text`, un texte comme un dossier
 (exemple : le dossier des analyses). Le module dit ce qui est permis
 (`normalize`, `validate`, `options`) ; la plateforme dessine et enregistre. Un module
 apprend qu'un réglage a changé par `context.settings.onChange`.

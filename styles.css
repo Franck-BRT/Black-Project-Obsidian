@@ -265,3 +265,7 @@
 .bp-feature-section.is-reference .bp-feature-tag {
   font-family: inherit;
 }
+
+.bp-mapping-add .bp-mapping-value {
+  min-width: 18em;
+}

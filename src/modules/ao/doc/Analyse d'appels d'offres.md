@@ -68,6 +68,14 @@ Chaque pièce est **lue**, **typée** et **décrite par une note** dans `Pièces
 
 {{types}}
 
+  **Vos propres types** : en tête de la fenêtre **Fonctions**, « Types de pièces
+  personnalisés » ajoute un type avec un code court et un libellé (« PAQ » — « Plan
+  d'assurance qualité »). Il prend place après les types du module, avant « autre
+  pièce » ; son code sert aussi de mot-clé dans le nom des fichiers (« PAQ_v2.pdf »). Il
+  est proposé par « Changer le type de la pièce » et par les mots-clés personnalisés.
+  Retirer un type retire ses mots-clés ; les pièces qui l'avaient le gardent, signalé
+  « type retiré » dans le tableau.
+
   **Vos propres mots-clés** : en tête de la fenêtre **Fonctions**, deux listes —
   « nom du fichier » et « titre du document » — où ajouter un mot ou une expression vers
   un type (« SPEC » → CCTP, « grille de prix » → BPU). Ils sont cherchés **avant** ceux

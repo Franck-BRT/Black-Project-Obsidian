@@ -3,7 +3,7 @@
 
 /** Les types de pièces et leurs mots-clés, en tableau Markdown pour la documentation écrite dans le coffre. */
 
-import { NO_CUSTOM_KEYWORDS, PIECE_TYPES, type CustomKeywords } from './pieces'
+import { allTypes, NO_CUSTOM_KEYWORDS, typeLabel, type CustomKeywords } from './pieces'
 
 /** Les mots-clés du module, puis ceux de l'utilisateur, marqués « (ajouté) ». */
 function cell(builtIn: readonly string[], custom: Readonly<Record<string, string>>, code: string): string {
@@ -12,13 +12,16 @@ function cell(builtIn: readonly string[], custom: Readonly<Record<string, string
   return all.length > 0 ? all.join(', ') : '—'
 }
 
-export function typesMarkdown(t: (key: string) => string, custom: CustomKeywords = NO_CUSTOM_KEYWORDS): string {
+export function typesMarkdown(
+  t: (key: string, vars?: Record<string, string>) => string,
+  custom: CustomKeywords = NO_CUSTOM_KEYWORDS
+): string {
   return [
     `| Type | Pièce | ${t('ao.types.byName')} | ${t('ao.types.byTitle')} |`,
     '| --- | --- | --- | --- |',
-    ...PIECE_TYPES.map(
+    ...allTypes(custom).map(
       (each) =>
-        `| ${each.code} | ${t(each.labelKey)} | ${cell(each.names, custom.names, each.code)} | ${cell(each.titles, custom.titles, each.code)} |`
+        `| ${each.code}${each.custom ? ' *(ajouté)*' : ''} | ${typeLabel(each.code, custom, t)} | ${cell(each.names, custom.names, each.code)} | ${cell(each.titles, custom.titles, each.code)} |`
     )
   ].join('\n')
 }

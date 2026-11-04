@@ -21,13 +21,18 @@ import {
   keywordTargets,
   NAME_KEYWORDS_KEY,
   normalizeKeyword,
+  normalizeLabel,
+  normalizeTypeCode,
   readCustomKeywords,
+  readCustomTypes,
   readNameKeywords,
   readTitleKeywords,
   TITLE_KEYWORDS_KEY,
-  validateKeyword
+  TYPES_KEY,
+  validateKeyword,
+  validateType
 } from './keywords'
-import { NO_CUSTOM_KEYWORDS, OTHER, PIECE_TYPES, pieceType, type CustomKeywords } from './pieces'
+import { allTypes, NO_CUSTOM_KEYWORDS, OTHER, typeLabel, type CustomKeywords } from './pieces'
 import { typesMarkdown } from './typesDoc'
 import {
   AnalysisExists,
@@ -73,6 +78,30 @@ const rootField: TextField = {
   normalize: cleanFolder
 }
 
+/** Le réglage « Types de pièces personnalisés » : code → libellé. */
+const typesField: MappingField = {
+  kind: 'mapping',
+  key: TYPES_KEY,
+  nameKey: 'ao.types.custom',
+  descKey: 'ao.types.custom.desc',
+  placeholderKey: 'ao.types.custom.placeholder',
+  prefix: '',
+  connectorKey: 'ao.types.custom.connector',
+  valueKind: 'text',
+  valuePlaceholderKey: 'ao.types.custom.labelPlaceholder',
+  normalizeValue: normalizeLabel,
+  tooltipKeys: {
+    from: 'ao.types.custom.tip.code',
+    to: 'ao.types.custom.tip.label',
+    add: 'ao.types.custom.tip.add',
+    remove: 'ao.types.custom.tip.remove'
+  },
+  options: () => [],
+  normalize: normalizeTypeCode,
+  validate: (code, label, current) => validateType(code, label, current),
+  read: readCustomTypes
+}
+
 /** Un réglage « mot-clé → type » : pour le nom du fichier, ou pour le titre du document. */
 function keywordsField(where: 'names' | 'titles'): MappingField {
   const name = where === 'names'
@@ -90,11 +119,11 @@ function keywordsField(where: 'names' | 'titles'): MappingField {
       add: 'ao.keywords.tip.add',
       remove: 'ao.keywords.tip.remove'
     },
-    options: keywordTargets,
+    options: (settings) => keywordTargets(readCustomTypes(settings)),
     defaultOption: 'CCTP',
-    optionLabelKey: (code) => pieceType(code).labelKey,
+    optionLabel: (code, settings, t) => typeLabel(code, readCustomKeywords(settings), t),
     normalize: normalizeKeyword,
-    validate: (keyword, code, current) => validateKeyword(where, keyword, code, current),
+    validate: (keyword, code, current, settings) => validateKeyword(where, keyword, code, current, readCustomTypes(settings)),
     read: name ? readNameKeywords : readTitleKeywords
   }
 }
@@ -134,9 +163,10 @@ export function aoFeatures(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): ModuleD
       introKey: 'ao.types.intro',
       kind: 'reference',
       tagPrefix: '',
-      features: PIECE_TYPES.map((each) => ({
+      features: allTypes(custom).map((each) => ({
         prefix: each.code,
         labelKey: each.labelKey,
+        ...(each.label === undefined ? {} : { vars: { label: each.label } }),
         status: 'available' as const,
         tagGroups: [
           { labelKey: 'ao.types.byName', tags: each.names },
@@ -144,7 +174,7 @@ export function aoFeatures(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): ModuleD
           { labelKey: 'ao.types.addedName', tags: added(custom.names, each.code) },
           { labelKey: 'ao.types.addedTitle', tags: added(custom.titles, each.code) }
         ],
-        ...(each.code === OTHER ? { noteKey: 'ao.types.other' } : {})
+        ...(each.code === OTHER ? { noteKey: 'ao.types.other' } : each.custom ? { noteKey: 'ao.types.customNote' } : {})
       }))
     },
     {
@@ -231,12 +261,12 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.3.2',
+  version: '0.3.3',
   // Les pièces du dossier sont lues par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: aoFr, en: aoEn },
   details: (settings) => aoFeatures(readCustomKeywords(settings)),
-  settingsFields: [rootField, keywordsField('names'), keywordsField('titles')],
+  settingsFields: [rootField, typesField, keywordsField('names'), keywordsField('titles')],
   docs: ({ folder, t, settings }) => [
     {
       path: "Modules/Analyse d'appels d'offres.md",
@@ -350,17 +380,22 @@ export const aoModule: BlackModule = {
           platform.notifier.notify(t('ao.type.notPiece'), 6000)
           return
         }
+        const custom = services.keywords ?? NO_CUSTOM_KEYWORDS
         const type = await platform.ui.pickOption(
-          PIECE_TYPES.map((each) => ({
+          allTypes(custom).map((each) => ({
             value: each.code,
-            label: `${each.code} — ${t(each.labelKey)}`,
-            ...(each.code === piece.type ? { description: t('ao.type.current') } : {})
+            label: `${each.code} — ${typeLabel(each.code, custom, t)}`,
+            ...(each.code === piece.type
+              ? { description: t('ao.type.current') }
+              : each.custom
+                ? { description: t('ao.type.custom') }
+                : {})
           })),
           t('ao.type.placeholder')
         )
         if (!type || type === piece.type) return
         await setPieceType(services, note, type)
-        platform.notifier.notify(t('ao.type.done', { type: `${type} — ${t(`ao.piece.${type.toLowerCase()}`)}` }), 5000)
+        platform.notifier.notify(t('ao.type.done', { type: `${type} — ${typeLabel(type, custom, t)}` }), 5000)
       }
     })
   }

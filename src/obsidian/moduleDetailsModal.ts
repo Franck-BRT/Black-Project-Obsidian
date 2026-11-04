@@ -68,10 +68,13 @@ export class ModuleDetailsModal extends Modal {
     const { plugin, module } = this
     const t = this.t.bind(this)
     const prefix = field.prefix ?? ''
-    const current = field.read(this.settings())
+    const settings = this.settings()
+    const current = field.read(settings)
+    const free = field.valueKind === 'text'
     const optionText = (option: string) => {
-      const key = field.optionLabelKey?.(option)
-      return key ? `${prefix}${option} — ${t(key)}` : `${prefix}${option}`
+      if (free) return option
+      const label = field.optionLabel?.(option, settings, t)
+      return label ? `${prefix}${option} — ${label}` : `${prefix}${option}`
     }
     const save = async (pairs: Record<string, string>) => {
       await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: pairs })
@@ -82,43 +85,54 @@ export class ModuleDetailsModal extends Modal {
     block.createDiv({ text: t(field.nameKey), cls: 'bp-module-settings-title' })
     if (field.descKey) block.createDiv({ text: t(field.descKey), cls: 'bp-module-settings-desc' })
 
-    const options = field.options()
+    const options = free ? [] : field.options(settings)
     let typed = ''
-    let target = field.defaultOption && options.includes(field.defaultOption) ? field.defaultOption : (options[0] ?? '')
+    let target = free ? '' : field.defaultOption && options.includes(field.defaultOption) ? field.defaultOption : (options[0] ?? '')
     const add = async () => {
       const from = field.normalize(typed)
-      const error = field.validate(from, target, current)
+      const to = free ? (field.normalizeValue?.(target) ?? target.trim()) : target
+      const error = field.validate(from, to, current, settings)
       if (error) {
         plugin.platform.notifier.notify(t(error.key, error.vars), 6000)
         return
       }
-      await save({ ...current, [from]: target })
+      await save({ ...current, [from]: to })
     }
-    new Setting(block)
-      .setClass('bp-mapping-add')
-      .addText((text) => {
-        text.setPlaceholder(`${prefix}${field.placeholderKey ? t(field.placeholderKey) : ''}`)
-        text.onChange((value) => (typed = value))
-        if (field.tooltipKeys?.from) setTooltip(text.inputEl, t(field.tooltipKeys.from))
-        text.inputEl.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault()
-            void add()
-          }
-        })
+    const onEnter = (input: HTMLInputElement) =>
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          void add()
+        }
       })
-      .addDropdown((dropdown) => {
+    const row = new Setting(block).setClass('bp-mapping-add').addText((text) => {
+      text.setPlaceholder(`${prefix}${field.placeholderKey ? t(field.placeholderKey) : ''}`)
+      text.onChange((value) => (typed = value))
+      if (field.tooltipKeys?.from) setTooltip(text.inputEl, t(field.tooltipKeys.from))
+      onEnter(text.inputEl)
+    })
+    if (free) {
+      row.addText((text) => {
+        text.setPlaceholder(field.valuePlaceholderKey ? t(field.valuePlaceholderKey) : '')
+        text.onChange((value) => (target = value))
+        text.inputEl.addClass('bp-mapping-value')
+        if (field.tooltipKeys?.to) setTooltip(text.inputEl, t(field.tooltipKeys.to))
+        onEnter(text.inputEl)
+      })
+    } else {
+      row.addDropdown((dropdown) => {
         for (const option of options) dropdown.addOption(option, `${t(field.connectorKey)} ${optionText(option)}`)
         dropdown.setValue(target).onChange((value) => (target = value))
         if (field.tooltipKeys?.to) setTooltip(dropdown.selectEl, t(field.tooltipKeys.to))
       })
-      .addButton((button) =>
-        button
-          .setButtonText(t('settings.mapping.add'))
-          .setCta()
-          .setTooltip(t(field.tooltipKeys?.add ?? 'tip.mapping.add'))
-          .onClick(add)
-      )
+    }
+    row.addButton((button) =>
+      button
+        .setButtonText(t('settings.mapping.add'))
+        .setCta()
+        .setTooltip(t(field.tooltipKeys?.add ?? 'tip.mapping.add'))
+        .onClick(add)
+    )
 
     const pairs = Object.entries(current).sort(([a], [b]) => a.localeCompare(b))
     if (pairs.length === 0) block.createDiv({ text: t('settings.mapping.empty'), cls: 'bp-mapping-empty' })

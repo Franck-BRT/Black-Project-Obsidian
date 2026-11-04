@@ -36,12 +36,12 @@ describe('mots-clés personnalisés : saisie', () => {
   it('relit les réglages en écartant ce qui n’est plus valable', () => {
     expect(
       readCustomKeywords({ motsClesNom: { SPEC: 'CCTP', ' grille  de prix ': 'BPU', x: 'XYZ', y: 3 }, motsClesTitre: ['non'] })
-    ).toEqual({ names: { SPEC: 'CCTP', 'grille de prix': 'BPU' }, titles: {} })
+    ).toEqual({ names: { SPEC: 'CCTP', 'grille de prix': 'BPU' }, titles: {}, types: {} })
   })
 })
 
 describe('mots-clés personnalisés : reconnaissance', () => {
-  const custom = { names: { SPEC: 'CCTP', 'grille de prix': 'BPU' }, titles: { 'dossier technique de référence': 'CCTP' } }
+  const custom = { names: { SPEC: 'CCTP', 'grille de prix': 'BPU' }, titles: { 'dossier technique de référence': 'CCTP' }, types: {} }
 
   it('reconnaît une pièce par un mot-clé de l’utilisateur', () => {
     expect(classifyPiece('SPEC_sol_v2.pdf', '', custom)).toBe('CCTP')
@@ -68,7 +68,7 @@ describe('mots-clés personnalisés : reconnaissance', () => {
 
 describe('mots-clés personnalisés : affichage', () => {
   it('apparaissent dans la fenêtre Fonctions, à part de ceux du module', () => {
-    const section = aoFeatures({ names: { SPEC: 'CCTP' }, titles: { 'grille tarifaire': 'BPU' } }).sections.find(
+    const section = aoFeatures({ names: { SPEC: 'CCTP' }, titles: { 'grille tarifaire': 'BPU' }, types: {} }).sections.find(
       (each) => each.titleKey === 'ao.types.section'
     )
     const groups = (code: string) =>
@@ -81,7 +81,7 @@ describe('mots-clés personnalisés : affichage', () => {
   it('apparaissent dans la documentation, marqués « ajouté »', () => {
     const i18n = createI18n('fr')
     i18n.register('fr', aoFr)
-    const table = typesMarkdown(i18n.t.bind(i18n), { names: { SPEC: 'CCTP' }, titles: {} })
+    const table = typesMarkdown(i18n.t.bind(i18n), { names: { SPEC: 'CCTP' }, titles: {}, types: {} })
     expect(table).toContain('`statement of work`, `SPEC` *(ajouté)* |')
   })
 })

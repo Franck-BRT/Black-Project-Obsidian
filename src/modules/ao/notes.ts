@@ -17,7 +17,7 @@
  */
 
 import { frontmatter } from '../../core/frontmatter'
-import { PIECE_TYPES } from './pieces'
+import { allTypes, NO_CUSTOM_KEYWORDS, typeLabel, type CustomKeywords } from './pieces'
 
 export const PIECES = 'Pièces'
 export const ORIGINALS = 'Originaux'
@@ -184,12 +184,18 @@ export interface PieceRow {
 }
 
 /** Le tableau des pièces de la note d'analyse ; les « | » des liens échappés pour ne pas couper les cellules. */
-export function piecesTable(rows: readonly PieceRow[], t: (key: string, vars?: Record<string, string | number>) => string): string {
+export function piecesTable(
+  rows: readonly PieceRow[],
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  custom: CustomKeywords = NO_CUSTOM_KEYWORDS
+): string {
   if (rows.length === 0) return t('ao.note.noPieces')
-  // Dans l'ordre d'un dossier : avis, RC, AE, CCAP… et les autres pièces à la fin.
+  // Dans l'ordre d'un dossier : avis, RC, AE, CCAP…, les types ajoutés, puis les autres
+  // pièces ; un type qui n'existe plus tout à la fin.
+  const types = allTypes(custom)
   const rank = (code: string) => {
-    const index = PIECE_TYPES.findIndex((each) => each.code === code)
-    return index === -1 ? PIECE_TYPES.length : index
+    const index = types.findIndex((each) => each.code === code)
+    return index === -1 ? types.length : index
   }
   const sorted = [...rows].sort((a, b) => rank(a.type) - rank(b.type) || a.note.localeCompare(b.note))
   const header = [
@@ -201,7 +207,7 @@ export function piecesTable(rows: readonly PieceRow[], t: (key: string, vars?: R
     const link = `[[${row.note.replace(/\.md$/, '')}\\|${name}]]`
     const state = `${READING_MARK[row.state]} ${t(`ao.state.${row.state}`)}`
     const size = row.state === 'lue' ? t('ao.table.characters', { count: row.characters.toLocaleString('fr-FR') }) : '—'
-    return `| ${link} | ${row.type} — ${t(`ao.piece.${row.type.toLowerCase()}`)} | ${state} | ${size} |`
+    return `| ${link} | ${row.type} — ${typeLabel(row.type, custom, t)} | ${state} | ${size} |`
   })
   const read = rows.filter((row) => row.state === 'lue').length
   const summary = t('ao.table.summary', { count: rows.length, read })

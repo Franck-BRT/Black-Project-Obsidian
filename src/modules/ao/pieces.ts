@@ -20,6 +20,10 @@ export interface PieceType {
   readonly code: string
   /** Clé du libellé long : « Cahier des clauses techniques particulières ». */
   readonly labelKey: string
+  /** Le libellé tel quel, pour un type ajouté par l'utilisateur (sa clé est alors générique). */
+  readonly label?: string
+  /** Ajouté par l'utilisateur. */
+  readonly custom?: boolean
   /** Les mots-clés cherchés dans le nom du fichier. */
   readonly names: readonly string[]
   /** Les mots-clés cherchés dans le début du texte, quand le nom ne dit rien. */
@@ -87,8 +91,28 @@ export const PIECE_TYPES: readonly PieceType[] = [
 
 export const OTHER = 'AUTRE'
 
-export function pieceType(code: string): PieceType {
-  return PIECE_TYPES.find((each) => each.code === code) ?? PIECE_TYPES[PIECE_TYPES.length - 1]!
+export function pieceType(code: string, custom: CustomKeywords = NO_CUSTOM_KEYWORDS): PieceType {
+  return allTypes(custom).find((each) => each.code === code) ?? PIECE_TYPES[PIECE_TYPES.length - 1]!
+}
+
+/**
+ * Tous les types : ceux du module, puis ceux de l'utilisateur, puis « autre pièce », qui
+ * reste le dernier. Le code d'un type ajouté est aussi son premier mot-clé de nom : un
+ * type « PAQ » reconnaît « PAQ_v2.pdf » sans rien de plus.
+ */
+export function allTypes(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): PieceType[] {
+  const builtIn = PIECE_TYPES.filter((each) => each.code !== OTHER)
+  const added = Object.entries(custom.types)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([code, label]): PieceType => ({ code, labelKey: 'ao.types.customLabel', label, names: [code], titles: [], custom: true }))
+  return [...builtIn, ...added, PIECE_TYPES[PIECE_TYPES.length - 1]!]
+}
+
+/** Le libellé d'un type, ajouté ou non ; un code qui n'est plus un type est montré tel quel. */
+export function typeLabel(code: string, custom: CustomKeywords, t: (key: string, vars?: Record<string, string>) => string): string {
+  const type = allTypes(custom).find((each) => each.code === code)
+  if (!type) return t('ao.types.removed', { code })
+  return type.label ?? t(type.labelKey)
 }
 
 /** Sans accents, en minuscules, la ponctuation et les séparateurs ramenés à des espaces. */
@@ -121,9 +145,11 @@ export function keywordIn(keyword: string, folded: string): boolean {
 export interface CustomKeywords {
   readonly names: Readonly<Record<string, string>>
   readonly titles: Readonly<Record<string, string>>
+  /** Les types ajoutés par l'utilisateur : code → libellé. */
+  readonly types: Readonly<Record<string, string>>
 }
 
-export const NO_CUSTOM_KEYWORDS: CustomKeywords = { names: {}, titles: {} }
+export const NO_CUSTOM_KEYWORDS: CustomKeywords = { names: {}, titles: {}, types: {} }
 
 function customMatch(keywords: Readonly<Record<string, string>>, folded: string): string | null {
   for (const [keyword, code] of Object.entries(keywords)) if (keywordIn(keyword, folded)) return code
@@ -143,11 +169,12 @@ export function classifyPiece(fileName: string, text = '', custom: CustomKeyword
   const name = fold(base)
   const byName = customMatch(custom.names, name)
   if (byName) return byName
-  for (const each of PIECE_TYPES) if (each.names.some((keyword) => keywordIn(keyword, name))) return each.code
+  const types = allTypes(custom)
+  for (const each of types) if (each.names.some((keyword) => keywordIn(keyword, name))) return each.code
   const head = fold(text.slice(0, 1500))
   if (!head) return OTHER
   const byTitle = customMatch(custom.titles, head)
   if (byTitle) return byTitle
-  for (const each of PIECE_TYPES) if (each.titles.some((keyword) => keywordIn(keyword, head))) return each.code
+  for (const each of types) if (each.titles.some((keyword) => keywordIn(keyword, head))) return each.code
   return OTHER
 }

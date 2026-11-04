@@ -125,16 +125,30 @@ export interface MappingField {
   readonly connectorKey: string
   /** Les infobulles du champ de saisie, du menu, du bouton d'ajout et de la corbeille. */
   readonly tooltipKeys?: { readonly from?: string; readonly to?: string; readonly add?: string; readonly remove?: string }
-  /** Les valeurs possibles à droite. */
-  options(): readonly string[]
+  /**
+   * La valeur de droite : choisie dans un menu (`choice`, par défaut) ou saisie librement
+   * (`text`) — un libellé, par exemple.
+   */
+  readonly valueKind?: 'choice' | 'text'
+  /** L'exemple affiché dans le champ de la valeur, quand elle est saisie. */
+  readonly valuePlaceholderKey?: string
+  /** La valeur saisie, nettoyée. */
+  normalizeValue?(input: string): string
+  /** Les valeurs possibles à droite, d'après les réglages du module (pour un menu). */
+  options(settings: Readonly<Record<string, unknown>>): readonly string[]
   /** La valeur proposée d'abord ; à défaut, la première. */
   readonly defaultOption?: string
-  /** La clé du libellé d'une valeur de droite, affiché après elle : « CCTP — Cahier des… ». */
-  optionLabelKey?(option: string): string
+  /** Le libellé d'une valeur de droite, affiché après elle : « CCTP — Cahier des… ». */
+  optionLabel?(option: string, settings: Readonly<Record<string, unknown>>, t: (key: string) => string): string
   /** La saisie de gauche, nettoyée : « .TOT » devient « tot ». */
   normalize(input: string): string
   /** `null` si la paire est acceptable, sinon pourquoi elle ne l'est pas. */
-  validate(from: string, to: string, current: Readonly<Record<string, string>>): FieldError | null
+  validate(
+    from: string,
+    to: string,
+    current: Readonly<Record<string, string>>,
+    settings: Readonly<Record<string, unknown>>
+  ): FieldError | null
   /** Les paires enregistrées, lues dans les réglages du module. */
   read(settings: Readonly<Record<string, unknown>>): Record<string, string>
 }

@@ -30,7 +30,7 @@ import {
   type PieceRow,
   type ReadingState
 } from './notes'
-import { classifyPiece, NO_CUSTOM_KEYWORDS, OTHER, PIECE_TYPES, type CustomKeywords } from './pieces'
+import { classifyPiece, NO_CUSTOM_KEYWORDS, OTHER, type CustomKeywords } from './pieces'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -237,7 +237,9 @@ async function pieceNotes(fs: FileSystem, analysis: Analysis): Promise<PieceNote
     const { data } = parseFrontmatter(await fs.readText(note))
     if (data['bp-type'] !== PIECE_TYPE) continue
     const state = READING_STATES.includes(data.lecture as ReadingState) ? (data.lecture as ReadingState) : 'non-lue'
-    const type = PIECE_TYPES.some((each) => each.code === data.type) ? data.type! : OTHER
+    // Un code inconnu — un type ajouté puis retiré — est gardé tel quel : le tableau le
+    // signale, et l'utilisateur choisit un autre type s'il le veut.
+    const type = (data.type ?? '').trim() || OTHER
     out.push({ note, original: linkTarget(data.fichier ?? ''), type, state, characters: Number(data.caracteres) || 0 })
   }
   return out
@@ -248,7 +250,7 @@ export async function refreshTable(services: Services, analysis: Analysis): Prom
   const { fs, t } = services
   const rows = await pieceNotes(fs, analysis)
   const note = await fs.readText(analysis.note)
-  const updated = withPiecesTable(note, piecesTable(rows, t))
+  const updated = withPiecesTable(note, piecesTable(rows, t, services.keywords ?? NO_CUSTOM_KEYWORDS))
   if (updated !== note) await fs.writeText(analysis.note, updated)
   return rows
 }

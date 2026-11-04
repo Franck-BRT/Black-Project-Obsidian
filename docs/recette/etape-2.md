@@ -61,6 +61,13 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
       par type (AVIS, RC… AUTRE), dans l'ordre où ils sont essayés, avec les mots-clés
       cherchés « Dans le nom du fichier » et « Dans le titre du document » ; pas de
       pastille d'état ; les compteurs restent 5 / 10
+- [ ] **Types personnalisés** (v0.3.3), en tête de la fenêtre **Fonctions** : ajouter
+      `paq` — « Plan d'assurance qualité » : il apparaît « PAQ — Plan d'assurance
+      qualité », a sa fiche (avant AUTRE), et figure dans le menu des mots-clés ;
+      importer `PAQ_v2.pdf` : type PAQ ; « Changer le type de la pièce » le propose
+- [ ] Ajouter `CCTP` comme type : refusé ; un type sans libellé : refusé ; retirer PAQ :
+      ses mots-clés disparaissent, et le tableau d'une analyse mise à jour montre
+      « PAQ (type retiré) »
 - [ ] **Mots-clés personnalisés** (v0.3.2), en tête de la fenêtre **Fonctions** :
       ajouter `SPEC` → CCTP dans « nom du fichier » ; il apparaît dans la liste et dans la
       fiche CCTP (« Ajoutés par vous — nom du fichier ») ; importer un fichier
