@@ -13,11 +13,12 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.2.0 — étape 1 du [plan d'intégration](docs/plan-integration.md) : les
-lecteurs de documents.** Le cœur lit les pièces d'un dossier de consultation — PDF,
-Word (`.docx`, `.doc`), RTF, Excel (`.xlsx`, `.xls`), PowerPoint, HTML, Markdown, texte —
-sans aucune dépendance externe. Le module *Analyse d'appels d'offres* s'en servira à
-partir de l'étape 2.
+**Version 0.2.1 — étape 1 du [plan d'intégration](docs/plan-integration.md) : la
+lecture de fichiers.** Le module *Lecture de fichiers* lit les pièces d'un dossier de
+consultation — PDF, Word (`.docx`, `.doc`), RTF, Excel (`.xlsx`, `.xls`), PowerPoint,
+HTML, Markdown, texte — sans aucune dépendance externe ; une commande provisoire permet
+de l'essayer dans Obsidian. Le module *Analyse d'appels d'offres* s'en servira à partir
+de l'étape 2.
 
 ## Documentation
 
@@ -38,7 +39,7 @@ Prérequis : Node.js 22 ou plus récent, pnpm 10.
 
 ```bash
 pnpm install
-pnpm run check      # mentions, en-têtes, types, lint, tests
+pnpm run check      # mentions, en-têtes, frontières de modules, types, lint, tests
 pnpm run build      # produit main.js
 pnpm run dev        # recompile à chaque modification
 ```
@@ -48,7 +49,9 @@ Structure :
 ```
 src/
 ├── core/       cœur, TypeScript pur, indépendant de la plateforme
-├── modules/    logique des modules (ao : analyse d'appels d'offres)
+├── modules/    un répertoire fermé par module
+│   ├── lecture-fichiers/   lecture des documents (voir son README.md)
+│   └── ao/                 analyse d'appels d'offres
 └── obsidian/   adaptateur Obsidian : point d'entrée, ports, réglages
 docs/           documentation
 scripts/        contrôles du dépôt

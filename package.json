@@ -1,6 +1,6 @@
 {
   "name": "black-projects",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Black Projects by Black Room Technologies — plugin Obsidian",
   "author": "Black Room Technologies",
@@ -9,9 +9,10 @@
   "scripts": {
     "dev": "node esbuild.config.mjs --watch",
     "build": "node esbuild.config.mjs --production",
-    "check": "pnpm run check:mentions && pnpm run check:headers && pnpm run check:types && pnpm run check:lint && pnpm run test",
+    "check": "pnpm run check:mentions && pnpm run check:headers && pnpm run check:modules && pnpm run check:types && pnpm run check:lint && pnpm run test",
     "check:mentions": "node scripts/check-mentions.mjs",
     "check:headers": "node scripts/check-headers.mjs",
+    "check:modules": "node scripts/check-modules.mjs",
     "check:types": "tsc --noEmit",
     "check:lint": "eslint --max-warnings 0 src test",
     "test": "vitest run",

@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 import { describe, expect, it } from 'vitest'
-import { buildXlsx } from '../writers/xlsx'
+import { buildXlsx } from '../../../core/writers/xlsx'
 import { blocksText, fileText, FileReadError, imageDataUrl, isImage, isReadable } from './fileText'
 
 const bytes = (text: string): Uint8Array => new TextEncoder().encode(text)

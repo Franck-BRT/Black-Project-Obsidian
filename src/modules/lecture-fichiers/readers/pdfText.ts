@@ -3,7 +3,7 @@
 
 import type { DocxReadBlock, DocxReadParagraph } from './docxRead'
 import type { PdfContent, PdfContentRef, PdfRectItem, PdfStructElement, PdfTextItem } from './pdfRead'
-import { charWidth } from '../formats/pdfFont'
+import { charWidth } from '../../../core/formats/pdfFont'
 
 /**
  * A PDF's text, put back into paragraphs and tables.

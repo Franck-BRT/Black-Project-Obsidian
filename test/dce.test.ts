@@ -15,7 +15,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { fileText } from '../src/core/readers/fileText'
+import { fileText } from '../src/modules/lecture-fichiers'
 
 const folder = fileURLToPath(new URL('./fixtures/dce-exemple/', import.meta.url))
 

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { cleanWordText, readDoc } from './docRead'
 import { isRtf, readRtf } from './rtfRead'
 import { fileText } from './fileText'
-import { bytesOf, footnote, simpleTable, word6 } from '../../../test/docFixtures'
+import { bytesOf, footnote, simpleTable, word6 } from '../../../../test/docFixtures'
 
 const FIXTURES: Record<string, string> = {
   'simple-table.doc': simpleTable,

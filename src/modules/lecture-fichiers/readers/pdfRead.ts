@@ -1,7 +1,7 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
-import { charWidth } from '../formats/pdfFont'
+import { charWidth } from '../../../core/formats/pdfFont'
 import { PdfDecipher, PdfLocked, type EncryptSpec } from '../formats/pdfCrypt'
 
 /**

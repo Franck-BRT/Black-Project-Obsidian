@@ -7,10 +7,29 @@
 - [ ] `pnpm run check` passe, dont `test/dce.test.ts`
 - [ ] `pnpm run build` produit `main.js`
 
+## Dans Obsidian
+
+Déposer dans un coffre de test les pièces de `test/fixtures/dce-exemple/`, puis :
+
+- [ ] **Réglages → Modules** : « Lecture de fichiers · 0.2.0 » et « Analyse d'appels
+      d'offres · 0.1.0 » (Nécessite : Lecture de fichiers), tous deux **Actif**
+- [ ] Commande **Lire un fichier du coffre (provisoire)** : la liste ne propose que des
+      fichiers lisibles ; le fichier ouvert vient en premier
+- [ ] `CCTP.pdf`, `CCTP.docx`, `CCTP.doc`, `CCTP.rtf` : le texte, les titres et le
+      tableau des exigences EX-SOL-001 / EX-SOL-002 s'affichent ; la ligne du haut donne
+      le format, les caractères, les lignes et le temps de lecture
+- [ ] `BPU.xlsx`, `BPU.xls` : le tableau des prix ; `Presentation.pptx` : les
+      diapositives ; `RC.html` : la date limite de remise
+- [ ] **Copier** copie le texte
+- [ ] Une image ou un fichier vide : un message dit pourquoi il ne se lit pas
+- [ ] Désactiver « Lecture de fichiers », recharger le plugin : la commande disparaît et
+      l'analyse d'appels d'offres passe à « Module requis indisponible : Lecture de
+      fichiers » ; réactiver, recharger : tout revient
+
 ## Sur un vrai dossier (à faire avec le CNES)
 
-Pas encore d'interface : l'essai se fait par les tests. Pour chaque pièce d'un dossier
-réel anonymisé, déposée dans `test/fixtures/` :
+Avec la commande, ou par les tests en déposant les pièces dans `test/fixtures/`, pour
+chaque pièce d'un dossier réel anonymisé :
 
 - [ ] Le texte est complet : rien ne manque par rapport au document ouvert dans son
       application

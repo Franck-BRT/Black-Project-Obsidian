@@ -11,17 +11,23 @@
 └───────────────┬──────────────────────────────────────────────┘
                 │ fournit les ports, active les modules
 ┌───────────────▼──────────────────────────────────────────────┐
-│ src/modules/    logique des modules (ao, …)                  │
+│ src/modules/    un répertoire fermé par module :             │
+│                 lecture-fichiers, ao, …                      │
 └───────────────┬──────────────────────────────────────────────┘
                 │ s'appuie sur
 ┌───────────────▼──────────────────────────────────────────────┐
 │ src/core/       cœur : ports, registre de modules, licence,  │
-│                 réglages, textes ; puis lecteurs, exigences, │
-│                 client IA                                    │
+│                 réglages, textes, briques zip/xml, writers ; │
+│                 puis exigences, client IA                    │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**La règle :** `src/core` et `src/modules` n'importent jamais `obsidian`, `electron`,
+**Les règles :**
+
+- Un module est une boîte fermée : hors de `src/modules/<id>/`, on n'importe que son
+  `index.ts` ; le cœur n'importe aucun module (`pnpm check:modules`, voir
+  [modules](modules.md)).
+- `src/core` et `src/modules` n'importent jamais `obsidian`, `electron`,
 un module Node, ni l'adaptateur. La règle de lint `no-restricted-imports` le vérifie et
 fait échouer `pnpm check`. C'est ce qui permettra à l'[application de
 bureau](application-desktop.md) de réutiliser tout le code métier.
@@ -35,6 +41,7 @@ Ce que le cœur attend de la plateforme :
 | `FileSystem` | lire, écrire, lister les fichiers du coffre | `app.vault.adapter` |
 | `Http` | appels réseau (serveur d'IA) | `requestUrl`, qui passe les restrictions d'origine |
 | `Notifier` | messages brefs à l'utilisateur | `Notice` |
+| `Ui` | choisir un fichier, montrer un texte long | `FuzzySuggestModal`, `Modal` |
 | `SettingsStorage` | réglages du plugin | `loadData` / `saveData` |
 
 Les tests implémentent ces ports en mémoire ; l'application de bureau les implémentera

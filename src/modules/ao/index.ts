@@ -11,6 +11,7 @@
  */
 
 import type { BlackModule } from '../../core/modules/module'
+import { LECTURE_FICHIERS } from '../lecture-fichiers'
 import { aoEn, aoFr } from './i18n'
 
 export const aoModule: BlackModule = {
@@ -18,7 +19,8 @@ export const aoModule: BlackModule = {
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
   version: '0.1.0',
-  requires: [],
+  // Les pièces du dossier sont lues par le module Lecture de fichiers.
+  requires: [LECTURE_FICHIERS],
   texts: { fr: aoFr, en: aoEn },
   activate() {
     // Rien encore : les fonctions arrivent à partir de l'étape 2.

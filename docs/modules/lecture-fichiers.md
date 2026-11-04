@@ -1,18 +1,49 @@
-# Cœur — lecteurs de documents
+# Module — Lecture de fichiers (`lecture-fichiers`)
 
 > Copyright © 2026 Black Room Technologies. Tous droits réservés.
 
 | | |
 | --- | --- |
-| Emplacement | `src/core/readers/`, `src/core/formats/`, `src/core/writers/` |
-| Étape | 1 (v0.2.0) |
+| Identifiant | `lecture-fichiers` |
+| Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
+| Interface publique | `src/modules/lecture-fichiers/index.ts` |
+| Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
+| Requiert | — |
+| Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
+| Étape | 1 (v0.2.0), devenu module en v0.2.1 |
 | Dépendances externes | **aucune** : tout est lu « à la main », avec les seules API du navigateur (`DecompressionStream`, `crypto.subtle`, `TextDecoder`) |
 
-Les lecteurs transforment une pièce du dossier en texte que l'outil, puis l'IA, peuvent
-lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
+Le module transforme un document en texte que l'outil, puis l'IA, peuvent lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
 colonnes** — c'est là que sont souvent les exigences et les prix.
 
-## Point d'entrée unique : `fileText(extension, octets)`
+## Dans Obsidian
+
+**Réglages → Modules → Lecture de fichiers** : l'état du module. Le désactiver désactive
+aussi les modules qui en dépendent (l'analyse d'appels d'offres passe à l'état
+« Module requis indisponible »).
+
+Commande provisoire **« Lire un fichier du coffre (provisoire) »** : choisir un fichier
+lisible (le fichier ouvert est proposé en premier, puis les plus récents) ; son texte
+extrait s'affiche avec le format, le nombre de caractères et de lignes, le temps de
+lecture, et un bouton **Copier**. Si le fichier ne se lit pas, un message dit pourquoi.
+Elle sera retirée quand l'étape 2 apportera l'import du dossier de consultation.
+
+## Pour les autres modules
+
+```ts
+import { readVaultFile } from '../lecture-fichiers'
+
+const outcome = await readVaultFile(context.platform.fs, 'AO/Pièces/CCTP.pdf')
+if (outcome.ok) outcome.text        // Markdown : titres, listes, tableaux
+else outcome.problem                // 'unsupported' | 'empty' | 'unreadable'
+```
+
+`readVaultFile` ne lève jamais d'exception pour un fichier illisible. L'interface publique
+expose aussi les lecteurs par format (`readDocx`, `readSpreadsheet`, `readPptx`, `readPdf`
++ `pdfBlocks`, `readHtml`, `readMarkdown`) et `unzip` / `parseXml`, dont l'extraction des
+exigences aura besoin.
+
+## Point d'entrée des octets : `fileText(extension, octets)`
 
 Il choisit le bon lecteur et rend du Markdown :
 
@@ -57,13 +88,22 @@ Limite connue de `markdownRead` : les lignes d'un paragraphe restent ensemble, c
 elles ont été écrites ; une liste collée à un paragraphe, sans ligne vide, en fait donc
 partie.
 
-## Les briques (`src/core/formats/`)
+## Organisation
 
-`zip` / `unzip` (archives, avec contrôle CRC), `xmlParse` / `xml`, `cfb` (fichiers
-composés d'Office 97-2003), `pdfCrypt` (déchiffrement PDF), `pdfFont` (métriques des
-polices standard).
+```
+src/modules/lecture-fichiers/
+├── README.md        guide de maintenance
+├── index.ts         interface publique + déclaration du module
+├── lecture.ts       readVaultFile : lire un fichier du coffre
+├── i18n.ts          textes
+├── readers/         un lecteur par format, et fileText qui les aiguille
+└── formats/         briques propres à la lecture : unzip, xmlParse, cfb, pdfCrypt
+```
 
-## Les générateurs (`src/core/writers/`)
+Restent dans le cœur (`src/core/formats/`) les briques partagées avec l'écriture :
+`zip` (et son CRC), `xml` (échappement), `pdfFont` (métriques des polices standard).
+
+## Les générateurs (`src/core/writers/`) — hors du module
 
 `docx`, `xlsx`, `pptx` : repris dès cette étape parce que les tests des lecteurs
 fabriquent leurs fichiers avec ; ils serviront aux livrables de l'étape 7 (matrice de
@@ -72,6 +112,7 @@ conformité, rapport).
 ## Tests
 
 - Tests unitaires de chaque lecteur, repris avec lui.
+- `lecture.test.ts` : `readVaultFile` et la commande, sur une plateforme en mémoire.
 - `test/dce.test.ts` : un dossier de consultation fictif (`test/fixtures/dce-exemple/`)
   produit par **d'autres outils que les nôtres** — LibreOffice pour Word, RTF et PDF,
   pandoc pour HTML et PowerPoint — lu pièce par pièce.

@@ -51,7 +51,11 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
       const description = setting.descEl
       description.createDiv({ text: t(module.descriptionKey) })
       if (module.requires.length > 0) {
-        description.createDiv({ text: t('settings.modules.requires', { modules: module.requires.join(', ') }) })
+        const names = module.requires.map((id) => {
+          const required = plugin.registry.status(id)?.module
+          return required ? t(required.nameKey) : id
+        })
+        description.createDiv({ text: t('settings.modules.requires', { modules: names.join(', ') }) })
       }
       const stateText =
         status.state === 'failed' && status.error

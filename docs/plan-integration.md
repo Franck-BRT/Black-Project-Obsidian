@@ -47,12 +47,15 @@ src/
 │   ├── licence.ts     droits d'usage (tout ouvert pour l'instant)
 │   ├── settings.ts    réglages communs
 │   ├── i18n/          traductions
-│   └── …              (étapes suivantes) lecteurs, exigences, client IA
-├── modules/     la logique des modules, TypeScript pur
+│   └── …              (étapes suivantes) exigences, client IA
+├── modules/     la logique des modules, TypeScript pur, un répertoire fermé par module
+│   ├── lecture-fichiers/  lire PDF, Word, Excel, PowerPoint… (réutilisable)
 │   └── ao/            analyse d'appels d'offres
 └── obsidian/    l'adaptateur Obsidian : point d'entrée, ports, vues, réglages
 ```
 
+- Un module est une boîte fermée : hors de son répertoire, on n'importe que son
+  `index.ts`. Le cœur ne dépend d'aucun module (`pnpm check:modules`).
 - `src/core` et `src/modules` n'importent jamais `obsidian`, `electron` ni de module
   Node : une règle de lint fait échouer le build sinon. C'est ce qui rendra possible
   l'application de bureau, qui fournira ses propres implémentations des ports.
@@ -83,7 +86,7 @@ code.
 **Jalon :** le plugin se charge dans Obsidian ; ses réglages listent les modules et
 l'état de la licence.
 
-### Étape 1 — Lecteurs de documents (`src/core/readers/`) ✅ *terminée (v0.2.0)*
+### Étape 1 — Lecteurs de documents (module `lecture-fichiers`) ✅ *terminée (v0.2.1)*
 
 Repris de `module-obsidian` (code Black Room), dans cet ordre :
 
@@ -94,23 +97,29 @@ Repris de `module-obsidian` (code Black Room), dans cet ordre :
 
 Tests et fichiers d'essai repris. Pas d'interface. ≈ 4 500 lignes.
 
-Réalisé : briques dans `src/core/formats/`, lecteurs et `fileText` dans
-`src/core/readers/`, et les générateurs `docx`, `xlsx`, `pptx` dans `src/core/writers/`
-(avancés de l'étape 7 : les tests des lecteurs fabriquent leurs fichiers avec). Doc :
-[modules/lecteurs.md](modules/lecteurs.md).
+Réalisé, puis réorganisé en v0.2.1 en un **module « Lecture de fichiers »**
+(`lecture-fichiers`), visible dans les réglages et réutilisable par tout module : tout le
+code de lecture est dans `src/modules/lecture-fichiers/`, et les autres modules n'en
+connaissent que l'interface publique (`index.ts`), ce que `pnpm check:modules` vérifie.
+Les générateurs `docx`, `xlsx`, `pptx` sont dans `src/core/writers/` (avancés de
+l'étape 7 : les tests des lecteurs fabriquent leurs fichiers avec). Commande provisoire
+« Lire un fichier du coffre » pour essayer dans Obsidian. Doc :
+[modules/lecture-fichiers.md](modules/lecture-fichiers.md).
 
 **Jalon :** tests verts sur un dossier de consultation fictif produit par LibreOffice
 et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du CNES.
 
 ### Étape 2 — Dossier de consultation (module AO)
 
+- Retrait de la commande provisoire « Lire un fichier du coffre »
 - Commande « Nouvelle analyse d'appel d'offres » : dossier `AO/<nom>/` avec `pièces/`,
   `exigences/`, `analyse/`
 - Import des pièces par glisser-déposer ou depuis le ZIP du dossier
 - Typage des pièces (RC, CCTP, CCAP, AE, BPU, DPGF, annexes), corrigeable
 - Une note par pièce : texte extrait, type, état de lecture (lue, scan illisible,
   format inconnu)
-- Repris : `libraryDoc` et `docText`, allégés
+- Lecture par le module `lecture-fichiers` (`readVaultFile`) ; repris : la partie utile
+  de `libraryDoc` et `docText`, allégés
 - Vue « Dossier »
 
 **Jalon de démo n° 1 :** « je dépose le ZIP du dossier, toutes les pièces sont lues ».

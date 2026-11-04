@@ -1,7 +1,7 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
-import { crc32 } from './zip'
+import { crc32 } from '../../../core/formats/zip'
 
 /**
  * Reading a ZIP archive, by hand.

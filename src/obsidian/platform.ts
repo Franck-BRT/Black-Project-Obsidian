@@ -9,7 +9,9 @@
  */
 
 import { normalizePath, Notice, requestUrl, type App, type Plugin } from 'obsidian'
+import type { I18n } from '../core/i18n'
 import type { FileSystem, FolderListing, Http, Notifier, Platform, SettingsStorage } from '../core/ports'
+import { obsidianUi } from './ui'
 
 function parentOf(path: string): string {
   const index = path.lastIndexOf('/')
@@ -90,11 +92,12 @@ export function pluginSettingsStorage(plugin: Plugin): SettingsStorage {
   }
 }
 
-export function obsidianPlatform(app: App, version: string): Platform {
+export function obsidianPlatform(app: App, version: string, i18n: I18n): Platform {
   return {
     info: { name: 'obsidian', version },
     fs: new ObsidianFileSystem(app),
     http: obsidianHttp,
-    notifier: obsidianNotifier
+    notifier: obsidianNotifier,
+    ui: obsidianUi(app, i18n)
   }
 }

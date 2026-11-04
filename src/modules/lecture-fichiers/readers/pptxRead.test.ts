@@ -2,9 +2,9 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 import { describe, expect, it } from 'vitest'
-import { buildPptx } from '../writers/pptx'
+import { buildPptx } from '../../../core/writers/pptx'
 import { readPptx } from './pptxRead'
-import { utf8, zip } from '../formats/zip'
+import { utf8, zip } from '../../../core/formats/zip'
 
 const NS =
   'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'

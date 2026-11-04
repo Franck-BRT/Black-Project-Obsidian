@@ -2,9 +2,9 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 import { describe, expect, it } from 'vitest'
-import { buildDocx, para } from '../writers/docx'
+import { buildDocx, para } from '../../../core/writers/docx'
 import { readDocx, type DocxReadBlock } from './docxRead'
-import { utf8, zip } from '../formats/zip'
+import { utf8, zip } from '../../../core/formats/zip'
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
 

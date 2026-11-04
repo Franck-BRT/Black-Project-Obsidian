@@ -30,7 +30,7 @@ export default class BlackProjectsPlugin extends Plugin {
     this.storage = pluginSettingsStorage(this)
     this.config = readSettings(await this.storage.load())
     this.i18n = createI18n(this.config.language)
-    this.platform = obsidianPlatform(this.app, this.manifest.version)
+    this.platform = obsidianPlatform(this.app, this.manifest.version, this.i18n)
 
     for (const module of MODULES) {
       this.registry.register(module)

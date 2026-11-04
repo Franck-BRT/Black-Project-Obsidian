@@ -62,6 +62,28 @@ export interface SettingsStorage {
   save(data: unknown): Promise<void>
 }
 
+export interface FilePickOptions {
+  /** Les extensions proposées, en minuscules, sans point ; toutes si absent. */
+  extensions?: ReadonlySet<string> | readonly string[]
+  /** Le texte affiché dans le champ de recherche. */
+  placeholder?: string
+}
+
+export interface TextView {
+  title: string
+  /** Une ligne sous le titre : format, taille… */
+  subtitle?: string
+  text: string
+}
+
+/** Les fenêtres dont un module a besoin, sans savoir comment la plateforme les dessine. */
+export interface Ui {
+  /** Fait choisir un fichier du coffre ; `null` si l'utilisateur renonce. */
+  pickFile(options: FilePickOptions): Promise<VaultPath | null>
+  /** Montre un texte long, avec de quoi le copier. */
+  showText(view: TextView): void
+}
+
 /** Ce que la plateforme sait d'elle-même. */
 export interface PlatformInfo {
   /** `obsidian`, `desktop` (l'application Tauri, plus tard) ou `test`. */
@@ -75,4 +97,5 @@ export interface Platform {
   fs: FileSystem
   http: Http
   notifier: Notifier
+  ui: Ui
 }

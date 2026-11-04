@@ -16,7 +16,7 @@ export const aoModule: BlackModule = {
   requires: [],                   // modules à activer avant celui-ci
   texts: { fr: aoFr, en: aoEn },  // enregistrés même si le module est désactivé
   activate(context) {
-    // context.platform  : fichiers, réseau, notifications
+    // context.platform  : fichiers, réseau, notifications, fenêtres (choisir un fichier, montrer un texte)
     // context.i18n      : textes
     // context.settings  : réglages du module, rangés sous son identifiant
     // context.commands  : déclarer des commandes
@@ -38,10 +38,26 @@ export const aoModule: BlackModule = {
 Les modules sont activés dans l'ordre de leurs dépendances et désactivés dans l'ordre
 inverse.
 
+## Un module est une boîte fermée
+
+Tout le code d'un module est dans `src/modules/<id>/`. De l'extérieur, on n'importe que
+`src/modules/<id>/index.ts`, son **interface publique** ; le reste est son affaire et peut
+changer sans toucher à personne. Le cœur, lui, ne dépend d'aucun module.
+`pnpm check:modules` vérifie ces deux règles import par import.
+
+Un module qui s'appuie sur un autre le déclare dans `requires` : il ne s'active que si
+l'autre est actif. Exemple : `ao` requiert `lecture-fichiers`.
+
+| Module | Rôle | Requiert |
+| --- | --- | --- |
+| `lecture-fichiers` | Lire le texte des documents ; réutilisable par tout module | — |
+| `ao` | Analyse d'appels d'offres | `lecture-fichiers` |
+
 ## Ajouter un module
 
-1. Créer `src/modules/<id>/index.ts` qui exporte un `BlackModule`, et
-   `src/modules/<id>/i18n.ts` avec ses textes, toutes clés préfixées par `<id>.`.
+1. Créer `src/modules/<id>/index.ts` qui exporte un `BlackModule` et l'interface
+   publique du module, `src/modules/<id>/i18n.ts` avec ses textes (toutes clés préfixées
+   par `<id>.`), et un `README.md` de maintenance (voir celui de `lecture-fichiers`).
 2. L'ajouter au catalogue `src/modules/index.ts`.
 3. Mettre la logique dans `src/modules/<id>/` (TypeScript pur) et ses vues Obsidian
    dans `src/obsidian/`.

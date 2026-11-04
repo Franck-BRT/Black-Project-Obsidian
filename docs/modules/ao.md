@@ -6,8 +6,8 @@
 | --- | --- |
 | Identifiant | `ao` |
 | Version | 0.1.0 |
-| Requiert | — |
-| État | Déclaré ; les lecteurs de documents du cœur sont prêts (étape 1), fonctions du module à partir de l'étape 2 |
+| Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
+| État | Déclaré ; la lecture des pièces est prête dans le module Lecture de fichiers (étape 1), fonctions propres à partir de l'étape 2 |
 
 ## Ce que le module fera
 

@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { unzip, ZipError } from './unzip'
-import { utf8, zip } from './zip'
+import { utf8, zip } from '../../../core/formats/zip'
 
 // Written by Python's zipfile with ZIP_DEFLATED, not by anything in this plugin: a reader
 // tested only against its own writer agrees with itself whatever it does. Holds a

@@ -23,6 +23,7 @@
 | --- | --- |
 | `check:mentions` | aucune référence à un projet tiers d'origine, dans aucun fichier |
 | `check:headers` | la mention de propriété en tête de chaque fichier source |
+| `check:modules` | hors d'un module, on n'importe que son `index.ts` ; le cœur n'importe aucun module |
 | `check:types` | TypeScript strict |
 | `check:lint` | ESLint, dont l'interdiction d'importer la plateforme dans `core` et `modules` |
 | `test` | Vitest |

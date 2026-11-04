@@ -2,9 +2,9 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 import { describe, expect, it } from 'vitest'
-import { buildXlsx } from '../writers/xlsx'
+import { buildXlsx } from '../../../core/writers/xlsx'
 import { columnIndex, isDateFormat, readXlsx, serialDate } from './xlsxRead'
-import { utf8, zip } from '../formats/zip'
+import { utf8, zip } from '../../../core/formats/zip'
 
 /**
  * A workbook shaped the way Excel saves one, written out here by hand rather than by this

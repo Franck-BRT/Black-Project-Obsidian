@@ -3,10 +3,10 @@
 
 import { describe, expect, it } from 'vitest'
 import { readSpreadsheet, readXls } from './xlsRead'
-import { buildXlsx } from '../writers/xlsx'
+import { buildXlsx } from '../../../core/writers/xlsx'
 import { fileText } from './fileText'
-import { bytesOf } from '../../../test/docFixtures'
-import { cryptoApi, planning, rc4 } from '../../../test/xlsFixtures'
+import { bytesOf } from '../../../../test/docFixtures'
+import { cryptoApi, planning, rc4 } from '../../../../test/xlsFixtures'
 
 describe('readXls', () => {
   it('reads each sheet: text, dates as dates, numbers, truth values', async () => {

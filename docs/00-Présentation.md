@@ -33,6 +33,6 @@ Black Projects est construit en modules : d'autres fonctions s'ajouteront au mê
 - [Guide utilisateur](guide-utilisateur/README.md)
 - Modules
   - [Analyse d'appels d'offres](modules/ao.md)
-  - [Cœur — lecteurs de documents](modules/lecteurs.md)
+  - [Lecture de fichiers](modules/lecture-fichiers.md)
 - [Recette](recette/README.md)
 - [Règles de développement](developpement/regles.md)

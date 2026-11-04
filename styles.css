@@ -25,3 +25,32 @@
 .bp-module-state.is-failed {
   color: var(--text-error);
 }
+
+.bp-text-modal {
+  width: min(900px, 90vw);
+}
+
+.bp-text-modal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-2);
+}
+
+.bp-text-modal-subtitle {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.bp-text-modal-text {
+  max-height: 65vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+  font-size: var(--font-ui-small);
+  padding: var(--size-4-2);
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+}
