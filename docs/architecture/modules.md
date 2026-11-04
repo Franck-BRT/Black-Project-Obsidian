@@ -25,7 +25,8 @@ export const aoModule: BlackModule = {
 }
 ```
 
-Facultatif : `details`, ce que les réglages montrent quand on clique sur le module — des
+Facultatif : `details`, ce qu'une fenêtre montre quand on clique sur le module dans les
+réglages — des
 sections (une ligne chacune) de fonctions (un bloc chacune), avec un état
 `available` (vert), `in-progress` (orange, avec l'étape du plan) ou `planned` (gris).
 Le module écrit le contenu, la plateforme le dessine. Exemple : le catalogue des formats

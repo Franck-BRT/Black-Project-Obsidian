@@ -22,8 +22,8 @@ colonnes** — c'est là que sont souvent les exigences et les prix.
 aussi les modules qui en dépendent (l'analyse d'appels d'offres passe à l'état
 « Module requis indisponible »).
 
-**Cliquer sur le nom du module** (ou sur la flèche à droite) ouvre le détail **Formats de
-fichiers** : une ligne par famille (PDF, traitement de texte, tableurs, présentations,
+**Cliquer sur le nom du module**, ou sur le bouton **Formats de fichiers** à droite, ouvre
+une fenêtre **Lecture de fichiers — Formats de fichiers** : une ligne par famille (PDF, traitement de texte, tableurs, présentations,
 web et texte, messagerie, images, archives et échanges), un bloc par format, avec ses
 extensions, une précision, et son état :
 

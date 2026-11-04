@@ -32,8 +32,7 @@ export const en: Record<string, string> = {
   'settings.licence.noExpiry': 'No expiry.',
   'settings.licence.owner': 'Proprietary software © 2026 Black Room Technologies. All rights reserved.',
 
-  'module.details.show': 'Show details',
-  'module.details.hide': 'Hide details',
+  'module.details.open': 'Open “{title}”',
   'module.feature.available': 'Available',
   'module.feature.in-progress': 'In development',
   'module.feature.planned': 'Planned',

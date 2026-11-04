@@ -14,7 +14,7 @@ Documentation fonctionnelle : [`docs/modules/lecture-fichiers.md`](../../../docs
 | --- | --- |
 | `index.ts` | **Interface publique** (ce que les autres modules ont le droit d'utiliser) et déclaration du module |
 | `lecture.ts` | `readVaultFile` : lit un fichier du coffre, rend le texte ou la raison de l'échec |
-| `catalogue.ts` | **Catalogue des formats** montré dans les réglages : intégré, en développement (avec l'étape), prévu |
+| `catalogue.ts` | **Catalogue des formats**, ouvert depuis les réglages dans sa propre fenêtre : intégré, en développement (avec l'étape), prévu |
 | `i18n.ts` | Textes français et anglais, clés `lecture-fichiers.*` |
 | `readers/fileText.ts` | Aiguilleur : extension → lecteur ; liste des extensions lisibles ; mise en Markdown |
 | `readers/pdfRead.ts` | PDF : objets, flux, polices, positions du texte |

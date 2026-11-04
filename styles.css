@@ -55,27 +55,19 @@
   border-radius: var(--radius-s);
 }
 
-/* Détail d'un module dans les réglages : une ligne par famille, un bloc par fonction. */
+/* Détail d'un module, dans sa fenêtre : une ligne par famille, un bloc par fonction. */
 
-.bp-module-name-toggle {
+.bp-module-name-link {
   cursor: pointer;
 }
 
-.bp-module-name-toggle:hover {
+.bp-module-name-link:hover {
   color: var(--text-accent);
+  text-decoration: underline;
 }
 
-.bp-module-details {
-  margin: 0 0 var(--size-4-4) var(--size-4-4);
-  padding: var(--size-4-3);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-primary-alt);
-}
-
-.bp-module-details-title {
-  font-weight: var(--font-semibold);
-  margin-bottom: var(--size-4-1);
+.bp-details-modal {
+  width: min(960px, 92vw);
 }
 
 .bp-module-details-intro {
