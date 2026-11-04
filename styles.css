@@ -1,0 +1,27 @@
+/*
+ * Black Projects by Black Room Technologies
+ * Copyright © 2026 Black Room Technologies. Tous droits réservés.
+ */
+
+.bp-modules-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.bp-module-state {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.bp-module-state.is-active {
+  color: var(--text-success);
+}
+
+.bp-module-state.is-blocked {
+  color: var(--text-warning);
+}
+
+.bp-module-state.is-failed {
+  color: var(--text-error);
+}

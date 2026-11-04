@@ -1,0 +1,55 @@
+# Architecture — vue d'ensemble
+
+> Copyright © 2026 Black Room Technologies. Tous droits réservés.
+
+## Trois couches
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ src/obsidian/   adaptateur Obsidian                          │
+│   point d'entrée, réglages, vues, implémentation des ports   │
+└───────────────┬──────────────────────────────────────────────┘
+                │ fournit les ports, active les modules
+┌───────────────▼──────────────────────────────────────────────┐
+│ src/modules/    logique des modules (ao, …)                  │
+└───────────────┬──────────────────────────────────────────────┘
+                │ s'appuie sur
+┌───────────────▼──────────────────────────────────────────────┐
+│ src/core/       cœur : ports, registre de modules, licence,  │
+│                 réglages, textes ; puis lecteurs, exigences, │
+│                 client IA                                    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**La règle :** `src/core` et `src/modules` n'importent jamais `obsidian`, `electron`,
+un module Node, ni l'adaptateur. La règle de lint `no-restricted-imports` le vérifie et
+fait échouer `pnpm check`. C'est ce qui permettra à l'[application de
+bureau](application-desktop.md) de réutiliser tout le code métier.
+
+## Les ports (`src/core/ports.ts`)
+
+Ce que le cœur attend de la plateforme :
+
+| Port | Rôle | Implémentation Obsidian |
+| --- | --- | --- |
+| `FileSystem` | lire, écrire, lister les fichiers du coffre | `app.vault.adapter` |
+| `Http` | appels réseau (serveur d'IA) | `requestUrl`, qui passe les restrictions d'origine |
+| `Notifier` | messages brefs à l'utilisateur | `Notice` |
+| `SettingsStorage` | réglages du plugin | `loadData` / `saveData` |
+
+Les tests implémentent ces ports en mémoire ; l'application de bureau les implémentera
+avec Tauri.
+
+## Le démarrage
+
+1. Lecture des réglages, sans jamais faire confiance au fichier (`readSettings`).
+2. Déclaration des modules du catalogue (`src/modules/index.ts`) et de leurs textes.
+3. Activation par le [registre](modules.md) : ordre des dépendances, modules désactivés,
+   droits de licence, isolation des pannes.
+4. Branchement des commandes déclarées par les modules.
+
+## Les données
+
+Markdown + YAML dans le coffre, au même format que la version complète de Black Projects
+(blocs `pm-req` pour les exigences), pour qu'un client passe de l'une à l'autre sans
+perte.

@@ -1,0 +1,12 @@
+// Copyright © 2026 Black Room Technologies. Tous droits réservés.
+// Logiciel propriétaire — voir le fichier LICENSE.
+
+/**
+ * Le catalogue des modules livrés avec le plugin, dans l'ordre où les réglages les
+ * montrent. Ajouter un module, c'est l'écrire sous `src/modules/<id>/` et l'ajouter ici.
+ */
+
+import type { BlackModule } from '../core/modules/module'
+import { aoModule } from './ao'
+
+export const MODULES: readonly BlackModule[] = [aoModule]
