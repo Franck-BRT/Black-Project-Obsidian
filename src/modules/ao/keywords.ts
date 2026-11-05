@@ -19,6 +19,8 @@ import { allTypes, fold, OTHER, PIECE_TYPES, type CustomKeywords } from './piece
 export const TYPES_KEY = 'typesPerso'
 export const NAME_KEYWORDS_KEY = 'motsClesNom'
 export const TITLE_KEYWORDS_KEY = 'motsClesTitre'
+/** Les codes des types désactivés par l'utilisateur. */
+export const DISABLED_KEY = 'typesDesactives'
 /** Les codes de types renommés : ancien → nouveau, pour retyper les pièces qui avaient l'ancien. */
 export const RENAMES_KEY = 'typesRenommes'
 
@@ -74,11 +76,22 @@ export function readCustomTypes(settings: Settings): Record<string, string> {
 
 // ── Les mots-clés ajoutés ───────────────────────────────────────────────────────
 
-/** Les types qu'un mot-clé peut désigner : tous, ajoutés compris, sauf « autre pièce ». */
-export function keywordTargets(types: Readonly<Record<string, string>> = {}): string[] {
+/**
+ * Les types qu'un mot-clé peut désigner : tous, ajoutés compris, sauf « autre pièce » et
+ * les types désactivés.
+ */
+export function keywordTargets(types: Readonly<Record<string, string>> = {}, disabled: readonly string[] = []): string[] {
   return allTypes({ names: {}, titles: {}, types })
-    .filter((each) => each.code !== OTHER)
+    .filter((each) => each.code !== OTHER && !disabled.includes(each.code))
     .map((each) => each.code)
+}
+
+/** Les types désactivés, relus des réglages : seulement des types qui existent, jamais « autre pièce ». */
+export function readDisabled(settings: Settings): string[] {
+  const raw = settings[DISABLED_KEY]
+  if (!Array.isArray(raw)) return []
+  const known = new Set(allTypes({ names: {}, titles: {}, types: readCustomTypes(settings) }).map((each) => each.code))
+  return [...new Set(raw.filter((code): code is string => typeof code === 'string' && code !== OTHER && known.has(code)))].sort()
 }
 
 /** La saisie, espaces superflues retirées ; accents et casse gardés pour l'affichage. */
@@ -126,7 +139,12 @@ export function readTitleKeywords(settings: Settings): Record<string, string> {
 
 /** Ce que l'utilisateur a ajouté, tel que la reconnaissance l'emploie. */
 export function readCustomKeywords(settings: Settings): CustomKeywords {
-  return { names: readNameKeywords(settings), titles: readTitleKeywords(settings), types: readCustomTypes(settings) }
+  return {
+    names: readNameKeywords(settings),
+    titles: readTitleKeywords(settings),
+    types: readCustomTypes(settings),
+    disabled: readDisabled(settings)
+  }
 }
 
 // ── Modifier et supprimer un type ajouté ────────────────────────────────────────
@@ -183,12 +201,17 @@ export function afterTypeChange(change: MappingChange, settings: Record<string, 
     for (const [from, to] of Object.entries(renames)) if (to === before) renames[from] = after
     renames[before] = after
     delete renames[after]
+    // Un type désactivé le reste sous son nouveau code.
+    const disabled = Array.isArray(settings[DISABLED_KEY]) ? (settings[DISABLED_KEY] as unknown[]) : []
+    next[DISABLED_KEY] = disabled.map((code) => (code === before ? after : code))
   } else if (change.kind === 'remove') {
     // Les anciens codes qui menaient à ce type ne mènent plus nulle part.
     for (const [from, to] of Object.entries(renames)) if (to === change.from) delete renames[from]
     const map = (code: string) => (code === change.from ? null : code)
     next[NAME_KEYWORDS_KEY] = remapKeywords(settings[NAME_KEYWORDS_KEY], map)
     next[TITLE_KEYWORDS_KEY] = remapKeywords(settings[TITLE_KEYWORDS_KEY], map)
+    const disabled = Array.isArray(settings[DISABLED_KEY]) ? (settings[DISABLED_KEY] as unknown[]) : []
+    next[DISABLED_KEY] = disabled.filter((code) => code !== change.from)
   }
   next[RENAMES_KEY] = renames
   return next

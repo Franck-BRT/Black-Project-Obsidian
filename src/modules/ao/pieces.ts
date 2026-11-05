@@ -108,6 +108,15 @@ export function allTypes(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): PieceType
   return [...builtIn, ...added, PIECE_TYPES[PIECE_TYPES.length - 1]!]
 }
 
+export function isDisabled(code: string, custom: CustomKeywords = NO_CUSTOM_KEYWORDS): boolean {
+  return code !== OTHER && (custom.disabled ?? []).includes(code)
+}
+
+/** Les types qui peuvent être reconnus et proposés : tous, sauf ceux que l'utilisateur a désactivés. */
+export function activeTypes(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): PieceType[] {
+  return allTypes(custom).filter((each) => !isDisabled(each.code, custom))
+}
+
 /** Le libellé d'un type, ajouté ou non ; un code qui n'est plus un type est montré tel quel. */
 export function typeLabel(code: string, custom: CustomKeywords, t: (key: string, vars?: Record<string, string>) => string): string {
   const type = allTypes(custom).find((each) => each.code === code)
@@ -147,12 +156,16 @@ export interface CustomKeywords {
   readonly titles: Readonly<Record<string, string>>
   /** Les types ajoutés par l'utilisateur : code → libellé. */
   readonly types: Readonly<Record<string, string>>
+  /** Les types désactivés : ni reconnus ni proposés ; les pièces qui les ont les gardent. */
+  readonly disabled?: readonly string[]
 }
 
 export const NO_CUSTOM_KEYWORDS: CustomKeywords = { names: {}, titles: {}, types: {} }
 
-function customMatch(keywords: Readonly<Record<string, string>>, folded: string): string | null {
-  for (const [keyword, code] of Object.entries(keywords)) if (keywordIn(keyword, folded)) return code
+function customMatch(keywords: Readonly<Record<string, string>>, folded: string, custom: CustomKeywords): string | null {
+  for (const [keyword, code] of Object.entries(keywords)) {
+    if (!isDisabled(code, custom) && keywordIn(keyword, folded)) return code
+  }
   return null
 }
 
@@ -167,13 +180,14 @@ function customMatch(keywords: Readonly<Record<string, string>>, folded: string)
 export function classifyPiece(fileName: string, text = '', custom: CustomKeywords = NO_CUSTOM_KEYWORDS): string {
   const base = fileName.slice(fileName.lastIndexOf('/') + 1).replace(/\.[^.]+$/, '')
   const name = fold(base)
-  const byName = customMatch(custom.names, name)
+  const byName = customMatch(custom.names, name, custom)
   if (byName) return byName
-  const types = allTypes(custom)
+  // Un type désactivé n'est plus reconnu, ni par ses mots-clés ni par ceux de l'utilisateur.
+  const types = activeTypes(custom)
   for (const each of types) if (each.names.some((keyword) => keywordIn(keyword, name))) return each.code
   const head = fold(text.slice(0, 1500))
   if (!head) return OTHER
-  const byTitle = customMatch(custom.titles, head)
+  const byTitle = customMatch(custom.titles, head, custom)
   if (byTitle) return byTitle
   for (const each of types) if (each.titles.some((keyword) => keywordIn(keyword, head))) return each.code
   return OTHER

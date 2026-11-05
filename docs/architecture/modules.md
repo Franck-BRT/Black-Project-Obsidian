@@ -36,7 +36,9 @@ l'utilisateur a ajouté.
 Une section de `details` peut être de type `reference` : des fiches sans état ni
 couleur, hors du résumé, avec des groupes d'étiquettes titrés (`tagGroups`) — c'est ainsi
 que la fenêtre **Fonctions** de l'analyse d'appels d'offres montre les types de pièces et
-les mots-clés qui les font reconnaître.
+les mots-clés qui les font reconnaître. Une fiche peut porter un interrupteur (`switch`) :
+il ajoute son identifiant à une liste des réglages du module, ou l'en retire (exemple :
+les types désactivés), et la fiche est alors montrée en retrait (`disabled`).
 
 Facultatif : `settingsFields`, les réglages propres au module, dessinés en tête de sa
 fenêtre (celle qu'ouvre `details`).

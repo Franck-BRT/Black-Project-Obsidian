@@ -40,6 +40,18 @@ export interface ModuleFeature {
   readonly vars?: Vars
   /** Des groupes d'étiquettes, chacun avec son titre : les mots-clés cherchés dans le nom, dans le titre… */
   readonly tagGroups?: readonly { readonly labelKey: string; readonly tags: readonly string[] }[]
+  /** La fiche est désactivée par l'utilisateur : montrée en retrait. */
+  readonly disabled?: boolean
+  /**
+   * Un interrupteur sur la fiche, qui active ou désactive ce qu'elle décrit : `id` est
+   * ajouté à (ou retiré de) la liste rangée sous `settingsKey` dans les réglages du module.
+   */
+  readonly switch?: {
+    readonly settingsKey: string
+    readonly id: string
+    /** Les infobulles de l'interrupteur, actif et inactif. */
+    readonly tooltipKeys?: { readonly on: string; readonly off: string }
+  }
 }
 
 /** Une ligne de blocs : une famille de fonctions (les PDF, les tableurs…). */

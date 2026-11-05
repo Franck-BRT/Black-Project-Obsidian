@@ -18,6 +18,8 @@ import page from "./doc/Analyse d'appels d'offres.md"
 import { aoEn, aoFr } from './i18n'
 import { ORIGINALS, PIECES, POSITIONS, safeName, type Analysis, type Position } from './notes'
 import {
+  DISABLED_KEY,
+  readDisabled,
   afterTypeChange,
   describeTypeRemoval,
   keywordTargets,
@@ -35,7 +37,7 @@ import {
   validateKeyword,
   validateType
 } from './keywords'
-import { allTypes, NO_CUSTOM_KEYWORDS, OTHER, typeLabel, type CustomKeywords } from './pieces'
+import { allTypes, isDisabled, NO_CUSTOM_KEYWORDS, OTHER, typeLabel, type CustomKeywords } from './pieces'
 import { typesMarkdown } from './typesDoc'
 import {
   AnalysisExists,
@@ -132,7 +134,7 @@ function keywordsField(where: 'names' | 'titles'): MappingField {
       add: 'ao.keywords.tip.add',
       remove: 'ao.keywords.tip.remove'
     },
-    options: (settings) => keywordTargets(readCustomTypes(settings)),
+    options: (settings) => keywordTargets(readCustomTypes(settings), readDisabled(settings)),
     defaultOption: 'CCTP',
     optionLabel: (code, settings, t) => typeLabel(code, readCustomKeywords(settings), t),
     normalize: normalizeKeyword,
@@ -185,13 +187,30 @@ export function aoFeatures(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): ModuleD
         labelKey: each.labelKey,
         ...(each.label === undefined ? {} : { vars: { label: each.label } }),
         status: 'available' as const,
+        // « Autre pièce » ne se désactive pas : c'est là que va ce qui n'est rien d'autre.
+        ...(each.code === OTHER
+          ? {}
+          : {
+              disabled: isDisabled(each.code, custom),
+              switch: {
+                settingsKey: DISABLED_KEY,
+                id: each.code,
+                tooltipKeys: { on: 'ao.types.switch.on', off: 'ao.types.switch.off' }
+              }
+            }),
         tagGroups: [
           { labelKey: 'ao.types.byName', tags: each.names },
           { labelKey: 'ao.types.byTitle', tags: each.titles },
           { labelKey: 'ao.types.addedName', tags: added(custom.names, each.code) },
           { labelKey: 'ao.types.addedTitle', tags: added(custom.titles, each.code) }
         ],
-        ...(each.code === OTHER ? { noteKey: 'ao.types.other' } : each.custom ? { noteKey: 'ao.types.customNote' } : {})
+        ...(each.code === OTHER
+          ? { noteKey: 'ao.types.other' }
+          : isDisabled(each.code, custom)
+            ? { noteKey: 'ao.types.disabledNote' }
+            : each.custom
+              ? { noteKey: 'ao.types.customNote' }
+              : {})
       }))
     },
     {
@@ -279,7 +298,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.3.4',
+  version: '0.3.5',
   // Les pièces du dossier sont lues par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: aoFr, en: aoEn },
@@ -414,7 +433,10 @@ export const aoModule: BlackModule = {
         }
         const custom = services.keywords ?? NO_CUSTOM_KEYWORDS
         const type = await platform.ui.pickOption(
-          allTypes(custom).map((each) => ({
+          // Les types actifs, et le type actuel de la pièce même s'il a été désactivé.
+          allTypes(custom)
+            .filter((each) => !isDisabled(each.code, custom) || each.code === piece.type)
+            .map((each) => ({
             value: each.code,
             label: `${each.code} — ${typeLabel(each.code, custom, t)}`,
             ...(each.code === piece.type

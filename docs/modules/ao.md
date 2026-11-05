@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.3.4 |
+| Version | 0.3.5 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -71,6 +71,12 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
   tableaux. La suppression demande confirmation (`describeTypeRemoval` : le type, ses
   mots-clés, les pièces qui le gardent), retire les mots-clés et oublie les renommages qui
   y menaient. Les types du module ne se modifient pas.
+- **Désactiver** (v0.3.5) : un interrupteur sur chaque fiche de type (sauf AUTRE), du
+  module ou ajouté ; réglage `typesDesactives`. Un type désactivé n'est plus reconnu
+  (`activeTypes`, et les mots-clés de l'utilisateur qui le visent sont ignorés), n'est
+  plus proposé (changer le type, sauf s'il est celui de la pièce ; cibles des mots-clés)
+  ; les pièces le gardent, marqué « (désactivé) » dans le tableau. La liste suit le
+  renommage et la suppression d'un type ajouté.
 - **Mots-clés personnalisés** (v0.3.2, `keywords.ts`) : l'utilisateur ajoute ses paires
   « mot-clé → type » en tête de la fenêtre **Fonctions**, une liste pour le nom du
   fichier (réglage `motsClesNom`), une pour le titre (`motsClesTitre`). Ordre de la

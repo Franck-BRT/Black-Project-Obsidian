@@ -17,7 +17,7 @@
  */
 
 import { frontmatter } from '../../core/frontmatter'
-import { allTypes, NO_CUSTOM_KEYWORDS, typeLabel, type CustomKeywords } from './pieces'
+import { allTypes, isDisabled, NO_CUSTOM_KEYWORDS, typeLabel, type CustomKeywords } from './pieces'
 
 export const PIECES = 'Pièces'
 export const ORIGINALS = 'Originaux'
@@ -207,7 +207,9 @@ export function piecesTable(
     const link = `[[${row.note.replace(/\.md$/, '')}\\|${name}]]`
     const state = `${READING_MARK[row.state]} ${t(`ao.state.${row.state}`)}`
     const size = row.state === 'lue' ? t('ao.table.characters', { count: row.characters.toLocaleString('fr-FR') }) : '—'
-    return `| ${link} | ${row.type} — ${typeLabel(row.type, custom, t)} | ${state} | ${size} |`
+    const label = typeLabel(row.type, custom, t)
+    const type = isDisabled(row.type, custom) ? t('ao.types.disabledLabel', { label }) : label
+    return `| ${link} | ${row.type} — ${type} | ${state} | ${size} |`
   })
   const read = rows.filter((row) => row.state === 'lue').length
   const summary = t('ao.table.summary', { count: rows.length, read })

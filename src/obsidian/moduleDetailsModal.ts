@@ -9,11 +9,12 @@
  * que le dessiner, et se redessine quand un réglage change.
  */
 
-import { Modal, Setting, setTooltip, type App } from 'obsidian'
+import { Modal, Setting, setTooltip, ToggleComponent, type App } from 'obsidian'
 import {
   FEATURE_STATUSES,
   type FeatureStatus,
   type MappingChange,
+  type ModuleFeature,
   type MappingField,
   type TextField,
   type ModuleDescriptor,
@@ -249,6 +250,25 @@ export class ModuleDetailsModal extends Modal {
     })
   }
 
+  /**
+   * L'interrupteur d'une fiche : il retire son identifiant de la liste des désactivés (ou
+   * l'y ajoute), enregistre, et redessine la fenêtre.
+   */
+  private renderSwitch(head: HTMLElement, spec: NonNullable<ModuleFeature['switch']>, enabled: boolean): void {
+    const { plugin, module } = this
+    const t = this.t.bind(this)
+    const toggle = new ToggleComponent(head.createDiv({ cls: 'bp-feature-switch' })).setValue(enabled)
+    if (spec.tooltipKeys) toggle.setTooltip(t(enabled ? spec.tooltipKeys.on : spec.tooltipKeys.off))
+    toggle.onChange(async (value) => {
+      const settings = this.settings()
+      const raw = settings[spec.settingsKey]
+      const list = Array.isArray(raw) ? raw.filter((each): each is string => typeof each === 'string') : []
+      const next = value ? list.filter((each) => each !== spec.id) : [...new Set([...list, spec.id])]
+      await plugin.saveModuleSettings(module.id, { ...settings, [spec.settingsKey]: next })
+      this.render()
+    })
+  }
+
   /** Le détail : un résumé, puis une ligne par famille et un petit bloc par fonction. */
   private renderDetails(panel: HTMLElement, details: ModuleDetails): void {
     const t = this.t.bind(this)
@@ -273,9 +293,13 @@ export class ModuleDetailsModal extends Modal {
       if (section.introKey) block.createDiv({ text: t(section.introKey), cls: 'bp-feature-section-intro' })
       const row = block.createDiv({ cls: 'bp-feature-row' })
       for (const feature of section.features) {
-        const card = row.createDiv({ cls: ['bp-feature', reference ? 'is-reference' : `is-${feature.status}`] })
+        const card = row.createDiv({
+          cls: ['bp-feature', reference ? 'is-reference' : `is-${feature.status}`, ...(feature.disabled ? ['is-disabled'] : [])]
+        })
         const label = t(feature.labelKey, feature.vars)
-        card.createDiv({ text: feature.prefix ? `${feature.prefix} — ${label}` : label, cls: 'bp-feature-label' })
+        const head = card.createDiv({ cls: 'bp-feature-head' })
+        head.createDiv({ text: feature.prefix ? `${feature.prefix} — ${label}` : label, cls: 'bp-feature-label' })
+        if (feature.switch) this.renderSwitch(head, feature.switch, !feature.disabled)
         if (feature.tags && feature.tags.length > 0) {
           const tags = card.createDiv({ cls: 'bp-feature-tags' })
           for (const tag of feature.tags) tags.createSpan({ text: `${tagPrefix}${tag}`, cls: 'bp-feature-tag' })

@@ -68,6 +68,16 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
 - [ ] Ajouter `CCTP` comme type : refusé ; un type sans libellé : refusé ; retirer PAQ :
       ses mots-clés disparaissent, et le tableau d'une analyse mise à jour montre
       « PAQ (type retiré) »
+- [ ] **Désactiver un type** (v0.3.5) : dans « Types de pièces et leur détection »,
+      chaque fiche a un interrupteur, sauf AUTRE ; désactiver PLANNING : la fiche est
+      grisée et barrée, avec « Désactivé : ni reconnu à l'import, ni proposé » ; il
+      disparaît du menu des mots-clés
+- [ ] Importer `Planning prévisionnel.xlsx` : type AUTRE ; une pièce importée avant la
+      désactivation garde PLANNING, marqué « (désactivé) » dans le tableau après
+      « Mettre à jour l'analyse » ; « Changer le type de la pièce » ne propose plus
+      PLANNING, sauf sur une pièce qui l'a
+- [ ] Réactiver PLANNING : tout revient ; fermer et rouvrir le coffre : l'état est
+      conservé
 - [ ] **Modifier un type** (v0.3.4) : crayon de PAQ → « Modifier le type PAQ », champs
       Code et Libellé ; un code du module est refusé ; passer à `PQA` et changer le
       libellé : le mot-clé qui visait PAQ vise PQA, et un message dit combien de pièces

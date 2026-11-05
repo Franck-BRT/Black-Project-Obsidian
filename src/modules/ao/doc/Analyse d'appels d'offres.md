@@ -80,6 +80,15 @@ Chaque pièce est **lue**, **typée** et **décrite par une note** dans `Pièces
   retiré » dans le tableau. Les types du module, eux, ne se modifient pas : ajoutez-leur
   des mots-clés. Vos mots-clés ont aussi un crayon et une corbeille.
 
+  **Désactiver un type** : chaque fiche de type, dans la section « Types de pièces et
+  leur détection » de la fenêtre **Fonctions**, a un interrupteur. Un type désactivé —
+  du module ou ajouté par vous — n'est plus reconnu à l'import (ni par ses mots-clés ni
+  par les vôtres : le type suivant qui correspond prend la place) ni proposé par
+  « Changer le type de la pièce » ou par les mots-clés personnalisés. Les pièces qui
+  l'ont déjà le gardent, marqué « (désactivé) » dans le tableau. L'interrupteur le
+  réactive. « Autre pièce » ne se désactive pas. Les types désactivés sont marqués
+  *(désactivé)* dans le tableau ci-dessus.
+
   **Vos propres mots-clés** : en tête de la fenêtre **Fonctions**, deux listes —
   « nom du fichier » et « titre du document » — où ajouter un mot ou une expression vers
   un type (« SPEC » → CCTP, « grille de prix » → BPU). Ils sont cherchés **avant** ceux

@@ -273,3 +273,25 @@
 .bp-confirm-message {
   white-space: pre-line;
 }
+
+/* Une fiche avec son interrupteur, et une fiche désactivée. */
+
+.bp-feature-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+}
+
+.bp-feature-switch {
+  flex-shrink: 0;
+}
+
+.bp-feature.is-disabled {
+  opacity: 0.55;
+  border-left-color: var(--text-faint);
+}
+
+.bp-feature.is-disabled .bp-feature-label {
+  text-decoration: line-through;
+}
