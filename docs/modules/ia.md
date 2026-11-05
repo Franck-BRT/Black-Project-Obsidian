@@ -16,12 +16,12 @@ Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
 
 ## Ce qu'il fait
 
-Il relie Black Projects à un serveur d'IA **compatible OpenAI** — **Sidonie** au CNES, ou
-tout autre serveur qui parle le même protocole (`/v1/models`, `/v1/chat/completions`,
+Il relie Black Projects à un serveur d'IA **compatible OpenAI** — le **serveur d'IA de
+l'entreprise**, quel qu'il soit, s'il parle le même protocole (`/v1/models`, `/v1/chat/completions`,
 `/v1/embeddings`). Il ne fait rien de lui-même : il tient la connexion et la donne aux
 autres modules, qui l'utilisent **s'il est là**. Sans lui, ou sans connexion réglée, tout
 Black Projects fonctionne ; une commande qui demande l'IA le dit en clair (« l'IA n'est
-pas réglée : Réglages → Black Projects → IA (Sidonie) »).
+pas réglée : Réglages → Black Projects → IA »).
 
 | Réglage | Clé | Rôle |
 | --- | --- | --- |

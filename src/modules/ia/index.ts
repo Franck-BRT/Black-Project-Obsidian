@@ -2,8 +2,8 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Le module IA — la connexion à un serveur d'IA compatible OpenAI : **Sidonie**, au CNES,
- * ou tout autre (vLLM, Ollama, LiteLLM…). L'adresse et les modèles dans les réglages ; la
+ * Le module IA — la connexion au serveur d'IA de l'entreprise, compatible OpenAI (vLLM,
+ * Ollama, LiteLLM…). L'adresse et les modèles dans les réglages ; la
  * clé dans le trousseau de l'ordinateur, jamais dans le coffre ; un bouton « Tester la
  * connexion » qui liste les modèles et fait choisir.
  *

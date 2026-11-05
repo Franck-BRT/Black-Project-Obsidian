@@ -86,11 +86,11 @@ describe('translations and the source they were made from', () => {
 })
 
 describe('a wording a machine produced', () => {
-  const machine = () => setText(written(), 'en', 'The system shall start in under 5 s.', 'sidonie', 'machine')
+  const machine = () => setText(written(), 'en', 'The system shall start in under 5 s.', 'ia', 'machine')
 
   /** Requirements engineering lives on knowing who wrote what. */
   it('arrives unreviewed, and says who produced it', () => {
-    expect(textOf(machine(), 'en')).toMatchObject({ origin: 'machine', reviewed: false, by: 'sidonie' })
+    expect(textOf(machine(), 'en')).toMatchObject({ origin: 'machine', reviewed: false, by: 'ia' })
     expect(isUnreviewedMachine(machine(), 'en')).toBe(true)
   })
 

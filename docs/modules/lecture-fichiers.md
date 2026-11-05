@@ -150,8 +150,8 @@ Quand il n'y a pas de texte à rendre, il dit pourquoi (`FileReadError`) :
 
 ## Ce qui n'est pas lu (aujourd'hui)
 
-- **Les scans et les images** : il faudra un modèle qui voit. Prévu avec Sidonie si un
-  modèle de vision y est disponible.
+- **Les scans et les images** : il faudra un modèle qui voit. Prévu avec le serveur d'IA
+  de l'entreprise si un modèle de vision y est disponible.
 - **PowerPoint 97-2003** (`.ppt`) et **OpenDocument** (`.odt`, `.ods`).
 - Les documents protégés par un **mot de passe d'ouverture**.
 

@@ -116,7 +116,7 @@ Chaque pièce est **lue**, **typée** et **décrite par une note** dans `Pièces
 | État | Signification |
 | --- | --- |
 | 🟩 Lue | le texte est extrait dans la note |
-| 🟧 Sans texte (scan) | à lire par le modèle de vision de Sidonie (à venir) |
+| 🟧 Sans texte (scan) | à lire par le modèle de vision du serveur d’IA (à venir) |
 | 🟧 Image | idem |
 | ⬜ Format non lu | le fichier est gardé ; déclarez une extension équivalente s'il s'agit d'un format lu |
 | 🟥 Illisible | fichier abîmé, ou protégé par un mot de passe d'ouverture |
@@ -181,7 +181,7 @@ section Notes, jamais touchée.
 | **Extraire les exigences de toutes les pièces** | Toutes les pièces de l'appel d'offres en un seul aperçu (chaque exigence avec sa pièce entre crochets) ; un identifiant déjà trouvé dans une autre pièce est refusé, la première pièce fait foi. Le rapport donne le nombre d'exigences par pièce, et les pièces sans exigence |
 | **Chercher les exigences oubliées** | Les phrases qui ont la tournure d'une exigence (« doit », « devra », « est tenu de », « s'engage à », « obligatoirement », « shall », « must »…) mais qu'aucune exigence ne reprend — ni par son identifiant, ni par ses mots. Elles sont proposées à l'ajout (rien n'est coché d'avance) ; celles ajoutées reçoivent un identifiant sous le type de leur pièce |
 | **Vérifier la cohérence des exigences entre pièces** | Un même identifiant écrit différemment d'une pièce à l'autre ; présent dans une version d'un document (deux pièces du même type, CCTP en Word et en PDF par exemple) et absent de l'autre ; en double dans une pièce ; un même texte sous deux identifiants ; une exigence rangée qui ne dit plus ce que dit sa pièce |
-| **Vérifier la couverture des exigences par la réponse** | Pour chaque exigence de l'analyse, l'endroit des pièces de **réponse** qui la **cite** (identifiant ou alias), la **traite** (au moins 60 % de ses mots), est **à vérifier** (35 à 60 %), ou son **absence**. Pour l'émetteur, un tableau par candidat. Une estimation sans IA, à relire : l'IA de Sidonie l'affinera avec la matrice de conformité (étape 7) |
+| **Vérifier la couverture des exigences par la réponse** | Pour chaque exigence de l'analyse, l'endroit des pièces de **réponse** qui la **cite** (identifiant ou alias), la **traite** (au moins 60 % de ses mots), est **à vérifier** (35 à 60 %), ou son **absence**. Pour l'émetteur, un tableau par candidat. Une estimation sans IA, à relire : l'IA l'affinera avec la matrice de conformité (étape 7) |
 
 ## 8. La qualité des exigences du dossier
 
@@ -212,7 +212,7 @@ Vérifiez toujours dans la pièce avant de vous engager. La section Notes est ga
 
 ## 10. Interroger le dossier avec l'IA
 
-Avec le module **IA (Sidonie)** réglé (voir {{link:Modules/IA|IA (Sidonie)}}) :
+Avec le module **IA** réglé (voir {{link:Modules/IA|IA}}) :
 
 - **Interroger le dossier (IA)** : posez une question (« Quelles sont les pénalités de
   retard ? », « Que dit l'article 7.2 ? »). **Recherche dans les pièces** (par défaut) :

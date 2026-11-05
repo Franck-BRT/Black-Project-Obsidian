@@ -42,7 +42,7 @@ export interface Session {
   notifier: Notifier
   t: Translate
   settings(): ReqSettings
-  /** Le client du serveur d'IA (Sidonie) ; `null` si le module IA n'est pas actif ou pas réglé. */
+  /** Le client du serveur d'IA ; `null` si le module IA n'est pas actif ou pas réglé. */
   ai?: () => AiClient | null
 }
 

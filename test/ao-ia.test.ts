@@ -61,7 +61,7 @@ const chat = (content: unknown) => ({
   status: 200,
   text: JSON.stringify({ choices: [{ message: { content: typeof content === 'string' ? content : JSON.stringify(content) }, finish_reason: 'stop' }] })
 })
-const SIDONIE = { adresse: 'http://sidonie.cnes.fr/v1', modele: 'mistral-small' }
+const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' }
 
 afterEach(async () => {
   for (const module of [...MODULES].reverse()) await module.deactivate?.()
@@ -81,7 +81,7 @@ describe('jalon n° 4 — l’IA relit, conseille et répond en citant ses sourc
 
   it('interroger le dossier : la réponse cite le RC, qui est lié', async () => {
     const platform = memoryPlatform()
-    const { run } = await start(platform, SIDONIE)
+    const { run } = await start(platform, SERVEUR)
     platform.forms.push({ question: 'Quels sont les critères d’attribution ?', mode: 'search' })
     platform.httpAnswers.push(chat('Valeur technique 60 % et prix 40 % [1].'))
     await run('ao-interroger')
@@ -95,7 +95,7 @@ describe('jalon n° 4 — l’IA relit, conseille et répond en citant ses sourc
 
   it('relire : côté émetteur, la reformulation retenue devient la formulation', async () => {
     const platform = memoryPlatform()
-    const { run } = await start(platform, SIDONIE)
+    const { run } = await start(platform, SERVEUR)
     // EX-SOL-003 (« le cas échéant ») est la plus faible, cochée d'avance.
     platform.httpAnswers.push(
       chat({
@@ -117,7 +117,7 @@ describe('jalon n° 4 — l’IA relit, conseille et répond en citant ses sourc
 
   it('la qualité, avec un modèle d’embeddings : les doublons par le sens en plus', async () => {
     const platform = memoryPlatform()
-    const { run } = await start(platform, { ...SIDONIE, modeleEmbeddings: 'bge-m3' })
+    const { run } = await start(platform, { ...SERVEUR, modeleEmbeddings: 'bge-m3' })
     // EX-SOL-001 et EX-SOL-002 proches par le sens (simulé), EX-SOL-003 à part.
     platform.httpAnswers.push({
       status: 200,

@@ -3,8 +3,8 @@
 
 /**
  * Black Projects est un projet Black Room Technologies à part entière. Aucune référence
- * à un projet tiers d'origine ne doit y entrer : ni dans le code, ni dans la doc, ni
- * dans la configuration. Ce contrôle fait échouer `pnpm check` à la première.
+ * à un projet tiers d'origine ne doit y entrer, ni le nom d'un outil propre à un client :
+ * ni dans le code, ni dans la doc, ni dans la configuration. Ce contrôle fait échouer `pnpm check` à la première.
  *
  * Les termes sont écrits en morceaux pour que ce fichier ne se signale pas lui-même.
  */
@@ -17,7 +17,10 @@ const FORBIDDEN = [
   ['obsidian', '-pm'],
   ['kropa', 'chev'],
   ['project', '-manager'],
-  ['buymea', 'coffee']
+  ['buymea', 'coffee'],
+  // Le nom d'un serveur d'IA propre à un client : Black Projects se connecte au serveur
+  // d'IA de chaque entreprise, sans en nommer aucun.
+  ['sido', 'nie']
 ].map((parts) => parts.join(''))
 
 const pattern = new RegExp(FORBIDDEN.map((term) => term.replace(/[-]/g, '\\-')).join('|'), 'gi')

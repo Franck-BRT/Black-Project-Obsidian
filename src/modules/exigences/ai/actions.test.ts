@@ -40,7 +40,7 @@ const PATH = 'Exigences/REQ-SYS-0001 Maintien en température.md'
 
 async function setup(withAi = true) {
   const platform = memoryPlatform()
-  if (withAi) await activate(iaModule, platform, { adresse: 'http://sidonie/v1', modele: 'mistral' })
+  if (withAi) await activate(iaModule, platform, { adresse: 'http://ia.exemple/v1', modele: 'mistral' })
   const exigences = await activate(exigencesModule, platform, {})
   platform.forms.push({
     category: 'sys',

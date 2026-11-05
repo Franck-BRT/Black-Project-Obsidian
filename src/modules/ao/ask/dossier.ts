@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Interroger le dossier d'un appel d'offres avec l'IA de Sidonie, en citant ses sources.
+ * Interroger le dossier d'un appel d'offres avec l'IA, en citant ses sources.
  *
  * - **Recherche** (par défaut) : les passages des pièces qui répondent le mieux à la
  *   question sont trouvés par le module, hors ligne (mots de la question, les plus rares

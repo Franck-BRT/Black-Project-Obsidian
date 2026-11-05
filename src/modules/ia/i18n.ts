@@ -3,13 +3,13 @@
 
 /** Les textes du module IA. Toutes les clés commencent par `ia.`. */
 export const iaFr: Record<string, string> = {
-  'ia.name': 'IA (Sidonie)',
+  'ia.name': 'IA',
   'ia.description':
-    'La connexion à un serveur d’IA compatible OpenAI — Sidonie au CNES, ou un autre : relecture et traduction des exigences, questions posées au dossier, en citant les sources.',
+    'La connexion au serveur d’IA de votre entreprise, compatible OpenAI : relecture et traduction des exigences, questions posées au dossier, en citant les sources.',
   'ia.command.test': 'Tester la connexion au serveur d’IA',
   'ia.setting.url': 'Adresse du serveur',
-  'ia.setting.url.desc': 'L’adresse de Sidonie (ou d’un autre serveur compatible OpenAI), jusqu’à /v1.',
-  'ia.setting.url.tip': 'Par exemple https://serveur.exemple/v1. Demandez l’adresse de Sidonie à votre service informatique.',
+  'ia.setting.url.desc': 'L’adresse du serveur d’IA de votre entreprise (compatible OpenAI), jusqu’à /v1.',
+  'ia.setting.url.tip': 'Par exemple https://serveur.exemple/v1. Demandez l’adresse du serveur d’IA à votre service informatique.',
   'ia.setting.model': 'Modèle de texte',
   'ia.setting.model.desc': 'Le modèle qui relit, traduit et répond. « Tester la connexion » liste ceux du serveur et fait choisir.',
   'ia.setting.model.tip': 'Le nom exact, tel que le serveur le donne.',
@@ -34,7 +34,7 @@ export const iaFr: Record<string, string> = {
   'ia.test.current': 'Modèle actuel',
   'ia.test.ok': 'Connexion réussie : {count} modèle(s) ; modèle de texte : {model}.',
   'ia.unavailable':
-    'L’IA n’est pas réglée : Paramètres → Black Projects → IA (Sidonie) — adresse, modèle, puis « Tester la connexion ».',
+    'L’IA n’est pas réglée : Paramètres → Black Projects → IA — adresse, modèle, puis « Tester la connexion ».',
   'ia.error.unreachable': 'serveur injoignable ({detail}). Êtes-vous sur le bon réseau ?',
   'ia.error.timeout': 'pas de réponse à temps ({detail}).',
   'ia.error.http': '{detail}',
@@ -45,7 +45,7 @@ export const iaFr: Record<string, string> = {
   'ia.details.intro': 'La connexion au serveur d’IA, et ce que les autres modules en font.',
   'ia.feature.section.connection': 'La connexion',
   'ia.feature.server': 'Serveur compatible OpenAI',
-  'ia.feature.server.note': 'Sidonie au CNES, ou tout serveur qui parle le même protocole (vLLM, Ollama, LiteLLM…).',
+  'ia.feature.server.note': 'Le serveur d’IA de votre entreprise, s’il parle le protocole d’OpenAI (vLLM, Ollama, LiteLLM…).',
   'ia.feature.key': 'Clé dans le trousseau',
   'ia.feature.key.note': 'Jamais dans le coffre ni dans les réglages synchronisés.',
   'ia.feature.test': 'Tester la connexion',
@@ -62,17 +62,17 @@ export const iaFr: Record<string, string> = {
   'ia.feature.semantic': 'Doublons par le sens',
   'ia.feature.semantic.note': 'Avec un modèle d’embeddings : les exigences qui disent la même chose en d’autres mots.',
   'ia.feature.vision': 'Lire les scans et les images',
-  'ia.feature.vision.note': 'Par le modèle de vision de Sidonie.'
+  'ia.feature.vision.note': 'Par le modèle de vision du serveur d’IA.'
 }
 
 export const iaEn: Record<string, string> = {
-  'ia.name': 'AI (Sidonie)',
+  'ia.name': 'AI',
   'ia.description':
-    'The connection to an OpenAI-compatible AI server — Sidonie at CNES, or another: review and translation of requirements, questions asked of the package, citing sources.',
+    'The connection to your organisation’s OpenAI-compatible AI server: review and translation of requirements, questions asked of the package, citing sources.',
   'ia.command.test': 'Test the AI server connection',
   'ia.setting.url': 'Server address',
-  'ia.setting.url.desc': 'The address of Sidonie (or another OpenAI-compatible server), up to /v1.',
-  'ia.setting.url.tip': 'For example https://server.example/v1. Ask your IT department for Sidonie’s address.',
+  'ia.setting.url.desc': 'The address of your organisation’s AI server (OpenAI-compatible), up to /v1.',
+  'ia.setting.url.tip': 'For example https://server.example/v1. Ask your IT department for the AI server’s address.',
   'ia.setting.model': 'Text model',
   'ia.setting.model.desc': 'The model that reviews, translates and answers. “Test the connection” lists the server’s and lets you pick.',
   'ia.setting.model.tip': 'The exact name, as the server gives it.',
@@ -96,7 +96,7 @@ export const iaEn: Record<string, string> = {
   'ia.test.pick': 'The server answers: {count} model(s). Pick the text model',
   'ia.test.current': 'Current model',
   'ia.test.ok': 'Connected: {count} model(s); text model: {model}.',
-  'ia.unavailable': 'AI is not set up: Settings → Black Projects → AI (Sidonie) — address, model, then “Test the connection”.',
+  'ia.unavailable': 'AI is not set up: Settings → Black Projects → AI — address, model, then “Test the connection”.',
   'ia.error.unreachable': 'server unreachable ({detail}). Are you on the right network?',
   'ia.error.timeout': 'no answer in time ({detail}).',
   'ia.error.http': '{detail}',
@@ -107,7 +107,7 @@ export const iaEn: Record<string, string> = {
   'ia.details.intro': 'The connection to the AI server, and what other modules do with it.',
   'ia.feature.section.connection': 'The connection',
   'ia.feature.server': 'OpenAI-compatible server',
-  'ia.feature.server.note': 'Sidonie at CNES, or any server speaking the same protocol (vLLM, Ollama, LiteLLM…).',
+  'ia.feature.server.note': 'Your organisation’s AI server, if it speaks the OpenAI protocol (vLLM, Ollama, LiteLLM…).',
   'ia.feature.key': 'Key in the keychain',
   'ia.feature.key.note': 'Never in the vault nor in the synchronised settings.',
   'ia.feature.test': 'Test the connection',
@@ -124,5 +124,5 @@ export const iaEn: Record<string, string> = {
   'ia.feature.semantic': 'Duplicates by meaning',
   'ia.feature.semantic.note': 'With an embedding model: requirements saying the same thing in other words.',
   'ia.feature.vision': 'Read scans and images',
-  'ia.feature.vision.note': 'By Sidonie’s vision model.'
+  'ia.feature.vision.note': 'By the AI server’s vision model.'
 }

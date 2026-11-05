@@ -4,7 +4,7 @@
 
 /**
  * Trouver l'exigence écrite deux fois — ici par la seule comparaison des lettres (trigrammes),
- * sans IA ; la comparaison par le sens se fait avec l'IA de Sidonie (`ai/semantic.ts`). Repris de la
+ * sans IA ; la comparaison par le sens se fait avec l'IA (`ai/semantic.ts`). Repris de la
  * version complète de Black Projects (Black Room Technologies).
  *
  * Finding the requirement that was written twice.

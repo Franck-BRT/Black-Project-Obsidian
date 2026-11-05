@@ -76,7 +76,7 @@ async function setup(withAi = true) {
   const platform = memoryPlatform()
   await activate(typagePiecesModule, platform, {})
   await activate(exigencesModule, platform, {})
-  if (withAi) await activate(iaModule, platform, { adresse: 'http://sidonie/v1', modele: 'mistral' })
+  if (withAi) await activate(iaModule, platform, { adresse: 'http://ia.exemple/v1', modele: 'mistral' })
   const ao = await activate(aoModule, platform, { dossier: 'AO' })
   const services = { fs: platform.fs, t, root: 'AO', today: () => '2026-11-05' }
   const analysis = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: 'CNES', reference: '' })

@@ -1,15 +1,15 @@
-# IA (Sidonie)
+# IA
 
-Le module **IA** relie Black Projects à un serveur d'IA compatible OpenAI : **Sidonie**,
-au CNES, ou tout autre serveur qui parle le même protocole. Sans lui, tout Black Projects
+Le module **IA** relie Black Projects au serveur d'IA de votre entreprise, s'il est
+compatible OpenAI (c'est le cas de la plupart : vLLM, Ollama, LiteLLM…). Sans lui, tout Black Projects
 fonctionne : seules la relecture et la traduction des exigences et les questions posées au
 dossier le demandent.
 
 ## 1. Régler la connexion
 
-Paramètres → Black Projects → bouton **Fonctions** de la ligne « IA (Sidonie) » :
+Paramètres → Black Projects → bouton **Fonctions** de la ligne « IA » :
 
-- **Adresse du serveur** — jusqu'à `/v1` ; demandez celle de Sidonie à votre service
+- **Adresse du serveur** — jusqu'à `/v1` ; demandez celle du serveur d'IA à votre service
   informatique ;
 - **Clé d'accès** — si le serveur en demande une. Elle est rangée dans le **trousseau de
   l'ordinateur**, jamais dans le coffre ni dans les réglages synchronisés ; la fenêtre dit

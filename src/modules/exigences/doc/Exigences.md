@@ -138,9 +138,9 @@ traductions à jour) et **traçable** (liens).
   (satisfaite par rien, sans méthode de vérification, liens à revoir, sans formulation),
   puis chaque exigence. Réécrite à chaque analyse ; la section Notes est gardée.
 
-## 8. Avec l'IA de Sidonie
+## 8. Avec l'IA
 
-Quand le module **IA (Sidonie)** est réglé (voir {{link:Modules/IA|IA (Sidonie)}}) :
+Quand le module **IA** est réglé (voir {{link:Modules/IA|IA}}) :
 
 - **Relire l'exigence avec l'IA** (note ouverte, ou une ligne de la liste) : un avis, les
   défauts que les règles ne voient pas, et des **reformulations** qui visent les axes

@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Parler à un serveur d'IA compatible OpenAI — Sidonie, au CNES, ou tout autre — par le
+ * Parler au serveur d'IA de l'entreprise, compatible OpenAI, par le
  * port réseau de la plateforme (`Platform.http`) : le même code dans Obsidian, dans
  * l'application de bureau et dans les tests. Sans flux (une réponse en une fois) : ce dont
  * l'analyse d'un dossier a besoin, c'est d'une réponse juste, pas d'une réponse qui

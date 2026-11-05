@@ -17,11 +17,11 @@ import {
 } from './protocol'
 
 describe('the body a chat request sends', () => {
-  const base = { model: 'sidonie/mistral-cnes-latest', messages: [{ role: 'user' as const, content: 'Bonjour' }] }
+  const base = { model: 'entreprise/mistral-latest', messages: [{ role: 'user' as const, content: 'Bonjour' }] }
 
   it('sends what the gateway documents, and nothing it did not ask for', () => {
     expect(buildChatBody({ ...base, maxTokens: 512, temperature: 0.7 })).toEqual({
-      model: 'sidonie/mistral-cnes-latest',
+      model: 'entreprise/mistral-latest',
       messages: [{ role: 'user', content: 'Bonjour' }],
       max_tokens: 512,
       temperature: 0.7
@@ -57,8 +57,8 @@ describe('the body a chat request sends', () => {
   })
 
   it('embeds many texts in one call', () => {
-    expect(buildEmbeddingBody('sidonie/embeddings-cnes-latest', ['a', 'b'])).toEqual({
-      model: 'sidonie/embeddings-cnes-latest',
+    expect(buildEmbeddingBody('entreprise/embeddings-latest', ['a', 'b'])).toEqual({
+      model: 'entreprise/embeddings-latest',
       input: ['a', 'b'],
       // Said outright: a LiteLLM gateway otherwise sends it on as null, and is refused.
       encoding_format: 'float'
@@ -102,8 +102,8 @@ describe('reading what came back', () => {
   })
 
   it('lists the models, ignoring rows that name none', () => {
-    expect(readModels({ data: [{ id: 'sidonie/mistral-cnes-latest' }, {}, { id: '' }] })).toEqual([
-      'sidonie/mistral-cnes-latest'
+    expect(readModels({ data: [{ id: 'entreprise/mistral-latest' }, {}, { id: '' }] })).toEqual([
+      'entreprise/mistral-latest'
     ])
   })
 })

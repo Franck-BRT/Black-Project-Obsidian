@@ -2,13 +2,13 @@
 
 > Copyright © 2026 Black Room Technologies. Tous droits réservés.
 
-Sur le coffre de test, **sur le réseau de Sidonie** (ou avec tout serveur compatible
-OpenAI joignable). **Jalon de démo n° 4 : l'IA relit, conseille et répond en citant ses
+Sur le coffre de test, **sur le réseau du serveur d'IA de l'entreprise** (tout serveur
+compatible OpenAI joignable). **Jalon de démo n° 4 : l'IA relit, conseille et répond en citant ses
 sources.**
 
 ## Sans IA d'abord
 
-- [ ] Module **IA (Sidonie)** désactivé ou non réglé : « Relire l'exigence avec l'IA »
+- [ ] Module **IA** désactivé ou non réglé : « Relire l'exigence avec l'IA »
       répond « L'IA n'est pas réglée : … » et ne fait rien
 - [ ] Commande **Calendrier de l'appel d'offres** sur l'analyse « Station sol » : la note
       `Analyse/Calendrier` s'ouvre ; « À retenir » donne la **date limite de remise des
@@ -19,7 +19,7 @@ sources.**
 
 ## La connexion
 
-- [ ] Paramètres → Black Projects → **IA (Sidonie)** → bouton **Fonctions** : adresse du
+- [ ] Paramètres → Black Projects → **IA** → bouton **Fonctions** : adresse du
       serveur (jusqu'à `/v1`)
 - [ ] **Clé d'accès** : saisie, « Une clé est enregistrée dans le trousseau de
       l'ordinateur » ; la clé n'apparaît

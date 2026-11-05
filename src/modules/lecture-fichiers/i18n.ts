@@ -58,7 +58,7 @@ export const lectureFr: Record<string, string> = {
   'lecture-fichiers.format.pdf-protected': 'PDF protégé contre la modification',
   'lecture-fichiers.format.pdf-protected.note': 'Ouvert sans mot de passe, comme tout lecteur PDF (RC4, AES 128 et 256).',
   'lecture-fichiers.format.pdf-scan': 'PDF sans texte (scan)',
-  'lecture-fichiers.format.pdf-scan.note': 'Lu par le modèle de vision de Sidonie, page par page.',
+  'lecture-fichiers.format.pdf-scan.note': 'Lu par le modèle de vision du serveur d’IA, page par page.',
   'lecture-fichiers.format.pdf-password': 'PDF protégé par mot de passe',
   'lecture-fichiers.format.pdf-password.note': 'Mot de passe d’ouverture demandé à la lecture.',
 
@@ -133,7 +133,7 @@ export const lectureFr: Record<string, string> = {
   'lecture-fichiers.format.msg.note': 'Message et pièces jointes.',
 
   'lecture-fichiers.format.section.images': 'Images',
-  'lecture-fichiers.format.image.note': 'Lue par le modèle de vision de Sidonie.',
+  'lecture-fichiers.format.image.note': 'Lue par le modèle de vision du serveur d’IA.',
   'lecture-fichiers.format.png': 'Image PNG',
   'lecture-fichiers.format.jpg': 'Photo JPEG',
   'lecture-fichiers.format.jpeg': 'Photo JPEG (extension longue)',
@@ -231,7 +231,7 @@ export const lectureEn: Record<string, string> = {
   'lecture-fichiers.format.pdf-protected': 'PDF protected against editing',
   'lecture-fichiers.format.pdf-protected.note': 'Opened without a password, as any PDF reader does (RC4, AES 128 and 256).',
   'lecture-fichiers.format.pdf-scan': 'PDF without text (scan)',
-  'lecture-fichiers.format.pdf-scan.note': 'Read by Sidonie’s vision model, page by page.',
+  'lecture-fichiers.format.pdf-scan.note': 'Read by the AI server’s vision model, page by page.',
   'lecture-fichiers.format.pdf-password': 'Password-protected PDF',
   'lecture-fichiers.format.pdf-password.note': 'Opening password asked when reading.',
 
@@ -306,7 +306,7 @@ export const lectureEn: Record<string, string> = {
   'lecture-fichiers.format.msg.note': 'Message and attachments.',
 
   'lecture-fichiers.format.section.images': 'Images',
-  'lecture-fichiers.format.image.note': 'Read by Sidonie’s vision model.',
+  'lecture-fichiers.format.image.note': 'Read by the AI server’s vision model.',
   'lecture-fichiers.format.png': 'PNG image',
   'lecture-fichiers.format.jpg': 'JPEG photo',
   'lecture-fichiers.format.jpeg': 'JPEG photo (long extension)',

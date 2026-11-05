@@ -9,7 +9,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 01 — Importer un dossier de consultation | 2 ✅ (page *Analyse d'appels d'offres* dans le coffre) |
 | 02 — Extraire les exigences | 3-4 |
 | 03 — Analyser la qualité | 5 |
-| 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA (Sidonie)* et *Analyse d'appels d'offres* dans le coffre) |
+| 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
 ## Aujourd'hui (version 0.8.0)
@@ -60,7 +60,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   limite de remise, validité des offres, délais et livraisons, chacun avec sa phrase et
   sa pièce.
 
-- **IA (Sidonie)** : Paramètres → Black Projects → **IA (Sidonie)** — adresse du
+- **IA** : Paramètres → Black Projects → **IA** — adresse du
   serveur, clé (rangée dans le trousseau, jamais dans le coffre), **Tester la
   connexion** pour choisir le modèle. Ensuite : **Relire l'exigence avec l'IA** (un avis,
   des reformulations à choisir ou non), **Traduire l'exigence avec l'IA** (marquée à

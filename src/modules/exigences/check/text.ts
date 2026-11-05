@@ -4,7 +4,7 @@
 /**
  * Comparer des textes sans IA : les ramener à leurs mots porteurs de sens (sans accents,
  * sans majuscules, sans mots vides), puis compter ce qu'ils ont en commun. Simple,
- * explicable, et le même résultat d'une fois à l'autre ; l'IA de Sidonie l'affinera avec
+ * explicable, et le même résultat d'une fois à l'autre ; l'IA l'affinera avec
  * la matrice de conformité (étape 7).
  */
 

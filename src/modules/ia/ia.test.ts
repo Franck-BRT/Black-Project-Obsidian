@@ -1,7 +1,7 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
-/** Le module IA : la connexion à Sidonie, le test de connexion, la clé dans le trousseau. */
+/** Le module IA : la connexion au serveur d'IA, le test de connexion, la clé dans le trousseau. */
 
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../../core/i18n'
@@ -33,7 +33,7 @@ afterEach(async () => {
   await iaModule.deactivate?.()
 })
 
-describe('la connexion à Sidonie', () => {
+describe('la connexion au serveur d’IA', () => {
   it('sans adresse ni modèle, pas de client : les autres modules le disent', async () => {
     const platform = memoryPlatform()
     await activate(platform, {})
@@ -43,11 +43,11 @@ describe('la connexion à Sidonie', () => {
   it('« Tester la connexion » liste les modèles et fait choisir celui de texte, la clé du trousseau envoyée', async () => {
     const platform = memoryPlatform()
     platform.secretValues.set(SECRET_ID, 'cle-secrete')
-    const ia = await activate(platform, { adresse: 'https://sidonie.cnes.fr/v1' })
+    const ia = await activate(platform, { adresse: 'https://ia.exemple.fr/v1' })
     platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }, { id: 'llama-70b' }] }))
     platform.choices.push('llama-70b')
     await ia.run('tester')
-    expect(platform.requests[0]!.url).toBe('https://sidonie.cnes.fr/v1/models')
+    expect(platform.requests[0]!.url).toBe('https://ia.exemple.fr/v1/models')
     expect(platform.requests[0]!.headers?.Authorization).toBe('Bearer cle-secrete')
     expect(platform.offered[0]!.map((choice) => choice.value)).toEqual(['mistral-small', 'llama-70b'])
     expect(ia.settings()[MODEL_KEY]).toBe('llama-70b')
@@ -59,7 +59,7 @@ describe('la connexion à Sidonie', () => {
 
   it('un échec est dit en clair', async () => {
     const platform = memoryPlatform()
-    const ia = await activate(platform, { adresse: 'https://sidonie.cnes.fr/v1' })
+    const ia = await activate(platform, { adresse: 'https://ia.exemple.fr/v1' })
     platform.httpAnswers.push({ status: 401, text: 'unauthorized' })
     await ia.run('tester')
     expect(platform.notices.at(-1)).toMatch(/clé/i)

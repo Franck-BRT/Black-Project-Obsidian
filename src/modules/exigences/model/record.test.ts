@@ -25,7 +25,7 @@ const sample = () => {
     links: [{ kind: 'derives-from', to: 'REQ-SYS-0007' }]
   })
   req = setText(req, 'fr', 'Le système doit démarrer en moins de 5 s.', 'Franck')
-  req = setText(req, 'en', 'The system shall start in under 5 s.', 'sidonie', 'machine')
+  req = setText(req, 'en', 'The system shall start in under 5 s.', 'ia', 'machine')
   return req
 }
 
@@ -76,7 +76,7 @@ describe('a requirement on disk', () => {
   it('keeps where each wording came from and whether it was reviewed', () => {
     const back = roundTrip(sample())
     expect(back.text.fr).toMatchObject({ origin: 'human', reviewed: true, by: 'Franck' })
-    expect(back.text.en).toMatchObject({ origin: 'machine', reviewed: false, by: 'sidonie' })
+    expect(back.text.en).toMatchObject({ origin: 'machine', reviewed: false, by: 'ia' })
   })
 
   it('keeps the revision each translation was made from, so staleness survives a reload', () => {

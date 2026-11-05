@@ -3,7 +3,7 @@
 
 /**
  * Les exigences qui disent la même chose en d'autres mots : leurs formulations converties
- * en vecteurs par le modèle d'embeddings de Sidonie, comparées deux à deux. S'ajoute aux
+ * en vecteurs par le modèle d'embeddings du serveur d'IA, comparées deux à deux. S'ajoute aux
  * doublons trouvés sur les lettres, dans l'analyse de qualité, quand un modèle d'embeddings
  * est réglé. Sans lui, ou si le serveur ne répond pas, rien de plus : l'analyse reste
  * celle des règles.

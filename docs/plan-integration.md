@@ -24,7 +24,7 @@ une application de bureau autonome.
 | Modèle économique | Gratuit pour l'évaluation ; un point d'accroche permet d'activer une licence payante plus tard sans rien refaire |
 | Application autonome | Plus tard, avec Tauri (Rust + interface web), **sans embarquer Obsidian** (interdit par ses conditions d'utilisation) |
 | Position d'analyse | **Les deux** : émetteur (relire son propre dossier avant publication) et répondant / évaluateur (analyser un dossier reçu, ou une offre face au dossier) |
-| Serveur d'IA | **Sidonie**, le serveur d'IA du CNES, compatible OpenAI ; le client IA repris de `module-obsidian` a été écrit pour lui |
+| Serveur d'IA | Celui de l'entreprise qui utilise Black Projects, **compatible OpenAI** ; aucun serveur n'est nommé dans le logiciel : chaque entreprise règle le sien |
 
 ### Règles de provenance du code
 
@@ -254,7 +254,7 @@ CCTP d'exemple (`test/ao-qualite.test.ts`).
   classe de relecture réécrite en fonctions `deepReview` / `reviewWording`), `reqAdvice`,
   la partie utile de `translate` (garde des chiffres et unités), `ReqEmbeddings`
   (`semanticDuplicates`) — et leurs tests
-- Réglages de connexion à **Sidonie** (CNES) : adresse, modèle (choisi par « Tester la
+- Réglages de connexion au **serveur d'IA de l'entreprise** : adresse, modèle (choisi par « Tester la
   connexion » parmi ceux du serveur), modèle d'embeddings facultatif, longueur des
   réponses ; la **clé dans le trousseau d'Obsidian** (nouveau port `SecretStore`, champ
   de réglage `secret`), jamais dans le coffre ; tout serveur compatible OpenAI reste
@@ -285,8 +285,8 @@ sur le dossier d'exemple avec un serveur simulé (`test/ao-ia.test.ts`).
 
 - Repris : générateurs `xlsx` et `docx`, `reqXlsx`, `reqDocx`
 - Reporté de l'étape 6 : la couverture des exigences par la réponse affinée par l'IA
-  (pour la matrice) ; la lecture des scans et des images par le modèle de vision de
-  Sidonie
+  (pour la matrice) ; la lecture des scans et des images par le modèle de vision du
+  serveur d'IA
 - Matrice de conformité (Excel), rapport d'analyse (Word)
 - Deux modes d'analyse, choisis à la création de l'analyse :
   - **émetteur** : relecture de son propre dossier avant publication — qualité des
@@ -338,7 +338,7 @@ lignes écrites pour le socle, les vues et les réglages.
 
 1. **Texte de la licence** à faire valider par un juriste (voir
    [architecture/propriete-et-licences.md](architecture/propriete-et-licences.md)).
-2. **Accès à Sidonie** pour les essais : adresse, modèles disponibles (texte,
+2. **Accès au serveur d'IA du client** pour les essais : adresse, modèles disponibles (texte,
    embeddings, vision), et conditions d'accès depuis le poste de démonstration.
 
-Tranchées : position d'analyse (les deux), serveur d'IA (Sidonie).
+Tranchées : position d'analyse (les deux), serveur d'IA (celui du client, compatible OpenAI, jamais nommé dans le logiciel).

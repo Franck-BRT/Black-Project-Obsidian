@@ -310,7 +310,7 @@ export const exigencesModule: BlackModule = {
       }
     })
 
-    // L'IA (le module IA, réglé sur Sidonie) relit et traduit la note ouverte.
+    // L'IA (le module IA, réglé sur le serveur de l'entreprise) relit et traduit la note ouverte.
     const withAi = (run: (client: NonNullable<ReturnType<typeof aiClient>>, path: string) => Promise<unknown>) => async () => {
       const note = platform.ui.activeNote()
       if (!note || !(await session.store.load(note))) {

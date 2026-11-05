@@ -668,7 +668,7 @@ export const aoModule: BlackModule = {
     verification('coherence-pieces', 'ao.command.coherence', (services, analysis) => checkCoherence(services, analysis))
     verification('couverture-reponse', 'ao.command.coverage', (services, analysis) => checkCoverage(services, analysis))
 
-    // ── Étape 6 : l'IA de Sidonie (module IA) ; le calendrier, lui, se passe d'elle ──
+    // ── Étape 6 : l'IA (module IA) ; le calendrier, lui, se passe d'elle ──
     commands.register({
       id: 'calendrier',
       nameKey: 'ao.command.calendar',

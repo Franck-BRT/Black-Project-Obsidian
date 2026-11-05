@@ -14,7 +14,7 @@ qualité, et un assistant IA local.
 ## État
 
 **Version 0.8.0 — étape 6 du [plan d'intégration](docs/plan-integration.md) : l'IA
-locale.** Le module IA se connecte à **Sidonie** (ou tout serveur compatible OpenAI ; la
+locale.** Le module IA se connecte au **serveur d'IA de l'entreprise** (compatible OpenAI ; la
 clé reste dans le trousseau) : relire une exigence et choisir une reformulation, la
 traduire, trouver les doublons par le sens ; **interroger le dossier** d'un appel
 d'offres — la réponse cite ses sources, liées aux pièces — et un questionnaire prêt à
@@ -72,7 +72,7 @@ src/
 │   ├── lecture-fichiers/   lecture des documents (voir son README.md)
 │   ├── typage-pieces/      reconnaissance du type des pièces (voir son README.md)
 │   ├── exigences/          bibliothèque d'exigences, extraction, qualité
-│   ├── ia/                 connexion au serveur d'IA (Sidonie)
+│   ├── ia/                 connexion au serveur d'IA de l'entreprise
 │   └── ao/                 analyse d'appels d'offres
 └── obsidian/   adaptateur Obsidian : point d'entrée, ports, réglages
 docs/           documentation
