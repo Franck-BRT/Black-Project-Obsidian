@@ -56,7 +56,8 @@ export function probableDuplicates(requirements: readonly Requirement[]): Simila
 /** Un défaut en mots : « mot vague (« le cas échéant ») ». */
 export function describeFinding(finding: QualityFinding, t: Translate): string {
   const label = t(`exigences.rule.${finding.rule}`)
-  return finding.term ? `${label} (« ${finding.term} »)` : label
+  // « et/ou » (« et/ou ») ne dit rien de plus : le terme n'est rappelé que s'il apprend quelque chose.
+  return finding.term && !label.toLowerCase().includes(finding.term.toLowerCase()) ? `${label} (« ${finding.term} »)` : label
 }
 
 export interface QualityNoteOptions {
@@ -121,7 +122,8 @@ export function qualityMarkdown(runs: readonly QualityRun[], options: QualityNot
       if (!list) continue
       const examples = list.slice(0, 3).map((run) => {
         const term = run.report.findings.find((finding) => finding.rule === rule)?.term
-        return `${link(run.requirement)}${term ? ` (« ${term} »)` : ''}`
+        const said = term && !t(`exigences.rule.${rule}`).toLowerCase().includes(term.toLowerCase())
+        return `${link(run.requirement)}${said ? ` (« ${term} »)` : ''}`
       })
       out.push(`| ${t(`exigences.rule.${rule}`)} | ${list.length} | ${cell(examples.join(', '))}${list.length > 3 ? '…' : ''} |`)
     }
