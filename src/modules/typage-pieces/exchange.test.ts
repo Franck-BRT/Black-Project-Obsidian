@@ -227,3 +227,25 @@ describe('ce que d’autres modules joignent aux types', () => {
     expect(parsed.ok && parsed.file.types[0]?.modules).toBeUndefined()
   })
 })
+
+describe('le message d’export', () => {
+  it('dit où trouver le fichier quand la plateforme masque les .json', async () => {
+    const platform = memoryPlatform()
+    platform.display = { kind: () => 'hidden' }
+    let stored: Record<string, unknown> = settings
+    const commands: ModuleCommand[] = []
+    const i18n = createI18n('fr')
+    i18n.register('fr', typagePiecesModule.texts.fr)
+    await typagePiecesModule.activate({
+      moduleId: 'typage-pieces',
+      platform,
+      i18n,
+      settings: { get: () => stored, save: async (values) => void (stored = values), onChange: () => () => {} },
+      commands: { register: (command) => void commands.push(command) }
+    })
+    platform.manyAnswers.push(['PAQ'])
+    await commands.find((command) => command.id === 'exporter-types')!.run()
+    expect(platform.notices.at(-1)).toContain('Obsidian ne montre pas les fichiers .json')
+    await typagePiecesModule.deactivate?.()
+  })
+})

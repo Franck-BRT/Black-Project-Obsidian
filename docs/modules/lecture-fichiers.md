@@ -33,6 +33,28 @@ extensions, une précision, et son état :
 | 🟧 orange | **En développement · Étape N** | prévu à l'étape N du plan |
 | ⬜ gris | **Prévu** | à venir, sans date |
 
+### Lu, écrit, affiché (v0.3.1)
+
+Chaque bloc porte trois constats, en pastilles colorées (vert : oui ; orange : en cours
+ou avec une réserve ; gris : non), avec une infobulle :
+
+| Constat | D'où il vient |
+| --- | --- |
+| **Lu par Black Projects** | l'état du lecteur du format (Oui, En développement, Pas encore) |
+| **Écrit par Black Projects** | `WRITTEN` dans `capabilities.ts` : `.md` (notes, documentation) et `.json` (exports de types) aujourd'hui ; `.reqif` à l'étape 4 ; `.docx`, `.xlsx`, `.pptx` (livrables) à l'étape 7. Les originaux importés sont gardés tels quels : ce n'est pas « écrire » le format |
+| **Affiché dans Obsidian** | la plateforme (`Platform.display`) : **Oui** si Obsidian (ou un plugin) l'ouvre ; **Visible, ouvert à l'extérieur** si « Détecter toutes les extensions de fichier » est activé ; **Masqué** sinon — le fichier est dans le coffre mais absent de l'explorateur de gauche (c'est le cas des `.json` d'export de types) |
+
+Quand une fiche mélange (« Texte » : `.json` écrit, `.txt` non), la valeur est donnée par
+extension : « Oui (.json) · Non (.txt, .csv…) ». Les extensions équivalentes ajoutées par
+l'utilisateur ont les mêmes constats. Le constat d'affichage est relu à chaque ouverture
+de la fenêtre : il suit le réglage d'Obsidian. La page de documentation écrite dans le
+coffre reprend l'écriture et l'affichage en colonnes.
+
+Côté plateforme Obsidian (`src/obsidian/platform.ts`, `obsidianDisplay`) : la liste des
+extensions qu'Obsidian ouvre lui-même, `viewRegistry.isExtensionRegistered` pour celles
+qu'un plugin ouvre, et le réglage `showUnsupportedFiles` ; ces deux derniers ne sont pas
+dans l'API publique et sont lus prudemment.
+
 ### Extensions équivalentes
 
 En tête de la fenêtre **Formats de fichiers**, la section **Extensions équivalentes**

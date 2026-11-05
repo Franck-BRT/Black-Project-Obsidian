@@ -18,6 +18,15 @@ Déposer dans un coffre de test les pièces de `test/fixtures/dce-exemple/`, pui
       résumé « Lecture intégrée : 13 · En développement : 4 · Prévu : 6 » ; une ligne par
       famille ; « PDF avec texte natif » en vert, « PDF sans texte (scan) » en orange
       « En développement · Étape 6 » ; Échap ou la croix la ferment
+- [ ] (v0.3.1) Chaque bloc a trois lignes : **Lu par Black Projects**, **Écrit par Black
+      Projects**, **Affiché dans Obsidian**. Markdown : écrit Oui, affiché Oui ; PDF :
+      écrit Non, affiché Oui ; Texte : écrit « Oui (.json) · Non (.txt, .csv…) »,
+      affiché Masqué ; Word 2007 : écrit « En développement · étape 7 ». L'infobulle de
+      « Masqué » dit comment faire apparaître ces fichiers
+- [ ] Activer « Détecter toutes les extensions de fichier » (Paramètres → Fichiers et
+      liens), rouvrir la fenêtre : Texte passe à « Visible, ouvert à l'extérieur »
+- [ ] Exporter des types de pièces : le message dit qu'Obsidian ne montre pas les
+      `.json`, et comment les voir (sauf si le réglage ci-dessus est activé)
 - [ ] Commande **Lire un fichier du coffre (provisoire)** : la liste ne propose que des
       fichiers lisibles (pas les images) ; le fichier ouvert vient en premier
 - [ ] `CCTP.pdf`, `CCTP.docx`, `CCTP.doc`, `CCTP.rtf` : le texte, les titres et le

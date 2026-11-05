@@ -270,7 +270,12 @@ async function exportCommand(context: ModuleContext): Promise<void> {
   let path = `${folder}/${exportFileName(today)}`
   for (let index = 2; await platform.fs.exists(path); index++) path = `${folder}/${exportFileName(`${today} (${index})`)}`
   await platform.fs.writeText(path, `${JSON.stringify(exportTypes(custom, chosen, today, moduleExtras), null, 2)}\n`)
-  platform.notifier.notify(t('typage-pieces.exchange.exported', { count: chosen.length, path }), 10000)
+  // Obsidian ne montre pas les .json par défaut : dire où le trouver quand même.
+  const hidden = platform.display?.kind('json') === 'hidden'
+  platform.notifier.notify(
+    [t('typage-pieces.exchange.exported', { count: chosen.length, path }), ...(hidden ? [t('typage-pieces.exchange.hidden')] : [])].join(' '),
+    hidden ? 15000 : 10000
+  )
 }
 
 /** Importer des types : un fichier de l'ordinateur ou du coffre, les types à prendre, puis l'import. */
@@ -353,7 +358,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.4.3',
+  version: '0.4.4',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),

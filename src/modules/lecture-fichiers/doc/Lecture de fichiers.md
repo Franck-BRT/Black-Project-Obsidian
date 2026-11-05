@@ -34,6 +34,13 @@ fichiers ») montre la même liste, un bloc par format.
 
 🟩 lecture intégrée · 🟧 en développement (avec l'étape du plan) · ⬜ prévu
 
+Chaque format dit aussi s'il est **écrit par Black Projects** (aujourd'hui : les notes
+`.md` et les exports de types `.json`) et s'il est **affiché dans Obsidian**. Obsidian ne
+montre dans son explorateur que les fichiers qu'il sait ouvrir : un `.json` exporté, par
+exemple, est bien dans le coffre mais n'apparaît pas à gauche. Pour tout voir :
+Paramètres d'Obsidian → Fichiers et liens → **Détecter toutes les extensions de
+fichier** (ces fichiers s'ouvrent alors avec une autre application).
+
 {{formats}}
 
 ## Extensions équivalentes

@@ -116,7 +116,7 @@ répertoire de chaque module). Doc :
 **Jalon :** tests verts sur un dossier de consultation fictif produit par LibreOffice
 et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du CNES.
 
-### Étape 2 — Dossier de consultation (module AO) ✅ *terminée (v0.4.5)*
+### Étape 2 — Dossier de consultation (module AO) ✅ *terminée (v0.4.6)*
 
 - Retrait de la commande provisoire « Lire un fichier du coffre »
 - Commande « Nouvelle analyse d'appel d'offres » : formulaire (nom, position candidat /
@@ -156,6 +156,9 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
   du module, rappel à l'ouverture tant que la liste est vide (désactivable)
 - v0.4.5 : le rangement voyage avec les types exportés et importés (données jointes
   par le module AO au fichier d'échange du typage)
+- v0.4.6 : la fenêtre **Formats de fichiers** dit, pour chaque format, s'il est lu par
+  Black Projects, écrit par Black Projects, et affiché dans Obsidian (les `.json`
+  d'export ne le sont pas par défaut, et le message d'export le dit)
 - Doc : [modules/ao.md](modules/ao.md) ; recette : [recette/etape-2.md](recette/etape-2.md)
 
 **Jalon de démo n° 1 :** « je dépose le ZIP du dossier, toutes les pièces sont lues »

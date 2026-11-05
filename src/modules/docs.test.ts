@@ -42,7 +42,9 @@ describe('documentation des modules', () => {
     expect(content).toContain('| PDF avec texte natif | `.pdf` | 🟩 Lecture intégrée |')
     expect(content).toContain('| PDF sans texte (scan) | `.pdf` | 🟧 En développement · Étape 6 |')
     expect(content).toContain('- `.tot` lu comme `.xml`')
-    expect(content).toContain('| Fichiers .tot | `.tot` | 🟩 Lecture intégrée | Lus comme .xml')
+    expect(content).toContain('| Fichiers .tot | `.tot` | 🟩 Lecture intégrée | Non | Lus comme .xml')
+    expect(content).toContain('| Format | Extensions | État | Écrit par Black Projects | Précision |')
+    expect(content).toContain('| Oui (.json) · Non (.txt, .csv, .tsv, .xml, .yaml, .yml, .ics) |')
     expect(build().find((each) => each.path === 'Modules/Lecture de fichiers.md')?.content).toContain('*Aucune pour le moment.*')
   })
 

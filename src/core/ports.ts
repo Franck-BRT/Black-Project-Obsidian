@@ -202,6 +202,18 @@ export interface PlatformInfo {
   version: string
 }
 
+/**
+ * Comment la plateforme montre un fichier, d'après son extension :
+ * - `opens` : visible dans la liste des fichiers, et ouvert dans l'application ;
+ * - `listed` : visible, mais ouvert par une autre application de l'ordinateur ;
+ * - `hidden` : absent de la liste des fichiers (il est pourtant bien dans le coffre).
+ */
+export type DisplayKind = 'opens' | 'listed' | 'hidden'
+
+export interface FileDisplay {
+  kind(extension: string): DisplayKind
+}
+
 /** Tous les ports, tels qu'un module les reçoit. */
 export interface Platform {
   info: PlatformInfo
@@ -209,4 +221,6 @@ export interface Platform {
   http: Http
   notifier: Notifier
   ui: Ui
+  /** Ce que la plateforme montre des fichiers ; absent si elle ne sait pas le dire. */
+  display?: FileDisplay
 }

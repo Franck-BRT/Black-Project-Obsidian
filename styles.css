@@ -156,6 +156,44 @@
   background: var(--background-modifier-hover);
 }
 
+/* Les constats d'une fiche : « Écrit par Black Projects : Oui ». */
+.bp-feature-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  font-size: var(--font-ui-smaller);
+}
+
+.bp-feature-fact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-2-2);
+}
+
+.bp-feature-fact-label {
+  color: var(--text-muted);
+}
+
+.bp-feature-fact-label::after {
+  content: ' :';
+}
+
+.bp-fact {
+  --bp-fact-rgb: 128, 128, 128;
+  padding: 0 var(--size-4-1);
+  border-radius: var(--radius-s);
+  background: rgba(var(--bp-fact-rgb), 0.15);
+}
+
+.bp-fact.is-yes {
+  --bp-fact-rgb: var(--color-green-rgb);
+}
+
+.bp-fact.is-partial {
+  --bp-fact-rgb: var(--color-orange-rgb);
+}
+
 .bp-feature-note {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);

@@ -10,7 +10,7 @@
 
 import { normalizePath, Notice, requestUrl, TFile, TFolder, type App, type Plugin } from 'obsidian'
 import type { I18n } from '../core/i18n'
-import type { FileSystem, FolderListing, Http, Notifier, Platform, SettingsStorage } from '../core/ports'
+import type { FileDisplay, FileSystem, FolderListing, Http, Notifier, Platform, SettingsStorage } from '../core/ports'
 import { obsidianUi } from './ui'
 
 function parentOf(path: string): string {
@@ -112,6 +112,55 @@ export const obsidianNotifier: Notifier = {
   }
 }
 
+/** Ce qu'Obsidian ouvre lui-même, plugins à part : notes, toiles, bases, PDF, images, sons, vidéos. */
+const OPENED_BY_OBSIDIAN = new Set([
+  'md',
+  'canvas',
+  'base',
+  'pdf',
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'bmp',
+  'svg',
+  'webp',
+  'avif',
+  'mp3',
+  'wav',
+  'm4a',
+  'ogg',
+  '3gp',
+  'flac',
+  'webm',
+  'mp4',
+  'ogv',
+  'mov',
+  'mkv'
+])
+
+/**
+ * Ce que l'explorateur d'Obsidian montre. Une extension qu'Obsidian (ou un plugin) sait
+ * ouvrir est visible ; les autres n'y paraissent que si « Détecter toutes les extensions
+ * de fichier » est activé (Paramètres → Fichiers et liens), et s'ouvrent alors avec une
+ * autre application. Lu à chaque question : le réglage peut changer entre-temps.
+ */
+export function obsidianDisplay(app: App): FileDisplay {
+  // Pas dans l'API publique : lus prudemment, avec la liste ci-dessus en repli.
+  const internals = app as unknown as {
+    viewRegistry?: { isExtensionRegistered?(extension: string): boolean }
+    vault: { getConfig?(key: string): unknown }
+  }
+  return {
+    kind(extension) {
+      const ext = extension.toLowerCase()
+      const registered = internals.viewRegistry?.isExtensionRegistered?.(ext) ?? false
+      if (registered || OPENED_BY_OBSIDIAN.has(ext)) return 'opens'
+      return internals.vault.getConfig?.('showUnsupportedFiles') === true ? 'listed' : 'hidden'
+    }
+  }
+}
+
 /** Les réglages, dans le `data.json` du plugin. */
 export function pluginSettingsStorage(plugin: Plugin): SettingsStorage {
   return {
@@ -126,6 +175,7 @@ export function obsidianPlatform(app: App, version: string, i18n: I18n): Platfor
     fs: new ObsidianFileSystem(app),
     http: obsidianHttp,
     notifier: obsidianNotifier,
-    ui: obsidianUi(app, i18n)
+    ui: obsidianUi(app, i18n),
+    display: obsidianDisplay(app)
   }
 }

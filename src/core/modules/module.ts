@@ -38,6 +38,11 @@ export interface ModuleFeature {
   readonly step?: number
   /** Les variables du libellé et de la précision : `{from}`, `{to}`… */
   readonly vars?: Vars
+  /**
+   * Des constats sur la fiche, une ligne chacun : « Écrit par Black Projects : Oui (.json)
+   * · Non (.txt, .csv) ». Chaque valeur a sa couleur (`tone`) et, au besoin, son infobulle.
+   */
+  readonly facts?: readonly FeatureFact[]
   /** Des groupes d'étiquettes, chacun avec son titre : les mots-clés cherchés dans le nom, dans le titre… */
   readonly tagGroups?: readonly { readonly labelKey: string; readonly tags: readonly string[] }[]
   /** La fiche est désactivée par l'utilisateur : montrée en retrait. */
@@ -52,6 +57,24 @@ export interface ModuleFeature {
     /** Les infobulles de l'interrupteur, actif et inactif. */
     readonly tooltipKeys?: { readonly on: string; readonly off: string }
   }
+}
+
+/** Un constat sur une fiche : un libellé, puis une ou plusieurs valeurs. */
+export interface FeatureFact {
+  readonly labelKey: string
+  readonly values: readonly FactValue[]
+}
+
+/** `yes` : vert ; `partial` : orange (en cours, ou avec une réserve) ; `no` : gris. */
+export type FactTone = 'yes' | 'partial' | 'no'
+
+export interface FactValue {
+  readonly textKey: string
+  readonly vars?: Vars
+  readonly tone: FactTone
+  readonly tooltipKey?: string
+  /** Les extensions concernées, quand la valeur n'est pas la même pour toute la fiche. */
+  readonly extensions?: readonly string[]
 }
 
 /** Une ligne de blocs : une famille de fonctions (les PDF, les tableurs…). */

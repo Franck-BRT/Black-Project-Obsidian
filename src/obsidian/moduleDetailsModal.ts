@@ -461,6 +461,18 @@ export class ModuleDetailsModal extends Modal {
           const tags = card.createDiv({ cls: 'bp-feature-tags' })
           for (const tag of group.tags) tags.createSpan({ text: `${tagPrefix}${tag}`, cls: 'bp-feature-tag' })
         }
+        if (feature.facts && feature.facts.length > 0) {
+          const facts = card.createDiv({ cls: 'bp-feature-facts' })
+          for (const fact of feature.facts) {
+            const line = facts.createDiv({ cls: 'bp-feature-fact' })
+            line.createSpan({ text: t(fact.labelKey), cls: 'bp-feature-fact-label' })
+            for (const value of fact.values) {
+              const extensions = value.extensions?.length ? ` (${value.extensions.map((ext) => `.${ext}`).join(', ')})` : ''
+              const pill = line.createSpan({ text: `${t(value.textKey, value.vars)}${extensions}`, cls: ['bp-fact', `is-${value.tone}`] })
+              if (value.tooltipKey) setTooltip(pill, t(value.tooltipKey, value.vars))
+            }
+          }
+        }
         if (feature.noteKey) card.createDiv({ text: t(feature.noteKey, feature.vars), cls: 'bp-feature-note' })
         if (reference) continue
         const status =

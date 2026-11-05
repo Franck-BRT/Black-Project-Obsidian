@@ -23,6 +23,7 @@ import {
   resolveExtension,
   validateAlias
 } from './aliases'
+import type { FileDisplay } from '../../core/ports'
 import { formatsCatalogue } from './catalogue'
 import { lectureDocs } from './doc'
 import { lectureEn, lectureFr } from './i18n'
@@ -101,18 +102,21 @@ const aliasesField: MappingField = {
 }
 
 let unsubscribe: (() => void) | null = null
+/** Ce que la plateforme montre des fichiers, pour la fenêtre des formats. */
+let display: FileDisplay | undefined
 
 export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.3.0',
+  version: '0.3.1',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
-  details: (settings) => formatsCatalogue(readAliases(settings)),
+  details: (settings) => formatsCatalogue(readAliases(settings), display),
   settingsFields: [aliasesField],
-  docs: lectureDocs,
-  activate({ settings }) {
+  docs: (input) => lectureDocs(input, display),
+  activate({ settings, platform }) {
+    display = platform.display
     configureAliases(readAliases(settings.get()))
     unsubscribe = settings.onChange((values) => configureAliases(readAliases(values)))
   },
@@ -120,5 +124,6 @@ export const lectureFichiersModule: BlackModule = {
     unsubscribe?.()
     unsubscribe = null
     configureAliases({})
+    display = undefined
   }
 }

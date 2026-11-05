@@ -14,6 +14,8 @@
  */
 
 import type { ModuleDetails, ModuleFeature } from '../../core/modules/module'
+import type { FileDisplay } from '../../core/ports'
+import { formatFacts } from './capabilities'
 
 const k = (key: string) => `lecture-fichiers.format.${key}`
 
@@ -99,16 +101,20 @@ export const FORMATS_CATALOGUE: ModuleDetails = {
 }
 
 /**
- * Le catalogue tel que les réglages le montrent : les formats du module, puis une ligne
- * « Extensions ajoutées » avec les équivalences déclarées par l'utilisateur.
+ * Le catalogue tel que les réglages le montrent : les formats du module, chacun avec ce
+ * que Black Projects en lit et en écrit, et ce que la plateforme en affiche (`display`),
+ * puis une ligne « Extensions ajoutées » avec les équivalences déclarées par l'utilisateur.
  */
-export function formatsCatalogue(aliases: Readonly<Record<string, string>>): ModuleDetails {
+export function formatsCatalogue(aliases: Readonly<Record<string, string>>, display?: FileDisplay): ModuleDetails {
   const added = Object.entries(aliases).sort(([a], [b]) => a.localeCompare(b))
-  if (added.length === 0) return FORMATS_CATALOGUE
+  const withFacts = (feature: ModuleFeature): ModuleFeature => ({
+    ...feature,
+    facts: formatFacts(feature.tags ?? [], feature.status, display)
+  })
   return {
     ...FORMATS_CATALOGUE,
     sections: [
-      ...FORMATS_CATALOGUE.sections,
+      ...FORMATS_CATALOGUE.sections.map((section) => ({ ...section, features: section.features.map(withFacts) })),
       {
         titleKey: 'lecture-fichiers.alias.section',
         features: added.map(([from, to]) => ({
@@ -116,10 +122,11 @@ export function formatsCatalogue(aliases: Readonly<Record<string, string>>): Mod
           noteKey: 'lecture-fichiers.alias.note',
           tags: [from],
           status: 'available' as const,
-          vars: { from, to }
+          vars: { from, to },
+          facts: formatFacts([from], 'available', display)
         }))
       }
-    ]
+    ].filter((section) => section.features.length > 0)
   }
 }
 
