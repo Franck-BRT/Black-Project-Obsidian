@@ -84,3 +84,35 @@ export function typeAnnotations(code: string): TypeAnnotation[] {
   }
   return out
 }
+
+// ── Ce que d'autres modules font voyager avec les types ───────────────────────────
+// À l'export, un module peut joindre à chaque type ce qu'il en sait (l'analyse d'appels
+// d'offres : où elle le range) ; à l'import, il reprend ce que le fichier en dit. Le
+// typage écrit et relit ces données sans les comprendre, sous l'identifiant du module :
+// `"modules": { "ao": { "rangement": "reponse" } }`.
+
+export interface TypeExchangeExtension {
+  /** Le nom de ce qui voyage, pour les messages : « rangement (Analyse d'appels d'offres) ». */
+  readonly nameKey: string
+  /** Ce que le module joint à ce type ; `undefined` : rien. */
+  exportType(code: string): unknown
+  /** En quelques mots, pour les listes d'export et d'import : « AO : Réponse AO » ; `null` si la valeur ne convient pas. */
+  describe(value: unknown): string | null
+  /** Reprend ce que le fichier dit des types importés (code → valeur) ; rend combien de types ont été repris. */
+  importTypes(values: Readonly<Record<string, unknown>>): Promise<number>
+}
+
+const extensions = new Map<string, TypeExchangeExtension>()
+
+/** Joint des données d'un module aux types échangés ; rend de quoi le retirer. */
+export function extendTypeExchange(id: string, extension: TypeExchangeExtension): () => void {
+  extensions.set(id, extension)
+  return () => {
+    if (extensions.get(id) === extension) extensions.delete(id)
+  }
+}
+
+/** Les modules qui joignent des données aux types échangés, par identifiant. */
+export function typeExchangeExtensions(): ReadonlyMap<string, TypeExchangeExtension> {
+  return extensions
+}

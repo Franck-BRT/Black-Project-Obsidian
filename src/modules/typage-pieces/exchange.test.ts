@@ -7,7 +7,7 @@ import type { ModuleCommand, ModuleContext } from '../../core/modules/module'
 import { memoryPlatform } from '../../core/testing/memoryPlatform'
 import { typagePiecesModule } from '.'
 import { readCustomKeywords } from './custom'
-import { applyImport, exportableCodes, exportTypes, parseTypesFile, planImport, type TypesFile } from './exchange'
+import { applyImport, exportableCodes, exportTypes, moduleValues, parseTypesFile, planImport, type TypesFile } from './exchange'
 import { migrateFromAo } from './migrate'
 
 const settings = {
@@ -194,5 +194,36 @@ describe('migration des réglages de la v0.3.5', () => {
       ao: {},
       'typage-pieces': { typesPerso: { NEW: 'y' } }
     })
+  })
+})
+
+describe('ce que d’autres modules joignent aux types', () => {
+  const extras = (code: string): Record<string, unknown> => (code === 'BPU' ? { ao: { rangement: 'reponse' } } : {})
+
+  it('rend exportable un type qu’un module seul connaît, et l’écrit sous l’identifiant du module', () => {
+    const custom = readCustomKeywords({})
+    expect(exportableCodes(custom)).toEqual([])
+    expect(exportableCodes(custom, extras)).toEqual(['BPU'])
+    const file = exportTypes(custom, ['BPU'], '2026-11-05', extras)
+    expect(file.types).toEqual([
+      { code: 'BPU', ajoute: false, desactive: false, motsClesNom: [], motsClesTitre: [], modules: { ao: { rangement: 'reponse' } } }
+    ])
+  })
+
+  it('se relit, et n’est rendu que pour les types importés', () => {
+    const text = JSON.stringify(exportTypes(readCustomKeywords(settings), ['PAQ', 'BPU'], '2026-11-05', extras))
+    const parsed = parseTypesFile(text)
+    if (!parsed.ok) throw new Error(parsed.errorKey)
+    expect(planImport({}, parsed.file).find((entry) => entry.code === 'BPU')?.modules).toEqual({ ao: { rangement: 'reponse' } })
+    expect(moduleValues(parsed.file, ['BPU', 'PAQ'])).toEqual({ ao: { BPU: { rangement: 'reponse' } } })
+    expect(moduleValues(parsed.file, ['PAQ'])).toEqual({})
+    expect(applyImport({}, parsed.file, ['BPU']).imported).toEqual(['BPU'])
+  })
+
+  it('un fichier sans « modules » (v0.4.0) reste lisible', () => {
+    const parsed = parseTypesFile(
+      JSON.stringify({ format: 'black-projects/types-de-pieces', version: 1, types: [{ code: 'CCTP', motsClesNom: ['SPEC'] }] })
+    )
+    expect(parsed.ok && parsed.file.types[0]?.modules).toBeUndefined()
   })
 })

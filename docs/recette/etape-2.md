@@ -129,6 +129,15 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
       un message fait le compte
 - [ ] Importer un fichier qui n'est pas un fichier de types : message clair, rien de
       changé
+- [ ] (v0.4.5) Ranger BPU en « Réponse AO » dans le module AO, puis **Exporter…** : BPU
+      est proposé même sans mot-clé, avec « va dans : Réponse AO » ; le fichier porte
+      `"modules": { "ao": { "rangement": "reponse" } }` pour BPU
+- [ ] Importer `A importer/types-exemple.json` du coffre de test : CCTP et PAQ
+      affichent « va dans : … » ; après import, le message dit « Repris aussi : le
+      rangement (Analyse d'appels d'offres) pour 2 type(s) », et la liste « Types
+      rangés » du module AO les contient
+- [ ] Le même import avec le module AO désactivé : les types sont importés, le message
+      dit que les réglages du module « ao » sont ignorés
 - [ ] Commandes « Exporter des types de pièces » et « Importer des types de pièces » dans
       la palette
 - [ ] **Créer / mettre à jour la documentation** : une page *Typage des pièces* ; la page

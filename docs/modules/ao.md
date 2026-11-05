@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.4.4 |
+| Version | 0.4.5 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -81,6 +81,12 @@ Le réglage générique qui dessine cela est un champ `toggles` du contrat de mo
 (`TogglesField` : colonnes, `read`, `candidates`, `write`), dessiné par
 `src/obsidian/moduleDetailsModal.ts` ; le formulaire d'ajout utilise le nouveau champ
 `toggle` de `askForm`.
+
+Le rangement **voyage avec les types exportés** (v0.4.5) : le module s'inscrit auprès du
+typage (`extendTypeExchange`) ; chaque type rangé porte dans le fichier
+`"modules": { "ao": { "rangement": "reponse" } }`, affiché « va dans : Réponse AO » dans
+les listes d'export et d'import ; à l'import, le rangement des types importés est repris
+(ceux déjà rangés ici prennent la valeur du fichier, les autres restent).
 
 Reprise de la v0.4.1 (`migratePlaces`) : `typage-pieces.placesTypes` devient
 `ao.rangement` (seulement les choix de l'utilisateur) et quitte les réglages du typage.

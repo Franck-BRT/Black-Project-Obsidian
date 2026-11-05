@@ -60,11 +60,13 @@ En tête de la fenêtre, **Exporter** et **Importer** (aussi en commandes : « E
 types de pièces », « Importer des types de pièces ») :
 
 - **Exporter** : cochez un ou plusieurs types — vos types, et ceux du module que vous
-  avez modifiés (mots-clés, désactivation). Ils sont écrits dans un fichier
+  avez modifiés (mots-clés, désactivation), ou que l'analyse d'appels d'offres range
+  (où va le type : AO, Réponse AO, ou les deux — il voyage avec). Ils sont écrits dans un fichier
   `types-de-pieces-AAAA-MM-JJ.json` du dossier des échanges (par défaut `Black
   Projects/Échanges`, réglable).
 - **Importer** : choisissez un tel fichier, sur l'ordinateur ou dans le coffre. La liste
   dit ce que deviendra chaque type — nouveau, mise à jour, mots-clés d'un type du module —
   et ceux qui ne peuvent pas être importés (un code qui est déjà un type du module).
   Cochez ceux à prendre. Les mots-clés s'ajoutent aux vôtres ; ceux qui feraient doublon
-  sont écartés et comptés.
+  sont écartés et comptés. Si le fichier dit où va un type (« va dans : Réponse AO »),
+  l'analyse d'appels d'offres le reprend dans sa liste « Types rangés ».

@@ -38,10 +38,20 @@ import {
 } from './custom'
 import { typesMarkdown } from './doc'
 import page from './doc/Typage des pièces.md'
-import { applyImport, exportableCodes, exportFileName, exportTypes, importable, parseTypesFile, planImport } from './exchange'
+import {
+  applyImport,
+  exportableCodes,
+  exportFileName,
+  exportTypes,
+  importable,
+  moduleValues,
+  parseTypesFile,
+  planImport,
+  type ModuleExtras
+} from './exchange'
 import { typageEn, typageFr } from './i18n'
 import { migrateFromAo } from './migrate'
-import { configureTyping, currentCustomization } from './state'
+import { configureTyping, currentCustomization, typeExchangeExtensions } from './state'
 import {
   activeTypes as activeTypesWith,
   allTypes as allTypesWith,
@@ -58,8 +68,11 @@ export {
   annotateTypes,
   currentCustomization,
   currentTyping,
+  extendTypeExchange,
   onTypingChange,
   typeAnnotations,
+  typeExchangeExtensions,
+  type TypeExchangeExtension,
   type TypeAnnotation,
   type TypeAnnotator,
   type TypingState
@@ -198,12 +211,36 @@ function exchangeFolder(settings: Readonly<Record<string, unknown>>): string {
   return (typeof value === 'string' && cleanFolder(value)) || DEFAULT_EXCHANGE_FOLDER
 }
 
+/** Ce que les autres modules actifs joignent à chaque type exporté. */
+const moduleExtras: ModuleExtras = (code) => {
+  const out: Record<string, unknown> = {}
+  for (const [id, extension] of typeExchangeExtensions()) {
+    try {
+      const value = extension.exportType(code)
+      if (value !== undefined) out[id] = value
+    } catch (error) {
+      console.error(`[Black Projects] export des types (${id})`, error)
+    }
+  }
+  return out
+}
+
+/** Ce que disent les données des autres modules, en quelques mots : « AO : Réponse AO ». */
+function describeExtras(modules: Readonly<Record<string, unknown>>): string[] {
+  const out: string[] = []
+  for (const [id, value] of Object.entries(modules)) {
+    const text = typeExchangeExtensions().get(id)?.describe(value)
+    if (text) out.push(text)
+  }
+  return out
+}
+
 /** Exporter des types : les choisir, puis les écrire dans un fichier du coffre. */
 async function exportCommand(context: ModuleContext): Promise<void> {
   const { platform, i18n, settings } = context
   const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
   const custom = readCustomKeywords(settings.get())
-  const codes = exportableCodes(custom)
+  const codes = exportableCodes(custom, moduleExtras)
   if (codes.length === 0) {
     platform.notifier.notify(t('typage-pieces.exchange.nothing'), 8000)
     return
@@ -220,7 +257,8 @@ async function exportCommand(context: ModuleContext): Promise<void> {
         description: [
           type?.custom ? t('typage-pieces.exchange.added') : t('typage-pieces.exchange.builtIn'),
           t('typage-pieces.exchange.keywords', { count: keywords }),
-          ...(isDisabledWith(code, custom) ? [t('typage-pieces.exchange.disabled')] : [])
+          ...(isDisabledWith(code, custom) ? [t('typage-pieces.exchange.disabled')] : []),
+          ...describeExtras(moduleExtras(code))
         ].join(' · ')
       }
     }),
@@ -231,7 +269,7 @@ async function exportCommand(context: ModuleContext): Promise<void> {
   const folder = exchangeFolder(settings.get())
   let path = `${folder}/${exportFileName(today)}`
   for (let index = 2; await platform.fs.exists(path); index++) path = `${folder}/${exportFileName(`${today} (${index})`)}`
-  await platform.fs.writeText(path, `${JSON.stringify(exportTypes(custom, chosen, today), null, 2)}\n`)
+  await platform.fs.writeText(path, `${JSON.stringify(exportTypes(custom, chosen, today, moduleExtras), null, 2)}\n`)
   platform.notifier.notify(t('typage-pieces.exchange.exported', { count: chosen.length, path }), 10000)
 }
 
@@ -270,7 +308,8 @@ async function importCommand(context: ModuleContext): Promise<void> {
       description: [
         t(`typage-pieces.exchange.plan.${entry.kind}`),
         t('typage-pieces.exchange.keywords', { count: entry.keywords }),
-        ...(entry.desactive ? [t('typage-pieces.exchange.disabled')] : [])
+        ...(entry.desactive ? [t('typage-pieces.exchange.disabled')] : []),
+        ...describeExtras(entry.modules)
       ].join(' · ')
     })),
     selected: plan.filter(importable).map((entry) => entry.code),
@@ -279,11 +318,30 @@ async function importCommand(context: ModuleContext): Promise<void> {
   if (!chosen || chosen.length === 0) return
   const result = applyImport(settings.get(), parsed.file, chosen)
   await settings.save(result.settings)
+  // Puis ce que d'autres modules joignaient aux types : chacun reprend le sien.
+  const extras: string[] = []
+  const ignored: string[] = []
+  for (const [id, values] of Object.entries(moduleValues(parsed.file, result.imported))) {
+    const extension = typeExchangeExtensions().get(id)
+    if (!extension) {
+      ignored.push(id)
+      continue
+    }
+    try {
+      const count = await extension.importTypes(values)
+      if (count > 0) extras.push(t('typage-pieces.exchange.extras', { what: t(extension.nameKey), count }))
+    } catch (error) {
+      console.error(`[Black Projects] import des types (${id})`, error)
+      ignored.push(id)
+    }
+  }
   platform.notifier.notify(
     [
       t('typage-pieces.exchange.imported', { added: result.added, updated: result.updated, keywords: result.keywordsAdded }),
       ...(result.keywordsSkipped > 0 ? [t('typage-pieces.exchange.keywordsSkipped', { count: result.keywordsSkipped })] : []),
-      ...(result.skipped.length > 0 ? [t('typage-pieces.exchange.skipped', { codes: result.skipped.join(', ') })] : [])
+      ...(result.skipped.length > 0 ? [t('typage-pieces.exchange.skipped', { codes: result.skipped.join(', ') })] : []),
+      ...extras,
+      ...(ignored.length > 0 ? [t('typage-pieces.exchange.extrasIgnored', { modules: ignored.join(', ') })] : [])
     ].join(' '),
     10000
   )
@@ -295,7 +353,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.4.2',
+  version: '0.4.3',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),

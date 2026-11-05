@@ -47,6 +47,9 @@ export const typageFr: Record<string, string> = {
   'typage-pieces.exchange.imported': 'Import : {added} type(s) ajouté(s), {updated} mis à jour, {keywords} mot(s)-clé(s) ajouté(s).',
   'typage-pieces.exchange.keywordsSkipped': '{count} mot(s)-clé(s) déjà présent(s) ou invalides, écartés.',
   'typage-pieces.exchange.skipped': 'Non importés : {codes}.',
+  'typage-pieces.exchange.extras': 'Repris aussi : {what} pour {count} type(s).',
+  'typage-pieces.exchange.extrasIgnored':
+    'Le fichier contient aussi des réglages de module(s) absent(s) ou inactif(s) ici, ignorés : {modules}.',
   'typage-pieces.exchange.error.json': 'Ce fichier n’est pas du JSON lisible.',
   'typage-pieces.exchange.error.format': 'Ce fichier n’est pas un fichier de types de pièces de Black Projects.',
   'typage-pieces.exchange.error.version': 'Ce fichier vient d’une version plus récente de Black Projects : mettez le plugin à jour.',
@@ -171,6 +174,8 @@ export const typageEn: Record<string, string> = {
   'typage-pieces.exchange.imported': 'Import: {added} type(s) added, {updated} updated, {keywords} keyword(s) added.',
   'typage-pieces.exchange.keywordsSkipped': '{count} keyword(s) already there or invalid, left out.',
   'typage-pieces.exchange.skipped': 'Not imported: {codes}.',
+  'typage-pieces.exchange.extras': 'Also taken: {what} for {count} type(s).',
+  'typage-pieces.exchange.extrasIgnored': 'The file also holds settings of module(s) missing or inactive here, ignored: {modules}.',
   'typage-pieces.exchange.error.json': 'This file is not readable JSON.',
   'typage-pieces.exchange.error.format': 'This file is not a Black Projects document types file.',
   'typage-pieces.exchange.error.version': 'This file comes from a newer Black Projects: update the plugin.',

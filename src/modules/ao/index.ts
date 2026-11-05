@@ -27,6 +27,7 @@ import {
   allTypes,
   annotateTypes,
   currentTyping,
+  extendTypeExchange,
   isDisabled,
   OTHER,
   onTypingChange,
@@ -47,6 +48,7 @@ import {
 import {
   columnsPlace,
   migratePlaces,
+  PLACES,
   placeColumns,
   placementMessage,
   placeOf,
@@ -55,7 +57,8 @@ import {
   WELCOME_KEY,
   rangementOf,
   readRangement,
-  renameRangement
+  renameRangement,
+  type Place
 } from './placement'
 import {
   AnalysisExists,
@@ -386,7 +389,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.4.4',
+  version: '0.4.5',
   // Les pièces sont lues par le module Lecture de fichiers, et typées par Typage des pièces.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES],
   texts: { fr: aoFr, en: aoEn },
@@ -410,6 +413,39 @@ export const aoModule: BlackModule = {
         return {
           labelKey: 'ao.annotation',
           tags: place === 'les-deux' ? [t('ao.place.tender'), t('ao.place.response'), t('ao.annotation.ask')] : [placeTag(place)]
+        }
+      })
+    )
+
+    // Le rangement voyage avec les types exportés par le module Typage des pièces :
+    // `"modules": { "ao": { "rangement": "reponse" } }`, repris à l'import.
+    const shortPlace = (place: string) => t(`ao.exchange.place.${place}`)
+    const placeIn = (value: unknown): Place | null => {
+      const place = typeof value === 'object' && value !== null ? (value as { rangement?: unknown }).rangement : undefined
+      return PLACES.includes(place as Place) ? (place as Place) : null
+    }
+    cleanups.push(
+      extendTypeExchange(AO, {
+        nameKey: 'ao.exchange.name',
+        exportType: (code) => {
+          const rangement = rangementOf(context.settings.get())
+          return code in rangement ? { rangement: rangement[code] } : undefined
+        },
+        describe: (value) => {
+          const place = placeIn(value)
+          return place ? t('ao.exchange.describe', { place: shortPlace(place) }) : null
+        },
+        importTypes: async (values) => {
+          const rangement: Record<string, Place> = readRangement(context.settings.get())
+          let count = 0
+          for (const [code, value] of Object.entries(values)) {
+            const place = placeIn(value)
+            if (!place || code === OTHER) continue
+            rangement[code] = place
+            count++
+          }
+          if (count > 0) await context.settings.save({ ...context.settings.get(), [RANGEMENT_KEY]: rangement })
+          return count
         }
       })
     )

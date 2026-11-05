@@ -15,10 +15,15 @@
  *   "types": [
  *     { "code": "PAQ", "libelle": "Plan d’assurance qualité", "ajoute": true, "desactive": false,
  *       "motsClesNom": ["plan qualité"], "motsClesTitre": [] },
- *     { "code": "CCTP", "ajoute": false, "desactive": false, "motsClesNom": ["SPEC"], "motsClesTitre": [] }
+ *     { "code": "CCTP", "ajoute": false, "desactive": false, "motsClesNom": ["SPEC"], "motsClesTitre": [],
+ *       "modules": { "ao": { "rangement": "appel-d-offres" } } }
  *   ]
  * }
  * ```
+ *
+ * `modules` porte ce que d'autres modules savent du type (l'analyse d'appels d'offres :
+ * où elle le range), sous leur identifiant ; le typage le transporte sans le lire
+ * (voir `extendTypeExchange`). Un lecteur plus ancien l'ignore.
  *
  * Un type ajouté voyage avec son libellé ; un type du module, avec ce que l'utilisateur
  * lui a donné : ses mots-clés, et s'il est désactivé. À l'import, rien n'est écrasé sans
@@ -57,6 +62,8 @@ export interface ExchangedType {
   desactive: boolean
   motsClesNom: string[]
   motsClesTitre: string[]
+  /** Ce que d'autres modules joignent au type, par identifiant de module. */
+  modules?: Record<string, unknown>
 }
 
 export interface TypesFile {
@@ -70,16 +77,31 @@ type Settings = Readonly<Record<string, unknown>>
 
 const isBuiltIn = (code: string) => PIECE_TYPES.some((each) => each.code === code)
 
-/** Les types qui ont quelque chose à exporter : les types ajoutés, et ceux du module que l'utilisateur a modifiés. */
-export function exportableCodes(custom: CustomKeywords): string[] {
+/** Ce que d'autres modules joignent à un type : identifiant du module → données. */
+export type ModuleExtras = (code: string) => Record<string, unknown>
+const NO_EXTRAS: ModuleExtras = () => ({})
+
+/**
+ * Les types qui ont quelque chose à exporter : les types ajoutés, ceux du module que
+ * l'utilisateur a modifiés, et ceux auxquels un autre module joint quelque chose.
+ */
+export function exportableCodes(custom: CustomKeywords, extras: ModuleExtras = NO_EXTRAS): string[] {
   const touched = new Set([...Object.values(custom.names), ...Object.values(custom.titles), ...(custom.disabled ?? [])])
   return allTypes(custom)
-    .filter((each) => each.code !== OTHER && (each.custom || touched.has(each.code)))
+    .filter(
+      (each) =>
+        each.code !== OTHER && (each.custom || touched.has(each.code) || Object.keys(extras(each.code)).length > 0)
+    )
     .map((each) => each.code)
 }
 
 /** Le fichier d'échange pour les types choisis. */
-export function exportTypes(custom: CustomKeywords, codes: readonly string[], today: string): TypesFile {
+export function exportTypes(
+  custom: CustomKeywords,
+  codes: readonly string[],
+  today: string,
+  extras: ModuleExtras = NO_EXTRAS
+): TypesFile {
   const of = (keywords: Readonly<Record<string, string>>, code: string) =>
     Object.keys(keywords).filter((keyword) => keywords[keyword] === code)
   const types = allTypes(custom)
@@ -90,7 +112,8 @@ export function exportTypes(custom: CustomKeywords, codes: readonly string[], to
       ajoute: Boolean(each.custom),
       desactive: (custom.disabled ?? []).includes(each.code),
       motsClesNom: of(custom.names, each.code),
-      motsClesTitre: of(custom.titles, each.code)
+      motsClesTitre: of(custom.titles, each.code),
+      ...(Object.keys(extras(each.code)).length > 0 ? { modules: extras(each.code) } : {})
     }))
   return { format: EXCHANGE_FORMAT, version: EXCHANGE_VERSION, exporte: today, types }
 }
@@ -132,7 +155,10 @@ export function parseTypesFile(text: string): ParseResult {
       ajoute: each.ajoute === true,
       desactive: each.desactive === true,
       motsClesNom: strings(each.motsClesNom),
-      motsClesTitre: strings(each.motsClesTitre)
+      motsClesTitre: strings(each.motsClesTitre),
+      ...(typeof each.modules === 'object' && each.modules !== null && !Array.isArray(each.modules)
+        ? { modules: { ...(each.modules as Record<string, unknown>) } }
+        : {})
     })
   }
   if (types.length === 0) return { ok: false, errorKey: 'typage-pieces.exchange.error.empty' }
@@ -149,13 +175,15 @@ export interface PlanEntry {
   label: string
   keywords: number
   desactive: boolean
+  /** Ce que d'autres modules joignent au type. */
+  modules: Record<string, unknown>
 }
 
 export function planImport(settings: Settings, file: TypesFile): PlanEntry[] {
   const types = readCustomTypes(settings)
   return file.types.map((entry) => {
     const keywords = entry.motsClesNom.length + entry.motsClesTitre.length
-    const base = { code: entry.code, label: entry.libelle ?? '', keywords, desactive: entry.desactive }
+    const base = { code: entry.code, label: entry.libelle ?? '', keywords, desactive: entry.desactive, modules: entry.modules ?? {} }
     if (entry.ajoute) {
       if (isBuiltIn(entry.code)) return { ...base, kind: 'conflict' }
       if (validateType(entry.code, entry.libelle ?? '', {}) !== null) return { ...base, kind: 'unknown' }
@@ -179,6 +207,8 @@ export interface ImportResult {
   keywordsAdded: number
   keywordsSkipped: number
   skipped: string[]
+  /** Les types effectivement importés. */
+  imported: string[]
 }
 
 /** Les réglages du module après l'import des types choisis, et ce qui s'est passé. */
@@ -189,7 +219,15 @@ export function applyImport(settings: Settings, file: TypesFile, codes: readonly
   const titles = readTitleKeywords(settings)
   const disabled = new Set(readDisabled(settings))
   const renames = readRenames(settings)
-  const result: ImportResult = { settings: {}, added: 0, updated: 0, keywordsAdded: 0, keywordsSkipped: 0, skipped: [] }
+  const result: ImportResult = {
+    settings: {},
+    added: 0,
+    updated: 0,
+    keywordsAdded: 0,
+    keywordsSkipped: 0,
+    skipped: [],
+    imported: []
+  }
 
   for (const entry of file.types) {
     if (!codes.includes(entry.code)) continue
@@ -198,6 +236,7 @@ export function applyImport(settings: Settings, file: TypesFile, codes: readonly
       result.skipped.push(entry.code)
       continue
     }
+    result.imported.push(entry.code)
     if (entry.ajoute) {
       if (types[entry.code] === undefined) result.added++
       else result.updated++
@@ -230,4 +269,19 @@ export function applyImport(settings: Settings, file: TypesFile, codes: readonly
     [RENAMES_KEY]: renames
   }
   return result
+}
+
+/**
+ * Ce que le fichier dit des types importés, par module : identifiant du module → (code →
+ * données). Seulement pour les types effectivement importés.
+ */
+export function moduleValues(file: TypesFile, imported: readonly string[]): Record<string, Record<string, unknown>> {
+  const out: Record<string, Record<string, unknown>> = {}
+  for (const entry of file.types) {
+    if (!imported.includes(entry.code)) continue
+    for (const [id, value] of Object.entries(entry.modules ?? {})) {
+      ;(out[id] ??= {})[entry.code] = value
+    }
+  }
+  return out
 }

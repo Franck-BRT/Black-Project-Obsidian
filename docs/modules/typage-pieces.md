@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `typage-pieces` |
-| Version | 0.4.2 |
+| Version | 0.4.3 |
 | Emplacement | `src/modules/typage-pieces/` |
 | Interface publique | `src/modules/typage-pieces/index.ts` |
 | Guide de maintenance | [`src/modules/typage-pieces/README.md`](../../src/modules/typage-pieces/README.md) |
@@ -66,6 +66,16 @@ boutons dans la fenêtre.
   importable (code qui est un type du module, type mal formé) — et proposé dans une liste
   à cocher. Les mots-clés s'ajoutent à ceux de l'utilisateur ; ceux qui feraient doublon
   sont écartés et comptés.
+- **Données des autres modules** (v0.4.3) : un module peut joindre à chaque type ce
+  qu'il en sait, avec `extendTypeExchange(id, { nameKey, exportType, describe,
+  importTypes })`. Le fichier les porte sous `"modules": { "<id>": … }` dans l'entrée du
+  type ; le typage les transporte sans les lire. À l'export, un type qu'un module seul
+  distingue devient exportable, et la liste à cocher affiche ce qu'il joint (« va dans :
+  Réponse AO ») ; à l'import aussi, puis chaque module reprend ses données pour les types
+  effectivement importés (`moduleValues`), et le message le compte. Les données d'un
+  module absent ou inactif sont ignorées, et le message le dit. Le format reste en
+  version 1 : un lecteur plus ancien ignore `modules`.
+  Aujourd'hui : l'analyse d'appels d'offres y fait voyager son **rangement**.
 
 Format (`exchange.ts`) :
 
