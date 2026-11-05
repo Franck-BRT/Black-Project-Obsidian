@@ -269,3 +269,7 @@
 .bp-mapping-add .bp-mapping-value {
   min-width: 18em;
 }
+
+.bp-confirm-message {
+  white-space: pre-line;
+}

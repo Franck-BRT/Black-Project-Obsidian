@@ -5,7 +5,7 @@
 
 import { FuzzySuggestModal, Modal, Notice, Setting, SuggestModal, TFile, setTooltip, type App } from 'obsidian'
 import type { I18n } from '../core/i18n'
-import type { Choice, ExternalFile, FilePickOptions, FormView, TextView, Ui } from '../core/ports'
+import type { Choice, ConfirmView, ExternalFile, FilePickOptions, FormView, TextView, Ui } from '../core/ports'
 
 /** Les fichiers du coffre, le fichier ouvert d'abord, puis les plus récents. */
 class FilePickerModal extends FuzzySuggestModal<TFile> {
@@ -158,6 +158,43 @@ class FormModal extends Modal {
   }
 }
 
+/** Une question oui / non, le bouton qui détruit marqué comme tel. */
+class ConfirmModal extends Modal {
+  private answered = false
+
+  constructor(
+    app: App,
+    private readonly view: ConfirmView,
+    private readonly done: (yes: boolean) => void
+  ) {
+    super(app)
+  }
+
+  override onOpen(): void {
+    const { contentEl, view } = this
+    this.setTitle(view.title)
+    contentEl.createEl('p', { text: view.message, cls: 'bp-confirm-message' })
+    new Setting(contentEl)
+      .addButton((button) => button.setButtonText(view.cancel).onClick(() => this.answer(false)))
+      .addButton((button) => {
+        button.setButtonText(view.confirm).onClick(() => this.answer(true))
+        if (view.danger) button.setWarning()
+        else button.setCta()
+      })
+  }
+
+  private answer(yes: boolean): void {
+    this.answered = true
+    this.done(yes)
+    this.close()
+  }
+
+  override onClose(): void {
+    this.contentEl.empty()
+    if (!this.answered) this.done(false)
+  }
+}
+
 /** Des fichiers pris sur l'ordinateur, par la fenêtre de sélection du système. */
 function pickExternal(options: { accept?: readonly string[]; multiple?: boolean }): Promise<ExternalFile[]> {
   return new Promise((resolve) => {
@@ -262,6 +299,16 @@ export function obsidianUi(app: App, i18n: I18n): Ui {
       })
     },
     pickExternalFiles: pickExternal,
+    confirm(view) {
+      return new Promise((resolve) => {
+        let settled = false
+        new ConfirmModal(app, view, (yes) => {
+          if (settled) return
+          settled = true
+          resolve(yes)
+        }).open()
+      })
+    },
     askForm(form) {
       return new Promise((resolve) => {
         let settled = false

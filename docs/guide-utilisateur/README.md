@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.3.3)
+## Aujourd'hui (version 0.3.4)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -20,7 +20,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   l'analyse tient le tableau des pièces. Voir la page *Analyse d'appels d'offres* de la
   documentation écrite dans le coffre. Les types de pièces et les mots-clés qui les font
   reconnaître sont dans Paramètres → Black Projects → **Fonctions**, où vous pouvez
-  ajouter vos propres types de pièces et vos propres mots-clés.
+  ajouter, modifier et supprimer vos propres types de pièces et vos propres mots-clés.
 
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**

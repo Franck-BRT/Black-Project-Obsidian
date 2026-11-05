@@ -7,7 +7,7 @@
  * ici, il le fait de la même façon dans Obsidian.
  */
 
-import type { Choice, ExternalFile, FilePickOptions, FormView, Platform, TextView } from '../ports'
+import type { Choice, ConfirmView, ExternalFile, FilePickOptions, FormView, Platform, TextView } from '../ports'
 
 export interface MemoryPlatform extends Platform {
   files: Map<string, Uint8Array>
@@ -26,6 +26,9 @@ export interface MemoryPlatform extends Platform {
   /** Ce qui a été proposé. */
   offered: Choice[][]
   asked: FormView[]
+  /** Les réponses des prochaines confirmations (oui par défaut), et les questions posées. */
+  confirmations: boolean[]
+  confirmed: ConfirmView[]
 }
 
 export function memoryPlatform(files: Record<string, string | Uint8Array> = {}): MemoryPlatform {
@@ -58,6 +61,8 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
     externalFiles: [],
     offered: [],
     asked: [],
+    confirmations: [],
+    confirmed: [],
     info: { name: 'test', version: '0.0.0' },
     fs: {
       exists: async (path) => store.has(path) || folders.has(path),
@@ -105,6 +110,10 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
           if (error) throw new Error(`Formulaire refusé : ${error}`)
         }
         return answer
+      },
+      confirm: async (view) => {
+        platform.confirmed.push(view)
+        return platform.confirmations.shift() ?? true
       }
     }
   }

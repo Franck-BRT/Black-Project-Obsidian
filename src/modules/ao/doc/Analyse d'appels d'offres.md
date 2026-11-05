@@ -73,8 +73,12 @@ Chaque pièce est **lue**, **typée** et **décrite par une note** dans `Pièces
   d'assurance qualité »). Il prend place après les types du module, avant « autre
   pièce » ; son code sert aussi de mot-clé dans le nom des fichiers (« PAQ_v2.pdf »). Il
   est proposé par « Changer le type de la pièce » et par les mots-clés personnalisés.
-  Retirer un type retire ses mots-clés ; les pièces qui l'avaient le gardent, signalé
-  « type retiré » dans le tableau.
+  Le **crayon** d'un type modifie son code ou son libellé : un nouveau code est repris par
+  ses mots-clés et par les pièces déjà importées, dans toutes les analyses. La
+  **corbeille** le supprime, après une confirmation qui dit ce qu'elle emporte : ses
+  mots-clés partent avec lui ; les pièces qui l'avaient le gardent, signalé « type
+  retiré » dans le tableau. Les types du module, eux, ne se modifient pas : ajoutez-leur
+  des mots-clés. Vos mots-clés ont aussi un crayon et une corbeille.
 
   **Vos propres mots-clés** : en tête de la fenêtre **Fonctions**, deux listes —
   « nom du fichier » et « titre du document » — où ajouter un mot ou une expression vers

@@ -137,6 +137,18 @@ export interface Ui {
   pickExternalFiles(options: { accept?: readonly string[]; multiple?: boolean }): Promise<ExternalFile[]>
   /** Un formulaire ; les valeurs saisies, ou `null` si l'utilisateur renonce. */
   askForm(form: FormView): Promise<Record<string, string> | null>
+  /** Une question oui / non avant une action qu'on ne défait pas ; `true` si l'utilisateur confirme. */
+  confirm(view: ConfirmView): Promise<boolean>
+}
+
+export interface ConfirmView {
+  title: string
+  message: string
+  /** Le libellé du bouton qui confirme : « Supprimer ». */
+  confirm: string
+  cancel: string
+  /** L'action détruit quelque chose : le bouton est marqué comme tel. */
+  danger?: boolean
 }
 
 /** Ce que la plateforme sait d'elle-même. */

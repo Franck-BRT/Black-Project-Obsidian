@@ -86,13 +86,18 @@ const aliasesField: MappingField = {
     from: 'lecture-fichiers.alias.tip.from',
     to: 'lecture-fichiers.alias.tip.to',
     add: 'lecture-fichiers.alias.tip.add',
+    edit: 'lecture-fichiers.alias.tip.edit',
     remove: 'lecture-fichiers.alias.tip.remove'
   },
   options: aliasTargets,
   defaultOption: 'txt',
   normalize: normalizeExtension,
   validate: validateAlias,
-  read: readAliases
+  read: readAliases,
+  editable: true,
+  editTitleKey: 'lecture-fichiers.alias.editTitle',
+  fromLabelKey: 'lecture-fichiers.alias.from',
+  toLabelKey: 'lecture-fichiers.alias.to'
 }
 
 let unsubscribe: (() => void) | null = null

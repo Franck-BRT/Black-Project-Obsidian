@@ -59,6 +59,13 @@ export const en: Record<string, string> = {
   'settings.modules.reload': 'The change applies the next time the plugin loads.',
   'settings.modules.requires': 'Requires: {modules}',
 
+  'settings.mapping.delete': 'Delete',
+  'settings.mapping.edit': 'Edit',
+  'settings.mapping.editTitle': 'Edit “{from}”',
+  'settings.mapping.save': 'Save',
+  'settings.mapping.cancel': 'Cancel',
+  'settings.mapping.removeTitle': 'Delete “{item}”?',
+  'tip.mapping.edit': 'Edit this line.',
   'settings.mapping.add': 'Add',
   'settings.mapping.remove': 'Remove',
   'settings.mapping.empty': 'None yet.',

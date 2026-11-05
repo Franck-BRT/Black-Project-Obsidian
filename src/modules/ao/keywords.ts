@@ -13,12 +13,14 @@
  * un mot-clé vers un type qui n'existe plus est écarté.
  */
 
-import type { FieldError } from '../../core/modules/module'
+import type { FieldError, MappingChange } from '../../core/modules/module'
 import { allTypes, fold, OTHER, PIECE_TYPES, type CustomKeywords } from './pieces'
 
 export const TYPES_KEY = 'typesPerso'
 export const NAME_KEYWORDS_KEY = 'motsClesNom'
 export const TITLE_KEYWORDS_KEY = 'motsClesTitre'
+/** Les codes de types renommés : ancien → nouveau, pour retyper les pièces qui avaient l'ancien. */
+export const RENAMES_KEY = 'typesRenommes'
 
 const MAX_KEYWORD = 60
 const MAX_LABEL = 80
@@ -125,4 +127,88 @@ export function readTitleKeywords(settings: Settings): Record<string, string> {
 /** Ce que l'utilisateur a ajouté, tel que la reconnaissance l'emploie. */
 export function readCustomKeywords(settings: Settings): CustomKeywords {
   return { names: readNameKeywords(settings), titles: readTitleKeywords(settings), types: readCustomTypes(settings) }
+}
+
+// ── Modifier et supprimer un type ajouté ────────────────────────────────────────
+
+/** Les renommages enregistrés : ancien code → nouveau code. */
+export function readRenames(settings: Settings): Record<string, string> {
+  const raw = settings[RENAMES_KEY]
+  const out: Record<string, string> = {}
+  if (!isRecord(raw)) return out
+  for (const [from, to] of Object.entries(raw)) {
+    if (typeof to === 'string' && CODE.test(from) && CODE.test(to) && from !== to) out[from] = to
+  }
+  return out
+}
+
+/** Le code actuel d'un type, renommages suivis (« PQA » → « PAQ ») ; inchangé s'il n'a pas été renommé. */
+export function currentCode(code: string, renames: Readonly<Record<string, string>>): string {
+  let current = code
+  for (let hops = 0; hops < 20 && renames[current] !== undefined; hops++) current = renames[current]!
+  return current
+}
+
+function remapKeywords(raw: unknown, map: (code: string) => string | null): Record<string, string> {
+  const out: Record<string, string> = {}
+  if (!isRecord(raw)) return out
+  for (const [keyword, code] of Object.entries(raw)) {
+    if (typeof code !== 'string') continue
+    const target = map(code)
+    if (target !== null) out[keyword] = target
+  }
+  return out
+}
+
+/**
+ * Ce qu'un changement de type entraîne dans les autres réglages du module :
+ *
+ * - **code changé** : les mots-clés qui visaient l'ancien code visent le nouveau, et le
+ *   renommage est gardé pour retyper les pièces qui avaient l'ancien ;
+ * - **type supprimé** : ses mots-clés sont retirés ;
+ * - **type ajouté** : un ancien renommage depuis ce code est oublié — le code redevient
+ *   le sien.
+ */
+export function afterTypeChange(change: MappingChange, settings: Record<string, unknown>): Record<string, unknown> {
+  const renames = readRenames(settings)
+  const next = { ...settings }
+  if (change.kind === 'add') {
+    delete renames[change.from]
+  } else if (change.kind === 'edit' && change.previousFrom !== change.from) {
+    const before = change.previousFrom
+    const after = change.from
+    const map = (code: string) => (code === before ? after : code)
+    next[NAME_KEYWORDS_KEY] = remapKeywords(settings[NAME_KEYWORDS_KEY], map)
+    next[TITLE_KEYWORDS_KEY] = remapKeywords(settings[TITLE_KEYWORDS_KEY], map)
+    for (const [from, to] of Object.entries(renames)) if (to === before) renames[from] = after
+    renames[before] = after
+    delete renames[after]
+  } else if (change.kind === 'remove') {
+    // Les anciens codes qui menaient à ce type ne mènent plus nulle part.
+    for (const [from, to] of Object.entries(renames)) if (to === change.from) delete renames[from]
+    const map = (code: string) => (code === change.from ? null : code)
+    next[NAME_KEYWORDS_KEY] = remapKeywords(settings[NAME_KEYWORDS_KEY], map)
+    next[TITLE_KEYWORDS_KEY] = remapKeywords(settings[TITLE_KEYWORDS_KEY], map)
+  }
+  next[RENAMES_KEY] = renames
+  return next
+}
+
+/** Ce que la suppression d'un type emporte, à faire confirmer. */
+export function describeTypeRemoval(
+  code: string,
+  label: string,
+  settings: Settings,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): string {
+  const keywords = [...Object.values(readNameKeywords(settings)), ...Object.values(readTitleKeywords(settings))].filter(
+    (target) => target === code
+  ).length
+  return [
+    t('ao.types.custom.remove.what', { code, label }),
+    keywords > 0 ? t('ao.types.custom.remove.keywords', { count: keywords }) : '',
+    t('ao.types.custom.remove.pieces', { code })
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 }

@@ -42,7 +42,10 @@ Facultatif : `settingsFields`, les réglages propres au module, dessinés en tê
 fenêtre (celle qu'ouvre `details`).
 Deux types : `mapping`, une liste de paires « ceci → cela » avec un formulaire
 d'ajout, la valeur choisie dans un menu (exemple : les extensions équivalentes) ou saisie
-librement (`valueKind: 'text'`, exemple : les types de pièces personnalisés) ; `text`, un texte comme un dossier
+librement (`valueKind: 'text'`, exemple : les types de pièces personnalisés). Une paire
+peut être modifiée (`editable` : un crayon ouvre un formulaire contrôlé comme l'ajout) et
+sa suppression confirmée (`describeRemoval`) ; `afterChange` laisse le module ajuster
+ses autres réglages (les mots-clés d'un type renommé) ; `text`, un texte comme un dossier
 (exemple : le dossier des analyses). Le module dit ce qui est permis
 (`normalize`, `validate`, `options`) ; la plateforme dessine et enregistre. Un module
 apprend qu'un réglage a changé par `context.settings.onChange`.

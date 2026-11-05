@@ -13,6 +13,7 @@ import { Modal, Setting, setTooltip, type App } from 'obsidian'
 import {
   FEATURE_STATUSES,
   type FeatureStatus,
+  type MappingChange,
   type MappingField,
   type TextField,
   type ModuleDescriptor,
@@ -76,9 +77,15 @@ export class ModuleDetailsModal extends Modal {
       const label = field.optionLabel?.(option, settings, t)
       return label ? `${prefix}${option} — ${label}` : `${prefix}${option}`
     }
-    const save = async (pairs: Record<string, string>) => {
-      await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: pairs })
+    const save = async (pairs: Record<string, string>, change: MappingChange) => {
+      const next = { ...this.settings(), [field.key]: pairs }
+      await plugin.saveModuleSettings(module.id, field.afterChange ? field.afterChange(change, next) : next)
       this.render()
+    }
+    const without = (from: string) => {
+      const rest = { ...current }
+      delete rest[from]
+      return rest
     }
 
     block.addClass('bp-module-settings')
@@ -96,7 +103,7 @@ export class ModuleDetailsModal extends Modal {
         plugin.platform.notifier.notify(t(error.key, error.vars), 6000)
         return
       }
-      await save({ ...current, [from]: to })
+      await save({ ...current, [from]: to }, { kind: 'add', from, to })
     }
     const onEnter = (input: HTMLInputElement) =>
       input.addEventListener('keydown', (event) => {
@@ -137,20 +144,91 @@ export class ModuleDetailsModal extends Modal {
     const pairs = Object.entries(current).sort(([a], [b]) => a.localeCompare(b))
     if (pairs.length === 0) block.createDiv({ text: t('settings.mapping.empty'), cls: 'bp-mapping-empty' })
     for (const [from, to] of pairs) {
-      new Setting(block)
-        .setClass('bp-mapping-pair')
-        .setName(`${prefix}${from}  ${t(field.connectorKey)}  ${optionText(to)}`)
-        .addExtraButton((button) =>
+      const line = new Setting(block).setClass('bp-mapping-pair').setName(`${prefix}${from}  ${t(field.connectorKey)}  ${optionText(to)}`)
+      if (field.editable) {
+        line.addExtraButton((button) =>
           button
-            .setIcon('trash-2')
-            .setTooltip(t(field.tooltipKeys?.remove ?? 'tip.mapping.remove'))
-            .onClick(async () => {
-              const next = { ...current }
-              delete next[from]
-              await save(next)
-            })
+            .setIcon('pencil')
+            .setTooltip(t(field.tooltipKeys?.edit ?? 'tip.mapping.edit'))
+            .onClick(() => void this.editPair(field, from, to, without(from), optionText, save))
         )
+      }
+      line.addExtraButton((button) =>
+        button
+          .setIcon('trash-2')
+          .setTooltip(t(field.tooltipKeys?.remove ?? 'tip.mapping.remove'))
+          .onClick(async () => {
+            const impact = field.describeRemoval?.(from, to, this.settings(), t)
+            if (impact) {
+              const yes = await plugin.platform.ui.confirm({
+                title: t('settings.mapping.removeTitle', { item: `${prefix}${from}` }),
+                message: impact,
+                confirm: t('settings.mapping.delete'),
+                cancel: t('settings.mapping.cancel'),
+                danger: true
+              })
+              if (!yes) return
+            }
+            await save(without(from), { kind: 'remove', from, to })
+          })
+      )
     }
+  }
+
+  /** Le formulaire qui modifie une paire : les deux valeurs, contrôlées comme à l'ajout. */
+  private async editPair(
+    field: MappingField,
+    from: string,
+    to: string,
+    others: Record<string, string>,
+    optionText: (option: string) => string,
+    save: (pairs: Record<string, string>, change: MappingChange) => Promise<void>
+  ): Promise<void> {
+    const t = this.t.bind(this)
+    const settings = this.settings()
+    const free = field.valueKind === 'text'
+    const values = await this.plugin.platform.ui.askForm({
+      title: t(field.editTitleKey ?? 'settings.mapping.editTitle', { from: `${field.prefix ?? ''}${from}` }),
+      fields: [
+        {
+          kind: 'text',
+          key: 'from',
+          label: t(field.fromLabelKey ?? field.nameKey),
+          value: from,
+          required: true,
+          ...(field.tooltipKeys?.from ? { tooltip: t(field.tooltipKeys.from) } : {})
+        },
+        free
+          ? {
+              kind: 'text',
+              key: 'to',
+              label: t(field.toLabelKey ?? field.connectorKey),
+              value: to,
+              required: true,
+              ...(field.tooltipKeys?.to ? { tooltip: t(field.tooltipKeys.to) } : {})
+            }
+          : {
+              kind: 'choice',
+              key: 'to',
+              label: t(field.toLabelKey ?? field.connectorKey),
+              value: to,
+              options: field.options(settings).map((option) => ({ value: option, label: optionText(option) })),
+              ...(field.tooltipKeys?.to ? { tooltip: t(field.tooltipKeys.to) } : {})
+            }
+      ],
+      submit: t('settings.mapping.save'),
+      validate: (entered) => {
+        const newFrom = field.normalize(entered.from ?? '')
+        const newTo = free ? (field.normalizeValue?.(entered.to ?? '') ?? (entered.to ?? '').trim()) : (entered.to ?? '')
+        const error = field.validate(newFrom, newTo, others, settings)
+        return error ? t(error.key, error.vars) : null
+      }
+    })
+    if (!values) return
+    const newFrom = field.normalize(values.from ?? '')
+    const newTo = free ? (field.normalizeValue?.(values.to ?? '') ?? (values.to ?? '').trim()) : (values.to ?? '')
+    if (newFrom === from && newTo === to) return
+    await save({ ...others, [newFrom]: newTo }, { kind: 'edit', from: newFrom, to: newTo, previousFrom: from, previousTo: to })
   }
 
   /** Un réglage fait d'un texte, enregistré à chaque saisie ; vide, il revient à sa valeur par défaut. */

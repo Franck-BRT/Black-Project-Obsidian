@@ -68,6 +68,15 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
 - [ ] Ajouter `CCTP` comme type : refusé ; un type sans libellé : refusé ; retirer PAQ :
       ses mots-clés disparaissent, et le tableau d'une analyse mise à jour montre
       « PAQ (type retiré) »
+- [ ] **Modifier un type** (v0.3.4) : crayon de PAQ → « Modifier le type PAQ », champs
+      Code et Libellé ; un code du module est refusé ; passer à `PQA` et changer le
+      libellé : le mot-clé qui visait PAQ vise PQA, et un message dit combien de pièces
+      déjà importées ont pris le nouveau code ; leurs tableaux suivent
+- [ ] **Supprimer un type** : corbeille → confirmation « Supprimer « PQA » ? » qui dit
+      combien de mots-clés partent et ce que deviennent les pièces ; **Annuler** ne change
+      rien ; **Supprimer** retire le type et ses mots-clés
+- [ ] Crayon d'un mot-clé personnalisé et d'une extension équivalente : modification
+      contrôlée comme l'ajout
 - [ ] **Mots-clés personnalisés** (v0.3.2), en tête de la fenêtre **Fonctions** :
       ajouter `SPEC` → CCTP dans « nom du fichier » ; il apparaît dans la liste et dans la
       fiche CCTP (« Ajoutés par vous — nom du fichier ») ; importer un fichier

@@ -18,7 +18,10 @@ import page from "./doc/Analyse d'appels d'offres.md"
 import { aoEn, aoFr } from './i18n'
 import { ORIGINALS, PIECES, POSITIONS, safeName, type Analysis, type Position } from './notes'
 import {
+  afterTypeChange,
+  describeTypeRemoval,
   keywordTargets,
+  readRenames,
   NAME_KEYWORDS_KEY,
   normalizeKeyword,
   normalizeLabel,
@@ -36,6 +39,7 @@ import { allTypes, NO_CUSTOM_KEYWORDS, OTHER, typeLabel, type CustomKeywords } f
 import { typesMarkdown } from './typesDoc'
 import {
   AnalysisExists,
+  applyRenames,
   analysisOf,
   createAnalysis,
   importFiles,
@@ -63,6 +67,8 @@ export {
 } from './service'
 export { classifyPiece, PIECE_TYPES } from './pieces'
 export { type Analysis, type ReadingState } from './notes'
+
+let unsubscribe: (() => void) | null = null
 
 export const AO = 'ao'
 export const ROOT_KEY = 'dossier'
@@ -94,12 +100,19 @@ const typesField: MappingField = {
     from: 'ao.types.custom.tip.code',
     to: 'ao.types.custom.tip.label',
     add: 'ao.types.custom.tip.add',
+    edit: 'ao.types.custom.tip.edit',
     remove: 'ao.types.custom.tip.remove'
   },
   options: () => [],
   normalize: normalizeTypeCode,
   validate: (code, label, current) => validateType(code, label, current),
-  read: readCustomTypes
+  read: readCustomTypes,
+  editable: true,
+  editTitleKey: 'ao.types.custom.editTitle',
+  fromLabelKey: 'ao.types.custom.code',
+  toLabelKey: 'ao.types.custom.label',
+  describeRemoval: (code, label, settings, t) => describeTypeRemoval(code, label, settings, t),
+  afterChange: afterTypeChange
 }
 
 /** Un réglage « mot-clé → type » : pour le nom du fichier, ou pour le titre du document. */
@@ -124,7 +137,11 @@ function keywordsField(where: 'names' | 'titles'): MappingField {
     optionLabel: (code, settings, t) => typeLabel(code, readCustomKeywords(settings), t),
     normalize: normalizeKeyword,
     validate: (keyword, code, current, settings) => validateKeyword(where, keyword, code, current, readCustomTypes(settings)),
-    read: name ? readNameKeywords : readTitleKeywords
+    read: name ? readNameKeywords : readTitleKeywords,
+    editable: true,
+    editTitleKey: 'ao.keywords.editTitle',
+    fromLabelKey: 'ao.keywords.keyword',
+    toLabelKey: 'ao.keywords.type'
   }
 }
 
@@ -209,7 +226,8 @@ function servicesFor(context: ModuleContext): Services {
     t: (key, vars) => context.i18n.t(key, vars),
     root: rootOf(context.settings.get()),
     today: localToday,
-    keywords: readCustomKeywords(context.settings.get())
+    keywords: readCustomKeywords(context.settings.get()),
+    renames: readRenames(context.settings.get())
   }
 }
 
@@ -261,7 +279,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.3.3',
+  version: '0.3.4',
   // Les pièces du dossier sont lues par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: aoFr, en: aoEn },
@@ -276,6 +294,20 @@ export const aoModule: BlackModule = {
   activate(context) {
     const { commands, platform, i18n } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
+
+    // Un type renommé dans la fenêtre Fonctions : les pièces qui avaient l'ancien code le
+    // quittent aussitôt, dans toutes les analyses.
+    let renames = JSON.stringify(readRenames(context.settings.get()))
+    unsubscribe = context.settings.onChange((values) => {
+      const now = JSON.stringify(readRenames(values))
+      if (now === renames) return
+      renames = now
+      void applyRenames(servicesFor(context))
+        .then((count) => {
+          if (count > 0) platform.notifier.notify(t('ao.types.custom.retyped', { count }), 6000)
+        })
+        .catch((error: unknown) => console.error('[Black Projects] renommage des types', error))
+    })
 
     commands.register({
       id: 'nouvelle-analyse',
@@ -398,5 +430,9 @@ export const aoModule: BlackModule = {
         platform.notifier.notify(t('ao.type.done', { type: `${type} — ${typeLabel(type, custom, t)}` }), 5000)
       }
     })
+  },
+  deactivate() {
+    unsubscribe?.()
+    unsubscribe = null
   }
 }

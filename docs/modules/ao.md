@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.3.3 |
+| Version | 0.3.4 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -64,6 +64,13 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
   cibles des mots-clés personnalisés, et ont leur fiche dans la fenêtre **Fonctions**. Un
   type retiré emporte ses mots-clés (écartés à la relecture) ; les notes de pièces gardent
   le code, montré « (type retiré) » dans le tableau.
+- **Modifier, supprimer** (v0.3.4) : crayon et corbeille sur chaque type et chaque
+  mot-clé ajoutés. Un code modifié est repris par les mots-clés (`afterTypeChange`) et
+  noté dans `typesRenommes` (ancien → nouveau, chaînes suivies) ; dès que le module voit
+  ce renommage, `applyRenames` retype les pièces de toutes les analyses et réécrit leurs
+  tableaux. La suppression demande confirmation (`describeTypeRemoval` : le type, ses
+  mots-clés, les pièces qui le gardent), retire les mots-clés et oublie les renommages qui
+  y menaient. Les types du module ne se modifient pas.
 - **Mots-clés personnalisés** (v0.3.2, `keywords.ts`) : l'utilisateur ajoute ses paires
   « mot-clé → type » en tête de la fenêtre **Fonctions**, une liste pour le nom du
   fichier (réglage `motsClesNom`), une pour le titre (`motsClesTitre`). Ordre de la

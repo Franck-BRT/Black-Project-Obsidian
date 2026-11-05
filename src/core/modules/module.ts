@@ -124,7 +124,13 @@ export interface MappingField {
   /** Le mot entre les deux : « lu comme ». */
   readonly connectorKey: string
   /** Les infobulles du champ de saisie, du menu, du bouton d'ajout et de la corbeille. */
-  readonly tooltipKeys?: { readonly from?: string; readonly to?: string; readonly add?: string; readonly remove?: string }
+  readonly tooltipKeys?: {
+    readonly from?: string
+    readonly to?: string
+    readonly add?: string
+    readonly edit?: string
+    readonly remove?: string
+  }
   /**
    * La valeur de droite : choisie dans un menu (`choice`, par défaut) ou saisie librement
    * (`text`) — un libellé, par exemple.
@@ -151,7 +157,36 @@ export interface MappingField {
   ): FieldError | null
   /** Les paires enregistrées, lues dans les réglages du module. */
   read(settings: Readonly<Record<string, unknown>>): Record<string, string>
+  /** Chaque paire a un bouton pour la modifier : les deux valeurs, dans un formulaire. */
+  readonly editable?: boolean
+  /** Le titre du formulaire de modification ; `{from}` y est remplacé par la paire modifiée. */
+  readonly editTitleKey?: string
+  /** Les libellés des deux champs du formulaire de modification : « Code », « Libellé ». */
+  readonly fromLabelKey?: string
+  readonly toLabelKey?: string
+  /**
+   * Ce que la suppression d'une paire entraîne, à faire confirmer ; `null` : supprimée
+   * sans question.
+   */
+  describeRemoval?(
+    from: string,
+    to: string,
+    settings: Readonly<Record<string, unknown>>,
+    t: (key: string, vars?: Vars) => string
+  ): string | null
+  /**
+   * Après un ajout, une modification ou une suppression, les réglages du module tels
+   * qu'ils seront enregistrés — la paire déjà changée —, pour que le module ajuste ce qui
+   * en dépend : les mots-clés d'un type dont le code change, par exemple.
+   */
+  afterChange?(change: MappingChange, settings: Record<string, unknown>): Record<string, unknown>
 }
+
+/** Ce qui vient d'arriver à une paire. */
+export type MappingChange =
+  | { readonly kind: 'add'; readonly from: string; readonly to: string }
+  | { readonly kind: 'edit'; readonly from: string; readonly to: string; readonly previousFrom: string; readonly previousTo: string }
+  | { readonly kind: 'remove'; readonly from: string; readonly to: string }
 
 /** Un réglage fait d'un texte : un dossier, par exemple. */
 export interface TextField {

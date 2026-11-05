@@ -30,6 +30,7 @@ import {
   type PieceRow,
   type ReadingState
 } from './notes'
+import { currentCode } from './keywords'
 import { classifyPiece, NO_CUSTOM_KEYWORDS, OTHER, type CustomKeywords } from './pieces'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
@@ -43,6 +44,8 @@ export interface Services {
   today: () => string
   /** Les mots-clés ajoutés par l'utilisateur à la reconnaissance des types. */
   keywords?: CustomKeywords
+  /** Les codes de types renommés (ancien → nouveau) : les pièces à l'ancien code sont retypées. */
+  renames?: Readonly<Record<string, string>>
 }
 
 export function localToday(): string {
@@ -228,18 +231,33 @@ interface PieceNoteInfo {
   characters: number
 }
 
-async function pieceNotes(fs: FileSystem, analysis: Analysis): Promise<PieceNoteInfo[]> {
+/**
+ * Les notes des pièces d'une analyse. Une pièce dont le type a été renommé (« PQA » devenu
+ * « PAQ ») est retypée au passage, dans sa note ; `retyped` compte celles-là.
+ */
+async function pieceNotes(
+  fs: FileSystem,
+  analysis: Analysis,
+  renames: Readonly<Record<string, string>> = {},
+  retyped: { count: number } = { count: 0 }
+): Promise<PieceNoteInfo[]> {
   const folder = piecesFolder(analysis)
   if (!(await fs.exists(folder))) return []
   const { files } = await fs.list(folder)
   const out: PieceNoteInfo[] = []
   for (const note of files.filter((file) => file.endsWith('.md'))) {
-    const { data } = parseFrontmatter(await fs.readText(note))
+    const content = await fs.readText(note)
+    const { data } = parseFrontmatter(content)
     if (data['bp-type'] !== PIECE_TYPE) continue
     const state = READING_STATES.includes(data.lecture as ReadingState) ? (data.lecture as ReadingState) : 'non-lue'
     // Un code inconnu — un type ajouté puis retiré — est gardé tel quel : le tableau le
     // signale, et l'utilisateur choisit un autre type s'il le veut.
-    const type = (data.type ?? '').trim() || OTHER
+    const written = (data.type ?? '').trim() || OTHER
+    const type = currentCode(written, renames)
+    if (type !== written) {
+      await fs.writeText(note, setFrontmatterField(content, 'type', type))
+      retyped.count++
+    }
     out.push({ note, original: linkTarget(data.fichier ?? ''), type, state, characters: Number(data.caracteres) || 0 })
   }
   return out
@@ -248,11 +266,24 @@ async function pieceNotes(fs: FileSystem, analysis: Analysis): Promise<PieceNote
 /** Réécrit le tableau des pièces dans la note de l'analyse, d'après les notes des pièces. */
 export async function refreshTable(services: Services, analysis: Analysis): Promise<PieceRow[]> {
   const { fs, t } = services
-  const rows = await pieceNotes(fs, analysis)
+  const rows = await pieceNotes(fs, analysis, services.renames)
   const note = await fs.readText(analysis.note)
   const updated = withPiecesTable(note, piecesTable(rows, t, services.keywords ?? NO_CUSTOM_KEYWORDS))
   if (updated !== note) await fs.writeText(analysis.note, updated)
   return rows
+}
+
+/**
+ * Applique les renommages de types à toutes les analyses : les pièces à un ancien code
+ * prennent le nouveau, et les tableaux suivent. Rend le nombre de pièces retypées.
+ */
+export async function applyRenames(services: Services): Promise<number> {
+  const retyped = { count: 0 }
+  for (const analysis of await listAnalyses(services)) {
+    await pieceNotes(services.fs, analysis, services.renames, retyped)
+    await refreshTable(services, analysis)
+  }
+  return retyped.count
 }
 
 /**
