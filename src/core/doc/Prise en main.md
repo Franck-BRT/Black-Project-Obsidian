@@ -55,6 +55,8 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Chercher les exigences oubliées | les phrases à tournure d'exigence qu'aucune exigence ne reprend, proposées à l'ajout |
 | Vérifier la cohérence des exigences entre pièces | identifiants écrits différemment, absents d'une version, en double… |
 | Vérifier la couverture des exigences par la réponse | pour chaque exigence : citée, traitée, à vérifier ou absente dans la réponse |
+| Analyser la qualité des exigences du dossier | la note `Analyse/Qualité des exigences` : notes, défauts, doublons, non vérifiables |
+| Analyser la qualité de la bibliothèque d'exigences | la même analyse pour la bibliothèque, rattachements compris |
 
 ## Vos données
 

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.3.0 (Black Projects 0.6.1) |
+| Version | 0.4.0 (Black Projects 0.7.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -94,6 +94,19 @@ Sans IA, des fonctions pures que l'analyse d'appels d'offres appelle :
 
 L'aperçu d'import (`previewImport`) accepte aussi des lignes venues de plusieurs pièces
 (`pieceOf`, `labelOf`, `categoryOf`) et des propositions non cochées (`preselect: false`).
+
+## La qualité (`quality/`, étape 5)
+
+| Fichier | Rôle | Origine |
+| --- | --- | --- |
+| `quality/rules.ts` | `checkWording` : les défauts de rédaction, par langue (FR, EN) ; à définir et « et/ou » dans toute langue | repris |
+| `quality/score.ts` | `assessRequirement(exigence, langues, portée)` : six axes ISO/IEC/IEEE 29148, pondérés, en étoiles ; portée `record` (bibliothèque) ou `wording` (rédaction seule, plafond à deux étoiles sans obligation) | repris, portée ajoutée |
+| `quality/similar.ts` | doublons par trigrammes (Jaccard) ; seuils strict / normal / large ; la partie par le sens attend l'étape 6 | repris |
+| `quality/library.ts` | `coverageOf` : rattachements (citée, satisfaite, vérifiée, liens à revoir, formulation) | repris |
+| `quality/report.ts` | `qualityMarkdown` : le rapport (vue d'ensemble, répartition, axes, défauts, doublons, non vérifiables, faibles, rattachements, toutes) ; `withQuality` le réécrit en gardant les Notes | nouveau |
+
+Commande **Analyser la qualité de la bibliothèque d'exigences** ; la note est aussi dans
+la liste (colonne, filtre), la fiche et la colonne `rating` d'un bloc `brt-req`.
 
 ## Le format
 

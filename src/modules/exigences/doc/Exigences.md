@@ -106,7 +106,39 @@ où chaque exigence a été trouvée ; on coche, puis **Importer**. Rien n'est �
 Dans une analyse d'appel d'offres, la même extraction se fait sur une pièce : voir
 {{link:Modules/Analyse d'appels d'offres|Analyse d'appels d'offres}}.
 
-## 7. Ce qui arrive
+## 7. La qualité des exigences
 
-Qualité de rédaction selon l'ISO/IEC/IEEE 29148 (étape 5), traductions assistées par
-l'IA de Sidonie (étape 6), matrice de conformité (étape 7). Voir {{link:Accueil|l'accueil}}.
+L'analyse note chaque exigence en **étoiles** (0 à 5), selon les caractéristiques de
+l'ISO/IEC/IEEE 29148, et relève ce qui ne va pas — chaque constat vient d'une règle
+lisible, sans IA :
+
+| Défaut | Exemple |
+| --- | --- |
+| aucune obligation | « Le centre sera installé… » (ni « doit », ni « devra », ni « shall ») |
+| plusieurs obligations | « doit fournir… et doit maintenir… » : deux exigences sous un identifiant |
+| terme vague | « convivial », « rapide », « le cas échéant », « si possible », « environ »… |
+| « et/ou » | une alternative qu'on ne sait pas trancher |
+| à définir | TBD, TBC, « à définir », « à préciser » |
+| tournure passive sans acteur | « Les alarmes doivent être acquittées » : par qui ? |
+| comparatif non chiffré | « doit être réduit », « plus rapide » sans valeur |
+| trop longue | plus de 50 mots |
+
+Les axes : **unique** (une seule obligation), **non ambiguë**, **vérifiable** (une méthode
+de vérification, rien de non chiffré), **attribuable** (un acteur), et, pour la
+bibliothèque, **complète** (catégorie, type, statut, criticité, source, justification,
+traductions à jour) et **traçable** (liens).
+
+- **Dans la liste**, une colonne **Note** et un filtre (faibles : moins de 3 étoiles) ;
+  **dans la fiche**, la note et les défauts en tête ; **dans un bloc `brt-req`**, la
+  colonne `rating`.
+- Commande **Analyser la qualité de la bibliothèque d'exigences** : la note `Qualité des
+  exigences` du dossier des exigences — vue d'ensemble et répartition des notes, moyenne
+  par axe, défauts les plus fréquents, **doublons probables** (au moins 60 % de lettres en
+  commun), exigences **non vérifiables**, les plus faibles, les **rattachements**
+  (satisfaite par rien, sans méthode de vérification, liens à revoir, sans formulation),
+  puis chaque exigence. Réécrite à chaque analyse ; la section Notes est gardée.
+
+## 8. Ce qui arrive
+
+Traductions et relecture assistées par l'IA de Sidonie, doublons par le sens (étape 6),
+matrice de conformité (étape 7). Voir {{link:Accueil|l'accueil}}.

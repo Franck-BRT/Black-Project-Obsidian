@@ -183,13 +183,25 @@ section Notes, jamais touchée.
 | **Vérifier la cohérence des exigences entre pièces** | Un même identifiant écrit différemment d'une pièce à l'autre ; présent dans une version d'un document (deux pièces du même type, CCTP en Word et en PDF par exemple) et absent de l'autre ; en double dans une pièce ; un même texte sous deux identifiants ; une exigence rangée qui ne dit plus ce que dit sa pièce |
 | **Vérifier la couverture des exigences par la réponse** | Pour chaque exigence de l'analyse, l'endroit des pièces de **réponse** qui la **cite** (identifiant ou alias), la **traite** (au moins 60 % de ses mots), est **à vérifier** (35 à 60 %), ou son **absence**. Pour l'émetteur, un tableau par candidat. Une estimation sans IA, à relire : l'IA de Sidonie l'affinera à l'étape 6 |
 
+## 8. La qualité des exigences du dossier
+
+Commande **Analyser la qualité des exigences du dossier** : la note `Analyse/Qualité des
+exigences` de l'analyse — combien d'exigences, la **répartition des notes**, la moyenne
+par axe, les **défauts les plus fréquents** (avec des exemples), les **doublons
+probables**, les exigences **non vérifiables**, les **plus faibles**, puis chacune avec
+sa note et ses défauts. Hors ligne, sans serveur d'IA.
+
+Les exigences d'un dossier sont notées sur leur **seule rédaction** (une obligation, sans
+ambiguïté, vérifiable, avec un acteur) : elles sont de l'acheteur, et n'ont chez nous ni
+responsable ni liens. Une phrase qui n'oblige personne a deux étoiles au plus. Le détail
+des règles est dans la page {{link:Modules/Exigences|Exigences}}.
+
 ## Ce qui arrive ensuite
 
 Paramètres → Black Projects → **Fonctions** montre où en est le module :
 
 | Fonction | Étape |
 | --- | --- |
-| Mesurer la qualité des exigences (règles, score ISO/IEC/IEEE 29148, doublons) | 5 |
 | Relecture et conseils par l'IA (Sidonie), calendrier de l'appel d'offres, questions posées à tout le dossier | 6 |
 | Matrice de conformité (Excel), rapport (Word), fiche de synthèse, comparaison de deux versions du dossier | 7 |
 

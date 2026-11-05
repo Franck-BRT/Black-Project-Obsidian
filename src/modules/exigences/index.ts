@@ -39,6 +39,8 @@ import {
 import { RequirementStore } from './store'
 import { canExtract, EXTRACTABLE, extractRequirements } from './import/extract'
 import { previewImport, type ImportReport } from './import/preview'
+import { assessAll, qualityMarkdown, withQuality } from './quality/report'
+import { localToday } from '../../core/dates'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { RequirementStore, RequirementExists } from './store'
@@ -65,6 +67,19 @@ export {
   type ReadDocument
 } from './check/checks'
 export { keywords, normativeMarker, overlap, sentences } from './check/text'
+export { checkWording, QUALITY_RULES, type QualityFinding, type QualityRule } from './quality/rules'
+export { assessRequirement, isWeak, QUALITY_AXES, type QualityReport, type QualityScope } from './quality/score'
+export { lexicalPairs, thresholdsFor, type SimilarPair } from './quality/similar'
+export { coverageOf, countGaps, COVERAGE_GAPS, type LibraryCoverage } from './quality/library'
+export {
+  assessAll,
+  describeFinding,
+  probableDuplicates,
+  qualityMarkdown,
+  stars,
+  withQuality,
+  type QualityRun
+} from './quality/report'
 export {
   makeReqText,
   makeRequirement,
@@ -144,10 +159,14 @@ export function exigencesFeatures(): ModuleDetails {
         ]
       },
       {
+        titleKey: 'exigences.feature.section.quality',
+        features: [feature('rating', 'available'), feature('qualityReport', 'available')]
+      },
+      {
         titleKey: 'exigences.feature.section.next',
         features: [
 
-          feature('quality', 'in-progress', 5),
+
           feature('translate', 'in-progress', 6),
           feature('matrix', 'in-progress', 7)
         ]
@@ -225,7 +244,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.3.0',
+  version: '0.4.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -268,6 +287,32 @@ export const exigencesModule: BlackModule = {
         }
         const path = await editRequirement(session, note)
         if (path && path !== note) await platform.ui.openNote(path)
+      }
+    })
+
+    commands.register({
+      id: 'qualite',
+      nameKey: 'exigences.command.quality',
+      async run() {
+        const settings = readReqSettings(context.settings.get())
+        const t = session.t
+        const runs = assessAll(await session.store.all(), settings.languages, 'record')
+        const path = `${settings.folder}/${t('exigences.quality.title')}.md`
+        const content = qualityMarkdown(runs, {
+          t,
+          scope: 'record',
+          languages: settings.languages,
+          date: localToday(),
+          link: (requirement) => (requirement.filePath ? `[[${requirement.filePath.replace(/\.md$/, '')}|${requirement.id}]]` : requirement.id)
+        })
+        const existing = (await platform.fs.exists(path)) ? await platform.fs.readText(path) : null
+        await platform.fs.writeText(path, withQuality(existing, t('exigences.quality.title'), t('exigences.quality.intro'), content, 'Notes'))
+        const mean = runs.length ? Math.round((runs.reduce((sum, run) => sum + run.report.score, 0) / runs.length) * 100) : 0
+        platform.notifier.notify(
+          t('exigences.quality.done', { count: runs.length, mean, weak: runs.filter((run) => run.report.stars < 3).length }),
+          8000
+        )
+        await platform.ui.openNote(path)
       }
     })
 

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.6.0 (Black Projects 0.6.1) |
+| Version | 0.7.0 (Black Projects 0.7.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -30,6 +30,7 @@ Documentation utilisateur (écrite dans le coffre) :
 | Chercher les exigences oubliées | Phrases à tournure normative non reprises ; proposées à l'ajout, rien de coché d'avance |
 | Vérifier la cohérence des exigences entre pièces | Formulations différentes, absente d'une version, doublon, même texte, exigence rangée qui diffère |
 | Vérifier la couverture des exigences par la réponse | Citée, traitée (≥ 60 %), à vérifier (35-60 %), absente ; un tableau par candidat pour l'émetteur |
+| Analyser la qualité des exigences du dossier | `Analyse/Qualité des exigences.md` : notes sur la seule rédaction, défauts, doublons, non vérifiables (v0.7.0) |
 
 Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
 
@@ -168,6 +169,7 @@ l'émetteur).
 | `notes.ts` | Forme des notes et des dossiers ; tableau des pièces |
 | `requirements.ts` | Extraire les exigences d'une pièce ; listes d'exigences des notes de pièce et d'analyse |
 | `verification.ts` | Les quatre vérifications et le rapport « Vérification des exigences » |
+| `quality.ts` | L'analyse de qualité des exigences de l'analyse (étape 5) |
 | `i18n.ts` | Textes, infobulles comprises |
 | `doc/` | Page de documentation écrite dans le coffre |
 

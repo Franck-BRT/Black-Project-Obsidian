@@ -13,8 +13,11 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.6.1 — étape 4 du [plan d'intégration](docs/plan-integration.md) :
-l'extraction des exigences.** Sur la note d'une pièce (le CCTP), « Extraire les
+**Version 0.7.0 — étape 5 du [plan d'intégration](docs/plan-integration.md) :
+l'analyse qualité sans IA.** Chaque exigence notée en étoiles selon l'ISO/IEC/IEEE 29148
+(défauts de rédaction, doublons probables, exigences non vérifiables), et une note
+« Qualité des exigences » pour le dossier et pour la bibliothèque, hors ligne. Étape 4,
+l'extraction des exigences : sur la note d'une pièce (le CCTP), « Extraire les
 exigences de la pièce » : les tableaux d'exigences et les paragraphes qui commencent par
 un identifiant sont reconnus (Word, PDF, HTML, Markdown, Excel, CSV, PowerPoint, ReqIF),
 montrés avant d'être importés, et chaque exigence est tracée jusqu'à sa pièce ; quatre

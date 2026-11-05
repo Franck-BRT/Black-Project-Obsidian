@@ -223,14 +223,27 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
 vérifié sur le dossier d'exemple, en Word, PDF et Markdown (`test/dce-exigences.test.ts`,
 `test/ao-exigences.test.ts`).
 
-### Étape 5 — Analyse qualité sans IA
+### Étape 5 — Analyse qualité sans IA ✅ *terminée (v0.7.0)*
 
-- Repris : `reqQuality`, `reqScore` (ISO/IEC/IEEE 29148), `reqSimilar` (partie lexicale),
-  `ReqCoverage`
-- Vue « Analyse du dossier » : nombre d'exigences, répartition des notes, défauts
-  les plus fréquents, doublons, exigences non vérifiables
+- Repris dans le module `exigences` (`quality/`) : `reqQuality` (règles de rédaction FR/EN),
+  `reqScore` (six axes ISO/IEC/IEEE 29148, étoiles), `reqSimilar` (doublons par les
+  lettres ; la partie par le sens attend l'étape 6), `ReqCoverage` (rattachements) — et
+  leurs tests (81)
+- Ajout : une note **sur la seule rédaction** (`wording`) pour les exigences d'un
+  dossier, qui n'ont ni responsable, ni fiche, ni liens chez nous ; une phrase sans
+  obligation y a deux étoiles au plus
+- Vue « Analyse du dossier » : la note `Analyse/Qualité des exigences` de l'analyse
+  (commande « Analyser la qualité des exigences du dossier ») — nombre d'exigences,
+  répartition des notes, moyenne par axe, défauts les plus fréquents, doublons probables,
+  exigences non vérifiables, les plus faibles, chacune ; la même pour la bibliothèque
+  (rattachements en plus)
+- La note dans la liste (colonne et filtre), la fiche, et la colonne `rating` des blocs
+  `brt-req`
+- Doc : [modules/exigences.md](modules/exigences.md), [modules/ao.md](modules/ao.md) ;
+  recette : [recette/etape-5.md](recette/etape-5.md)
 
-**Jalon de démo n° 3 :** analyse complète hors ligne, sans serveur d'IA.
+**Jalon de démo n° 3 :** analyse complète hors ligne, sans serveur d'IA — vérifié sur le
+CCTP d'exemple (`test/ao-qualite.test.ts`).
 
 ### Étape 6 — IA locale
 

@@ -83,6 +83,7 @@ import {
 } from './service'
 import { extractFromPiece, refreshRequirements } from './requirements'
 import { checkCoherence, checkCoverage, extractAll, findMissed, reportPath, verifyAll } from './verification'
+import { analyseQuality, qualityPath } from './quality'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export {
@@ -236,7 +237,7 @@ export function aoFeatures(): ModuleDetails {
           feature('reqif', 'available'),
           feature('trace', 'available'),
           feature('verify', 'available'),
-          feature('quality', 'in-progress', 5)
+          feature('quality', 'available')
         ]
       },
       {
@@ -399,7 +400,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.6.0',
+  version: '0.7.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -661,6 +662,23 @@ export const aoModule: BlackModule = {
     verification('exigences-oubliees', 'ao.command.missed', (services, analysis) => findMissed(services, window, analysis))
     verification('coherence-pieces', 'ao.command.coherence', (services, analysis) => checkCoherence(services, analysis))
     verification('couverture-reponse', 'ao.command.coverage', (services, analysis) => checkCoverage(services, analysis))
+
+    commands.register({
+      id: 'qualite-exigences',
+      nameKey: 'ao.command.quality',
+      async run() {
+        const services = servicesFor(context)
+        const analysis = await chooseAnalysis(context, services)
+        if (!analysis) return
+        const runs = await analyseQuality(services, analysis)
+        const mean = runs.length ? Math.round((runs.reduce((sum, run) => sum + run.report.score, 0) / runs.length) * 100) : 0
+        platform.notifier.notify(
+          t('exigences.quality.done', { count: runs.length, mean, weak: runs.filter((run) => run.report.stars < 3).length }),
+          8000
+        )
+        await platform.ui.openNote(qualityPath(analysis))
+      }
+    })
 
     commands.register({
       id: 'exigences-a-jour',

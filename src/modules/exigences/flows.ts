@@ -28,6 +28,8 @@ import { idCategory, knownCategories } from './model/reqId'
 import type { ReqSettings } from './settings'
 import { RequirementExists, type RequirementStore } from './store'
 import { vocabularyChoices, vocabularyLabel } from './vocabulary'
+import { describeFinding, stars } from './quality/report'
+import { assessRequirement, isWeak } from './quality/score'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -186,9 +188,19 @@ export async function editRequirement(session: Session, path: string): Promise<s
   }
   const lang = current.sourceLang
   const library = await store.all()
+  // La note et les défauts de rédaction, en tête de la fiche : ce qu'on vient corriger.
+  const quality = assessRequirement(current, session.settings().languages)
+  const defects = quality.findings.map((finding) => describeFinding(finding, t)).join(', ')
   const values = await ui.askForm({
     title: t('exigences.edit.title', { id: current.id }),
-    intro: t('exigences.edit.intro', { rev: current.rev, category: current.category || '—' }),
+    intro: [
+      t('exigences.edit.intro', { rev: current.rev, category: current.category || '—' }),
+      t('exigences.edit.quality', {
+        stars: stars(quality.stars),
+        score: Math.round(quality.score * 100),
+        defects: defects ? `${defects}.` : t('exigences.edit.quality.clean')
+      })
+    ].join(' '),
     fields: [
       ...detailFields(t, current, lang),
       {
@@ -262,9 +274,12 @@ function flagsOf(requirement: Requirement, languages: string[], t: Translate): s
 
 /** Les lignes de la liste des exigences. */
 export function listRows(library: readonly Requirement[], settings: ReqSettings, t: Translate): ListRow[] {
-  return library.map((requirement) => ({
+  return library.map((requirement) => {
+    const quality = assessRequirement(requirement, settings.languages)
+    return {
     id: requirement.filePath ?? requirement.id,
     cells: {
+      rating: stars(quality.stars),
       id: requirement.id,
       title: requirement.title,
       text: textOf(requirement, requirement.sourceLang)?.body ?? '',
@@ -276,10 +291,12 @@ export function listRows(library: readonly Requirement[], settings: ReqSettings,
       category: requirement.category,
       type: requirement.type,
       status: requirement.status,
-      criticality: requirement.criticality
+      criticality: requirement.criticality,
+      rating: isWeak(quality) ? 'weak' : 'good'
     },
     flags: flagsOf(requirement, settings.languages, t)
-  }))
+    }
+  })
 }
 
 /**
@@ -303,14 +320,23 @@ export async function browseRequirements(session: Session): Promise<void> {
         { key: 'text', label: t('exigences.column.text'), width: 'wide' },
         { key: 'type', label: t('exigences.column.type'), width: 'narrow' },
         { key: 'status', label: t('exigences.column.status'), width: 'narrow' },
-        { key: 'criticality', label: t('exigences.column.criticality'), width: 'narrow' }
+        { key: 'criticality', label: t('exigences.column.criticality'), width: 'narrow' },
+        { key: 'rating', label: t('exigences.column.ratingShort'), width: 'narrow' }
       ],
       rows: listRows(library, settings, t),
       filters: [
         { key: 'category', label: t('exigences.filter.category'), options: categories.map((value) => ({ value, label: value })) },
         { key: 'type', label: t('exigences.filter.type'), options: vocabularyChoices('type', t) },
         { key: 'status', label: t('exigences.filter.status'), options: vocabularyChoices('status', t) },
-        { key: 'criticality', label: t('exigences.filter.criticality'), options: vocabularyChoices('criticality', t) }
+        { key: 'criticality', label: t('exigences.filter.criticality'), options: vocabularyChoices('criticality', t) },
+        {
+          key: 'rating',
+          label: t('exigences.filter.rating'),
+          options: [
+            { value: 'weak', label: t('exigences.filter.rating.weak') },
+            { value: 'good', label: t('exigences.filter.rating.good') }
+          ]
+        }
       ],
       searchPlaceholder: t('exigences.list.search'),
       empty: library.length ? t('exigences.list.noMatch') : t('exigences.list.empty'),
@@ -380,8 +406,9 @@ export async function renderBlock(session: Session, source: string): Promise<Blo
           return vocabularyLabel('criticality', requirement.criticality, t)
         case 'verification':
           return vocabularyLabel('verification', requirement.verification, t)
+        case 'rating':
+          return stars(assessRequirement(requirement, settings.languages).stars)
         default:
-          // La note de qualité arrive à l'étape 5.
           return '—'
       }
     }
