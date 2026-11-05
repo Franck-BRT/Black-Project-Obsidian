@@ -9,7 +9,10 @@ export const en: Record<string, string> = {
   'command.about': 'About Black Projects',
   'about.notice': 'Black Projects {version} — {active} of {total} module(s) active. {licence}',
 
-  'settings.choices.pick': 'Choose… ({count})',
+  'settings.choices.none': '— none —',
+  'settings.choices.type': 'Type another name…',
+  'settings.choices.typed': '{name} (typed)',
+  'settings.choices.back': 'Back to the list',
   'settings.secret.saved': 'A key is stored in the computer’s keychain.',
   'settings.secret.empty': 'No key stored.',
   'settings.secret.unavailable': 'This Obsidian version has no keychain (1.11.4 or newer needed): the key cannot be stored outside the vault.',

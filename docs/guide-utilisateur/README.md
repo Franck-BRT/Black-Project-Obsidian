@@ -63,7 +63,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 - **IA** : Paramètres → Black Projects → **IA** — adresse du
   serveur, clé (rangée dans le trousseau, jamais dans le coffre), **Tester la
   connexion**, puis un modèle par usage — analyse, traduction, vecteurs, reranking,
-  lecture OCR, lecture par vision —, chacun dans le menu **Choisir…** de sa ligne. Ensuite : **Relire l'exigence avec l'IA** (un avis,
+  lecture OCR, lecture par vision —, chacun dans le menu de sa ligne (ou « Saisir un autre nom… »). Ensuite : **Relire l'exigence avec l'IA** (un avis,
   des reformulations à choisir ou non), **Traduire l'exigence avec l'IA** (marquée à
   relire), les doublons par le sens dans la qualité (avec un modèle d'embeddings) ;
   pour un appel d'offres, **Interroger le dossier** (la réponse cite ses sources, liées

@@ -37,7 +37,8 @@ pas réglée : Réglages → Black Projects → IA »).
 | Clé d'accès | — | dans le **trousseau d'Obsidian** (`app.secretStorage`, identifiant `black-projects-ia-cle`), jamais dans le coffre ni dans `data.json` |
 
 **Un modèle par usage**, comme dans la version complète : chaque champ de modèle a un menu
-**Choisir…** (`TextField.choices`, nouveau dans le cœur) qui propose les modèles du serveur
+(`TextField.choices`, nouveau dans le cœur : le menu remplace le champ texte, avec « — aucun — »
+et « Saisir un autre nom… » ; un nom saisi hors liste reste affiché « (saisi) ») qui propose les modèles du serveur
 convenant à l'usage, triés (`modelsFor` dans `models.ts`, d'après leur nom : `embed`,
 `bge`, `e5`… pour les vecteurs, `rerank` pour le reranking, `ocr`, `nougat`, `dots.ocr`…
 pour l'OCR, `vl`, `pixtral`, `llava`… pour la vision ; tous si aucun ne convient). Le

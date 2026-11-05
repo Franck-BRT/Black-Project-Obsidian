@@ -16,9 +16,10 @@ Paramètres → Black Projects → bouton **Fonctions** de la ligne « IA » :
   seulement si une clé est enregistrée ;
 - **Tester la connexion** — interroge le serveur et retient la liste de ses modèles ; si
   aucun modèle d'analyse n'est choisi, il le fait choisir tout de suite ;
-- **un modèle par usage** — chaque ligne a un menu **Choisir…** qui propose les modèles du
-  serveur qui conviennent à cet usage (d'après leur nom ; tous s'il n'y en a aucun), et
-  reste modifiable à la main :
+- **un modèle par usage** — chaque ligne a un menu qui propose les modèles du serveur qui
+  conviennent à cet usage (d'après leur nom ; tous s'il n'y en a aucun), plus « — aucun — »
+  et « Saisir un autre nom… » pour taper un nom à la main (le bouton liste ramène au menu).
+  Avant le premier test de connexion, la ligne est un simple champ texte :
 
 | Usage | À quoi il sert | Laissé vide |
 | --- | --- | --- |

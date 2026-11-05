@@ -30,6 +30,8 @@ import type BlackProjectsPlugin from './main'
 export class ModuleDetailsModal extends Modal {
   /** Les listes dépliées : elles le restent quand la fenêtre se redessine. */
   private readonly openLists = new Set<string>()
+  /** Les réglages à choix dont l'utilisateur a demandé à saisir le nom à la main. */
+  private readonly typing = new Set<string>()
 
   constructor(
     app: App,
@@ -424,34 +426,53 @@ export class ModuleDetailsModal extends Modal {
     }
   }
 
-  /** Un réglage fait d'un texte, enregistré à chaque saisie ; vide, il revient à sa valeur par défaut. */
+  /**
+   * Un réglage fait d'un texte, enregistré à chaque saisie ; vide, il revient à sa valeur
+   * par défaut. S'il propose des choix (les modèles d'un serveur), un menu seul les montre
+   * — plus « aucun » et « saisir un autre nom… », qui rend le champ texte —, pour ne pas
+   * afficher deux fois la même valeur.
+   */
   private renderText(block: HTMLElement, field: TextField): void {
     const { plugin, module } = this
     const t = this.t.bind(this)
     const stored = this.settings()[field.key]
+    const current = typeof stored === 'string' ? stored : ''
     block.addClass('bp-module-settings')
     const setting = new Setting(block).setName(t(field.nameKey))
     if (field.descKey) setting.setDesc(t(field.descKey))
-    setting.addText((text) => {
-      text.setPlaceholder(field.defaultValue).setValue(typeof stored === 'string' ? stored : field.defaultValue)
-      if (field.tooltipKey) setTooltip(text.inputEl, t(field.tooltipKey))
-      text.onChange(async (value) => {
-        const clean = field.normalize(value) || field.defaultValue
-        await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: clean })
-      })
-    })
-    // Les valeurs proposées (les modèles du serveur) : un menu, seulement s'il y en a.
+    const save = async (value: string) => {
+      await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: field.normalize(value) || field.defaultValue })
+    }
     const choices = field.choices?.(this.settings()) ?? []
-    if (choices.length === 0) return
-    const current = typeof stored === 'string' ? stored : ''
+    if (choices.length === 0 || this.typing.has(field.key)) {
+      setting.addText((text) => {
+        text.setPlaceholder(field.defaultValue).setValue(typeof stored === 'string' ? stored : field.defaultValue)
+        if (field.tooltipKey) setTooltip(text.inputEl, t(field.tooltipKey))
+        text.onChange(save)
+      })
+      if (choices.length === 0) return
+      // Revenir au menu une fois le nom saisi.
+      setting.addExtraButton((button) => {
+        button.setIcon('list').setTooltip(t('settings.choices.back'))
+        button.onClick(() => {
+          this.typing.delete(field.key)
+          this.render()
+        })
+      })
+      return
+    }
+    const TYPE = '\u0000saisir'
     setting.addDropdown((dropdown) => {
-      dropdown.addOption('', t('settings.choices.pick', { count: choices.length }))
+      dropdown.addOption('', t('settings.choices.none'))
       for (const choice of choices) dropdown.addOption(choice, choice)
-      dropdown.setValue(choices.includes(current) ? current : '')
+      // Un nom saisi à la main, que le serveur ne propose pas : gardé, et dit.
+      if (current && !choices.includes(current)) dropdown.addOption(current, t('settings.choices.typed', { name: current }))
+      dropdown.addOption(TYPE, t('settings.choices.type'))
+      dropdown.setValue(current)
       if (field.choicesTooltipKey) setTooltip(dropdown.selectEl, t(field.choicesTooltipKey))
       dropdown.onChange(async (value) => {
-        if (!value) return
-        await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: field.normalize(value) })
+        if (value === TYPE) this.typing.add(field.key)
+        else await save(value)
         this.render()
       })
     })

@@ -9,7 +9,10 @@ export const fr: Record<string, string> = {
   'command.about': 'À propos de Black Projects',
   'about.notice': 'Black Projects {version} — {active} module(s) actif(s) sur {total}. {licence}',
 
-  'settings.choices.pick': 'Choisir… ({count})',
+  'settings.choices.none': '— aucun —',
+  'settings.choices.type': 'Saisir un autre nom…',
+  'settings.choices.typed': '{name} (saisi)',
+  'settings.choices.back': 'Revenir à la liste',
   'settings.secret.saved': 'Une clé est enregistrée dans le trousseau de l’ordinateur.',
   'settings.secret.empty': 'Aucune clé enregistrée.',
   'settings.secret.unavailable':

@@ -27,9 +27,10 @@ sources.**
 - [ ] **Tester la connexion** : la liste des modèles du serveur ; choisir le modèle
       d'analyse ; message « Connexion réussie … »
 - [ ] Chaque usage (analyse, traduction, vecteurs, reranking, lecture OCR, lecture par
-      vision) a un menu **Choisir…** : il ne propose que les modèles qui lui conviennent
-      (les rerankers pour le reranking, les modèles d'embeddings pour les vecteurs…) ;
-      le choix s'enregistre, le champ reste modifiable
+      vision) a un menu, sans champ texte en double : il ne propose que les modèles qui
+      lui conviennent (les rerankers pour le reranking, les modèles d'embeddings pour les
+      vecteurs…), plus « — aucun — » ; « Saisir un autre nom… » rend un champ texte, le
+      bouton liste ramène au menu, et le nom saisi y apparaît « (saisi) »
 - [ ] Un modèle de traduction réglé : « Traduire l'exigence avec l'IA » passe par lui
 - [ ] Un modèle de reranking réglé : « Interroger le dossier » classe les pièces trouvées
       par pertinence (la plus pertinente est la source [1])
