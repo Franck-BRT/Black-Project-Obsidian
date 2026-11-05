@@ -152,6 +152,28 @@ export interface Ui {
   confirm(view: ConfirmView): Promise<boolean>
   /** Fait cocher plusieurs choix dans une liste ; `null` si l'utilisateur renonce. */
   pickMany(view: PickManyView): Promise<string[] | null>
+  /**
+   * Un message qui demande qu'on le lise : une explication, des boutons, et parfois une
+   * case (« Ne plus me le rappeler »). Montré quand l'espace de travail est prêt.
+   */
+  inform(view: MessageView): Promise<MessageAnswer>
+}
+
+export interface MessageView {
+  title: string
+  /** Le texte ; une ligne vide sépare les paragraphes. */
+  message: string
+  /** Les boutons, dans l'ordre ; `cta` : le bouton mis en avant. */
+  actions: readonly { value: string; label: string; cta?: boolean }[]
+  /** Une case à cocher sous le texte. */
+  option?: { label: string; value?: boolean; tooltip?: string }
+}
+
+export interface MessageAnswer {
+  /** Le bouton choisi ; `null` si le message a été fermé. */
+  action: string | null
+  /** L'état de la case, cochée ou non (même si le message a été fermé). */
+  option: boolean
 }
 
 export interface PickManyView {

@@ -16,6 +16,7 @@ import { docModules, documentationPages, writeDocumentation } from '../core/docs
 import { moduleSettings, readSettings, type CoreSettings } from '../core/settings'
 import { MODULES } from '../modules'
 import { obsidianPlatform, pluginSettingsStorage } from './platform'
+import { ModuleDetailsModal } from './moduleDetailsModal'
 import { BlackProjectsSettingTab } from './settingsTab'
 
 export default class BlackProjectsPlugin extends Plugin {
@@ -168,7 +169,8 @@ export default class BlackProjectsPlugin extends Plugin {
       },
       commands: {
         register: (command) => this.addModuleCommand(module, command)
-      }
+      },
+      openWindow: () => new ModuleDetailsModal(this.app, this, module).open()
     }
   }
 

@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.4.3)
+## Aujourd'hui (version 0.4.4)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -26,7 +26,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   avec la réponse (une par candidat pour l'émetteur), d'après le réglage « Où vont les
   types de pièces » du module *Analyse d'appels d'offres* (un bouton pour ajouter un
   type, une liste dépliable, un type par ligne avec ses interrupteurs « AO » et « Réponse AO ») ; quand le type va dans les
-  deux, la question est posée à l'import. Les fiches de **Types de pièces** le rappellent.
+  deux, la question est posée à l'import. La liste est vide au départ : à vous de
+  choisir ; un message l'explique à l'activation du module, puis un rappel s'affiche à
+  l'ouverture tant qu'elle est vide (il se coupe d'une case). Les fiches de **Types de
+  pièces** rappellent où va chaque type.
 
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**

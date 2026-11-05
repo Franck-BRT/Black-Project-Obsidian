@@ -7,7 +7,18 @@
  * ici, il le fait de la même façon dans Obsidian.
  */
 
-import type { Choice, ConfirmView, ExternalFile, FilePickOptions, FormView, PickManyView, Platform, TextView } from '../ports'
+import type {
+  Choice,
+  ConfirmView,
+  ExternalFile,
+  FilePickOptions,
+  FormView,
+  MessageAnswer,
+  MessageView,
+  PickManyView,
+  Platform,
+  TextView
+} from '../ports'
 
 export interface MemoryPlatform extends Platform {
   files: Map<string, Uint8Array>
@@ -32,6 +43,9 @@ export interface MemoryPlatform extends Platform {
   /** Les réponses des prochains choix multiples (par défaut : ce qui était coché), et les listes proposées. */
   manyAnswers: (string[] | null)[]
   manyAsked: PickManyView[]
+  /** Les réponses des prochains messages (par défaut : fermé, case telle quelle), et les messages montrés. */
+  messageAnswers: MessageAnswer[]
+  messages: MessageView[]
 }
 
 export function memoryPlatform(files: Record<string, string | Uint8Array> = {}): MemoryPlatform {
@@ -68,6 +82,8 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
     confirmed: [],
     manyAnswers: [],
     manyAsked: [],
+    messageAnswers: [],
+    messages: [],
     info: { name: 'test', version: '0.0.0' },
     fs: {
       exists: async (path) => store.has(path) || folders.has(path),
@@ -130,6 +146,10 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
         platform.manyAsked.push(view)
         if (platform.manyAnswers.length > 0) return platform.manyAnswers.shift()!
         return view.selected ? [...view.selected] : view.choices.map((choice) => choice.value)
+      },
+      inform: async (view) => {
+        platform.messages.push(view)
+        return platform.messageAnswers.shift() ?? { action: null, option: view.option?.value ?? false }
       }
     }
   }

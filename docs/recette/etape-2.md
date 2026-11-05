@@ -136,25 +136,34 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
 
 ## Appel d'offres et réponse (v0.4.1)
 
+- [ ] (v0.4.4) Coffre neuf, à l'ouverture : la fenêtre « Analyse d'appels d'offres : où
+      ranger les pièces ? » explique quoi faire, sans case à cocher ; **Régler
+      maintenant** ouvre la fenêtre du module
+- [ ] Fermer et rouvrir le coffre, liste toujours vide : « Rappel : aucun type de pièce
+      rangé », avec la case **Ne plus me le rappeler à l'ouverture** ; **Plus tard** sans
+      cocher : le rappel revient à l'ouverture suivante ; cochée : il ne revient plus
+- [ ] Fenêtre du module : interrupteur **Rappel à l'ouverture** éteint après la case
+      cochée ; le rallumer : le rappel revient à l'ouverture suivante
+- [ ] Un type rangé : plus aucun message à l'ouverture
 - [ ] (v0.4.2) Fenêtre du module **Analyse d'appels d'offres** : rubrique « Où vont les
       types de pièces », bouton **Ajouter un type…** et liste dépliable **Types rangés
-      (15)** ; dépliée : l'explication des colonnes **AO** et **Réponse AO** en haut
-      (v0.4.3), puis RC avec « AO » seul allumé, BPU avec les deux
+      (0)** au départ (v0.4.4) ; dépliée : l'explication des colonnes **AO** et
+      **Réponse AO** en haut (v0.4.3), puis « Aucun type rangé » ; ajouter RC avec « AO »
+      et BPU avec les deux : **Types rangés (2)**
 - [ ] (v0.4.3) Chaque type tient sur **une seule ligne**, même FORMULAIRE (libellé coupé
       par « … », entier en infobulle) ; fenêtre étroite : les interrupteurs restent sur
       la ligne
 - [ ] Éteindre « AO » sur BPU : il ne reste que « Réponse AO » ; la liste reste
       dépliée ; éteindre aussi « Réponse AO » : refusé avec un message, l'interrupteur se
       rallume
-- [ ] Corbeille sur PLANNING : il quitte la liste (14) ; **Ajouter un type…** : la petite
-      fenêtre propose PLANNING (pas RC, déjà rangé), « AO » allumé ; tout
-      éteindre puis valider : refusé ; valider avec « Réponse AO » : PLANNING revient dans
-      la liste
+- [ ] Corbeille sur BPU : il quitte la liste (1) ; **Ajouter un type…** : la petite
+      fenêtre propose BPU (pas RC, déjà rangé), « AO » allumé ; tout éteindre puis
+      valider : refusé ; valider avec « Réponse AO » : BPU revient dans la liste
 - [ ] Un type ajouté dans **Types de pièces** (PAQ) : proposé dans **Ajouter un type…** ;
       renommé dans le typage, il garde son rangement
 - [ ] **Types de pièces** : chaque fiche affiche « Analyse d'appels d'offres — va dans »
-      (CCTP : Appel d'offres ; BPU : ce que vous avez réglé ; AUTRE : demandé à
-      l'import) ; plus aucun menu « Va dans » ; désactiver le module AO fait disparaître
+      (RC : Appel d'offres ; BPU : ce que vous avez réglé ; un type pas rangé : « pas
+      encore rangé — demandé à l'import » ; AUTRE : demandé à l'import) ; plus aucun menu « Va dans » ; désactiver le module AO fait disparaître
       cette ligne
 - [ ] Un coffre où la v0.4.1 avait réglé « Va dans » : le réglage se retrouve dans la
       liste du module AO

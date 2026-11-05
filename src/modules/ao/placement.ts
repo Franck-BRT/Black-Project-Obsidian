@@ -9,12 +9,14 @@
  * chaque module qui classe des pièces dit, lui, où il les met. Le module Typage des pièces
  * affiche ce rangement sur la fiche de chaque type, à titre d'information.
  *
- * Réglage `rangement` : code du type → `appel-d-offres`, `reponse` ou `les-deux`. Absent,
- * le rangement par défaut s'applique ; enregistré, il fait foi. Un type qui n'y figure
- * pas va « dans les deux » : la question est posée à l'import.
+ * Réglage `rangement` : code du type → `appel-d-offres`, `reponse` ou `les-deux`. Il est
+ * vide au départ : c'est à l'utilisateur de choisir (le module le lui explique à son
+ * activation, puis le lui rappelle à l'ouverture tant que la liste est vide — rappel
+ * qu'il peut couper). Un type qui n'y figure pas va « dans les deux » : la question est
+ * posée à l'import.
  */
 
-import { allTypes, OTHER, PIECE_TYPES, type CustomKeywords } from '../typage-pieces'
+import { allTypes, OTHER, type CustomKeywords } from '../typage-pieces'
 import type { PiecePlace } from './notes'
 
 export type Place = PiecePlace | 'les-deux'
@@ -22,26 +24,20 @@ export const PLACES: readonly Place[] = ['appel-d-offres', 'reponse', 'les-deux'
 
 export const RANGEMENT_KEY = 'rangement'
 
-/** Les pièces que rédige l'acheteur vont avec l'appel d'offres ; les autres peuvent aller des deux côtés. */
-const TENDER_ONLY = new Set(['AVIS', 'RC', 'CCAP', 'CCAG', 'CCTP', 'CCTG', 'QR'])
-
-/** Le rangement de départ : chaque type du module typage, sauf AUTRE, toujours demandé. */
-export const DEFAULT_RANGEMENT: Readonly<Record<string, Place>> = Object.fromEntries(
-  PIECE_TYPES.filter((each) => each.code !== OTHER).map((each) => [
-    each.code,
-    TENDER_ONLY.has(each.code) ? 'appel-d-offres' : 'les-deux'
-  ])
-)
+/** Le module se souvient d'avoir expliqué le rangement à son activation. */
+export const WELCOME_KEY = 'accueilVu'
+/** Le rappel à l'ouverture, tant qu'aucun type n'est rangé ; coupé par l'utilisateur s'il le veut. */
+export const REMINDER_KEY = 'rappelOuverture'
 
 type Settings = Readonly<Record<string, unknown>>
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-/** Ce qui est enregistré, nettoyé ; le rangement par défaut si rien ne l'est. */
+/** Ce qui est enregistré, nettoyé ; vide si rien ne l'est. */
 export function readRangement(settings: Settings): Record<string, Place> {
   const raw = settings[RANGEMENT_KEY]
-  if (!isRecord(raw)) return { ...DEFAULT_RANGEMENT }
+  if (!isRecord(raw)) return {}
   const out: Record<string, Place> = {}
   for (const [code, place] of Object.entries(raw)) {
     if (code !== OTHER && PLACES.includes(place as Place)) out[code] = place as Place
@@ -53,6 +49,22 @@ export function readRangement(settings: Settings): Record<string, Place> {
 export function rangementOf(settings: Settings, custom?: CustomKeywords): Record<string, Place> {
   const known = new Set(allTypes(custom).map((each) => each.code))
   return Object.fromEntries(Object.entries(readRangement(settings)).filter(([code]) => known.has(code)))
+}
+
+/** Aucun type n'est rangé : toutes les pièces sont demandées à l'import. */
+export function rangementEmpty(settings: Settings, custom?: CustomKeywords): boolean {
+  return Object.keys(rangementOf(settings, custom)).length === 0
+}
+
+/**
+ * Faut-il expliquer le rangement à l'ouverture ? `welcome` : la première fois que le
+ * module est actif ; `reminder` : ensuite, tant que la liste est vide et que le rappel
+ * n'est pas coupé ; `null` : rien à dire.
+ */
+export function placementMessage(settings: Settings, custom?: CustomKeywords): 'welcome' | 'reminder' | null {
+  if (!rangementEmpty(settings, custom)) return null
+  if (settings[WELCOME_KEY] !== true) return 'welcome'
+  return settings[REMINDER_KEY] === false ? null : 'reminder'
 }
 
 /** Où va un type ; « les deux » s'il n'est pas rangé. */
@@ -93,7 +105,7 @@ export function renameRangement(settings: Settings, renames: Readonly<Record<str
 
 /**
  * Les réglages de la version 0.4.1, où la place était choisie dans le module de typage
- * (`placesTypes`) : repris ici, par-dessus le rangement par défaut.
+ * (`placesTypes`) : ce que l'utilisateur y avait choisi est repris ici.
  */
 export function migratePlaces(
   modules: Readonly<Record<string, Record<string, unknown>>>,
@@ -108,7 +120,7 @@ export function migratePlaces(
   delete rest.placesTypes
   const out: Record<string, Record<string, unknown>> = { ...modules, [typing]: rest }
   if (!isRecord(aoSettings[RANGEMENT_KEY]) && isRecord(old)) {
-    const rangement: Record<string, Place> = { ...DEFAULT_RANGEMENT }
+    const rangement: Record<string, Place> = {}
     for (const [code, place] of Object.entries(old)) {
       if (code !== OTHER && PLACES.includes(place as Place)) rangement[code] = place as Place
     }

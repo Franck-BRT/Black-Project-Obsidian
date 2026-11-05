@@ -52,8 +52,23 @@ export const aoFr: Record<string, string> = {
   'ao.setting.places.response.tip': 'Les pièces de ce type sont rangées avec la réponse (Réponse/Originaux, ou le dossier du candidat pour l’émetteur).',
   'ao.setting.places.remove.tip': 'Retirer ce type de la liste : ses pièces seront demandées à l’import.',
   'ao.setting.places.disabled': 'désactivé',
+  'ao.setting.reminder': 'Rappel à l’ouverture',
+  'ao.setting.reminder.desc':
+    'Tant qu’aucun type n’est rangé, un message le rappelle à chaque ouverture d’Obsidian. Éteignez-le pour ne plus le voir.',
+  'ao.setting.reminder.tip': 'Allumé : le rappel s’affiche à l’ouverture tant que la liste « Types rangés » est vide.',
+  'ao.message.welcome.title': 'Analyse d’appels d’offres : où ranger les pièces ?',
+  'ao.message.welcome':
+    'L’analyse range chaque pièce importée avec l’appel d’offres (AO) ou avec la réponse (Réponse AO). Aucun type de pièce n’est encore rangé : c’est à vous de choisir. D’ici là, l’analyse vous demandera, à chaque import, où mettre chaque pièce.\n\nPour le régler : fenêtre du module (Paramètres → Black Projects → bouton « Fonctions » de la ligne « Analyse d’appels d’offres »), rubrique « Où vont les types de pièces ». « Ajouter un type… », choisissez le type, puis allumez AO, Réponse AO, ou les deux — les deux : la question reste posée à l’import.',
+  'ao.message.reminder.title': 'Rappel : aucun type de pièce rangé',
+  'ao.message.reminder':
+    'La liste « Types rangés » du module Analyse d’appels d’offres est vide : à chaque import, l’analyse vous demande où mettre chaque pièce.\n\nPour ranger un type une fois pour toutes : fenêtre du module, rubrique « Où vont les types de pièces », « Ajouter un type… », puis AO, Réponse AO, ou les deux.',
+  'ao.message.open': 'Régler maintenant',
+  'ao.message.later': 'Plus tard',
+  'ao.message.stop': 'Ne plus me le rappeler à l’ouverture',
+  'ao.message.stop.tip': 'Le rappel se rétablit dans la fenêtre du module : « Rappel à l’ouverture ».',
   'ao.annotation': 'Analyse d’appels d’offres — va dans',
   'ao.annotation.ask': 'demandé à l’import',
+  'ao.annotation.unset': 'pas encore rangé — demandé à l’import',
   'ao.name': "Analyse d'appels d'offres",
   'ao.description':
     "Lire les pièces d'un dossier de consultation, en extraire les exigences, en mesurer la qualité et produire la matrice de conformité.",
@@ -234,8 +249,22 @@ export const aoEn: Record<string, string> = {
   'ao.setting.places.response.tip': 'Documents of this type are filed with the response (Réponse/Originaux, or the bidder’s folder for the issuer).',
   'ao.setting.places.remove.tip': 'Remove this type from the list: its documents will be asked at import.',
   'ao.setting.places.disabled': 'disabled',
+  'ao.setting.reminder': 'Reminder at startup',
+  'ao.setting.reminder.desc': 'While no type is filed, a message reminds you each time Obsidian opens. Turn it off to stop seeing it.',
+  'ao.setting.reminder.tip': 'On: the reminder shows at startup while the “Filed types” list is empty.',
+  'ao.message.welcome.title': 'Tender analysis: where to file documents?',
+  'ao.message.welcome':
+    'The analysis files each imported document with the tender (AO) or with the response (Réponse AO). No document type is filed yet: it is up to you to choose. Until then, the analysis asks you at each import where to put each document.\n\nTo set it: the module window (Settings → Black Projects → “Features” button on the “Tender analysis” row), “Where document types go” section. “Add a type…”, pick the type, then turn on AO, Réponse AO, or both — both: you are still asked at import.',
+  'ao.message.reminder.title': 'Reminder: no document type filed',
+  'ao.message.reminder':
+    'The “Filed types” list of the Tender analysis module is empty: at each import, the analysis asks you where to put each document.\n\nTo file a type once and for all: the module window, “Where document types go” section, “Add a type…”, then AO, Réponse AO, or both.',
+  'ao.message.open': 'Set it now',
+  'ao.message.later': 'Later',
+  'ao.message.stop': 'Don’t remind me at startup',
+  'ao.message.stop.tip': 'The reminder can be turned back on in the module window: “Reminder at startup”.',
   'ao.annotation': 'Tender analysis — goes in',
   'ao.annotation.ask': 'asked at import',
+  'ao.annotation.unset': 'not filed yet — asked at import',
   'ao.name': 'Tender analysis',
   'ao.description':
     'Read the documents of a tender package, extract its requirements, measure their quality and produce the compliance matrix.',

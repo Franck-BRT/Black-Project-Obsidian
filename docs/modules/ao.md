@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.4.3 |
+| Version | 0.4.4 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -51,10 +51,26 @@ Réglage `rangement` du module (code du type → `appel-d-offres`, `reponse` ou
   entier en infobulle) avec ses deux interrupteurs (au moins un allumé ; les deux : la
   question est posée à l'import) et une corbeille qui le retire de la liste (v0.4.3).
 
-Rangement de départ (`DEFAULT_RANGEMENT`, `placement.ts`) : avis, RC, CCAP, CCAG, CCTP, CCTG,
-questions-réponses avec l'appel d'offres ; les autres types du module dans les deux. Un
-type absent de la liste — un type ajouté par l'utilisateur, par exemple — et AUTRE sont
-toujours demandés. Une fois modifié, le rangement enregistré fait foi.
+**Au départ, la liste est vide** (v0.4.4) : c'est à l'utilisateur de choisir. Un type
+absent de la liste, et AUTRE, sont demandés à l'import ; sur la fiche du type, dans le
+typage, l'information dit « pas encore rangé — demandé à l'import ».
+
+### Le message à l'activation, et le rappel à l'ouverture (v0.4.4)
+
+`explainPlacement(context)`, lancé à l'activation sans la bloquer, tant que la liste est
+vide (`placementMessage`) :
+
+- **première activation** (`accueilVu` absent) : la fenêtre « Analyse d'appels
+  d'offres : où ranger les pièces ? » explique quoi faire ; boutons **Plus tard** et
+  **Régler maintenant** (ouvre la fenêtre du module) ; `accueilVu` passe à `true` ;
+- **ouvertures suivantes** : « Rappel : aucun type de pièce rangé », avec la case **Ne
+  plus me le rappeler à l'ouverture** ; cochée, `rappelOuverture` passe à `false`.
+  L'interrupteur **Rappel à l'ouverture** de la fenêtre du module le rétablit.
+
+Rien ne s'affiche dès qu'un type est rangé. Le message passe par le port `ui.inform`
+(fenêtre `MessageModal`, montrée quand l'espace de travail est prêt) ; « Régler
+maintenant » par `context.openWindow()` ; l'interrupteur est un champ `boolean` du
+contrat de module.
 
 Le rangement suit le **renommage** d'un type dans le typage (`renameRangement`) ; un
 type supprimé disparaît de la liste. Sur la fiche de chaque type, dans la fenêtre
@@ -67,7 +83,7 @@ Le réglage générique qui dessine cela est un champ `toggles` du contrat de mo
 `toggle` de `askForm`.
 
 Reprise de la v0.4.1 (`migratePlaces`) : `typage-pieces.placesTypes` devient
-`ao.rangement` (par-dessus le rangement de départ) et quitte les réglages du typage.
+`ao.rangement` (seulement les choix de l'utilisateur) et quitte les réglages du typage.
 
 ## Dans le coffre
 

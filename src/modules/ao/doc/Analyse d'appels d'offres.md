@@ -74,9 +74,15 @@ d'appels d'offres*), rubrique **Où vont les types de pièces** :
   chaque type tient sur une ligne, avec ses deux interrupteurs et une corbeille pour le
   retirer de la liste.
 
-Les deux interrupteurs allumés, ou un type absent de la liste (vos types ajoutés, AUTRE),
-la question est posée à l'import. Dans **Types de pièces**, chaque fiche rappelle où
-l'analyse range ce type.
+**Au départ, la liste est vide** : c'est à vous de choisir. Tant qu'un type n'y est pas
+(et pour AUTRE), ou si ses deux interrupteurs sont allumés, la question est posée à
+l'import. Dans **Types de pièces**, chaque fiche rappelle où l'analyse range ce type.
+
+À l'activation du module, un message explique cela, avec un bouton **Régler
+maintenant** qui ouvre la fenêtre du module. Ensuite, tant que la liste est vide, un
+rappel s'affiche à chaque ouverture d'Obsidian : cochez **Ne plus me le rappeler à
+l'ouverture** pour ne plus le voir ; l'interrupteur **Rappel à l'ouverture**, dans la
+fenêtre du module, le rétablit.
 
 À l'import, les pièces dont le type va « dans les deux » font l'objet d'**une question,
 en une fois** : la fenêtre « Où ranger ces pièces ? » propose pour chacune « Appel

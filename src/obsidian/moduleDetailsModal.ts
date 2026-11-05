@@ -14,6 +14,7 @@ import {
   FEATURE_STATUSES,
   type FeatureStatus,
   type ActionsField,
+  type BooleanField,
   type MappingChange,
   type ModuleFeature,
   type MappingField,
@@ -63,6 +64,7 @@ export class ModuleDetailsModal extends Modal {
       if (field.kind === 'mapping') this.renderMapping(contentEl.createDiv(), field)
       else if (field.kind === 'actions') this.renderActions(contentEl.createDiv(), field)
       else if (field.kind === 'toggles') this.renderToggles(contentEl.createDiv(), field)
+      else if (field.kind === 'boolean') this.renderBoolean(contentEl.createDiv(), field)
       else this.renderText(contentEl.createDiv(), field)
     }
     if (details) this.renderDetails(contentEl.createDiv(), details)
@@ -345,6 +347,23 @@ export class ModuleDetailsModal extends Modal {
       values.item,
       field.columns.filter((column) => values[`c:${column.id}`] === 'true').map((column) => column.id)
     )
+  }
+
+  /** Un réglage oui / non : un interrupteur, enregistré aussitôt. */
+  private renderBoolean(block: HTMLElement, field: BooleanField): void {
+    const { plugin, module } = this
+    const t = this.t.bind(this)
+    const stored = this.settings()[field.key]
+    block.addClass('bp-module-settings')
+    const setting = new Setting(block).setName(t(field.nameKey))
+    if (field.descKey) setting.setDesc(t(field.descKey))
+    setting.addToggle((toggle) => {
+      toggle.setValue(typeof stored === 'boolean' ? stored : field.defaultValue)
+      if (field.tooltipKey) toggle.setTooltip(t(field.tooltipKey))
+      toggle.onChange(async (value) => {
+        await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: value })
+      })
+    })
   }
 
   /** Une ligne de boutons, chacun lançant une commande du module ; la fenêtre se redessine après. */

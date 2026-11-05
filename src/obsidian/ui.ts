@@ -5,7 +5,18 @@
 
 import { FuzzySuggestModal, Modal, Notice, Setting, SuggestModal, TFile, setTooltip, type App } from 'obsidian'
 import type { I18n } from '../core/i18n'
-import type { Choice, ConfirmView, ExternalFile, FilePickOptions, FormView, PickManyView, TextView, Ui } from '../core/ports'
+import type {
+  Choice,
+  ConfirmView,
+  ExternalFile,
+  FilePickOptions,
+  FormView,
+  MessageAnswer,
+  MessageView,
+  PickManyView,
+  TextView,
+  Ui
+} from '../core/ports'
 
 /** Les fichiers du coffre, le fichier ouvert d'abord, puis les plus récents. */
 class FilePickerModal extends FuzzySuggestModal<TFile> {
@@ -203,6 +214,50 @@ class ConfirmModal extends Modal {
   }
 }
 
+/** Un message à lire : des paragraphes, une case éventuelle, des boutons. */
+class MessageModal extends Modal {
+  private action: string | null = null
+  private option: boolean
+
+  constructor(
+    app: App,
+    private readonly view: MessageView,
+    private readonly done: (answer: MessageAnswer) => void
+  ) {
+    super(app)
+    this.option = view.option?.value ?? false
+  }
+
+  override onOpen(): void {
+    const { contentEl, view } = this
+    this.modalEl.addClass('bp-message-modal')
+    this.setTitle(view.title)
+    for (const paragraph of view.message.split(/\n\s*\n/)) contentEl.createEl('p', { text: paragraph.trim() })
+    if (view.option) {
+      const option = view.option
+      new Setting(contentEl).setName(option.label).addToggle((toggle) => {
+        toggle.setValue(this.option).onChange((value) => (this.option = value))
+        if (option.tooltip) toggle.setTooltip(option.tooltip)
+      })
+    }
+    const buttons = new Setting(contentEl)
+    for (const action of view.actions) {
+      buttons.addButton((button) => {
+        button.setButtonText(action.label).onClick(() => {
+          this.action = action.value
+          this.close()
+        })
+        if (action.cta) button.setCta()
+      })
+    }
+  }
+
+  override onClose(): void {
+    this.contentEl.empty()
+    this.done({ action: this.action, option: this.option })
+  }
+}
+
 /** Plusieurs choix à cocher, avec « Tout » et « Rien ». */
 class PickManyModal extends Modal {
   private readonly chosen: Set<string>
@@ -392,6 +447,12 @@ export function obsidianUi(app: App, i18n: I18n): Ui {
           settled = true
           resolve(yes)
         }).open()
+      })
+    },
+    inform(view) {
+      return new Promise((resolve) => {
+        // Au démarrage, attendre que l'espace de travail soit prêt.
+        app.workspace.onLayoutReady(() => new MessageModal(app, view, resolve).open())
       })
     },
     askForm(form) {

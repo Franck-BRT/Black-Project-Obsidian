@@ -40,7 +40,7 @@ import {
   type Position,
   type ReadingState
 } from './notes'
-import { DEFAULT_RANGEMENT, placeOf, type Place } from './placement'
+import { placeOf, type Place } from './placement'
 
 export { localToday }
 
@@ -60,7 +60,7 @@ export interface Services {
   keywords?: CustomKeywords
   /** Les codes de types renommés (ancien → nouveau) ; par défaut, ceux du module de typage. */
   renames?: Readonly<Record<string, string>>
-  /** Où ranger chaque type (réglage `rangement` du module) ; par défaut, le rangement de départ. */
+  /** Où ranger chaque type (réglage `rangement` du module) ; par défaut, aucun : tout est demandé. */
   rangement?: Readonly<Record<string, Place>>
 }
 
@@ -297,7 +297,7 @@ export async function importFiles(
     const name = entry.path.slice(entry.path.lastIndexOf('/') + 1)
     const read = await readPiece(name, entry.bytes)
     const type = classifyPiece(name, read.text, custom)
-    pieces.push({ ...entry, read, type, place: placeOf(type, services.rangement ?? DEFAULT_RANGEMENT) })
+    pieces.push({ ...entry, read, type, place: placeOf(type, services.rangement ?? {}) })
   }
 
   // Puis demander, une fois, ce que les types ne disent pas.

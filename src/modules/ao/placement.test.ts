@@ -12,13 +12,15 @@ import { aoModule, rangementField } from '.'
 import { aoFr } from './i18n'
 import {
   columnsPlace,
-  DEFAULT_RANGEMENT,
   migratePlaces,
   placeColumns,
+  placementMessage,
   placeOf,
   RANGEMENT_KEY,
   rangementOf,
-  renameRangement
+  REMINDER_KEY,
+  renameRangement,
+  WELCOME_KEY
 } from './placement'
 
 const i18n = createI18n('fr')
@@ -26,16 +28,10 @@ i18n.register('fr', aoFr)
 i18n.register('fr', typagePiecesModule.texts.fr)
 const t = (key: string) => i18n.t(key)
 
-describe('le rangement par défaut', () => {
-  it('les pièces de l’acheteur avec l’appel d’offres, les autres des deux côtés, AUTRE toujours demandé', () => {
-    expect(DEFAULT_RANGEMENT.CCTP).toBe('appel-d-offres')
-    expect(DEFAULT_RANGEMENT.RC).toBe('appel-d-offres')
-    expect(DEFAULT_RANGEMENT.AVIS).toBe('appel-d-offres')
-    expect(Object.keys(DEFAULT_RANGEMENT)).toHaveLength(15)
-    expect(DEFAULT_RANGEMENT.BPU).toBe('les-deux')
-    expect('AUTRE' in DEFAULT_RANGEMENT).toBe(false)
-    expect(rangementOf({})).toEqual(DEFAULT_RANGEMENT)
-    expect(placeOf('INCONNU', DEFAULT_RANGEMENT)).toBe('les-deux')
+describe('le rangement', () => {
+  it('vide au départ : c’est à l’utilisateur de choisir, et tout est demandé', () => {
+    expect(rangementOf({})).toEqual({})
+    expect(placeOf('CCTP', rangementOf({}))).toBe('les-deux')
   })
 
   it('enregistré, il fait foi ; les valeurs inconnues sont écartées', () => {
@@ -70,9 +66,10 @@ describe('le réglage, tel que la fenêtre du module le dessine', () => {
     expect(removed[RANGEMENT_KEY]).toEqual({ BPU: 'reponse', MEMOIRE: 'reponse' })
   })
 
-  it('le premier changement part du rangement par défaut', () => {
-    const next = rangementField.write({}, 'BPU', ['reponse'])
-    expect(next[RANGEMENT_KEY]).toEqual({ ...DEFAULT_RANGEMENT, BPU: 'reponse' })
+  it('au départ, la liste est vide et tous les types (sauf AUTRE) peuvent être ajoutés', () => {
+    expect(rangementField.read({})).toEqual({})
+    expect(rangementField.candidates({})).toHaveLength(15)
+    expect(rangementField.write({}, 'BPU', ['reponse'])[RANGEMENT_KEY]).toEqual({ BPU: 'reponse' })
   })
 })
 
@@ -97,7 +94,7 @@ describe('l’information sur les fiches du typage', () => {
     expect(typeAnnotationsFor('CCTP')).toEqual([{ labelKey: 'ao.annotation', tags: ['Appel d’offres'] }])
     expect(typeAnnotationsFor('BPU')).toEqual([{ labelKey: 'ao.annotation', tags: ['Réponse'] }])
     expect(typeAnnotationsFor('AE')[0]?.tags).toEqual(['Appel d’offres', 'Réponse', 'demandé à l’import'])
-    expect(typeAnnotationsFor('RC')[0]?.tags).toEqual(['Appel d’offres', 'Réponse', 'demandé à l’import'])
+    expect(typeAnnotationsFor('RC')[0]?.tags).toEqual(['pas encore rangé — demandé à l’import'])
     await aoModule.deactivate?.()
     expect(typeAnnotationsFor('CCTP')).toEqual([])
   })
@@ -122,7 +119,7 @@ describe('les types renommés, et la reprise de la 0.4.1', () => {
     }
     const migrated = migratePlaces(modules, 'ao', 'typage-pieces')!
     expect(migrated['typage-pieces']).toEqual({ typesPerso: { PAQ: 'Plan' } })
-    expect(migrated.ao).toEqual({ dossier: 'AO', [RANGEMENT_KEY]: { ...DEFAULT_RANGEMENT, BPU: 'reponse' } })
+    expect(migrated.ao).toEqual({ dossier: 'AO', [RANGEMENT_KEY]: { BPU: 'reponse' } })
     expect(migrated.autre).toEqual({ x: 1 })
     expect(migratePlaces(migrated, 'ao', 'typage-pieces')).toBeNull()
   })
@@ -135,5 +132,70 @@ describe('les types renommés, et la reprise de la 0.4.1', () => {
     )!
     expect(migrated.ao).toEqual({ [RANGEMENT_KEY]: { CCTP: 'reponse' } })
     expect(migrated['typage-pieces']).toEqual({})
+  })
+})
+
+describe('le message à l’activation, puis le rappel à l’ouverture', () => {
+  const activate = async (stored: Record<string, unknown>, platform = memoryPlatform(), withWindow = true) => {
+    let settings = stored
+    let opened = 0
+    const context: ModuleContext = {
+      moduleId: aoModule.id,
+      platform,
+      i18n,
+      settings: { get: () => settings, save: async (values) => void (settings = values), onChange: () => () => {} },
+      commands: { register: () => {} },
+      ...(withWindow ? { openWindow: () => void opened++ } : {})
+    }
+    await aoModule.activate(context)
+    // Le message est montré sans bloquer l'activation.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    return { platform, settings: () => settings, opened: () => opened }
+  }
+  afterEach(async () => {
+    await aoModule.deactivate?.()
+  })
+
+  it('quand dire quoi', () => {
+    expect(placementMessage({})).toBe('welcome')
+    expect(placementMessage({ [WELCOME_KEY]: true })).toBe('reminder')
+    expect(placementMessage({ [WELCOME_KEY]: true, [REMINDER_KEY]: false })).toBeNull()
+    expect(placementMessage({ [RANGEMENT_KEY]: { CCTP: 'appel-d-offres' } })).toBeNull()
+    // Seulement des types qui n'existent plus : la liste est vide.
+    expect(placementMessage({ [WELCOME_KEY]: true, [RANGEMENT_KEY]: { FANTOME: 'reponse' } })).toBe('reminder')
+  })
+
+  it('à l’activation : l’explication, sans case ; « Régler maintenant » ouvre la fenêtre du module', async () => {
+    const platform = memoryPlatform()
+    platform.messageAnswers.push({ action: 'open', option: false })
+    const run = await activate({}, platform)
+    const [message] = platform.messages
+    expect(message?.title).toBe('Analyse d’appels d’offres : où ranger les pièces ?')
+    expect(message?.message).toContain('Aucun type de pièce n’est encore rangé')
+    expect(message?.option).toBeUndefined()
+    expect(message?.actions.map((action) => action.label)).toEqual(['Plus tard', 'Régler maintenant'])
+    expect(run.opened()).toBe(1)
+    expect(run.settings()[WELCOME_KEY]).toBe(true)
+  })
+
+  it('aux ouvertures suivantes : le rappel, avec sa case ; cochée, il ne revient plus', async () => {
+    const platform = memoryPlatform()
+    platform.messageAnswers.push({ action: 'later', option: true })
+    const run = await activate({ [WELCOME_KEY]: true }, platform)
+    expect(platform.messages[0]?.title).toBe('Rappel : aucun type de pièce rangé')
+    expect(platform.messages[0]?.option?.label).toBe('Ne plus me le rappeler à l’ouverture')
+    expect(run.opened()).toBe(0)
+    expect(run.settings()[REMINDER_KEY]).toBe(false)
+    await aoModule.deactivate?.()
+    const again = await activate(run.settings())
+    expect(again.platform.messages).toEqual([])
+  })
+
+  it('rien quand un type est rangé ; pas de bouton « Régler » sans fenêtre de module', async () => {
+    const ranged = await activate({ [RANGEMENT_KEY]: { CCTP: 'appel-d-offres' } })
+    expect(ranged.platform.messages).toEqual([])
+    await aoModule.deactivate?.()
+    const bare = await activate({}, memoryPlatform(), false)
+    expect(bare.platform.messages[0]?.actions.map((action) => action.value)).toEqual(['later'])
   })
 })

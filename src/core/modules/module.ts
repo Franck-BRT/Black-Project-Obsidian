@@ -270,7 +270,18 @@ export interface TogglesField {
   readonly tooltipKeys?: { readonly add?: string; readonly list?: string; readonly remove?: string }
 }
 
-export type ModuleSettingField = MappingField | TextField | ActionsField | TogglesField
+/** Un réglage oui / non : un interrupteur. */
+export interface BooleanField {
+  readonly kind: 'boolean'
+  readonly key: string
+  readonly nameKey: string
+  readonly descKey?: string
+  readonly tooltipKey?: string
+  /** La valeur quand rien n'est enregistré. */
+  readonly defaultValue: boolean
+}
+
+export type ModuleSettingField = MappingField | TextField | ActionsField | TogglesField | BooleanField
 
 /** Une action que l'utilisateur lance, depuis la palette de commandes par exemple. */
 export interface ModuleCommand {
@@ -297,6 +308,8 @@ export interface ModuleContext {
   readonly commands: {
     register(command: ModuleCommand): void
   }
+  /** Ouvre la fenêtre du module (ses réglages et ses fonctions), quand la plateforme en a une. */
+  openWindow?(): void
 }
 
 export interface BlackModule extends ModuleDescriptor {

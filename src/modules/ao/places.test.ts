@@ -12,7 +12,7 @@ import { memoryPlatform, type MemoryPlatform } from '../../core/testing/memoryPl
 import { typagePiecesModule } from '../typage-pieces'
 import { aoModule } from '.'
 import { aoFr } from './i18n'
-import { DEFAULT_RANGEMENT, type Place } from './placement'
+import type { Place } from './placement'
 import { createAnalysis, importFiles, listCandidates, movePiece, updateAnalysis, type PlacementRequest } from './service'
 
 const i18n = createI18n('fr')
@@ -21,9 +21,18 @@ i18n.register('fr', typagePiecesModule.texts.fr)
 const t = i18n.t.bind(i18n)
 const NONE = { names: {}, titles: {}, types: {} }
 
-function setup(rangement?: Record<string, Place>) {
+/** Un rangement réglé par l'utilisateur : les pièces de l'acheteur avec l'appel d'offres, les autres des deux côtés. */
+const RANGEMENT: Record<string, Place> = {
+  RC: 'appel-d-offres',
+  CCTP: 'appel-d-offres',
+  AE: 'les-deux',
+  BPU: 'les-deux',
+  FORMULAIRE: 'les-deux'
+}
+
+function setup(rangement: Record<string, Place> = RANGEMENT) {
   const platform = memoryPlatform()
-  const services = { fs: platform.fs, t, root: 'AO', today: () => '2026-11-05', keywords: NONE, ...(rangement ? { rangement } : {}) }
+  const services = { fs: platform.fs, t, root: 'AO', today: () => '2026-11-05', keywords: NONE, rangement }
   return { platform, services }
 }
 
@@ -93,7 +102,7 @@ describe('candidat : une réponse, la sienne', () => {
 
 describe('émetteur : une réponse par candidat', () => {
   it('range les pièces de réponse dans le dossier du candidat, et le demande même sans pièce ambiguë', async () => {
-    const { platform, services } = setup({ ...DEFAULT_RANGEMENT, FORMULAIRE: 'reponse' })
+    const { platform, services } = setup({ ...RANGEMENT, FORMULAIRE: 'reponse' })
     const analysis = await createAnalysis(services, 'Essai', { position: 'emetteur', buyer: '', reference: '' })
     const asked: PlacementRequest[] = []
     await importFiles(services, analysis, [{ name: 'DC1.md', bytes: utf8('# DC1') }], async (request) => {
@@ -182,7 +191,7 @@ describe('les commandes', () => {
   it('importer : la fenêtre demande où ranger, « Tout mettre dans » vaut pour toutes', async () => {
     const platform = memoryPlatform()
     await activate(typagePiecesModule, platform, {})
-    const run = await activate(aoModule, platform, { dossier: 'AO' })
+    const run = await activate(aoModule, platform, { dossier: 'AO', rangement: { CCTP: 'appel-d-offres' } })
     const { services } = setup()
     services.fs = platform.fs
     const analysis = await createAnalysis({ ...services, keywords: undefined as never }, 'Essai', {
@@ -220,6 +229,17 @@ describe('les commandes', () => {
 })
 
 describe('le rangement, réglé dans le module', () => {
+  it('vide (au départ) : toutes les pièces sont demandées', async () => {
+    const { services } = setup({})
+    const analysis = await createAnalysis(services, 'Essai', { position: 'candidat', buyer: '', reference: '' })
+    const asked: PlacementRequest[] = []
+    await importFiles(services, analysis, files(), async (request) => {
+      asked.push(request)
+      return { places: {} }
+    })
+    expect(asked[0]?.pending.map((piece) => piece.type)).toEqual(['CCTP', 'BPU', 'AE'])
+  })
+
   it('un type rangé avec la réponse n’est plus demandé ; un type absent de la liste l’est', async () => {
     const { platform, services } = setup({ BPU: 'reponse' })
     const analysis = await createAnalysis(services, 'Essai', { position: 'candidat', buyer: '', reference: '' })

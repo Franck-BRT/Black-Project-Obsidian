@@ -12,7 +12,15 @@
 
 import { cleanFolder } from '../../core/settings'
 import { fillTemplate } from '../../core/docs'
-import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField, TogglesField } from '../../core/modules/module'
+import type {
+  BlackModule,
+  BooleanField,
+  ModuleContext,
+  ModuleDetails,
+  ModuleFeature,
+  TextField,
+  TogglesField
+} from '../../core/modules/module'
 import type { FormField } from '../../core/ports'
 import { LECTURE_FICHIERS } from '../lecture-fichiers'
 import {
@@ -40,8 +48,11 @@ import {
   columnsPlace,
   migratePlaces,
   placeColumns,
+  placementMessage,
   placeOf,
   RANGEMENT_KEY,
+  REMINDER_KEY,
+  WELCOME_KEY,
   rangementOf,
   readRangement,
   renameRangement
@@ -83,7 +94,7 @@ export {
   type Services
 } from './service'
 export { type Analysis, type Destination, type ReadingState } from './notes'
-export { DEFAULT_RANGEMENT, placeOf, RANGEMENT_KEY, rangementOf, type Place } from './placement'
+export { placeOf, RANGEMENT_KEY, rangementOf, REMINDER_KEY, WELCOME_KEY, type Place } from './placement'
 
 let cleanups: (() => void)[] = []
 
@@ -146,6 +157,42 @@ export const rangementField: TogglesField = {
     list: 'ao.setting.places.list.tip',
     remove: 'ao.setting.places.remove.tip'
   }
+}
+
+/** Couper (ou rétablir) le rappel à l'ouverture, tant qu'aucun type n'est rangé. */
+export const reminderField: BooleanField = {
+  kind: 'boolean',
+  key: REMINDER_KEY,
+  nameKey: 'ao.setting.reminder',
+  descKey: 'ao.setting.reminder.desc',
+  tooltipKey: 'ao.setting.reminder.tip',
+  defaultValue: true
+}
+
+/**
+ * À l'activation du module, puis à chaque ouverture tant qu'aucun type n'est rangé :
+ * expliquer ce qu'il faut faire, et proposer d'ouvrir la fenêtre du module. Le rappel
+ * se coupe d'une case, ou dans la fenêtre du module.
+ */
+export async function explainPlacement(context: ModuleContext): Promise<void> {
+  const kind = placementMessage(context.settings.get())
+  if (!kind) return
+  const t = (key: string) => context.i18n.t(key)
+  const answer = await context.platform.ui.inform({
+    title: t(`ao.message.${kind}.title`),
+    message: t(`ao.message.${kind}`),
+    actions: [
+      { value: 'later', label: t('ao.message.later') },
+      ...(context.openWindow ? [{ value: 'open', label: t('ao.message.open'), cta: true }] : [])
+    ],
+    ...(kind === 'reminder' ? { option: { label: t('ao.message.stop'), value: false, tooltip: t('ao.message.stop.tip') } } : {})
+  })
+  await context.settings.save({
+    ...context.settings.get(),
+    [WELCOME_KEY]: true,
+    ...(answer.option ? { [REMINDER_KEY]: false } : {})
+  })
+  if (answer.action === 'open') context.openWindow?.()
 }
 
 const feature = (key: string, status: ModuleFeature['status'], step?: number): ModuleFeature => ({
@@ -339,12 +386,12 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.4.3',
+  version: '0.4.4',
   // Les pièces sont lues par le module Lecture de fichiers, et typées par Typage des pièces.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES],
   texts: { fr: aoFr, en: aoEn },
   details: () => aoFeatures(),
-  settingsFields: [rootField, rangementField],
+  settingsFields: [rootField, rangementField, reminderField],
   // En 0.4.1, la place d'un type se choisissait dans le module de typage : reprise ici.
   migrateSettings: (modules) => migratePlaces(modules, AO, TYPAGE_PIECES),
   docs: ({ folder }) => [{ path: "Modules/Analyse d'appels d'offres.md", content: fillTemplate(page, folder) }],
@@ -357,7 +404,9 @@ export const aoModule: BlackModule = {
     cleanups.push(
       annotateTypes(AO, (code) => {
         if (code === OTHER) return { labelKey: 'ao.annotation', tags: [t('ao.annotation.ask')] }
-        const place = placeOf(code, rangementOf(context.settings.get()))
+        const rangement = rangementOf(context.settings.get())
+        if (!(code in rangement)) return { labelKey: 'ao.annotation', tags: [t('ao.annotation.unset')] }
+        const place = placeOf(code, rangement)
         return {
           labelKey: 'ao.annotation',
           tags: place === 'les-deux' ? [t('ao.place.tender'), t('ao.place.response'), t('ao.annotation.ask')] : [placeTag(place)]
@@ -381,6 +430,9 @@ export const aoModule: BlackModule = {
         .catch((error: unknown) => console.error('[Black Projects] renommage des types', error))
     })
     cleanups.push(fromTyping)
+
+    // Le rangement est vide tant que l'utilisateur ne l'a pas réglé : le lui expliquer.
+    void explainPlacement(context).catch((error: unknown) => console.error('[Black Projects] message de rangement', error))
 
     commands.register({
       id: 'nouvelle-analyse',
