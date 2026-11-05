@@ -204,13 +204,14 @@ export interface PlatformInfo {
 
 /**
  * Comment la plateforme montre un fichier, d'après son extension :
- * - `opens` : visible dans la liste des fichiers, et ouvert dans l'application ;
+ * - `native` : visible dans la liste des fichiers, et ouvert par l'application elle-même ;
+ * - `plugin` : visible, et ouvert par une extension de l'application (un autre plugin) ;
  * - `viewer` : visible parce que l'utilisateur l'a demandé, et ouvert dans la visionneuse
  *   de Black Projects (en lecture seule) ;
  * - `listed` : visible, mais ouvert par une autre application de l'ordinateur ;
  * - `hidden` : absent de la liste des fichiers (il est pourtant bien dans le coffre).
  */
-export type DisplayKind = 'opens' | 'viewer' | 'listed' | 'hidden'
+export type DisplayKind = 'native' | 'plugin' | 'viewer' | 'listed' | 'hidden'
 
 export interface FileDisplay {
   kind(extension: string): DisplayKind

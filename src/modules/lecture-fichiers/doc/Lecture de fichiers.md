@@ -33,9 +33,10 @@ Paramètres → Black Projects → **Formats de fichiers** (le bouton de la lign
 fichiers ») montre la même liste : une fiche par extension, trois par ligne — plusieurs
 fiches pour le PDF, une par cas.
 
-Chaque fiche dit si le format est **lu par Black Projects**, **écrit par Black
-Projects** (aujourd'hui : les notes `.md` et les exports de types `.json`) et **affiché
-dans Obsidian**. 🟩 verte : les trois ; 🟥 rouge : ni lu ni écrit, avec ce qui est à
+Chaque fiche dit si le format est **lu** par Black Projects, **écrit** — les notes `.md`
+par Black Projects, ou par export (« Export uniquement » : les types de pièces en
+`.json`, les notes exportées en PDF par Obsidian) — et **affiché** dans Obsidian
+(« Oui nativement » pour ce qu'Obsidian ouvre lui-même). 🟩 verte : les trois ; 🟥 rouge : ni lu ni écrit, avec ce qui est à
 venir ; 🟧 orange : le reste.
 
 Obsidian ne montre dans son explorateur que les fichiers qu'il sait ouvrir : un `.json`

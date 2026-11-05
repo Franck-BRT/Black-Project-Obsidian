@@ -158,13 +158,14 @@ export function obsidianDisplay(plugin: Plugin): FileDisplay {
   }
   /** Les extensions que Black Projects a déclarées à Obsidian. */
   const ours = new Set<string>()
-  const openedByOthers = (ext: string) =>
-    !ours.has(ext) && (OPENED_BY_OBSIDIAN.has(ext) || (internals.viewRegistry?.isExtensionRegistered?.(ext) ?? false))
+  const openedByPlugin = (ext: string) => !ours.has(ext) && (internals.viewRegistry?.isExtensionRegistered?.(ext) ?? false)
+  const openedByOthers = (ext: string) => OPENED_BY_OBSIDIAN.has(ext) || openedByPlugin(ext)
   return {
     kind(extension) {
       const ext = extension.toLowerCase()
+      if (OPENED_BY_OBSIDIAN.has(ext)) return 'native'
       if (ours.has(ext)) return 'viewer'
-      if (openedByOthers(ext)) return 'opens'
+      if (openedByPlugin(ext)) return 'plugin'
       return internals.vault.getConfig?.('showUnsupportedFiles') === true ? 'listed' : 'hidden'
     },
     canShow(extension) {

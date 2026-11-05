@@ -32,14 +32,17 @@ protégé par mot de passe).
 
 ### Lu, écrit, affiché
 
-Chaque fiche porte trois constats, en pastilles vertes (oui) ou rouges (non), avec une
-infobulle :
+Chaque fiche porte trois constats, **Lu**, **Écrit**, **Affiché**, en pastilles vertes
+(oui) ou rouges (non), avec une infobulle :
 
 | Constat | D'où il vient |
 | --- | --- |
 | **Lu par Black Projects** | l'état du lecteur : Oui ; sinon « Non · à venir, étape N » ou « Non · à venir » |
-| **Écrit par Black Projects** | `WRITTEN` dans `capabilities.ts` : `.md` (notes, documentation) et `.json` (exports de types) aujourd'hui ; « Non · à venir, étape 4 » pour `.reqif`, « étape 7 » pour `.docx`, `.xlsx`, `.pptx` (livrables) ; « Non · pas prévu » pour le reste. Les originaux importés sont gardés tels quels : ce n'est pas « écrire » le format |
-| **Affiché dans Obsidian** | la plateforme (`Platform.display`) : **Oui** si Obsidian (ou un plugin) l'ouvre ; **Oui · par Black Projects** si l'utilisateur l'a affiché (interrupteur) ; **Visible, ouvert à l'extérieur** (orange) si « Détecter toutes les extensions de fichier » est activé ; **Non · masqué** sinon |
+| **Écrit** | `WRITTEN` dans `capabilities.ts` : **Oui** pour `.md` (Black Projects écrit et met à jour ses notes) ; **Export uniquement** (vert, v0.4.8) quand le format est créé par export et jamais modifié ensuite — `.json` (exports de types, par Black Projects), `.pdf` (« Exporter en PDF » d'Obsidian) ; « Non · export à venir, étape 4 » pour `.reqif`, « étape 7 » pour `.docx`, `.xlsx`, `.pptx` (livrables) ; « Non · pas prévu » pour le reste. Les originaux importés sont gardés tels quels : ce n'est pas « écrire » le format |
+| **Affiché** | la plateforme (`Platform.display`) : **Oui nativement** si Obsidian l'ouvre lui-même ; **Oui · par un plugin** ; **Oui · par Black Projects** si l'utilisateur l'a affiché (interrupteur) ; **Visible, ouvert à l'extérieur** (orange) si « Détecter toutes les extensions de fichier » est activé ; **Non · masqué** sinon |
+
+Basculer un interrupteur redessine la fenêtre **sans la faire remonter** : la position
+de défilement est gardée (v0.4.8).
 
 **La couleur de la fiche** (`cardLook`) : **verte** si les trois sont oui ; **rouge** si
 elle n'est ni lue ni écrite — son badge dit alors si c'est à venir (« Ni lu ni écrit · à

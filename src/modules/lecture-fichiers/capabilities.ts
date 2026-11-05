@@ -5,9 +5,11 @@
  * Pour chaque fiche de format, trois constats, chacun vert (oui) ou rouge (non) :
  *
  * - **lu** par Black Projects : l'état de son lecteur ; non lu, on précise s'il arrive ;
- * - **écrit** par Black Projects : ce que l'application produit elle-même dans ce format
- *   (`WRITTEN`, ci-dessous) ; non écrit, on précise si c'est à venir ou pas prévu. Les
- *   fichiers importés sont gardés tels quels : ce n'est pas « écrire » un format ;
+ * - **écrit** : ce que Black Projects écrit et réécrit (les notes `.md`), ou crée par
+ *   **export** — lui-même (les types de pièces en `.json`) ou l'application hôte (Obsidian
+ *   exporte une note en PDF) : « Export uniquement », ces fichiers-là n'étant jamais
+ *   modifiés ensuite (`WRITTEN`, ci-dessous) ; non écrit, on précise si c'est à venir ou
+ *   pas prévu. Les fichiers importés sont gardés tels quels : ce n'est pas « écrire » ;
  * - **affiché** dans l'application hôte : c'est la plateforme qui le dit
  *   (`Platform.display`). L'utilisateur peut afficher un type qu'elle masque
  *   (interrupteur de la fiche, réglage `SHOWN_KEY`).
@@ -32,16 +34,24 @@ export function readShown(settings: Readonly<Record<string, unknown>>): string[]
   return Array.isArray(raw) ? [...new Set(raw.filter((each): each is string => typeof each === 'string' && each !== ''))].sort() : []
 }
 
-export type WriteSupport = { support: 'yes'; whatKey: string } | { support: 'in-progress'; step: number; whatKey: string }
+/**
+ * `yes` : écrit et réécrit ; `export` : créé par export, jamais modifié ensuite ;
+ * `export-coming` : un export arrive à l'étape donnée.
+ */
+export type WriteSupport =
+  | { support: 'yes'; whatKey: string }
+  | { support: 'export'; whatKey: string }
+  | { support: 'export-coming'; step: number; whatKey: string }
 
-/** Ce que Black Projects écrit, ou écrira, par extension. Ce qui n'y est pas n'est pas prévu. */
+/** Ce qui est écrit, ou le sera, par extension. Ce qui n'y est pas n'est pas prévu. */
 export const WRITTEN: Readonly<Record<string, WriteSupport>> = {
   md: { support: 'yes', whatKey: k('write.md') },
-  json: { support: 'yes', whatKey: k('write.json') },
-  reqif: { support: 'in-progress', step: 4, whatKey: k('write.reqif') },
-  docx: { support: 'in-progress', step: 7, whatKey: k('write.deliverables') },
-  xlsx: { support: 'in-progress', step: 7, whatKey: k('write.deliverables') },
-  pptx: { support: 'in-progress', step: 7, whatKey: k('write.deliverables') }
+  json: { support: 'export', whatKey: k('write.json') },
+  pdf: { support: 'export', whatKey: k('write.pdf') },
+  reqif: { support: 'export-coming', step: 4, whatKey: k('write.reqif') },
+  docx: { support: 'export-coming', step: 7, whatKey: k('write.deliverables') },
+  xlsx: { support: 'export-coming', step: 7, whatKey: k('write.deliverables') },
+  pptx: { support: 'export-coming', step: 7, whatKey: k('write.deliverables') }
 }
 
 /** « à venir, étape 6 », « à venir », ou « pas prévu ». */
@@ -58,11 +68,13 @@ function written(extension: string): FactValue {
   const entry = WRITTEN[extension]
   if (!entry) return coming('none')
   if (entry.support === 'yes') return { textKey: k('yes'), tone: 'yes', tooltipKey: entry.whatKey }
-  return { ...coming('in-progress', entry.step), tooltipKey: entry.whatKey }
+  if (entry.support === 'export') return { textKey: k('write.export'), tone: 'yes', tooltipKey: entry.whatKey }
+  return { textKey: k('write.exportComing'), vars: { step: entry.step }, tone: 'no', tooltipKey: entry.whatKey }
 }
 
 const DISPLAYED: Record<DisplayKind, FactValue> = {
-  opens: { textKey: k('display.opens'), tone: 'yes', tooltipKey: k('display.opens.tip') },
+  native: { textKey: k('display.native'), tone: 'yes', tooltipKey: k('display.native.tip') },
+  plugin: { textKey: k('display.plugin'), tone: 'yes', tooltipKey: k('display.plugin.tip') },
   viewer: { textKey: k('display.viewer'), tone: 'yes', tooltipKey: k('display.viewer.tip') },
   listed: { textKey: k('display.listed'), tone: 'partial', tooltipKey: k('display.listed.tip') },
   hidden: { textKey: k('display.hidden'), tone: 'no', tooltipKey: k('display.hidden.tip') }
@@ -100,10 +112,10 @@ export function cardLook(
   if (tone === 'partial') return { tone, badge: { textKey: 'lecture-fichiers.badge.partial', tone } }
   // Rouge : dire si c'est à venir — la lecture, ou l'écriture — ou si rien n'est prévu.
   const write = WRITTEN[extension]
-  const steps = [status !== 'available' ? step : undefined, write?.support === 'in-progress' ? write.step : undefined].filter(
+  const steps = [status !== 'available' ? step : undefined, write?.support === 'export-coming' ? write.step : undefined].filter(
     (each): each is number => each !== undefined
   )
-  const isComing = status !== 'available' || write !== undefined
+  const isComing = status !== 'available' || write?.support === 'export-coming'
   if (!isComing) return { tone, badge: { textKey: 'lecture-fichiers.badge.never', tone } }
   return steps.length > 0
     ? { tone, badge: { textKey: 'lecture-fichiers.badge.step', vars: { step: Math.min(...steps) }, tone } }

@@ -55,8 +55,13 @@ export class ModuleDetailsModal extends Modal {
     this.contentEl.empty()
   }
 
+  /**
+   * Dessine (ou redessine) la fenêtre. Redessiner après un interrupteur ne doit pas
+   * ramener l'utilisateur en haut : la position de défilement est gardée.
+   */
   private render(): void {
-    const { contentEl, module } = this
+    const { contentEl, modalEl, module } = this
+    const scrolled = [modalEl.scrollTop, contentEl.scrollTop]
     const details = module.details?.(this.settings())
     contentEl.empty()
     this.setTitle(details ? `${this.t(module.nameKey)} — ${this.t(details.titleKey)}` : this.t(module.nameKey))
@@ -68,6 +73,8 @@ export class ModuleDetailsModal extends Modal {
       else this.renderText(contentEl.createDiv(), field)
     }
     if (details) this.renderDetails(contentEl.createDiv(), details)
+    modalEl.scrollTop = scrolled[0] ?? 0
+    contentEl.scrollTop = scrolled[1] ?? 0
   }
 
   /**

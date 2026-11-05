@@ -21,11 +21,13 @@ Déposer dans un coffre de test les pièces de `test/fixtures/dce-exemple/`, pui
 - [ ] (v0.4.7) **Une fiche par extension**, trois par ligne ; quatre fiches `.pdf` (texte
       natif, protégé contre la modification, scan, mot de passe) ; résumé en tête par
       couleur (Lu, écrit et affiché · En partie · Ni lu ni écrit)
-- [ ] Chaque fiche : **Lu par Black Projects**, **Écrit par Black Projects**, **Affiché
-      dans Obsidian**, en vert (oui) ou rouge (non). `.md` : fiche **verte** ; `.pdf`
-      texte natif : **orange** (pas écrit) ; `.pdf` scan : **rouge**, badge « Ni lu ni
-      écrit · à venir, étape 6 » ; `.odt` : rouge, « à venir » ; `.docx` : écrit « Non ·
-      à venir, étape 7 »
+- [ ] Chaque fiche : **Lu**, **Écrit**, **Affiché**, en vert (oui) ou rouge (non).
+      `.md` : fiche **verte**, affiché « Oui nativement » ; `.pdf` texte natif : **verte**,
+      écrit « Export uniquement », affiché « Oui nativement » (v0.4.8) ; `.pdf` scan :
+      **orange** ; `.odt` : **rouge**, badge « Ni lu ni écrit · à venir » ; `.docx` :
+      écrit « Non · export à venir, étape 7 »
+- [ ] (v0.4.8) Descendre jusqu'à la fiche `.json`, basculer son interrupteur : la fenêtre
+      reste à la même hauteur
 - [ ] Fiche `.json` : affiché « Non · masqué », un **interrupteur** ; l'allumer : la fiche
       passe au vert (« Oui · par Black Projects »), et les exports de types
       (`Black Projects/Échanges`) apparaissent dans l'explorateur ; un clic en ouvre un

@@ -13,7 +13,7 @@ import { formatsCatalogue } from './catalogue'
 function obsidianLike(shown: string[] = []): FileDisplay {
   const native = ['md', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp']
   return {
-    kind: (ext): DisplayKind => (native.includes(ext) ? 'opens' : shown.includes(ext) ? 'viewer' : 'hidden'),
+    kind: (ext): DisplayKind => (native.includes(ext) ? 'native' : shown.includes(ext) ? 'viewer' : 'hidden'),
     canShow: (ext) => !native.includes(ext),
     show: () => {}
   }
@@ -30,15 +30,23 @@ describe('les constats d’une fiche', () => {
   it('lu, écrit : oui en vert, non en rouge, avec ce qui est à venir', () => {
     expect(texts(card('lecture-fichiers.format.markdown'))).toEqual(['yes', 'yes'])
     expect(texts(card('lecture-fichiers.format.txt'))).toEqual(['yes', 'no.never'])
-    expect(texts(card('lecture-fichiers.format.docx'))).toEqual(['yes', 'no.step'])
+    expect(texts(card('lecture-fichiers.format.docx'))).toEqual(['yes', 'write.exportComing'])
     expect(texts(card('lecture-fichiers.format.png'))).toEqual(['no.step', 'no.never'])
     expect(texts(card('lecture-fichiers.format.odt'))).toEqual(['no.coming', 'no.never'])
     const docx = card('lecture-fichiers.format.docx').facts![1]!.values[0]!
     expect(docx).toMatchObject({ tone: 'no', vars: { step: 7 }, tooltipKey: 'lecture-fichiers.fact.write.deliverables' })
   })
 
+  it('un export compte pour l’écriture : « Export uniquement », en vert', () => {
+    for (const label of ['lecture-fichiers.format.json', 'lecture-fichiers.format.pdf-text', 'lecture-fichiers.format.pdf-scan']) {
+      expect(card(label).facts![1]!.values[0], label).toMatchObject({ textKey: 'lecture-fichiers.fact.write.export', tone: 'yes' })
+    }
+    expect(card('lecture-fichiers.format.pdf-text').facts![1]!.values[0]?.tooltipKey).toBe('lecture-fichiers.fact.write.pdf')
+  })
+
   it('affiché : selon la plateforme, et omis si elle ne sait pas le dire', () => {
     expect(card('lecture-fichiers.format.json').facts).toHaveLength(2)
+    expect(cardFacts('pdf', 'available', undefined, obsidianLike())[2]?.values[0]?.textKey).toBe('lecture-fichiers.fact.display.native')
     expect(cardFacts('json', 'available', undefined, obsidianLike())[2]?.values[0]?.textKey).toBe('lecture-fichiers.fact.display.hidden')
     expect(cardFacts('json', 'available', undefined, obsidianLike(['json']))[2]?.values[0]).toMatchObject({
       textKey: 'lecture-fichiers.fact.display.viewer',
@@ -55,12 +63,13 @@ describe('la couleur et le badge d’une fiche', () => {
 
   it('verte quand les trois sont oui', () => {
     expect(look('lecture-fichiers.format.markdown')).toEqual(['yes', 'yes', undefined])
+    expect(look('lecture-fichiers.format.pdf-text')).toEqual(['yes', 'yes', undefined])
     expect(look('lecture-fichiers.format.json', obsidianLike(['json']))).toEqual(['yes', 'yes', undefined])
   })
 
   it('orange quand lu ou écrit, mais pas les trois', () => {
     expect(look('lecture-fichiers.format.json')).toEqual(['partial', 'partial', undefined])
-    expect(look('lecture-fichiers.format.pdf-text')).toEqual(['partial', 'partial', undefined])
+    expect(look('lecture-fichiers.format.pdf-scan')).toEqual(['partial', 'partial', undefined])
     expect(look('lecture-fichiers.format.docx')).toEqual(['partial', 'partial', undefined])
   })
 
