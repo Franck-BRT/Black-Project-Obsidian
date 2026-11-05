@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.5.0 (Black Projects 0.8.1) |
+| Version | 0.6.0 (Black Projects 0.9.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -131,6 +131,14 @@ et ne font rien. Rien n'est écrit dans une formulation sans l'accord de l'utili
 
 `sessionAt(dossier, ui, notifier)` et `reviewRequirement(…, { scope, offerRewrite, quiet })`
 sont publics : l'AO relit les exigences d'une analyse avec eux (portée `wording`).
+
+## Workflows (Black Projects 0.9.0)
+
+`workflows.ts` déclare au module [Workflows](workflows.md) le déclencheur « exigence
+créée » (signalé par « Nouvelle exigence », `Session.created`), les actions « analyser la
+qualité de la bibliothèque » (`writeLibraryQuality`, partagée avec la commande) et
+« relire une exigence avec l'IA » (relecture écrite, aucune reformulation appliquée), et
+le workflow prêt à l'emploi « qualité chaque lundi ».
 
 ## Le format
 

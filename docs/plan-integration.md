@@ -286,6 +286,27 @@ CCTP d'exemple (`test/ao-qualite.test.ts`).
 **Jalon de démo n° 4 :** l'IA relit, conseille et répond en citant ses sources — vérifié
 sur le dossier d'exemple avec un serveur simulé (`test/ao-ia.test.ts`).
 
+### Étape 6 bis — Workflows ✅ *terminée (v0.9.0)*
+
+- Nouveau module **`workflows`** : repris de la version complète le modèle (conditions,
+  variables, jours relatifs, planification) et l'échange JSON ; le moteur réécrit ; les
+  déclencheurs et les actions **ouverts aux modules** (`registerTrigger`,
+  `registerAction`, `registerTemplate`, `emitWorkflowEvent`)
+- Déclencheurs à la main et à heure fixe ; AO : analyse créée, pièces importées,
+  exigences extraites ; Exigences : exigence créée
+- Actions : prévenir, écrire une note, ajouter à une note ; AO : calendrier, qualité,
+  cohérence, couverture, interroger le dossier (IA), questionnaire (IA) ; Exigences :
+  qualité de la bibliothèque, relecture (IA) ; IA : demander à l'IA
+- Mode « demander d'abord » ou « tout seul », résultats passés d'étape en étape
+  (`{step1.link}`), journal dans le coffre, garde-fou contre les boucles, workflows prêts
+  à l'emploi, export et import
+- Cœur : `ModuleContext.timers` (minuterie des workflows planifiés)
+- Doc : [modules/workflows.md](modules/workflows.md) ; recette :
+  [recette/etape-6-workflows.md](recette/etape-6-workflows.md)
+
+**Jalon :** le dossier se traite seul — calendrier relevé dès le dépôt des pièces,
+qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`).
+
 ### Étape 7 — Livrables
 
 - Repris : générateurs `xlsx` et `docx`, `reqXlsx`, `reqDocx`

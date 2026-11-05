@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.2.0 (Black Projects 0.8.1) |
+| Version | 0.3.0 (Black Projects 0.9.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -47,6 +47,12 @@ client donne le modèle d'un usage par `modelFor(usage)`, avec les remplacements
 Bouton **Tester la connexion** (commande `tester`) : interroge `/models`, retient la liste,
 fait choisir le modèle d'analyse s'il n'y en a pas, et dit en clair ce qui ne va pas (serveur injoignable, adresse sans
 `/v1`, clé refusée, aucun modèle).
+
+## Workflows (Black Projects 0.9.0)
+
+`workflows.ts` déclare l'action « Demander à l'IA » au module [Workflows](workflows.md) :
+une consigne, un contexte (souvent `{step1.text}`), une note facultative ; la réponse
+passe aux étapes suivantes (`{stepN.text}`).
 
 ## Interface publique
 

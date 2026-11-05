@@ -371,6 +371,13 @@ export interface ModuleContext {
   readonly blocks?: {
     register(language: string, render: BlockRenderer): void
   }
+  /**
+   * Une tâche répétée tant que le plugin tourne (les workflows planifiés), arrêtée à son
+   * déchargement ; aussi lancée une fois quand l'espace de travail est prêt.
+   */
+  readonly timers?: {
+    every(milliseconds: number, run: () => void): void
+  }
 }
 
 /** Ce qu'un bloc de code devient : un tableau, et des messages au-dessus. */

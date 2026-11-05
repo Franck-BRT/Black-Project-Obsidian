@@ -175,6 +175,17 @@ export default class BlackProjectsPlugin extends Plugin {
         register: (command) => this.addModuleCommand(module, command)
       },
       openWindow: () => new ModuleDetailsModal(this.app, this, module).open(),
+      timers: {
+        every: (milliseconds, run) => {
+          const safe = () => {
+            Promise.resolve()
+              .then(run)
+              .catch((error: unknown) => console.error(`[Black Projects] minuterie ${module.id}`, error))
+          }
+          this.registerInterval(window.setInterval(safe, milliseconds))
+          this.app.workspace.onLayoutReady(safe)
+        }
+      },
       blocks: {
         register: (language, render) =>
           this.registerMarkdownCodeBlockProcessor(language, async (source, el, ctx) => {

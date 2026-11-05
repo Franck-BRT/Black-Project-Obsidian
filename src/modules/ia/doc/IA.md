@@ -46,6 +46,10 @@ qui ne se termine pas par `/v1`, clé refusée, modèle introuvable.
 | Analyse d'appels d'offres | Relire les exigences du dossier avec l'IA | les plus faibles relues ; côté candidat, la formulation de l'acheteur n'est jamais changée |
 | Exigences et Analyse d'appels d'offres | Analyser la qualité… (avec un modèle d'embeddings) | les doublons par le sens, en plus de ceux par les lettres |
 
+Dans les {{link:Modules/Workflows|workflows}}, l'action **Demander à l'IA** envoie une
+consigne et un contexte (souvent le résultat d'une étape d'avant, `{step1.text}`) ; sa
+réponse passe aux étapes suivantes, ou s'écrit dans une note.
+
 Ce que l'IA propose n'est jamais écrit sans vous : une reformulation se choisit, une
 traduction est marquée « automatique, à relire », une réponse cite où elle a lu.
 

@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.8.1)
+## Aujourd'hui (version 0.9.0)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -69,6 +69,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   pour un appel d'offres, **Interroger le dossier** (la réponse cite ses sources, liées
   aux pièces ; rien trouvé, l'IA n'est pas appelée), le **Questionnaire du dossier**
   (six questions prêtes) et **Relire les exigences du dossier avec l'IA**.
+
+- **Workflows** : « Nouveau workflow » — de zéro ou d'après un modèle prêt à l'emploi
+  (calendrier à l'import des pièces, qualité à l'extraction des exigences, questionnaire
+  avec l'IA, qualité de la bibliothèque chaque lundi) ; un déclencheur, des conditions,
+  des actions à la suite qui reprennent `{analyse}`, `{today}` ou le résultat d'une étape
+  d'avant `{step1.link}` ; seul ou « demander d'abord » ; « Journal des workflows » ;
+  export et import. Voir la page *Workflows* dans le coffre.
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**
   (ou la commande « Créer ou mettre à jour la documentation ») écrit l'accueil, la prise

@@ -37,5 +37,6 @@ Black Projects est construit en modules : d'autres fonctions s'ajouteront au mê
   - [Typage des pièces](modules/typage-pieces.md)
   - [Exigences](modules/exigences.md)
   - [IA](modules/ia.md)
+  - [Workflows](modules/workflows.md)
 - [Recette](recette/README.md)
 - [Règles de développement](developpement/regles.md)

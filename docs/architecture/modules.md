@@ -105,6 +105,7 @@ l'autre est actif. Exemple : `ao` requiert `lecture-fichiers`.
 | `typage-pieces` | Reconnaître le type des pièces ; types et mots-clés de l'utilisateur, échange de types | — |
 | `exigences` | Bibliothèque d'exigences, extraction, vérifications, qualité ; relecture et traduction avec l'IA | `lecture-fichiers` |
 | `ia` | Connexion à un serveur d'IA compatible OpenAI de l'entreprise ; utilisé par les autres s'il est actif | — |
+| `workflows` | Automatiser : déclencheurs, conditions, actions, journal ; ouvert aux déclarations des autres modules | — |
 | `ao` | Analyse d'appels d'offres : analyses, import du dossier, pièces, exigences, qualité, calendrier, questions au dossier | `lecture-fichiers`, `typage-pieces`, `exigences` |
 
 ## Ajouter un module

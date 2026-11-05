@@ -44,6 +44,8 @@ export interface Session {
   settings(): ReqSettings
   /** Le client du serveur d'IA ; `null` si le module IA n'est pas actif ou pas réglé. */
   ai?: () => AiClient | null
+  /** Prévenu de chaque exigence créée (les workflows qui l'attendent). */
+  created?: (requirement: Requirement) => Promise<void>
 }
 
 const list = (raw: string | undefined) =>
@@ -169,6 +171,7 @@ export async function createRequirement(session: Session): Promise<Requirement |
       text: { [lang]: makeReqText({ body: (values.text ?? '').trim() }) }
     })
     notifier.notify(t('exigences.create.done', { id: created.id }), 6000)
+    await session.created?.(created)
     return created
   } catch (error) {
     if (error instanceof RequirementExists) {

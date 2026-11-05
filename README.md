@@ -13,8 +13,12 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.8.1 — étape 6 du [plan d'intégration](docs/plan-integration.md) : l'IA
-locale.** Le module IA se connecte au **serveur d'IA de l'entreprise** (compatible OpenAI ; la
+**Version 0.9.0 — étape 6 bis du [plan d'intégration](docs/plan-integration.md) : les
+workflows.** Quand ceci arrive, si cela tient, faire ceci : relever le calendrier dès que
+les pièces sont déposées, analyser la qualité dès que les exigences sont extraites,
+interroger le dossier avec l'IA, écrire une note ; seul ou après accord, à heure fixe,
+avec un journal ; chaque module y apporte ses déclencheurs et ses actions. Étape 6, l'IA
+locale : Le module IA se connecte au **serveur d'IA de l'entreprise** (compatible OpenAI ; la
 clé reste dans le trousseau ; un modèle par usage — analyse, traduction, vecteurs,
 reranking, lecture OCR, lecture par vision — choisi dans la liste du serveur) : relire une exigence et choisir une reformulation, la
 traduire, trouver les doublons par le sens ; **interroger le dossier** d'un appel
@@ -74,6 +78,7 @@ src/
 │   ├── typage-pieces/      reconnaissance du type des pièces (voir son README.md)
 │   ├── exigences/          bibliothèque d'exigences, extraction, qualité
 │   ├── ia/                 connexion au serveur d'IA de l'entreprise
+│   ├── workflows/          automatisation : déclencheurs, conditions, actions
 │   └── ao/                 analyse d'appels d'offres
 └── obsidian/   adaptateur Obsidian : point d'entrée, ports, réglages
 docs/           documentation

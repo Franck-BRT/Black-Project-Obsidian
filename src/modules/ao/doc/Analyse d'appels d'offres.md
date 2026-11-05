@@ -233,6 +233,15 @@ Avec le module **IA** réglé (voir {{link:Modules/IA|IA}}) :
 
 Rien ne quitte votre réseau : les questions vont au serveur que vous avez réglé.
 
+## 11. Automatiser avec les workflows
+
+Avec le module {{link:Modules/Workflows|Workflows}}, l'analyse se traite seule : « Nouveau
+workflow » propose *À l'import des pièces : relever le calendrier*, *À l'extraction des
+exigences : qualité et cohérence* et *À l'import du CCAP, du RC ou du CCTP : questionnaire
+(IA)*. Vous pouvez aussi écrire les vôtres : déclencheurs *analyse créée*, *pièces
+importées*, *exigences extraites* ; actions calendrier, qualité, cohérence, couverture,
+interroger le dossier, questionnaire.
+
 ## Ce qui arrive ensuite
 
 Paramètres → Black Projects → **Fonctions** montre où en est le module :

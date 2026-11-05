@@ -89,6 +89,9 @@ import { calendarPath, writeCalendar } from './calendar'
 import { answerQuestion, QUESTIONNAIRE, runQuestionnaire, writeQuestionNote, type AskMode, type QuestionKey } from './ask/dossier'
 import { pieceSources } from './ask/sources'
 import { reviewAnalysisRequirements } from './review'
+import { emitCreated, emitExtracted, emitImported, registerAoWorkflows } from './workflows'
+import { requirementsAt } from '../exigences'
+import { requirementsFolder } from './requirements'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export {
@@ -399,13 +402,14 @@ async function importInto(context: ModuleContext, services: Services, analysis: 
   }
   notifier.notify(describeImport(context, report), 10000)
   await ui.openNote(analysis.note)
+  await emitImported(services, analysis, report)
 }
 
 export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.8.0',
+  version: '0.9.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -418,6 +422,8 @@ export const aoModule: BlackModule = {
   activate(context) {
     const { commands, platform, i18n } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
+    // Ce que l'AO apporte aux workflows : déclencheurs, actions, workflows prêts à l'emploi.
+    registerAoWorkflows(() => servicesFor(context), t)
 
     // Sur la fiche de chaque type, dans le module Typage des pièces : où l'analyse le range.
     const placeTag = (place: string) => (place === 'reponse' ? t('ao.place.response') : t('ao.place.tender'))
@@ -535,6 +541,7 @@ export const aoModule: BlackModule = {
           throw error
         }
         await platform.ui.openNote(analysis.note)
+        await emitCreated(services, analysis)
         const next = await platform.ui.pickOption(
           [
             { value: 'import', label: t('ao.next.import'), description: t('ao.next.import.desc') },
@@ -576,6 +583,7 @@ export const aoModule: BlackModule = {
           8000
         )
         await platform.ui.openNote(analysis.note)
+        await emitImported(services, analysis, report)
       }
     })
 
@@ -639,6 +647,11 @@ export const aoModule: BlackModule = {
         }
         const report = await extractFromPiece(services, { ui: platform.ui, notifier: platform.notifier }, target)
         if (report) await platform.ui.openNote(target)
+        const owner = report ? await analysisOf(services, target) : null
+        if (report && owner) {
+          const count = report.outcome.created.length + report.outcome.updated.length
+          await emitExtracted(services, owner, target.slice(target.lastIndexOf('/') + 1).replace(/\.md$/, ''), count)
+        }
       }
     })
 
@@ -653,9 +666,13 @@ export const aoModule: BlackModule = {
           const analysis = await chooseAnalysis(context, services)
           if (!analysis) return
           platform.notifier.notify(t('ao.verif.running'), 3000)
+          const before = (await requirementsAt(requirementsFolder(analysis)).all()).length
           const summary = await check(services, analysis)
           platform.notifier.notify(summary, 10000)
           await platform.ui.openNote(reportPath(analysis))
+          // De nouvelles exigences (tout extraire, oubliées ajoutées) : les workflows qui l'attendent.
+          const after = (await requirementsAt(requirementsFolder(analysis)).all()).length
+          if (after > before) await emitExtracted(services, analysis, '', after - before)
         }
       })
     const window = { ui: platform.ui, notifier: platform.notifier }

@@ -39,11 +39,10 @@ import {
 import { RequirementStore } from './store'
 import { canExtract, EXTRACTABLE, extractRequirements } from './import/extract'
 import { previewImport, type ImportReport } from './import/preview'
-import { assessAll, qualityMarkdown, withQuality } from './quality/report'
 import { localToday } from '../../core/dates'
 import { aiClient } from '../ia'
 import { reviewRequirement, translateRequirement } from './ai/actions'
-import { semanticDuplicates } from './ai/semantic'
+import { emitRequirementCreated, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { RequirementStore, RequirementExists } from './store'
@@ -207,7 +206,8 @@ function sessionFor(context: ModuleContext): Session {
     notifier: platform.notifier,
     t: (key, vars) => i18n.t(key, vars),
     settings: () => readReqSettings(settings.get()),
-    ai: () => aiClient()
+    ai: () => aiClient(),
+    created: (requirement) => emitRequirementCreated(requirement)
   }
 }
 
@@ -264,7 +264,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.5.0',
+  version: '0.6.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -280,6 +280,8 @@ export const exigencesModule: BlackModule = {
     const { commands, platform } = context
     const session = sessionFor(context)
     active = context
+    // Ce que les exigences apportent aux workflows.
+    registerExigencesWorkflows(() => session, session.t, localToday)
 
     commands.register({
       id: 'nouvelle',
@@ -341,28 +343,9 @@ export const exigencesModule: BlackModule = {
       id: 'qualite',
       nameKey: 'exigences.command.quality',
       async run() {
-        const settings = readReqSettings(context.settings.get())
-        const t = session.t
-        const library = await session.store.all()
-        const runs = assessAll(library, settings.languages, 'record')
-        const semantic = await semanticDuplicates(aiClient(), library)
-        const path = `${settings.folder}/${t('exigences.quality.title')}.md`
-        const content = qualityMarkdown(runs, {
-          t,
-          scope: 'record',
-          languages: settings.languages,
-          date: localToday(),
-          semantic,
-          link: (requirement) => (requirement.filePath ? `[[${requirement.filePath.replace(/\.md$/, '')}|${requirement.id}]]` : requirement.id)
-        })
-        const existing = (await platform.fs.exists(path)) ? await platform.fs.readText(path) : null
-        await platform.fs.writeText(path, withQuality(existing, t('exigences.quality.title'), t('exigences.quality.intro'), content, 'Notes'))
-        const mean = runs.length ? Math.round((runs.reduce((sum, run) => sum + run.report.score, 0) / runs.length) * 100) : 0
-        platform.notifier.notify(
-          t('exigences.quality.done', { count: runs.length, mean, weak: runs.filter((run) => run.report.stars < 3).length }),
-          8000
-        )
-        await platform.ui.openNote(path)
+        const report = await writeLibraryQuality(session, localToday())
+        platform.notifier.notify(report.text, 8000)
+        await platform.ui.openNote(report.path)
       }
     })
 

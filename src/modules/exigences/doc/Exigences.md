@@ -155,6 +155,13 @@ Quand le module **IA** est réglé (voir {{link:Modules/IA|IA}}) :
 
 Rien n'est écrit dans une formulation sans votre accord.
 
-## 9. Ce qui arrive
+## 9. Automatiser
+
+Avec le module {{link:Modules/Workflows|Workflows}} : le déclencheur *Exigences : exigence
+créée*, les actions *Analyser la qualité de la bibliothèque* et *Relire l'exigence avec
+l'IA* (la relecture est écrite dans la note, la formulation ne change pas), et le modèle
+*Chaque lundi : qualité de la bibliothèque d'exigences*.
+
+## 10. Ce qui arrive
 
 Matrice de conformité (étape 7). Voir {{link:Accueil|l'accueil}}.

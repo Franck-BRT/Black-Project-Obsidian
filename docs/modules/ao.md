@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.8.0 (Black Projects 0.8.1) |
+| Version | 0.9.0 (Black Projects 0.9.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -141,6 +141,15 @@ l'émetteur).
 
 Les sources sont les **notes des pièces** lues (section « Texte extrait », sans les
 sections tenues par Black Projects) : une citation mène à la note, qui mène à l'original.
+
+## Workflows (v0.9.0)
+
+`workflows.ts` déclare au module [Workflows](workflows.md) trois déclencheurs (analyse
+créée, pièces importées, exigences extraites — signalés par `index.ts` après création,
+import, mise à jour, extraction d'une pièce ou vérifications qui ajoutent des
+exigences), six actions sans fenêtre (calendrier, qualité, cohérence, couverture,
+interroger le dossier et questionnaire avec l'IA ; chacune vise l'analyse nommée,
+`{analyse}` par défaut) et trois workflows prêts à l'emploi.
 
 ## Dans le coffre
 

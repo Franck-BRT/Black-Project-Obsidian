@@ -18,6 +18,7 @@ import page from './doc/IA.md'
 import { AiClient, type AiConnection } from './client'
 import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
+import { registerIaWorkflows } from './workflows'
 import { listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, type ModelUse } from './models'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -147,7 +148,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.2.0',
+  version: '0.3.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -165,6 +166,7 @@ export const iaModule: BlackModule = {
   docs: ({ folder }) => [{ path: 'Modules/IA.md', content: fillTemplate(page, folder) }],
   activate(context) {
     active = context
+    registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)))
     const { platform, i18n, settings } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
 

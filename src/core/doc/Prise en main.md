@@ -15,7 +15,7 @@
   lecture de fichiers, **Types de pièces** pour le typage des pièces (types, mots-clés,
   échange), **Fonctions** pour l'analyse d'appels d'offres (avec le dossier des
   analyses) et pour l'**IA** (adresse du serveur, clé, « Tester la
-  connexion »).
+  connexion ») ; les **Workflows** ont aussi leur fenêtre (dossier du journal).
 - **Licence** : vos droits d'usage.
 
 Survolez un réglage, un bouton ou un bloc : une infobulle explique à quoi il sert.
@@ -65,6 +65,11 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Interroger le dossier (IA) | une question aux pièces ; la réponse cite ses sources, liées aux pièces (`Analyse/Questions`) |
 | Questionnaire du dossier (IA) | attribution, pénalités, garanties, propriété intellectuelle, confidentialité, contrôle export (`Analyse/Questionnaire`) |
 | Relire les exigences du dossier avec l'IA | les plus faibles relues ; côté candidat, la formulation de l'acheteur reste |
+| Nouveau workflow | automatiser : de zéro ou d'après un modèle prêt à l'emploi ; voir {{link:Modules/Workflows|Workflows}} |
+| Workflows : liste et modification | vos workflows ; une ligne ouvre sa fiche (conditions, actions, exécuter, désactiver…) |
+| Exécuter un workflow | à la main, sans attendre son déclencheur |
+| Journal des workflows | chaque exécution, avec ce qu'elle a fait |
+| Exporter / Importer des workflows | un fichier JSON pour un autre coffre |
 
 ## Vos données
 
