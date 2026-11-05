@@ -82,6 +82,7 @@ import {
   type Services
 } from './service'
 import { extractFromPiece, refreshRequirements } from './requirements'
+import { checkCoherence, checkCoverage, extractAll, findMissed, reportPath, verifyAll } from './verification'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export {
@@ -230,7 +231,13 @@ export function aoFeatures(): ModuleDetails {
       },
       {
         titleKey: 'ao.feature.section.requirements',
-        features: [feature('extract', 'available'), feature('reqif', 'available'), feature('trace', 'available'), feature('quality', 'in-progress', 5)]
+        features: [
+          feature('extract', 'available'),
+          feature('reqif', 'available'),
+          feature('trace', 'available'),
+          feature('verify', 'available'),
+          feature('quality', 'in-progress', 5)
+        ]
       },
       {
         titleKey: 'ao.feature.section.ai',
@@ -392,7 +399,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.5.0',
+  version: '0.6.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -628,6 +635,32 @@ export const aoModule: BlackModule = {
         if (report) await platform.ui.openNote(target)
       }
     })
+
+    // Vérifier les exigences du dossier : quatre vérifications, et une qui les enchaîne.
+    // Chacune écrit sa section du rapport (Analyse/Vérification des exigences.md), puis l'ouvre.
+    const verification = (id: string, nameKey: string, check: (services: Services, analysis: Analysis) => Promise<string>) =>
+      commands.register({
+        id,
+        nameKey,
+        async run() {
+          const services = servicesFor(context)
+          const analysis = await chooseAnalysis(context, services)
+          if (!analysis) return
+          platform.notifier.notify(t('ao.verif.running'), 3000)
+          const summary = await check(services, analysis)
+          platform.notifier.notify(summary, 10000)
+          await platform.ui.openNote(reportPath(analysis))
+        }
+      })
+    const window = { ui: platform.ui, notifier: platform.notifier }
+    verification('verifier-exigences', 'ao.command.verifyAll', async (services, analysis) => {
+      await verifyAll(services, window, analysis)
+      return t('ao.verif.all.done')
+    })
+    verification('extraire-tout', 'ao.command.extractAll', (services, analysis) => extractAll(services, window, analysis))
+    verification('exigences-oubliees', 'ao.command.missed', (services, analysis) => findMissed(services, window, analysis))
+    verification('coherence-pieces', 'ao.command.coherence', (services, analysis) => checkCoherence(services, analysis))
+    verification('couverture-reponse', 'ao.command.coverage', (services, analysis) => checkCoverage(services, analysis))
 
     commands.register({
       id: 'exigences-a-jour',

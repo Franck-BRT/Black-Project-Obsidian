@@ -50,6 +50,11 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Importer des exigences d'un fichier (Excel, CSV, Word, PDF, ReqIF…) | aperçu, puis import dans la bibliothèque, chaque exigence avec son origine |
 | Extraire les exigences de la pièce | sur la note d'une pièce (le CCTP) : aperçu, puis import dans les exigences de l'analyse, tracées jusqu'à la pièce |
 | Mettre à jour les exigences de l'analyse | réécrit la liste des exigences de chaque pièce et le tableau de l'analyse |
+| Vérifier les exigences du dossier (les quatre vérifications) | les quatre vérifications ci-dessous, puis le rapport `Analyse/Vérification des exigences` |
+| Extraire les exigences de toutes les pièces | toutes les pièces de l'appel d'offres en un aperçu |
+| Chercher les exigences oubliées | les phrases à tournure d'exigence qu'aucune exigence ne reprend, proposées à l'ajout |
+| Vérifier la cohérence des exigences entre pièces | identifiants écrits différemment, absents d'une version, en double… |
+| Vérifier la couverture des exigences par la réponse | pour chaque exigence : citée, traitée, à vérifier ou absente dans la réponse |
 
 ## Vos données
 

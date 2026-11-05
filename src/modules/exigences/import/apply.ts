@@ -58,6 +58,8 @@ export interface ApplyOptions {
   lang: string
   /** La catégorie des exigences créées sans catégorie (pour attribuer leur identifiant). */
   category: string
+  /** La catégorie d'une ligne créée sans catégorie, quand elle dépend de la ligne (sa pièce). */
+  categoryOf?: (index: number) => string
   /** D'où vient chaque ligne, par sa position. */
   origin?: (index: number) => ReqOrigin | undefined
 }
@@ -80,7 +82,7 @@ export async function applyPlan(store: RequirementStore, plan: readonly CsvPlanR
         const created = await store.create({
           ...seed,
           ...(kept ? { id: kept } : { id: undefined }),
-          category: row.values.category || options.category,
+          category: row.values.category || options.categoryOf?.(index) || options.category,
           aliases: alias ? [...new Set([...seed.aliases, alias])] : seed.aliases,
           ...(origin ? { origin } : {})
         })

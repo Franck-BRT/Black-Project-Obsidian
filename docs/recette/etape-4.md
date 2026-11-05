@@ -33,6 +33,31 @@ jusqu'à leur pièce.**
 - [ ] Supprimer une exigence de `Exigences/`, puis **Mettre à jour les exigences de
       l'analyse** : les deux listes suivent
 
+## Vérifier les exigences du dossier (v0.6.1)
+
+Dans l'analyse « Station sol », importer aussi `A importer/CCTP v2.md` (avec l'appel
+d'offres) et `A importer/Mémoire technique.md` (avec la réponse).
+
+- [ ] **Extraire les exigences de toutes les pièces** : un aperçu « Exigences trouvées
+      dans les pièces (…) », chaque ligne préfixée de sa pièce `[CCTP (docx)]` ; les
+      doublons des autres versions « Refusée : identifiant déjà vu plus haut » ; le
+      rapport `Analyse/Vérification des exigences` s'ouvre, section Extraction : une ligne
+      par pièce
+- [ ] **Chercher les exigences oubliées** : « Phrases qui ressemblent à des exigences
+      (1) », la formation de la v2, non cochée ; la cocher et **Importer** : REQ-CCTP-0001
+      créée ; la section dit « 0 phrase(s)… ; 1 ajoutée(s) »
+- [ ] **Vérifier la cohérence des exigences entre pièces** : « Formulations différentes »
+      pour EX-SOL-001 (3,7 m ≠ 4 m) ; « Absente de cette version » pour EX-SOL-002 dans la
+      v2
+- [ ] **Vérifier la couverture des exigences par la réponse** : EX-SOL-001 « Citée »
+      (Mémoire technique — 1. Antenne), EX-SOL-002 « Traitée (83 %) », les autres
+      « Absente »
+- [ ] **Vérifier les exigences du dossier (les quatre vérifications)** : les deux aperçus,
+      puis le rapport, résumé daté en tête ; plus aucune « pas encore lancée »
+- [ ] Écrire dans la section Notes du rapport, relancer une vérification : la note est
+      gardée
+- [ ] Analyse sans pièce de réponse : la couverture le dit
+
 ## Dans la bibliothèque
 
 - [ ] Commande **Importer des exigences d'un fichier** → « Dans le coffre » →

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.5.0 (Black Projects 0.6.0) |
+| Version | 0.6.0 (Black Projects 0.6.1) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -25,6 +25,11 @@ Documentation utilisateur (écrite dans le coffre) :
 | Déplacer la pièce (appel d'offres ↔ réponse) | Sur la note d'une pièce : original et note changent de dossier, place mise à jour, tableau réécrit (v0.4.1) |
 | Extraire les exigences de la pièce | Sur la note d'une pièce, ou depuis la note de l'analyse (choix de la pièce) : aperçu, puis import dans `Exigences/` de l'analyse (v0.5.0) |
 | Mettre à jour les exigences de l'analyse | Réécrit la liste des exigences de chaque pièce et le tableau « Exigences du dossier » |
+| Vérifier les exigences du dossier (les quatre vérifications) | Les quatre commandes suivantes, l'une après l'autre (v0.6.0) |
+| Extraire les exigences de toutes les pièces | Toutes les pièces de l'appel d'offres en un aperçu ; la première pièce fait foi pour un identifiant |
+| Chercher les exigences oubliées | Phrases à tournure normative non reprises ; proposées à l'ajout, rien de coché d'avance |
+| Vérifier la cohérence des exigences entre pièces | Formulations différentes, absente d'une version, doublon, même texte, exigence rangée qui diffère |
+| Vérifier la couverture des exigences par la réponse | Citée, traitée (≥ 60 %), à vérifier (35-60 %), absente ; un tableau par candidat pour l'émetteur |
 
 Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
 
@@ -112,6 +117,17 @@ vont et les trace.
   dossier » avant la section Notes — tous deux entre `<!-- bp:exigences:debut -->` et
   `<!-- bp:exigences:fin -->`, réécrits à chaque extraction.
 
+## Vérifier les exigences (v0.6.0)
+
+`verification.ts` : les quatre vérifications et le rapport ; les calculs eux-mêmes sont
+ceux du module Exigences (`check/`), sans IA. Le rapport est la note
+`<analyse>/Analyse/Vérification des exigences.md` (`bp-type: ao-verification`) : un
+résumé (entre `<!-- bp:verif:resume:… -->`, d'après les champs `extraction`, `oubliees`,
+`coherence`, `couverture` de son en-tête, datés), puis une section par vérification
+(`<!-- bp:verif:<clé>:debut -->` / `fin`), puis Notes. Pièces de l'appel d'offres : celles
+dont la place est `appel-d-offres` ; de la réponse : `reponse` (par candidat pour
+l'émetteur).
+
 ## Dans le coffre
 
 ```
@@ -119,6 +135,7 @@ vont et les trace.
 ├── <Nom>.md        bp-type: ao-analyse ; position, acheteur, référence, date ;
 │                   tableau des pièces (une partie par destination) entre
 │                   <!-- bp:pieces:debut --> et <!-- bp:pieces:fin -->
+│                   ; exigences du dossier (bp:exigences)
 ├── Pièces/
 │   ├── Appel d'offres/
 │   │   ├── Originaux/  les fichiers tels que reçus
@@ -127,7 +144,7 @@ vont et les trace.
 │   ├── Réponse/              candidat (même forme)
 │   └── Réponses/<candidat>/  émetteur (même forme)
 ├── Exigences/      une note par exigence extraite (étape 4) : <identifiant>.md
-└── Analyse/        (étapes 5 à 7)
+└── Analyse/        Vérification des exigences.md (v0.6.0) ; étapes 5 à 7
 ```
 
 - **Noms des notes** : `CCTP.md` ; si une autre pièce porte déjà ce nom dans un autre
@@ -150,6 +167,7 @@ vont et les trace.
 | `service.ts` | Créer, lister, importer, mettre à jour, changer le type — sans fenêtre, testé sur un coffre en mémoire |
 | `notes.ts` | Forme des notes et des dossiers ; tableau des pièces |
 | `requirements.ts` | Extraire les exigences d'une pièce ; listes d'exigences des notes de pièce et d'analyse |
+| `verification.ts` | Les quatre vérifications et le rapport « Vérification des exigences » |
 | `i18n.ts` | Textes, infobulles comprises |
 | `doc/` | Page de documentation écrite dans le coffre |
 

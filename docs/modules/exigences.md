@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.2.0 (Black Projects 0.6.0) |
+| Version | 0.3.0 (Black Projects 0.6.1) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -81,6 +81,19 @@ origin:
 
 et en tête de son corps (« *Origine : …* »). La version complète garde cette clé telle
 quelle (clés d'en-tête étrangères conservées).
+
+## Vérifier des exigences (`check/`, Black Projects 0.6.1)
+
+Sans IA, des fonctions pures que l'analyse d'appels d'offres appelle :
+
+| Fichier | Rôle |
+| --- | --- |
+| `check/passages.ts` | un document en **passages** (paragraphes, lignes de tableau, feuilles, diapositives), chacun avec son endroit : `documentPassages`, `blockPassages` |
+| `check/text.ts` | mots porteurs de sens (sans accents, sans mots vides), recouvrement, phrases, tournures normatives (FR/EN) |
+| `check/checks.ts` | `missedRequirements` (phrases normatives qu'aucune exigence ne reprend : par nom, par inclusion, ou ≥ 70 % des mots), `coherence` (formulations différentes, absente d'une version du même type, doublon, même texte, exigence rangée qui diffère), `coverage` (citée ; traitée ≥ 60 % des mots ; à vérifier ≥ 35 % ; absente) |
+
+L'aperçu d'import (`previewImport`) accepte aussi des lignes venues de plusieurs pièces
+(`pieceOf`, `labelOf`, `categoryOf`) et des propositions non cochées (`preselect: false`).
 
 ## Le format
 

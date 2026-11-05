@@ -214,6 +214,11 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
 - Doc : [modules/exigences.md](modules/exigences.md), [modules/ao.md](modules/ao.md) ;
   recette : [recette/etape-4.md](recette/etape-4.md)
 
+- v0.6.1 : **vérifier les exigences du dossier** — quatre commandes (tout extraire,
+  exigences oubliées, cohérence entre pièces, couverture par la réponse) et une qui les
+  enchaîne ; un rapport dans l'analyse. Sans IA : la couverture est une estimation par
+  les mots, que l'étape 6 affinera
+
 **Jalon de démo n° 2 :** les exigences du CCTP extraites et tracées jusqu'à leur pièce —
 vérifié sur le dossier d'exemple, en Word, PDF et Markdown (`test/dce-exigences.test.ts`,
 `test/ao-exigences.test.ts`).

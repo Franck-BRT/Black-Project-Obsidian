@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.6.0)
+## Aujourd'hui (version 0.6.1)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -44,6 +44,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   dans le dossier `Exigences` de l'analyse, chacune liée à sa pièce ; la pièce et
   l'analyse les listent. « Importer des exigences d'un fichier » fait de même pour la
   bibliothèque (ReqIF de DOORS compris).
+
+- **Vérifier les exigences du dossier** : « Vérifier les exigences du dossier (les quatre
+  vérifications) », ou chacune seule — tout extraire, chercher les exigences oubliées
+  (phrases en « doit », « devra », « shall »… non reprises), la cohérence entre pièces,
+  la couverture par la réponse ; le rapport `Analyse/Vérification des exigences` de
+  l'analyse en garde le résultat.
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**
   (ou la commande « Créer ou mettre à jour la documentation ») écrit l'accueil, la prise

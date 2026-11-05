@@ -167,6 +167,22 @@ Une fenêtre montre d'abord ce que l'extraction ferait — chaque exigence, **no
 Commande **Mettre à jour les exigences de l'analyse** : réécrit ces deux listes, après
 avoir modifié ou supprimé des exigences à la main.
 
+## 7. Vérifier les exigences du dossier
+
+Quatre vérifications, chacune sa commande, et une commande qui les enchaîne : **Vérifier
+les exigences du dossier (les quatre vérifications)**. Elles visent l'analyse de la note
+ouverte. Les résultats vont dans la note `Analyse/Vérification des exigences` de
+l'analyse : un **résumé** en tête (la date et le résultat de chaque vérification), puis
+une section par vérification, réécrite quand on la relance. Vos remarques vont dans la
+section Notes, jamais touchée.
+
+| Commande | Ce qu'elle vérifie |
+| --- | --- |
+| **Extraire les exigences de toutes les pièces** | Toutes les pièces de l'appel d'offres en un seul aperçu (chaque exigence avec sa pièce entre crochets) ; un identifiant déjà trouvé dans une autre pièce est refusé, la première pièce fait foi. Le rapport donne le nombre d'exigences par pièce, et les pièces sans exigence |
+| **Chercher les exigences oubliées** | Les phrases qui ont la tournure d'une exigence (« doit », « devra », « est tenu de », « s'engage à », « obligatoirement », « shall », « must »…) mais qu'aucune exigence ne reprend — ni par son identifiant, ni par ses mots. Elles sont proposées à l'ajout (rien n'est coché d'avance) ; celles ajoutées reçoivent un identifiant sous le type de leur pièce |
+| **Vérifier la cohérence des exigences entre pièces** | Un même identifiant écrit différemment d'une pièce à l'autre ; présent dans une version d'un document (deux pièces du même type, CCTP en Word et en PDF par exemple) et absent de l'autre ; en double dans une pièce ; un même texte sous deux identifiants ; une exigence rangée qui ne dit plus ce que dit sa pièce |
+| **Vérifier la couverture des exigences par la réponse** | Pour chaque exigence de l'analyse, l'endroit des pièces de **réponse** qui la **cite** (identifiant ou alias), la **traite** (au moins 60 % de ses mots), est **à vérifier** (35 à 60 %), ou son **absence**. Pour l'émetteur, un tableau par candidat. Une estimation sans IA, à relire : l'IA de Sidonie l'affinera à l'étape 6 |
+
 ## Ce qui arrive ensuite
 
 Paramètres → Black Projects → **Fonctions** montre où en est le module :

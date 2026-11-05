@@ -58,6 +58,15 @@ export interface ImportRequest {
   category?: string
   /** Ce que l'origine de chaque exigence nomme : un lien vers la note de la pièce, ou le nom du fichier. */
   piece: string
+  /** Quand les lignes viennent de plusieurs pièces : la pièce de chacune, et son nom court pour l'aperçu. */
+  pieceOf?: (index: number) => string
+  labelOf?: (index: number) => string
+  /** Quand les lignes viennent de plusieurs pièces : la catégorie des exigences sans identifiant, pour chacune. */
+  categoryOf?: (index: number) => string
+  /** Cocher d'avance les nouvelles et les mises à jour (oui par défaut). */
+  preselect?: boolean
+  /** Le titre de la fenêtre, à la place de « Exigences trouvées dans … ». */
+  title?: string
 }
 
 export interface ImportReport {
@@ -87,13 +96,13 @@ export async function previewImport(request: ImportRequest): Promise<ImportRepor
     ...(extraction.unmatched.length ? [t('exigences.import.unmatched', { values: extraction.unmatched.join(', ') })] : [])
   ]
   const chosen = await ui.pickMany({
-    title: t('exigences.import.title', { name, count: plan.length }),
+    title: request.title ?? t('exigences.import.title', { name, count: plan.length }),
     intro: notes.join(' '),
     choices: plan.map((row, index) => {
       const body = Object.values(row.values.text)[0] ?? row.title
       return {
         value: String(index),
-        label: `${row.id || t('exigences.import.newId')} — ${excerpt(body)}`,
+        label: `${request.labelOf ? `[${request.labelOf(index)}] ` : ''}${row.id || t('exigences.import.newId')} — ${excerpt(body)}`,
         description: [
           row.action === 'invalid' ? t(`exigences.import.invalid.${row.reason ?? 'no-wording'}`) : t(`exigences.import.action.${row.action}`),
           describeLocation(extraction.where[index], t)
@@ -102,7 +111,10 @@ export async function previewImport(request: ImportRequest): Promise<ImportRepor
           .join(' · ')
       }
     }),
-    selected: plan.flatMap((row, index) => (row.action === 'create' || row.action === 'update' ? [String(index)] : [])),
+    selected:
+      request.preselect === false
+        ? []
+        : plan.flatMap((row, index) => (row.action === 'create' || row.action === 'update' ? [String(index)] : [])),
     submit: t('exigences.import.submit')
   })
   if (!chosen || chosen.length === 0) return null
@@ -111,7 +123,7 @@ export async function previewImport(request: ImportRequest): Promise<ImportRepor
   let category = request.category ?? ''
   const minted = chosen.some((value) => {
     const row = plan[Number(value)]
-    return row?.action === 'create' && !row.values.category
+    return row?.action === 'create' && !row.values.category && !request.categoryOf?.(Number(value))
   })
   if (minted && !category) {
     const values = await ui.askForm({
@@ -129,7 +141,8 @@ export async function previewImport(request: ImportRequest): Promise<ImportRepor
     by: '',
     lang: extraction.lang,
     category: idCategory(category || 'GEN'),
-    origin: (index) => ({ piece: request.piece, locator: describeLocation(extraction.where[index], t) })
+    ...(request.categoryOf ? { categoryOf: (index: number) => idCategory(request.categoryOf!(index) || category || 'GEN') } : {}),
+    origin: (index) => ({ piece: request.pieceOf?.(index) ?? request.piece, locator: describeLocation(extraction.where[index], t) })
   })
   notifier.notify(
     [

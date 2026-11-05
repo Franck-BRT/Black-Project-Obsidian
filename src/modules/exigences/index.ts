@@ -49,6 +49,22 @@ export { type ReqLocation } from './import/document'
 export { describeLocation, previewImport, type ImportReport, type ImportRequest } from './import/preview'
 export { type ImportOutcome } from './import/apply'
 export { type ReqOrigin } from './model/requirement'
+export { blockPassages, documentPassages, hasPassages, type Passage } from './check/passages'
+export {
+  coherence,
+  coverage,
+  missedRequirements,
+  ADDRESSED,
+  PARTIAL,
+  type Coverage,
+  type CoverageStatus,
+  type Finding,
+  type FindingKind,
+  type Missed,
+  type PieceRequirements,
+  type ReadDocument
+} from './check/checks'
+export { keywords, normativeMarker, overlap, sentences } from './check/text'
 export {
   makeReqText,
   makeRequirement,
@@ -209,7 +225,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.2.0',
+  version: '0.3.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },

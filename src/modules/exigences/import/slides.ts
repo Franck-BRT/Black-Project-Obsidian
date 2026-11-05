@@ -140,7 +140,7 @@ function ownSlide(
 }
 
 /** A slide as a page of a document: its title a heading, its text paragraphs, its tables tables. */
-function slideBlocks(slide: PptxReadSlide): DocxReadBlock[] {
+export function slideBlocks(slide: PptxReadSlide): DocxReadBlock[] {
   const title = titleOf(slide)
   const rest = slide.shapes
     .filter((shape) => shape !== title && !(shape.kind === 'text' && FURNITURE.has(shape.placeholder ?? '')))
