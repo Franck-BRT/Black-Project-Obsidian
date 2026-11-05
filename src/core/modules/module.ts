@@ -52,6 +52,18 @@ export interface ModuleFeature {
     /** Les infobulles de l'interrupteur, actif et inactif. */
     readonly tooltipKeys?: { readonly on: string; readonly off: string }
   }
+  /**
+   * Un menu sur la fiche : la valeur choisie est rangée sous `id` dans l'objet
+   * `settingsKey` des réglages du module (la place d'un type de pièce, par exemple).
+   */
+  readonly select?: {
+    readonly settingsKey: string
+    readonly id: string
+    readonly labelKey: string
+    readonly value: string
+    readonly options: readonly { readonly value: string; readonly labelKey: string }[]
+    readonly tooltipKey?: string
+  }
 }
 
 /** Une ligne de blocs : une famille de fonctions (les PDF, les tableurs…). */

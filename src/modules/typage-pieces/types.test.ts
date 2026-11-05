@@ -85,3 +85,38 @@ describe('types de pièces dans la fenêtre « Fonctions »', async () => {
     expect(cctp?.tagGroups?.[1]?.tags).toContain('cahier des charges')
   })
 })
+
+describe('place des types dans une analyse', () => {
+  it('a une place par défaut, que l’utilisateur peut changer', async () => {
+    const { typePlace, allTypes } = await import('./types')
+    expect(typePlace('RC')).toBe('appel-d-offres')
+    expect(typePlace('BPU')).toBe('les-deux')
+    expect(typePlace('AE')).toBe('les-deux')
+    const custom = { names: {}, titles: {}, types: { PAQ: 'Plan qualité' }, places: { RC: 'reponse' as const } }
+    expect(typePlace('RC', custom)).toBe('reponse')
+    expect(typePlace('PAQ', custom)).toBe('les-deux')
+    expect(typePlace('INCONNU', custom)).toBe('les-deux')
+    expect(allTypes(custom).find((each) => each.code === 'RC')?.place).toBe('reponse')
+  })
+
+  it('se relit des réglages, suit le renommage et la suppression d’un type ajouté', async () => {
+    const { readPlaces, afterTypeChange } = await import('./custom')
+    expect(readPlaces({ placesTypes: { RC: 'reponse', BPU: 'nulle-part', XYZ: 'reponse' } })).toEqual({ RC: 'reponse' })
+    const renamed = afterTypeChange(
+      { kind: 'edit', from: 'PQA', to: 'x', previousFrom: 'PAQ', previousTo: 'x' },
+      { typesPerso: { PQA: 'x' }, placesTypes: { PAQ: 'reponse' } }
+    )
+    expect(renamed.placesTypes).toEqual({ PQA: 'reponse' })
+    expect(afterTypeChange({ kind: 'remove', from: 'PQA', to: 'x' }, { placesTypes: { PQA: 'reponse' } }).placesTypes).toEqual({})
+  })
+
+  it('a son menu « Va dans » sur chaque fiche', async () => {
+    const { typingDetails } = await import('./catalogue')
+    const section = typingDetails().sections.find((each) => each.titleKey === 'typage-pieces.types.section')
+    expect(section?.features.find((each) => each.prefix === 'BPU')?.select).toMatchObject({
+      settingsKey: 'placesTypes',
+      id: 'BPU',
+      value: 'les-deux'
+    })
+  })
+})

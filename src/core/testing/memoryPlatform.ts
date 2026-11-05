@@ -86,6 +86,12 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
       ensureFolder: async (path) => {
         if (path) addFolders(`${path}/x`)
       },
+      rename: async (from, to) => {
+        const bytes = store.get(from)
+        if (!bytes) throw missing(from)
+        store.delete(from)
+        put(to, bytes)
+      },
       list: async (folder) => {
         const prefix = folder ? `${folder}/` : ''
         const direct = (path: string) => path.startsWith(prefix) && !path.slice(prefix.length).includes('/')

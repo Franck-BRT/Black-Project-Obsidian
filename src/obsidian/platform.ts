@@ -77,6 +77,16 @@ export class ObsidianFileSystem implements FileSystem {
     }
   }
 
+  /** Par le gestionnaire de fichiers d'Obsidian : les liens vers le fichier suivent. */
+  async rename(from: string, to: string): Promise<void> {
+    const source = normalizePath(from)
+    const target = normalizePath(to)
+    await this.ensureFolder(parentOf(target))
+    const file = this.app.vault.getAbstractFileByPath(source)
+    if (file instanceof TFile) await this.app.fileManager.renameFile(file, target)
+    else await this.adapter.rename(source, target)
+  }
+
   async list(folder: string): Promise<FolderListing> {
     const listed = await this.adapter.list(normalizePath(folder))
     return { files: listed.files, folders: listed.folders }

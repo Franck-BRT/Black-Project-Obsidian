@@ -16,8 +16,19 @@
  * prolongent (« annexe… » trouve « annexes »).
  */
 
+/**
+ * Où va une pièce de ce type dans une analyse : avec l'appel d'offres (le dossier de
+ * consultation), avec la réponse (l'offre d'un candidat), ou l'un ou l'autre selon le
+ * cas — un BPU vierge dans le dossier, rempli dans l'offre : la question est alors posée
+ * à l'import.
+ */
+export type Place = 'appel-d-offres' | 'reponse' | 'les-deux'
+export const PLACES: readonly Place[] = ['appel-d-offres', 'reponse', 'les-deux']
+
 export interface PieceType {
   readonly code: string
+  /** Où va une pièce de ce type ; réglable par l'utilisateur. */
+  readonly place: Place
   /** Clé du libellé long : « Cahier des clauses techniques particulières ». */
   readonly labelKey: string
   /** Le libellé tel quel, pour un type ajouté par l'utilisateur (sa clé est alors générique). */
@@ -30,8 +41,9 @@ export interface PieceType {
   readonly titles: readonly string[]
 }
 
-const type = (code: string, names: string[], titles: string[] = []): PieceType => ({
+const type = (code: string, place: Place, names: string[], titles: string[] = []): PieceType => ({
   code,
+  place,
   labelKey: `typage-pieces.piece.${code.toLowerCase()}`,
   names,
   titles
@@ -39,17 +51,19 @@ const type = (code: string, names: string[], titles: string[] = []): PieceType =
 
 /** Dans l'ordre où ils sont essayés : le plus précis d'abord ; le premier qui correspond l'emporte. */
 export const PIECE_TYPES: readonly PieceType[] = [
-  type('AVIS', ['AAPC', 'avis d’appel', 'avis de marché', 'BOAMP'], ['avis d’appel public', 'avis de marché']),
+  type('AVIS', 'appel-d-offres', ['AAPC', 'avis d’appel', 'avis de marché', 'BOAMP'], ['avis d’appel public', 'avis de marché']),
   type(
     'RC',
+    'appel-d-offres',
     ['RC', 'RDC', 'règlement de consultation', 'règlement de la consultation'],
     ['règlement de la consultation', 'règlement de consultation']
   ),
-  type('AE', ['AE', 'ATTRI1', 'acte d’engagement'], ['acte d’engagement']),
-  type('CCAP', ['CCAP', 'clauses administratives particulières'], ['clauses administratives particulières']),
-  type('CCAG', ['CCAG', 'clauses administratives générales'], ['clauses administratives générales']),
+  type('AE', 'les-deux', ['AE', 'ATTRI1', 'acte d’engagement'], ['acte d’engagement']),
+  type('CCAP', 'appel-d-offres', ['CCAP', 'clauses administratives particulières'], ['clauses administratives particulières']),
+  type('CCAG', 'appel-d-offres', ['CCAG', 'clauses administratives générales'], ['clauses administratives générales']),
   type(
     'CCTP',
+    'appel-d-offres',
     [
       'CCTP',
       'clauses techniques particulières',
@@ -65,28 +79,31 @@ export const PIECE_TYPES: readonly PieceType[] = [
     ],
     ['clauses techniques particulières', 'cahier des charges', 'spécification technique de besoin', 'statement of work']
   ),
-  type('CCTG', ['CCTG', 'clauses techniques générales'], ['clauses techniques générales']),
-  type('BPU', ['BPU', 'bordereau des prix', 'bordereau de prix'], ['bordereau des prix', 'bordereau de prix']),
+  type('CCTG', 'appel-d-offres', ['CCTG', 'clauses techniques générales'], ['clauses techniques générales']),
+  type('BPU', 'les-deux', ['BPU', 'bordereau des prix', 'bordereau de prix'], ['bordereau des prix', 'bordereau de prix']),
   type(
     'DPGF',
+    'les-deux',
     ['DPGF', 'décomposition du prix global', 'décomposition prix global'],
     ['décomposition du prix global', 'décomposition prix global']
   ),
-  type('DQE', ['DQE', 'détail quantitatif'], ['détail quantitatif']),
+  type('DQE', 'les-deux', ['DQE', 'détail quantitatif'], ['détail quantitatif']),
   type(
     'MEMOIRE',
+    'les-deux',
     ['cadre de réponse', 'cadre de mémoire', 'mémoire technique', 'CRT', 'CMT'],
     ['cadre de réponse', 'cadre de mémoire', 'mémoire technique']
   ),
-  type('FORMULAIRE', ['DC1', 'DC2', 'DC3', 'DC4', 'DUME', 'formulaire…', 'attestation…', 'déclaration sur l’honneur']),
+  type('FORMULAIRE', 'les-deux', ['DC1', 'DC2', 'DC3', 'DC4', 'DUME', 'formulaire…', 'attestation…', 'déclaration sur l’honneur']),
   type(
     'QR',
+    'appel-d-offres',
     ['questions réponses', 'questions et réponses', 'question réponse', 'FAQ', 'Q/R', 'QR'],
     ['questions et réponses', 'questions réponses']
   ),
-  type('PLANNING', ['planning', 'calendrier', 'Gantt']),
-  type('ANNEXE', ['annexe…', 'appendix']),
-  type('AUTRE', [])
+  type('PLANNING', 'les-deux', ['planning', 'calendrier', 'Gantt']),
+  type('ANNEXE', 'les-deux', ['annexe…', 'appendix']),
+  type('AUTRE', 'les-deux', [])
 ]
 
 export const OTHER = 'AUTRE'
@@ -101,11 +118,30 @@ export function pieceType(code: string, custom: CustomKeywords = NO_CUSTOM_KEYWO
  * type « PAQ » reconnaît « PAQ_v2.pdf » sans rien de plus.
  */
 export function allTypes(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): PieceType[] {
+  const placed = (type: PieceType): PieceType => {
+    const place = custom.places?.[type.code]
+    return place && place !== type.place ? { ...type, place } : type
+  }
   const builtIn = PIECE_TYPES.filter((each) => each.code !== OTHER)
   const added = Object.entries(custom.types)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([code, label]): PieceType => ({ code, labelKey: 'typage-pieces.types.customLabel', label, names: [code], titles: [], custom: true }))
-  return [...builtIn, ...added, PIECE_TYPES[PIECE_TYPES.length - 1]!]
+    .map(
+      ([code, label]): PieceType => ({
+        code,
+        place: 'les-deux',
+        labelKey: 'typage-pieces.types.customLabel',
+        label,
+        names: [code],
+        titles: [],
+        custom: true
+      })
+    )
+  return [...builtIn, ...added, PIECE_TYPES[PIECE_TYPES.length - 1]!].map(placed)
+}
+
+/** Où va une pièce de ce type ; « les deux » pour un code qui n'est plus un type. */
+export function typePlace(code: string, custom: CustomKeywords = NO_CUSTOM_KEYWORDS): Place {
+  return allTypes(custom).find((each) => each.code === code)?.place ?? 'les-deux'
 }
 
 export function isDisabled(code: string, custom: CustomKeywords = NO_CUSTOM_KEYWORDS): boolean {
@@ -158,6 +194,8 @@ export interface CustomKeywords {
   readonly types: Readonly<Record<string, string>>
   /** Les types désactivés : ni reconnus ni proposés ; les pièces qui les ont les gardent. */
   readonly disabled?: readonly string[]
+  /** La place choisie par l'utilisateur pour un type, à la place de celle par défaut. */
+  readonly places?: Readonly<Record<string, Place>>
 }
 
 export const NO_CUSTOM_KEYWORDS: CustomKeywords = { names: {}, titles: {}, types: {} }

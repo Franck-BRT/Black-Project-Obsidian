@@ -9,7 +9,7 @@
  * que le dessiner, et se redessine quand un réglage change.
  */
 
-import { Modal, Setting, setTooltip, ToggleComponent, type App } from 'obsidian'
+import { DropdownComponent, Modal, Setting, setTooltip, ToggleComponent, type App } from 'obsidian'
 import {
   FEATURE_STATUSES,
   type FeatureStatus,
@@ -288,6 +288,26 @@ export class ModuleDetailsModal extends Modal {
     })
   }
 
+  /** Le menu d'une fiche : la valeur choisie est rangée sous son identifiant, puis la fenêtre se redessine. */
+  private renderSelect(card: HTMLElement, spec: NonNullable<ModuleFeature['select']>): void {
+    const { plugin, module } = this
+    const t = this.t.bind(this)
+    const row = card.createDiv({ cls: 'bp-feature-select' })
+    row.createSpan({ text: t(spec.labelKey), cls: 'bp-feature-group' })
+    const dropdown = new DropdownComponent(row)
+    for (const option of spec.options) dropdown.addOption(option.value, t(option.labelKey))
+    dropdown.setValue(spec.value)
+    if (spec.tooltipKey) setTooltip(dropdown.selectEl, t(spec.tooltipKey))
+    dropdown.onChange(async (value) => {
+      const settings = this.settings()
+      const raw = settings[spec.settingsKey]
+      const map = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? { ...(raw as Record<string, unknown>) } : {}
+      map[spec.id] = value
+      await plugin.saveModuleSettings(module.id, { ...settings, [spec.settingsKey]: map })
+      this.render()
+    })
+  }
+
   /** Le détail : un résumé, puis une ligne par famille et un petit bloc par fonction. */
   private renderDetails(panel: HTMLElement, details: ModuleDetails): void {
     const t = this.t.bind(this)
@@ -329,6 +349,7 @@ export class ModuleDetailsModal extends Modal {
           const tags = card.createDiv({ cls: 'bp-feature-tags' })
           for (const tag of group.tags) tags.createSpan({ text: `${tagPrefix}${tag}`, cls: 'bp-feature-tag' })
         }
+        if (feature.select) this.renderSelect(card, feature.select)
         if (feature.noteKey) card.createDiv({ text: t(feature.noteKey, feature.vars), cls: 'bp-feature-note' })
         if (reference) continue
         const status =

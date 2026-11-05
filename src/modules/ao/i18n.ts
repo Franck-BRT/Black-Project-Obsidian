@@ -3,6 +3,35 @@
 
 /** Les textes du module Analyse d'appels d'offres. Toutes les clés commencent par `ao.`. */
 export const aoFr: Record<string, string> = {
+  'ao.command.move': 'Déplacer la pièce (appel d’offres ↔ réponse)',
+  'ao.place.tender': 'Appel d’offres',
+  'ao.place.response': 'Réponse',
+  'ao.place.responseOf': 'Réponse — {candidate}',
+  'ao.ask.title': 'Où ranger ces pièces ?',
+  'ao.ask.intro':
+    'Le type de ces pièces peut aller avec l’appel d’offres comme avec votre réponse : un BPU vierge du dossier, ou celui que vous avez rempli. Dites où ranger chacune.',
+  'ao.ask.intro.emitter':
+    'Le type de certaines pièces peut aller avec l’appel d’offres comme avec la réponse d’un candidat. Dites où ranger chacune, et de quel candidat est la réponse.',
+  'ao.ask.all': 'Tout mettre dans',
+  'ao.ask.all.tip': 'Un choix pour toutes les pièces ci-dessous ; « Au cas par cas » laisse le choix de chacune.',
+  'ao.ask.case': 'Au cas par cas',
+  'ao.ask.candidate': 'Réponse de quel candidat ?',
+  'ao.ask.candidate.tip': 'Les pièces rangées avec la réponse vont dans le dossier de ce candidat.',
+  'ao.ask.candidate.new': 'Un nouveau candidat…',
+  'ao.ask.candidate.name': 'Nom du nouveau candidat',
+  'ao.ask.candidate.placeholder': 'Société X',
+  'ao.ask.candidate.missing': 'Donnez le nom du candidat dont c’est la réponse.',
+  'ao.ask.submit': 'Ranger les pièces',
+  'ao.import.cancelled': 'Import annulé : rien n’a été ajouté à l’analyse.',
+  'ao.import.places': '{tender} avec l’appel d’offres, {response} avec la réponse.',
+  'ao.move.placeholder': 'Déplacer la pièce vers…',
+  'ao.move.current': 'Place actuelle',
+  'ao.move.newCandidate': 'La réponse d’un nouveau candidat…',
+  'ao.move.newCandidate.desc': 'Un dossier est créé pour ce candidat.',
+  'ao.move.submit': 'Déplacer',
+  'ao.move.done': 'Pièce déplacée : {place}.',
+  'ao.feature.place': 'Appel d’offres et réponse',
+  'ao.feature.place.note': 'Chaque pièce rangée avec l’appel d’offres ou la réponse — une par candidat pour l’émetteur —, d’après son type ; demandé quand le type va dans les deux.',
   'ao.name': "Analyse d'appels d'offres",
   'ao.description':
     "Lire les pièces d'un dossier de consultation, en extraire les exigences, en mesurer la qualité et produire la matrice de conformité.",
@@ -40,9 +69,9 @@ export const aoFr: Record<string, string> = {
   'ao.next.import': 'Importer des fichiers de l’ordinateur',
   'ao.next.import.desc': 'Les pièces une à une, ou le ZIP du dossier : il est ouvert et chaque fichier importé.',
   'ao.next.drop': 'Je dépose les fichiers moi-même',
-  'ao.next.drop.desc': 'Glissez-les dans « {folder} », puis lancez « Mettre à jour l’analyse ».',
+  'ao.next.drop.desc': 'Glissez-les dans « {folder} » (ou dans les originaux de la réponse), puis lancez « Mettre à jour l’analyse ».',
   'ao.next.drop.notice':
-    'Glissez les fichiers du dossier dans « {folder} » (dans l’explorateur de fichiers d’Obsidian), puis lancez la commande « Mettre à jour l’analyse ».',
+    'Glissez les fichiers de l’appel d’offres dans « {folder} », ceux de la réponse dans les originaux de la réponse (dans l’explorateur de fichiers d’Obsidian), puis lancez la commande « Mettre à jour l’analyse ».',
   'ao.next.later': 'Plus tard',
   'ao.next.later.desc': 'Commande « Importer des pièces dans une analyse », quand vous voudrez.',
 
@@ -134,6 +163,35 @@ export const aoFr: Record<string, string> = {
 }
 
 export const aoEn: Record<string, string> = {
+  'ao.command.move': 'Move the document (tender ↔ response)',
+  'ao.place.tender': 'Tender',
+  'ao.place.response': 'Response',
+  'ao.place.responseOf': 'Response — {candidate}',
+  'ao.ask.title': 'Where should these documents go?',
+  'ao.ask.intro':
+    'These documents’ type can belong to the tender as well as to your response: a blank schedule of prices from the package, or the one you filled in. Say where each goes.',
+  'ao.ask.intro.emitter':
+    'Some documents’ type can belong to the tender as well as to a bidder’s response. Say where each goes, and whose response it is.',
+  'ao.ask.all': 'Put everything in',
+  'ao.ask.all.tip': 'One choice for all the documents below; “Case by case” leaves each choice.',
+  'ao.ask.case': 'Case by case',
+  'ao.ask.candidate': 'Response of which bidder?',
+  'ao.ask.candidate.tip': 'Documents filed with the response go into this bidder’s folder.',
+  'ao.ask.candidate.new': 'A new bidder…',
+  'ao.ask.candidate.name': 'Name of the new bidder',
+  'ao.ask.candidate.placeholder': 'Company X',
+  'ao.ask.candidate.missing': 'Give the name of the bidder whose response this is.',
+  'ao.ask.submit': 'File the documents',
+  'ao.import.cancelled': 'Import cancelled: nothing was added to the analysis.',
+  'ao.import.places': '{tender} with the tender, {response} with the response.',
+  'ao.move.placeholder': 'Move the document to…',
+  'ao.move.current': 'Current place',
+  'ao.move.newCandidate': 'A new bidder’s response…',
+  'ao.move.newCandidate.desc': 'A folder is created for this bidder.',
+  'ao.move.submit': 'Move',
+  'ao.move.done': 'Document moved: {place}.',
+  'ao.feature.place': 'Tender and response',
+  'ao.feature.place.note': 'Each document filed with the tender or the response — one per bidder for the issuer —, from its type; asked when the type can go in either.',
   'ao.name': 'Tender analysis',
   'ao.description':
     'Read the documents of a tender package, extract its requirements, measure their quality and produce the compliance matrix.',

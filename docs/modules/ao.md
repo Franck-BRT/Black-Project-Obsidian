@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.4.0 |
+| Version | 0.4.1 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -22,19 +22,36 @@ Documentation utilisateur (écrite dans le coffre) :
 | Importer des pièces dans une analyse (ZIP compris) | Fichiers de l'ordinateur ; un ZIP est ouvert (sous-dossiers gardés, archive imbriquée ouverte, fichiers parasites écartés, noms Windows en page 437 relus) |
 | Mettre à jour l'analyse (pièces déposées à la main) | Lit les fichiers de `Pièces/Originaux` qui n'ont pas de note ; réécrit le tableau |
 | Changer le type de la pièce | Sur la note d'une pièce ; le tableau suit |
+| Déplacer la pièce (appel d'offres ↔ réponse) | Sur la note d'une pièce : original et note changent de dossier, place mise à jour, tableau réécrit (v0.4.1) |
 
 Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
+
+## Appel d'offres et réponse (v0.4.1)
+
+Chaque pièce est rangée avec l'**appel d'offres** ou avec la **réponse** — pour
+l'émetteur, la réponse d'un candidat nommé. La place vient du type (`typePlace` du module
+de typage : appel d'offres, réponse, ou les deux) ; pour « les deux », et pour savoir de
+quel candidat est la réponse, `importFiles` reçoit un `PlacementResolver` qui pose la
+question **une fois pour tout l'import** (fenêtre « Où ranger ces pièces ? », avec
+« Tout mettre dans »). Renoncer annule l'import sans rien écrire. Les fichiers déposés à
+la main prennent la place du dossier où ils sont (`destinationOf`). Les analyses d'avant
+la v0.4.1 (`Pièces/Originaux`, notes sans `place`) restent lisibles, comptées avec
+l'appel d'offres.
 
 ## Dans le coffre
 
 ```
 <dossier des analyses>/<Nom>/            (« Appels d'offres » par défaut, réglable)
 ├── <Nom>.md        bp-type: ao-analyse ; position, acheteur, référence, date ;
-│                   tableau des pièces entre <!-- bp:pieces:debut --> et <!-- bp:pieces:fin -->
+│                   tableau des pièces (une partie par destination) entre
+│                   <!-- bp:pieces:debut --> et <!-- bp:pieces:fin -->
 ├── Pièces/
-│   ├── Originaux/  les fichiers tels que reçus
-│   └── <pièce>.md  bp-type: ao-piece ; type, fichier, format, lecture, caracteres,
-│                   importee ; texte extrait (titres descendus de deux niveaux)
+│   ├── Appel d'offres/
+│   │   ├── Originaux/  les fichiers tels que reçus
+│   │   └── <pièce>.md  bp-type: ao-piece ; type, place, [candidat], fichier, format,
+│   │                   lecture, caracteres, importee ; texte extrait
+│   ├── Réponse/              candidat (même forme)
+│   └── Réponses/<candidat>/  émetteur (même forme)
 ├── Exigences/      (étape 3)
 └── Analyse/        (étapes 5 à 7)
 ```

@@ -41,7 +41,7 @@ describe('import du dossier d’exemple', () => {
       'Presentation.pptx': 'AUTRE lue',
       'RC.html': 'RC lue'
     })
-    const cctp = await platform.fs.readText("Appels d'offres/Station sol/Pièces/CCTP.md")
+    const cctp = await platform.fs.readText("Appels d'offres/Station sol/Pièces/Appel d'offres/CCTP.md")
     expect(cctp).toContain('EX-SOL-001')
     expect(await platform.fs.readText(analysis.note)).toContain('9 pièce(s), dont 9 lue(s).')
   })

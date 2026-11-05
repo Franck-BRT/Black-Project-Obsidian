@@ -37,13 +37,15 @@ import {
   readNameKeywords,
   readRenames,
   readTitleKeywords,
+  PLACES_KEY,
+  readPlaces,
   RENAMES_KEY,
   TITLE_KEYWORDS_KEY,
   TYPES_KEY,
   validateKeyword,
   validateType
 } from './custom'
-import { allTypes, OTHER, PIECE_TYPES, type CustomKeywords } from './types'
+import { allTypes, OTHER, PIECE_TYPES, PLACES, type CustomKeywords, type Place } from './types'
 
 export const EXCHANGE_FORMAT = 'black-projects/types-de-pieces'
 export const EXCHANGE_VERSION = 1
@@ -55,6 +57,8 @@ export interface ExchangedType {
   /** Ajouté par l'utilisateur (sinon : un type du module). */
   ajoute: boolean
   desactive: boolean
+  /** Où va une pièce de ce type : appel-d-offres, reponse, les-deux. Absent dans les fichiers d'avant la v0.4.1. */
+  place?: Place
   motsClesNom: string[]
   motsClesTitre: string[]
 }
@@ -72,7 +76,12 @@ const isBuiltIn = (code: string) => PIECE_TYPES.some((each) => each.code === cod
 
 /** Les types qui ont quelque chose à exporter : les types ajoutés, et ceux du module que l'utilisateur a modifiés. */
 export function exportableCodes(custom: CustomKeywords): string[] {
-  const touched = new Set([...Object.values(custom.names), ...Object.values(custom.titles), ...(custom.disabled ?? [])])
+  const touched = new Set([
+    ...Object.values(custom.names),
+    ...Object.values(custom.titles),
+    ...(custom.disabled ?? []),
+    ...Object.keys(custom.places ?? {})
+  ])
   return allTypes(custom)
     .filter((each) => each.code !== OTHER && (each.custom || touched.has(each.code)))
     .map((each) => each.code)
@@ -89,6 +98,7 @@ export function exportTypes(custom: CustomKeywords, codes: readonly string[], to
       ...(each.custom ? { libelle: each.label ?? '' } : {}),
       ajoute: Boolean(each.custom),
       desactive: (custom.disabled ?? []).includes(each.code),
+      place: each.place,
       motsClesNom: of(custom.names, each.code),
       motsClesTitre: of(custom.titles, each.code)
     }))
@@ -131,6 +141,7 @@ export function parseTypesFile(text: string): ParseResult {
       ...(typeof each.libelle === 'string' ? { libelle: normalizeLabel(each.libelle) } : {}),
       ajoute: each.ajoute === true,
       desactive: each.desactive === true,
+      ...(PLACES.includes(each.place as Place) ? { place: each.place as Place } : {}),
       motsClesNom: strings(each.motsClesNom),
       motsClesTitre: strings(each.motsClesTitre)
     })
@@ -189,6 +200,7 @@ export function applyImport(settings: Settings, file: TypesFile, codes: readonly
   const titles = readTitleKeywords(settings)
   const disabled = new Set(readDisabled(settings))
   const renames = readRenames(settings)
+  const places: Record<string, Place> = readPlaces(settings)
   const result: ImportResult = { settings: {}, added: 0, updated: 0, keywordsAdded: 0, keywordsSkipped: 0, skipped: [] }
 
   for (const entry of file.types) {
@@ -207,6 +219,7 @@ export function applyImport(settings: Settings, file: TypesFile, codes: readonly
     }
     if (entry.desactive) disabled.add(entry.code)
     else disabled.delete(entry.code)
+    if (entry.place) places[entry.code] = entry.place
     for (const [list, where, words] of [
       [names, 'names', entry.motsClesNom],
       [titles, 'titles', entry.motsClesTitre]
@@ -227,6 +240,7 @@ export function applyImport(settings: Settings, file: TypesFile, codes: readonly
     [NAME_KEYWORDS_KEY]: names,
     [TITLE_KEYWORDS_KEY]: titles,
     [DISABLED_KEY]: [...disabled].sort(),
+    [PLACES_KEY]: places,
     [RENAMES_KEY]: renames
   }
   return result

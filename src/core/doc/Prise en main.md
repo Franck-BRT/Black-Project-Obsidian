@@ -41,6 +41,7 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Importer des pièces dans une analyse (ZIP compris) | importe des fichiers de l'ordinateur, ou le ZIP du dossier |
 | Mettre à jour l'analyse (pièces déposées à la main) | lit les fichiers déposés dans `Pièces/Originaux`, réécrit le tableau des pièces |
 | Changer le type de la pièce | sur la note d'une pièce : RC, CCTP, CCAP, BPU… |
+| Déplacer la pièce (appel d'offres ↔ réponse) | sur la note d'une pièce : la range avec l'appel d'offres, la réponse, ou la réponse d'un candidat |
 | Exporter des types de pièces | écrit un ou plusieurs types dans un fichier, pour un autre coffre ; voir {{link:Modules/Typage des pièces|Typage des pièces}} |
 | Importer des types de pièces | reprend des types d'un tel fichier |
 

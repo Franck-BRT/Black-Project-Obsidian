@@ -23,6 +23,14 @@ trouve « Annexes »). Vos mots-clés passent avant ceux du module.
 
 *(ajouté)* : un type ou un mot-clé à vous ; *(désactivé)* : un type désactivé.
 
+## Où vont les pièces : « Va dans »
+
+Chaque fiche de type a un menu **Va dans** : l'appel d'offres, la réponse, ou les deux.
+Il dit où une analyse d'appels d'offres range une pièce de ce type ; pour « les deux »
+(un BPU vierge dans le dossier, rempli dans l'offre), la question est posée à l'import.
+Le tableau ci-dessus donne la place de chaque type. Un type que vous ajoutez va « dans
+les deux » tant que vous ne choisissez pas.
+
 ## Vos types
 
 « Types de pièces personnalisés » ajoute un type avec un code court et un libellé

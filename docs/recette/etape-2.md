@@ -134,3 +134,29 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
 - [ ] **Créer / mettre à jour la documentation** : une page *Typage des pièces* ; la page
       *Analyse d'appels d'offres* y renvoie
 
+## Appel d'offres et réponse (v0.4.1)
+
+- [ ] **Types de pièces** : chaque fiche a un menu « Va dans » (L'appel d'offres, La
+      réponse, Les deux (demander)) ; RC : l'appel d'offres ; BPU : les deux ; un
+      changement est conservé
+- [ ] Nouvelle analyse **candidat** : `Pièces/Appel d'offres/Originaux` et
+      `Pièces/Réponse/Originaux` sont créés ; **émetteur** : `Pièces/Appel d'offres` et
+      `Pièces/Réponses`
+- [ ] Importer le ZIP d'exemple : la fenêtre « Où ranger ces pièces ? » liste les pièces
+      dont le type va dans les deux (BPU, présentation…), avec « Tout mettre dans » ;
+      les pièces dont le type a une place fixe (CCTP, RC) ne sont pas demandées
+- [ ] Choisir « Réponse » pour un BPU : il est rangé dans `Pièces/Réponse` ; le message
+      dit combien vont avec l'appel d'offres et avec la réponse ; le tableau a une partie
+      « Appel d'offres » et une partie « Réponse »
+- [ ] Annuler la fenêtre : message « Import annulé », rien n'est ajouté
+- [ ] Émetteur : la fenêtre demande aussi « Réponse de quel candidat ? » (connu, ou
+      nouveau avec son nom) ; les pièces vont dans `Pièces/Réponses/<candidat>` ; le
+      tableau a une partie par candidat ; sans nom pour un nouveau candidat, refusé
+- [ ] **Déplacer la pièce** sur une note de pièce : la liste des destinations (place
+      actuelle signalée ; émetteur : chaque candidat, et « un nouveau candidat… ») ; la
+      pièce, son fichier et sa note changent de dossier, et le tableau suit
+- [ ] Déposer un fichier dans `Pièces/Réponse/Originaux` puis **Mettre à jour
+      l'analyse** : il est rangé avec la réponse
+- [ ] Une analyse créée avant la v0.4.1 : ses pièces restent visibles, avec l'appel
+      d'offres
+

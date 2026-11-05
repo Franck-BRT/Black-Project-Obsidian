@@ -12,26 +12,34 @@ import { localToday } from '../../core/dates'
 import { parseFrontmatter, setFrontmatterField } from '../../core/frontmatter'
 import type { ExternalFile, FileSystem } from '../../core/ports'
 import { FileReadError, fileText, isArchive, isImage, isReadable, readArchive } from '../lecture-fichiers'
+import { classifyPiece, currentCode, currentTyping, OTHER, typePlace, type CustomKeywords } from '../typage-pieces'
 import {
   ANALYSIS,
   ANALYSIS_TYPE,
   analysisAt,
   analysisNote,
+  destinationOf,
   linkTarget,
-  originalsFolder,
+  ORIGINALS,
   PIECE_TYPE,
   pieceNote,
   piecesFolder,
   piecesTable,
+  placeFolder,
+  placeOriginals,
+  POSITIONS,
   READING_STATES,
   REQUIREMENTS,
+  RESPONSES,
   withPiecesTable,
   type Analysis,
   type AnalysisFields,
+  type Destination,
+  type PiecePlace,
   type PieceRow,
+  type Position,
   type ReadingState
 } from './notes'
-import { classifyPiece, currentCode, currentTyping, OTHER, type CustomKeywords } from '../typage-pieces'
 
 export { localToday }
 
@@ -92,11 +100,28 @@ export async function createAnalysis(services: Services, name: string, fields: O
   const { fs, t } = services
   const analysis = analysisAt(services.root, name)
   if (await fs.exists(analysis.folder)) throw new AnalysisExists(name)
-  await fs.ensureFolder(originalsFolder(analysis))
+  await fs.ensureFolder(placeOriginals(analysis, { place: 'appel-d-offres' }))
+  // Le candidat a une réponse, la sienne ; l'émetteur, celles des candidats, rangées par candidat.
+  if (fields.position === 'candidat') await fs.ensureFolder(placeOriginals(analysis, { place: 'reponse' }))
+  else await fs.ensureFolder(`${piecesFolder(analysis)}/${RESPONSES}`)
   await fs.ensureFolder(`${analysis.folder}/${REQUIREMENTS}`)
   await fs.ensureFolder(`${analysis.folder}/${ANALYSIS}`)
   await fs.writeText(analysis.note, analysisNote(analysis, { ...fields, created: services.today() }, t))
   return analysis
+}
+
+/** La position de l'analyse : candidat (une réponse, la sienne) ou émetteur (une réponse par candidat). */
+export async function analysisPosition(fs: FileSystem, analysis: Analysis): Promise<Position> {
+  const { data } = parseFrontmatter(await fs.readText(analysis.note))
+  return POSITIONS.includes(data.position as Position) ? (data.position as Position) : 'candidat'
+}
+
+/** Les candidats dont l'émetteur a rangé une réponse, par ordre alphabétique. */
+export async function listCandidates(fs: FileSystem, analysis: Analysis): Promise<string[]> {
+  const folder = `${piecesFolder(analysis)}/${RESPONSES}`
+  if (!(await fs.exists(folder))) return []
+  const { folders } = await fs.list(folder)
+  return folders.map((each) => each.slice(each.lastIndexOf('/') + 1)).sort((a, b) => a.localeCompare(b))
 }
 
 // ── Les pièces ──────────────────────────────────────────────────────────────────
@@ -106,6 +131,7 @@ export interface ImportedPiece {
   original: string
   type: string
   state: ReadingState
+  destination: Destination
 }
 
 export interface ImportReport {
@@ -116,7 +142,42 @@ export interface ImportReport {
   archives: number
   /** Des archives qui n'ont pas pu être ouvertes. */
   brokenArchives: string[]
+  /** L'utilisateur a renoncé quand on lui a demandé où ranger les pièces : rien n'a été écrit. */
+  cancelled?: boolean
 }
+
+/** Une pièce dont le type va « dans les deux » : il faut demander où la ranger. */
+export interface PendingPiece {
+  path: string
+  type: string
+}
+
+/** Ce qu'il faut demander à l'utilisateur avant de ranger les pièces. */
+export interface PlacementRequest {
+  position: Position
+  /** Les pièces à ranger à la main : avec l'appel d'offres, ou avec la réponse. */
+  pending: PendingPiece[]
+  /** Des pièces vont certainement dans une réponse (leur type le dit). */
+  responseCertain: boolean
+  /** Émetteur : les candidats dont une réponse est déjà rangée. */
+  candidates: string[]
+}
+
+export interface Placement {
+  /** Chemin dans l'import → place choisie. */
+  places: Record<string, PiecePlace>
+  /** Émetteur : le candidat dont les pièces « réponse » sont la réponse. */
+  candidate?: string
+}
+
+/** Demande à l'utilisateur où ranger les pièces ; `null` s'il renonce. */
+export type PlacementResolver = (request: PlacementRequest) => Promise<Placement | null>
+
+/** Sans personne à qui demander (les tests) : l'appel d'offres, et le premier candidat connu. */
+const defaultResolver: PlacementResolver = async (request) => ({
+  places: Object.fromEntries(request.pending.map((piece) => [piece.path, 'appel-d-offres' as const])),
+  candidate: request.candidates[0] ?? 'Candidat'
+})
 
 function extensionOf(name: string): string {
   const base = name.slice(name.lastIndexOf('/') + 1)
@@ -156,36 +217,62 @@ async function readPiece(name: string, bytes: Uint8Array): Promise<{ state: Read
   }
 }
 
-/** La note d'une pièce déjà rangée dans les originaux : lue, typée, écrite. */
-async function notePiece(services: Services, analysis: Analysis, original: string, bytes: Uint8Array): Promise<ImportedPiece> {
-  const { fs, t } = services
-  const name = original.slice(original.lastIndexOf('/') + 1)
-  const { state, text } = await readPiece(name, bytes)
-  const type = classifyPiece(name, text, services.keywords ?? currentTyping().custom)
-  // « CCTP.md » ; si le nom est pris par la même pièce dans un autre format, « CCTP (pdf).md » ;
-  // ensuite seulement des numéros.
+/** Le chemin de la note d'une pièce : « CCTP.md », sinon « CCTP (pdf).md », ensuite des numéros. */
+async function notePath(fs: FileSystem, folder: string, name: string): Promise<string> {
   const stem = name.replace(/\.[^.]+$/, '') || name
   const ext = extensionOf(name)
-  const plain = `${piecesFolder(analysis)}/${stem}.md`
-  const note =
-    !(await fs.exists(plain)) || !ext ? await freePath(fs, plain) : await freePath(fs, `${piecesFolder(analysis)}/${stem} (${ext}).md`)
+  const plain = `${folder}/${stem}.md`
+  return !(await fs.exists(plain)) || !ext ? freePath(fs, plain) : freePath(fs, `${folder}/${stem} (${ext}).md`)
+}
+
+/** Écrit la note d'une pièce déjà rangée dans les originaux de sa destination. */
+async function writePieceNote(
+  services: Services,
+  analysis: Analysis,
+  destination: Destination,
+  original: string,
+  read: { state: ReadingState; text: string },
+  type: string
+): Promise<ImportedPiece> {
+  const { fs, t } = services
+  const name = original.slice(original.lastIndexOf('/') + 1)
+  const note = await notePath(fs, placeFolder(analysis, destination), name)
   await fs.writeText(
     note,
     pieceNote(
-      { analysis, original, type, format: extensionOf(name), state, characters: text.length, imported: services.today() },
-      text,
+      {
+        analysis,
+        destination,
+        original,
+        type,
+        format: extensionOf(name),
+        state: read.state,
+        characters: read.text.length,
+        imported: services.today()
+      },
+      read.text,
       t
     )
   )
-  return { note, original, type, state }
+  return { note, original, type, state: read.state, destination }
 }
 
 /**
- * Importe des fichiers dans une analyse : chacun rangé dans les originaux, lu, typé, et
- * décrit par une note ; une archive est ouverte et chacun de ses fichiers importé.
+ * Importe des fichiers dans une analyse. Chacun est lu et typé ; son type dit s'il va avec
+ * l'appel d'offres ou avec la réponse ; quand il peut aller dans les deux — et, pour
+ * l'émetteur, pour savoir de quel candidat est la réponse —, `resolve` le demande à
+ * l'utilisateur, en une fois pour tout l'import. Puis chaque fichier est rangé dans les
+ * originaux de sa destination et décrit par une note. Une archive est ouverte, et chacun
+ * de ses fichiers importé.
  */
-export async function importFiles(services: Services, analysis: Analysis, files: readonly ExternalFile[]): Promise<ImportReport> {
+export async function importFiles(
+  services: Services,
+  analysis: Analysis,
+  files: readonly ExternalFile[],
+  resolve: PlacementResolver = defaultResolver
+): Promise<ImportReport> {
   const { fs } = services
+  const custom = services.keywords ?? currentTyping().custom
   const report: ImportReport = { imported: [], duplicates: [], archives: 0, brokenArchives: [] }
   const entries: { path: string; bytes: Uint8Array }[] = []
   for (const file of files) {
@@ -201,18 +288,53 @@ export async function importFiles(services: Services, analysis: Analysis, files:
     } else entries.push({ path: file.name, bytes: file.bytes })
   }
 
+  // Lire et typer d'abord : la place dépend du type.
+  const pieces = []
   for (const entry of entries) {
-    const wanted = `${originalsFolder(analysis)}/${entry.path}`
-    if ((await fs.exists(wanted)) && sameBytes(new Uint8Array(await fs.readBinary(wanted)), entry.bytes)) {
-      report.duplicates.push(entry.path)
+    const name = entry.path.slice(entry.path.lastIndexOf('/') + 1)
+    const read = await readPiece(name, entry.bytes)
+    const type = classifyPiece(name, read.text, custom)
+    pieces.push({ ...entry, read, type, place: typePlace(type, custom) })
+  }
+
+  // Puis demander, une fois, ce que les types ne disent pas.
+  const position = await analysisPosition(fs, analysis)
+  const pending = pieces.filter((piece) => piece.place === 'les-deux').map((piece) => ({ path: piece.path, type: piece.type }))
+  const responseCertain = pieces.some((piece) => piece.place === 'reponse')
+  let placement: Placement = { places: {} }
+  if (pending.length > 0 || (position === 'emetteur' && responseCertain)) {
+    const answer = await resolve({ position, pending, responseCertain, candidates: await listCandidates(fs, analysis) })
+    if (!answer) return { ...report, cancelled: true }
+    placement = answer
+  }
+
+  for (const piece of pieces) {
+    const place: PiecePlace = piece.place === 'les-deux' ? (placement.places[piece.path] ?? 'appel-d-offres') : piece.place
+    const destination: Destination =
+      place === 'reponse' && position === 'emetteur'
+        ? { place, candidate: safeCandidate(placement.candidate) }
+        : { place }
+    const wanted = `${placeOriginals(analysis, destination)}/${piece.path}`
+    if ((await fs.exists(wanted)) && sameBytes(new Uint8Array(await fs.readBinary(wanted)), piece.bytes)) {
+      report.duplicates.push(piece.path)
       continue
     }
     const original = await freePath(fs, wanted)
-    await fs.writeBinary(original, entry.bytes.slice().buffer)
-    report.imported.push(await notePiece(services, analysis, original, entry.bytes))
+    await fs.writeBinary(original, piece.bytes.slice().buffer)
+    report.imported.push(await writePieceNote(services, analysis, destination, original, piece.read, piece.type))
   }
   await refreshTable(services, analysis)
   return report
+}
+
+/** Un nom de candidat utilisable comme nom de dossier. */
+export function safeCandidate(name: string | undefined): string {
+  const clean = (name ?? '')
+    .replace(/[\\/:*?"<>|#^[\]]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80)
+  return clean || 'Candidat'
 }
 
 /** Tous les fichiers sous un dossier, sous-dossiers compris. */
@@ -225,15 +347,27 @@ async function filesUnder(fs: FileSystem, folder: string): Promise<string[]> {
 
 interface PieceNoteInfo {
   note: string
+  destination: Destination
   original: string
   type: string
   state: ReadingState
   characters: number
 }
 
+/** Les notes sous `Pièces`, hors des originaux, à toute profondeur. */
+async function notesUnder(fs: FileSystem, folder: string): Promise<string[]> {
+  if (!(await fs.exists(folder))) return []
+  const { files, folders } = await fs.list(folder)
+  const nested = await Promise.all(
+    folders.filter((each) => each.slice(each.lastIndexOf('/') + 1) !== ORIGINALS).map((each) => notesUnder(fs, each))
+  )
+  return [...files.filter((file) => file.endsWith('.md')), ...nested.flat()]
+}
+
 /**
- * Les notes des pièces d'une analyse. Une pièce dont le type a été renommé (« PQA » devenu
- * « PAQ ») est retypée au passage, dans sa note ; `retyped` compte celles-là.
+ * Les notes des pièces d'une analyse, où qu'elles soient rangées. Une pièce dont le type a
+ * été renommé (« PQA » devenu « PAQ ») est retypée au passage, dans sa note ; `retyped`
+ * compte celles-là.
  */
 async function pieceNotes(
   fs: FileSystem,
@@ -241,11 +375,8 @@ async function pieceNotes(
   renames: Readonly<Record<string, string>> = {},
   retyped: { count: number } = { count: 0 }
 ): Promise<PieceNoteInfo[]> {
-  const folder = piecesFolder(analysis)
-  if (!(await fs.exists(folder))) return []
-  const { files } = await fs.list(folder)
   const out: PieceNoteInfo[] = []
-  for (const note of files.filter((file) => file.endsWith('.md'))) {
+  for (const note of await notesUnder(fs, piecesFolder(analysis))) {
     const content = await fs.readText(note)
     const { data } = parseFrontmatter(content)
     if (data['bp-type'] !== PIECE_TYPE) continue
@@ -258,7 +389,10 @@ async function pieceNotes(
       await fs.writeText(note, setFrontmatterField(content, 'type', type))
       retyped.count++
     }
-    out.push({ note, original: linkTarget(data.fichier ?? ''), type, state, characters: Number(data.caracteres) || 0 })
+    // Une pièce d'avant la v0.4.1 n'a pas de place : elle compte avec l'appel d'offres.
+    const destination: Destination =
+      data.place === 'reponse' ? { place: 'reponse', ...(data.candidat ? { candidate: data.candidat } : {}) } : { place: 'appel-d-offres' }
+    out.push({ note, destination, original: linkTarget(data.fichier ?? ''), type, state, characters: Number(data.caracteres) || 0 })
   }
   return out
 }
@@ -287,17 +421,22 @@ export async function applyRenames(services: Services): Promise<number> {
 }
 
 /**
- * Met une analyse à jour : les fichiers déposés à la main dans les originaux et qui n'ont
- * pas encore de note sont lus et décrits ; le tableau des pièces est réécrit.
+ * Met une analyse à jour : les fichiers déposés à la main dans des originaux — ceux de
+ * l'appel d'offres, de la réponse, ou d'un candidat — et qui n'ont pas encore de note sont
+ * lus, typés et décrits, là où ils ont été déposés ; le tableau des pièces est réécrit.
  */
 export async function updateAnalysis(services: Services, analysis: Analysis): Promise<ImportReport> {
   const { fs } = services
+  const custom = services.keywords ?? currentTyping().custom
   const report: ImportReport = { imported: [], duplicates: [], archives: 0, brokenArchives: [] }
   const known = new Set((await pieceNotes(fs, analysis)).map((piece) => piece.original))
-  for (const original of await filesUnder(fs, originalsFolder(analysis))) {
-    if (known.has(original)) continue
-    const bytes = new Uint8Array(await fs.readBinary(original))
-    report.imported.push(await notePiece(services, analysis, original, bytes))
+  for (const original of await filesUnder(fs, piecesFolder(analysis))) {
+    const destination = destinationOf(analysis, original)
+    if (!destination || known.has(original)) continue
+    const name = original.slice(original.lastIndexOf('/') + 1)
+    const read = await readPiece(name, new Uint8Array(await fs.readBinary(original)))
+    const type = classifyPiece(name, read.text, custom)
+    report.imported.push(await writePieceNote(services, analysis, destination, original, read, type))
   }
   await refreshTable(services, analysis)
   return report
@@ -305,13 +444,23 @@ export async function updateAnalysis(services: Services, analysis: Analysis): Pr
 
 export class NotAPiece extends Error {}
 
+export interface PieceInfo {
+  analysis: Analysis
+  type: string
+  destination: Destination
+  original: string
+}
+
 /** La pièce décrite par une note, et son analyse. */
-export async function pieceAt(services: Services, note: string): Promise<{ analysis: Analysis; type: string } | null> {
+export async function pieceAt(services: Services, note: string): Promise<PieceInfo | null> {
   if (!note.endsWith('.md') || !(await services.fs.exists(note))) return null
   const { data } = parseFrontmatter(await services.fs.readText(note))
   if (data['bp-type'] !== PIECE_TYPE) return null
   const analysis = await analysisOf(services, note)
-  return analysis ? { analysis, type: data.type ?? OTHER } : null
+  if (!analysis) return null
+  const destination: Destination =
+    data.place === 'reponse' ? { place: 'reponse', ...(data.candidat ? { candidate: data.candidat } : {}) } : { place: 'appel-d-offres' }
+  return { analysis, type: data.type ?? OTHER, destination, original: linkTarget(data.fichier ?? '') }
 }
 
 /** Change le type d'une pièce, puis le tableau de son analyse. */
@@ -320,4 +469,38 @@ export async function setPieceType(services: Services, note: string, type: strin
   if (!piece) throw new NotAPiece(note)
   await services.fs.writeText(note, setFrontmatterField(await services.fs.readText(note), 'type', type))
   await refreshTable(services, piece.analysis)
+}
+
+/**
+ * Déplace une pièce vers une autre destination — de l'appel d'offres vers la réponse, ou
+ * vers la réponse d'un autre candidat : son original et sa note changent de dossier, sa
+ * note dit sa nouvelle place, et le tableau suit. Rend le nouveau chemin de la note.
+ */
+export async function movePiece(services: Services, note: string, destination: Destination): Promise<string> {
+  const { fs } = services
+  const piece = await pieceAt(services, note)
+  if (!piece) throw new NotAPiece(note)
+  const target: Destination =
+    destination.place === 'reponse' && destination.candidate ? { place: 'reponse', candidate: safeCandidate(destination.candidate) } : destination
+  const name = piece.original.slice(piece.original.lastIndexOf('/') + 1)
+  let original = piece.original
+  if (piece.original && (await fs.exists(piece.original))) {
+    original = await freePath(fs, `${placeOriginals(piece.analysis, target)}/${name}`)
+    await fs.rename(piece.original, original)
+  }
+  const newNote = await notePath(fs, placeFolder(piece.analysis, target), name)
+  await fs.rename(note, newNote)
+  let content = await fs.readText(newNote)
+  // Les liens vers l'original : la plateforme les suit d'ordinaire ; on s'en assure.
+  if (original !== piece.original) content = content.split(`[[${piece.original}`).join(`[[${original}`)
+  content = setFrontmatterField(content, 'place', target.place)
+  content = target.candidate ? setFrontmatterField(content, 'candidat', target.candidate) : removeField(content, 'candidat')
+  await fs.writeText(newNote, content)
+  await refreshTable(services, piece.analysis)
+  return newNote
+}
+
+/** Retire un champ de l'en-tête, s'il y est. */
+function removeField(content: string, key: string): string {
+  return content.replace(new RegExp(`^(---\\n[\\s\\S]*?)^${key}:.*\\n([\\s\\S]*?^---)`, 'm'), '$1$2')
 }

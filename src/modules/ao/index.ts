@@ -13,23 +13,37 @@
 import { cleanFolder } from '../../core/settings'
 import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
+import type { FormField } from '../../core/ports'
 import { LECTURE_FICHIERS } from '../lecture-fichiers'
 import { allTypes, currentTyping, isDisabled, onTypingChange, TYPAGE_PIECES, typeLabel } from '../typage-pieces'
 import page from "./doc/Analyse d'appels d'offres.md"
 import { aoEn, aoFr } from './i18n'
-import { ORIGINALS, PIECES, POSITIONS, safeName, type Analysis, type Position } from './notes'
+import {
+  destinationLabel,
+  placeOriginals,
+  POSITIONS,
+  safeName,
+  type Analysis,
+  type Destination,
+  type Position
+} from './notes'
 import {
   AnalysisExists,
   applyRenames,
   analysisOf,
   createAnalysis,
+  analysisPosition,
   importFiles,
   listAnalyses,
+  listCandidates,
   localToday,
+  movePiece,
   pieceAt,
   setPieceType,
   updateAnalysis,
   type ImportReport,
+  type PlacementRequest,
+  type PlacementResolver,
   type Services
 } from './service'
 
@@ -39,14 +53,17 @@ export {
   createAnalysis,
   importFiles,
   listAnalyses,
+  movePiece,
   pieceAt,
   refreshTable,
   setPieceType,
   updateAnalysis,
   type ImportReport,
+  type Placement,
+  type PlacementRequest,
   type Services
 } from './service'
-export { type Analysis, type ReadingState } from './notes'
+export { type Analysis, type Destination, type ReadingState } from './notes'
 
 let unsubscribe: (() => void) | null = null
 
@@ -87,6 +104,7 @@ export function aoFeatures(): ModuleDetails {
           feature('import', 'available'),
           feature('drop', 'available'),
           feature('classify', 'available'),
+          feature('place', 'available'),
           feature('notes', 'available')
         ]
       },
@@ -130,6 +148,8 @@ function describeImport(context: ModuleContext, report: ImportReport): string {
   const t = (key: string, vars?: Record<string, string | number>) => context.i18n.t(key, vars)
   const count = (state: string) => report.imported.filter((piece) => piece.state === state).length
   const parts = [t('ao.import.done', { count: report.imported.length, read: count('lue') })]
+  const toResponse = report.imported.filter((piece) => piece.destination.place === 'reponse').length
+  if (toResponse > 0) parts.push(t('ao.import.places', { tender: report.imported.length - toResponse, response: toResponse }))
   const unread = report.imported.length - count('lue')
   if (unread > 0) parts.push(t('ao.import.unread', { count: unread }))
   if (report.archives > 0) parts.push(t('ao.import.archives', { count: report.archives }))
@@ -157,6 +177,80 @@ async function chooseAnalysis(context: ModuleContext, services: Services): Promi
   return analyses.find((analysis) => analysis.name === chosen) ?? null
 }
 
+const NEW_CANDIDATE = '__nouveau__'
+
+/**
+ * La fenêtre qui demande, en une fois pour tout l'import, où ranger les pièces dont le type
+ * va « dans les deux » — avec l'appel d'offres ou avec la réponse —, et, pour l'émetteur,
+ * de quel candidat est la réponse.
+ */
+function placementResolver(context: ModuleContext): PlacementResolver {
+  const { ui } = context.platform
+  const t = (key: string, vars?: Record<string, string | number>) => context.i18n.t(key, vars)
+  const places = [
+    { value: 'appel-d-offres', label: t('ao.place.tender') },
+    { value: 'reponse', label: t('ao.place.response') }
+  ]
+  return async (request: PlacementRequest) => {
+    const emitter = request.position === 'emetteur'
+    const fields: FormField[] = []
+    if (request.pending.length > 1) {
+      fields.push({
+        kind: 'choice',
+        key: 'all',
+        label: t('ao.ask.all'),
+        tooltip: t('ao.ask.all.tip'),
+        options: [{ value: 'case', label: t('ao.ask.case') }, ...places]
+      })
+    }
+    for (const [index, piece] of request.pending.entries()) {
+      const name = piece.path.slice(piece.path.lastIndexOf('/') + 1)
+      fields.push({
+        kind: 'choice',
+        key: `p${index}`,
+        label: name,
+        description: `${piece.type} — ${typeLabel(piece.type, t)}${piece.path !== name ? ` · ${piece.path}` : ''}`,
+        options: places
+      })
+    }
+    if (emitter) {
+      fields.push({
+        kind: 'choice',
+        key: 'candidate',
+        label: t('ao.ask.candidate'),
+        tooltip: t('ao.ask.candidate.tip'),
+        options: [
+          ...request.candidates.map((candidate) => ({ value: candidate, label: candidate })),
+          { value: NEW_CANDIDATE, label: t('ao.ask.candidate.new') }
+        ]
+      })
+      fields.push({ kind: 'text', key: 'newCandidate', label: t('ao.ask.candidate.name'), placeholder: t('ao.ask.candidate.placeholder') })
+    }
+    const placeOf = (values: Readonly<Record<string, string>>, index: number) =>
+      (values.all && values.all !== 'case' ? values.all : values[`p${index}`]) === 'reponse' ? 'reponse' : 'appel-d-offres'
+    const values = await ui.askForm({
+      title: t('ao.ask.title'),
+      intro: emitter ? t('ao.ask.intro.emitter') : t('ao.ask.intro'),
+      fields,
+      submit: t('ao.ask.submit'),
+      validate: (entered) => {
+        const toResponse = request.responseCertain || request.pending.some((_, index) => placeOf(entered, index) === 'reponse')
+        if (emitter && toResponse && entered.candidate === NEW_CANDIDATE && !(entered.newCandidate ?? '').trim()) {
+          return t('ao.ask.candidate.missing')
+        }
+        return null
+      }
+    })
+    if (!values) return null
+    return {
+      places: Object.fromEntries(request.pending.map((piece, index) => [piece.path, placeOf(values, index)])),
+      ...(emitter
+        ? { candidate: values.candidate === NEW_CANDIDATE || !values.candidate ? (values.newCandidate ?? '').trim() : values.candidate }
+        : {})
+    }
+  }
+}
+
 async function importInto(context: ModuleContext, services: Services, analysis: Analysis): Promise<void> {
   const { ui, notifier } = context.platform
   // Tous les fichiers : un dossier contient aussi des plans ou des images, gardés même
@@ -164,7 +258,11 @@ async function importInto(context: ModuleContext, services: Services, analysis: 
   const files = await ui.pickExternalFiles({ multiple: true })
   if (files.length === 0) return
   notifier.notify(services.t('ao.import.reading', { count: files.length }), 3000)
-  const report = await importFiles(services, analysis, files)
+  const report = await importFiles(services, analysis, files, placementResolver(context))
+  if (report.cancelled) {
+    notifier.notify(services.t('ao.import.cancelled'), 6000)
+    return
+  }
   notifier.notify(describeImport(context, report), 10000)
   await ui.openNote(analysis.note)
 }
@@ -173,7 +271,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.4.0',
+  version: '0.4.1',
   // Les pièces sont lues par le module Lecture de fichiers, et typées par Typage des pièces.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES],
   texts: { fr: aoFr, en: aoEn },
@@ -252,7 +350,7 @@ export const aoModule: BlackModule = {
             {
               value: 'drop',
               label: t('ao.next.drop'),
-              description: t('ao.next.drop.desc', { folder: `${analysis.folder}/${PIECES}/${ORIGINALS}` })
+              description: t('ao.next.drop.desc', { folder: placeOriginals(analysis, { place: 'appel-d-offres' }) })
             },
             { value: 'later', label: t('ao.next.later'), description: t('ao.next.later.desc') }
           ],
@@ -260,7 +358,7 @@ export const aoModule: BlackModule = {
         )
         if (next === 'import') await importInto(context, services, analysis)
         else if (next === 'drop')
-          platform.notifier.notify(t('ao.next.drop.notice', { folder: `${analysis.folder}/${PIECES}/${ORIGINALS}` }), 12000)
+          platform.notifier.notify(t('ao.next.drop.notice', { folder: placeOriginals(analysis, { place: 'appel-d-offres' }) }), 12000)
       }
     })
 
@@ -319,6 +417,48 @@ export const aoModule: BlackModule = {
         if (!type || type === piece.type) return
         await setPieceType(services, note, type)
         platform.notifier.notify(t('ao.type.done', { type: `${type} — ${typeLabel(type, t)}` }), 5000)
+      }
+    })
+
+    commands.register({
+      id: 'deplacer-piece',
+      nameKey: 'ao.command.move',
+      async run() {
+        const services = servicesFor(context)
+        const note = platform.ui.activeNote()
+        const piece = note ? await pieceAt(services, note) : null
+        if (!note || !piece) {
+          platform.notifier.notify(t('ao.type.notPiece'), 6000)
+          return
+        }
+        const same = (a: Destination, b: Destination) => a.place === b.place && (a.candidate ?? '') === (b.candidate ?? '')
+        const position = await analysisPosition(services.fs, piece.analysis)
+        const destinations: Destination[] = [{ place: 'appel-d-offres' }]
+        if (position === 'emetteur') {
+          for (const candidate of await listCandidates(services.fs, piece.analysis)) destinations.push({ place: 'reponse', candidate })
+        } else destinations.push({ place: 'reponse' })
+        const choices = destinations.map((destination, index) => ({
+          value: String(index),
+          label: destinationLabel(destination, t),
+          ...(same(destination, piece.destination) ? { description: t('ao.move.current') } : {})
+        }))
+        if (position === 'emetteur') choices.push({ value: 'new', label: t('ao.move.newCandidate'), description: t('ao.move.newCandidate.desc') })
+        const chosen = await platform.ui.pickOption(choices, t('ao.move.placeholder'))
+        if (chosen === null) return
+        let destination: Destination
+        if (chosen === 'new') {
+          const values = await platform.ui.askForm({
+            title: t('ao.move.newCandidate'),
+            fields: [{ kind: 'text', key: 'name', label: t('ao.ask.candidate.name'), placeholder: t('ao.ask.candidate.placeholder'), required: true }],
+            submit: t('ao.move.submit')
+          })
+          if (!values) return
+          destination = { place: 'reponse', candidate: (values.name ?? '').trim() }
+        } else destination = destinations[Number(chosen)]!
+        if (same(destination, piece.destination)) return
+        const moved = await movePiece(services, note, destination)
+        platform.notifier.notify(t('ao.move.done', { place: destinationLabel(destination, t) }), 5000)
+        await platform.ui.openNote(moved)
       }
     })
   },

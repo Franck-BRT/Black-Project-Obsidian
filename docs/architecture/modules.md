@@ -38,7 +38,9 @@ couleur, hors du résumé, avec des groupes d'étiquettes titrés (`tagGroups`) 
 que la fenêtre **Fonctions** de l'analyse d'appels d'offres montre les types de pièces et
 les mots-clés qui les font reconnaître. Une fiche peut porter un interrupteur (`switch`) :
 il ajoute son identifiant à une liste des réglages du module, ou l'en retire (exemple :
-les types désactivés), et la fiche est alors montrée en retrait (`disabled`).
+les types désactivés), et la fiche est alors montrée en retrait (`disabled`). Une fiche
+peut aussi porter un menu (`select`) dont la valeur est rangée sous son identifiant dans
+un objet des réglages (exemple : la place d'un type de pièce).
 
 Facultatif : `settingsFields`, les réglages propres au module, dessinés en tête de sa
 fenêtre (celle qu'ouvre `details`).

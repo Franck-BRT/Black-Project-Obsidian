@@ -32,13 +32,14 @@ describe('export', () => {
       version: 1,
       exporte: '2026-11-05',
       types: [
-        { code: 'CCTP', ajoute: false, desactive: false, motsClesNom: ['SPEC'], motsClesTitre: [] },
-        { code: 'PLANNING', ajoute: false, desactive: true, motsClesNom: [], motsClesTitre: [] },
+        { code: 'CCTP', ajoute: false, desactive: false, place: 'appel-d-offres', motsClesNom: ['SPEC'], motsClesTitre: [] },
+        { code: 'PLANNING', ajoute: false, desactive: true, place: 'les-deux', motsClesNom: [], motsClesTitre: [] },
         {
           code: 'PAQ',
           libelle: 'Plan d’assurance qualité',
           ajoute: true,
           desactive: false,
+          place: 'les-deux',
           motsClesNom: ['plan qualité'],
           motsClesTitre: ['assurance qualité']
         }

@@ -91,14 +91,14 @@ describe('import des pièces', () => {
       ['Vide.txt', 'AUTRE', 'sans-texte']
     ])
     // L'original est gardé tel quel, la note décrit la pièce.
-    expect(await platform.fs.readText("Appels d'offres/Station sol/Pièces/Originaux/03_CCTP.md")).toBe(CCTP)
-    const note = await platform.fs.readText("Appels d'offres/Station sol/Pièces/03_CCTP.md")
+    expect(await platform.fs.readText("Appels d'offres/Station sol/Pièces/Appel d'offres/Originaux/03_CCTP.md")).toBe(CCTP)
+    const note = await platform.fs.readText("Appels d'offres/Station sol/Pièces/Appel d'offres/03_CCTP.md")
     expect(parseFrontmatter(note).data).toMatchObject({
       'bp-type': 'ao-piece',
       type: 'CCTP',
       lecture: 'lue',
       format: 'md',
-      fichier: "[[Appels d'offres/Station sol/Pièces/Originaux/03_CCTP.md]]",
+      fichier: "[[Appels d'offres/Station sol/Pièces/Appel d'offres/Originaux/03_CCTP.md]]",
       analyse: "[[Appels d'offres/Station sol/Station sol]]"
     })
     // Le titre du texte extrait est descendu sous « Texte extrait ».
@@ -107,7 +107,7 @@ describe('import des pièces', () => {
     const table = await platform.fs.readText(analysis.note)
     const inside = table.slice(table.indexOf(PIECES_START), table.indexOf(PIECES_END))
     expect(inside).toContain('5 pièce(s), dont 2 lue(s).')
-    expect(inside).toContain("| [[Appels d'offres/Station sol/Pièces/03_CCTP\\|03_CCTP.md]] | CCTP — Cahier des clauses techniques particulières | 🟩 Lue |")
+    expect(inside).toContain("| [[Appels d'offres/Station sol/Pièces/Appel d'offres/03_CCTP\\|03_CCTP.md]] | CCTP — Cahier des clauses techniques particulières | 🟩 Lue |")
     expect(inside).toContain('| ⬜ Format non lu | — |')
   })
 
@@ -122,8 +122,8 @@ describe('import des pièces', () => {
     const first = await importFiles(services, analysis, [{ name: 'DCE complet.zip', bytes: archive }])
     expect(first.archives).toBe(1)
     expect(first.imported.map((piece) => piece.original)).toEqual([
-      "Appels d'offres/AO/Pièces/Originaux/DCE complet/DCE/RC.md",
-      "Appels d'offres/AO/Pièces/Originaux/DCE complet/DCE/Technique/CCTP.md"
+      "Appels d'offres/AO/Pièces/Appel d'offres/Originaux/DCE complet/DCE/RC.md",
+      "Appels d'offres/AO/Pièces/Appel d'offres/Originaux/DCE complet/DCE/Technique/CCTP.md"
     ])
     expect(first.imported.map((piece) => piece.type)).toEqual(['RC', 'CCTP'])
 
@@ -134,7 +134,7 @@ describe('import des pièces', () => {
     // Un fichier différent du même nom est gardé à côté, et sa note aussi.
     const other = await importFiles(services, analysis, [{ name: 'RC.md', bytes: utf8('# Autre') }, { name: 'RC.md', bytes: utf8('# Encore') }])
     expect(other.imported.map((piece) => piece.note.split('/').pop())).toEqual(['RC (md).md', 'RC (2).md'])
-    expect(await platform.fs.exists("Appels d'offres/AO/Pièces/Originaux/RC (2).md")).toBe(true)
+    expect(await platform.fs.exists("Appels d'offres/AO/Pièces/Appel d'offres/Originaux/RC (2).md")).toBe(true)
   })
 
   it('dit quand une archive est illisible', async () => {
@@ -162,7 +162,7 @@ describe('mise à jour et type des pièces', () => {
     const analysis = await createAnalysis(services, 'AO', { position: 'candidat', buyer: '', reference: '' })
     const [piece] = (await importFiles(services, analysis, [{ name: 'document.md', bytes: utf8('Texte quelconque') }])).imported
     expect(piece?.type).toBe('AUTRE')
-    expect(await pieceAt(services, piece!.note)).toEqual({ analysis, type: 'AUTRE' })
+    expect(await pieceAt(services, piece!.note)).toMatchObject({ analysis, type: 'AUTRE', destination: { place: 'appel-d-offres' } })
     await setPieceType(services, piece!.note, 'ANNEXE')
     expect(parseFrontmatter(await platform.fs.readText(piece!.note)).data.type).toBe('ANNEXE')
     expect(await platform.fs.readText(analysis.note)).toContain('| ANNEXE — Annexe |')

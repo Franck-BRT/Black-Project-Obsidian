@@ -29,6 +29,8 @@ export interface FileSystem {
   /** Crée le dossier et ses parents ; ne fait rien s'il existe déjà. */
   ensureFolder(path: VaultPath): Promise<void>
   list(folder: VaultPath): Promise<FolderListing>
+  /** Déplace ou renomme un fichier ; crée le dossier d'arrivée s'il manque. Les liens vers lui suivent quand la plateforme le permet. */
+  rename(from: VaultPath, to: VaultPath): Promise<void>
 }
 
 export interface HttpRequest {

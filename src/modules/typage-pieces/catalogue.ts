@@ -8,8 +8,8 @@
  */
 
 import type { ModuleDetails } from '../../core/modules/module'
-import { DISABLED_KEY } from './custom'
-import { allTypes, isDisabled, NO_CUSTOM_KEYWORDS, OTHER, type CustomKeywords } from './types'
+import { DISABLED_KEY, PLACES_KEY } from './custom'
+import { allTypes, isDisabled, NO_CUSTOM_KEYWORDS, OTHER, PLACES, type CustomKeywords } from './types'
 
 export function typingDetails(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): ModuleDetails {
   const added = (keywords: Readonly<Record<string, string>>, code: string) =>
@@ -41,6 +41,15 @@ export function typingDetails(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): Modu
                   tooltipKeys: { on: 'typage-pieces.types.switch.on', off: 'typage-pieces.types.switch.off' }
                 }
               }),
+          // Où va une pièce de ce type dans une analyse ; « les deux » : demandé à l'import.
+          select: {
+            settingsKey: PLACES_KEY,
+            id: each.code,
+            labelKey: 'typage-pieces.place.label',
+            value: each.place,
+            options: PLACES.map((place) => ({ value: place, labelKey: `typage-pieces.place.${place}` })),
+            tooltipKey: 'typage-pieces.place.tip'
+          },
           tagGroups: [
             { labelKey: 'typage-pieces.types.byName', tags: each.names },
             { labelKey: 'typage-pieces.types.byTitle', tags: each.titles },

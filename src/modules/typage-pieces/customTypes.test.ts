@@ -82,6 +82,6 @@ describe('types personnalisés : affichage', () => {
   })
 
   it('apparaissent dans la documentation, marqués « ajouté »', () => {
-    expect(typesMarkdown(t, custom)).toContain('| PAQ *(ajouté)* | Plan d’assurance qualité | `PAQ`, `plan qualité` *(ajouté)* | — |')
+    expect(typesMarkdown(t, custom)).toContain('| PAQ *(ajouté)* | Plan d’assurance qualité | Les deux (demander) | `PAQ`, `plan qualité` *(ajouté)* | — |')
   })
 })
