@@ -34,12 +34,14 @@ export const aoFr: Record<string, string> = {
   'ao.feature.place.note': 'Chaque pièce rangée avec l’appel d’offres ou la réponse — une par candidat pour l’émetteur —, d’après le rangement de son type ; demandé quand le type va dans les deux.',
   'ao.setting.places': 'Où vont les types de pièces',
   'ao.setting.places.desc':
-    'Pour chaque type, où l’analyse range ses pièces : avec l’appel d’offres, avec la réponse, ou les deux — la question est alors posée à l’import. Un type absent de la liste, et AUTRE, sont toujours demandés.',
+    'AO : les pièces du type sont rangées avec l’appel d’offres. Réponse AO : avec la réponse (celle d’un candidat, pour l’émetteur). Les deux allumés : la question est posée à l’import. Un type absent de la liste, et AUTRE, sont toujours demandés.',
+  'ao.setting.places.col.tender': 'AO',
+  'ao.setting.places.col.response': 'Réponse AO',
   'ao.setting.places.add': 'Ajouter un type…',
   'ao.setting.places.add.tip': 'Choisir un type de pièce et où il va, dans une petite fenêtre.',
   'ao.setting.places.addTitle': 'Où va ce type de pièce ?',
   'ao.setting.places.addIntro':
-    'Allumez « Appel d’offres », « Réponse », ou les deux : les deux allumés, l’analyse vous demandera à chaque import où ranger ces pièces.',
+    'Allumez « AO » (avec l’appel d’offres), « Réponse AO » (avec la réponse), ou les deux : les deux allumés, l’analyse vous demandera à chaque import où ranger ces pièces.',
   'ao.setting.places.type': 'Type de pièce',
   'ao.setting.places.list': 'Types rangés ({count})',
   'ao.setting.places.list.tip': 'Déplier pour modifier où va chaque type, ou le retirer de la liste.',
@@ -214,7 +216,9 @@ export const aoEn: Record<string, string> = {
   'ao.feature.place.note': 'Each document filed with the tender or the response — one per bidder for the issuer —, from where its type goes; asked when the type can go in either.',
   'ao.setting.places': 'Where document types go',
   'ao.setting.places.desc':
-    'For each type, where the analysis files its documents: with the tender, with the response, or both — then you are asked at import. A type missing from the list, and AUTRE, are always asked.',
+    'Tender: documents of the type are filed with the tender. Response: with the response (a bidder’s, for the issuer). Both on: you are asked at import. A type missing from the list, and AUTRE, are always asked.',
+  'ao.setting.places.col.tender': 'Tender',
+  'ao.setting.places.col.response': 'Response',
   'ao.setting.places.add': 'Add a type…',
   'ao.setting.places.add.tip': 'Pick a document type and where it goes, in a small window.',
   'ao.setting.places.addTitle': 'Where does this document type go?',

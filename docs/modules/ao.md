@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.4.2 |
+| Version | 0.4.3 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -44,10 +44,12 @@ Réglage `rangement` du module (code du type → `appel-d-offres`, `reponse` ou
 `les-deux`), dans la fenêtre du module, sous **Dossier des analyses** :
 
 - **Ajouter un type…** ouvre une petite fenêtre : le type (parmi ceux qui ne sont pas
-  encore dans la liste), un interrupteur **Appel d'offres** et un **Réponse** ;
-- la liste dépliable **Types rangés (n)** montre chaque type avec ses deux interrupteurs
-  (au moins un allumé ; les deux : la question est posée à l'import) et une corbeille
-  qui le retire de la liste.
+  encore dans la liste), un interrupteur **AO** (avec l'appel d'offres) et un
+  **Réponse AO** (avec la réponse) ;
+- la liste dépliable **Types rangés (n)** commence par l'explication des deux colonnes,
+  puis montre chaque type **sur une seule ligne** (libellé coupé par « … » si besoin,
+  entier en infobulle) avec ses deux interrupteurs (au moins un allumé ; les deux : la
+  question est posée à l'import) et une corbeille qui le retire de la liste (v0.4.3).
 
 Rangement de départ (`DEFAULT_RANGEMENT`, `placement.ts`) : avis, RC, CCAP, CCAG, CCTP, CCTG,
 questions-réponses avec l'appel d'offres ; les autres types du module dans les deux. Un

@@ -69,9 +69,10 @@ Cela se règle dans la fenêtre de ce module (Paramètres → Black Projects →
 d'appels d'offres*), rubrique **Où vont les types de pièces** :
 
 - **Ajouter un type…** : une petite fenêtre pour choisir le type et allumer
-  « Appel d'offres », « Réponse », ou les deux ;
-- **Types rangés** : la liste se déplie ; chaque type a ses deux interrupteurs, et une
-  corbeille pour le retirer de la liste.
+  « AO » (avec l'appel d'offres), « Réponse AO » (avec la réponse), ou les deux ;
+- **Types rangés** : la liste se déplie ; l'explication des colonnes est en haut, puis
+  chaque type tient sur une ligne, avec ses deux interrupteurs et une corbeille pour le
+  retirer de la liste.
 
 Les deux interrupteurs allumés, ou un type absent de la liste (vos types ajoutés, AUTRE),
 la question est posée à l'import. Dans **Types de pièces**, chaque fiche rappelle où

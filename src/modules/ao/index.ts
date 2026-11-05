@@ -113,8 +113,8 @@ export const rangementField: TogglesField = {
   nameKey: 'ao.setting.places',
   descKey: 'ao.setting.places.desc',
   columns: [
-    { id: 'appel-d-offres', labelKey: 'ao.place.tender', tooltipKey: 'ao.setting.places.tender.tip' },
-    { id: 'reponse', labelKey: 'ao.place.response', tooltipKey: 'ao.setting.places.response.tip' }
+    { id: 'appel-d-offres', labelKey: 'ao.setting.places.col.tender', tooltipKey: 'ao.setting.places.tender.tip' },
+    { id: 'reponse', labelKey: 'ao.setting.places.col.response', tooltipKey: 'ao.setting.places.response.tip' }
   ],
   read: (settings) =>
     Object.fromEntries(Object.entries(rangementOf(settings)).map(([code, place]) => [code, placeColumns(place)])),
@@ -339,7 +339,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.4.2',
+  version: '0.4.3',
   // Les pièces sont lues par le module Lecture de fichiers, et typées par Typage des pièces.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES],
   texts: { fr: aoFr, en: aoEn },

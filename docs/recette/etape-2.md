@@ -138,13 +138,17 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
 
 - [ ] (v0.4.2) Fenêtre du module **Analyse d'appels d'offres** : rubrique « Où vont les
       types de pièces », bouton **Ajouter un type…** et liste dépliable **Types rangés
-      (15)** ; dépliée : RC avec « Appel d'offres » seul allumé, BPU avec les deux
-- [ ] Éteindre « Appel d'offres » sur BPU : il ne reste que « Réponse » ; la liste reste
-      dépliée ; éteindre aussi « Réponse » : refusé avec un message, l'interrupteur se
+      (15)** ; dépliée : l'explication des colonnes **AO** et **Réponse AO** en haut
+      (v0.4.3), puis RC avec « AO » seul allumé, BPU avec les deux
+- [ ] (v0.4.3) Chaque type tient sur **une seule ligne**, même FORMULAIRE (libellé coupé
+      par « … », entier en infobulle) ; fenêtre étroite : les interrupteurs restent sur
+      la ligne
+- [ ] Éteindre « AO » sur BPU : il ne reste que « Réponse AO » ; la liste reste
+      dépliée ; éteindre aussi « Réponse AO » : refusé avec un message, l'interrupteur se
       rallume
 - [ ] Corbeille sur PLANNING : il quitte la liste (14) ; **Ajouter un type…** : la petite
-      fenêtre propose PLANNING (pas RC, déjà rangé), « Appel d'offres » allumé ; tout
-      éteindre puis valider : refusé ; valider avec « Réponse » : PLANNING revient dans
+      fenêtre propose PLANNING (pas RC, déjà rangé), « AO » allumé ; tout
+      éteindre puis valider : refusé ; valider avec « Réponse AO » : PLANNING revient dans
       la liste
 - [ ] Un type ajouté dans **Types de pièces** (PAQ) : proposé dans **Ajouter un type…** ;
       renommé dans le typage, il garde son rangement

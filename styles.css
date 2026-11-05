@@ -314,11 +314,33 @@
   padding: var(--size-4-1) 0;
 }
 
+.bp-toggles-intro {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  padding: var(--size-4-1) 0 var(--size-4-2);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Une ligne par élément : le libellé se coupe, les interrupteurs restent sur la ligne. */
+.bp-toggles-item .setting-item-info {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.bp-toggles-item .setting-item-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .bp-toggles-item .setting-item-control {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   gap: var(--size-4-2);
 }
 
 .bp-toggles-column {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
+  white-space: nowrap;
 }

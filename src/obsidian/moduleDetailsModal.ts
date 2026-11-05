@@ -256,7 +256,6 @@ export class ModuleDetailsModal extends Modal {
 
     block.addClass('bp-module-settings')
     const head = new Setting(block).setName(t(field.nameKey))
-    if (field.descKey) head.setDesc(t(field.descKey))
     head.addButton((button) => {
       button
         .setButtonText(t(field.addKey))
@@ -274,10 +273,15 @@ export class ModuleDetailsModal extends Modal {
     })
     const summary = list.createEl('summary', { text: t(field.listKey, { count: names.length }) })
     if (field.tooltipKeys?.list) setTooltip(summary, t(field.tooltipKeys.list))
+    // L'explication en haut du tableau ; chaque élément tient ensuite sur une ligne.
+    if (field.descKey) list.createDiv({ text: t(field.descKey), cls: 'bp-toggles-intro' })
     if (names.length === 0) list.createDiv({ text: t(field.emptyKey), cls: 'bp-mapping-empty' })
     for (const item of names) {
       const on = new Set(items[item])
-      const line = new Setting(list).setClass('bp-toggles-item').setName(field.itemLabel(item, settings, t))
+      const label = field.itemLabel(item, settings, t)
+      const line = new Setting(list).setClass('bp-toggles-item').setName(label)
+      // Coupé par des points de suspension s'il est trop long : le libellé entier en infobulle.
+      setTooltip(line.nameEl, label)
       for (const column of field.columns) {
         line.controlEl.createSpan({ text: t(column.labelKey), cls: 'bp-toggles-column' })
         line.addToggle((toggle) => {

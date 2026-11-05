@@ -241,8 +241,9 @@ export interface TogglesField {
   /** Identifie la liste dans la fenêtre (pour qu'elle reste dépliée quand on la redessine). */
   readonly key: string
   readonly nameKey: string
+  /** L'explication, affichée en haut de la liste dépliée, au-dessus des éléments. */
   readonly descKey?: string
-  /** Les colonnes : leur identifiant, leur libellé, leur infobulle. */
+  /** Les colonnes : leur identifiant, leur libellé (court : il tient sur la ligne), leur infobulle. */
   readonly columns: readonly { readonly id: string; readonly labelKey: string; readonly tooltipKey?: string }[]
   /** Les éléments de la liste, et leurs colonnes allumées. */
   read(settings: Readonly<Record<string, unknown>>): Record<string, readonly string[]>
