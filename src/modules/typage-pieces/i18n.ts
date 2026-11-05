@@ -3,12 +3,6 @@
 
 /** Les textes du module Typage des pièces. Toutes les clés commencent par `typage-pieces.`. */
 export const typageFr: Record<string, string> = {
-  'typage-pieces.place.label': 'Va dans',
-  'typage-pieces.place.appel-d-offres': 'L’appel d’offres',
-  'typage-pieces.place.reponse': 'La réponse',
-  'typage-pieces.place.les-deux': 'Les deux (demander)',
-  'typage-pieces.place.tip':
-    'Où une pièce de ce type est rangée dans une analyse : avec l’appel d’offres (le dossier de consultation), avec la réponse (l’offre), ou selon le cas — la question est alors posée à l’import.',
   'typage-pieces.name': 'Typage des pièces',
   'typage-pieces.description':
     'Reconnaît le type des documents d’un dossier de consultation — RC, CCTP, CCAP, BPU… — d’après le nom du fichier et le titre du texte. Vos types, vos mots-clés, les types désactivés, et leur échange avec d’autres coffres.',
@@ -76,7 +70,7 @@ export const typageFr: Record<string, string> = {
 
   'typage-pieces.types.section': 'Types de pièces et leur détection',
   'typage-pieces.types.intro':
-    'Le type d’une pièce est deviné à l’import : d’abord par le nom du fichier, puis, si le nom ne dit rien, par le titre en tête du texte. Les types sont essayés dans cet ordre ; le premier qui correspond l’emporte. Un mot-clé est cherché comme mot entier, sans tenir compte des accents, de la casse ni de la ponctuation ; terminé par « … », il vaut aussi pour les mots qui le prolongent. Vos mots-clés personnalisés, en tête de cette fenêtre, passent avant ceux du module. L’interrupteur d’une fiche désactive un type : il n’est plus reconnu ni proposé. Le menu « Va dans » dit où ranger ses pièces dans une analyse : l’appel d’offres, la réponse, ou les deux — la question est alors posée à l’import. Un type mal deviné se corrige avec la commande « Changer le type de la pièce ».',
+    'Le type d’une pièce est deviné à l’import : d’abord par le nom du fichier, puis, si le nom ne dit rien, par le titre en tête du texte. Les types sont essayés dans cet ordre ; le premier qui correspond l’emporte. Un mot-clé est cherché comme mot entier, sans tenir compte des accents, de la casse ni de la ponctuation ; terminé par « … », il vaut aussi pour les mots qui le prolongent. Vos mots-clés personnalisés, en tête de cette fenêtre, passent avant ceux du module. L’interrupteur d’une fiche désactive un type : il n’est plus reconnu ni proposé. Un type mal deviné se corrige avec la commande « Changer le type de la pièce ».',
   'typage-pieces.types.byName': 'Dans le nom du fichier',
   'typage-pieces.types.byTitle': 'Dans le titre du document',
   'typage-pieces.types.other': 'Quand aucun mot-clé ne correspond, ni dans le nom ni dans le titre.',
@@ -133,12 +127,6 @@ export const typageFr: Record<string, string> = {
 }
 
 export const typageEn: Record<string, string> = {
-  'typage-pieces.place.label': 'Goes into',
-  'typage-pieces.place.appel-d-offres': 'The tender',
-  'typage-pieces.place.reponse': 'The response',
-  'typage-pieces.place.les-deux': 'Either (ask)',
-  'typage-pieces.place.tip':
-    'Where a document of this type is filed in an analysis: with the tender (the package), with the response (the bid), or depending on the case — the question is then asked on import.',
   'typage-pieces.name': 'Document typing',
   'typage-pieces.description':
     'Recognises the type of tender package documents — instructions, specification, schedule of prices… — from the file name and the title of the text. Your types, your keywords, disabled types, and their exchange with other vaults.',
@@ -206,7 +194,7 @@ export const typageEn: Record<string, string> = {
 
   'typage-pieces.types.section': 'Document types and how they are detected',
   'typage-pieces.types.intro':
-    'A document’s type is guessed on import: first from the file name, then, if the name says nothing, from the title at the top of its text. Types are tried in this order; the first that matches wins. A keyword is looked for as a whole word, ignoring accents, case and punctuation; ending with “…”, it also matches the words that extend it. Your custom keywords, at the top of this window, come before the module’s. A card’s switch disables a type: it is no longer detected or offered. The “Goes into” menu says where its documents are filed in an analysis: the tender, the response, or either — the question is then asked on import. A wrong guess is fixed with the “Change the document type” command.',
+    'A document’s type is guessed on import: first from the file name, then, if the name says nothing, from the title at the top of its text. Types are tried in this order; the first that matches wins. A keyword is looked for as a whole word, ignoring accents, case and punctuation; ending with “…”, it also matches the words that extend it. Your custom keywords, at the top of this window, come before the module’s. A card’s switch disables a type: it is no longer detected or offered. A wrong guess is fixed with the “Change the document type” command.',
   'typage-pieces.types.byName': 'In the file name',
   'typage-pieces.types.byTitle': 'In the document title',
   'typage-pieces.types.other': 'When no keyword matches, neither in the name nor in the title.',

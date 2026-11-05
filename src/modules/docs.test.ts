@@ -63,9 +63,9 @@ describe('documentation des modules', () => {
 describe('types de pièces dans la documentation', () => {
   it('donne chaque type avec les mots-clés que la reconnaissance cherche', () => {
     const ao = build().find((each) => each.path === 'Modules/Typage des pièces.md')?.content ?? ''
-    expect(ao).toContain('| Type | Pièce | Va dans | Dans le nom du fichier | Dans le titre du document |')
-    expect(ao).toContain('| RC | Règlement de la consultation | L’appel d’offres | `RC`, `RDC`, `règlement de consultation`, `règlement de la consultation` |')
-    expect(ao).toContain('| ANNEXE | Annexe | Les deux (demander) | `annexe…`, `appendix` | — |')
-    expect(ao).toContain('| AUTRE | Autre pièce | Les deux (demander) | — | — |')
+    expect(ao).toContain('| Type | Pièce | Dans le nom du fichier | Dans le titre du document |')
+    expect(ao).toContain('| RC | Règlement de la consultation | `RC`, `RDC`, `règlement de consultation`, `règlement de la consultation` |')
+    expect(ao).toContain('| ANNEXE | Annexe | `annexe…`, `appendix` | — |')
+    expect(ao).toContain('| AUTRE | Autre pièce | — | — |')
   })
 })

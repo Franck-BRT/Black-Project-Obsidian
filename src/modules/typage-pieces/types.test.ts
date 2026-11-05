@@ -86,37 +86,18 @@ describe('types de pièces dans la fenêtre « Fonctions »', async () => {
   })
 })
 
-describe('place des types dans une analyse', () => {
-  it('a une place par défaut, que l’utilisateur peut changer', async () => {
-    const { typePlace, allTypes } = await import('./types')
-    expect(typePlace('RC')).toBe('appel-d-offres')
-    expect(typePlace('BPU')).toBe('les-deux')
-    expect(typePlace('AE')).toBe('les-deux')
-    const custom = { names: {}, titles: {}, types: { PAQ: 'Plan qualité' }, places: { RC: 'reponse' as const } }
-    expect(typePlace('RC', custom)).toBe('reponse')
-    expect(typePlace('PAQ', custom)).toBe('les-deux')
-    expect(typePlace('INCONNU', custom)).toBe('les-deux')
-    expect(allTypes(custom).find((each) => each.code === 'RC')?.place).toBe('reponse')
-  })
-
-  it('se relit des réglages, suit le renommage et la suppression d’un type ajouté', async () => {
-    const { readPlaces, afterTypeChange } = await import('./custom')
-    expect(readPlaces({ placesTypes: { RC: 'reponse', BPU: 'nulle-part', XYZ: 'reponse' } })).toEqual({ RC: 'reponse' })
-    const renamed = afterTypeChange(
-      { kind: 'edit', from: 'PQA', to: 'x', previousFrom: 'PAQ', previousTo: 'x' },
-      { typesPerso: { PQA: 'x' }, placesTypes: { PAQ: 'reponse' } }
-    )
-    expect(renamed.placesTypes).toEqual({ PQA: 'reponse' })
-    expect(afterTypeChange({ kind: 'remove', from: 'PQA', to: 'x' }, { placesTypes: { PQA: 'reponse' } }).placesTypes).toEqual({})
-  })
-
-  it('a son menu « Va dans » sur chaque fiche', async () => {
+describe('annotations des autres modules', () => {
+  it('s’affichent sur la fiche du type, à titre d’information, puis se retirent', async () => {
+    const { annotateTypes } = await import('./state')
     const { typingDetails } = await import('./catalogue')
-    const section = typingDetails().sections.find((each) => each.titleKey === 'typage-pieces.types.section')
-    expect(section?.features.find((each) => each.prefix === 'BPU')?.select).toMatchObject({
-      settingsKey: 'placesTypes',
-      id: 'BPU',
-      value: 'les-deux'
-    })
+    const fiche = (code: string) =>
+      typingDetails()
+        .sections.find((each) => each.titleKey === 'typage-pieces.types.section')
+        ?.features.find((each) => each.prefix === code)
+    const remove = annotateTypes('essai', (code) => (code === 'RC' ? { labelKey: 'essai.va', tags: ['L’appel d’offres'] } : null))
+    expect(fiche('RC')?.tagGroups?.at(-1)).toEqual({ labelKey: 'essai.va', tags: ['L’appel d’offres'] })
+    expect(fiche('BPU')?.tagGroups?.some((group) => group.labelKey === 'essai.va')).toBe(false)
+    remove()
+    expect(fiche('RC')?.tagGroups?.some((group) => group.labelKey === 'essai.va')).toBe(false)
   })
 })

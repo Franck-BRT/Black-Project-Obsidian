@@ -12,10 +12,19 @@
 
 import { cleanFolder } from '../../core/settings'
 import { fillTemplate } from '../../core/docs'
-import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
+import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField, TogglesField } from '../../core/modules/module'
 import type { FormField } from '../../core/ports'
 import { LECTURE_FICHIERS } from '../lecture-fichiers'
-import { allTypes, currentTyping, isDisabled, onTypingChange, TYPAGE_PIECES, typeLabel } from '../typage-pieces'
+import {
+  allTypes,
+  annotateTypes,
+  currentTyping,
+  isDisabled,
+  OTHER,
+  onTypingChange,
+  TYPAGE_PIECES,
+  typeLabel
+} from '../typage-pieces'
 import page from "./doc/Analyse d'appels d'offres.md"
 import { aoEn, aoFr } from './i18n'
 import {
@@ -27,6 +36,16 @@ import {
   type Destination,
   type Position
 } from './notes'
+import {
+  columnsPlace,
+  migratePlaces,
+  placeColumns,
+  placeOf,
+  RANGEMENT_KEY,
+  rangementOf,
+  readRangement,
+  renameRangement
+} from './placement'
 import {
   AnalysisExists,
   applyRenames,
@@ -64,8 +83,9 @@ export {
   type Services
 } from './service'
 export { type Analysis, type Destination, type ReadingState } from './notes'
+export { DEFAULT_RANGEMENT, placeOf, RANGEMENT_KEY, rangementOf, type Place } from './placement'
 
-let unsubscribe: (() => void) | null = null
+let cleanups: (() => void)[] = []
 
 export const AO = 'ao'
 export const ROOT_KEY = 'dossier'
@@ -79,6 +99,53 @@ const rootField: TextField = {
   tooltipKey: 'ao.setting.root.tip',
   defaultValue: DEFAULT_ROOT,
   normalize: cleanFolder
+}
+
+/**
+ * Où va chaque type de pièce : une petite fenêtre pour ajouter un type et choisir où il
+ * va, puis la liste dépliable, un interrupteur « Appel d'offres » et un « Réponse » par
+ * type. Les deux allumés : la question est posée à l'import. Un type absent de la liste
+ * aussi.
+ */
+export const rangementField: TogglesField = {
+  kind: 'toggles',
+  key: RANGEMENT_KEY,
+  nameKey: 'ao.setting.places',
+  descKey: 'ao.setting.places.desc',
+  columns: [
+    { id: 'appel-d-offres', labelKey: 'ao.place.tender', tooltipKey: 'ao.setting.places.tender.tip' },
+    { id: 'reponse', labelKey: 'ao.place.response', tooltipKey: 'ao.setting.places.response.tip' }
+  ],
+  read: (settings) =>
+    Object.fromEntries(Object.entries(rangementOf(settings)).map(([code, place]) => [code, placeColumns(place)])),
+  candidates: (settings) => {
+    const listed = rangementOf(settings)
+    return allTypes()
+      .filter((each) => each.code !== OTHER && !(each.code in listed))
+      .map((each) => each.code)
+  },
+  itemLabel: (code, _settings, t) => `${code} — ${typeLabel(code, t)}${isDisabled(code) ? ` (${t('ao.setting.places.disabled')})` : ''}`,
+  write: (settings, code, columns) => {
+    const rangement: Record<string, string> = readRangement(settings)
+    const place = columns ? columnsPlace(columns) : null
+    if (place) rangement[code] = place
+    else delete rangement[code]
+    return { ...settings, [RANGEMENT_KEY]: rangement }
+  },
+  defaultColumns: ['appel-d-offres'],
+  addKey: 'ao.setting.places.add',
+  addTitleKey: 'ao.setting.places.addTitle',
+  addIntroKey: 'ao.setting.places.addIntro',
+  itemFieldKey: 'ao.setting.places.type',
+  listKey: 'ao.setting.places.list',
+  emptyKey: 'ao.setting.places.empty',
+  noCandidateKey: 'ao.setting.places.none',
+  minimumKey: 'ao.setting.places.minimum',
+  tooltipKeys: {
+    add: 'ao.setting.places.add.tip',
+    list: 'ao.setting.places.list.tip',
+    remove: 'ao.setting.places.remove.tip'
+  }
 }
 
 const feature = (key: string, status: ModuleFeature['status'], step?: number): ModuleFeature => ({
@@ -139,7 +206,8 @@ function servicesFor(context: ModuleContext): Services {
     fs: context.platform.fs,
     t: (key, vars) => context.i18n.t(key, vars),
     root: rootOf(context.settings.get()),
-    today: localToday
+    today: localToday,
+    rangement: rangementOf(context.settings.get())
   }
 }
 
@@ -271,30 +339,48 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.4.1',
+  version: '0.4.2',
   // Les pièces sont lues par le module Lecture de fichiers, et typées par Typage des pièces.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES],
   texts: { fr: aoFr, en: aoEn },
   details: () => aoFeatures(),
-  settingsFields: [rootField],
+  settingsFields: [rootField, rangementField],
+  // En 0.4.1, la place d'un type se choisissait dans le module de typage : reprise ici.
+  migrateSettings: (modules) => migratePlaces(modules, AO, TYPAGE_PIECES),
   docs: ({ folder }) => [{ path: "Modules/Analyse d'appels d'offres.md", content: fillTemplate(page, folder) }],
   activate(context) {
     const { commands, platform, i18n } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
 
+    // Sur la fiche de chaque type, dans le module Typage des pièces : où l'analyse le range.
+    const placeTag = (place: string) => (place === 'reponse' ? t('ao.place.response') : t('ao.place.tender'))
+    cleanups.push(
+      annotateTypes(AO, (code) => {
+        if (code === OTHER) return { labelKey: 'ao.annotation', tags: [t('ao.annotation.ask')] }
+        const place = placeOf(code, rangementOf(context.settings.get()))
+        return {
+          labelKey: 'ao.annotation',
+          tags: place === 'les-deux' ? [t('ao.place.tender'), t('ao.place.response'), t('ao.annotation.ask')] : [placeTag(place)]
+        }
+      })
+    )
+
     // Un type renommé dans le module Typage des pièces : les pièces qui avaient l'ancien
-    // code le quittent aussitôt, dans toutes les analyses.
+    // code le quittent aussitôt, dans toutes les analyses, et le rangement suit.
     let renames = JSON.stringify(currentTyping().renames)
-    unsubscribe = onTypingChange((state) => {
+    const fromTyping = onTypingChange((state) => {
       const now = JSON.stringify(state.renames)
       if (now === renames) return
       renames = now
+      const moved = renameRangement(context.settings.get(), state.renames)
+      if (moved) void context.settings.save(moved)
       void applyRenames(servicesFor(context))
         .then((count) => {
           if (count > 0) platform.notifier.notify(t('ao.retyped', { count }), 6000)
         })
         .catch((error: unknown) => console.error('[Black Projects] renommage des types', error))
     })
+    cleanups.push(fromTyping)
 
     commands.register({
       id: 'nouvelle-analyse',
@@ -463,7 +549,7 @@ export const aoModule: BlackModule = {
     })
   },
   deactivate() {
-    unsubscribe?.()
-    unsubscribe = null
+    for (const cleanup of cleanups) cleanup()
+    cleanups = []
   }
 }

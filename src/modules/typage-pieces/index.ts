@@ -48,14 +48,22 @@ import {
   classifyPiece as classifyWith,
   isDisabled as isDisabledWith,
   typeLabel as typeLabelWith,
-  typePlace as typePlaceWith,
   type CustomKeywords
 } from './types'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
-export { fold, keywordIn, NO_CUSTOM_KEYWORDS, OTHER, PIECE_TYPES, PLACES, type CustomKeywords, type PieceType, type Place } from './types'
+export { fold, keywordIn, NO_CUSTOM_KEYWORDS, OTHER, PIECE_TYPES, type CustomKeywords, type PieceType } from './types'
 export { currentCode } from './custom'
-export { currentCustomization, currentTyping, onTypingChange, type TypingState } from './state'
+export {
+  annotateTypes,
+  currentCustomization,
+  currentTyping,
+  onTypingChange,
+  typeAnnotations,
+  type TypeAnnotation,
+  type TypeAnnotator,
+  type TypingState
+} from './state'
 export { typesMarkdown } from './doc'
 
 /**
@@ -87,11 +95,6 @@ export function typeLabel(
   custom: CustomKeywords = currentCustomization()
 ): string {
   return typeLabelWith(code, custom, t)
-}
-
-/** Où va une pièce de ce type dans une analyse : appel d'offres, réponse, ou les deux (à demander). */
-export function typePlace(code: string, custom: CustomKeywords = currentCustomization()) {
-  return typePlaceWith(code, custom)
 }
 
 /** Le libellé tel que le montre un tableau : « (désactivé) » pour un type désactivé. */
@@ -292,7 +295,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.4.1',
+  version: '0.4.2',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),

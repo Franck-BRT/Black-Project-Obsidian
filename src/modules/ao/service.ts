@@ -12,7 +12,7 @@ import { localToday } from '../../core/dates'
 import { parseFrontmatter, setFrontmatterField } from '../../core/frontmatter'
 import type { ExternalFile, FileSystem } from '../../core/ports'
 import { FileReadError, fileText, isArchive, isImage, isReadable, readArchive } from '../lecture-fichiers'
-import { classifyPiece, currentCode, currentTyping, OTHER, typePlace, type CustomKeywords } from '../typage-pieces'
+import { classifyPiece, currentCode, currentTyping, OTHER, type CustomKeywords } from '../typage-pieces'
 import {
   ANALYSIS,
   ANALYSIS_TYPE,
@@ -40,6 +40,7 @@ import {
   type Position,
   type ReadingState
 } from './notes'
+import { DEFAULT_RANGEMENT, placeOf, type Place } from './placement'
 
 export { localToday }
 
@@ -59,6 +60,8 @@ export interface Services {
   keywords?: CustomKeywords
   /** Les codes de types renommés (ancien → nouveau) ; par défaut, ceux du module de typage. */
   renames?: Readonly<Record<string, string>>
+  /** Où ranger chaque type (réglage `rangement` du module) ; par défaut, le rangement de départ. */
+  rangement?: Readonly<Record<string, Place>>
 }
 
 
@@ -294,7 +297,7 @@ export async function importFiles(
     const name = entry.path.slice(entry.path.lastIndexOf('/') + 1)
     const read = await readPiece(name, entry.bytes)
     const type = classifyPiece(name, read.text, custom)
-    pieces.push({ ...entry, read, type, place: typePlace(type, custom) })
+    pieces.push({ ...entry, read, type, place: placeOf(type, services.rangement ?? DEFAULT_RANGEMENT) })
   }
 
   // Puis demander, une fois, ce que les types ne disent pas.

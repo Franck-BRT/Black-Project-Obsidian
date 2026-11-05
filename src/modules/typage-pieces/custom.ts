@@ -14,13 +14,11 @@
  */
 
 import type { FieldError, MappingChange } from '../../core/modules/module'
-import { allTypes, fold, OTHER, PIECE_TYPES, PLACES, type CustomKeywords, type Place } from './types'
+import { allTypes, fold, OTHER, PIECE_TYPES, type CustomKeywords } from './types'
 
 export const TYPES_KEY = 'typesPerso'
 export const NAME_KEYWORDS_KEY = 'motsClesNom'
 export const TITLE_KEYWORDS_KEY = 'motsClesTitre'
-/** La place choisie pour un type : code → place. */
-export const PLACES_KEY = 'placesTypes'
 /** Les codes des types désactivés par l'utilisateur. */
 export const DISABLED_KEY = 'typesDesactives'
 /** Les codes de types renommés : ancien → nouveau, pour retyper les pièces qui avaient l'ancien. */
@@ -139,26 +137,13 @@ export function readTitleKeywords(settings: Settings): Record<string, string> {
   return readList('titles', settings[TITLE_KEYWORDS_KEY], readCustomTypes(settings))
 }
 
-/** Les places choisies par l'utilisateur, relues des réglages : seulement des types qui existent. */
-export function readPlaces(settings: Settings): Record<string, Place> {
-  const raw = settings[PLACES_KEY]
-  const out: Record<string, Place> = {}
-  if (!isRecord(raw)) return out
-  const known = new Set(allTypes({ names: {}, titles: {}, types: readCustomTypes(settings) }).map((each) => each.code))
-  for (const [code, place] of Object.entries(raw)) {
-    if (known.has(code) && PLACES.includes(place as Place)) out[code] = place as Place
-  }
-  return out
-}
-
 /** Ce que l'utilisateur a ajouté, tel que la reconnaissance l'emploie. */
 export function readCustomKeywords(settings: Settings): CustomKeywords {
   return {
     names: readNameKeywords(settings),
     titles: readTitleKeywords(settings),
     types: readCustomTypes(settings),
-    disabled: readDisabled(settings),
-    places: readPlaces(settings)
+    disabled: readDisabled(settings)
   }
 }
 
@@ -216,15 +201,9 @@ export function afterTypeChange(change: MappingChange, settings: Record<string, 
     for (const [from, to] of Object.entries(renames)) if (to === before) renames[from] = after
     renames[before] = after
     delete renames[after]
-    // Un type désactivé le reste sous son nouveau code, et garde sa place.
+    // Un type désactivé le reste sous son nouveau code.
     const disabled = Array.isArray(settings[DISABLED_KEY]) ? (settings[DISABLED_KEY] as unknown[]) : []
     next[DISABLED_KEY] = disabled.map((code) => (code === before ? after : code))
-    const places = isRecord(settings[PLACES_KEY]) ? { ...(settings[PLACES_KEY] as Record<string, unknown>) } : {}
-    if (before in places) {
-      places[after] = places[before]
-      delete places[before]
-    }
-    next[PLACES_KEY] = places
   } else if (change.kind === 'remove') {
     // Les anciens codes qui menaient à ce type ne mènent plus nulle part.
     for (const [from, to] of Object.entries(renames)) if (to === change.from) delete renames[from]
@@ -233,9 +212,6 @@ export function afterTypeChange(change: MappingChange, settings: Record<string, 
     next[TITLE_KEYWORDS_KEY] = remapKeywords(settings[TITLE_KEYWORDS_KEY], map)
     const disabled = Array.isArray(settings[DISABLED_KEY]) ? (settings[DISABLED_KEY] as unknown[]) : []
     next[DISABLED_KEY] = disabled.filter((code) => code !== change.from)
-    const places = isRecord(settings[PLACES_KEY]) ? { ...(settings[PLACES_KEY] as Record<string, unknown>) } : {}
-    delete places[change.from]
-    next[PLACES_KEY] = places
   }
   next[RENAMES_KEY] = renames
   return next

@@ -52,18 +52,6 @@ export interface ModuleFeature {
     /** Les infobulles de l'interrupteur, actif et inactif. */
     readonly tooltipKeys?: { readonly on: string; readonly off: string }
   }
-  /**
-   * Un menu sur la fiche : la valeur choisie est rangée sous `id` dans l'objet
-   * `settingsKey` des réglages du module (la place d'un type de pièce, par exemple).
-   */
-  readonly select?: {
-    readonly settingsKey: string
-    readonly id: string
-    readonly labelKey: string
-    readonly value: string
-    readonly options: readonly { readonly value: string; readonly labelKey: string }[]
-    readonly tooltipKey?: string
-  }
 }
 
 /** Une ligne de blocs : une famille de fonctions (les PDF, les tableurs…). */
@@ -242,7 +230,46 @@ export interface ActionsField {
   readonly actions: readonly { readonly commandId: string; readonly labelKey: string; readonly tooltipKey?: string }[]
 }
 
-export type ModuleSettingField = MappingField | TextField | ActionsField
+/**
+ * Un réglage fait d'éléments rangés dans des colonnes — des types de pièces, avec
+ * l'appel d'offres ou avec la réponse : chaque élément de la liste a un interrupteur par
+ * colonne, au moins un allumé. On ajoute un élément dans une petite fenêtre (lequel, et
+ * ses colonnes) ; la liste se déplie pour le modifier ou le retirer.
+ */
+export interface TogglesField {
+  readonly kind: 'toggles'
+  /** Identifie la liste dans la fenêtre (pour qu'elle reste dépliée quand on la redessine). */
+  readonly key: string
+  readonly nameKey: string
+  readonly descKey?: string
+  /** Les colonnes : leur identifiant, leur libellé, leur infobulle. */
+  readonly columns: readonly { readonly id: string; readonly labelKey: string; readonly tooltipKey?: string }[]
+  /** Les éléments de la liste, et leurs colonnes allumées. */
+  read(settings: Readonly<Record<string, unknown>>): Record<string, readonly string[]>
+  /** Les éléments qu'on peut ajouter : ceux qui ne sont pas encore dans la liste. */
+  candidates(settings: Readonly<Record<string, unknown>>): readonly string[]
+  /** Le libellé d'un élément : « CCTP — Cahier des clauses techniques particulières ». */
+  itemLabel(item: string, settings: Readonly<Record<string, unknown>>, t: (key: string) => string): string
+  /** Les réglages du module après le changement ; `columns` à `null` retire l'élément. */
+  write(settings: Readonly<Record<string, unknown>>, item: string, columns: readonly string[] | null): Record<string, unknown>
+  /** Les colonnes allumées au départ dans la fenêtre d'ajout ; toutes si absent. */
+  readonly defaultColumns?: readonly string[]
+  /** Le bouton d'ajout, le titre et le texte de sa fenêtre, le libellé du choix de l'élément. */
+  readonly addKey: string
+  readonly addTitleKey: string
+  readonly addIntroKey?: string
+  readonly itemFieldKey: string
+  /** Le titre de la liste dépliable ; `{count}` y est remplacé par le nombre d'éléments. */
+  readonly listKey: string
+  readonly emptyKey: string
+  /** Quand plus aucun élément ne peut être ajouté. */
+  readonly noCandidateKey: string
+  /** Quand on éteint la dernière colonne d'un élément. */
+  readonly minimumKey: string
+  readonly tooltipKeys?: { readonly add?: string; readonly list?: string; readonly remove?: string }
+}
+
+export type ModuleSettingField = MappingField | TextField | ActionsField | TogglesField
 
 /** Une action que l'utilisateur lance, depuis la palette de commandes par exemple. */
 export interface ModuleCommand {

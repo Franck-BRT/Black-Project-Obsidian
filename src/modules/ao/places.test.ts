@@ -12,6 +12,7 @@ import { memoryPlatform, type MemoryPlatform } from '../../core/testing/memoryPl
 import { typagePiecesModule } from '../typage-pieces'
 import { aoModule } from '.'
 import { aoFr } from './i18n'
+import { DEFAULT_RANGEMENT, type Place } from './placement'
 import { createAnalysis, importFiles, listCandidates, movePiece, updateAnalysis, type PlacementRequest } from './service'
 
 const i18n = createI18n('fr')
@@ -20,9 +21,9 @@ i18n.register('fr', typagePiecesModule.texts.fr)
 const t = i18n.t.bind(i18n)
 const NONE = { names: {}, titles: {}, types: {} }
 
-function setup(keywords: Record<string, unknown> = NONE) {
+function setup(rangement?: Record<string, Place>) {
   const platform = memoryPlatform()
-  const services = { fs: platform.fs, t, root: 'AO', today: () => '2026-11-05', keywords: keywords as typeof NONE }
+  const services = { fs: platform.fs, t, root: 'AO', today: () => '2026-11-05', keywords: NONE, ...(rangement ? { rangement } : {}) }
   return { platform, services }
 }
 
@@ -92,7 +93,7 @@ describe('candidat : une réponse, la sienne', () => {
 
 describe('émetteur : une réponse par candidat', () => {
   it('range les pièces de réponse dans le dossier du candidat, et le demande même sans pièce ambiguë', async () => {
-    const { platform, services } = setup({ ...NONE, places: { FORMULAIRE: 'reponse' } })
+    const { platform, services } = setup({ ...DEFAULT_RANGEMENT, FORMULAIRE: 'reponse' })
     const analysis = await createAnalysis(services, 'Essai', { position: 'emetteur', buyer: '', reference: '' })
     const asked: PlacementRequest[] = []
     await importFiles(services, analysis, [{ name: 'DC1.md', bytes: utf8('# DC1') }], async (request) => {
@@ -215,5 +216,24 @@ describe('les commandes', () => {
     expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Appel d’offres', 'Réponse'])
     expect(platform.notices.at(-1)).toBe('Pièce déplacée : Réponse.')
     expect(platform.opened.at(-1)).toBe('AO/Essai/Pièces/Réponse/CCTP.md')
+  })
+})
+
+describe('le rangement, réglé dans le module', () => {
+  it('un type rangé avec la réponse n’est plus demandé ; un type absent de la liste l’est', async () => {
+    const { platform, services } = setup({ BPU: 'reponse' })
+    const analysis = await createAnalysis(services, 'Essai', { position: 'candidat', buyer: '', reference: '' })
+    const asked: PlacementRequest[] = []
+    const report = await importFiles(services, analysis, files(), async (request) => {
+      asked.push(request)
+      return { places: { 'CCTP.md': 'appel-d-offres', 'AE.md': 'reponse' } }
+    })
+    expect(asked[0]?.pending.map((piece) => piece.type)).toEqual(['CCTP', 'AE'])
+    expect(report.imported.map((piece) => [piece.type, piece.destination.place])).toEqual([
+      ['CCTP', 'appel-d-offres'],
+      ['BPU', 'reponse'],
+      ['AE', 'reponse']
+    ])
+    expect(await platform.fs.exists('AO/Essai/Pièces/Réponse/Originaux/BPU.csv')).toBe(true)
   })
 })

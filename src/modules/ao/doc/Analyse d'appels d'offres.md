@@ -61,10 +61,21 @@ laquelle.
 
 ## 3. Appel d'offres ou réponse
 
-Chaque type de pièce a une **place** (réglable dans **Types de pièces**, menu « Va dans »
-de sa fiche) : avec l'**appel d'offres** (RC, CCTP, CCAP…), avec la **réponse**, ou **les
-deux** (AE, BPU, DPGF, DQE, mémoire, formulaires, planning, annexes… : vierges dans le
-dossier, remplis dans l'offre).
+Chaque type de pièce va avec l'**appel d'offres** (RC, CCTP, CCAP…), avec la
+**réponse**, ou **les deux** (AE, BPU, DPGF, DQE, mémoire, formulaires, planning,
+annexes… : vierges dans le dossier, remplis dans l'offre).
+
+Cela se règle dans la fenêtre de ce module (Paramètres → Black Projects → *Analyse
+d'appels d'offres*), rubrique **Où vont les types de pièces** :
+
+- **Ajouter un type…** : une petite fenêtre pour choisir le type et allumer
+  « Appel d'offres », « Réponse », ou les deux ;
+- **Types rangés** : la liste se déplie ; chaque type a ses deux interrupteurs, et une
+  corbeille pour le retirer de la liste.
+
+Les deux interrupteurs allumés, ou un type absent de la liste (vos types ajoutés, AUTRE),
+la question est posée à l'import. Dans **Types de pièces**, chaque fiche rappelle où
+l'analyse range ce type.
 
 À l'import, les pièces dont le type va « dans les deux » font l'objet d'**une question,
 en une fois** : la fenêtre « Où ranger ces pièces ? » propose pour chacune « Appel

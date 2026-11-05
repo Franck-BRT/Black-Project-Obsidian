@@ -46,3 +46,41 @@ export function onTypingChange(listener: (state: TypingState) => void): () => vo
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
+
+// ── Les annotations des autres modules ────────────────────────────────────────────
+// Ce que d'autres modules disent d'un type, affiché sur sa fiche à titre d'information :
+// l'analyse d'appels d'offres dit où elle range ses pièces ; d'autres modules pourront
+// dire où ils classent les leurs. Le typage n'en fait rien d'autre que les montrer.
+
+export interface TypeAnnotation {
+  /** Le titre de la ligne : « Analyse d'appels d'offres — va dans ». */
+  readonly labelKey: string
+  /** Ce qu'elle dit, déjà mis en mots par le module : « L'appel d'offres », « La réponse ». */
+  readonly tags: readonly string[]
+}
+
+export type TypeAnnotator = (code: string) => TypeAnnotation | null
+
+const annotators = new Map<string, TypeAnnotator>()
+
+/** Ajoute une ligne d'information aux fiches des types ; rend de quoi la retirer. */
+export function annotateTypes(id: string, annotator: TypeAnnotator): () => void {
+  annotators.set(id, annotator)
+  return () => {
+    if (annotators.get(id) === annotator) annotators.delete(id)
+  }
+}
+
+/** Ce que les autres modules disent d'un type. */
+export function typeAnnotations(code: string): TypeAnnotation[] {
+  const out: TypeAnnotation[] = []
+  for (const annotator of annotators.values()) {
+    try {
+      const annotation = annotator(code)
+      if (annotation) out.push(annotation)
+    } catch (error) {
+      console.error('[Black Projects] annotation des types', error)
+    }
+  }
+  return out
+}

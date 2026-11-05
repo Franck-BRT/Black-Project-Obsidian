@@ -17,11 +17,11 @@ export function typesMarkdown(
   custom: CustomKeywords = NO_CUSTOM_KEYWORDS
 ): string {
   return [
-    `| Type | Pièce | ${t('typage-pieces.place.label')} | ${t('typage-pieces.types.byName')} | ${t('typage-pieces.types.byTitle')} |`,
-    '| --- | --- | --- | --- | --- |',
+    `| Type | Pièce | ${t('typage-pieces.types.byName')} | ${t('typage-pieces.types.byTitle')} |`,
+    '| --- | --- | --- | --- |',
     ...allTypes(custom).map(
       (each) =>
-        `| ${each.code}${each.custom ? ' *(ajouté)*' : ''}${isDisabled(each.code, custom) ? ' *(désactivé)*' : ''} | ${typeLabel(each.code, custom, t)} | ${t(`typage-pieces.place.${each.place}`)} | ${cell(each.names, custom.names, each.code)} | ${cell(each.titles, custom.titles, each.code)} |`
+        `| ${each.code}${each.custom ? ' *(ajouté)*' : ''}${isDisabled(each.code, custom) ? ' *(désactivé)*' : ''} | ${typeLabel(each.code, custom, t)} | ${cell(each.names, custom.names, each.code)} | ${cell(each.titles, custom.titles, each.code)} |`
     )
   ].join('\n')
 }

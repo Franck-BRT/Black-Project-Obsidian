@@ -33,7 +33,7 @@ describe('mots-clés personnalisés : saisie', () => {
   it('relit les réglages en écartant ce qui n’est plus valable', () => {
     expect(
       readCustomKeywords({ motsClesNom: { SPEC: 'CCTP', ' grille  de prix ': 'BPU', x: 'XYZ', y: 3 }, motsClesTitre: ['non'] })
-    ).toEqual({ names: { SPEC: 'CCTP', 'grille de prix': 'BPU' }, titles: {}, types: {}, disabled: [], places: {} })
+    ).toEqual({ names: { SPEC: 'CCTP', 'grille de prix': 'BPU' }, titles: {}, types: {}, disabled: [] })
   })
 })
 

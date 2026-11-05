@@ -301,13 +301,24 @@
   overflow: auto;
 }
 
-.bp-feature-select {
-  display: flex;
-  align-items: center;
-  gap: var(--size-4-2);
-  margin-top: var(--size-2-2);
+.bp-toggles-list {
+  margin: var(--size-4-2) 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: var(--size-4-1) var(--size-4-3);
 }
 
-.bp-feature-select select {
+.bp-toggles-list > summary {
+  cursor: pointer;
+  font-weight: var(--font-semibold);
+  padding: var(--size-4-1) 0;
+}
+
+.bp-toggles-item .setting-item-control {
+  gap: var(--size-4-2);
+}
+
+.bp-toggles-column {
   font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
 }

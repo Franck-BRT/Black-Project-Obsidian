@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `typage-pieces` |
-| Version | 0.4.1 |
+| Version | 0.4.2 |
 | Emplacement | `src/modules/typage-pieces/` |
 | Interface publique | `src/modules/typage-pieces/index.ts` |
 | Guide de maintenance | [`src/modules/typage-pieces/README.md`](../../src/modules/typage-pieces/README.md) |
@@ -30,15 +30,19 @@ pièces**.
 - **Échanger** : exporter un ou plusieurs types dans un fichier JSON, et les importer dans
   un autre coffre.
 
-## La place des types (v0.4.1)
+## Ce que les autres modules disent d'un type (v0.4.2)
 
-Chaque type a une place — `appel-d-offres`, `reponse` ou `les-deux` — qui dit où
-l'analyse d'appels d'offres range ses pièces ; « les deux » fait poser la question à
-l'import. Valeurs par défaut : avis, RC, CCAP, CCAG, CCTP, CCTG, questions-réponses avec
-l'appel d'offres ; AE, BPU, DPGF, DQE, mémoire, formulaires, planning, annexe, autre et
-les types ajoutés dans les deux. Réglage `placesTypes` (code → place), menu **Va dans**
-sur chaque fiche ; exporté et importé avec les types ; suit le renommage et la
-suppression d'un type ajouté. API : `typePlace(code)`.
+Le typage dit **ce qu'est** une pièce, pas **où elle va** : chaque module qui classe des
+pièces décide lui-même où il les range (l'analyse d'appels d'offres : avec l'appel
+d'offres ou avec la réponse ; d'autres modules, plus tard, ailleurs). Pour que
+l'utilisateur le voie au même endroit, un module peut **annoter** les fiches :
+`annotateTypes(id, (code) => ({ labelKey, tags }) | null)` ajoute une ligne
+d'information sous les mots-clés de chaque fiche (« Analyse d'appels d'offres — va dans :
+Appel d'offres ») et rend de quoi la retirer (à la désactivation du module).
+`typeAnnotations(code)` les relit. Ce n'est qu'un affichage : rien ne se règle ici.
+
+En v0.4.1, la place se réglait dans ce module (`placesTypes`, menu « Va dans ») ; ce
+réglage est repris par le module AO au premier chargement de la v0.4.2.
 
 ## La fenêtre « Types de pièces »
 
@@ -99,7 +103,6 @@ elle retype aussitôt les pièces de toutes ses analyses.
 | `motsClesNom`, `motsClesTitre` | mot-clé → code |
 | `typesDesactives` | codes |
 | `typesRenommes` | ancien code → nouveau |
-| `placesTypes` | code → place (appel-d-offres, reponse, les-deux) |
 | `dossierEchanges` | dossier des exports |
 
 Jusqu'à la v0.3.5, ces réglages étaient rangés sous `modules.ao` ; `migrate.ts` les

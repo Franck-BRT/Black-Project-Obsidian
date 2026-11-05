@@ -112,6 +112,15 @@ export type FormField =
       options: readonly Choice[]
       value?: string
     }
+  | {
+      /** Un interrupteur ; sa valeur rendue est `"true"` ou `"false"`. */
+      kind: 'toggle'
+      key: string
+      label: string
+      description?: string
+      tooltip?: string
+      value?: boolean
+    }
 
 export interface FormView {
   title: string

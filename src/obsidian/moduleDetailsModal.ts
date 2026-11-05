@@ -9,7 +9,7 @@
  * que le dessiner, et se redessine quand un réglage change.
  */
 
-import { DropdownComponent, Modal, Setting, setTooltip, ToggleComponent, type App } from 'obsidian'
+import { Modal, Setting, setTooltip, ToggleComponent, type App } from 'obsidian'
 import {
   FEATURE_STATUSES,
   type FeatureStatus,
@@ -18,6 +18,7 @@ import {
   type ModuleFeature,
   type MappingField,
   type TextField,
+  type TogglesField,
   type ModuleDescriptor,
   type ModuleDetails
 } from '../core/modules/module'
@@ -25,6 +26,9 @@ import { moduleSettings } from '../core/settings'
 import type BlackProjectsPlugin from './main'
 
 export class ModuleDetailsModal extends Modal {
+  /** Les listes dépliées : elles le restent quand la fenêtre se redessine. */
+  private readonly openLists = new Set<string>()
+
   constructor(
     app: App,
     private readonly plugin: BlackProjectsPlugin,
@@ -58,6 +62,7 @@ export class ModuleDetailsModal extends Modal {
     for (const field of module.settingsFields ?? []) {
       if (field.kind === 'mapping') this.renderMapping(contentEl.createDiv(), field)
       else if (field.kind === 'actions') this.renderActions(contentEl.createDiv(), field)
+      else if (field.kind === 'toggles') this.renderToggles(contentEl.createDiv(), field)
       else this.renderText(contentEl.createDiv(), field)
     }
     if (details) this.renderDetails(contentEl.createDiv(), details)
@@ -234,6 +239,110 @@ export class ModuleDetailsModal extends Modal {
     await save({ ...others, [newFrom]: newTo }, { kind: 'edit', from: newFrom, to: newTo, previousFrom: from, previousTo: to })
   }
 
+  /**
+   * Des éléments rangés dans des colonnes : un bouton qui ouvre la petite fenêtre d'ajout
+   * (l'élément, et un interrupteur par colonne), puis la liste dépliable où chaque élément
+   * a ses interrupteurs et de quoi le retirer.
+   */
+  private renderToggles(block: HTMLElement, field: TogglesField): void {
+    const { plugin, module } = this
+    const t = this.t.bind(this)
+    const settings = this.settings()
+    const items = field.read(settings)
+    const save = async (item: string, columns: readonly string[] | null) => {
+      await plugin.saveModuleSettings(module.id, field.write(this.settings(), item, columns))
+      this.render()
+    }
+
+    block.addClass('bp-module-settings')
+    const head = new Setting(block).setName(t(field.nameKey))
+    if (field.descKey) head.setDesc(t(field.descKey))
+    head.addButton((button) => {
+      button
+        .setButtonText(t(field.addKey))
+        .setCta()
+        .onClick(() => void this.addToggled(field, save))
+      if (field.tooltipKeys?.add) button.setTooltip(t(field.tooltipKeys.add))
+    })
+
+    const names = Object.keys(items).sort((a, b) => a.localeCompare(b))
+    const list = block.createEl('details', { cls: 'bp-toggles-list' })
+    list.open = this.openLists.has(field.key)
+    list.addEventListener('toggle', () => {
+      if (list.open) this.openLists.add(field.key)
+      else this.openLists.delete(field.key)
+    })
+    const summary = list.createEl('summary', { text: t(field.listKey, { count: names.length }) })
+    if (field.tooltipKeys?.list) setTooltip(summary, t(field.tooltipKeys.list))
+    if (names.length === 0) list.createDiv({ text: t(field.emptyKey), cls: 'bp-mapping-empty' })
+    for (const item of names) {
+      const on = new Set(items[item])
+      const line = new Setting(list).setClass('bp-toggles-item').setName(field.itemLabel(item, settings, t))
+      for (const column of field.columns) {
+        line.controlEl.createSpan({ text: t(column.labelKey), cls: 'bp-toggles-column' })
+        line.addToggle((toggle) => {
+          toggle.setValue(on.has(column.id))
+          if (column.tooltipKey) toggle.setTooltip(t(column.tooltipKey))
+          toggle.onChange(async (value) => {
+            const next = field.columns.map((each) => each.id).filter((id) => (id === column.id ? value : on.has(id)))
+            if (next.length === 0) {
+              plugin.platform.notifier.notify(t(field.minimumKey), 6000)
+              this.render()
+              return
+            }
+            await save(item, next)
+          })
+        })
+      }
+      line.addExtraButton((button) => {
+        button.setIcon('trash-2').onClick(() => void save(item, null))
+        if (field.tooltipKeys?.remove) button.setTooltip(t(field.tooltipKeys.remove))
+      })
+    }
+  }
+
+  /** La petite fenêtre d'ajout : l'élément à ajouter, et ses colonnes. */
+  private async addToggled(
+    field: TogglesField,
+    save: (item: string, columns: readonly string[] | null) => Promise<void>
+  ): Promise<void> {
+    const t = this.t.bind(this)
+    const settings = this.settings()
+    const candidates = field.candidates(settings)
+    if (candidates.length === 0) {
+      this.plugin.platform.notifier.notify(t(field.noCandidateKey), 6000)
+      return
+    }
+    const initially = new Set(field.defaultColumns ?? field.columns.map((column) => column.id))
+    const values = await this.plugin.platform.ui.askForm({
+      title: t(field.addTitleKey),
+      ...(field.addIntroKey ? { intro: t(field.addIntroKey) } : {}),
+      fields: [
+        {
+          kind: 'choice',
+          key: 'item',
+          label: t(field.itemFieldKey),
+          options: candidates.map((item) => ({ value: item, label: field.itemLabel(item, settings, t) }))
+        },
+        ...field.columns.map((column) => ({
+          kind: 'toggle' as const,
+          key: `c:${column.id}`,
+          label: t(column.labelKey),
+          value: initially.has(column.id),
+          ...(column.tooltipKey ? { tooltip: t(column.tooltipKey) } : {})
+        }))
+      ],
+      submit: t(field.addKey),
+      validate: (entered) => (field.columns.some((column) => entered[`c:${column.id}`] === 'true') ? null : t(field.minimumKey))
+    })
+    if (!values?.item) return
+    this.openLists.add(field.key)
+    await save(
+      values.item,
+      field.columns.filter((column) => values[`c:${column.id}`] === 'true').map((column) => column.id)
+    )
+  }
+
   /** Une ligne de boutons, chacun lançant une commande du module ; la fenêtre se redessine après. */
   private renderActions(block: HTMLElement, field: ActionsField): void {
     const t = this.t.bind(this)
@@ -288,26 +397,6 @@ export class ModuleDetailsModal extends Modal {
     })
   }
 
-  /** Le menu d'une fiche : la valeur choisie est rangée sous son identifiant, puis la fenêtre se redessine. */
-  private renderSelect(card: HTMLElement, spec: NonNullable<ModuleFeature['select']>): void {
-    const { plugin, module } = this
-    const t = this.t.bind(this)
-    const row = card.createDiv({ cls: 'bp-feature-select' })
-    row.createSpan({ text: t(spec.labelKey), cls: 'bp-feature-group' })
-    const dropdown = new DropdownComponent(row)
-    for (const option of spec.options) dropdown.addOption(option.value, t(option.labelKey))
-    dropdown.setValue(spec.value)
-    if (spec.tooltipKey) setTooltip(dropdown.selectEl, t(spec.tooltipKey))
-    dropdown.onChange(async (value) => {
-      const settings = this.settings()
-      const raw = settings[spec.settingsKey]
-      const map = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? { ...(raw as Record<string, unknown>) } : {}
-      map[spec.id] = value
-      await plugin.saveModuleSettings(module.id, { ...settings, [spec.settingsKey]: map })
-      this.render()
-    })
-  }
-
   /** Le détail : un résumé, puis une ligne par famille et un petit bloc par fonction. */
   private renderDetails(panel: HTMLElement, details: ModuleDetails): void {
     const t = this.t.bind(this)
@@ -349,7 +438,6 @@ export class ModuleDetailsModal extends Modal {
           const tags = card.createDiv({ cls: 'bp-feature-tags' })
           for (const tag of group.tags) tags.createSpan({ text: `${tagPrefix}${tag}`, cls: 'bp-feature-tag' })
         }
-        if (feature.select) this.renderSelect(card, feature.select)
         if (feature.noteKey) card.createDiv({ text: t(feature.noteKey, feature.vars), cls: 'bp-feature-note' })
         if (reference) continue
         const status =

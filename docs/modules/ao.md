@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.4.1 |
+| Version | 0.4.2 |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
@@ -29,14 +29,43 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
 ## Appel d'offres et réponse (v0.4.1)
 
 Chaque pièce est rangée avec l'**appel d'offres** ou avec la **réponse** — pour
-l'émetteur, la réponse d'un candidat nommé. La place vient du type (`typePlace` du module
-de typage : appel d'offres, réponse, ou les deux) ; pour « les deux », et pour savoir de
+l'émetteur, la réponse d'un candidat nommé. La place vient du **rangement** de son type,
+réglé dans ce module (voir plus bas) ; pour « les deux », et pour savoir de
 quel candidat est la réponse, `importFiles` reçoit un `PlacementResolver` qui pose la
 question **une fois pour tout l'import** (fenêtre « Où ranger ces pièces ? », avec
 « Tout mettre dans »). Renoncer annule l'import sans rien écrire. Les fichiers déposés à
 la main prennent la place du dossier où ils sont (`destinationOf`). Les analyses d'avant
 la v0.4.1 (`Pièces/Originaux`, notes sans `place`) restent lisibles, comptées avec
 l'appel d'offres.
+
+## Où vont les types de pièces (v0.4.2)
+
+Réglage `rangement` du module (code du type → `appel-d-offres`, `reponse` ou
+`les-deux`), dans la fenêtre du module, sous **Dossier des analyses** :
+
+- **Ajouter un type…** ouvre une petite fenêtre : le type (parmi ceux qui ne sont pas
+  encore dans la liste), un interrupteur **Appel d'offres** et un **Réponse** ;
+- la liste dépliable **Types rangés (n)** montre chaque type avec ses deux interrupteurs
+  (au moins un allumé ; les deux : la question est posée à l'import) et une corbeille
+  qui le retire de la liste.
+
+Rangement de départ (`DEFAULT_RANGEMENT`, `placement.ts`) : avis, RC, CCAP, CCAG, CCTP, CCTG,
+questions-réponses avec l'appel d'offres ; les autres types du module dans les deux. Un
+type absent de la liste — un type ajouté par l'utilisateur, par exemple — et AUTRE sont
+toujours demandés. Une fois modifié, le rangement enregistré fait foi.
+
+Le rangement suit le **renommage** d'un type dans le typage (`renameRangement`) ; un
+type supprimé disparaît de la liste. Sur la fiche de chaque type, dans la fenêtre
+**Types de pièces**, le module affiche à titre d'information où il le range
+(`annotateTypes` du module de typage).
+
+Le réglage générique qui dessine cela est un champ `toggles` du contrat de module
+(`TogglesField` : colonnes, `read`, `candidates`, `write`), dessiné par
+`src/obsidian/moduleDetailsModal.ts` ; le formulaire d'ajout utilise le nouveau champ
+`toggle` de `askForm`.
+
+Reprise de la v0.4.1 (`migratePlaces`) : `typage-pieces.placesTypes` devient
+`ao.rangement` (par-dessus le rangement de départ) et quitte les réglages du typage.
 
 ## Dans le coffre
 

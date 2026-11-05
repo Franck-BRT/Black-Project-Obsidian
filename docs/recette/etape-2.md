@@ -136,9 +136,24 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
 
 ## Appel d'offres et réponse (v0.4.1)
 
-- [ ] **Types de pièces** : chaque fiche a un menu « Va dans » (L'appel d'offres, La
-      réponse, Les deux (demander)) ; RC : l'appel d'offres ; BPU : les deux ; un
-      changement est conservé
+- [ ] (v0.4.2) Fenêtre du module **Analyse d'appels d'offres** : rubrique « Où vont les
+      types de pièces », bouton **Ajouter un type…** et liste dépliable **Types rangés
+      (15)** ; dépliée : RC avec « Appel d'offres » seul allumé, BPU avec les deux
+- [ ] Éteindre « Appel d'offres » sur BPU : il ne reste que « Réponse » ; la liste reste
+      dépliée ; éteindre aussi « Réponse » : refusé avec un message, l'interrupteur se
+      rallume
+- [ ] Corbeille sur PLANNING : il quitte la liste (14) ; **Ajouter un type…** : la petite
+      fenêtre propose PLANNING (pas RC, déjà rangé), « Appel d'offres » allumé ; tout
+      éteindre puis valider : refusé ; valider avec « Réponse » : PLANNING revient dans
+      la liste
+- [ ] Un type ajouté dans **Types de pièces** (PAQ) : proposé dans **Ajouter un type…** ;
+      renommé dans le typage, il garde son rangement
+- [ ] **Types de pièces** : chaque fiche affiche « Analyse d'appels d'offres — va dans »
+      (CCTP : Appel d'offres ; BPU : ce que vous avez réglé ; AUTRE : demandé à
+      l'import) ; plus aucun menu « Va dans » ; désactiver le module AO fait disparaître
+      cette ligne
+- [ ] Un coffre où la v0.4.1 avait réglé « Va dans » : le réglage se retrouve dans la
+      liste du module AO
 - [ ] Nouvelle analyse **candidat** : `Pièces/Appel d'offres/Originaux` et
       `Pièces/Réponse/Originaux` sont créés ; **émetteur** : `Pièces/Appel d'offres` et
       `Pièces/Réponses`

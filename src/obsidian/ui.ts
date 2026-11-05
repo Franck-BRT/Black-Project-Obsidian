@@ -94,7 +94,10 @@ class FormModal extends Modal {
   ) {
     super(app)
     for (const field of form.fields) {
-      this.values[field.key] = field.value ?? (field.kind === 'choice' ? (field.options[0]?.value ?? '') : '')
+      this.values[field.key] =
+        field.kind === 'toggle'
+          ? String(field.value ?? false)
+          : (field.value ?? (field.kind === 'choice' ? (field.options[0]?.value ?? '') : ''))
     }
   }
 
@@ -119,6 +122,11 @@ class FormModal extends Modal {
             }
           })
           first ??= text.inputEl
+        })
+      } else if (field.kind === 'toggle') {
+        setting.addToggle((toggle) => {
+          toggle.setValue(this.values[field.key] === 'true').onChange((value) => (this.values[field.key] = String(value)))
+          if (field.tooltip) toggle.setTooltip(field.tooltip)
         })
       } else {
         setting.addDropdown((dropdown) => {
