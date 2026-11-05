@@ -5,7 +5,7 @@
 
 import { FuzzySuggestModal, Modal, Notice, Setting, SuggestModal, TFile, setTooltip, type App } from 'obsidian'
 import type { I18n } from '../core/i18n'
-import type { Choice, ConfirmView, ExternalFile, FilePickOptions, FormView, TextView, Ui } from '../core/ports'
+import type { Choice, ConfirmView, ExternalFile, FilePickOptions, FormView, PickManyView, TextView, Ui } from '../core/ports'
 
 /** Les fichiers du coffre, le fichier ouvert d'abord, puis les plus récents. */
 class FilePickerModal extends FuzzySuggestModal<TFile> {
@@ -195,6 +195,73 @@ class ConfirmModal extends Modal {
   }
 }
 
+/** Plusieurs choix à cocher, avec « Tout » et « Rien ». */
+class PickManyModal extends Modal {
+  private readonly chosen: Set<string>
+  private answered = false
+
+  constructor(
+    app: App,
+    private readonly view: PickManyView,
+    private readonly i18n: I18n,
+    private readonly done: (values: string[] | null) => void
+  ) {
+    super(app)
+    this.chosen = new Set(view.selected ?? view.choices.map((choice) => choice.value))
+  }
+
+  override onOpen(): void {
+    this.modalEl.addClass('bp-form-modal')
+    this.render()
+  }
+
+  private render(): void {
+    const { contentEl, view, i18n } = this
+    contentEl.empty()
+    this.setTitle(view.title)
+    if (view.intro) contentEl.createEl('p', { text: view.intro, cls: 'bp-form-intro' })
+    new Setting(contentEl)
+      .addButton((button) =>
+        button.setButtonText(i18n.t('ui.all')).onClick(() => {
+          for (const choice of view.choices) this.chosen.add(choice.value)
+          this.render()
+        })
+      )
+      .addButton((button) =>
+        button.setButtonText(i18n.t('ui.none')).onClick(() => {
+          this.chosen.clear()
+          this.render()
+        })
+      )
+    const list = contentEl.createDiv({ cls: 'bp-pick-many' })
+    for (const choice of view.choices) {
+      const row = new Setting(list).setName(choice.label)
+      if (choice.description) row.setDesc(choice.description)
+      row.addToggle((toggle) =>
+        toggle.setValue(this.chosen.has(choice.value)).onChange((on) => {
+          if (on) this.chosen.add(choice.value)
+          else this.chosen.delete(choice.value)
+        })
+      )
+    }
+    new Setting(contentEl).addButton((button) =>
+      button
+        .setButtonText(view.submit)
+        .setCta()
+        .onClick(() => {
+          this.answered = true
+          this.done(view.choices.map((choice) => choice.value).filter((value) => this.chosen.has(value)))
+          this.close()
+        })
+    )
+  }
+
+  override onClose(): void {
+    this.contentEl.empty()
+    if (!this.answered) this.done(null)
+  }
+}
+
 /** Des fichiers pris sur l'ordinateur, par la fenêtre de sélection du système. */
 function pickExternal(options: { accept?: readonly string[]; multiple?: boolean }): Promise<ExternalFile[]> {
   return new Promise((resolve) => {
@@ -299,6 +366,16 @@ export function obsidianUi(app: App, i18n: I18n): Ui {
       })
     },
     pickExternalFiles: pickExternal,
+    pickMany(view) {
+      return new Promise((resolve) => {
+        let settled = false
+        new PickManyModal(app, view, i18n, (values) => {
+          if (settled) return
+          settled = true
+          resolve(values)
+        }).open()
+      })
+    },
     confirm(view) {
       return new Promise((resolve) => {
         let settled = false

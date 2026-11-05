@@ -295,3 +295,8 @@
 .bp-feature.is-disabled .bp-feature-label {
   text-decoration: line-through;
 }
+
+.bp-pick-many {
+  max-height: 55vh;
+  overflow: auto;
+}

@@ -13,6 +13,7 @@ import { Modal, Setting, setTooltip, ToggleComponent, type App } from 'obsidian'
 import {
   FEATURE_STATUSES,
   type FeatureStatus,
+  type ActionsField,
   type MappingChange,
   type ModuleFeature,
   type MappingField,
@@ -56,6 +57,7 @@ export class ModuleDetailsModal extends Modal {
     this.setTitle(details ? `${this.t(module.nameKey)} — ${this.t(details.titleKey)}` : this.t(module.nameKey))
     for (const field of module.settingsFields ?? []) {
       if (field.kind === 'mapping') this.renderMapping(contentEl.createDiv(), field)
+      else if (field.kind === 'actions') this.renderActions(contentEl.createDiv(), field)
       else this.renderText(contentEl.createDiv(), field)
     }
     if (details) this.renderDetails(contentEl.createDiv(), details)
@@ -230,6 +232,23 @@ export class ModuleDetailsModal extends Modal {
     const newTo = free ? (field.normalizeValue?.(values.to ?? '') ?? (values.to ?? '').trim()) : (values.to ?? '')
     if (newFrom === from && newTo === to) return
     await save({ ...others, [newFrom]: newTo }, { kind: 'edit', from: newFrom, to: newTo, previousFrom: from, previousTo: to })
+  }
+
+  /** Une ligne de boutons, chacun lançant une commande du module ; la fenêtre se redessine après. */
+  private renderActions(block: HTMLElement, field: ActionsField): void {
+    const t = this.t.bind(this)
+    block.addClass('bp-module-settings')
+    const row = new Setting(block).setName(t(field.nameKey))
+    if (field.descKey) row.setDesc(t(field.descKey))
+    for (const action of field.actions) {
+      row.addButton((button) => {
+        button.setButtonText(t(action.labelKey)).onClick(async () => {
+          await this.plugin.runModuleCommand(this.module.id, action.commandId)
+          this.render()
+        })
+        if (action.tooltipKey) button.setTooltip(t(action.tooltipKey))
+      })
+    }
   }
 
   /** Un réglage fait d'un texte, enregistré à chaque saisie ; vide, il revient à sa valeur par défaut. */

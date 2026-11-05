@@ -139,6 +139,17 @@ export interface Ui {
   askForm(form: FormView): Promise<Record<string, string> | null>
   /** Une question oui / non avant une action qu'on ne défait pas ; `true` si l'utilisateur confirme. */
   confirm(view: ConfirmView): Promise<boolean>
+  /** Fait cocher plusieurs choix dans une liste ; `null` si l'utilisateur renonce. */
+  pickMany(view: PickManyView): Promise<string[] | null>
+}
+
+export interface PickManyView {
+  title: string
+  intro?: string
+  choices: readonly Choice[]
+  /** Les choix cochés au départ ; tous si absent. */
+  selected?: readonly string[]
+  submit: string
 }
 
 export interface ConfirmView {

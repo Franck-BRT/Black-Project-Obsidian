@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 import { describe, expect, it } from 'vitest'
-import { classifyPiece, fold, keywordIn, PIECE_TYPES } from './pieces'
+import { classifyPiece, fold, keywordIn, PIECE_TYPES } from './types'
 
 describe('reconnaissance des pièces', () => {
   it.each([
@@ -74,8 +74,8 @@ describe('reconnaissance des pièces', () => {
 })
 
 describe('types de pièces dans la fenêtre « Fonctions »', async () => {
-  const { aoFeatures } = await import('.')
-  const section = aoFeatures().sections.find((each) => each.titleKey === 'ao.types.section')
+  const { typingDetails } = await import('./catalogue')
+  const section = typingDetails().sections.find((each) => each.titleKey === 'typage-pieces.types.section')
 
   it('montre un bloc de référence par type, dans l’ordre où ils sont essayés, avec leurs mots-clés', () => {
     expect(section?.kind).toBe('reference')

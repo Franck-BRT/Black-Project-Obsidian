@@ -14,7 +14,7 @@
  */
 
 import type { FieldError, MappingChange } from '../../core/modules/module'
-import { allTypes, fold, OTHER, PIECE_TYPES, type CustomKeywords } from './pieces'
+import { allTypes, fold, OTHER, PIECE_TYPES, type CustomKeywords } from './types'
 
 export const TYPES_KEY = 'typesPerso'
 export const NAME_KEYWORDS_KEY = 'motsClesNom'
@@ -53,10 +53,10 @@ export function normalizeLabel(input: string): string {
 
 /** `null` si le type peut être ajouté, sinon pourquoi il ne le peut pas. */
 export function validateType(code: string, label: string, current: Readonly<Record<string, string>>): FieldError | null {
-  if (!CODE.test(code)) return { key: 'ao.types.custom.error.code', vars: { code } }
-  if (PIECE_TYPES.some((each) => each.code === code)) return { key: 'ao.types.custom.error.builtIn', vars: { code } }
-  if (current[code] !== undefined) return { key: 'ao.types.custom.error.exists', vars: { code, label: current[code]! } }
-  if (!label || label.length > MAX_LABEL) return { key: 'ao.types.custom.error.label', vars: { code } }
+  if (!CODE.test(code)) return { key: 'typage-pieces.types.custom.error.code', vars: { code } }
+  if (PIECE_TYPES.some((each) => each.code === code)) return { key: 'typage-pieces.types.custom.error.builtIn', vars: { code } }
+  if (current[code] !== undefined) return { key: 'typage-pieces.types.custom.error.exists', vars: { code, label: current[code]! } }
+  if (!label || label.length > MAX_LABEL) return { key: 'typage-pieces.types.custom.error.label', vars: { code } }
   return null
 }
 
@@ -108,13 +108,13 @@ export function validateKeyword(
   types: Readonly<Record<string, string>> = {}
 ): FieldError | null {
   const phrase = fold(keyword.replace(/…$/, ''))
-  if (!phrase || keyword.length > MAX_KEYWORD) return { key: 'ao.keywords.error.invalid', vars: { keyword } }
+  if (!phrase || keyword.length > MAX_KEYWORD) return { key: 'typage-pieces.keywords.error.invalid', vars: { keyword } }
   const type = allTypes({ names: {}, titles: {}, types }).find((each) => each.code === code)
-  if (!type || code === OTHER) return { key: 'ao.keywords.error.type', vars: { type: code } }
+  if (!type || code === OTHER) return { key: 'typage-pieces.keywords.error.type', vars: { type: code } }
   const same = Object.keys(current).find((each) => fold(each) === fold(keyword))
-  if (same !== undefined) return { key: 'ao.keywords.error.exists', vars: { keyword: same, type: current[same]! } }
+  if (same !== undefined) return { key: 'typage-pieces.keywords.error.exists', vars: { keyword: same, type: current[same]! } }
   const builtIn = (where === 'names' ? type.names : type.titles).some((each) => fold(each) === fold(keyword))
-  if (builtIn) return { key: 'ao.keywords.error.builtIn', vars: { keyword, type: code } }
+  if (builtIn) return { key: 'typage-pieces.keywords.error.builtIn', vars: { keyword, type: code } }
   return null
 }
 
@@ -228,9 +228,9 @@ export function describeTypeRemoval(
     (target) => target === code
   ).length
   return [
-    t('ao.types.custom.remove.what', { code, label }),
-    keywords > 0 ? t('ao.types.custom.remove.keywords', { count: keywords }) : '',
-    t('ao.types.custom.remove.pieces', { code })
+    t('typage-pieces.types.custom.remove.what', { code, label }),
+    keywords > 0 ? t('typage-pieces.types.custom.remove.keywords', { count: keywords }) : '',
+    t('typage-pieces.types.custom.remove.pieces', { code })
   ]
     .filter(Boolean)
     .join('\n\n')

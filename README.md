@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.3.5 — étape 2 du [plan d'intégration](docs/plan-integration.md) : le
+**Version 0.4.0 — étape 2 du [plan d'intégration](docs/plan-integration.md) : le
 dossier de consultation.** Créer une analyse d'appel d'offres (candidat ou émetteur),
 importer les pièces du dossier — ZIP compris — ou les déposer à la main ; chaque pièce
 est lue, typée (RC, CCTP, CCAP, BPU…) et décrite par une note, et la note de l'analyse
@@ -51,6 +51,7 @@ src/
 ├── core/       cœur, TypeScript pur, indépendant de la plateforme
 ├── modules/    un répertoire fermé par module
 │   ├── lecture-fichiers/   lecture des documents (voir son README.md)
+│   ├── typage-pieces/      reconnaissance du type des pièces (voir son README.md)
 │   └── ao/                 analyse d'appels d'offres
 └── obsidian/   adaptateur Obsidian : point d'entrée, ports, réglages
 docs/           documentation

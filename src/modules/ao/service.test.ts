@@ -7,6 +7,7 @@ import { parseFrontmatter } from '../../core/frontmatter'
 import { createI18n } from '../../core/i18n'
 import { memoryPlatform } from '../../core/testing/memoryPlatform'
 import { buildXlsx } from '../../core/writers/xlsx'
+import { typagePiecesModule } from '../typage-pieces'
 import { aoFr } from './i18n'
 import { PIECES_END, PIECES_START } from './notes'
 import {
@@ -26,6 +27,7 @@ function setup(files: Record<string, string | Uint8Array> = {}) {
   const platform = memoryPlatform(files)
   const i18n = createI18n('fr')
   i18n.register('fr', aoFr)
+  i18n.register('fr', typagePiecesModule.texts.fr)
   const services: Services = {
     fs: platform.fs,
     t: (key, vars) => i18n.t(key, vars),

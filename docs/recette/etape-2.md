@@ -57,6 +57,9 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
       demande dans quelle analyse
 - [ ] Réglages → ligne « Analyse d'appels d'offres » → **Fonctions** : le réglage
       « Dossier des analyses », et les fonctions (5 disponibles, 10 en développement)
+- [ ] (v0.4.0) Ces réglages et la section des types sont désormais dans la fenêtre
+      **Types de pièces** du module **Typage des pièces** ; l'AO « Nécessite : Lecture de
+      fichiers, Typage des pièces »
 - [ ] Même fenêtre, section **Types de pièces et leur détection** (v0.3.1) : une fiche
       par type (AVIS, RC… AUTRE), dans l'ordre où ils sont essayés, avec les mots-clés
       cherchés « Dans le nom du fichier » et « Dans le titre du document » ; pas de
@@ -107,3 +110,27 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
       est intacte
 - [ ] **Créer / mettre à jour la documentation** : la page *Analyse d'appels d'offres*
       décrit tout ce qui précède
+
+## Typage des pièces en module, échange de types (v0.4.0)
+
+- [ ] Un coffre où des types, mots-clés ou désactivations avaient été réglés en v0.3.5 :
+      après mise à jour, ils sont dans la fenêtre **Types de pièces** (rien de perdu)
+- [ ] Réglages : trois modules — Lecture de fichiers, Typage des pièces, Analyse
+      d'appels d'offres ; désactiver Typage des pièces met l'AO à l'état « Module requis
+      indisponible »
+- [ ] Fenêtre **Types de pièces** : Échanger des types (Importer…, Exporter…), Dossier des
+      échanges, types et mots-clés personnalisés, fiches des types
+- [ ] **Exporter…** : une liste à cocher des types ajoutés et des types du module modifiés,
+      avec Tout / Rien ; un fichier `Black Projects/Échanges/types-de-pieces-AAAA-MM-JJ.json`
+      est créé ; sans rien à exporter, un message le dit
+- [ ] **Importer…** depuis l'ordinateur ou le coffre : la liste dit ce que deviendra
+      chaque type (nouveau, mise à jour, type du module, non importable) ; les non
+      importables sont décochés ; après import, la fenêtre montre les nouveaux types et
+      un message fait le compte
+- [ ] Importer un fichier qui n'est pas un fichier de types : message clair, rien de
+      changé
+- [ ] Commandes « Exporter des types de pièces » et « Importer des types de pièces » dans
+      la palette
+- [ ] **Créer / mettre à jour la documentation** : une page *Typage des pièces* ; la page
+      *Analyse d'appels d'offres* y renvoie
+

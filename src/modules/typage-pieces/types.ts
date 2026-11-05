@@ -32,7 +32,7 @@ export interface PieceType {
 
 const type = (code: string, names: string[], titles: string[] = []): PieceType => ({
   code,
-  labelKey: `ao.piece.${code.toLowerCase()}`,
+  labelKey: `typage-pieces.piece.${code.toLowerCase()}`,
   names,
   titles
 })
@@ -104,7 +104,7 @@ export function allTypes(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): PieceType
   const builtIn = PIECE_TYPES.filter((each) => each.code !== OTHER)
   const added = Object.entries(custom.types)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([code, label]): PieceType => ({ code, labelKey: 'ao.types.customLabel', label, names: [code], titles: [], custom: true }))
+    .map(([code, label]): PieceType => ({ code, labelKey: 'typage-pieces.types.customLabel', label, names: [code], titles: [], custom: true }))
   return [...builtIn, ...added, PIECE_TYPES[PIECE_TYPES.length - 1]!]
 }
 
@@ -120,7 +120,7 @@ export function activeTypes(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): PieceT
 /** Le libellé d'un type, ajouté ou non ; un code qui n'est plus un type est montré tel quel. */
 export function typeLabel(code: string, custom: CustomKeywords, t: (key: string, vars?: Record<string, string>) => string): string {
   const type = allTypes(custom).find((each) => each.code === code)
-  if (!type) return t('ao.types.removed', { code })
+  if (!type) return t('typage-pieces.types.removed', { code })
   return type.label ?? t(type.labelKey)
 }
 

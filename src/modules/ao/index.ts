@@ -12,33 +12,12 @@
 
 import { cleanFolder } from '../../core/settings'
 import { fillTemplate } from '../../core/docs'
-import type { BlackModule, MappingField, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
+import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import { LECTURE_FICHIERS } from '../lecture-fichiers'
+import { allTypes, currentTyping, isDisabled, onTypingChange, TYPAGE_PIECES, typeLabel } from '../typage-pieces'
 import page from "./doc/Analyse d'appels d'offres.md"
 import { aoEn, aoFr } from './i18n'
 import { ORIGINALS, PIECES, POSITIONS, safeName, type Analysis, type Position } from './notes'
-import {
-  DISABLED_KEY,
-  readDisabled,
-  afterTypeChange,
-  describeTypeRemoval,
-  keywordTargets,
-  readRenames,
-  NAME_KEYWORDS_KEY,
-  normalizeKeyword,
-  normalizeLabel,
-  normalizeTypeCode,
-  readCustomKeywords,
-  readCustomTypes,
-  readNameKeywords,
-  readTitleKeywords,
-  TITLE_KEYWORDS_KEY,
-  TYPES_KEY,
-  validateKeyword,
-  validateType
-} from './keywords'
-import { allTypes, isDisabled, NO_CUSTOM_KEYWORDS, OTHER, typeLabel, type CustomKeywords } from './pieces'
-import { typesMarkdown } from './typesDoc'
 import {
   AnalysisExists,
   applyRenames,
@@ -67,7 +46,6 @@ export {
   type ImportReport,
   type Services
 } from './service'
-export { classifyPiece, PIECE_TYPES } from './pieces'
 export { type Analysis, type ReadingState } from './notes'
 
 let unsubscribe: (() => void) | null = null
@@ -86,67 +64,6 @@ const rootField: TextField = {
   normalize: cleanFolder
 }
 
-/** Le réglage « Types de pièces personnalisés » : code → libellé. */
-const typesField: MappingField = {
-  kind: 'mapping',
-  key: TYPES_KEY,
-  nameKey: 'ao.types.custom',
-  descKey: 'ao.types.custom.desc',
-  placeholderKey: 'ao.types.custom.placeholder',
-  prefix: '',
-  connectorKey: 'ao.types.custom.connector',
-  valueKind: 'text',
-  valuePlaceholderKey: 'ao.types.custom.labelPlaceholder',
-  normalizeValue: normalizeLabel,
-  tooltipKeys: {
-    from: 'ao.types.custom.tip.code',
-    to: 'ao.types.custom.tip.label',
-    add: 'ao.types.custom.tip.add',
-    edit: 'ao.types.custom.tip.edit',
-    remove: 'ao.types.custom.tip.remove'
-  },
-  options: () => [],
-  normalize: normalizeTypeCode,
-  validate: (code, label, current) => validateType(code, label, current),
-  read: readCustomTypes,
-  editable: true,
-  editTitleKey: 'ao.types.custom.editTitle',
-  fromLabelKey: 'ao.types.custom.code',
-  toLabelKey: 'ao.types.custom.label',
-  describeRemoval: (code, label, settings, t) => describeTypeRemoval(code, label, settings, t),
-  afterChange: afterTypeChange
-}
-
-/** Un réglage « mot-clé → type » : pour le nom du fichier, ou pour le titre du document. */
-function keywordsField(where: 'names' | 'titles'): MappingField {
-  const name = where === 'names'
-  return {
-    kind: 'mapping',
-    key: name ? NAME_KEYWORDS_KEY : TITLE_KEYWORDS_KEY,
-    nameKey: name ? 'ao.keywords.names' : 'ao.keywords.titles',
-    descKey: name ? 'ao.keywords.names.desc' : 'ao.keywords.titles.desc',
-    placeholderKey: name ? 'ao.keywords.names.placeholder' : 'ao.keywords.titles.placeholder',
-    prefix: '',
-    connectorKey: 'ao.keywords.connector',
-    tooltipKeys: {
-      from: 'ao.keywords.tip.from',
-      to: 'ao.keywords.tip.to',
-      add: 'ao.keywords.tip.add',
-      remove: 'ao.keywords.tip.remove'
-    },
-    options: (settings) => keywordTargets(readCustomTypes(settings), readDisabled(settings)),
-    defaultOption: 'CCTP',
-    optionLabel: (code, settings, t) => typeLabel(code, readCustomKeywords(settings), t),
-    normalize: normalizeKeyword,
-    validate: (keyword, code, current, settings) => validateKeyword(where, keyword, code, current, readCustomTypes(settings)),
-    read: name ? readNameKeywords : readTitleKeywords,
-    editable: true,
-    editTitleKey: 'ao.keywords.editTitle',
-    fromLabelKey: 'ao.keywords.keyword',
-    toLabelKey: 'ao.keywords.type'
-  }
-}
-
 const feature = (key: string, status: ModuleFeature['status'], step?: number): ModuleFeature => ({
   labelKey: `ao.feature.${key}`,
   noteKey: `ao.feature.${key}.note`,
@@ -156,81 +73,41 @@ const feature = (key: string, status: ModuleFeature['status'], step?: number): M
 
 /**
  * Ce que le module sait faire, et ce qui arrive : la fenêtre « Fonctions ». Les types de
- * pièces y montrent aussi les mots-clés ajoutés par l'utilisateur.
+ * pièces sont dans celle du module Typage des pièces.
  */
-export function aoFeatures(custom: CustomKeywords = NO_CUSTOM_KEYWORDS): ModuleDetails {
-  const added = (keywords: Readonly<Record<string, string>>, code: string) =>
-    Object.keys(keywords).filter((keyword) => keywords[keyword] === code)
+export function aoFeatures(): ModuleDetails {
   return {
-  titleKey: 'ao.details.title',
-  introKey: 'ao.details.intro',
-  sections: [
-    {
-      titleKey: 'ao.feature.section.dossier',
-      features: [
-        feature('create', 'available'),
-        feature('import', 'available'),
-        feature('drop', 'available'),
-        feature('classify', 'available'),
-        feature('notes', 'available')
-      ]
-    },
-    {
-      // Les types de pièces et ce qui les fait reconnaître, tirés de la liste même que la
-      // reconnaissance applique.
-      titleKey: 'ao.types.section',
-      introKey: 'ao.types.intro',
-      kind: 'reference',
-      tagPrefix: '',
-      features: allTypes(custom).map((each) => ({
-        prefix: each.code,
-        labelKey: each.labelKey,
-        ...(each.label === undefined ? {} : { vars: { label: each.label } }),
-        status: 'available' as const,
-        // « Autre pièce » ne se désactive pas : c'est là que va ce qui n'est rien d'autre.
-        ...(each.code === OTHER
-          ? {}
-          : {
-              disabled: isDisabled(each.code, custom),
-              switch: {
-                settingsKey: DISABLED_KEY,
-                id: each.code,
-                tooltipKeys: { on: 'ao.types.switch.on', off: 'ao.types.switch.off' }
-              }
-            }),
-        tagGroups: [
-          { labelKey: 'ao.types.byName', tags: each.names },
-          { labelKey: 'ao.types.byTitle', tags: each.titles },
-          { labelKey: 'ao.types.addedName', tags: added(custom.names, each.code) },
-          { labelKey: 'ao.types.addedTitle', tags: added(custom.titles, each.code) }
-        ],
-        ...(each.code === OTHER
-          ? { noteKey: 'ao.types.other' }
-          : isDisabled(each.code, custom)
-            ? { noteKey: 'ao.types.disabledNote' }
-            : each.custom
-              ? { noteKey: 'ao.types.customNote' }
-              : {})
-      }))
-    },
-    {
-      titleKey: 'ao.feature.section.requirements',
-      features: [feature('extract', 'in-progress', 4), feature('reqif', 'in-progress', 4), feature('quality', 'in-progress', 5)]
-    },
-    {
-      titleKey: 'ao.feature.section.ai',
-      features: [feature('review', 'in-progress', 6), feature('deadlines', 'in-progress', 6), feature('ask', 'in-progress', 6)]
-    },
-    {
-      titleKey: 'ao.feature.section.deliverables',
-      features: [
-        feature('matrix', 'in-progress', 7),
-        feature('report', 'in-progress', 7),
-        feature('summary', 'in-progress', 7),
-        feature('compare', 'in-progress', 7)
-      ]
-    }
-  ]
+    titleKey: 'ao.details.title',
+    introKey: 'ao.details.intro',
+    sections: [
+      {
+        titleKey: 'ao.feature.section.dossier',
+        features: [
+          feature('create', 'available'),
+          feature('import', 'available'),
+          feature('drop', 'available'),
+          feature('classify', 'available'),
+          feature('notes', 'available')
+        ]
+      },
+      {
+        titleKey: 'ao.feature.section.requirements',
+        features: [feature('extract', 'in-progress', 4), feature('reqif', 'in-progress', 4), feature('quality', 'in-progress', 5)]
+      },
+      {
+        titleKey: 'ao.feature.section.ai',
+        features: [feature('review', 'in-progress', 6), feature('deadlines', 'in-progress', 6), feature('ask', 'in-progress', 6)]
+      },
+      {
+        titleKey: 'ao.feature.section.deliverables',
+        features: [
+          feature('matrix', 'in-progress', 7),
+          feature('report', 'in-progress', 7),
+          feature('summary', 'in-progress', 7),
+          feature('compare', 'in-progress', 7)
+        ]
+      }
+    ]
   }
 }
 
@@ -244,9 +121,7 @@ function servicesFor(context: ModuleContext): Services {
     fs: context.platform.fs,
     t: (key, vars) => context.i18n.t(key, vars),
     root: rootOf(context.settings.get()),
-    today: localToday,
-    keywords: readCustomKeywords(context.settings.get()),
-    renames: readRenames(context.settings.get())
+    today: localToday
   }
 }
 
@@ -298,32 +173,27 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.3.5',
-  // Les pièces du dossier sont lues par le module Lecture de fichiers.
-  requires: [LECTURE_FICHIERS],
+  version: '0.4.0',
+  // Les pièces sont lues par le module Lecture de fichiers, et typées par Typage des pièces.
+  requires: [LECTURE_FICHIERS, TYPAGE_PIECES],
   texts: { fr: aoFr, en: aoEn },
-  details: (settings) => aoFeatures(readCustomKeywords(settings)),
-  settingsFields: [rootField, typesField, keywordsField('names'), keywordsField('titles')],
-  docs: ({ folder, t, settings }) => [
-    {
-      path: "Modules/Analyse d'appels d'offres.md",
-      content: fillTemplate(page, folder, { types: typesMarkdown(t, readCustomKeywords(settings)) })
-    }
-  ],
+  details: () => aoFeatures(),
+  settingsFields: [rootField],
+  docs: ({ folder }) => [{ path: "Modules/Analyse d'appels d'offres.md", content: fillTemplate(page, folder) }],
   activate(context) {
     const { commands, platform, i18n } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
 
-    // Un type renommé dans la fenêtre Fonctions : les pièces qui avaient l'ancien code le
-    // quittent aussitôt, dans toutes les analyses.
-    let renames = JSON.stringify(readRenames(context.settings.get()))
-    unsubscribe = context.settings.onChange((values) => {
-      const now = JSON.stringify(readRenames(values))
+    // Un type renommé dans le module Typage des pièces : les pièces qui avaient l'ancien
+    // code le quittent aussitôt, dans toutes les analyses.
+    let renames = JSON.stringify(currentTyping().renames)
+    unsubscribe = onTypingChange((state) => {
+      const now = JSON.stringify(state.renames)
       if (now === renames) return
       renames = now
       void applyRenames(servicesFor(context))
         .then((count) => {
-          if (count > 0) platform.notifier.notify(t('ao.types.custom.retyped', { count }), 6000)
+          if (count > 0) platform.notifier.notify(t('ao.retyped', { count }), 6000)
         })
         .catch((error: unknown) => console.error('[Black Projects] renommage des types', error))
     })
@@ -431,14 +301,13 @@ export const aoModule: BlackModule = {
           platform.notifier.notify(t('ao.type.notPiece'), 6000)
           return
         }
-        const custom = services.keywords ?? NO_CUSTOM_KEYWORDS
         const type = await platform.ui.pickOption(
           // Les types actifs, et le type actuel de la pièce même s'il a été désactivé.
-          allTypes(custom)
-            .filter((each) => !isDisabled(each.code, custom) || each.code === piece.type)
+          allTypes()
+            .filter((each) => !isDisabled(each.code) || each.code === piece.type)
             .map((each) => ({
             value: each.code,
-            label: `${each.code} — ${typeLabel(each.code, custom, t)}`,
+            label: `${each.code} — ${typeLabel(each.code, t)}`,
             ...(each.code === piece.type
               ? { description: t('ao.type.current') }
               : each.custom
@@ -449,7 +318,7 @@ export const aoModule: BlackModule = {
         )
         if (!type || type === piece.type) return
         await setPieceType(services, note, type)
-        platform.notifier.notify(t('ao.type.done', { type: `${type} — ${typeLabel(type, custom, t)}` }), 5000)
+        platform.notifier.notify(t('ao.type.done', { type: `${type} — ${typeLabel(type, t)}` }), 5000)
       }
     })
   },

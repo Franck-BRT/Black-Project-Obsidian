@@ -8,6 +8,7 @@
  * donc sur un coffre en mémoire.
  */
 
+import { localToday } from '../../core/dates'
 import { parseFrontmatter, setFrontmatterField } from '../../core/frontmatter'
 import type { ExternalFile, FileSystem } from '../../core/ports'
 import { FileReadError, fileText, isArchive, isImage, isReadable, readArchive } from '../lecture-fichiers'
@@ -30,8 +31,9 @@ import {
   type PieceRow,
   type ReadingState
 } from './notes'
-import { currentCode } from './keywords'
-import { classifyPiece, NO_CUSTOM_KEYWORDS, OTHER, type CustomKeywords } from './pieces'
+import { classifyPiece, currentCode, currentTyping, OTHER, type CustomKeywords } from '../typage-pieces'
+
+export { localToday }
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -42,17 +44,15 @@ export interface Services {
   root: string
   /** La date du jour, AAAA-MM-JJ. */
   today: () => string
-  /** Les mots-clés ajoutés par l'utilisateur à la reconnaissance des types. */
+  /**
+   * Ce que l'utilisateur a réglé dans le module Typage des pièces ; par défaut, ce qui y
+   * est en vigueur. Donné explicitement par les tests.
+   */
   keywords?: CustomKeywords
-  /** Les codes de types renommés (ancien → nouveau) : les pièces à l'ancien code sont retypées. */
+  /** Les codes de types renommés (ancien → nouveau) ; par défaut, ceux du module de typage. */
   renames?: Readonly<Record<string, string>>
 }
 
-export function localToday(): string {
-  const now = new Date()
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-}
 
 // ── Les analyses ────────────────────────────────────────────────────────────────
 
@@ -161,7 +161,7 @@ async function notePiece(services: Services, analysis: Analysis, original: strin
   const { fs, t } = services
   const name = original.slice(original.lastIndexOf('/') + 1)
   const { state, text } = await readPiece(name, bytes)
-  const type = classifyPiece(name, text, services.keywords ?? NO_CUSTOM_KEYWORDS)
+  const type = classifyPiece(name, text, services.keywords ?? currentTyping().custom)
   // « CCTP.md » ; si le nom est pris par la même pièce dans un autre format, « CCTP (pdf).md » ;
   // ensuite seulement des numéros.
   const stem = name.replace(/\.[^.]+$/, '') || name
@@ -266,9 +266,9 @@ async function pieceNotes(
 /** Réécrit le tableau des pièces dans la note de l'analyse, d'après les notes des pièces. */
 export async function refreshTable(services: Services, analysis: Analysis): Promise<PieceRow[]> {
   const { fs, t } = services
-  const rows = await pieceNotes(fs, analysis, services.renames)
+  const rows = await pieceNotes(fs, analysis, services.renames ?? currentTyping().renames)
   const note = await fs.readText(analysis.note)
-  const updated = withPiecesTable(note, piecesTable(rows, t, services.keywords ?? NO_CUSTOM_KEYWORDS))
+  const updated = withPiecesTable(note, piecesTable(rows, t, services.keywords ?? currentTyping().custom))
   if (updated !== note) await fs.writeText(analysis.note, updated)
   return rows
 }
@@ -280,7 +280,7 @@ export async function refreshTable(services: Services, analysis: Analysis): Prom
 export async function applyRenames(services: Services): Promise<number> {
   const retyped = { count: 0 }
   for (const analysis of await listAnalyses(services)) {
-    await pieceNotes(services.fs, analysis, services.renames, retyped)
+    await pieceNotes(services.fs, analysis, services.renames ?? currentTyping().renames, retyped)
     await refreshTable(services, analysis)
   }
   return retyped.count

@@ -27,6 +27,8 @@ export default class BlackProjectsPlugin extends Plugin {
   entitlements: Entitlements = EVALUATION
   private storage!: SettingsStorage
   private readonly settingsListeners = new Map<string, Set<(values: Readonly<Record<string, unknown>>) => void>>()
+  /** Les commandes déclarées par les modules, pour les lancer aussi depuis leur fenêtre. */
+  private readonly moduleCommands = new Map<string, ModuleCommand>()
 
   override async onload(): Promise<void> {
     this.storage = pluginSettingsStorage(this)
@@ -39,6 +41,17 @@ export default class BlackProjectsPlugin extends Plugin {
       this.i18n.register('fr', module.texts.fr)
       this.i18n.register('en', module.texts.en)
     }
+
+    // Des réglages rangés autrement par une version plus ancienne, remis en ordre.
+    let migrated = false
+    for (const module of MODULES) {
+      const modules = module.migrateSettings?.(this.config.modules)
+      if (modules) {
+        this.config = { ...this.config, modules }
+        migrated = true
+      }
+    }
+    if (migrated) await this.saveSettings()
 
     this.addCommand({
       id: 'about',
@@ -159,7 +172,20 @@ export default class BlackProjectsPlugin extends Plugin {
     }
   }
 
+  /** Lance une commande d'un module, comme depuis la palette ; une erreur est montrée, pas levée. */
+  async runModuleCommand(moduleId: string, commandId: string): Promise<void> {
+    const command = this.moduleCommands.get(`${moduleId}-${commandId}`)
+    if (!command) return
+    try {
+      await command.run()
+    } catch (error) {
+      console.error(`[Black Projects] ${moduleId}-${commandId}`, error)
+      this.platform.notifier.notify(error instanceof Error ? error.message : String(error))
+    }
+  }
+
   private addModuleCommand(module: BlackModule, command: ModuleCommand): void {
+    this.moduleCommands.set(`${module.id}-${command.id}`, command)
     this.addCommand({
       id: `${module.id}-${command.id}`,
       name: this.i18n.t(command.nameKey),

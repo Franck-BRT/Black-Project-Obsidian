@@ -111,6 +111,12 @@ export interface ModuleDescriptor {
    * le répertoire du module (`doc/`), pour se maintenir avec son code.
    */
   readonly docs?: (input: DocInput) => readonly DocPage[]
+  /**
+   * Remet en ordre, au chargement, des réglages rangés autrement par une version plus
+   * ancienne : reçoit les réglages de tous les modules, rend ceux à enregistrer, ou `null`
+   * s'il n'y a rien à changer.
+   */
+  migrateSettings?(modules: Readonly<Record<string, Record<string, unknown>>>): Record<string, Record<string, unknown>> | null
 }
 
 /** Une erreur de saisie, à montrer à l'utilisateur. */
@@ -213,7 +219,18 @@ export interface TextField {
   normalize(input: string): string
 }
 
-export type ModuleSettingField = MappingField | TextField
+/**
+ * Une ligne de boutons dans la fenêtre du module, chacun lançant une commande du module
+ * (celles qu'il déclare à son activation) : « Importer », « Exporter »…
+ */
+export interface ActionsField {
+  readonly kind: 'actions'
+  readonly nameKey: string
+  readonly descKey?: string
+  readonly actions: readonly { readonly commandId: string; readonly labelKey: string; readonly tooltipKey?: string }[]
+}
+
+export type ModuleSettingField = MappingField | TextField | ActionsField
 
 /** Une action que l'utilisateur lance, depuis la palette de commandes par exemple. */
 export interface ModuleCommand {

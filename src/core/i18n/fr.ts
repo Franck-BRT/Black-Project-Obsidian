@@ -9,6 +9,8 @@ export const fr: Record<string, string> = {
   'command.about': 'À propos de Black Projects',
   'about.notice': 'Black Projects {version} — {active} module(s) actif(s) sur {total}. {licence}',
 
+  'ui.all': 'Tout',
+  'ui.none': 'Rien',
   'ui.copy': 'Copier',
   'ui.copied': 'Texte copié.',
 

@@ -3,7 +3,7 @@
 
 /** Les types de pièces et leurs mots-clés, en tableau Markdown pour la documentation écrite dans le coffre. */
 
-import { allTypes, isDisabled, NO_CUSTOM_KEYWORDS, typeLabel, type CustomKeywords } from './pieces'
+import { allTypes, isDisabled, NO_CUSTOM_KEYWORDS, typeLabel, type CustomKeywords } from './types'
 
 /** Les mots-clés du module, puis ceux de l'utilisateur, marqués « (ajouté) ». */
 function cell(builtIn: readonly string[], custom: Readonly<Record<string, string>>, code: string): string {
@@ -17,7 +17,7 @@ export function typesMarkdown(
   custom: CustomKeywords = NO_CUSTOM_KEYWORDS
 ): string {
   return [
-    `| Type | Pièce | ${t('ao.types.byName')} | ${t('ao.types.byTitle')} |`,
+    `| Type | Pièce | ${t('typage-pieces.types.byName')} | ${t('typage-pieces.types.byTitle')} |`,
     '| --- | --- | --- | --- |',
     ...allTypes(custom).map(
       (each) =>

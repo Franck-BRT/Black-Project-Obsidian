@@ -52,6 +52,13 @@ ses autres réglages (les mots-clés d'un type renommé) ; `text`, un texte comm
 (`normalize`, `validate`, `options`) ; la plateforme dessine et enregistre. Un module
 apprend qu'un réglage a changé par `context.settings.onChange`.
 
+Un réglage `actions` est une ligne de boutons dans la fenêtre du module, chacun lançant
+une commande du module (exemple : Importer…, Exporter… du typage des pièces).
+
+Facultatif : `migrateSettings`, appelé au chargement avec les réglages de tous les
+modules, pour remettre en ordre des réglages rangés autrement par une version plus
+ancienne (exemple : le typage des pièces reprend ce qui était rangé dans l'AO).
+
 Facultatif : `docs`, les pages de documentation du module, écrites dans le coffre par la
 commande « Créer ou mettre à jour la documentation ». Leur texte est dans
 `src/modules/<id>/doc/*.md`, embarqué dans le plugin au build : la documentation d'un
@@ -90,7 +97,8 @@ l'autre est actif. Exemple : `ao` requiert `lecture-fichiers`.
 | Module | Rôle | Requiert |
 | --- | --- | --- |
 | `lecture-fichiers` | Lire le texte des documents ; réutilisable par tout module | — |
-| `ao` | Analyse d'appels d'offres : analyses, import du dossier, pièces | `lecture-fichiers` |
+| `typage-pieces` | Reconnaître le type des pièces ; types et mots-clés de l'utilisateur, échange de types | — |
+| `ao` | Analyse d'appels d'offres : analyses, import du dossier, pièces | `lecture-fichiers`, `typage-pieces` |
 
 ## Ajouter un module
 

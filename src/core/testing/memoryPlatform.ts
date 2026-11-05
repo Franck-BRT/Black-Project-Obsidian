@@ -7,7 +7,7 @@
  * ici, il le fait de la même façon dans Obsidian.
  */
 
-import type { Choice, ConfirmView, ExternalFile, FilePickOptions, FormView, Platform, TextView } from '../ports'
+import type { Choice, ConfirmView, ExternalFile, FilePickOptions, FormView, PickManyView, Platform, TextView } from '../ports'
 
 export interface MemoryPlatform extends Platform {
   files: Map<string, Uint8Array>
@@ -29,6 +29,9 @@ export interface MemoryPlatform extends Platform {
   /** Les réponses des prochaines confirmations (oui par défaut), et les questions posées. */
   confirmations: boolean[]
   confirmed: ConfirmView[]
+  /** Les réponses des prochains choix multiples (par défaut : ce qui était coché), et les listes proposées. */
+  manyAnswers: (string[] | null)[]
+  manyAsked: PickManyView[]
 }
 
 export function memoryPlatform(files: Record<string, string | Uint8Array> = {}): MemoryPlatform {
@@ -63,6 +66,8 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
     asked: [],
     confirmations: [],
     confirmed: [],
+    manyAnswers: [],
+    manyAsked: [],
     info: { name: 'test', version: '0.0.0' },
     fs: {
       exists: async (path) => store.has(path) || folders.has(path),
@@ -114,6 +119,11 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
       confirm: async (view) => {
         platform.confirmed.push(view)
         return platform.confirmations.shift() ?? true
+      },
+      pickMany: async (view) => {
+        platform.manyAsked.push(view)
+        if (platform.manyAnswers.length > 0) return platform.manyAnswers.shift()!
+        return view.selected ? [...view.selected] : view.choices.map((choice) => choice.value)
       }
     }
   }

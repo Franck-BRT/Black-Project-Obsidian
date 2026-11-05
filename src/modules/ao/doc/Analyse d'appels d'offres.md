@@ -12,7 +12,8 @@ consultation, dans les deux sens :
   questions aux candidats.
 
 Il s'appuie sur le module {{link:Modules/Lecture de fichiers|Lecture de fichiers}} pour
-lire les pièces.
+lire les pièces, et sur {{link:Modules/Typage des pièces|Typage des pièces}} pour
+reconnaître leur type.
 
 ## 1. Créer une analyse
 
@@ -58,43 +59,11 @@ laquelle.
 
 Chaque pièce est **lue**, **typée** et **décrite par une note** dans `Pièces/` :
 
-- son **type**, deviné d'abord d'après le nom du fichier, puis, si le nom ne dit rien,
-  d'après le titre en tête de son texte. Les types sont essayés dans l'ordre du tableau ;
-  le premier qui correspond l'emporte. Un mot-clé est cherché comme mot entier, sans
-  tenir compte des accents, de la casse ni de la ponctuation (« CCTP_v3 » et « cctp v3 »
-  se valent) ; terminé par « … », il vaut aussi pour les mots qui le prolongent
-  (« annexe… » trouve « Annexes »). La même liste est dans Paramètres → Black Projects →
-  **Fonctions**. Les mots-clés marqués *(ajouté)* sont les vôtres (voir plus bas).
-
-{{types}}
-
-  **Vos propres types** : en tête de la fenêtre **Fonctions**, « Types de pièces
-  personnalisés » ajoute un type avec un code court et un libellé (« PAQ » — « Plan
-  d'assurance qualité »). Il prend place après les types du module, avant « autre
-  pièce » ; son code sert aussi de mot-clé dans le nom des fichiers (« PAQ_v2.pdf »). Il
-  est proposé par « Changer le type de la pièce » et par les mots-clés personnalisés.
-  Le **crayon** d'un type modifie son code ou son libellé : un nouveau code est repris par
-  ses mots-clés et par les pièces déjà importées, dans toutes les analyses. La
-  **corbeille** le supprime, après une confirmation qui dit ce qu'elle emporte : ses
-  mots-clés partent avec lui ; les pièces qui l'avaient le gardent, signalé « type
-  retiré » dans le tableau. Les types du module, eux, ne se modifient pas : ajoutez-leur
-  des mots-clés. Vos mots-clés ont aussi un crayon et une corbeille.
-
-  **Désactiver un type** : chaque fiche de type, dans la section « Types de pièces et
-  leur détection » de la fenêtre **Fonctions**, a un interrupteur. Un type désactivé —
-  du module ou ajouté par vous — n'est plus reconnu à l'import (ni par ses mots-clés ni
-  par les vôtres : le type suivant qui correspond prend la place) ni proposé par
-  « Changer le type de la pièce » ou par les mots-clés personnalisés. Les pièces qui
-  l'ont déjà le gardent, marqué « (désactivé) » dans le tableau. L'interrupteur le
-  réactive. « Autre pièce » ne se désactive pas. Les types désactivés sont marqués
-  *(désactivé)* dans le tableau ci-dessus.
-
-  **Vos propres mots-clés** : en tête de la fenêtre **Fonctions**, deux listes —
-  « nom du fichier » et « titre du document » — où ajouter un mot ou une expression vers
-  un type (« SPEC » → CCTP, « grille de prix » → BPU). Ils sont cherchés **avant** ceux
-  du module, et valent pour les prochains imports ; pour une pièce déjà importée,
-  utilisez **Changer le type de la pièce**. Un mot-clé déjà déclaré, ou déjà connu du
-  module pour ce type, est refusé avec un message.
+- son **type** (RC, CCTP, CCAP, BPU…), reconnu par le module
+  {{link:Modules/Typage des pièces|Typage des pièces}} d'après le nom du fichier, puis le
+  titre de son texte. Les types, ce qui les fait reconnaître, vos propres types et
+  mots-clés, les types désactivés et leur échange avec d'autres coffres se règlent dans
+  Paramètres → Black Projects → **Types de pièces**.
 
 - son **état de lecture** :
 

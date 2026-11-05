@@ -50,6 +50,7 @@ src/
 │   └── …              (étapes suivantes) exigences, client IA
 ├── modules/     la logique des modules, TypeScript pur, un répertoire fermé par module
 │   ├── lecture-fichiers/  lire PDF, Word, Excel, PowerPoint… (réutilisable)
+│   ├── typage-pieces/     reconnaître le type des pièces (réutilisable)
 │   └── ao/            analyse d'appels d'offres
 └── obsidian/    l'adaptateur Obsidian : point d'entrée, ports, vues, réglages
 ```
@@ -115,7 +116,7 @@ répertoire de chaque module). Doc :
 **Jalon :** tests verts sur un dossier de consultation fictif produit par LibreOffice
 et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du CNES.
 
-### Étape 2 — Dossier de consultation (module AO) ✅ *terminée (v0.3.5)*
+### Étape 2 — Dossier de consultation (module AO) ✅ *terminée (v0.4.0)*
 
 - Retrait de la commande provisoire « Lire un fichier du coffre »
 - Commande « Nouvelle analyse d'appel d'offres » : formulaire (nom, position candidat /
@@ -139,6 +140,9 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
   v0.3.3, les **types de pièces personnalisés** (code et libellé) ; en v0.3.4, leur
   modification (code repris par les mots-clés et les pièces) et leur suppression confirmée ;
   en v0.3.5, la **désactivation** de n'importe quel type, du module ou ajouté
+- v0.4.0 : le typage des pièces devient un **module à part** (`typage-pieces`), avec sa
+  fenêtre **Types de pièces** et l'**import / export** d'un ou plusieurs types dans un
+  fichier JSON ; les réglages de la v0.3.5 sont déplacés au premier chargement
 - Doc : [modules/ao.md](modules/ao.md) ; recette : [recette/etape-2.md](recette/etape-2.md)
 
 **Jalon de démo n° 1 :** « je dépose le ZIP du dossier, toutes les pièces sont lues »

@@ -2,18 +2,15 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 import { describe, expect, it } from 'vitest'
-import { utf8 } from '../../core/formats/zip'
 import { createI18n } from '../../core/i18n'
-import { memoryPlatform } from '../../core/testing/memoryPlatform'
-import { aoFeatures } from '.'
-import { aoFr } from './i18n'
-import { keywordTargets, normalizeTypeCode, readCustomKeywords, readCustomTypes, validateKeyword, validateType } from './keywords'
-import { allTypes, classifyPiece, typeLabel } from './pieces'
-import { createAnalysis, importFiles, refreshTable, setPieceType } from './service'
-import { typesMarkdown } from './typesDoc'
+import { typingDetails } from './catalogue'
+import { typageFr } from './i18n'
+import { keywordTargets, normalizeTypeCode, readCustomKeywords, readCustomTypes, validateKeyword, validateType } from './custom'
+import { allTypes, classifyPiece, typeLabel } from './types'
+import { typesMarkdown } from './doc'
 
 const i18n = createI18n('fr')
-i18n.register('fr', aoFr)
+i18n.register('fr', typageFr)
 const t = i18n.t.bind(i18n)
 
 describe('types personnalisés : saisie', () => {
@@ -25,12 +22,12 @@ describe('types personnalisés : saisie', () => {
 
   it('accepte un nouveau type, et refuse le reste', () => {
     expect(validateType('PAQ', 'Plan d’assurance qualité', {})).toBeNull()
-    expect(validateType('', 'Libellé', {})?.key).toBe('ao.types.custom.error.code')
-    expect(validateType('A'.repeat(21), 'Libellé', {})?.key).toBe('ao.types.custom.error.code')
-    expect(validateType('CCTP', 'Autre chose', {})?.key).toBe('ao.types.custom.error.builtIn')
-    expect(validateType('AUTRE', 'Autre chose', {})?.key).toBe('ao.types.custom.error.builtIn')
-    expect(validateType('PAQ', 'Encore', { PAQ: 'Plan qualité' })?.key).toBe('ao.types.custom.error.exists')
-    expect(validateType('PAQ', '', {})?.key).toBe('ao.types.custom.error.label')
+    expect(validateType('', 'Libellé', {})?.key).toBe('typage-pieces.types.custom.error.code')
+    expect(validateType('A'.repeat(21), 'Libellé', {})?.key).toBe('typage-pieces.types.custom.error.code')
+    expect(validateType('CCTP', 'Autre chose', {})?.key).toBe('typage-pieces.types.custom.error.builtIn')
+    expect(validateType('AUTRE', 'Autre chose', {})?.key).toBe('typage-pieces.types.custom.error.builtIn')
+    expect(validateType('PAQ', 'Encore', { PAQ: 'Plan qualité' })?.key).toBe('typage-pieces.types.custom.error.exists')
+    expect(validateType('PAQ', '', {})?.key).toBe('typage-pieces.types.custom.error.label')
   })
 
   it('relit les réglages en écartant ce qui n’est plus valable', () => {
@@ -57,8 +54,8 @@ describe('types personnalisés : reconnaissance et mots-clés', () => {
 
   it('peuvent être visés par un mot-clé, et ses mots-clés disparaissent avec eux', () => {
     expect(validateKeyword('names', 'plan qualité', 'PAQ', {}, custom.types)).toBeNull()
-    expect(validateKeyword('names', 'plan qualité', 'PAQ', {}, {})?.key).toBe('ao.keywords.error.type')
-    expect(validateKeyword('names', 'paq', 'PAQ', {}, custom.types)?.key).toBe('ao.keywords.error.builtIn')
+    expect(validateKeyword('names', 'plan qualité', 'PAQ', {}, {})?.key).toBe('typage-pieces.keywords.error.type')
+    expect(validateKeyword('names', 'paq', 'PAQ', {}, custom.types)?.key).toBe('typage-pieces.keywords.error.builtIn')
     const settings = { typesPerso: { PAQ: 'Plan qualité' }, motsClesNom: { 'plan qualité': 'PAQ', SPEC: 'CCTP' } }
     expect(readCustomKeywords(settings).names).toEqual({ 'plan qualité': 'PAQ', SPEC: 'CCTP' })
     expect(readCustomKeywords({ ...settings, typesPerso: {} }).names).toEqual({ SPEC: 'CCTP' })
@@ -71,36 +68,14 @@ describe('types personnalisés : reconnaissance et mots-clés', () => {
   })
 })
 
-describe('types personnalisés : dans une analyse', () => {
-  it('s’appliquent à l’import, au changement de type et au tableau', async () => {
-    const platform = memoryPlatform()
-    const keywords = { names: {}, titles: {}, types: { PAQ: 'Plan d’assurance qualité' } }
-    const services = { fs: platform.fs, t, root: 'AO', today: () => '2026-11-05', keywords }
-    const analysis = await createAnalysis(services, 'Essai', { position: 'candidat', buyer: '', reference: '' })
-    const [paq, autre] = (
-      await importFiles(services, analysis, [
-        { name: 'PAQ_v2.md', bytes: utf8('# Plan') },
-        { name: 'Note.md', bytes: utf8('# Note') }
-      ])
-    ).imported
-    expect(paq?.type).toBe('PAQ')
-    await setPieceType(services, autre!.note, 'PAQ')
-    const note = await platform.fs.readText(analysis.note)
-    expect(note.match(/\| PAQ — Plan d’assurance qualité \|/g)).toHaveLength(2)
-    // Le type retiré, les pièces le gardent, signalé.
-    await refreshTable({ ...services, keywords: { names: {}, titles: {}, types: {} } }, analysis)
-    expect(await platform.fs.readText(analysis.note)).toContain('| PAQ — PAQ (type retiré) |')
-  })
-})
-
 describe('types personnalisés : affichage', () => {
   const custom = { names: { 'plan qualité': 'PAQ' }, titles: {}, types: { PAQ: 'Plan d’assurance qualité' } }
 
   it('ont leur fiche dans la fenêtre Fonctions', () => {
-    const section = aoFeatures(custom).sections.find((each) => each.titleKey === 'ao.types.section')
+    const section = typingDetails(custom).sections.find((each) => each.titleKey === 'typage-pieces.types.section')
     const paq = section?.features.find((each) => each.prefix === 'PAQ')
     expect(t(paq!.labelKey, paq!.vars)).toBe('Plan d’assurance qualité')
-    expect(paq?.noteKey).toBe('ao.types.customNote')
+    expect(paq?.noteKey).toBe('typage-pieces.types.customNote')
     expect(paq?.tagGroups?.[0]?.tags).toEqual(['PAQ'])
     expect(paq?.tagGroups?.[2]?.tags).toEqual(['plan qualité'])
     expect(section?.features.at(-1)?.prefix).toBe('AUTRE')

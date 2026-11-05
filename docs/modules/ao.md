@@ -5,8 +5,8 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.3.5 |
-| Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
+| Version | 0.4.0 |
+| Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
 | État | Étape 2 livrée : analyses, import du dossier (ZIP compris), typage et notes des pièces |
@@ -45,46 +45,11 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
   un fichier différent du même nom devient `RC (2).pdf`.
 - **États de lecture** : `lue`, `sans-texte` (scan), `image`, `non-lue` (format non
   lu), `illisible` (abîmé ou mot de passe).
-- **Types** (`pieces.ts`) : AVIS, RC, AE, CCAP, CCAG, CCTP, CCTG, BPU, DPGF, DQE,
-  MEMOIRE, FORMULAIRE, QR, PLANNING, ANNEXE, AUTRE — devinés par le nom du fichier, puis
-  par le titre du texte ; le tableau suit cet ordre.
-- **Détection** (v0.3.1) : chaque type a deux listes de mots-clés écrits comme un
-  utilisateur les lit (`names` pour le nom du fichier, `titles` pour le début du texte).
-  Un mot-clé est cherché comme mot entier, sans accents, casse ni ponctuation ; terminé
-  par « … », il vaut aussi pour les mots qui le prolongent. Ces listes sont la source
-  unique : la reconnaissance les applique, la fenêtre **Fonctions** (section « Types de
-  pièces et leur détection ») et la page de documentation du coffre les affichent telles
-  quelles. Pour ajouter un mot-clé du module : l'écrire dans `pieces.ts`, ajouter un cas
-  dans `pieces.test.ts`.
-- **Types personnalisés** (v0.3.3, `keywords.ts`, réglage `typesPerso`) : code
-  (lettres, chiffres, tiret, souligné ; 20 caractères ; mis en majuscules sans accents)
-  et libellé (80 caractères). Refusés : code d'un type du module, code déjà ajouté,
-  libellé vide. `allTypes()` les place après les types du module et avant AUTRE ; le code
-  est leur mot-clé de nom. Ils sont proposés par « Changer le type de la pièce », comme
-  cibles des mots-clés personnalisés, et ont leur fiche dans la fenêtre **Fonctions**. Un
-  type retiré emporte ses mots-clés (écartés à la relecture) ; les notes de pièces gardent
-  le code, montré « (type retiré) » dans le tableau.
-- **Modifier, supprimer** (v0.3.4) : crayon et corbeille sur chaque type et chaque
-  mot-clé ajoutés. Un code modifié est repris par les mots-clés (`afterTypeChange`) et
-  noté dans `typesRenommes` (ancien → nouveau, chaînes suivies) ; dès que le module voit
-  ce renommage, `applyRenames` retype les pièces de toutes les analyses et réécrit leurs
-  tableaux. La suppression demande confirmation (`describeTypeRemoval` : le type, ses
-  mots-clés, les pièces qui le gardent), retire les mots-clés et oublie les renommages qui
-  y menaient. Les types du module ne se modifient pas.
-- **Désactiver** (v0.3.5) : un interrupteur sur chaque fiche de type (sauf AUTRE), du
-  module ou ajouté ; réglage `typesDesactives`. Un type désactivé n'est plus reconnu
-  (`activeTypes`, et les mots-clés de l'utilisateur qui le visent sont ignorés), n'est
-  plus proposé (changer le type, sauf s'il est celui de la pièce ; cibles des mots-clés)
-  ; les pièces le gardent, marqué « (désactivé) » dans le tableau. La liste suit le
-  renommage et la suppression d'un type ajouté.
-- **Mots-clés personnalisés** (v0.3.2, `keywords.ts`) : l'utilisateur ajoute ses paires
-  « mot-clé → type » en tête de la fenêtre **Fonctions**, une liste pour le nom du
-  fichier (réglage `motsClesNom`), une pour le titre (`motsClesTitre`). Ordre de la
-  reconnaissance : mots de l'utilisateur pour le nom, du module pour le nom, de
-  l'utilisateur pour le titre, du module pour le titre. Refusés : vide, plus de 60
-  caractères, type inconnu ou AUTRE, mot déjà déclaré, mot déjà connu du module pour ce
-  type. Ils s'appliquent aux prochains imports, et apparaissent dans les fiches des types
-  (« Ajoutés par vous ») et dans la documentation du coffre (« ajouté »).
+- **Types de pièces** : reconnus par le module [Typage des pièces](typage-pieces.md)
+  (`typage-pieces`), qui tient aussi les types et mots-clés de l'utilisateur, les types
+  désactivés et l'échange de types. L'AO s'en sert par son interface publique
+  (`classifyPiece`, `typeDisplay`, `allTypes`…) et suit ses renommages
+  (`onTypingChange` → `applyRenames`). Jusqu'à la v0.3.5, tout cela était dans l'AO.
 
 ## Organisation du code
 
@@ -93,9 +58,6 @@ Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
 | `index.ts` | Interface publique, déclaration du module, commandes, réglage du dossier, fenêtre « Fonctions » |
 | `service.ts` | Créer, lister, importer, mettre à jour, changer le type — sans fenêtre, testé sur un coffre en mémoire |
 | `notes.ts` | Forme des notes et des dossiers ; tableau des pièces |
-| `pieces.ts` | Types de pièces, leurs mots-clés, et la reconnaissance |
-| `keywords.ts` | Types et mots-clés personnalisés : saisie, validation, lecture des réglages |
-| `typesDoc.ts` | Le tableau des types et de leurs mots-clés pour la documentation du coffre |
 | `i18n.ts` | Textes, infobulles comprises |
 | `doc/` | Page de documentation écrite dans le coffre |
 
@@ -105,7 +67,8 @@ l'en-tête des notes.
 
 ## Tests
 
-- `pieces.test.ts` : reconnaissance des types (noms réels de pièces, titres).
+- `typing.test.ts` : le typage vu de l'AO (import, tableau, types désactivés, retypage
+  après renommage, changement de type).
 - `service.test.ts` : création, import, ZIP, doublons, mise à jour, changement de type,
   noms des notes, ordre du tableau.
 - `test/ao-dce.test.ts` : le dossier d'exemple compressé en ZIP, importé, chaque pièce

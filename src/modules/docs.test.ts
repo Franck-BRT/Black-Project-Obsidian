@@ -27,11 +27,12 @@ describe('documentation des modules', () => {
       'Accueil.md',
       'Prise en main.md',
       'Modules/Lecture de fichiers.md',
+      'Modules/Typage des pièces.md',
       "Modules/Analyse d'appels d'offres.md"
     ])
     for (const page of pages) {
       expect(page.content, page.path).not.toMatch(/\{\{|\}\}/)
-      expect(page.content, page.path).not.toMatch(/lecture-fichiers\.|module\.feature\.|\bao\.\w/)
+      expect(page.content, page.path).not.toMatch(/lecture-fichiers\.|typage-pieces\.|module\.feature\.|\bao\.\w/)
     }
   })
 
@@ -54,14 +55,14 @@ describe('documentation des modules', () => {
   it('s’écrit dans le coffre', async () => {
     const platform = memoryPlatform()
     const report = await writeDocumentation(platform.fs, 'Black Projects/Documentation', build())
-    expect(report.created).toHaveLength(4)
+    expect(report.created).toHaveLength(5)
     expect(await platform.fs.exists('Black Projects/Documentation/Modules/Lecture de fichiers.md')).toBe(true)
   })
 })
 
 describe('types de pièces dans la documentation', () => {
   it('donne chaque type avec les mots-clés que la reconnaissance cherche', () => {
-    const ao = build().find((each) => each.path === "Modules/Analyse d'appels d'offres.md")?.content ?? ''
+    const ao = build().find((each) => each.path === 'Modules/Typage des pièces.md')?.content ?? ''
     expect(ao).toContain('| Type | Pièce | Dans le nom du fichier | Dans le titre du document |')
     expect(ao).toContain('| RC | Règlement de la consultation | `RC`, `RDC`, `règlement de consultation`, `règlement de la consultation` |')
     expect(ao).toContain('| ANNEXE | Annexe | `annexe…`, `appendix` | — |')

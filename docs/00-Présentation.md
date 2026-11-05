@@ -34,5 +34,6 @@ Black Projects est construit en modules : d'autres fonctions s'ajouteront au mê
 - Modules
   - [Analyse d'appels d'offres](modules/ao.md)
   - [Lecture de fichiers](modules/lecture-fichiers.md)
+  - [Typage des pièces](modules/typage-pieces.md)
 - [Recette](recette/README.md)
 - [Règles de développement](developpement/regles.md)

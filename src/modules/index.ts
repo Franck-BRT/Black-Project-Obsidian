@@ -9,5 +9,6 @@
 import type { BlackModule } from '../core/modules/module'
 import { aoModule } from './ao'
 import { lectureFichiersModule } from './lecture-fichiers'
+import { typagePiecesModule } from './typage-pieces'
 
-export const MODULES: readonly BlackModule[] = [lectureFichiersModule, aoModule]
+export const MODULES: readonly BlackModule[] = [lectureFichiersModule, typagePiecesModule, aoModule]

@@ -12,8 +12,9 @@
 - **Modules** : chaque module avec sa version et son état. L'interrupteur l'active ou le
   désactive au prochain chargement du plugin ; vos données ne sont jamais supprimées.
   Certains modules ont un bouton qui ouvre leur fenêtre : **Formats de fichiers** pour la
-  lecture de fichiers, **Fonctions** pour l'analyse d'appels d'offres (avec le dossier
-  des analyses).
+  lecture de fichiers, **Types de pièces** pour le typage des pièces (types, mots-clés,
+  échange), **Fonctions** pour l'analyse d'appels d'offres (avec le dossier des
+  analyses).
 - **Licence** : vos droits d'usage.
 
 Survolez un réglage, un bouton ou un bloc : une infobulle explique à quoi il sert.
@@ -40,6 +41,8 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Importer des pièces dans une analyse (ZIP compris) | importe des fichiers de l'ordinateur, ou le ZIP du dossier |
 | Mettre à jour l'analyse (pièces déposées à la main) | lit les fichiers déposés dans `Pièces/Originaux`, réécrit le tableau des pièces |
 | Changer le type de la pièce | sur la note d'une pièce : RC, CCTP, CCAP, BPU… |
+| Exporter des types de pièces | écrit un ou plusieurs types dans un fichier, pour un autre coffre ; voir {{link:Modules/Typage des pièces|Typage des pièces}} |
+| Importer des types de pièces | reprend des types d'un tel fichier |
 
 ## Vos données
 
