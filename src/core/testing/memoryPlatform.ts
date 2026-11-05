@@ -7,8 +7,11 @@
  * ici, il le fait de la même façon dans Obsidian.
  */
 
+import { parse as parseYaml } from 'yaml'
 import type {
   Choice,
+  ListAnswer,
+  ListView,
   ConfirmView,
   ExternalFile,
   FilePickOptions,
@@ -46,6 +49,9 @@ export interface MemoryPlatform extends Platform {
   /** Les réponses des prochains messages (par défaut : fermé, case telle quelle), et les messages montrés. */
   messageAnswers: MessageAnswer[]
   messages: MessageView[]
+  /** Les réponses des prochaines listes (par défaut : fermée), et les listes montrées. */
+  listAnswers: (ListAnswer | null)[]
+  lists: ListView[]
 }
 
 export function memoryPlatform(files: Record<string, string | Uint8Array> = {}): MemoryPlatform {
@@ -84,6 +90,9 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
     manyAsked: [],
     messageAnswers: [],
     messages: [],
+    listAnswers: [],
+    lists: [],
+    yaml: { parse: (text) => parseYaml(text) as unknown },
     info: { name: 'test', version: '0.0.0' },
     fs: {
       exists: async (path) => store.has(path) || folders.has(path),
@@ -150,6 +159,10 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
       inform: async (view) => {
         platform.messages.push(view)
         return platform.messageAnswers.shift() ?? { action: null, option: view.option?.value ?? false }
+      },
+      pickFromList: async (view) => {
+        platform.lists.push(view)
+        return platform.listAnswers.shift() ?? null
       }
     }
   }

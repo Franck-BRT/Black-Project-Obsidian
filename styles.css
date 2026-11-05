@@ -444,3 +444,88 @@
   font-size: var(--font-ui-small);
   user-select: text;
 }
+
+/* Les formulaires : un texte sur plusieurs lignes, sous son libellé. */
+.bp-form-textarea {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--size-4-2);
+}
+
+.bp-form-textarea textarea {
+  width: 100%;
+  min-height: 6em;
+}
+
+/* La fenêtre de liste (les exigences) : recherche, filtres, tableau. */
+.bp-list-modal {
+  width: min(1100px, 95vw);
+}
+
+.bp-list-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-2);
+  align-items: center;
+}
+
+.bp-list-search {
+  flex: 1 1 220px;
+}
+
+.bp-list-count {
+  margin: var(--size-4-2) 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.bp-list-table,
+.bp-block-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-ui-small);
+}
+
+.bp-list-table th,
+.bp-list-table td,
+.bp-block-table th,
+.bp-block-table td {
+  text-align: start;
+  vertical-align: top;
+  padding: var(--size-4-1) var(--size-4-2);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.bp-list-table td.is-narrow {
+  white-space: nowrap;
+}
+
+.bp-list-row {
+  cursor: pointer;
+}
+
+.bp-list-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.bp-list-flag,
+.bp-block-flag {
+  display: inline-block;
+  margin-inline-start: var(--size-4-1);
+  padding: 0 var(--size-4-1);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-smaller);
+  background: rgba(var(--color-orange-rgb), 0.15);
+}
+
+.bp-list-empty,
+.bp-block-empty {
+  color: var(--text-muted);
+}
+
+/* Un bloc de code dessiné par un module (pm-req). */
+.bp-block-message {
+  font-size: var(--font-ui-small);
+  color: var(--text-warning);
+  margin-bottom: var(--size-4-1);
+}

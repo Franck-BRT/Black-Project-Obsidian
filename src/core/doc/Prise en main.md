@@ -44,6 +44,9 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Déplacer la pièce (appel d'offres ↔ réponse) | sur la note d'une pièce : la range avec l'appel d'offres, la réponse, ou la réponse d'un candidat |
 | Exporter des types de pièces | écrit un ou plusieurs types dans un fichier, pour un autre coffre ; voir {{link:Modules/Typage des pièces|Typage des pièces}} |
 | Importer des types de pièces | reprend des types d'un tel fichier |
+| Nouvelle exigence | crée une exigence avec son identifiant (REQ-SYS-0001) ; voir {{link:Modules/Exigences|Exigences}} |
+| Exigences : liste, filtres et fiches | parcourt la bibliothèque, ouvre une fiche ou une note |
+| Modifier l'exigence (note ouverte) | la fiche de l'exigence ouverte : formulation, attributs, alias |
 
 ## Vos données
 

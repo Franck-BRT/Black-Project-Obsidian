@@ -347,7 +347,32 @@ export interface ModuleContext {
   }
   /** Ouvre la fenêtre du module (ses réglages et ses fonctions), quand la plateforme en a une. */
   openWindow?(): void
+  /** Des blocs de code que le module dessine dans les notes (`pm-req`…), quand la plateforme le permet. */
+  readonly blocks?: {
+    register(language: string, render: BlockRenderer): void
+  }
 }
+
+/** Ce qu'un bloc de code devient : un tableau, et des messages au-dessus. */
+export interface BlockView {
+  readonly columns: readonly string[]
+  readonly rows: readonly BlockRow[]
+  /** Ce que le lecteur doit savoir : un identifiant introuvable, une clé inconnue… */
+  readonly messages: readonly string[]
+  /** Affiché quand il n'y a aucune ligne. */
+  readonly empty?: string
+}
+
+export interface BlockRow {
+  readonly cells: readonly string[]
+  /** De petites étiquettes sous la ligne : « traduction en retard »… */
+  readonly flags?: readonly string[]
+  /** La note de l'élément, ouverte d'un clic sur la première cellule. */
+  readonly link?: string
+}
+
+/** Dessine un bloc : son texte, et la note où il est. */
+export type BlockRenderer = (source: string, notePath: string) => Promise<BlockView>
 
 export interface BlackModule extends ModuleDescriptor {
   activate(context: ModuleContext): void | Promise<void>

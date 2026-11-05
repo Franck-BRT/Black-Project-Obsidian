@@ -13,8 +13,11 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.4.8 — étape 2 du [plan d'intégration](docs/plan-integration.md) : le
-dossier de consultation.** Créer une analyse d'appel d'offres (candidat ou émetteur),
+**Version 0.5.0 — étape 3 du [plan d'intégration](docs/plan-integration.md) : le
+socle des exigences.** Une bibliothèque d'exigences — une note par exigence, un
+identifiant jamais réutilisé, une liste avec filtres et une fiche, et le bloc `pm-req`
+qui cite des exigences dans un document au lieu de les recopier. Étape 2, le dossier de
+consultation : créer une analyse d'appel d'offres (candidat ou émetteur),
 importer les pièces du dossier — ZIP compris — ou les déposer à la main ; chaque pièce
 est lue, typée (RC, CCTP, CCAP, BPU…) et décrite par une note, et la note de l'analyse
 tient le tableau des pièces. La documentation s'écrit dans le coffre ; des infobulles

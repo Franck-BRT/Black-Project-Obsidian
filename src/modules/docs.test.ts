@@ -28,11 +28,12 @@ describe('documentation des modules', () => {
       'Prise en main.md',
       'Modules/Lecture de fichiers.md',
       'Modules/Typage des pièces.md',
+      'Modules/Exigences.md',
       "Modules/Analyse d'appels d'offres.md"
     ])
     for (const page of pages) {
       expect(page.content, page.path).not.toMatch(/\{\{|\}\}/)
-      expect(page.content, page.path).not.toMatch(/lecture-fichiers\.|typage-pieces\.|module\.feature\.|\bao\.\w/)
+      expect(page.content, page.path).not.toMatch(/lecture-fichiers\.|typage-pieces\.|exigences\.\w|module\.feature\.|\bao\.\w/)
     }
   })
 
@@ -58,7 +59,7 @@ describe('documentation des modules', () => {
   it('s’écrit dans le coffre', async () => {
     const platform = memoryPlatform()
     const report = await writeDocumentation(platform.fs, 'Black Projects/Documentation', build())
-    expect(report.created).toHaveLength(5)
+    expect(report.created).toHaveLength(6)
     expect(await platform.fs.exists('Black Projects/Documentation/Modules/Lecture de fichiers.md')).toBe(true)
   })
 })

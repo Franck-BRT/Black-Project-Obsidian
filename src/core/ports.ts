@@ -10,6 +10,8 @@
  * cette frontière tient, le même code métier tourne partout.
  */
 
+import type { YamlReader } from './yaml'
+
 /** Un chemin relatif à la racine du coffre, avec des « / », sans « / » initial. */
 export type VaultPath = string
 
@@ -113,6 +115,17 @@ export type FormField =
       value?: string
     }
   | {
+      /** Un texte sur plusieurs lignes : la formulation d'une exigence, par exemple. */
+      kind: 'textarea'
+      key: string
+      label: string
+      description?: string
+      placeholder?: string
+      tooltip?: string
+      required?: boolean
+      value?: string
+    }
+  | {
       /** Un interrupteur ; sa valeur rendue est `"true"` ou `"false"`. */
       kind: 'toggle'
       key: string
@@ -157,7 +170,55 @@ export interface Ui {
    * case (« Ne plus me le rappeler »). Montré quand l'espace de travail est prêt.
    */
   inform(view: MessageView): Promise<MessageAnswer>
+  /**
+   * Une liste qu'on filtre et qu'on parcourt : une ligne par élément, des menus de filtre,
+   * une recherche, des boutons. Rend la ligne choisie ou le bouton pressé ; `null` si
+   * l'utilisateur ferme la fenêtre.
+   */
+  pickFromList(view: ListView): Promise<ListAnswer | null>
 }
+
+export interface ListColumn {
+  key: string
+  label: string
+  /** `wide` : la colonne prend la place qui reste (le texte d'une exigence). */
+  width?: 'narrow' | 'wide'
+}
+
+export interface ListRow {
+  id: string
+  /** Le texte de chaque colonne, par clé. */
+  cells: Readonly<Record<string, string>>
+  /** Les valeurs sur lesquelles on filtre, par clé de filtre. */
+  values?: Readonly<Record<string, string>>
+  /** De petites étiquettes après la première colonne : « traduction en retard »… */
+  flags?: readonly string[]
+}
+
+export interface ListView {
+  title: string
+  intro?: string
+  columns: readonly ListColumn[]
+  rows: readonly ListRow[]
+  /** Des menus de filtre ; la première option, valeur vide, montre tout. */
+  filters?: readonly { key: string; label: string; options: readonly Choice[] }[]
+  searchPlaceholder?: string
+  /** Affiché quand aucune ligne ne correspond. */
+  empty: string
+  /** Des boutons en tête : « Nouvelle exigence »… */
+  actions?: readonly { value: string; label: string; cta?: boolean; tooltip?: string }[]
+  /** Les filtres et la recherche de départ (pour revenir là où l'on était). */
+  state?: ListState
+}
+
+export interface ListState {
+  search: string
+  filters: Readonly<Record<string, string>>
+}
+
+export type ListAnswer =
+  | { kind: 'row'; id: string; state: ListState }
+  | { kind: 'action'; value: string; state: ListState }
 
 export interface MessageView {
   title: string
@@ -230,4 +291,6 @@ export interface Platform {
   ui: Ui
   /** Ce que la plateforme montre des fichiers ; absent si elle ne sait pas le dire. */
   display?: FileDisplay
+  /** Lire du YAML (les en-têtes de notes structurés). */
+  yaml: YamlReader
 }

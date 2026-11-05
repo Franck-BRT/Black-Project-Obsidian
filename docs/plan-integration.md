@@ -170,16 +170,24 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
 **Jalon de démo n° 1 :** « je dépose le ZIP du dossier, toutes les pièces sont lues »
 — vérifié sur le dossier d'exemple (`test/ao-dce.test.ts`).
 
-### Étape 3 — Socle des exigences (`src/core/requirements/`)
+### Étape 3 — Socle des exigences (module `exigences`) ✅ *terminée (v0.5.0)*
 
+- Un **module à part** (`src/modules/exigences/`), comme la lecture de fichiers et le
+  typage des pièces, plutôt qu'un morceau du cœur : l'analyse d'appels d'offres s'en
+  servira à l'étape 4, d'autres modules ensuite
 - Repris : `reqId`, `Requirement`, `reqAlias`, `reqYaml`, `reqBlockFields`, `reqBlock`,
-  `reqFence`, `reqNote`, `RequirementStore`
-- Réécrit : les types globaux, le YAML (fonctions fournies par la plateforme), l'index
-  du coffre
-- Format `pm-req` identique à la version complète
-- Vue « Exigences » simplifiée : liste, filtres, fiche
+  `reqFence`, `reqNote`, et leurs tests (134)
+- Réécrit : `RequirementStore` sur les ports (fichiers, YAML lu par la plateforme), les
+  réglages et l'attribution des identifiants, la recherche des exigences (le dossier des
+  exigences, sous-dossiers compris)
+- Format `pm-requirement` / `pm-req` identique à la version complète
+- Fenêtre « Exigences » simplifiée : liste, recherche, filtres, fiche ; commandes
+  « Nouvelle exigence », « Modifier l'exigence » ; bloc `pm-req` dessiné dans les notes
+- Cœur : écriture YAML, `ui.pickFromList`, champ `textarea`, blocs de code des modules
+- Doc : [modules/exigences.md](modules/exigences.md) ; recette :
+  [recette/etape-3.md](recette/etape-3.md)
 
-**Jalon :** créer, modifier et relire une exigence.
+**Jalon :** créer, modifier et relire une exigence — vérifié (`flows.test.ts`).
 
 ### Étape 4 — Extraction des exigences du dossier
 

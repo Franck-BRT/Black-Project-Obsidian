@@ -16,10 +16,13 @@ export const aoModule: BlackModule = {
   requires: [],                   // modules à activer avant celui-ci
   texts: { fr: aoFr, en: aoEn },  // enregistrés même si le module est désactivé
   activate(context) {
-    // context.platform  : fichiers, réseau, notifications, fenêtres (choisir un fichier, montrer un texte)
     // context.i18n      : textes
     // context.settings  : réglages du module, rangés sous son identifiant
+    // context.platform  : fichiers, YAML, réseau, notifications, fenêtres (choisir un fichier,
+    //                     un formulaire, une liste filtrable, un message), affichage des fichiers
     // context.commands  : déclarer des commandes
+    // context.blocks    : dessiner un bloc de code dans les notes (pm-req), si la plateforme le permet
+    // context.openWindow: ouvrir la fenêtre du module, si la plateforme en a une
   },
   deactivate() {}                 // facultatif : libérer ce que le module a pris
 }

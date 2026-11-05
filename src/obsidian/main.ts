@@ -15,6 +15,7 @@ import type { Platform, SettingsStorage } from '../core/ports'
 import { docModules, documentationPages, writeDocumentation } from '../core/docs'
 import { moduleSettings, readSettings, type CoreSettings } from '../core/settings'
 import { MODULES } from '../modules'
+import { drawBlock, drawBlockError } from './blockView'
 import { BlackFileView } from './fileViewer'
 import { FILE_VIEW, obsidianPlatform, pluginSettingsStorage } from './platform'
 import { ModuleDetailsModal } from './moduleDetailsModal'
@@ -173,7 +174,18 @@ export default class BlackProjectsPlugin extends Plugin {
       commands: {
         register: (command) => this.addModuleCommand(module, command)
       },
-      openWindow: () => new ModuleDetailsModal(this.app, this, module).open()
+      openWindow: () => new ModuleDetailsModal(this.app, this, module).open(),
+      blocks: {
+        register: (language, render) =>
+          this.registerMarkdownCodeBlockProcessor(language, async (source, el, ctx) => {
+            try {
+              drawBlock(el, await render(source, ctx.sourcePath), this.platform.ui)
+            } catch (error) {
+              console.error(`[Black Projects] bloc ${language}`, error)
+              drawBlockError(el, this.i18n.t('block.failed', { language }))
+            }
+          })
+      }
     }
   }
 

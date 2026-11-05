@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.4.8)
+## Aujourd'hui (version 0.5.0)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -32,6 +32,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   pièces** rappellent où va chaque type, et l'export / import de types fait voyager ce
   rangement.
 
+
+- **Exigences** : « Nouvelle exigence » (catégorie, titre, formulation, attributs ;
+  l'identifiant REQ-SYS-0001 est attribué et ne sera jamais réutilisé), « Exigences :
+  liste, filtres et fiches » pour parcourir la bibliothèque et modifier une fiche, et le
+  bloc `pm-req` pour citer des exigences dans un document ; voir la page *Exigences* de
+  la documentation écrite dans le coffre.
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**
   (ou la commande « Créer ou mettre à jour la documentation ») écrit l'accueil, la prise

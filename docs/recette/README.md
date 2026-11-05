@@ -8,3 +8,4 @@ Un cahier par étape du [plan d'intégration](../plan-integration.md). À dérou
 - [Étape 0 — Socle](etape-0.md)
 - [Étape 1 — Lecteurs de documents](etape-1.md)
 - [Étape 2 — Dossier de consultation](etape-2.md)
+- [Étape 3 — Socle des exigences](etape-3.md)

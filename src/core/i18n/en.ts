@@ -9,6 +9,7 @@ export const en: Record<string, string> = {
   'command.about': 'About Black Projects',
   'about.notice': 'Black Projects {version} — {active} of {total} module(s) active. {licence}',
 
+  'block.failed': 'The {language} block could not be drawn: see the console for details.',
   'viewer.title': 'File',
   'viewer.meta': '.{extension} file · {size} — shown by Black Projects, read-only.',
   'viewer.open': 'Open with the computer’s application',

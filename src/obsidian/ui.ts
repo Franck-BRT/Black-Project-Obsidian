@@ -3,7 +3,19 @@
 
 /** Le port `Ui` du cœur, dessiné avec les fenêtres d'Obsidian. */
 
-import { FuzzySuggestModal, Modal, Notice, Setting, SuggestModal, TFile, setTooltip, type App } from 'obsidian'
+import {
+  ButtonComponent,
+  DropdownComponent,
+  FuzzySuggestModal,
+  Modal,
+  Notice,
+  Setting,
+  SuggestModal,
+  TextComponent,
+  TFile,
+  setTooltip,
+  type App
+} from 'obsidian'
 import type { I18n } from '../core/i18n'
 import type {
   Choice,
@@ -11,6 +23,9 @@ import type {
   ExternalFile,
   FilePickOptions,
   FormView,
+  ListAnswer,
+  ListState,
+  ListView,
   MessageAnswer,
   MessageView,
   PickManyView,
@@ -134,6 +149,15 @@ class FormModal extends Modal {
           })
           first ??= text.inputEl
         })
+      } else if (field.kind === 'textarea') {
+        // Le texte sous son libellé, sur toute la largeur : une formulation se lit en entier.
+        setting.settingEl.addClass('bp-form-textarea')
+        setting.addTextArea((area) => {
+          area.setValue(this.values[field.key] ?? '').onChange((value) => (this.values[field.key] = value))
+          if (field.placeholder) area.setPlaceholder(field.placeholder)
+          if (field.tooltip) setTooltip(area.inputEl, field.tooltip)
+          area.inputEl.rows = 5
+        })
       } else if (field.kind === 'toggle') {
         setting.addToggle((toggle) => {
           toggle.setValue(this.values[field.key] === 'true').onChange((value) => (this.values[field.key] = String(value)))
@@ -156,7 +180,7 @@ class FormModal extends Modal {
 
   private submit(): void {
     for (const field of this.form.fields) {
-      if (field.kind === 'text' && field.required && !(this.values[field.key] ?? '').trim()) {
+      if ((field.kind === 'text' || field.kind === 'textarea') && field.required && !(this.values[field.key] ?? '').trim()) {
         new Notice(`${field.label} ?`)
         return
       }
@@ -211,6 +235,102 @@ class ConfirmModal extends Modal {
   override onClose(): void {
     this.contentEl.empty()
     if (!this.answered) this.done(false)
+  }
+}
+
+/**
+ * Une liste qu'on filtre et qu'on parcourt : recherche, menus de filtre, boutons en tête,
+ * puis un tableau. Un clic sur une ligne la choisit ; un bouton rend sa valeur.
+ */
+class ListModal extends Modal {
+  private answer: ListAnswer | null = null
+  private search: string
+  private readonly filters: Record<string, string>
+
+  constructor(
+    app: App,
+    private readonly view: ListView,
+    private readonly done: (answer: ListAnswer | null) => void
+  ) {
+    super(app)
+    this.search = view.state?.search ?? ''
+    this.filters = { ...(view.state?.filters ?? {}) }
+  }
+
+  private state(): ListState {
+    return { search: this.search, filters: { ...this.filters } }
+  }
+
+  override onOpen(): void {
+    const { contentEl, view } = this
+    this.modalEl.addClass('bp-list-modal')
+    this.setTitle(view.title)
+    if (view.intro) contentEl.createEl('p', { text: view.intro, cls: 'bp-form-intro' })
+
+    const bar = contentEl.createDiv({ cls: 'bp-list-bar' })
+    const search = new TextComponent(bar).setPlaceholder(view.searchPlaceholder ?? '').setValue(this.search)
+    search.inputEl.addClass('bp-list-search')
+    for (const filter of view.filters ?? []) {
+      const dropdown = new DropdownComponent(bar)
+      dropdown.addOption('', filter.label)
+      for (const option of filter.options) dropdown.addOption(option.value, option.label)
+      dropdown.setValue(this.filters[filter.key] ?? '')
+      dropdown.onChange((value) => {
+        this.filters[filter.key] = value
+        draw()
+      })
+    }
+    for (const action of view.actions ?? []) {
+      const button = new ButtonComponent(bar).setButtonText(action.label).onClick(() => {
+        this.answer = { kind: 'action', value: action.value, state: this.state() }
+        this.close()
+      })
+      if (action.cta) button.setCta()
+      if (action.tooltip) button.setTooltip(action.tooltip)
+    }
+
+    const count = contentEl.createDiv({ cls: 'bp-list-count' })
+    const table = contentEl.createEl('table', { cls: 'bp-list-table' })
+    const head = table.createEl('thead').createEl('tr')
+    for (const column of view.columns) head.createEl('th', { text: column.label, cls: column.width ? `is-${column.width}` : '' })
+    const body = table.createEl('tbody')
+
+    const draw = () => {
+      body.empty()
+      const needle = this.search.trim().toLowerCase()
+      const shown = view.rows.filter(
+        (row) =>
+          Object.entries(this.filters).every(([key, value]) => !value || row.values?.[key] === value) &&
+          (!needle || Object.values(row.cells).some((cell) => cell.toLowerCase().includes(needle)))
+      )
+      count.setText(`${shown.length} / ${view.rows.length}`)
+      if (shown.length === 0) {
+        body.createEl('tr').createEl('td', { text: view.empty, cls: 'bp-list-empty', attr: { colspan: String(view.columns.length) } })
+        return
+      }
+      for (const row of shown) {
+        const line = body.createEl('tr', { cls: 'bp-list-row' })
+        view.columns.forEach((column, index) => {
+          const cell = line.createEl('td', { text: row.cells[column.key] ?? '', cls: column.width ? `is-${column.width}` : '' })
+          if (index === 0) for (const flag of row.flags ?? []) cell.createSpan({ text: flag, cls: 'bp-list-flag' })
+        })
+        line.addEventListener('click', () => {
+          this.answer = { kind: 'row', id: row.id, state: this.state() }
+          this.close()
+        })
+      }
+    }
+    search.onChange((value) => {
+      this.search = value
+      draw()
+    })
+    draw()
+    window.setTimeout(() => search.inputEl.focus(), 0)
+  }
+
+  override onClose(): void {
+    this.contentEl.empty()
+    this.done(this.answer)
   }
 }
 
@@ -453,6 +573,11 @@ export function obsidianUi(app: App, i18n: I18n): Ui {
       return new Promise((resolve) => {
         // Au démarrage, attendre que l'espace de travail soit prêt.
         app.workspace.onLayoutReady(() => new MessageModal(app, view, resolve).open())
+      })
+    },
+    pickFromList(view) {
+      return new Promise((resolve) => {
+        new ListModal(app, view, resolve).open()
       })
     },
     askForm(form) {
