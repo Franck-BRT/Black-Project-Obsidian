@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.5.1)
+## Aujourd'hui (version 0.6.0)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -38,6 +38,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   liste, filtres et fiches » pour parcourir la bibliothèque et modifier une fiche, et le
   bloc `brt-req` pour citer des exigences dans un document ; voir la page *Exigences* de
   la documentation écrite dans le coffre.
+
+- **Extraire les exigences** : sur la note d'une pièce (le CCTP), « Extraire les exigences
+  de la pièce » ; un aperçu montre chaque exigence trouvée et où, puis elles sont rangées
+  dans le dossier `Exigences` de l'analyse, chacune liée à sa pièce ; la pièce et
+  l'analyse les listent. « Importer des exigences d'un fichier » fait de même pour la
+  bibliothèque (ReqIF de DOORS compris).
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**
   (ou la commande « Créer ou mettre à jour la documentation ») écrit l'accueil, la prise

@@ -47,7 +47,8 @@ export const REQUIREMENT_FRONTMATTER_KEYS: ReadonlySet<string> = new Set([
   'links',
   'history',
   'createdAt',
-  'updatedAt'
+  'updatedAt',
+  'origin'
 ])
 
 function str(raw: unknown, fallback = ''): string {
@@ -154,8 +155,16 @@ export function hydrateRequirement(frontmatter: Record<string, unknown>, filePat
     history: readHistory(frontmatter.history),
     createdAt: str(frontmatter.createdAt),
     updatedAt: str(frontmatter.updatedAt),
-    filePath
+    filePath,
+    ...readOrigin(frontmatter.origin)
   })
+}
+
+function readOrigin(raw: unknown): { origin?: Requirement['origin'] } {
+  if (typeof raw !== 'object' || raw === null) return {}
+  const row = raw as Record<string, unknown>
+  const piece = str(row.piece)
+  return piece ? { origin: { piece, locator: str(row.locator) } } : {}
 }
 
 /**
@@ -186,5 +195,6 @@ export function requirementFrontmatter(requirement: Requirement): Record<string,
   if (requirement.aliases.length) fm.aliases = requirement.aliases
   if (requirement.links.length) fm.links = requirement.links.map((link) => ({ ...link }))
   if (requirement.history.length) fm.history = requirement.history.map((revision) => ({ ...revision }))
+  if (requirement.origin) fm.origin = { piece: requirement.origin.piece, locator: requirement.origin.locator }
   return fm
 }

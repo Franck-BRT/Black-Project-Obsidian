@@ -136,13 +136,43 @@ type : chaque pièce avec son lien, son type, son état de lecture et la taille 
 texte. Ne modifiez pas ce tableau ; écrivez vos remarques dans la section **Notes**, que
 Black Projects ne touche jamais.
 
+## 6. Extraire les exigences d'une pièce
+
+Ouvrez la note d'une pièce — le CCTP, surtout —, puis commande **Extraire les exigences
+de la pièce** (depuis la note de l'analyse, la commande demande de quelle pièce). Les
+exigences sont reconnues :
+
+- dans un **tableau** dont l'en-tête nomme un identifiant ou une exigence :
+  « Identifiant | Exigence | Vérification », « Réf. | Énoncé | Priorité »… ;
+- dans un **paragraphe** qui commence par un identifiant : « EX-SOL-003 — Le système
+  doit… ».
+
+Formats : Word, PDF (avec texte), HTML, Markdown, Excel, CSV, PowerPoint, ReqIF (DOORS).
+Le reste du texte est laissé tranquille : rien n'est deviné.
+
+Une fenêtre montre d'abord ce que l'extraction ferait — chaque exigence, **nouvelle**,
+**mise à jour**, **inchangée** ou **refusée**, et **où** elle a été trouvée (« Article 2
+— Exigences, tableau 1, ligne 2 ») ; cochez ce que vous prenez, puis **Importer**.
+
+- Les exigences vont dans le dossier `Exigences` de l'analyse, une note chacune ;
+  l'identifiant du dossier est gardé (`EX-SOL-001`). Une exigence sans identifiant en
+  reçoit un sous le type de la pièce (`REQ-CCTP-0001`).
+- Chacune garde sa **pièce** (un lien) et **l'endroit** où elle a été trouvée.
+- La note de la pièce liste ses **exigences extraites**, avant son texte.
+- La note de l'analyse tient le tableau **Exigences du dossier** : chaque exigence, sa
+  formulation, sa pièce, l'endroit.
+- Extraire de nouveau la même pièce ne crée rien en double : ce qui n'a pas changé est
+  « inchangé », ce qui a changé est mis à jour (avec une révision).
+
+Commande **Mettre à jour les exigences de l'analyse** : réécrit ces deux listes, après
+avoir modifié ou supprimé des exigences à la main.
+
 ## Ce qui arrive ensuite
 
 Paramètres → Black Projects → **Fonctions** montre où en est le module :
 
 | Fonction | Étape |
 | --- | --- |
-| Extraire les exigences (Word, Excel, PDF, ReqIF/DOORS), chacune reliée à sa pièce | 3-4 |
 | Mesurer la qualité des exigences (règles, score ISO/IEC/IEEE 29148, doublons) | 5 |
 | Relecture et conseils par l'IA (Sidonie), calendrier de l'appel d'offres, questions posées à tout le dossier | 6 |
 | Matrice de conformité (Excel), rapport (Word), fiche de synthèse, comparaison de deux versions du dossier | 7 |

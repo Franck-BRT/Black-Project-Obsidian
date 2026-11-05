@@ -45,15 +45,16 @@ export {
   TEXT_EXTENSIONS,
   type FileProblem
 } from './readers/fileText'
-export { readDocx, type DocxReadBlock } from './readers/docxRead'
+export { readDocx, type DocxReadBlock, type DocxReadParagraph } from './readers/docxRead'
 export { readSpreadsheet } from './readers/xlsRead'
-export { readPptx } from './readers/pptxRead'
-export { readPdf } from './readers/pdfRead'
-export { pdfBlocks } from './readers/pdfText'
+export { type XlsxReadSheet } from './readers/xlsxRead'
+export { readPptx, type PptxReadSlide, type PptxReadText } from './readers/pptxRead'
+export { PdfError, readPdf, type PdfContent } from './readers/pdfRead'
+export { pdfBlocks, readsByStructure } from './readers/pdfText'
 export { readHtml } from './readers/htmlRead'
 export { readMarkdown } from './readers/markdownRead'
-export { unzip } from './formats/unzip'
-export { parseXml, type XmlNode } from './formats/xmlParse'
+export { unzip, ZipError } from './formats/unzip'
+export { childLocal, childrenLocal, localName, parseXml, XmlError, type XmlNode } from './formats/xmlParse'
 
 /**
  * Le texte d'un fichier, d'après son extension et ses octets — en tenant compte des

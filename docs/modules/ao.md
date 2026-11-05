@@ -5,8 +5,8 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.4.5 |
-| Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`) |
+| Version | 0.5.0 (Black Projects 0.6.0) |
+| Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
 | État | Étape 2 livrée : analyses, import du dossier (ZIP compris), typage et notes des pièces |
@@ -23,6 +23,8 @@ Documentation utilisateur (écrite dans le coffre) :
 | Mettre à jour l'analyse (pièces déposées à la main) | Lit les fichiers de `Pièces/Originaux` qui n'ont pas de note ; réécrit le tableau |
 | Changer le type de la pièce | Sur la note d'une pièce ; le tableau suit |
 | Déplacer la pièce (appel d'offres ↔ réponse) | Sur la note d'une pièce : original et note changent de dossier, place mise à jour, tableau réécrit (v0.4.1) |
+| Extraire les exigences de la pièce | Sur la note d'une pièce, ou depuis la note de l'analyse (choix de la pièce) : aperçu, puis import dans `Exigences/` de l'analyse (v0.5.0) |
+| Mettre à jour les exigences de l'analyse | Réécrit la liste des exigences de chaque pièce et le tableau « Exigences du dossier » |
 
 Les commandes visent l'analyse de la note ouverte, sinon demandent laquelle.
 
@@ -91,6 +93,25 @@ les listes d'export et d'import ; à l'import, le rangement des types importés 
 Reprise de la v0.4.1 (`migratePlaces`) : `typage-pieces.placesTypes` devient
 `ao.rangement` (seulement les choix de l'utilisateur) et quitte les réglages du typage.
 
+## Les exigences du dossier (v0.5.0, étape 4)
+
+`requirements.ts` : l'extraction (`extractRequirements`), l'aperçu et l'écriture
+(`previewImport`) sont ceux du module [Exigences](exigences.md) ; l'AO choisit où elles
+vont et les trace.
+
+- **Où** : `requirementsAt('<analyse>/Exigences')` — un magasin d'exigences limité au
+  dossier de l'analyse : le plan d'import ne voit que les exigences de cette analyse (deux
+  appels d'offres peuvent avoir chacun leur `EX-SOL-001`), et les identifiants attribués
+  passent par les compteurs de la bibliothèque.
+- **Identifiants** : ceux du dossier sont gardés (`EX-SOL-001`) ; sans identifiant, la
+  catégorie est le type de la pièce (`REQ-CCTP-0001`) ; un identifiant d'un autre format
+  devient un alias.
+- **Trace** : `origin.piece` = lien vers la note de la pièce, `origin.locator` = l'endroit
+  (« Article 2 — Exigences, tableau 1, ligne 2 »). La note de la pièce reçoit la liste de
+  ses exigences avant son texte ; la note de l'analyse, le tableau « Exigences du
+  dossier » avant la section Notes — tous deux entre `<!-- bp:exigences:debut -->` et
+  `<!-- bp:exigences:fin -->`, réécrits à chaque extraction.
+
 ## Dans le coffre
 
 ```
@@ -105,7 +126,7 @@ Reprise de la v0.4.1 (`migratePlaces`) : `typage-pieces.placesTypes` devient
 │   │                   lecture, caracteres, importee ; texte extrait
 │   ├── Réponse/              candidat (même forme)
 │   └── Réponses/<candidat>/  émetteur (même forme)
-├── Exigences/      (étape 3)
+├── Exigences/      une note par exigence extraite (étape 4) : <identifiant>.md
 └── Analyse/        (étapes 5 à 7)
 ```
 
@@ -128,6 +149,7 @@ Reprise de la v0.4.1 (`migratePlaces`) : `typage-pieces.placesTypes` devient
 | `index.ts` | Interface publique, déclaration du module, commandes, réglage du dossier, fenêtre « Fonctions » |
 | `service.ts` | Créer, lister, importer, mettre à jour, changer le type — sans fenêtre, testé sur un coffre en mémoire |
 | `notes.ts` | Forme des notes et des dossiers ; tableau des pièces |
+| `requirements.ts` | Extraire les exigences d'une pièce ; listes d'exigences des notes de pièce et d'analyse |
 | `i18n.ts` | Textes, infobulles comprises |
 | `doc/` | Page de documentation écrite dans le coffre |
 

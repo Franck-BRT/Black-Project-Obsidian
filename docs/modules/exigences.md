@@ -5,11 +5,11 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.1.1 (Black Projects 0.5.1) |
+| Version | 0.2.0 (Black Projects 0.6.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
-| Requiert | — |
-| Utilisé par | à l'étape 4 : l'analyse d'appels d'offres (extraction des exigences) |
+| Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
+| Utilisé par | Analyse d'appels d'offres (`ao`) : extraction des exigences des pièces |
 | Étape | 3 du [plan d'intégration](../plan-integration.md) — le socle des exigences |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/exigences/doc/Exigences.md`.
@@ -44,6 +44,43 @@ inconnue dits au-dessus du tableau. Un clic sur l'identifiant ouvre la note.
 
 Les tests du modèle sont ceux de la version complète, repris tels quels (134 tests) ;
 `store.test.ts` et `flows.test.ts` couvrent le reste, dont le jalon de l'étape.
+
+## Extraire et importer (étape 4)
+
+| Fichier | Rôle | Origine |
+| --- | --- | --- |
+| `import/csv.ts` | lignes d'import, CSV, et le **plan** (créer, mettre à jour, inchangée, refusée) | repris |
+| `import/table.ts` | un tableau (feuille, ou tableau d'un document) en lignes, d'après son en-tête | repris |
+| `import/document.ts` | les exigences d'un document : tableaux et paragraphes qui commencent par un identifiant ; **l'endroit** de chacune | repris, endroit ajouté |
+| `import/slides.ts` | les exigences d'une présentation | repris |
+| `import/reqif.ts`, `reqifWrite.ts` | lire un ReqIF / ReqIFz (et en écrire, pour les essais aller-retour) | repris |
+| `import/words.ts` | les mots des documents des autres : en-têtes et valeurs, en français et en anglais | nouveau |
+| `import/extract.ts` | `extractRequirements(extension, octets, langues)` : tout format, par le module Lecture de fichiers | nouveau |
+| `import/apply.ts` | écrire un plan accepté, avec l'origine | réécrit (`ReqPorter`) |
+| `import/preview.ts` | la fenêtre d'aperçu, puis l'écriture ; l'endroit en mots | nouveau |
+
+Commande **Importer des exigences d'un fichier** (ordinateur ou coffre). Interface pour
+les autres modules : `extractRequirements`, `previewImport`, `requirementsAt(dossier)`,
+`requirementLanguages()`, `describeLocation`.
+
+Reconnu : un tableau dont l'en-tête nomme un identifiant ou une formulation (« Identifiant
+», « Réf. », « Exigence », « Énoncé », « Libellé »…, et les colonnes type, statut,
+criticité/priorité, vérification, source…), dont les valeurs (« Essai », « Haute »,
+« Approuvée ») sont ramenées aux valeurs rangées ; un paragraphe qui commence par un
+identifiant (`EX-SOL-003 — …`, `[SYS-12] …`), un titre de section qui en commence un. Le
+reste est de la prose : rien n'est deviné. Un identifiant au format `PRÉFIXE-CAT-NUM` est
+gardé ; un autre devient un alias.
+
+L'origine d'une exigence importée, dans l'en-tête de sa note :
+
+```yaml
+origin:
+  piece: "[[Appels d'offres/Station sol/Pièces/Appel d'offres/CCTP|CCTP]]"
+  locator: "Article 2 — Exigences, tableau 1, ligne 2"
+```
+
+et en tête de son corps (« *Origine : …* »). La version complète garde cette clé telle
+quelle (clés d'en-tête étrangères conservées).
 
 ## Le format
 

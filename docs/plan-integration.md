@@ -192,16 +192,31 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
 
 **Jalon :** créer, modifier et relire une exigence — vérifié (`flows.test.ts`).
 
-### Étape 4 — Extraction des exigences du dossier
+### Étape 4 — Extraction des exigences du dossier ✅ *terminée (v0.6.0)*
 
-- Repris : `reqCsv`, `reqXlsxRead`, `reqDocxRead`, `reqPptxRead`, `reqifRead`, `reqJson`,
-  `reqJsonImport`, `ReqPorter`
-- Extraction depuis un PDF : logique sortie de la vue des exigences vers un module
-- « Extraire les exigences » sur une pièce : aperçu, puis import ; chaque exigence
-  garde le lien vers sa pièce et son paragraphe d'origine
-- Import ReqIF (échange avec DOORS, courant dans le spatial)
+- Repris dans le module `exigences` (`import/`) : `reqCsv` (plan d'import), `reqXlsxRead`
+  (tableaux), `reqDocxRead` (documents : Word, et PDF, HTML, Markdown par les mêmes
+  blocs), `reqPptxRead`, `reqifRead` (ReqIF et ReqIFz), le rédacteur ReqIF (pour les
+  essais aller-retour), et leurs tests ; `ReqPorter` réécrit sur le magasin du module
+- Ajout : chaque exigence trouvée garde **où** — section, tableau et ligne, paragraphe,
+  feuille, objet ReqIF, diapositive — et l'exigence importée son **origine** (pièce ou
+  fichier, et endroit), dans l'en-tête de sa note (`origin`) et en tête de son corps
+- L'extraction depuis un PDF est sortie de la vue des exigences : `extractRequirements`
+  lit tout format par le module Lecture de fichiers
+- Module AO : « Extraire les exigences de la pièce » (aperçu, puis import dans le dossier
+  `Exigences` de l'analyse ; les identifiants du dossier sont gardés), la liste des
+  exigences dans la note de chaque pièce et le tableau « Exigences du dossier » dans la
+  note de l'analyse ; « Mettre à jour les exigences de l'analyse »
+- Module Exigences : « Importer des exigences d'un fichier » (ReqIF de DOORS compris) ;
+  un identifiant d'un autre format devient un alias
+- Pas repris : `reqJson` / `reqJsonImport` (sauvegarde de la bibliothèque en JSON), sans
+  usage pour l'analyse d'un dossier
+- Doc : [modules/exigences.md](modules/exigences.md), [modules/ao.md](modules/ao.md) ;
+  recette : [recette/etape-4.md](recette/etape-4.md)
 
-**Jalon de démo n° 2 :** les exigences du CCTP extraites et tracées jusqu'à leur pièce.
+**Jalon de démo n° 2 :** les exigences du CCTP extraites et tracées jusqu'à leur pièce —
+vérifié sur le dossier d'exemple, en Word, PDF et Markdown (`test/dce-exigences.test.ts`,
+`test/ao-exigences.test.ts`).
 
 ### Étape 5 — Analyse qualité sans IA
 

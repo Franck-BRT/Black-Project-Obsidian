@@ -85,6 +85,17 @@ export interface Requirement {
   createdAt: string
   updatedAt: string
   filePath?: string
+  /**
+   * D'où l'exigence a été extraite : sa pièce (un lien vers la note de la pièce, ou le nom
+   * du fichier) et l'endroit dans la pièce (« Article 2 — tableau 1, ligne 2 »). La trace
+   * jusqu'au document d'origine.
+   */
+  origin?: ReqOrigin
+}
+
+export interface ReqOrigin {
+  piece: string
+  locator: string
 }
 
 /** Un identifiant provisoire, quand aucun n'est donné (il est remplacé à la création). */

@@ -401,6 +401,11 @@ async function pieceNotes(
 }
 
 /** Réécrit le tableau des pièces dans la note de l'analyse, d'après les notes des pièces. */
+/** Les pièces d'une analyse, telles que leurs notes les décrivent. */
+export async function listPieces(services: Services, analysis: Analysis): Promise<PieceRow[]> {
+  return pieceNotes(services.fs, analysis, services.renames ?? currentTyping().renames)
+}
+
 export async function refreshTable(services: Services, analysis: Analysis): Promise<PieceRow[]> {
   const { fs, t } = services
   const rows = await pieceNotes(fs, analysis, services.renames ?? currentTyping().renames)

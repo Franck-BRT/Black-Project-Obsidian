@@ -85,8 +85,28 @@ Paramètres → Black Projects → bouton **Fonctions** de la ligne « Exigences
 le préfixe des identifiants (`REQ`), le nombre de chiffres (4), les langues de rédaction
 (`fr, en`).
 
-## 6. Ce qui arrive
+## 6. Importer des exigences d'un fichier
 
-Extraction des exigences d'une pièce du dossier et import ReqIF (étape 4), qualité de
-rédaction selon l'ISO/IEC/IEEE 29148 (étape 5), traductions assistées par l'IA de Sidonie
-(étape 6), matrice de conformité (étape 7). Voir {{link:Accueil|l'accueil}}.
+Commande **Importer des exigences d'un fichier (Excel, CSV, Word, PDF, ReqIF…)** : un
+fichier de l'ordinateur ou du coffre. Les exigences sont reconnues dans les tableaux dont
+l'en-tête nomme un identifiant ou une exigence, et dans les paragraphes qui commencent par
+un identifiant ; un **ReqIF** (ou ReqIFz) venu de DOORS, Polarion ou Jama est lu avec ses
+attributs et ses liens.
+
+Une fenêtre montre ce que l'import ferait (nouvelle, mise à jour, inchangée, refusée) et
+où chaque exigence a été trouvée ; on coche, puis **Importer**. Rien n'est écrit avant.
+
+- Un identifiant au format de la bibliothèque (`FOU-ANT-0001`) est gardé ; un autre
+  (`SYS-12`) devient un **alias**, et l'exigence reçoit un identifiant — la catégorie
+  est demandée quand il en faut une.
+- Chaque exigence garde son **origine** : le fichier (un lien s'il est dans le coffre) et
+  l'endroit.
+- Les colonnes, attributs ou valeurs non reconnus sont dits, jamais perdus en silence.
+
+Dans une analyse d'appel d'offres, la même extraction se fait sur une pièce : voir
+{{link:Modules/Analyse d'appels d'offres|Analyse d'appels d'offres}}.
+
+## 7. Ce qui arrive
+
+Qualité de rédaction selon l'ISO/IEC/IEEE 29148 (étape 5), traductions assistées par
+l'IA de Sidonie (étape 6), matrice de conformité (étape 7). Voir {{link:Accueil|l'accueil}}.

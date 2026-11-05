@@ -22,7 +22,8 @@ import type {
   TogglesField
 } from '../../core/modules/module'
 import type { FormField } from '../../core/ports'
-import { LECTURE_FICHIERS } from '../lecture-fichiers'
+import { canExtract, EXIGENCES } from '../exigences'
+import { extensionOf, LECTURE_FICHIERS } from '../lecture-fichiers'
 import {
   allTypes,
   annotateTypes,
@@ -69,6 +70,7 @@ import {
   importFiles,
   listAnalyses,
   listCandidates,
+  listPieces,
   localToday,
   movePiece,
   pieceAt,
@@ -79,6 +81,7 @@ import {
   type PlacementResolver,
   type Services
 } from './service'
+import { extractFromPiece, refreshRequirements } from './requirements'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export {
@@ -227,7 +230,7 @@ export function aoFeatures(): ModuleDetails {
       },
       {
         titleKey: 'ao.feature.section.requirements',
-        features: [feature('extract', 'in-progress', 4), feature('reqif', 'in-progress', 4), feature('quality', 'in-progress', 5)]
+        features: [feature('extract', 'available'), feature('reqif', 'available'), feature('trace', 'available'), feature('quality', 'in-progress', 5)]
       },
       {
         titleKey: 'ao.feature.section.ai',
@@ -389,9 +392,10 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.4.5',
-  // Les pièces sont lues par le module Lecture de fichiers, et typées par Typage des pièces.
-  requires: [LECTURE_FICHIERS, TYPAGE_PIECES],
+  version: '0.5.0',
+  // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
+  // leurs exigences sont extraites et rangées par le module Exigences.
+  requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
   texts: { fr: aoFr, en: aoEn },
   details: () => aoFeatures(),
   settingsFields: [rootField, rangementField, reminderField],
@@ -591,6 +595,50 @@ export const aoModule: BlackModule = {
         if (!type || type === piece.type) return
         await setPieceType(services, note, type)
         platform.notifier.notify(t('ao.type.done', { type: `${type} — ${typeLabel(type, t)}` }), 5000)
+      }
+    })
+
+    commands.register({
+      id: 'extraire-exigences',
+      nameKey: 'ao.command.extract',
+      async run() {
+        const services = servicesFor(context)
+        const note = platform.ui.activeNote()
+        let target = note && (await pieceAt(services, note)) ? note : null
+        // Depuis la note de l'analyse : choisir la pièce.
+        if (!target) {
+          const analysis = await chooseAnalysis(context, services)
+          if (!analysis) return
+          const pieces = (await listPieces(services, analysis)).filter((piece) => canExtract(extensionOf(piece.original)))
+          if (pieces.length === 0) {
+            platform.notifier.notify(t('ao.req.noPiece'), 8000)
+            return
+          }
+          target = await platform.ui.pickOption(
+            pieces.map((piece) => ({
+              value: piece.note,
+              label: piece.note.slice(piece.note.lastIndexOf('/') + 1).replace(/\.md$/, ''),
+              description: `${piece.type} — ${typeLabel(piece.type, t)}`
+            })),
+            t('ao.req.pickPiece')
+          )
+          if (!target) return
+        }
+        const report = await extractFromPiece(services, { ui: platform.ui, notifier: platform.notifier }, target)
+        if (report) await platform.ui.openNote(target)
+      }
+    })
+
+    commands.register({
+      id: 'exigences-a-jour',
+      nameKey: 'ao.command.refreshRequirements',
+      async run() {
+        const services = servicesFor(context)
+        const analysis = await chooseAnalysis(context, services)
+        if (!analysis) return
+        const requirements = await refreshRequirements(services, analysis)
+        platform.notifier.notify(t('ao.req.refreshed', { count: requirements.length }), 6000)
+        await platform.ui.openNote(analysis.note)
       }
     })
 

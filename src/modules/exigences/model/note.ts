@@ -22,7 +22,13 @@ export function orderedLanguages(requirement: Requirement): string[] {
 }
 
 function generatedBody(requirement: Requirement): string {
-  const lines: string[] = [`# ${requirement.id} — ${requirement.title}`.trimEnd(), '']
+  // Sans titre (une exigence extraite d'un tableau, souvent), l'identifiant seul.
+  const lines: string[] = [requirement.title.trim() ? `# ${requirement.id} — ${requirement.title}` : `# ${requirement.id}`, '']
+  // La trace jusqu'à la pièce d'origine, lisible sans le plugin.
+  if (requirement.origin) {
+    const where = requirement.origin.locator ? ` — ${requirement.origin.locator}` : ''
+    lines.push(`*Origine : ${requirement.origin.piece}${where}*`, '')
+  }
   for (const lang of orderedLanguages(requirement)) {
     lines.push(`## ${lang.toUpperCase()}`, '', requirement.text[lang]!.body.trim(), '')
   }
