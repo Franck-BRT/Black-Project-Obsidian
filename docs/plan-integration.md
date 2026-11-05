@@ -278,6 +278,11 @@ CCTP d'exemple (`test/ao-qualite.test.ts`).
 - Doc : [modules/ia.md](modules/ia.md), [modules/exigences.md](modules/exigences.md),
   [modules/ao.md](modules/ao.md) ; recette : [recette/etape-6.md](recette/etape-6.md)
 
+- v0.8.1 : **un modèle par usage**, comme dans la version complète — analyse,
+  traduction, vecteurs, reranking (les passages trouvés remis dans l'ordre avant la
+  réponse), lecture OCR et lecture par vision (pour l'étape 7) ; chacun choisi dans la
+  liste des modèles du serveur, filtrée selon l'usage
+
 **Jalon de démo n° 4 :** l'IA relit, conseille et répond en citant ses sources — vérifié
 sur le dossier d'exemple avec un serveur simulé (`test/ao-ia.test.ts`).
 

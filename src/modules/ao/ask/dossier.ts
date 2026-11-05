@@ -166,7 +166,11 @@ export async function answerQuestion(
     const context = await eachContext(outcome, sources.length, eachWords(t), ask, BUDGET * 2)
     return finish(question, mode, await reply(client, t, context + deadlines, question), found)
   }
-  const found: FoundSource[] = retrieve([...sources], `${question} ${terms}`.trim(), { budget: BUDGET, perSource: 3, maxSources: 8 })
+  const found: FoundSource[] = await rerankFound(
+    client,
+    question,
+    retrieve([...sources], `${question} ${terms}`.trim(), { budget: BUDGET, perSource: 3, maxSources: 8 })
+  )
   if (!found.length) return { question, mode, text: t('ao.ask.nothing'), sources: [], unknown: [], nothing: true }
   progress(t('ao.ask.asking', { count: found.length }))
   const text = await reply(client, t, retrievalContext(found, retrievalWords(t)) + deadlines, question)
@@ -176,6 +180,27 @@ export async function answerQuestion(
     text,
     found.map(({ source, passages }) => ({ source: source as PieceSource, passages, cited: false }))
   )
+}
+
+/**
+ * Les pièces trouvées remises dans l'ordre de pertinence par le modèle de reranking, s'il
+ * est réglé : la première citée [1] est alors la plus pertinente. Sans lui, ou s'il
+ * échoue, l'ordre de la recherche est gardé — le reranking affine, il ne bloque pas.
+ */
+export async function rerankFound(client: AiClient, question: string, found: FoundSource[]): Promise<FoundSource[]> {
+  if (found.length < 2 || !client.modelFor('rerank')) return found
+  try {
+    const scores = await client.rerank(
+      question,
+      found.map(({ source, passages }) => `${source.title}\n${passages.join('\n\n')}`.slice(0, 4000))
+    )
+    return found
+      .map((each, index) => ({ each, score: scores[index] ?? Number.NEGATIVE_INFINITY, index }))
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .map(({ each }) => each)
+  } catch {
+    return found
+  }
 }
 
 function finish(question: string, mode: AskMode, text: string, sources: AnswerSource[]): Answer {

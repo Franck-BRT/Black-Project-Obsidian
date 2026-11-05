@@ -174,7 +174,7 @@ export async function translateRequirement(session: Session, client: AiClient, p
   let text: string
   let notes: string
   try {
-    const request = buildTranslationRequest(client.connection.model, source, requirement.sourceLang, lang, { title: requirement.title })
+    const request = buildTranslationRequest(client.modelFor('translate'), source, requirement.sourceLang, lang, { title: requirement.title })
     const reply = readTranslation(await client.chatJson<unknown>(request))
     text = reply.text
     notes = reply.notes

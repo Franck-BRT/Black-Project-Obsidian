@@ -149,6 +149,18 @@ describe('la traduction par l’IA', () => {
     expect(platform.notices.at(-1)).not.toContain('Attention')
   })
 
+  it('passe par le modèle de traduction quand il est réglé', async () => {
+    const platform = memoryPlatform()
+    await activate(iaModule, platform, { adresse: 'http://ia.exemple/v1', modele: 'gros', modeleTraduction: 'rapide' })
+    const exigences = await activate(exigencesModule, platform, {})
+    platform.forms.push({ category: 'sys', title: 'T', text: 'Le système doit démarrer en 5 s.', type: 'performance', status: 'draft', criticality: 'high', verification: 'test', source: '', rationale: '' })
+    await exigences.run('nouvelle')
+    platform.active = 'Exigences/REQ-SYS-0001 T.md'
+    platform.httpAnswers.push(chat({ text: 'The system shall start in 5 s.', notes: '' }))
+    await exigences.run('traduire-ia')
+    expect(JSON.parse(platform.requests[0]!.body!).model).toBe('rapide')
+  })
+
   it('prévient quand un chiffre a changé', async () => {
     const { platform, run } = await setup()
     platform.httpAnswers.push(chat({ text: 'The system shall keep the hold between 5 °C and 35 °C.', notes: '' }))

@@ -14,10 +14,21 @@ Paramètres → Black Projects → bouton **Fonctions** de la ligne « IA » :
 - **Clé d'accès** — si le serveur en demande une. Elle est rangée dans le **trousseau de
   l'ordinateur**, jamais dans le coffre ni dans les réglages synchronisés ; la fenêtre dit
   seulement si une clé est enregistrée ;
-- **Tester la connexion** — interroge le serveur, liste ses modèles et fait choisir le
-  **modèle de texte** ;
-- **Modèle d'embeddings** (facultatif) — pour trouver les exigences qui disent la même
-  chose en d'autres mots ;
+- **Tester la connexion** — interroge le serveur et retient la liste de ses modèles ; si
+  aucun modèle d'analyse n'est choisi, il le fait choisir tout de suite ;
+- **un modèle par usage** — chaque ligne a un menu **Choisir…** qui propose les modèles du
+  serveur qui conviennent à cet usage (d'après leur nom ; tous s'il n'y en a aucun), et
+  reste modifiable à la main :
+
+| Usage | À quoi il sert | Laissé vide |
+| --- | --- | --- |
+| **Analyse** | relecture et conseils, questions au dossier, questionnaire ; un modèle qui raisonne | obligatoire |
+| **Traduction** | traduire les exigences ; un modèle rapide suffit | le modèle d'analyse |
+| **Vecteurs (embeddings)** | les doublons par le sens, même entre deux langues | doublons par les lettres seulement |
+| **Reranking** | remettre dans l'ordre de pertinence les passages trouvés pour une question, avant la réponse | l'ordre de la recherche |
+| **Lecture OCR** | lire le texte des PDF scannés et des images, page par page (étape 7) | le modèle de vision |
+| **Lecture par vision** | comprendre ce qu'une image montre — schéma, plan, photo (étape 7) | le modèle d'analyse |
+
 - **Longueur maximale d'une réponse** — vide : celle du serveur.
 
 Un échec est dit en clair : serveur injoignable (êtes-vous sur le bon réseau ?), adresse

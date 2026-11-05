@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.8.0)
+## Aujourd'hui (version 0.8.1)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -62,7 +62,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 
 - **IA** : Paramètres → Black Projects → **IA** — adresse du
   serveur, clé (rangée dans le trousseau, jamais dans le coffre), **Tester la
-  connexion** pour choisir le modèle. Ensuite : **Relire l'exigence avec l'IA** (un avis,
+  connexion**, puis un modèle par usage — analyse, traduction, vecteurs, reranking,
+  lecture OCR, lecture par vision —, chacun dans le menu **Choisir…** de sa ligne. Ensuite : **Relire l'exigence avec l'IA** (un avis,
   des reformulations à choisir ou non), **Traduire l'exigence avec l'IA** (marquée à
   relire), les doublons par le sens dans la qualité (avec un modèle d'embeddings) ;
   pour un appel d'offres, **Interroger le dossier** (la réponse cite ses sources, liées

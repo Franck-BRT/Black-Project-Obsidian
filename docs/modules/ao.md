@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.8.0 (Black Projects 0.8.0) |
+| Version | 0.8.0 (Black Projects 0.8.1) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |

@@ -14,15 +14,18 @@
  */
 
 import type { Http } from '../../core/ports'
+import type { ModelUse } from './models'
 import {
   buildChatBody,
   buildEmbeddingBody,
+  buildRerankBody,
   joinUrl,
   LlmError,
   parseJsonContent,
   readChatContent,
   readEmbeddings,
   readModels,
+  readRerank,
   type ChatMessage,
   type ChatRequest
 } from './protocol'
@@ -30,10 +33,18 @@ import {
 export interface AiConnection {
   /** L'adresse du serveur, jusqu'à `/v1`. */
   baseUrl: string
-  /** Le modèle de texte. */
+  /** Le modèle d'analyse : relecture, questions au dossier ; le modèle par défaut. */
   model: string
-  /** Le modèle d'embeddings, pour comparer par le sens ; vide : pas de comparaison par le sens. */
+  /** Le modèle de traduction ; vide : celui d'analyse. */
+  translateModel: string
+  /** Le modèle de vecteurs (embeddings), pour comparer par le sens ; vide : pas de comparaison par le sens. */
   embeddingModel: string
+  /** Le modèle de reranking, qui remet les passages trouvés dans l'ordre ; vide : l'ordre de la recherche. */
+  rerankModel: string
+  /** Le modèle qui lit le texte des images (scans) ; vide : celui de vision. */
+  ocrModel: string
+  /** Le modèle qui comprend les images (schémas, plans, photos) ; vide : celui d'analyse. */
+  visionModel: string
   /** La clé, lue dans le trousseau ; vide si le serveur n'en demande pas. */
   apiKey: string
   /** Le nombre de mots (jetons) au plus d'une réponse ; 0 : celui du serveur. */
@@ -137,6 +148,36 @@ export class AiClient {
       const { schema, ...plain } = request
       return parseJsonContent<T>(await this.chat({ ...plain, messages: askForJson(request.messages, schema.schema) }))
     }
+  }
+
+  /** Le modèle d'un usage : celui réglé, sinon celui qui le remplace (OCR → vision → analyse ; traduction → analyse). */
+  modelFor(use: ModelUse): string {
+    const { model, translateModel, embeddingModel, rerankModel, ocrModel, visionModel } = this.connection
+    switch (use) {
+      case 'translate':
+        return translateModel.trim() || model.trim()
+      case 'ocr':
+        return ocrModel.trim() || visionModel.trim() || model.trim()
+      case 'vision':
+        return visionModel.trim() || model.trim()
+      case 'embedding':
+        return embeddingModel.trim()
+      case 'rerank':
+        return rerankModel.trim()
+      default:
+        return model.trim()
+    }
+  }
+
+  /**
+   * La pertinence de chaque texte pour la question, dans l'ordre où ils sont donnés, par le
+   * modèle de reranking (`/rerank`, à la manière de Cohere et vLLM).
+   */
+  async rerank(query: string, documents: string[]): Promise<number[]> {
+    const model = this.connection.rerankModel.trim()
+    if (!model) throw new LlmError('disabled', 'Aucun modèle de reranking n’est réglé.')
+    if (documents.length === 0) return []
+    return readRerank(await this.send('rerank', 'POST', buildRerankBody(model, query, documents)), documents.length)
   }
 
   /** Les vecteurs de textes, pour les comparer par le sens. */

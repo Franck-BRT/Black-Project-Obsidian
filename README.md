@@ -13,9 +13,10 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.8.0 — étape 6 du [plan d'intégration](docs/plan-integration.md) : l'IA
+**Version 0.8.1 — étape 6 du [plan d'intégration](docs/plan-integration.md) : l'IA
 locale.** Le module IA se connecte au **serveur d'IA de l'entreprise** (compatible OpenAI ; la
-clé reste dans le trousseau) : relire une exigence et choisir une reformulation, la
+clé reste dans le trousseau ; un modèle par usage — analyse, traduction, vecteurs,
+reranking, lecture OCR, lecture par vision — choisi dans la liste du serveur) : relire une exigence et choisir une reformulation, la
 traduire, trouver les doublons par le sens ; **interroger le dossier** d'un appel
 d'offres — la réponse cite ses sources, liées aux pièces — et un questionnaire prêt à
 l'emploi (critères d'attribution, pénalités, garanties, propriété intellectuelle,

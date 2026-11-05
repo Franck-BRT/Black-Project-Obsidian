@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.5.0 (Black Projects 0.8.0) |
+| Version | 0.5.0 (Black Projects 0.8.1) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |

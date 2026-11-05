@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.1.0 (Black Projects 0.8.0) |
+| Version | 0.2.0 (Black Projects 0.8.1) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -26,13 +26,25 @@ pas réglée : Réglages → Black Projects → IA »).
 | Réglage | Clé | Rôle |
 | --- | --- | --- |
 | Adresse du serveur | `adresse` | jusqu'à `/v1` |
-| Modèle de texte | `modele` | choisi par « Tester la connexion » parmi ceux du serveur |
-| Modèle d'embeddings | `modeleEmbeddings` | facultatif : les doublons par le sens dans l'analyse de qualité |
+| Modèle — analyse | `modele` | relecture, questions au dossier, questionnaire ; le modèle par défaut (obligatoire) |
+| Modèle — traduction | `modeleTraduction` | vide : celui d'analyse |
+| Modèle — vecteurs (embeddings) | `modeleEmbeddings` | vide : pas de doublons par le sens |
+| Modèle — reranking | `modeleReranking` | vide : l'ordre de la recherche ; sinon `/rerank` classe les pièces trouvées avant la réponse |
+| Modèle — lecture OCR | `modeleOcr` | le texte des scans (étape 7) ; vide : celui de vision |
+| Modèle — lecture par vision | `modeleVision` | comprendre une image (étape 7) ; vide : celui d'analyse |
+| Liste des modèles du serveur | `modelesServeur` | retenue par « Tester la connexion » ; chaque usage en propose ceux qui lui conviennent |
 | Longueur maximale d'une réponse | `jetons` | vide : celle du serveur |
 | Clé d'accès | — | dans le **trousseau d'Obsidian** (`app.secretStorage`, identifiant `black-projects-ia-cle`), jamais dans le coffre ni dans `data.json` |
 
-Bouton **Tester la connexion** (commande `tester`) : interroge `/models`, fait choisir le
-modèle de texte, et dit en clair ce qui ne va pas (serveur injoignable, adresse sans
+**Un modèle par usage**, comme dans la version complète : chaque champ de modèle a un menu
+**Choisir…** (`TextField.choices`, nouveau dans le cœur) qui propose les modèles du serveur
+convenant à l'usage, triés (`modelsFor` dans `models.ts`, d'après leur nom : `embed`,
+`bge`, `e5`… pour les vecteurs, `rerank` pour le reranking, `ocr`, `nougat`, `dots.ocr`…
+pour l'OCR, `vl`, `pixtral`, `llava`… pour la vision ; tous si aucun ne convient). Le
+client donne le modèle d'un usage par `modelFor(usage)`, avec les remplacements ci-dessus.
+
+Bouton **Tester la connexion** (commande `tester`) : interroge `/models`, retient la liste,
+fait choisir le modèle d'analyse s'il n'y en a pas, et dit en clair ce qui ne va pas (serveur injoignable, adresse sans
 `/v1`, clé refusée, aucun modèle).
 
 ## Interface publique
@@ -40,7 +52,8 @@ modèle de texte, et dit en clair ce qui ne va pas (serveur injoignable, adresse
 | Nom | Rôle |
 | --- | --- |
 | `aiClient()` | le client réglé, ou `null` (module inactif, adresse ou modèle manquant) |
-| `AiClient` | `models()`, `chat(requête)`, `chatJson(requête + schéma)` (réessaie sans schéma si le serveur ne sait pas les suivre), `embed(textes)` |
+| `AiClient` | `models()`, `chat(requête)`, `chatJson(requête + schéma)` (réessaie sans schéma si le serveur ne sait pas les suivre), `embed(textes)`, `rerank(question, textes)`, `modelFor(usage)` |
+| `modelsFor(usage, liste)`, `MODEL_USES`, `MODEL_KEYS` | les usages et le tri des modèles du serveur |
 | `describeAiError(erreur, t)` | une phrase sur laquelle l'utilisateur peut agir (`ia.error.<kind>`) |
 | `LlmError` | `unreachable`, `timeout`, `http`, `shape`, `disabled` |
 | `buildChatBody`, `parseJsonContent`, `cosine` | du protocole, pour les modules qui composent leurs requêtes |
@@ -55,6 +68,7 @@ CORS, pas de proxy à régler dans le navigateur) ; les tests le simulent
 | --- | --- | --- |
 | `protocol.ts` | corps des requêtes, lecture des réponses (texte, JSON, flux SSE, embeddings, modèles), erreurs | repris de la version complète (`llm/protocol`) |
 | `client.ts` | `AiClient` sur le port `Http` ; messages d'erreur HTTP en français | réécrit (types de la version complète) |
+| `models.ts` | un modèle par usage : clés, tri des modèles du serveur | d'après la version complète (`llmModelRows`, `chatModels`) |
 | `index.ts` | réglages, clé, test de connexion, `aiClient()` | nouveau |
 | `i18n.ts`, `doc/IA.md` | textes et page du coffre | nouveau |
 

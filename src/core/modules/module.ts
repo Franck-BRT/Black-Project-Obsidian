@@ -254,6 +254,13 @@ export interface TextField {
   readonly defaultValue: string
   /** La saisie nettoyée ; une valeur vide revient à la valeur par défaut. */
   normalize(input: string): string
+  /**
+   * Des valeurs à choisir plutôt qu'à taper — les modèles d'un serveur, par exemple — ;
+   * montrées dans un menu à côté du champ, qui reste modifiable. Vide : le champ seul.
+   */
+  choices?(settings: Readonly<Record<string, unknown>>): readonly string[]
+  /** L'infobulle du menu des choix. */
+  readonly choicesTooltipKey?: string
 }
 
 /**

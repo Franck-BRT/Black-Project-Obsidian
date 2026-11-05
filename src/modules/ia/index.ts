@@ -18,6 +18,7 @@ import page from './doc/IA.md'
 import { AiClient, type AiConnection } from './client'
 import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
+import { listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, type ModelUse } from './models'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
@@ -33,8 +34,9 @@ export {
 
 export const IA = 'ia'
 export const URL_KEY = 'adresse'
-export const MODEL_KEY = 'modele'
-export const EMBEDDING_KEY = 'modeleEmbeddings'
+export { listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, type ModelUse } from './models'
+export const MODEL_KEY = MODEL_KEYS.text
+export const EMBEDDING_KEY = MODEL_KEYS.embedding
 export const TOKENS_KEY = 'jetons'
 /** L'identifiant de la clé dans le trousseau. */
 export const SECRET_ID = 'black-projects-ia-cle'
@@ -48,8 +50,12 @@ export function connectionOf(settings: Settings, apiKey: string): AiConnection {
   const tokens = Number.parseInt(text(settings, TOKENS_KEY), 10)
   return {
     baseUrl: text(settings, URL_KEY),
-    model: text(settings, MODEL_KEY),
-    embeddingModel: text(settings, EMBEDDING_KEY),
+    model: text(settings, MODEL_KEYS.text),
+    translateModel: text(settings, MODEL_KEYS.translate),
+    embeddingModel: text(settings, MODEL_KEYS.embedding),
+    rerankModel: text(settings, MODEL_KEYS.rerank),
+    ocrModel: text(settings, MODEL_KEYS.ocr),
+    visionModel: text(settings, MODEL_KEYS.vision),
     apiKey,
     maxTokens: Number.isFinite(tokens) && tokens > 0 ? tokens : 0
   }
@@ -79,6 +85,13 @@ const field = (key: string, name: string, defaultValue = '', normalize = (input:
   tooltipKey: `ia.setting.${name}.tip`,
   defaultValue,
   normalize
+})
+
+/** Le champ d'un usage : son nom, et les modèles du serveur qui lui conviennent. */
+const modelField = (use: ModelUse): TextField => ({
+  ...field(MODEL_KEYS[use], `model.${use}`),
+  choices: (settings) => modelsFor(use, listedModels(settings)),
+  choicesTooltipKey: 'ia.setting.model.choices'
 })
 
 const keyField: SecretField = {
@@ -111,7 +124,7 @@ export function iaFeatures(): ModuleDetails {
     sections: [
       {
         titleKey: 'ia.feature.section.connection',
-        features: [feature('server', 'available'), feature('key', 'available'), feature('test', 'available')]
+        features: [feature('server', 'available'), feature('key', 'available'), feature('test', 'available'), feature('models', 'available')]
       },
       {
         titleKey: 'ia.feature.section.uses',
@@ -121,6 +134,8 @@ export function iaFeatures(): ModuleDetails {
           feature('ask', 'available'),
           feature('questionnaire', 'available'),
           feature('semantic', 'available'),
+          feature('rerank', 'available'),
+          feature('ocr', 'in-progress', 7),
           feature('vision', 'in-progress', 7)
         ]
       }
@@ -132,20 +147,20 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.1.0',
+  version: '0.2.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
   settingsFields: [
     field(URL_KEY, 'url'),
-    field(MODEL_KEY, 'model'),
-    field(EMBEDDING_KEY, 'embedding'),
+    keyField,
+    testField,
+    // Un modèle par usage, choisi dans la liste du serveur (retenue par « Tester la connexion »).
+    ...MODEL_USES.map(modelField),
     field(TOKENS_KEY, 'tokens', '', (input) => {
       const value = Number.parseInt(input.trim(), 10)
       return Number.isFinite(value) && value > 0 ? String(value) : ''
-    }),
-    keyField,
-    testField
+    })
   ],
   docs: ({ folder }) => [{ path: 'Modules/IA.md', content: fillTemplate(page, folder) }],
   activate(context) {
@@ -173,17 +188,19 @@ export const iaModule: BlackModule = {
           platform.notifier.notify(t('ia.test.noModel'), 8000)
           return
         }
-        // Reachable : faire choisir le modèle de texte parmi ceux du serveur.
-        const chosen = await platform.ui.pickOption(
-          models.map((model) => ({
-            value: model,
-            label: model,
-            ...(model === connection.model ? { description: t('ia.test.current') } : {})
-          })),
-          t('ia.test.pick', { count: models.length })
-        )
-        if (chosen && chosen !== connection.model) await settings.save({ ...settings.get(), [MODEL_KEY]: chosen })
-        platform.notifier.notify(t('ia.test.ok', { count: models.length, model: chosen ?? connection.model ?? '—' }), 8000)
+        // La liste est retenue : chaque usage la propose dans la fenêtre du module.
+        await settings.save({ ...settings.get(), [LISTED_KEY]: models })
+        // Sans modèle d'analyse, rien ne marche : il est demandé tout de suite.
+        let chosen: string | null = connection.model || null
+        if (!chosen) {
+          const fitting = modelsFor('text', models)
+          chosen = await platform.ui.pickOption(
+            fitting.map((model) => ({ value: model, label: model })),
+            t('ia.test.pick', { count: fitting.length })
+          )
+          if (chosen) await settings.save({ ...settings.get(), [MODEL_KEYS.text]: chosen })
+        }
+        platform.notifier.notify(t('ia.test.ok', { count: models.length, model: chosen ?? '—' }), 10000)
       }
     })
   },

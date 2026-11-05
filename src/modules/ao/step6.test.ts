@@ -193,6 +193,34 @@ describe('interroger le dossier : l’IA répond en citant ses sources', () => {
     expect(note).toContain('> [!quote]- Ce que l’IA y a relevé')
   })
 
+  it('avec un modèle de reranking, la pièce la plus pertinente devient la source [1]', async () => {
+    const platform = memoryPlatform()
+    await activate(typagePiecesModule, platform, {})
+    await activate(exigencesModule, platform, {})
+    await activate(iaModule, platform, { adresse: 'http://ia.exemple/v1', modele: 'mistral', modeleReranking: 'bge-reranker' })
+    const ao = await activate(aoModule, platform, { dossier: 'AO' })
+    const services = { fs: platform.fs, t, root: 'AO', today: () => '2026-11-05' }
+    const analysis = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: '', reference: '' })
+    await importFiles(services, analysis, [
+      { name: 'RC.md', bytes: utf8(RC) },
+      { name: 'CCTP.md', bytes: utf8(CCTP) }
+    ])
+    platform.active = analysis.note
+    platform.forms.push({ question: 'Quelle est la date limite de remise des offres et la livraison ?', mode: 'search' })
+    platform.httpAnswers.push(
+      { status: 200, text: JSON.stringify({ results: [{ index: 0, relevance_score: 0.1 }, { index: 1, relevance_score: 0.8 }] }) },
+      chat('Le 15 décembre 2026 [1].')
+    )
+    await ao.run('interroger')
+    expect(platform.requests[0]!.url).toBe('http://ia.exemple/v1/rerank')
+    // Le second texte envoyé au reranker a la meilleure note : il devient la source [1].
+    const ranked = JSON.parse(platform.requests[0]!.body!) as { documents: string[] }
+    const [first, second] = ranked.documents.map((document) => document.split('\n')[0])
+    const sent = JSON.parse(platform.requests[1]!.body!) as { messages: { content: string }[] }
+    expect(sent.messages[1]!.content).toContain(`### Source [1] — ${second}\n`)
+    expect(sent.messages[1]!.content).toContain(`### Source [2] — ${first}\n`)
+  })
+
   it('une citation sans source est signalée', async () => {
     expect(citedNumbers('Oui [1][3], et [2, 4].')).toEqual([1, 2, 3, 4])
     const sources = [{ source: { path: 'P/a.md', title: 'a' }, passages: [], cited: true }] as never

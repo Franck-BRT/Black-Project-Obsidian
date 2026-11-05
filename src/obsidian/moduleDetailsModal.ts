@@ -440,6 +440,21 @@ export class ModuleDetailsModal extends Modal {
         await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: clean })
       })
     })
+    // Les valeurs proposées (les modèles du serveur) : un menu, seulement s'il y en a.
+    const choices = field.choices?.(this.settings()) ?? []
+    if (choices.length === 0) return
+    const current = typeof stored === 'string' ? stored : ''
+    setting.addDropdown((dropdown) => {
+      dropdown.addOption('', t('settings.choices.pick', { count: choices.length }))
+      for (const choice of choices) dropdown.addOption(choice, choice)
+      dropdown.setValue(choices.includes(current) ? current : '')
+      if (field.choicesTooltipKey) setTooltip(dropdown.selectEl, t(field.choicesTooltipKey))
+      dropdown.onChange(async (value) => {
+        if (!value) return
+        await plugin.saveModuleSettings(module.id, { ...this.settings(), [field.key]: field.normalize(value) })
+        this.render()
+      })
+    })
   }
 
   /**
