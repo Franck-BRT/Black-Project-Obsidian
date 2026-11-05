@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.4.6)
+## Aujourd'hui (version 0.4.7)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -45,10 +45,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   désactive au prochain chargement. Vos données ne sont jamais supprimées.
 - **Cliquer sur « Lecture de fichiers »** (ou sur son bouton **Formats de fichiers**) :
   une fenêtre montre les formats lus (en vert), en développement (en orange, avec
-  l'étape) et prévus (en gris). Chaque format dit aussi s'il est **lu** et **écrit** par
-  Black Projects, et s'il est **affiché dans Obsidian** : Obsidian masque par défaut les
-  fichiers qu'il n'ouvre pas, comme les `.json` d'export de types (Paramètres → Fichiers
-  et liens → « Détecter toutes les extensions de fichier » pour les voir).
+  une fiche par extension, trois par ligne, qui dit si le format est **lu** et **écrit**
+  par Black Projects et **affiché dans Obsidian** (verte : les trois ; rouge : ni lu ni
+  écrit, avec ce qui est à venir ; orange : le reste). Obsidian masque les fichiers qu'il
+  n'ouvre pas, comme les `.json` d'export de types : l'**interrupteur** de leur fiche les
+  affiche dans l'explorateur, ouverts en lecture seule par Black Projects.
 - **Extensions équivalentes** (en tête de la fenêtre Formats de fichiers) : lire par exemple les
   fichiers `.tot` comme du XML ; voir [Lecture de fichiers](../modules/lecture-fichiers.md).
 - **Réglages → Licence** : les droits d'usage.

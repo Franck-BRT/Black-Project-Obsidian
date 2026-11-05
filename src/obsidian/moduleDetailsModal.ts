@@ -402,19 +402,24 @@ export class ModuleDetailsModal extends Modal {
   }
 
   /**
-   * L'interrupteur d'une fiche : il retire son identifiant de la liste des désactivés (ou
-   * l'y ajoute), enregistre, et redessine la fenêtre.
+   * L'interrupteur d'une fiche : il retire son identifiant de la liste (ou l'y ajoute) —
+   * celle des éléments éteints, ou celle des allumés (`listed: 'on'`) —, enregistre, et
+   * redessine la fenêtre.
    */
-  private renderSwitch(head: HTMLElement, spec: NonNullable<ModuleFeature['switch']>, enabled: boolean): void {
+  private renderSwitch(head: HTMLElement, spec: NonNullable<ModuleFeature['switch']>, disabled: boolean): void {
     const { plugin, module } = this
     const t = this.t.bind(this)
+    const onList = spec.listed === 'on'
+    const stored = this.settings()[spec.settingsKey]
+    const enabled = onList ? Array.isArray(stored) && stored.includes(spec.id) : !disabled
     const toggle = new ToggleComponent(head.createDiv({ cls: 'bp-feature-switch' })).setValue(enabled)
     if (spec.tooltipKeys) toggle.setTooltip(t(enabled ? spec.tooltipKeys.on : spec.tooltipKeys.off))
     toggle.onChange(async (value) => {
       const settings = this.settings()
       const raw = settings[spec.settingsKey]
       const list = Array.isArray(raw) ? raw.filter((each): each is string => typeof each === 'string') : []
-      const next = value ? list.filter((each) => each !== spec.id) : [...new Set([...list, spec.id])]
+      const add = onList ? value : !value
+      const next = add ? [...new Set([...list, spec.id])] : list.filter((each) => each !== spec.id)
       await plugin.saveModuleSettings(module.id, { ...settings, [spec.settingsKey]: next })
       this.render()
     })
@@ -429,7 +434,15 @@ export class ModuleDetailsModal extends Modal {
 
     const features = details.sections.filter((section) => section.kind !== 'reference').flatMap((section) => section.features)
     const legend = panel.createDiv({ cls: 'bp-feature-legend' })
-    for (const status of FEATURE_STATUSES) {
+    // Des fiches colorées par leur propre couleur : le résumé les compte par couleur.
+    const tones = details.toneKeys
+    for (const tone of tones ? (['yes', 'partial', 'no'] as const) : []) {
+      const count = features.filter((feature) => feature.tone === tone).length
+      if (count === 0 || !tones) continue
+      const badge = legend.createSpan({ text: `${t(tones[tone].label)} : ${count}`, cls: ['bp-feature-badge', `is-tone-${tone}`] })
+      if (tones[tone].tip) setTooltip(badge, t(tones[tone].tip))
+    }
+    for (const status of tones ? [] : FEATURE_STATUSES) {
       const count = features.filter((feature) => feature.status === status).length
       if (count === 0) continue
       const badge = legend.createSpan({ text: `${statusLabel(status)} : ${count}`, cls: ['bp-feature-badge', `is-${status}`] })
@@ -442,15 +455,15 @@ export class ModuleDetailsModal extends Modal {
       const block = panel.createDiv({ cls: ['bp-feature-section', ...(reference ? ['is-reference'] : [])] })
       block.createDiv({ text: t(section.titleKey), cls: 'bp-feature-section-title' })
       if (section.introKey) block.createDiv({ text: t(section.introKey), cls: 'bp-feature-section-intro' })
-      const row = block.createDiv({ cls: 'bp-feature-row' })
+      const row = block.createDiv({ cls: ['bp-feature-row', ...(details.columns ? ['is-grid'] : [])] })
+      if (details.columns) row.style.setProperty('--bp-columns', String(details.columns))
       for (const feature of section.features) {
-        const card = row.createDiv({
-          cls: ['bp-feature', reference ? 'is-reference' : `is-${feature.status}`, ...(feature.disabled ? ['is-disabled'] : [])]
-        })
+        const look = reference ? 'is-reference' : feature.tone ? `is-tone-${feature.tone}` : `is-${feature.status}`
+        const card = row.createDiv({ cls: ['bp-feature', look, ...(feature.disabled ? ['is-disabled'] : [])] })
         const label = t(feature.labelKey, feature.vars)
         const head = card.createDiv({ cls: 'bp-feature-head' })
         head.createDiv({ text: feature.prefix ? `${feature.prefix} — ${label}` : label, cls: 'bp-feature-label' })
-        if (feature.switch) this.renderSwitch(head, feature.switch, !feature.disabled)
+        if (feature.switch) this.renderSwitch(head, feature.switch, Boolean(feature.disabled))
         if (feature.tags && feature.tags.length > 0) {
           const tags = card.createDiv({ cls: 'bp-feature-tags' })
           for (const tag of feature.tags) tags.createSpan({ text: `${tagPrefix}${tag}`, cls: 'bp-feature-tag' })
@@ -467,14 +480,21 @@ export class ModuleDetailsModal extends Modal {
             const line = facts.createDiv({ cls: 'bp-feature-fact' })
             line.createSpan({ text: t(fact.labelKey), cls: 'bp-feature-fact-label' })
             for (const value of fact.values) {
-              const extensions = value.extensions?.length ? ` (${value.extensions.map((ext) => `.${ext}`).join(', ')})` : ''
-              const pill = line.createSpan({ text: `${t(value.textKey, value.vars)}${extensions}`, cls: ['bp-fact', `is-${value.tone}`] })
+              const pill = line.createSpan({ text: t(value.textKey, value.vars), cls: ['bp-fact', `is-${value.tone}`] })
               if (value.tooltipKey) setTooltip(pill, t(value.tooltipKey, value.vars))
             }
           }
         }
         if (feature.noteKey) card.createDiv({ text: t(feature.noteKey, feature.vars), cls: 'bp-feature-note' })
         if (reference) continue
+        if (feature.badge) {
+          const badge = card.createSpan({
+            text: t(feature.badge.textKey, feature.badge.vars),
+            cls: ['bp-feature-badge', `is-tone-${feature.badge.tone}`]
+          })
+          if (feature.badge.tooltipKey) setTooltip(badge, t(feature.badge.tooltipKey, feature.badge.vars))
+          continue
+        }
         const status =
           feature.step !== undefined && feature.status !== 'available'
             ? `${statusLabel(feature.status)} · ${t('module.feature.step', { step: feature.step })}`

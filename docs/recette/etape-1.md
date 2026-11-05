@@ -18,15 +18,24 @@ Déposer dans un coffre de test les pièces de `test/fixtures/dce-exemple/`, pui
       résumé « Lecture intégrée : 13 · En développement : 4 · Prévu : 6 » ; une ligne par
       famille ; « PDF avec texte natif » en vert, « PDF sans texte (scan) » en orange
       « En développement · Étape 6 » ; Échap ou la croix la ferment
-- [ ] (v0.3.1) Chaque bloc a trois lignes : **Lu par Black Projects**, **Écrit par Black
-      Projects**, **Affiché dans Obsidian**. Markdown : écrit Oui, affiché Oui ; PDF :
-      écrit Non, affiché Oui ; Texte : écrit « Oui (.json) · Non (.txt, .csv…) »,
-      affiché Masqué ; Word 2007 : écrit « En développement · étape 7 ». L'infobulle de
-      « Masqué » dit comment faire apparaître ces fichiers
-- [ ] Activer « Détecter toutes les extensions de fichier » (Paramètres → Fichiers et
-      liens), rouvrir la fenêtre : Texte passe à « Visible, ouvert à l'extérieur »
-- [ ] Exporter des types de pièces : le message dit qu'Obsidian ne montre pas les
-      `.json`, et comment les voir (sauf si le réglage ci-dessus est activé)
+- [ ] (v0.4.7) **Une fiche par extension**, trois par ligne ; quatre fiches `.pdf` (texte
+      natif, protégé contre la modification, scan, mot de passe) ; résumé en tête par
+      couleur (Lu, écrit et affiché · En partie · Ni lu ni écrit)
+- [ ] Chaque fiche : **Lu par Black Projects**, **Écrit par Black Projects**, **Affiché
+      dans Obsidian**, en vert (oui) ou rouge (non). `.md` : fiche **verte** ; `.pdf`
+      texte natif : **orange** (pas écrit) ; `.pdf` scan : **rouge**, badge « Ni lu ni
+      écrit · à venir, étape 6 » ; `.odt` : rouge, « à venir » ; `.docx` : écrit « Non ·
+      à venir, étape 7 »
+- [ ] Fiche `.json` : affiché « Non · masqué », un **interrupteur** ; l'allumer : la fiche
+      passe au vert (« Oui · par Black Projects »), et les exports de types
+      (`Black Projects/Échanges`) apparaissent dans l'explorateur ; un clic en ouvre un
+      dans la visionneuse (texte, « Ouvrir avec l'application de l'ordinateur ») ;
+      l'éteindre : ils disparaissent de l'explorateur
+- [ ] Pas d'interrupteur sur les fiches qu'Obsidian ouvre lui-même (`.md`, `.pdf`,
+      images) ; une extension équivalente (`.tot`) en a un
+- [ ] Fermer et rouvrir Obsidian : les types affichés le restent
+- [ ] Exporter des types de pièces avec `.json` masqué : le message dit comment
+      l'afficher (Formats de fichiers → fiche .json → interrupteur)
 - [ ] Commande **Lire un fichier du coffre (provisoire)** : la liste ne propose que des
       fichiers lisibles (pas les images) ; le fichier ouvert vient en premier
 - [ ] `CCTP.pdf`, `CCTP.docx`, `CCTP.doc`, `CCTP.rtf` : le texte, les titres et le

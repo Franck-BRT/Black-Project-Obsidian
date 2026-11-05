@@ -4,137 +4,201 @@
 /**
  * Le catalogue des formats : ce que le module lit aujourd'hui, et ce qui arrive.
  *
- * C'est ce que les réglages montrent quand on clique sur « Lecture de fichiers », une
- * ligne par famille de documents, un bloc par format. Un test vérifie que les formats
- * marqués « Lecture intégrée » sont exactement ceux que `fileText` lit : la vitrine ne
- * peut pas promettre plus que le code, ni oublier ce qu'il sait faire.
+ * C'est ce que montre la fenêtre « Formats de fichiers » : une ligne par famille de
+ * documents, **une fiche par extension** — et plusieurs fiches pour une même extension
+ * quand ses cas diffèrent (un PDF à texte natif se lit, un PDF scanné pas encore). Un test
+ * vérifie que les extensions marquées « intégrées » sont exactement celles que `fileText`
+ * lit : la vitrine ne peut pas promettre plus que le code, ni oublier ce qu'il sait faire.
  *
  * Quand un format passe de « en développement » à « intégré », c'est ici qu'on change
  * son état, en même temps qu'on branche son lecteur dans `readers/fileText.ts`.
  */
 
-import type { ModuleDetails, ModuleFeature } from '../../core/modules/module'
+import type { FeatureStatus, ModuleDetails, ModuleFeature } from '../../core/modules/module'
 import type { FileDisplay } from '../../core/ports'
-import { formatFacts } from './capabilities'
+import { cardFacts, cardLook, SHOWN_KEY } from './capabilities'
 
 const k = (key: string) => `lecture-fichiers.format.${key}`
 
-function format(
-  key: string,
-  status: ModuleFeature['status'],
-  tags: readonly string[],
-  extra: { step?: number; note?: boolean } = {}
-): ModuleFeature {
-  return {
-    labelKey: k(key),
-    ...(extra.note === false ? {} : { noteKey: k(`${key}.note`) }),
-    tags,
-    status,
-    ...(extra.step === undefined ? {} : { step: extra.step })
-  }
+/** Une fiche : une extension, un cas, son état de lecture. */
+export interface FormatCard {
+  readonly extension: string
+  /** La clé de son libellé (et de sa précision, `<clé>.note`). */
+  readonly key: string
+  readonly status: FeatureStatus
+  readonly step?: number
+  /** Une précision partagée par plusieurs fiches (les images). */
+  readonly noteKey?: string
 }
 
-export const FORMATS_CATALOGUE: ModuleDetails = {
-  titleKey: 'lecture-fichiers.details.title',
-  introKey: 'lecture-fichiers.details.intro',
-  statusKeys: {
-    available: 'lecture-fichiers.status.available',
-    'in-progress': 'lecture-fichiers.status.in-progress',
-    planned: 'lecture-fichiers.status.planned'
+export interface FormatSection {
+  readonly titleKey: string
+  readonly cards: readonly FormatCard[]
+}
+
+const card = (extension: string, key: string, status: FeatureStatus, extra: { step?: number; noteKey?: string } = {}): FormatCard => ({
+  extension,
+  key,
+  status,
+  ...extra
+})
+
+const image = (extension: string, key: string) => card(extension, key, 'in-progress', { step: 6, noteKey: k('image.note') })
+
+export const FORMAT_SECTIONS: readonly FormatSection[] = [
+  {
+    titleKey: k('section.pdf'),
+    cards: [
+      card('pdf', 'pdf-text', 'available'),
+      card('pdf', 'pdf-protected', 'available'),
+      card('pdf', 'pdf-scan', 'in-progress', { step: 6 }),
+      card('pdf', 'pdf-password', 'planned')
+    ]
   },
-  sections: [
-    {
-      titleKey: k('section.pdf'),
-      features: [
-        format('pdf-text', 'available', ['pdf']),
-        format('pdf-protected', 'available', ['pdf']),
-        format('pdf-scan', 'in-progress', ['pdf'], { step: 6 }),
-        format('pdf-password', 'planned', ['pdf'])
-      ]
-    },
-    {
-      titleKey: k('section.word'),
-      features: [
-        format('docx', 'available', ['docx']),
-        format('doc', 'available', ['doc', 'dot']),
-        format('rtf', 'available', ['rtf']),
-        format('odt', 'planned', ['odt'])
-      ]
-    },
-    {
-      titleKey: k('section.sheets'),
-      features: [
-        format('xlsx', 'available', ['xlsx', 'xlsm']),
-        format('xls', 'available', ['xls']),
-        format('ods', 'planned', ['ods'])
-      ]
-    },
-    {
-      titleKey: k('section.slides'),
-      features: [format('pptx', 'available', ['pptx']), format('ppt', 'planned', ['ppt']), format('odp', 'planned', ['odp'])]
-    },
-    {
-      titleKey: k('section.text'),
-      features: [
-        format('html', 'available', ['html', 'htm']),
-        format('markdown', 'available', ['md']),
-        format('plain', 'available', ['txt', 'csv', 'tsv', 'json', 'xml', 'yaml', 'yml', 'ics']),
-        format('bench', 'available', ['log', 'result', 'err', 'spy'])
-      ]
-    },
-    {
-      titleKey: k('section.mail'),
-      features: [format('eml', 'available', ['eml']), format('msg', 'planned', ['msg'])]
-    },
-    {
-      titleKey: k('section.images'),
-      features: [format('images', 'in-progress', ['png', 'jpg', 'jpeg', 'webp', 'gif'], { step: 6 })]
-    },
-    {
-      titleKey: k('section.exchange'),
-      features: [
-        format('zip', 'available', ['zip']),
-        format('reqif', 'in-progress', ['reqif', 'reqifz'], { step: 4 })
-      ]
-    }
-  ]
+  {
+    titleKey: k('section.word'),
+    cards: [
+      card('docx', 'docx', 'available'),
+      card('doc', 'doc', 'available'),
+      card('dot', 'dot', 'available'),
+      card('rtf', 'rtf', 'available'),
+      card('odt', 'odt', 'planned')
+    ]
+  },
+  {
+    titleKey: k('section.sheets'),
+    cards: [
+      card('xlsx', 'xlsx', 'available'),
+      card('xlsm', 'xlsm', 'available'),
+      card('xls', 'xls', 'available'),
+      card('ods', 'ods', 'planned')
+    ]
+  },
+  {
+    titleKey: k('section.slides'),
+    cards: [card('pptx', 'pptx', 'available'), card('ppt', 'ppt', 'planned'), card('odp', 'odp', 'planned')]
+  },
+  {
+    titleKey: k('section.text'),
+    cards: [
+      card('md', 'markdown', 'available'),
+      card('html', 'html', 'available'),
+      card('htm', 'htm', 'available'),
+      card('txt', 'txt', 'available'),
+      card('csv', 'csv', 'available'),
+      card('tsv', 'tsv', 'available'),
+      card('json', 'json', 'available'),
+      card('xml', 'xml', 'available'),
+      card('yaml', 'yaml', 'available'),
+      card('yml', 'yml', 'available'),
+      card('ics', 'ics', 'available')
+    ]
+  },
+  {
+    titleKey: k('section.bench'),
+    cards: [
+      card('log', 'log', 'available'),
+      card('result', 'result', 'available'),
+      card('err', 'err', 'available'),
+      card('spy', 'spy', 'available')
+    ]
+  },
+  {
+    titleKey: k('section.mail'),
+    cards: [card('eml', 'eml', 'available'), card('msg', 'msg', 'planned')]
+  },
+  {
+    titleKey: k('section.images'),
+    cards: [image('png', 'png'), image('jpg', 'jpg'), image('jpeg', 'jpeg'), image('webp', 'webp'), image('gif', 'gif')]
+  },
+  {
+    titleKey: k('section.exchange'),
+    cards: [
+      card('zip', 'zip', 'available'),
+      card('reqif', 'reqif', 'in-progress', { step: 4 }),
+      card('reqifz', 'reqifz', 'in-progress', { step: 4 })
+    ]
+  }
+]
+
+/** Une fiche telle que la fenêtre la dessine : ses trois constats, sa couleur, et l'interrupteur d'affichage. */
+function feature(
+  base: Pick<ModuleFeature, 'labelKey' | 'noteKey' | 'vars'>,
+  extension: string,
+  status: FeatureStatus,
+  step: number | undefined,
+  display: FileDisplay | undefined
+): ModuleFeature {
+  const facts = cardFacts(extension, status, step, display)
+  return {
+    ...base,
+    prefix: `.${extension}`,
+    status,
+    ...(step === undefined ? {} : { step }),
+    facts,
+    ...cardLook(facts, extension, status, step),
+    ...(display?.canShow(extension)
+      ? {
+          switch: {
+            settingsKey: SHOWN_KEY,
+            id: extension,
+            listed: 'on' as const,
+            tooltipKeys: { on: 'lecture-fichiers.show.on', off: 'lecture-fichiers.show.off' }
+          }
+        }
+      : {})
+  }
 }
 
 /**
- * Le catalogue tel que les réglages le montrent : les formats du module, chacun avec ce
- * que Black Projects en lit et en écrit, et ce que la plateforme en affiche (`display`),
- * puis une ligne « Extensions ajoutées » avec les équivalences déclarées par l'utilisateur.
+ * Le catalogue tel que la fenêtre le montre : une fiche par extension, avec ce que
+ * Black Projects en lit et en écrit et ce que la plateforme en affiche (`display`), puis
+ * une ligne « Extensions ajoutées » avec les équivalences déclarées par l'utilisateur.
  */
 export function formatsCatalogue(aliases: Readonly<Record<string, string>>, display?: FileDisplay): ModuleDetails {
   const added = Object.entries(aliases).sort(([a], [b]) => a.localeCompare(b))
-  const withFacts = (feature: ModuleFeature): ModuleFeature => ({
-    ...feature,
-    facts: formatFacts(feature.tags ?? [], feature.status, display)
-  })
+  const sections = FORMAT_SECTIONS.map((section) => ({
+    titleKey: section.titleKey,
+    features: section.cards.map((each) =>
+      feature(
+        { labelKey: k(each.key), noteKey: each.noteKey ?? k(`${each.key}.note`) },
+        each.extension,
+        each.status,
+        each.step,
+        display
+      )
+    )
+  }))
+  if (added.length > 0) {
+    sections.push({
+      titleKey: 'lecture-fichiers.alias.section',
+      features: added.map(([from, to]) =>
+        feature(
+          { labelKey: 'lecture-fichiers.alias.label', noteKey: 'lecture-fichiers.alias.note', vars: { from, to } },
+          from,
+          'available',
+          undefined,
+          display
+        )
+      )
+    })
+  }
   return {
-    ...FORMATS_CATALOGUE,
-    sections: [
-      ...FORMATS_CATALOGUE.sections.map((section) => ({ ...section, features: section.features.map(withFacts) })),
-      {
-        titleKey: 'lecture-fichiers.alias.section',
-        features: added.map(([from, to]) => ({
-          labelKey: 'lecture-fichiers.alias.label',
-          noteKey: 'lecture-fichiers.alias.note',
-          tags: [from],
-          status: 'available' as const,
-          vars: { from, to },
-          facts: formatFacts([from], 'available', display)
-        }))
-      }
-    ].filter((section) => section.features.length > 0)
+    titleKey: 'lecture-fichiers.details.title',
+    introKey: 'lecture-fichiers.details.intro',
+    columns: 3,
+    toneKeys: {
+      yes: { label: 'lecture-fichiers.tone.yes', tip: 'lecture-fichiers.tone.yes.tip' },
+      partial: { label: 'lecture-fichiers.tone.partial', tip: 'lecture-fichiers.tone.partial.tip' },
+      no: { label: 'lecture-fichiers.tone.no', tip: 'lecture-fichiers.tone.no.tip' }
+    },
+    sections
   }
 }
 
-/** Toutes les extensions annoncées « Lecture intégrée » par le module lui-même : textes et archives. */
-export function availableExtensions(details: ModuleDetails = FORMATS_CATALOGUE): Set<string> {
+/** Toutes les extensions annoncées « lecture intégrée » par le module lui-même : textes et archives. */
+export function availableExtensions(sections: readonly FormatSection[] = FORMAT_SECTIONS): Set<string> {
   return new Set(
-    details.sections.flatMap((section) =>
-      section.features.filter((feature) => feature.status === 'available').flatMap((feature) => feature.tags ?? [])
-    )
+    sections.flatMap((section) => section.cards.filter((each) => each.status === 'available').map((each) => each.extension))
   )
 }

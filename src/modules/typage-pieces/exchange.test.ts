@@ -231,7 +231,7 @@ describe('ce que d’autres modules joignent aux types', () => {
 describe('le message d’export', () => {
   it('dit où trouver le fichier quand la plateforme masque les .json', async () => {
     const platform = memoryPlatform()
-    platform.display = { kind: () => 'hidden' }
+    platform.display = { kind: () => 'hidden', canShow: () => true, show: () => {} }
     let stored: Record<string, unknown> = settings
     const commands: ModuleCommand[] = []
     const i18n = createI18n('fr')

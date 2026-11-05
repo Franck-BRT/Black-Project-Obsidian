@@ -71,7 +71,7 @@ describe('extensions équivalentes', () => {
     const added = catalogue.sections.at(-1)
     expect(added?.titleKey).toBe('lecture-fichiers.alias.section')
     expect(added?.features).toEqual([
-      expect.objectContaining({ tags: ['tot'], status: 'available', vars: { from: 'tot', to: 'xml' } })
+      expect.objectContaining({ prefix: '.tot', status: 'available', vars: { from: 'tot', to: 'xml' } })
     ])
     expect(formatsCatalogue({}).sections.some((section) => section.titleKey === 'lecture-fichiers.alias.section')).toBe(
       false

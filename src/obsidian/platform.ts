@@ -139,24 +139,60 @@ const OPENED_BY_OBSIDIAN = new Set([
   'mkv'
 ])
 
+/** La vue de Black Projects qui ouvre, en lecture seule, les fichiers que l'utilisateur a choisi d'afficher. */
+export const FILE_VIEW = 'black-projects-file'
+
 /**
  * Ce que l'explorateur d'Obsidian montre. Une extension qu'Obsidian (ou un plugin) sait
  * ouvrir est visible ; les autres n'y paraissent que si « Détecter toutes les extensions
  * de fichier » est activé (Paramètres → Fichiers et liens), et s'ouvrent alors avec une
- * autre application. Lu à chaque question : le réglage peut changer entre-temps.
+ * autre application — ou si l'utilisateur a choisi de les afficher dans Black Projects :
+ * elles sont alors déclarées à Obsidian, ouvertes par la visionneuse de Black Projects.
+ * Lu à chaque question : les réglages peuvent changer entre-temps.
  */
-export function obsidianDisplay(app: App): FileDisplay {
+export function obsidianDisplay(plugin: Plugin): FileDisplay {
   // Pas dans l'API publique : lus prudemment, avec la liste ci-dessus en repli.
-  const internals = app as unknown as {
-    viewRegistry?: { isExtensionRegistered?(extension: string): boolean }
+  const internals = plugin.app as unknown as {
+    viewRegistry?: { isExtensionRegistered?(extension: string): boolean; unregisterExtensions?(extensions: string[]): void }
     vault: { getConfig?(key: string): unknown }
   }
+  /** Les extensions que Black Projects a déclarées à Obsidian. */
+  const ours = new Set<string>()
+  const openedByOthers = (ext: string) =>
+    !ours.has(ext) && (OPENED_BY_OBSIDIAN.has(ext) || (internals.viewRegistry?.isExtensionRegistered?.(ext) ?? false))
   return {
     kind(extension) {
       const ext = extension.toLowerCase()
-      const registered = internals.viewRegistry?.isExtensionRegistered?.(ext) ?? false
-      if (registered || OPENED_BY_OBSIDIAN.has(ext)) return 'opens'
+      if (ours.has(ext)) return 'viewer'
+      if (openedByOthers(ext)) return 'opens'
       return internals.vault.getConfig?.('showUnsupportedFiles') === true ? 'listed' : 'hidden'
+    },
+    canShow(extension) {
+      return !openedByOthers(extension.toLowerCase())
+    },
+    show(extensions) {
+      const wanted = new Set(extensions.map((ext) => ext.toLowerCase()).filter((ext) => ext && !openedByOthers(ext)))
+      for (const ext of [...ours]) {
+        if (wanted.has(ext)) continue
+        // Sans moyen de la retirer tout de suite, l'extension reste affichée jusqu'au prochain démarrage.
+        if (!internals.viewRegistry?.unregisterExtensions) continue
+        try {
+          internals.viewRegistry.unregisterExtensions([ext])
+          ours.delete(ext)
+        } catch (error) {
+          console.error(`[Black Projects] masquer .${ext}`, error)
+        }
+      }
+      for (const ext of wanted) {
+        if (ours.has(ext)) continue
+        try {
+          plugin.registerExtensions([ext], FILE_VIEW)
+          ours.add(ext)
+        } catch (error) {
+          // Déjà prise par un autre plugin entre-temps : c'est lui qui l'ouvre.
+          console.error(`[Black Projects] afficher .${ext}`, error)
+        }
+      }
     }
   }
 }
@@ -169,13 +205,14 @@ export function pluginSettingsStorage(plugin: Plugin): SettingsStorage {
   }
 }
 
-export function obsidianPlatform(app: App, version: string, i18n: I18n): Platform {
+export function obsidianPlatform(plugin: Plugin, version: string, i18n: I18n): Platform {
+  const app = plugin.app
   return {
     info: { name: 'obsidian', version },
     fs: new ObsidianFileSystem(app),
     http: obsidianHttp,
     notifier: obsidianNotifier,
     ui: obsidianUi(app, i18n),
-    display: obsidianDisplay(app)
+    display: obsidianDisplay(plugin)
   }
 }

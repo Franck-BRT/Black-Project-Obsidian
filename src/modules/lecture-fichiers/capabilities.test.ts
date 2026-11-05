@@ -1,59 +1,92 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
-/** Les constats des fiches de formats : lu, écrit, affiché. */
+/** Les constats des fiches de formats — lu, écrit, affiché —, leur couleur, et l'interrupteur d'affichage. */
 
 import { describe, expect, it } from 'vitest'
-import type { FileDisplay } from '../../core/ports'
-import { formatFacts } from './capabilities'
+import type { ModuleFeature } from '../../core/modules/module'
+import type { DisplayKind, FileDisplay } from '../../core/ports'
+import { cardFacts, readShown, SHOWN_KEY } from './capabilities'
 import { formatsCatalogue } from './catalogue'
 
-/** Comme Obsidian par défaut : notes, PDF et images ouverts, le reste masqué. */
-const obsidianLike: FileDisplay = { kind: (ext) => (['md', 'pdf', 'png', 'jpg'].includes(ext) ? 'opens' : 'hidden') }
+/** Comme Obsidian par défaut : notes, PDF et images ouverts ; le reste masqué, sauf ce que l'utilisateur affiche. */
+function obsidianLike(shown: string[] = []): FileDisplay {
+  const native = ['md', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp']
+  return {
+    kind: (ext): DisplayKind => (native.includes(ext) ? 'opens' : shown.includes(ext) ? 'viewer' : 'hidden'),
+    canShow: (ext) => !native.includes(ext),
+    show: () => {}
+  }
+}
 
-const fiche = (label: string, display?: FileDisplay) =>
-  formatsCatalogue({ tot: 'xml' }, display)
+const card = (label: string, display?: FileDisplay, aliases: Record<string, string> = {}): ModuleFeature =>
+  formatsCatalogue(aliases, display)
     .sections.flatMap((section) => section.features)
     .find((feature) => feature.labelKey === label)!
 
-describe('les constats d’une fiche de format', () => {
-  it('lu : l’état du lecteur', () => {
-    expect(formatFacts(['pdf'], 'available')[0]).toEqual({
-      labelKey: 'lecture-fichiers.fact.read',
-      values: [{ textKey: 'lecture-fichiers.fact.read.yes', tone: 'yes' }]
-    })
-    expect(formatFacts(['png'], 'in-progress')[0]?.values[0]?.tone).toBe('partial')
-    expect(formatFacts(['odt'], 'planned')[0]?.values[0]?.tone).toBe('no')
-  })
+const texts = (feature: ModuleFeature) => feature.facts!.map((fact) => fact.values[0]!.textKey.replace('lecture-fichiers.fact.', ''))
 
-  it('écrit : par extension, regroupé quand la fiche mélange', () => {
-    const plain = fiche('lecture-fichiers.format.plain').facts!.find((fact) => fact.labelKey === 'lecture-fichiers.fact.write')!
-    // Une valeur par sens, ce qui se fait d'abord : « oui » pour .json, « non » pour le reste.
-    expect(plain.values).toEqual([
-      {
-        textKey: 'lecture-fichiers.fact.write.yes',
-        tone: 'yes',
-        tooltipKey: 'lecture-fichiers.fact.write.json',
-        extensions: ['json']
-      },
-      { textKey: 'lecture-fichiers.fact.write.no', tone: 'no', extensions: ['txt', 'csv', 'tsv', 'xml', 'yaml', 'yml', 'ics'] }
-    ])
-    const markdown = fiche('lecture-fichiers.format.markdown').facts![1]!
-    expect(markdown.values).toEqual([{ textKey: 'lecture-fichiers.fact.write.yes', tone: 'yes', tooltipKey: 'lecture-fichiers.fact.write.md' }])
-    const docx = fiche('lecture-fichiers.format.docx').facts![1]!
-    expect(docx.values[0]).toMatchObject({ textKey: 'lecture-fichiers.fact.write.in-progress', vars: { step: 7 }, tone: 'partial' })
+describe('les constats d’une fiche', () => {
+  it('lu, écrit : oui en vert, non en rouge, avec ce qui est à venir', () => {
+    expect(texts(card('lecture-fichiers.format.markdown'))).toEqual(['yes', 'yes'])
+    expect(texts(card('lecture-fichiers.format.txt'))).toEqual(['yes', 'no.never'])
+    expect(texts(card('lecture-fichiers.format.docx'))).toEqual(['yes', 'no.step'])
+    expect(texts(card('lecture-fichiers.format.png'))).toEqual(['no.step', 'no.never'])
+    expect(texts(card('lecture-fichiers.format.odt'))).toEqual(['no.coming', 'no.never'])
+    const docx = card('lecture-fichiers.format.docx').facts![1]!.values[0]!
+    expect(docx).toMatchObject({ tone: 'no', vars: { step: 7 }, tooltipKey: 'lecture-fichiers.fact.write.deliverables' })
   })
 
   it('affiché : selon la plateforme, et omis si elle ne sait pas le dire', () => {
-    expect(fiche('lecture-fichiers.format.plain').facts).toHaveLength(2)
-    const shown = (label: string) => fiche(label, obsidianLike).facts!.find((fact) => fact.labelKey === 'lecture-fichiers.fact.display')!
-    expect(shown('lecture-fichiers.format.pdf-text').values).toEqual([
-      { textKey: 'lecture-fichiers.fact.display.opens', tone: 'yes', tooltipKey: 'lecture-fichiers.fact.display.opens.tip' }
-    ])
-    expect(shown('lecture-fichiers.format.plain').values).toEqual([
-      { textKey: 'lecture-fichiers.fact.display.hidden', tone: 'no', tooltipKey: 'lecture-fichiers.fact.display.hidden.tip' }
-    ])
-    // Les extensions ajoutées par l'utilisateur ont aussi leurs constats.
-    expect(shown('lecture-fichiers.alias.label').values[0]?.textKey).toBe('lecture-fichiers.fact.display.hidden')
+    expect(card('lecture-fichiers.format.json').facts).toHaveLength(2)
+    expect(cardFacts('json', 'available', undefined, obsidianLike())[2]?.values[0]?.textKey).toBe('lecture-fichiers.fact.display.hidden')
+    expect(cardFacts('json', 'available', undefined, obsidianLike(['json']))[2]?.values[0]).toMatchObject({
+      textKey: 'lecture-fichiers.fact.display.viewer',
+      tone: 'yes'
+    })
+  })
+})
+
+describe('la couleur et le badge d’une fiche', () => {
+  const look = (label: string, display = obsidianLike()) => {
+    const feature = card(label, display)
+    return [feature.tone, feature.badge?.textKey.replace('lecture-fichiers.badge.', ''), feature.badge?.vars?.step]
+  }
+
+  it('verte quand les trois sont oui', () => {
+    expect(look('lecture-fichiers.format.markdown')).toEqual(['yes', 'yes', undefined])
+    expect(look('lecture-fichiers.format.json', obsidianLike(['json']))).toEqual(['yes', 'yes', undefined])
+  })
+
+  it('orange quand lu ou écrit, mais pas les trois', () => {
+    expect(look('lecture-fichiers.format.json')).toEqual(['partial', 'partial', undefined])
+    expect(look('lecture-fichiers.format.pdf-text')).toEqual(['partial', 'partial', undefined])
+    expect(look('lecture-fichiers.format.docx')).toEqual(['partial', 'partial', undefined])
+  })
+
+  it('rouge quand ni lu ni écrit, en disant si c’est à venir', () => {
+    expect(look('lecture-fichiers.format.png')).toEqual(['no', 'step', 6])
+    expect(look('lecture-fichiers.format.reqif')).toEqual(['no', 'step', 4])
+    expect(look('lecture-fichiers.format.odt')).toEqual(['no', 'coming', undefined])
+  })
+})
+
+describe('l’interrupteur d’affichage', () => {
+  it('sur les fiches des types que la plateforme n’ouvre pas elle-même', () => {
+    expect(card('lecture-fichiers.format.json', obsidianLike()).switch).toEqual({
+      settingsKey: SHOWN_KEY,
+      id: 'json',
+      listed: 'on',
+      tooltipKeys: { on: 'lecture-fichiers.show.on', off: 'lecture-fichiers.show.off' }
+    })
+    expect(card('lecture-fichiers.format.pdf-text', obsidianLike()).switch).toBeUndefined()
+    expect(card('lecture-fichiers.format.json').switch).toBeUndefined()
+    // Une extension équivalente ajoutée par l'utilisateur a aussi le sien.
+    expect(card('lecture-fichiers.alias.label', obsidianLike(), { tot: 'xml' }).switch?.id).toBe('tot')
+  })
+
+  it('le réglage : une liste d’extensions, nettoyée', () => {
+    expect(readShown({ [SHOWN_KEY]: ['json', 'csv', 'json', 3, ''] })).toEqual(['csv', 'json'])
+    expect(readShown({})).toEqual([])
   })
 })

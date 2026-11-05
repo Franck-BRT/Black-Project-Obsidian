@@ -48,7 +48,7 @@ export const typageFr: Record<string, string> = {
   'typage-pieces.exchange.keywordsSkipped': '{count} mot(s)-clé(s) déjà présent(s) ou invalides, écartés.',
   'typage-pieces.exchange.skipped': 'Non importés : {codes}.',
   'typage-pieces.exchange.hidden':
-    'Obsidian ne montre pas les fichiers .json dans l’explorateur : le fichier est bien là, sur le disque, dans ce dossier du coffre. Pour le voir dans Obsidian : Paramètres → Fichiers et liens → « Détecter toutes les extensions de fichier ».',
+    'Obsidian ne montre pas les fichiers .json dans l’explorateur : le fichier est bien là, sur le disque, dans ce dossier du coffre. Pour le voir : Paramètres → Black Projects → Formats de fichiers → fiche .json → interrupteur.',
   'typage-pieces.exchange.extras': 'Repris aussi : {what} pour {count} type(s).',
   'typage-pieces.exchange.extrasIgnored':
     'Le fichier contient aussi des réglages de module(s) absent(s) ou inactif(s) ici, ignorés : {modules}.',
@@ -177,7 +177,7 @@ export const typageEn: Record<string, string> = {
   'typage-pieces.exchange.keywordsSkipped': '{count} keyword(s) already there or invalid, left out.',
   'typage-pieces.exchange.skipped': 'Not imported: {codes}.',
   'typage-pieces.exchange.hidden':
-    'Obsidian does not show .json files in the file explorer: the file is there, on disk, in this vault folder. To see it in Obsidian: Settings → Files and links → “Detect all file extensions”.',
+    'Obsidian does not show .json files in the file explorer: the file is there, on disk, in this vault folder. To see it: Settings → Black Projects → File formats → .json card → switch.',
   'typage-pieces.exchange.extras': 'Also taken: {what} for {count} type(s).',
   'typage-pieces.exchange.extrasIgnored': 'The file also holds settings of module(s) missing or inactive here, ignored: {modules}.',
   'typage-pieces.exchange.error.json': 'This file is not readable JSON.',

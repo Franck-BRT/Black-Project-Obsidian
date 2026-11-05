@@ -39,12 +39,12 @@ describe('documentation des modules', () => {
   it('décrit les formats tels qu’ils sont, et les extensions équivalentes déclarées', () => {
     const page = build({ 'lecture-fichiers': { aliases: { tot: 'xml' } } }).find((each) => each.path === 'Modules/Lecture de fichiers.md')
     const content = page?.content ?? ''
-    expect(content).toContain('| PDF avec texte natif | `.pdf` | 🟩 Lecture intégrée |')
-    expect(content).toContain('| PDF sans texte (scan) | `.pdf` | 🟧 En développement · Étape 6 |')
+    expect(content).toContain('| Format | En résumé | Lu par Black Projects | Écrit par Black Projects | Précision |')
+    expect(content).toContain('| .pdf — PDF avec texte natif | 🟧 En partie | Oui | Non · pas prévu |')
+    expect(content).toContain('| .pdf — PDF sans texte (scan) | 🟥 Ni lu ni écrit · à venir, étape 6 | Non · à venir, étape 6 | Non · pas prévu |')
+    expect(content).toContain('| .md — Markdown | 🟩 Lu et écrit | Oui | Oui |')
     expect(content).toContain('- `.tot` lu comme `.xml`')
-    expect(content).toContain('| Fichiers .tot | `.tot` | 🟩 Lecture intégrée | Non | Lus comme .xml')
-    expect(content).toContain('| Format | Extensions | État | Écrit par Black Projects | Précision |')
-    expect(content).toContain('| Oui (.json) · Non (.txt, .csv, .tsv, .xml, .yaml, .yml, .ics) |')
+    expect(content).toContain('| .tot — Lu comme .xml | 🟧 En partie | Oui | Non · pas prévu | Extension équivalente ajoutée')
     expect(build().find((each) => each.path === 'Modules/Lecture de fichiers.md')?.content).toContain('*Aucune pour le moment.*')
   })
 

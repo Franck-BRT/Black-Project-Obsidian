@@ -9,6 +9,17 @@ export const fr: Record<string, string> = {
   'command.about': 'À propos de Black Projects',
   'about.notice': 'Black Projects {version} — {active} module(s) actif(s) sur {total}. {licence}',
 
+  'viewer.title': 'Fichier',
+  'viewer.meta': 'Fichier .{extension} · {size} — affiché par Black Projects, en lecture seule.',
+  'viewer.open': 'Ouvrir avec l’application de l’ordinateur',
+  'viewer.open.tip': 'L’application que l’ordinateur associe à ce type de fichier.',
+  'viewer.folder': 'Montrer dans le dossier',
+  'viewer.folder.tip': 'Ouvre le dossier qui contient ce fichier, sur l’ordinateur.',
+  'viewer.cut': 'Texte coupé : seuls les {count} premiers caractères sont montrés.',
+  'viewer.problem.unsupported': 'Black Projects ne lit pas (encore) le contenu des fichiers .{extension} : ouvrez-le avec l’application de l’ordinateur.',
+  'viewer.problem.empty': 'Ce fichier ne contient aucun texte à lire.',
+  'viewer.problem.unreadable': 'Ce fichier n’a pas pu être lu : abîmé, ou protégé par un mot de passe.',
+
   'ui.all': 'Tout',
   'ui.none': 'Rien',
   'ui.copy': 'Copier',

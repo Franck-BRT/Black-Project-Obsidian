@@ -205,13 +205,19 @@ export interface PlatformInfo {
 /**
  * Comment la plateforme montre un fichier, d'après son extension :
  * - `opens` : visible dans la liste des fichiers, et ouvert dans l'application ;
+ * - `viewer` : visible parce que l'utilisateur l'a demandé, et ouvert dans la visionneuse
+ *   de Black Projects (en lecture seule) ;
  * - `listed` : visible, mais ouvert par une autre application de l'ordinateur ;
  * - `hidden` : absent de la liste des fichiers (il est pourtant bien dans le coffre).
  */
-export type DisplayKind = 'opens' | 'listed' | 'hidden'
+export type DisplayKind = 'opens' | 'viewer' | 'listed' | 'hidden'
 
 export interface FileDisplay {
   kind(extension: string): DisplayKind
+  /** Peut-on choisir d'afficher ce type ? Pas ceux que la plateforme (ou un plugin) ouvre déjà. */
+  canShow(extension: string): boolean
+  /** Les types à afficher, en plus de ce que la plateforme montre d'elle-même ; les autres sont masqués. */
+  show(extensions: readonly string[]): void
 }
 
 /** Tous les ports, tels qu'un module les reçoit. */

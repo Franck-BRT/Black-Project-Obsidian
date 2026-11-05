@@ -9,6 +9,17 @@ export const en: Record<string, string> = {
   'command.about': 'About Black Projects',
   'about.notice': 'Black Projects {version} — {active} of {total} module(s) active. {licence}',
 
+  'viewer.title': 'File',
+  'viewer.meta': '.{extension} file · {size} — shown by Black Projects, read-only.',
+  'viewer.open': 'Open with the computer’s application',
+  'viewer.open.tip': 'The application the computer associates with this file type.',
+  'viewer.folder': 'Show in folder',
+  'viewer.folder.tip': 'Opens the folder that holds this file, on the computer.',
+  'viewer.cut': 'Text cut: only the first {count} characters are shown.',
+  'viewer.problem.unsupported': 'Black Projects does not read the content of .{extension} files (yet): open it with the computer’s application.',
+  'viewer.problem.empty': 'This file holds no text to read.',
+  'viewer.problem.unreadable': 'This file could not be read: damaged, or password-protected.',
+
   'ui.all': 'All',
   'ui.none': 'None',
   'ui.copy': 'Copy',

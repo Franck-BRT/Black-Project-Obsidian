@@ -23,37 +23,47 @@ aussi les modules qui en dépendent (l'analyse d'appels d'offres passe à l'éta
 « Module requis indisponible »).
 
 **Cliquer sur le nom du module**, ou sur le bouton **Formats de fichiers** à droite, ouvre
-une fenêtre **Lecture de fichiers — Formats de fichiers** : une ligne par famille (PDF, traitement de texte, tableurs, présentations,
-web et texte, messagerie, images, archives et échanges), un bloc par format, avec ses
-extensions, une précision, et son état :
+une fenêtre **Lecture de fichiers — Formats de fichiers** : une ligne par famille (PDF,
+traitement de texte, tableurs, présentations, web/texte/données, bancs d'essai,
+messagerie, images, archives et échanges), **trois fiches par ligne**, **une fiche par
+extension** (v0.4.0 du module) — plusieurs pour une même extension quand ses cas
+diffèrent : le PDF a quatre fiches (texte natif, protégé contre la modification, scan,
+protégé par mot de passe).
 
-| Couleur | État | Signification |
-| --- | --- | --- |
-| 🟩 vert | **Lecture intégrée** | lu aujourd'hui |
-| 🟧 orange | **En développement · Étape N** | prévu à l'étape N du plan |
-| ⬜ gris | **Prévu** | à venir, sans date |
+### Lu, écrit, affiché
 
-### Lu, écrit, affiché (v0.3.1)
-
-Chaque bloc porte trois constats, en pastilles colorées (vert : oui ; orange : en cours
-ou avec une réserve ; gris : non), avec une infobulle :
+Chaque fiche porte trois constats, en pastilles vertes (oui) ou rouges (non), avec une
+infobulle :
 
 | Constat | D'où il vient |
 | --- | --- |
-| **Lu par Black Projects** | l'état du lecteur du format (Oui, En développement, Pas encore) |
-| **Écrit par Black Projects** | `WRITTEN` dans `capabilities.ts` : `.md` (notes, documentation) et `.json` (exports de types) aujourd'hui ; `.reqif` à l'étape 4 ; `.docx`, `.xlsx`, `.pptx` (livrables) à l'étape 7. Les originaux importés sont gardés tels quels : ce n'est pas « écrire » le format |
-| **Affiché dans Obsidian** | la plateforme (`Platform.display`) : **Oui** si Obsidian (ou un plugin) l'ouvre ; **Visible, ouvert à l'extérieur** si « Détecter toutes les extensions de fichier » est activé ; **Masqué** sinon — le fichier est dans le coffre mais absent de l'explorateur de gauche (c'est le cas des `.json` d'export de types) |
+| **Lu par Black Projects** | l'état du lecteur : Oui ; sinon « Non · à venir, étape N » ou « Non · à venir » |
+| **Écrit par Black Projects** | `WRITTEN` dans `capabilities.ts` : `.md` (notes, documentation) et `.json` (exports de types) aujourd'hui ; « Non · à venir, étape 4 » pour `.reqif`, « étape 7 » pour `.docx`, `.xlsx`, `.pptx` (livrables) ; « Non · pas prévu » pour le reste. Les originaux importés sont gardés tels quels : ce n'est pas « écrire » le format |
+| **Affiché dans Obsidian** | la plateforme (`Platform.display`) : **Oui** si Obsidian (ou un plugin) l'ouvre ; **Oui · par Black Projects** si l'utilisateur l'a affiché (interrupteur) ; **Visible, ouvert à l'extérieur** (orange) si « Détecter toutes les extensions de fichier » est activé ; **Non · masqué** sinon |
 
-Quand une fiche mélange (« Texte » : `.json` écrit, `.txt` non), la valeur est donnée par
-extension : « Oui (.json) · Non (.txt, .csv…) ». Les extensions équivalentes ajoutées par
-l'utilisateur ont les mêmes constats. Le constat d'affichage est relu à chaque ouverture
-de la fenêtre : il suit le réglage d'Obsidian. La page de documentation écrite dans le
-coffre reprend l'écriture et l'affichage en colonnes.
+**La couleur de la fiche** (`cardLook`) : **verte** si les trois sont oui ; **rouge** si
+elle n'est ni lue ni écrite — son badge dit alors si c'est à venir (« Ni lu ni écrit · à
+venir, étape 6 ») ou pas prévu ; **orange** sinon (« En partie »). Le résumé en tête de
+fenêtre compte les fiches par couleur.
 
-Côté plateforme Obsidian (`src/obsidian/platform.ts`, `obsidianDisplay`) : la liste des
-extensions qu'Obsidian ouvre lui-même, `viewRegistry.isExtensionRegistered` pour celles
-qu'un plugin ouvre, et le réglage `showUnsupportedFiles` ; ces deux derniers ne sont pas
-dans l'API publique et sont lus prudemment.
+### Afficher ou masquer un type dans Obsidian
+
+Les fiches des types qu'Obsidian n'ouvre pas lui-même (ni un de ses plugins) ont un
+**interrupteur** : allumé, les fichiers de ce type apparaissent dans l'explorateur de
+gauche, et s'ouvrent dans la **visionneuse de Black Projects**, en lecture seule — le
+texte tel que ce module le lit, et les boutons « Ouvrir avec l'application de
+l'ordinateur » et « Montrer dans le dossier ». Rien n'y est jamais réécrit. Éteint, ils
+sont de nouveau masqués. Réglage `extensionsAffichees` du module (liste d'extensions) ;
+les extensions équivalentes ajoutées ont aussi leur interrupteur.
+
+Côté plateforme Obsidian (`src/obsidian/platform.ts`, `obsidianDisplay` ;
+`src/obsidian/fileViewer.ts`) : chaque extension affichée est déclarée à Obsidian
+(`registerExtensions`) pour la vue `black-projects-file`, et retirée
+(`viewRegistry.unregisterExtensions`) quand on l'éteint ; les extensions qu'Obsidian
+ouvre lui-même sont une liste, complétée par `viewRegistry.isExtensionRegistered` pour
+celles d'un plugin ; `showUnsupportedFiles` dit si « Détecter toutes les extensions »
+est activé. Ces trois appels ne sont pas dans l'API publique et sont faits prudemment :
+sans moyen de retirer une extension, elle reste affichée jusqu'au prochain démarrage.
 
 ### Extensions équivalentes
 

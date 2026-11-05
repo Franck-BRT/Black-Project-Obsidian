@@ -24,6 +24,7 @@ import {
   validateAlias
 } from './aliases'
 import type { FileDisplay } from '../../core/ports'
+import { readShown } from './capabilities'
 import { formatsCatalogue } from './catalogue'
 import { lectureDocs } from './doc'
 import { lectureEn, lectureFr } from './i18n'
@@ -32,6 +33,7 @@ import { fileText as rawFileText, isReadable as rawIsReadable, TEXT_EXTENSIONS }
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { extensionOf, nameOf, readVaultFile, type ReadOptions, type ReadOutcome } from './lecture'
 export { currentAliases, resolveExtension } from './aliases'
+export { SHOWN_KEY } from './capabilities'
 export { ARCHIVE_EXTENSIONS, ArchiveError, isArchive, readArchive, type ArchiveEntry } from './archive'
 export {
   blocksText,
@@ -109,7 +111,7 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.3.1',
+  version: '0.4.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings), display),
@@ -118,12 +120,18 @@ export const lectureFichiersModule: BlackModule = {
   activate({ settings, platform }) {
     display = platform.display
     configureAliases(readAliases(settings.get()))
-    unsubscribe = settings.onChange((values) => configureAliases(readAliases(values)))
+    // Les types que l'utilisateur a choisi d'afficher : la plateforme les montre.
+    display?.show(readShown(settings.get()))
+    unsubscribe = settings.onChange((values) => {
+      configureAliases(readAliases(values))
+      display?.show(readShown(values))
+    })
   },
   deactivate() {
     unsubscribe?.()
     unsubscribe = null
     configureAliases({})
+    display?.show([])
     display = undefined
   }
 }

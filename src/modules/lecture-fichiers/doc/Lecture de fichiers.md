@@ -30,16 +30,20 @@ archive ZIP est ouverte, et chacun de ses fichiers lu à son tour.
 ## Les formats
 
 Paramètres → Black Projects → **Formats de fichiers** (le bouton de la ligne « Lecture de
-fichiers ») montre la même liste, un bloc par format.
+fichiers ») montre la même liste : une fiche par extension, trois par ligne — plusieurs
+fiches pour le PDF, une par cas.
 
-🟩 lecture intégrée · 🟧 en développement (avec l'étape du plan) · ⬜ prévu
+Chaque fiche dit si le format est **lu par Black Projects**, **écrit par Black
+Projects** (aujourd'hui : les notes `.md` et les exports de types `.json`) et **affiché
+dans Obsidian**. 🟩 verte : les trois ; 🟥 rouge : ni lu ni écrit, avec ce qui est à
+venir ; 🟧 orange : le reste.
 
-Chaque format dit aussi s'il est **écrit par Black Projects** (aujourd'hui : les notes
-`.md` et les exports de types `.json`) et s'il est **affiché dans Obsidian**. Obsidian ne
-montre dans son explorateur que les fichiers qu'il sait ouvrir : un `.json` exporté, par
-exemple, est bien dans le coffre mais n'apparaît pas à gauche. Pour tout voir :
-Paramètres d'Obsidian → Fichiers et liens → **Détecter toutes les extensions de
-fichier** (ces fichiers s'ouvrent alors avec une autre application).
+Obsidian ne montre dans son explorateur que les fichiers qu'il sait ouvrir : un `.json`
+exporté, par exemple, est bien dans le coffre mais n'apparaît pas à gauche.
+**L'interrupteur de la fiche** l'affiche : ces fichiers apparaissent alors dans
+l'explorateur et s'ouvrent dans la visionneuse de Black Projects, en lecture seule, avec
+un bouton pour les ouvrir avec l'application de l'ordinateur. Éteint, ils sont de
+nouveau masqués.
 
 {{formats}}
 

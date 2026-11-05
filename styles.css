@@ -100,6 +100,22 @@
   gap: var(--size-4-2);
 }
 
+/* Un nombre fixe de fiches par ligne (trois pour les formats de fichiers). */
+.bp-feature-row.is-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--bp-columns, 3), minmax(0, 1fr));
+}
+
+.bp-feature-row.is-grid .bp-feature {
+  max-width: none;
+}
+
+@media (max-width: 600px) {
+  .bp-feature-row.is-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .bp-feature {
   --bp-status: var(--text-faint);
   --bp-status-rgb: 128, 128, 128;
@@ -131,6 +147,25 @@
 .bp-feature-badge.is-planned {
   --bp-status: var(--text-muted);
   --bp-status-rgb: 128, 128, 128;
+}
+
+/* Les fiches colorées d'après leurs constats : vert, orange, rouge. */
+.bp-feature.is-tone-yes,
+.bp-feature-badge.is-tone-yes {
+  --bp-status: var(--color-green);
+  --bp-status-rgb: var(--color-green-rgb);
+}
+
+.bp-feature.is-tone-partial,
+.bp-feature-badge.is-tone-partial {
+  --bp-status: var(--color-orange);
+  --bp-status-rgb: var(--color-orange-rgb);
+}
+
+.bp-feature.is-tone-no,
+.bp-feature-badge.is-tone-no {
+  --bp-status: var(--color-red);
+  --bp-status-rgb: var(--color-red-rgb);
 }
 
 .bp-feature.is-planned {
@@ -192,6 +227,10 @@
 
 .bp-fact.is-partial {
   --bp-fact-rgb: var(--color-orange-rgb);
+}
+
+.bp-fact.is-no {
+  --bp-fact-rgb: var(--color-red-rgb);
 }
 
 .bp-feature-note {
@@ -381,4 +420,27 @@
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+/* La visionneuse de Black Projects : les fichiers qu'Obsidian n'ouvre pas, en lecture seule. */
+.bp-file-view {
+  padding: var(--size-4-4);
+}
+
+.bp-file-view-meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.bp-file-view-problem {
+  margin-top: var(--size-4-3);
+  color: var(--text-muted);
+}
+
+.bp-file-view-text {
+  margin-top: var(--size-4-3);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: var(--font-ui-small);
+  user-select: text;
 }

@@ -15,7 +15,8 @@ import type { Platform, SettingsStorage } from '../core/ports'
 import { docModules, documentationPages, writeDocumentation } from '../core/docs'
 import { moduleSettings, readSettings, type CoreSettings } from '../core/settings'
 import { MODULES } from '../modules'
-import { obsidianPlatform, pluginSettingsStorage } from './platform'
+import { BlackFileView } from './fileViewer'
+import { FILE_VIEW, obsidianPlatform, pluginSettingsStorage } from './platform'
 import { ModuleDetailsModal } from './moduleDetailsModal'
 import { BlackProjectsSettingTab } from './settingsTab'
 
@@ -35,7 +36,9 @@ export default class BlackProjectsPlugin extends Plugin {
     this.storage = pluginSettingsStorage(this)
     this.config = readSettings(await this.storage.load())
     this.i18n = createI18n(this.config.language)
-    this.platform = obsidianPlatform(this.app, this.manifest.version, this.i18n)
+    this.platform = obsidianPlatform(this, this.manifest.version, this.i18n)
+    // La visionneuse des fichiers qu'Obsidian n'ouvre pas, quand l'utilisateur choisit de les afficher.
+    this.registerView(FILE_VIEW, (leaf) => new BlackFileView(leaf, this))
 
     for (const module of MODULES) {
       this.registry.register(module)

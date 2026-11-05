@@ -39,10 +39,17 @@ export interface ModuleFeature {
   /** Les variables du libellé et de la précision : `{from}`, `{to}`… */
   readonly vars?: Vars
   /**
-   * Des constats sur la fiche, une ligne chacun : « Écrit par Black Projects : Oui (.json)
-   * · Non (.txt, .csv) ». Chaque valeur a sa couleur (`tone`) et, au besoin, son infobulle.
+   * Des constats sur la fiche, une ligne chacun : « Écrit par Black Projects : Oui ».
+   * Chaque valeur a sa couleur (`tone`) et, au besoin, son infobulle.
    */
   readonly facts?: readonly FeatureFact[]
+  /**
+   * La couleur de la fiche, quand elle ne suit pas l'état (`status`) : vert, orange,
+   * rouge. Le résumé en tête de fenêtre compte alors les fiches par couleur.
+   */
+  readonly tone?: FactTone
+  /** Le badge en bas de la fiche, à la place de celui de l'état. */
+  readonly badge?: FactValue
   /** Des groupes d'étiquettes, chacun avec son titre : les mots-clés cherchés dans le nom, dans le titre… */
   readonly tagGroups?: readonly { readonly labelKey: string; readonly tags: readonly string[] }[]
   /** La fiche est désactivée par l'utilisateur : montrée en retrait. */
@@ -54,6 +61,11 @@ export interface ModuleFeature {
   readonly switch?: {
     readonly settingsKey: string
     readonly id: string
+    /**
+     * `off` (par défaut) : la liste est celle des éléments éteints (types désactivés) ;
+     * `on` : celle des éléments allumés (extensions affichées).
+     */
+    readonly listed?: 'off' | 'on'
     /** Les infobulles de l'interrupteur, actif et inactif. */
     readonly tooltipKeys?: { readonly on: string; readonly off: string }
   }
@@ -65,7 +77,7 @@ export interface FeatureFact {
   readonly values: readonly FactValue[]
 }
 
-/** `yes` : vert ; `partial` : orange (en cours, ou avec une réserve) ; `no` : gris. */
+/** `yes` : vert ; `partial` : orange (en partie, ou avec une réserve) ; `no` : rouge. */
 export type FactTone = 'yes' | 'partial' | 'no'
 
 export interface FactValue {
@@ -73,8 +85,6 @@ export interface FactValue {
   readonly vars?: Vars
   readonly tone: FactTone
   readonly tooltipKey?: string
-  /** Les extensions concernées, quand la valeur n'est pas la même pour toute la fiche. */
-  readonly extensions?: readonly string[]
 }
 
 /** Une ligne de blocs : une famille de fonctions (les PDF, les tableurs…). */
@@ -103,6 +113,10 @@ export interface ModuleDetails {
   readonly introKey?: string
   /** Le libellé de chaque état dans ce module ; à défaut, ceux du cœur. */
   readonly statusKeys?: Partial<Record<FeatureStatus, string>>
+  /** Pour des fiches colorées par `tone` : le libellé et l'infobulle de chaque couleur dans le résumé. */
+  readonly toneKeys?: Readonly<Record<FactTone, { readonly label: string; readonly tip?: string }>>
+  /** Le nombre de fiches par ligne (une grille) ; à défaut, autant qu'il en tient. */
+  readonly columns?: number
   readonly sections: readonly ModuleDetailSection[]
 }
 
