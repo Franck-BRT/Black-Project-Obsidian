@@ -22,7 +22,7 @@ describe('normalizeAlias', () => {
     expect(normalizeAlias('  omlx-sys-0001 ')).toBe('OMLX-SYS-0001')
   })
 
-  // A pm-req block separates the identifiers it quotes with them, so an alias holding
+  // A brt-req block separates the identifiers it quotes with them, so an alias holding
   // one could never be cited.
   it('takes out what a block would read as a separator', () => {
     expect(normalizeAlias('OMLX,SYS;0001')).toBe('OMLX-SYS-0001')

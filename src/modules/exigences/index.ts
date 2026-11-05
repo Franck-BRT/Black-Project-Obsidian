@@ -6,8 +6,9 @@
  *
  * Une bibliothèque d'exigences : une note par exigence, un identifiant attribué une fois
  * et jamais réutilisé, une formulation par langue avec son retard sur la source, des
- * liens entre exigences, et le bloc `pm-req` qui cite des exigences dans un document au
- * lieu de les recopier. Le format est celui de la version complète de Black Projects.
+ * liens entre exigences, et le bloc `brt-req` qui cite des exigences dans un document au
+ * lieu de les recopier. Le format reprend celui de la version complète de Black Projects,
+ * sous le nom `brt-` ; ses anciennes notes et anciens blocs `pm-` sont encore lus.
  *
  * Ce fichier est la seule porte d'entrée du module ; `model/` (le modèle, repris de la
  * version complète), `store.ts` (les notes) et `flows.ts` (ce que fait l'utilisateur)
@@ -20,7 +21,7 @@ import { cleanFolder } from '../../core/settings'
 import page from './doc/Exigences.md'
 import { browseRequirements, createRequirement, editRequirement, renderBlock, type Session } from './flows'
 import { exigencesEn, exigencesFr } from './i18n'
-import { REQ_BLOCK_LANGUAGE } from './model/block'
+import { REQ_BLOCK_LANGUAGES } from './model/block'
 import {
   cleanLanguages,
   cleanPrefix,
@@ -118,7 +119,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.1.0',
+  version: '0.1.1',
   requires: [],
   texts: { fr: exigencesFr, en: exigencesEn },
   details: () => exigencesFeatures(),
@@ -162,7 +163,8 @@ export const exigencesModule: BlackModule = {
       }
     })
 
-    // Les blocs `pm-req` des notes : les exigences citées, dessinées d'après la bibliothèque.
-    context.blocks?.register(REQ_BLOCK_LANGUAGE, (source) => renderBlock(session, source))
+    // Les blocs `brt-req` des notes : les exigences citées, dessinées d'après la bibliothèque.
+    // (les anciens blocs `pm-req` aussi).
+    for (const language of REQ_BLOCK_LANGUAGES) context.blocks?.register(language, (source) => renderBlock(session, source))
   }
 }

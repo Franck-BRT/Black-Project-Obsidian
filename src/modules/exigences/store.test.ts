@@ -50,7 +50,7 @@ describe('créer, relire, modifier', () => {
     expect(created.filePath).toBe('Exigences/REQ-SYSTEME-0001 Maintien en température.md')
     expect(settings().compteurs).toEqual({ SYSTEME: 1 })
     const content = await platform.fs.readText(created.filePath!)
-    expect(content).toContain('pm-requirement: true')
+    expect(content).toContain('brt-requirement: true')
     expect(content).toContain('# REQ-SYSTEME-0001 — Maintien en température\n\n## FR\n\nLe système doit…')
     const again = await store.load(created.filePath!)
     expect(again).toMatchObject({ id: created.id, title: created.title, sourceLang: 'fr', rev: 1 })
@@ -121,12 +121,25 @@ describe('créer, relire, modifier', () => {
     const { platform, store } = setup()
     await platform.fs.writeText(
       'Exigences/Sous-dossier/REQ-SOL-0007.md',
-      '---\npm-requirement: true\nid: REQ-SOL-0007\ntitle: Écrite à la main\ntext:\n  fr: Le segment sol doit…\n  en: The ground segment shall…\nstatus: approved\n---\n'
+      '---\nbrt-requirement: true\nid: REQ-SOL-0007\ntitle: Écrite à la main\ntext:\n  fr: Le segment sol doit…\n  en: The ground segment shall…\nstatus: approved\n---\n'
     )
     await platform.fs.writeText('Exigences/Autre.md', '# Pas une exigence')
     const all = await store.all()
     expect(all.map((each) => each.id)).toEqual(['REQ-SOL-0007'])
     expect(all[0]).toMatchObject({ title: 'Écrite à la main', status: 'approved' })
     expect(all[0]?.text.en?.body).toBe('The ground segment shall…')
+  })
+})
+
+describe('les anciennes notes (pm-requirement)', () => {
+  it('se lisent, et prennent la clé brt-requirement quand elles sont réécrites', async () => {
+    const { platform, store } = setup()
+    const path = 'Exigences/REQ-SYS-0005 Ancienne.md'
+    await platform.fs.writeText(path, '---\npm-requirement: true\nid: REQ-SYS-0005\ntitle: Ancienne\ntext:\n  fr: Avant\n---\n')
+    expect((await store.all()).map((each) => each.id)).toEqual(['REQ-SYS-0005'])
+    await store.save(path, (requirement) => setText(requirement, 'fr', 'Après', ''))
+    const content = await platform.fs.readText(path)
+    expect(content).toContain('brt-requirement: true')
+    expect(content).not.toContain('pm-requirement')
   })
 })

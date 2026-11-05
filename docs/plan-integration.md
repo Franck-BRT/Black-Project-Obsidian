@@ -60,9 +60,10 @@ src/
 - `src/core` et `src/modules` n'importent jamais `obsidian`, `electron` ni de module
   Node : une règle de lint fait échouer le build sinon. C'est ce qui rendra possible
   l'application de bureau, qui fournira ses propres implémentations des ports.
-- Le format des données (Markdown + YAML, blocs `pm-req` pour les exigences) reste
-  identique à la version complète de Black Projects, pour qu'un client puisse passer de
-  l'une à l'autre sans perte.
+- Le format des données (Markdown + YAML, blocs `brt-req` pour les exigences) reprend
+  celui de la version complète de Black Projects, sous des noms Black Room Technologies ;
+  les anciens noms de la version complète restent lus, pour qu'un client passe de l'une
+  à l'autre sans perte.
 
 Détails : [architecture/vue-d-ensemble.md](architecture/vue-d-ensemble.md),
 [architecture/modules.md](architecture/modules.md).
@@ -180,10 +181,12 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
 - Réécrit : `RequirementStore` sur les ports (fichiers, YAML lu par la plateforme), les
   réglages et l'attribution des identifiants, la recherche des exigences (le dossier des
   exigences, sous-dossiers compris)
-- Format `pm-requirement` / `pm-req` identique à la version complète
+- Format de la version complète, sous les noms `brt-requirement` / `brt-req` (v0.5.1) ;
+  les anciens noms `pm-requirement` / `pm-req` restent lus
 - Fenêtre « Exigences » simplifiée : liste, recherche, filtres, fiche ; commandes
-  « Nouvelle exigence », « Modifier l'exigence » ; bloc `pm-req` dessiné dans les notes
+  « Nouvelle exigence », « Modifier l'exigence » ; bloc `brt-req` dessiné dans les notes
 - Cœur : écriture YAML, `ui.pickFromList`, champ `textarea`, blocs de code des modules
+- v0.5.1 : le bloc s'appelle `brt-req` et la clé d'en-tête `brt-requirement`
 - Doc : [modules/exigences.md](modules/exigences.md) ; recette :
   [recette/etape-3.md](recette/etape-3.md)
 

@@ -9,7 +9,7 @@ const reader = { parse: (text: string) => parse(text) as unknown }
 
 describe('écrire du YAML', () => {
   const data = {
-    'pm-requirement': true,
+    'brt-requirement': true,
     id: 'REQ-SYS-0001',
     title: 'Maintien en température',
     rev: 2,

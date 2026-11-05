@@ -71,6 +71,6 @@ l'utilisateur au même endroit, sans cette marque, n'est jamais écrasée.
 
 ## Les données
 
-Markdown + YAML dans le coffre, au même format que la version complète de Black Projects
-(blocs `pm-req` pour les exigences), pour qu'un client passe de l'une à l'autre sans
-perte.
+Markdown + YAML dans le coffre, au format de la version complète de Black Projects sous
+des noms Black Room Technologies (blocs `brt-req` pour les exigences) ; les anciens noms
+restent lus, pour qu'un client passe de l'une à l'autre sans perte.

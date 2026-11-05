@@ -45,11 +45,11 @@ La liste signale aussi une traduction en retard sur la source, une traduction au
 
 ## 4. Citer des exigences dans un document
 
-Dans n'importe quelle note, un bloc `pm-req` **cite** des exigences au lieu de les
+Dans n'importe quelle note, un bloc `brt-req` **cite** des exigences au lieu de les
 recopier : il montre toujours leur formulation du moment, et dit si elle a changé.
 
 ````
-```pm-req
+```brt-req
 REQ-SYS-0001
 REQ-SYS-0002
 ```
@@ -58,7 +58,7 @@ REQ-SYS-0002
 Ou par filtre :
 
 ````
-```pm-req
+```brt-req
 category: SYS
 status: approved
 fields: id, title, text, status
@@ -76,7 +76,8 @@ fields: id, title, text, status
 | `sort:` | `id` (par défaut), `title` ou `status` |
 
 Un identifiant introuvable, une clé inconnue ou un bloc vide sont signalés au-dessus du
-tableau. Un clic sur l'identifiant ouvre la note de l'exigence.
+tableau. Un clic sur l'identifiant ouvre la note de l'exigence. Un ancien bloc `pm-req`
+est dessiné de la même façon.
 
 ## 5. Les réglages
 

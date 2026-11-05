@@ -2,14 +2,14 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Trouver les blocs `pm-req` dans une note : quels documents citent une exigence.
+ * Trouver les blocs `brt-req` dans une note : quels documents citent une exigence.
  * Comptés depuis le haut : une clôture se ressemble à l'ouverture et à la fermeture, et
  * seule la lecture de celles d'avant dit laquelle on regarde. Une clôture fermante n'a
  * pas de langue et est du même type que l'ouvrante — une note sur le Markdown cite des
  * clôtures comme du texte.
  */
 
-import { parseReqBlock, REQ_BLOCK_LANGUAGE, type ReqBlockSpec } from './block'
+import { parseReqBlock, REQ_BLOCK_LANGUAGES, type ReqBlockSpec } from './block'
 
 const FENCE = /^(\s*)(`{3,}|~{3,})\s*(\S*)\s*$/
 
@@ -21,7 +21,7 @@ export interface FencedBlock {
   closed: boolean
 }
 
-/** Tous les blocs `pm-req` d'une note, dans l'ordre. */
+/** Tous les blocs `brt-req` d'une note, dans l'ordre. */
 export function reqBlockRanges(lines: string[]): FencedBlock[] {
   const found: FencedBlock[] = []
   let open = -1
@@ -37,15 +37,15 @@ export function reqBlockRanges(lines: string[]): FencedBlock[] {
       continue
     }
     if (match[3] !== '' || match[2]![0] !== marker) continue
-    if (language === REQ_BLOCK_LANGUAGE) found.push({ open, close: i, closed: true })
+    if (REQ_BLOCK_LANGUAGES.includes(language)) found.push({ open, close: i, closed: true })
     open = -1
     language = ''
   }
-  if (open !== -1 && language === REQ_BLOCK_LANGUAGE) found.push({ open, close: lines.length - 1, closed: false })
+  if (open !== -1 && REQ_BLOCK_LANGUAGES.includes(language)) found.push({ open, close: lines.length - 1, closed: false })
   return found
 }
 
-/** Le bloc `pm-req` où se trouve une ligne, s'il y en a un. Les clôtures comptent comme dedans. */
+/** Le bloc `brt-req` où se trouve une ligne, s'il y en a un. Les clôtures comptent comme dedans. */
 export function reqBlockAt(lines: string[], cursorLine: number): FencedBlock | null {
   return reqBlockRanges(lines).find((block) => cursorLine >= block.open && cursorLine <= block.close) ?? null
 }

@@ -523,7 +523,7 @@
   color: var(--text-muted);
 }
 
-/* Un bloc de code dessiné par un module (pm-req). */
+/* Un bloc de code dessiné par un module (brt-req). */
 .bp-block-message {
   font-size: var(--font-ui-small);
   color: var(--text-warning);

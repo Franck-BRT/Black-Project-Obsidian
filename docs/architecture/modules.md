@@ -21,7 +21,7 @@ export const aoModule: BlackModule = {
     // context.platform  : fichiers, YAML, réseau, notifications, fenêtres (choisir un fichier,
     //                     un formulaire, une liste filtrable, un message), affichage des fichiers
     // context.commands  : déclarer des commandes
-    // context.blocks    : dessiner un bloc de code dans les notes (pm-req), si la plateforme le permet
+    // context.blocks    : dessiner un bloc de code dans les notes (brt-req), si la plateforme le permet
     // context.openWindow: ouvrir la fenêtre du module, si la plateforme en a une
   },
   deactivate() {}                 // facultatif : libérer ce que le module a pris

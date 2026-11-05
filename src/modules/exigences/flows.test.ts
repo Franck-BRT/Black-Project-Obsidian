@@ -1,7 +1,7 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
-/** Le jalon de l'étape 3 : créer, modifier et relire une exigence ; la liste ; le bloc pm-req. */
+/** Le jalon de l'étape 3 : créer, modifier et relire une exigence ; la liste ; le bloc brt-req. */
 
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../../core/i18n'
@@ -143,7 +143,7 @@ describe('la liste', () => {
   })
 })
 
-describe('le bloc pm-req', () => {
+describe('le bloc brt-req', () => {
   async function library() {
     const app = await activate()
     app.platform.forms.push(form({}), form({ title: 'Antenne', text: 'L’antenne doit…', status: 'approved' }))
@@ -154,7 +154,7 @@ describe('le bloc pm-req', () => {
 
   it('cite par identifiant, dans l’ordre écrit, et dit ce qui manque', async () => {
     const { blocks } = await library()
-    const view = await blocks.get('pm-req')!('REQ-SYS-0002\nREQ-SYS-0001\nREQ-SYS-0099\nstatut: x', 'Doc.md')
+    const view = await blocks.get('brt-req')!('REQ-SYS-0002\nREQ-SYS-0001\nREQ-SYS-0099\nstatut: x', 'Doc.md')
     expect(view.columns).toEqual(['Identifiant', 'Formulation', 'Statut'])
     expect(view.rows.map((row) => row.cells)).toEqual([
       ['REQ-SYS-0002', 'L’antenne doit…', 'Approuvée'],
@@ -166,14 +166,20 @@ describe('le bloc pm-req', () => {
 
   it('par filtre, avec ses colonnes ; une langue absente est signalée', async () => {
     const { blocks } = await library()
-    const view = await blocks.get('pm-req')!('status: approved\nfields: id, title, criticality\nlang: en', 'Doc.md')
+    const view = await blocks.get('brt-req')!('status: approved\nfields: id, title, criticality\nlang: en', 'Doc.md')
     expect(view.columns).toEqual(['Identifiant', 'Titre', 'Criticité'])
     expect(view.rows.map((row) => row.cells)).toEqual([['REQ-SYS-0002', 'Antenne', 'Haute']])
     expect(view.rows[0]?.flags).toEqual(['pas de formulation EN : FR affichée'])
   })
 
+  it('l’ancien nom de bloc (pm-req) est dessiné aussi', async () => {
+    const { blocks } = await library()
+    expect([...blocks.keys()]).toEqual(['brt-req', 'pm-req'])
+    expect((await blocks.get('pm-req')!('REQ-SYS-0001', 'Doc.md')).rows).toHaveLength(1)
+  })
+
   it('un bloc vide le dit', async () => {
     const { blocks } = await library()
-    expect((await blocks.get('pm-req')!('', 'Doc.md')).messages[0]).toContain('Bloc vide')
+    expect((await blocks.get('brt-req')!('', 'Doc.md')).messages[0]).toContain('Bloc vide')
   })
 })

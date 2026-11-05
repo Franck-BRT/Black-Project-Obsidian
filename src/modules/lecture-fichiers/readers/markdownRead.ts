@@ -8,7 +8,7 @@ import type { DocxReadBlock, DocxReadParagraph } from './docxRead'
  *
  * The Markdown that documents are written in, not all of CommonMark: headings, paragraphs,
  * quotes, lists, pipe tables, and the emphasis, links and escapes inside them. Code is
- * code and is skipped whole — a `pm-req` block in a note is a query of the library, not
+ * code and is skipped whole — a `brt-req` block in a note is a query of the library, not
  * requirements to import.
  *
  * Two liberties, both to read the plugin's own exports back exactly:

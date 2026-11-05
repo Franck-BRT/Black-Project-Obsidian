@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.1.0 (Black Projects 0.5.0) |
+| Version | 0.1.1 (Black Projects 0.5.1) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | — |
@@ -22,7 +22,7 @@ Documentation utilisateur (écrite dans le coffre) : `src/modules/exigences/doc/
 | Exigences : liste, filtres et fiches | La bibliothèque : recherche, filtres par catégorie, type, statut, criticité ; une ligne → « Modifier la fiche » ou « Ouvrir la note » ; « Nouvelle exigence » ; la liste revient aux mêmes filtres |
 | Modifier l'exigence (note ouverte) | La fiche de l'exigence ouverte : formulation, attributs, responsable, mots-clés, alias |
 
-Et le bloc **`pm-req`**, dessiné dans toute note : des exigences citées plutôt que
+Et le bloc **`brt-req`**, dessiné dans toute note : des exigences citées plutôt que
 recopiées (par identifiant ou alias, ou par filtre), avec leur formulation du moment,
 une traduction en retard ou absente signalée, un identifiant introuvable ou une clé
 inconnue dits au-dessus du tableau. Un clic sur l'identifiant ouvre la note.
@@ -34,9 +34,9 @@ inconnue dits au-dessus du tableau. Un clic sur l'identifiant ouvre la note.
 | `model/requirement.ts` | l'exigence, ses formulations par langue (révision, retard), ses liens (suspects) | repris de la version complète (Black Room Technologies) |
 | `model/reqId.ts` | identifiants `REQ-SYS-0042` : lecture, format, catégories, numéro suivant | repris |
 | `model/aliases.ts` | alias : normalisation, unicité des noms | repris |
-| `model/record.ts` | l'exigence ↔ l'en-tête de sa note (clé `pm-requirement`) | repris |
+| `model/record.ts` | l'exigence ↔ l'en-tête de sa note (clé `brt-requirement`) | repris |
 | `model/note.ts` | la note complète ; corps généré ; ce que l'utilisateur ajoute est gardé | repris, YAML réécrit |
-| `model/block.ts`, `blockFields.ts`, `fence.ts` | le bloc `pm-req` : syntaxe, sélection, colonnes, blocs d'une note | repris |
+| `model/block.ts`, `blockFields.ts`, `fence.ts` | le bloc `brt-req` : syntaxe, sélection, colonnes, blocs d'une note | repris |
 | `settings.ts` | réglages ; attribution des identifiants et compteurs | réécrit |
 | `store.ts` | lire, créer, modifier, renommer les notes, marquer les liens | réécrit sur les ports (`FileSystem`, `yaml`) |
 | `vocabulary.ts` | types, statuts, criticités, vérifications et leurs libellés | réécrit |
@@ -47,12 +47,16 @@ Les tests du modèle sont ceux de la version complète, repris tels quels (134 t
 
 ## Le format
 
-Identique à la version complète de Black Projects : une note écrite par l'une se relit
-dans l'autre.
+Celui de la version complète de Black Projects, sous des noms Black Room Technologies
+(v0.5.1) : la clé d'en-tête **`brt-requirement`** et le bloc **`brt-req`**. Les anciens
+noms de la version complète (`pm-requirement`, `pm-req`) sont encore **lus** : une
+ancienne note d'exigence est reconnue, et prend la clé `brt-requirement` à sa prochaine
+modification ; un ancien bloc est dessiné comme un bloc `brt-req`. Rien n'est plus écrit
+sous les anciens noms.
 
 ```yaml
 ---
-pm-requirement: true
+brt-requirement: true
 id: REQ-SYS-0001
 title: Maintien en température
 sourceLang: fr
@@ -103,7 +107,7 @@ réutilisé. Un identifiant apporté (import) est gardé, et le compteur passe a
 | `chiffres` | chiffres du numéro (2 à 8) | `4` |
 | `langues` | langues de rédaction ; la première est la langue source | `fr, en` |
 | `compteurs` | catégorie → plus haut numéro attribué (interne) | — |
-| `colonnesBloc` | colonnes d'un bloc `pm-req` qui n'en nomme pas | `id, text, status` |
+| `colonnesBloc` | colonnes d'un bloc `brt-req` qui n'en nomme pas | `id, text, status` |
 
 ## Ce que le socle a ajouté au cœur
 

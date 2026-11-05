@@ -14,7 +14,7 @@ import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { makeRequirement, markLinksToward, type Requirement } from './model/requirement'
 import { isReqId, reqFileName } from './model/reqId'
 import { requirementBodyRemainder, serializeRequirement } from './model/note'
-import { hydrateRequirement, REQUIREMENT_FRONTMATTER_KEY, REQUIREMENT_FRONTMATTER_KEYS } from './model/record'
+import { hydrateRequirement, isRequirementFrontmatter, REQUIREMENT_FRONTMATTER_KEYS } from './model/record'
 import { allocateReqId, counterPast, type ReqSettings } from './settings'
 
 export interface StoreDeps {
@@ -74,7 +74,7 @@ export class RequirementStore {
     const { fs, yaml } = this.deps
     if (!(await fs.exists(path))) return null
     const { data } = readYamlFrontmatter(yaml, await fs.readText(path))
-    if (!data || data[REQUIREMENT_FRONTMATTER_KEY] !== true) return null
+    if (!data || !isRequirementFrontmatter(data)) return null
     return hydrateRequirement(data, path)
   }
 

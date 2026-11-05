@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Un bloc `pm-req` : des exigences citées dans un document plutôt que copiées.
+ * Un bloc `brt-req` : des exigences citées dans un document plutôt que copiées.
  *
  * Tout l'intérêt d'une bibliothèque d'exigences, c'est qu'une spécification la cite au
  * lieu d'en garder une copie. Une copie est juste le jour où on la colle et fausse dès la
@@ -10,8 +10,9 @@
  * peut dire tout haut que ce qu'elle montre a pris du retard.
  *
  * La syntaxe : des lignes `clé: valeur`. Quelqu'un qui écrit de la prose ne doit pas
- * apprendre un langage de requête pour citer six exigences. Le format est celui de la
- * version complète de Black Projects.
+ * apprendre un langage de requête pour citer six exigences. Les blocs de la version
+ * complète de Black Projects, sous leur ancien nom (`LEGACY_BLOCK_LANGUAGE`), sont dessinés
+ * aussi.
  */
 
 import type { Requirement } from './requirement'
@@ -28,7 +29,10 @@ export {
   type ReqBlockField
 } from './blockFields'
 
-export const REQ_BLOCK_LANGUAGE = 'pm-req'
+export const REQ_BLOCK_LANGUAGE = 'brt-req'
+/** L'ancien nom du bloc (version complète de Black Projects), encore dessiné. */
+export const LEGACY_BLOCK_LANGUAGE = 'pm-req'
+export const REQ_BLOCK_LANGUAGES: readonly string[] = [REQ_BLOCK_LANGUAGE, LEGACY_BLOCK_LANGUAGE]
 
 export interface ReqBlockSpec {
   /** Nommées, dans l'ordre écrit. Vide : « tout ce qui correspond ». */

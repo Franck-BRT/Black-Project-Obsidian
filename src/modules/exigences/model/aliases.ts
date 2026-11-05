@@ -19,7 +19,7 @@ import { parseReqId } from './reqId'
 
 /**
  * Un alias tel qu'il est rangé : en majuscules comme un identifiant, sans virgule ni
- * point-virgule (un bloc `pm-req` sépare ses identifiants avec).
+ * point-virgule (un bloc `brt-req` sépare ses identifiants avec).
  */
 export function normalizeAlias(raw: string): string {
   return raw.trim().toUpperCase().replace(/[,;]/g, ' ').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')

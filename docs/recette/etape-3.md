@@ -45,7 +45,7 @@ Sur un coffre de test. **Jalon : créer, modifier et relire une exigence.**
 
 ## Citer dans un document
 
-- [ ] Dans une note, un bloc `pm-req` avec `REQ-SYS-0001` et `OMLX-SYS-0001` : un tableau
+- [ ] Dans une note, un bloc `brt-req` avec `REQ-SYS-0001` et `OMLX-SYS-0001` : un tableau
       (identifiant, formulation, statut) ; l'alias est montré « OMLX-SYS-0001
       (REQ-SYS-0001) » ; un clic sur l'identifiant ouvre la note
 - [ ] Un identifiant inconnu : « Introuvable(s) dans la bibliothèque : … » ; une clé
@@ -55,6 +55,9 @@ Sur un coffre de test. **Jalon : créer, modifier et relire une exigence.**
       affichée »
 - [ ] Modifier la formulation citée, puis rouvrir la note qui la cite : la nouvelle
       formulation s'affiche
+- [ ] (v0.5.1) Les nouvelles notes portent `brt-requirement: true` ; un ancien bloc
+      `pm-req` est dessiné comme un `brt-req` ; une note `pm-requirement: true` est
+      dans la liste, et prend `brt-requirement` quand on modifie sa fiche
 
 ## Documentation
 

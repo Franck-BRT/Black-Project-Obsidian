@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.5.0)
+## Aujourd'hui (version 0.5.1)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -36,7 +36,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 - **Exigences** : « Nouvelle exigence » (catégorie, titre, formulation, attributs ;
   l'identifiant REQ-SYS-0001 est attribué et ne sera jamais réutilisé), « Exigences :
   liste, filtres et fiches » pour parcourir la bibliothèque et modifier une fiche, et le
-  bloc `pm-req` pour citer des exigences dans un document ; voir la page *Exigences* de
+  bloc `brt-req` pour citer des exigences dans un document ; voir la page *Exigences* de
   la documentation écrite dans le coffre.
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**

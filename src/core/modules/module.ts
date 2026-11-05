@@ -347,7 +347,7 @@ export interface ModuleContext {
   }
   /** Ouvre la fenêtre du module (ses réglages et ses fonctions), quand la plateforme en a une. */
   openWindow?(): void
-  /** Des blocs de code que le module dessine dans les notes (`pm-req`…), quand la plateforme le permet. */
+  /** Des blocs de code que le module dessine dans les notes (`brt-req`…), quand la plateforme le permet. */
   readonly blocks?: {
     register(language: string, render: BlockRenderer): void
   }

@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Les colonnes qu'un bloc `pm-req` peut dessiner — à part, parce que deux choses s'en
+ * Les colonnes qu'un bloc `brt-req` peut dessiner — à part, parce que deux choses s'en
  * servent : le lecteur du bloc (ligne `fields:`) et les réglages (la liste par défaut).
  */
 

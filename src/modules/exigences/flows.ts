@@ -342,7 +342,7 @@ export async function browseRequirements(session: Session): Promise<void> {
 }
 
 /**
- * Un bloc `pm-req` dessiné : les exigences citées, leur formulation et son état. Un
+ * Un bloc `brt-req` dessiné : les exigences citées, leur formulation et son état. Un
  * identifiant introuvable, une clé inconnue ou un bloc vide sont dits, jamais tus.
  */
 export async function renderBlock(session: Session, source: string): Promise<BlockView> {

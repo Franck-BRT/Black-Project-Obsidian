@@ -7,19 +7,28 @@
  * plugin qui l'a écrite. Les formulations sont dans l'en-tête aussi : une exigence en a
  * plusieurs, et une seule tiendrait dans le corps de la note.
  *
- * Le format est celui de la version complète de Black Projects (clé `pm-requirement`) :
- * une note écrite par l'une se lit dans l'autre.
+ * Une note d'exigence se reconnaît à la clé `brt-requirement: true`. Les notes de la
+ * version complète de Black Projects, marquées de l'ancienne clé (`LEGACY_FRONTMATTER_KEY`),
+ * sont lues aussi, et prennent la nouvelle clé quand elles sont réécrites.
  */
 
 import type { Requirement, ReqLink, ReqRevision, ReqText, VerificationMethod } from './requirement'
 import { makeRequirement, REQ_LINK_KINDS, VERIFICATION_METHODS } from './requirement'
 import { cleanAliases } from './aliases'
 
-export const REQUIREMENT_FRONTMATTER_KEY = 'pm-requirement'
+export const REQUIREMENT_FRONTMATTER_KEY = 'brt-requirement'
+/** L'ancienne clé, lue seulement. */
+export const LEGACY_FRONTMATTER_KEY = 'pm-requirement'
+
+/** L'en-tête est-il celui d'une exigence ? */
+export function isRequirementFrontmatter(data: Readonly<Record<string, unknown>>): boolean {
+  return data[REQUIREMENT_FRONTMATTER_KEY] === true || data[LEGACY_FRONTMATTER_KEY] === true
+}
 
 /** Les clés de l'en-tête qui appartiennent à l'exigence ; les autres sont gardées telles quelles. */
 export const REQUIREMENT_FRONTMATTER_KEYS: ReadonlySet<string> = new Set([
   REQUIREMENT_FRONTMATTER_KEY,
+  LEGACY_FRONTMATTER_KEY,
   'id',
   'title',
   'category',

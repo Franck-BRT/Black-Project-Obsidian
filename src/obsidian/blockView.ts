@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Dessine, dans une note, le bloc de code d'un module (`pm-req`…) : des messages, puis un
+ * Dessine, dans une note, le bloc de code d'un module (`brt-req`…) : des messages, puis un
  * tableau. Le contenu vient du module (`BlockView`) ; ici, on ne fait que le mettre en
  * forme. Un clic sur la première cellule ouvre la note de la ligne.
  */
