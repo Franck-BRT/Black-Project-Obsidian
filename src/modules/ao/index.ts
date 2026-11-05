@@ -84,6 +84,11 @@ import {
 import { extractFromPiece, refreshRequirements } from './requirements'
 import { checkCoherence, checkCoverage, extractAll, findMissed, reportPath, verifyAll } from './verification'
 import { analyseQuality, qualityPath } from './quality'
+import { aiClient, describeAiError } from '../ia'
+import { calendarPath, writeCalendar } from './calendar'
+import { answerQuestion, QUESTIONNAIRE, runQuestionnaire, writeQuestionNote, type AskMode, type QuestionKey } from './ask/dossier'
+import { pieceSources } from './ask/sources'
+import { reviewAnalysisRequirements } from './review'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export {
@@ -242,7 +247,7 @@ export function aoFeatures(): ModuleDetails {
       },
       {
         titleKey: 'ao.feature.section.ai',
-        features: [feature('review', 'in-progress', 6), feature('deadlines', 'in-progress', 6), feature('ask', 'in-progress', 6)]
+        features: [feature('review', 'available', 6), feature('deadlines', 'available', 6), feature('ask', 'available', 6)]
       },
       {
         titleKey: 'ao.feature.section.deliverables',
@@ -400,7 +405,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.7.0',
+  version: '0.8.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -662,6 +667,146 @@ export const aoModule: BlackModule = {
     verification('exigences-oubliees', 'ao.command.missed', (services, analysis) => findMissed(services, window, analysis))
     verification('coherence-pieces', 'ao.command.coherence', (services, analysis) => checkCoherence(services, analysis))
     verification('couverture-reponse', 'ao.command.coverage', (services, analysis) => checkCoverage(services, analysis))
+
+    // ── Étape 6 : l'IA de Sidonie (module IA) ; le calendrier, lui, se passe d'elle ──
+    commands.register({
+      id: 'calendrier',
+      nameKey: 'ao.command.calendar',
+      async run() {
+        const services = servicesFor(context)
+        const analysis = await chooseAnalysis(context, services)
+        if (!analysis) return
+        const calendar = await writeCalendar(services, analysis)
+        platform.notifier.notify(
+          t('ao.calendar.done', { dates: calendar.dates.length, delays: calendar.delays.length, pieces: calendar.read }),
+          8000
+        )
+        await platform.ui.openNote(calendarPath(analysis))
+      }
+    })
+
+    /** Le client de l'IA, ou rien — l'utilisateur est prévenu de ce qui manque. */
+    const needAi = () => {
+      const client = aiClient()
+      if (!client) platform.notifier.notify(t('ia.unavailable'), 10000)
+      return client
+    }
+    const failed = (error: unknown) => platform.notifier.notify(t('ao.ask.failed', { reason: describeAiError(error, t) }), 12000)
+
+    commands.register({
+      id: 'interroger',
+      nameKey: 'ao.command.ask',
+      async run() {
+        const services = servicesFor(context)
+        const analysis = await chooseAnalysis(context, services)
+        if (!analysis) return
+        const client = needAi()
+        if (!client) return
+        const sources = await pieceSources(services, analysis)
+        if (sources.length === 0) {
+          platform.notifier.notify(t('ao.ask.noPiece'), 8000)
+          return
+        }
+        const values = await platform.ui.askForm({
+          title: t('ao.ask.form.title', { name: analysis.name }),
+          intro: t('ao.ask.form.intro', { count: sources.length }),
+          fields: [
+            {
+              kind: 'textarea',
+              key: 'question',
+              label: t('ao.ask.form.question'),
+              placeholder: t('ao.ask.form.question.placeholder'),
+              tooltip: t('ao.ask.form.question.tip'),
+              required: true
+            },
+            {
+              kind: 'choice',
+              key: 'mode',
+              label: t('ao.ask.form.mode'),
+              tooltip: t('ao.ask.form.mode.tip'),
+              options: [
+                { value: 'search', label: t('ao.ask.mode.search') },
+                { value: 'each', label: t('ao.ask.mode.each') }
+              ],
+              value: 'search'
+            }
+          ],
+          submit: t('ao.ask.form.submit')
+        })
+        const question = values?.question?.trim()
+        if (!question) return
+        const mode: AskMode = values?.mode === 'each' ? 'each' : 'search'
+        platform.notifier.notify(t('ao.ask.running'), 4000)
+        try {
+          const answer = await answerQuestion(client, t, sources, question, mode, (message) => platform.notifier.notify(message, 3000))
+          const path = await writeQuestionNote(services, analysis, answer)
+          platform.notifier.notify(
+            answer.nothing ? t('ao.ask.nothing') : t('ao.ask.done', { cited: answer.sources.filter((each) => each.cited).length, sources: answer.sources.length }),
+            8000
+          )
+          await platform.ui.openNote(path)
+        } catch (error) {
+          failed(error)
+        }
+      }
+    })
+
+    commands.register({
+      id: 'questionnaire',
+      nameKey: 'ao.command.questionnaire',
+      async run() {
+        const services = servicesFor(context)
+        const analysis = await chooseAnalysis(context, services)
+        if (!analysis) return
+        const client = needAi()
+        if (!client) return
+        const sources = await pieceSources(services, analysis)
+        if (sources.length === 0) {
+          platform.notifier.notify(t('ao.ask.noPiece'), 8000)
+          return
+        }
+        const keys = await platform.ui.pickMany({
+          title: t('ao.questionnaire.pick.title', { name: analysis.name }),
+          intro: t('ao.questionnaire.pick.intro'),
+          choices: QUESTIONNAIRE.map((key) => ({ value: key, label: t(`ao.q.${key}`), description: t(`ao.q.${key}.ask`) })),
+          submit: t('ao.questionnaire.pick.submit')
+        })
+        if (!keys || keys.length === 0) return
+        try {
+          const { path, answers } = await runQuestionnaire(
+            services,
+            client,
+            analysis,
+            sources,
+            QUESTIONNAIRE.filter((key) => keys.includes(key)) as QuestionKey[],
+            (message) => platform.notifier.notify(message, 4000)
+          )
+          platform.notifier.notify(
+            t('ao.questionnaire.done', { count: answers.length, empty: answers.filter((answer) => answer.nothing).length }),
+            8000
+          )
+          await platform.ui.openNote(path)
+        } catch (error) {
+          failed(error)
+        }
+      }
+    })
+
+    commands.register({
+      id: 'relire-exigences-ia',
+      nameKey: 'ao.command.review',
+      async run() {
+        const services = servicesFor(context)
+        const analysis = await chooseAnalysis(context, services)
+        if (!analysis) return
+        const client = needAi()
+        if (!client) return
+        const position = await analysisPosition(services.fs, analysis)
+        const run = await reviewAnalysisRequirements(services, window, client, analysis, position)
+        if (!run) return
+        platform.notifier.notify(t(run.failed ? 'ao.review.stopped' : 'ao.review.done', { reviewed: run.reviewed, rewritten: run.rewritten }), 10000)
+      }
+    })
 
     commands.register({
       id: 'qualite-exigences',

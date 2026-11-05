@@ -8,6 +8,9 @@
  * en mémoire.
  */
 
+import type { AiClient } from '../ia'
+import { reviewRequirement, translateRequirement } from './ai/actions'
+import { localToday } from '../../core/dates'
 import type { BlockRow, BlockView } from '../../core/modules/module'
 import type { FormField, ListRow, ListState, Notifier, Ui } from '../../core/ports'
 import { nameOwner, normalizeAlias } from './model/aliases'
@@ -39,6 +42,8 @@ export interface Session {
   notifier: Notifier
   t: Translate
   settings(): ReqSettings
+  /** Le client du serveur d'IA (Sidonie) ; `null` si le module IA n'est pas actif ou pas réglé. */
+  ai?: () => AiClient | null
 }
 
 const list = (raw: string | undefined) =>
@@ -355,11 +360,23 @@ export async function browseRequirements(session: Session): Promise<void> {
       [
         { value: 'edit', label: t('exigences.row.edit'), description: t('exigences.row.edit.desc') },
         { value: 'open', label: t('exigences.row.open'), description: t('exigences.row.open.desc') },
+        ...(session.ai
+          ? [
+              { value: 'review', label: t('exigences.row.review'), description: t('exigences.row.review.desc') },
+              { value: 'translate', label: t('exigences.row.translate'), description: t('exigences.row.translate.desc') }
+            ]
+          : []),
         { value: 'back', label: t('exigences.row.back') }
       ],
       `${requirement.id} — ${requirement.title}`
     )
     if (next === 'edit') await editRequirement(session, requirement.filePath)
+    else if (next === 'review' || next === 'translate') {
+      const client = session.ai?.() ?? null
+      if (!client) session.notifier.notify(t('ia.unavailable'), 10000)
+      else if (next === 'review') await reviewRequirement(session, client, requirement.filePath, localToday())
+      else await translateRequirement(session, client, requirement.filePath)
+    }
     else if (next === 'open') {
       await ui.openNote(requirement.filePath)
       return

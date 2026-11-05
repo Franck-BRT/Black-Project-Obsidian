@@ -9,6 +9,9 @@ export const en: Record<string, string> = {
   'command.about': 'About Black Projects',
   'about.notice': 'Black Projects {version} — {active} of {total} module(s) active. {licence}',
 
+  'settings.secret.saved': 'A key is stored in the computer’s keychain.',
+  'settings.secret.empty': 'No key stored.',
+  'settings.secret.unavailable': 'This Obsidian version has no keychain (1.11.4 or newer needed): the key cannot be stored outside the vault.',
   'block.failed': 'The {language} block could not be drawn: see the console for details.',
   'viewer.title': 'File',
   'viewer.meta': '.{extension} file · {size} — shown by Black Projects, read-only.',

@@ -14,7 +14,8 @@
   Certains modules ont un bouton qui ouvre leur fenêtre : **Formats de fichiers** pour la
   lecture de fichiers, **Types de pièces** pour le typage des pièces (types, mots-clés,
   échange), **Fonctions** pour l'analyse d'appels d'offres (avec le dossier des
-  analyses).
+  analyses) et pour l'**IA (Sidonie)** (adresse du serveur, clé, « Tester la
+  connexion »).
 - **Licence** : vos droits d'usage.
 
 Survolez un réglage, un bouton ou un bloc : une infobulle explique à quoi il sert.
@@ -57,6 +58,13 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Vérifier la couverture des exigences par la réponse | pour chaque exigence : citée, traitée, à vérifier ou absente dans la réponse |
 | Analyser la qualité des exigences du dossier | la note `Analyse/Qualité des exigences` : notes, défauts, doublons, non vérifiables |
 | Analyser la qualité de la bibliothèque d'exigences | la même analyse pour la bibliothèque, rattachements compris |
+| Calendrier de l'appel d'offres | la note `Analyse/Calendrier` : remise, validité des offres, délais, chacun avec sa phrase (sans IA) |
+| Tester la connexion au serveur d'IA | liste les modèles du serveur et fait choisir le modèle de texte ; voir {{link:Modules/IA|IA (Sidonie)}} |
+| Relire l'exigence avec l'IA | avis, défauts, reformulations à choisir ou non ; la relecture dans la note |
+| Traduire l'exigence avec l'IA | dans une autre langue de rédaction, marquée à relire |
+| Interroger le dossier (IA) | une question aux pièces ; la réponse cite ses sources, liées aux pièces (`Analyse/Questions`) |
+| Questionnaire du dossier (IA) | attribution, pénalités, garanties, propriété intellectuelle, confidentialité, contrôle export (`Analyse/Questionnaire`) |
+| Relire les exigences du dossier avec l'IA | les plus faibles relues ; côté candidat, la formulation de l'acheteur reste |
 
 ## Vos données
 

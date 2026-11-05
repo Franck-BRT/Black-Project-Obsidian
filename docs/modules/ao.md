@@ -5,8 +5,9 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.7.0 (Black Projects 0.7.0) |
+| Version | 0.8.0 (Black Projects 0.8.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
+| S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
 | Interface publique | `src/modules/ao/index.ts` |
 | État | Étape 2 livrée : analyses, import du dossier (ZIP compris), typage et notes des pièces |
@@ -129,6 +130,18 @@ résumé (entre `<!-- bp:verif:resume:… -->`, d'après les champs `extraction`
 dont la place est `appel-d-offres` ; de la réponse : `reponse` (par candidat pour
 l'émetteur).
 
+## Calendrier et IA (v0.8.0, étape 6)
+
+| Commande | Ce qu'elle fait | IA |
+| --- | --- | --- |
+| Calendrier de l'appel d'offres | dans les pièces de l'appel d'offres, les dates (`findDates`) et les délais (`findDelays`, « sous 15 jours », « fixé à 120 jours »…), chacun avec sa phrase et sa pièce, reconnus par leur nature (`kindOf` : remise, validité, questions, visite, pénalités, livraison, démarrage, notification, autre) ; « À retenir » : la date limite de remise et la validité des offres. Note `Analyse/Calendrier.md` | non |
+| Interroger le dossier (IA) | une question ; **recherche** (par défaut) : les passages des pièces lues qui y répondent le mieux (BM25 sur les mots de la question, article nommé donné en entier — `ask/retrieval.ts`), numérotés `Source [n]`, seuls donnés au modèle, qui cite `[n]` ; **lecture de chaque pièce** : chaque pièce lue partie par partie, ce qui répond relevé, puis une réponse d'ensemble (`ask/eachDocument.ts`). Rien trouvé : le modèle n'est pas appelé. Une question de délais reçoit aussi les dates relevées. Note `Analyse/Questions/<date> <question>.md` : la question, la réponse (chaque `[n]` devient un lien vers la pièce), les sources (citée / non citée) et les extraits transmis ; une citation sans source est signalée | oui |
+| Questionnaire du dossier (IA) | six questions prêtes (critères d'attribution, pénalités, garanties, propriété intellectuelle, confidentialité, contrôle export), cochées ; chacune posée en recherche, avec des mots de recherche en plus (`ao.q.<clé>.terms`) ; `Analyse/Questionnaire.md`, une section par question entre `<!-- bp:questionnaire:<clé>:debut -->` / `fin`, écrite après chaque question | oui |
+| Relire les exigences du dossier avec l'IA | les exigences de l'analyse, les plus faibles cochées d'avance (moins de trois étoiles ; à défaut, celles qui ne sont pas parfaites) ; chacune relue par `reviewRequirement` du module Exigences (portée `wording`), la relecture dans sa note. Émetteur : une reformulation peut être retenue ; candidat : la formulation de l'acheteur n'est jamais changée | oui |
+
+Les sources sont les **notes des pièces** lues (section « Texte extrait », sans les
+sections tenues par Black Projects) : une citation mène à la note, qui mène à l'original.
+
 ## Dans le coffre
 
 ```
@@ -145,7 +158,8 @@ l'émetteur).
 │   ├── Réponse/              candidat (même forme)
 │   └── Réponses/<candidat>/  émetteur (même forme)
 ├── Exigences/      une note par exigence extraite (étape 4) : <identifiant>.md
-└── Analyse/        Vérification des exigences.md (v0.6.0) ; étapes 5 à 7
+└── Analyse/        Vérification des exigences.md (v0.6.0), Qualité des exigences.md
+                    (v0.7.0), Calendrier.md, Questionnaire.md, Questions/ (v0.8.0)
 ```
 
 - **Noms des notes** : `CCTP.md` ; si une autre pièce porte déjà ce nom dans un autre
@@ -169,7 +183,13 @@ l'émetteur).
 | `notes.ts` | Forme des notes et des dossiers ; tableau des pièces |
 | `requirements.ts` | Extraire les exigences d'une pièce ; listes d'exigences des notes de pièce et d'analyse |
 | `verification.ts` | Les quatre vérifications et le rapport « Vérification des exigences » |
-| `quality.ts` | L'analyse de qualité des exigences de l'analyse (étape 5) |
+| `quality.ts` | L'analyse de qualité des exigences de l'analyse (étape 5) ; doublons par le sens avec l'IA |
+| `deadlines.ts` | Dates et délais d'un texte, avec leur phrase (repris de la version complète) |
+| `calendar.ts` | Le calendrier de l'appel d'offres (étape 6) |
+| `ask/retrieval.ts`, `ask/eachDocument.ts` | Trouver les passages qui répondent ; lire chaque pièce (repris : `libraryRetrieval`, `eachDocument`) |
+| `ask/sources.ts` | Les pièces lues comme sources |
+| `ask/dossier.ts` | Interroger le dossier, la note d'une question, le questionnaire |
+| `review.ts` | Relire les exigences du dossier avec l'IA |
 | `i18n.ts` | Textes, infobulles comprises |
 | `doc/` | Page de documentation écrite dans le coffre |
 
@@ -185,3 +205,6 @@ l'en-tête des notes.
   noms des notes, ordre du tableau.
 - `test/ao-dce.test.ts` : le dossier d'exemple compressé en ZIP, importé, chaque pièce
   lue et typée.
+- `step6.test.ts`, `deadlines.test.ts`, `ask/*.test.ts` : calendrier, questions citées,
+  questionnaire, relecture (étape 6).
+- `test/ao-ia.test.ts` : **jalon n° 4** sur le dossier d'exemple, serveur simulé.

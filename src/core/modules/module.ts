@@ -318,7 +318,20 @@ export interface BooleanField {
   readonly defaultValue: boolean
 }
 
-export type ModuleSettingField = MappingField | TextField | ActionsField | TogglesField | BooleanField
+/**
+ * Un secret (une clé d'API) : saisi dans la fenêtre du module, rangé dans le trousseau de
+ * la plateforme sous `secretId` — jamais dans les réglages du module ni dans le coffre.
+ */
+export interface SecretField {
+  readonly kind: 'secret'
+  readonly secretId: string
+  readonly nameKey: string
+  readonly descKey?: string
+  readonly tooltipKey?: string
+  readonly placeholderKey?: string
+}
+
+export type ModuleSettingField = MappingField | TextField | ActionsField | TogglesField | BooleanField | SecretField
 
 /** Une action que l'utilisateur lance, depuis la palette de commandes par exemple. */
 export interface ModuleCommand {

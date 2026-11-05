@@ -10,7 +10,7 @@
 
 import { normalizePath, Notice, parseYaml, requestUrl, TFile, TFolder, type App, type Plugin } from 'obsidian'
 import type { I18n } from '../core/i18n'
-import type { FileDisplay, FileSystem, FolderListing, Http, Notifier, Platform, SettingsStorage } from '../core/ports'
+import type { FileDisplay, FileSystem, FolderListing, Http, Notifier, Platform, SecretStore, SettingsStorage } from '../core/ports'
 import { obsidianUi } from './ui'
 
 function parentOf(path: string): string {
@@ -198,6 +198,17 @@ export function obsidianDisplay(plugin: Plugin): FileDisplay {
   }
 }
 
+/**
+ * Le trousseau d'Obsidian (depuis la 1.11.4) : les secrets y sont rangés par le système,
+ * hors du coffre. Absent sur une version plus ancienne.
+ */
+function obsidianSecrets(app: App): { secrets?: SecretStore } {
+  const storage = (app as unknown as { secretStorage?: { getSecret(id: string): string | null; setSecret(id: string, value: string): void } })
+    .secretStorage
+  if (!storage) return {}
+  return { secrets: { get: (id) => storage.getSecret(id), set: (id, value) => storage.setSecret(id, value) } }
+}
+
 /** Les réglages, dans le `data.json` du plugin. */
 export function pluginSettingsStorage(plugin: Plugin): SettingsStorage {
   return {
@@ -215,6 +226,7 @@ export function obsidianPlatform(plugin: Plugin, version: string, i18n: I18n): P
     notifier: obsidianNotifier,
     ui: obsidianUi(app, i18n),
     display: obsidianDisplay(plugin),
-    yaml: { parse: (text) => parseYaml(text) as unknown }
+    yaml: { parse: (text) => parseYaml(text) as unknown },
+    ...obsidianSecrets(app)
   }
 }

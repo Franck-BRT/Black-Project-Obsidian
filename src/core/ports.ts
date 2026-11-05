@@ -293,4 +293,16 @@ export interface Platform {
   display?: FileDisplay
   /** Lire du YAML (les en-têtes de notes structurés). */
   yaml: YamlReader
+  /**
+   * Le trousseau de l'ordinateur, pour les secrets (une clé d'API) : jamais dans le coffre,
+   * jamais dans les réglages synchronisés. Absent si la plateforme n'en a pas.
+   */
+  secrets?: SecretStore
+}
+
+export interface SecretStore {
+  /** Le secret, ou `null` s'il n'est pas enregistré. */
+  get(id: string): string | null
+  /** Enregistre (ou remplace) un secret ; une valeur vide l'efface. */
+  set(id: string, value: string): void
 }

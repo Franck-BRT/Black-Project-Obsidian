@@ -9,6 +9,10 @@ export const fr: Record<string, string> = {
   'command.about': 'À propos de Black Projects',
   'about.notice': 'Black Projects {version} — {active} module(s) actif(s) sur {total}. {licence}',
 
+  'settings.secret.saved': 'Une clé est enregistrée dans le trousseau de l’ordinateur.',
+  'settings.secret.empty': 'Aucune clé enregistrée.',
+  'settings.secret.unavailable':
+    'Cette version d’Obsidian n’a pas de trousseau (il faut la 1.11.4 ou plus récente) : la clé ne peut pas être enregistrée hors du coffre.',
   'block.failed': 'Le bloc {language} n’a pas pu être dessiné : voir la console pour le détail.',
   'viewer.title': 'Fichier',
   'viewer.meta': 'Fichier .{extension} · {size} — affiché par Black Projects, en lecture seule.',

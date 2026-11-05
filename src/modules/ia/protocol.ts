@@ -1,0 +1,270 @@
+// Copyright © 2026 Black Room Technologies. Tous droits réservés.
+// Logiciel propriétaire — voir le fichier LICENSE.
+
+/**
+ * The OpenAI-compatible wire protocol, written out rather than taken from a library.
+ *
+ * The plugin carries no runtime dependencies and this is not the place to start: what is
+ * actually needed here is three request shapes and three response shapes, and an SDK
+ * would bring a network stack Obsidian already has a better answer for.
+ *
+ * Everything in this file is pure — it builds strings and reads parsed JSON — so the
+ * whole protocol is testable without a server, which matters because the server this was
+ * written for only answers from inside its own network.
+ */
+
+export type LlmFailure = 'unreachable' | 'timeout' | 'http' | 'shape' | 'disabled'
+
+/**
+ * A failure the interface can say something true about.
+ *
+ * A stack trace tells a reader nothing they can act on; "unreachable" tells them to check
+ * they are on the right network, which is the actual answer nine times out of ten for a
+ * service that lives behind one.
+ */
+export class LlmError extends Error {
+  constructor(
+    readonly kind: LlmFailure,
+    message: string,
+    readonly status?: number
+  ) {
+    super(message)
+    this.name = 'LlmError'
+  }
+}
+
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatRequest {
+  model: string
+  messages: ChatMessage[]
+  temperature?: number
+  maxTokens?: number
+  /** Asks for a reply matching this JSON Schema, which the gateway enforces. */
+  schema?: { name: string; schema: unknown }
+  /** Turns on step-by-step reasoning, on the models that have it. */
+  thinking?: boolean
+}
+
+/**
+ * The body of a chat request.
+ *
+ * `chat_template_kwargs` goes at the top level, not inside `extra_body`: `extra_body` is
+ * the Python client's own escape hatch and it merges those keys into the body before
+ * sending. Copying the Python example literally would send a field the server ignores,
+ * and the reasoning mode would look enabled while doing nothing.
+ */
+export function buildChatBody(request: ChatRequest): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model: request.model,
+    messages: request.messages
+  }
+  // Zero asks for no limit of the plugin's own: the gateway's, which is what is left of
+  // the model's context. A number there cuts a long reply short, silently but for the
+  // reason the reply ends with.
+  if (request.maxTokens) body.max_tokens = request.maxTokens
+  // Sent even at zero: a quality verdict that changes between two runs on the same text
+  // is a verdict nobody can audit, so determinism is the default and it must be explicit.
+  if (request.temperature !== undefined) body.temperature = request.temperature
+  if (request.schema) {
+    body.response_format = {
+      type: 'json_schema',
+      json_schema: { name: request.schema.name, schema: request.schema.schema }
+    }
+  }
+  if (request.thinking) body.chat_template_kwargs = { enable_thinking: true }
+  return body
+}
+
+/**
+ * The events of a streamed reply, out of what has arrived so far.
+ *
+ * A stream arrives in pieces cut wherever the network cut them: an event can end in the
+ * middle of one piece and the next begin in it. So what is complete is read, and the
+ * rest is handed back to wait for the next piece. An event is its `data:` lines, joined;
+ * a comment or another field is not the reply.
+ */
+export function readSseEvents(buffer: string): { events: string[]; rest: string } {
+  const normalized = buffer.replace(/\r\n?/g, '\n')
+  const blocks = normalized.split('\n\n')
+  const rest = blocks.pop() ?? ''
+  const events: string[] = []
+  for (const block of blocks) {
+    const data = block
+      .split('\n')
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.slice(5).replace(/^ /, ''))
+    if (data.length) events.push(data.join('\n'))
+  }
+  return { events, rest }
+}
+
+/**
+ * The words one streamed event adds to the reply: `choices[0].delta.content`, or nothing.
+ *
+ * An event carrying an error is the gateway failing in the middle of a reply, and says so
+ * rather than ending it quietly short.
+ */
+export function readDelta(payload: unknown): string {
+  const error = (payload as { error?: unknown } | null)?.error
+  if (error) {
+    const message = typeof error === 'string' ? error : (error as { message?: unknown }).message
+    throw new LlmError('http', typeof message === 'string' ? message : 'The gateway failed during the reply.')
+  }
+  const content = (payload as { choices?: { delta?: { content?: unknown } }[] } | null)?.choices?.[0]?.delta?.content
+  return typeof content === 'string' ? content : ''
+}
+
+/**
+ * Why the model stopped, from a reply or a streamed event: `stop` when it had finished,
+ * `length` when the reply ran into the length limit and was cut. '' when it does not say.
+ */
+export function readFinish(payload: unknown): string {
+  const reason = (payload as { choices?: { finish_reason?: unknown }[] } | null)?.choices?.[0]?.finish_reason
+  return typeof reason === 'string' ? reason : ''
+}
+
+export function buildEmbeddingBody(model: string, input: string[]): Record<string, unknown> {
+  // One call for many texts: the endpoint takes an array, and a library of requirements
+  // embedded one request at a time would be a thousand round trips. The format said
+  // outright: OpenAI takes floats when it is left out, but a LiteLLM gateway passes the
+  // missing field on as null, and the model behind it refuses the request (422).
+  return { model, input, encoding_format: 'float' }
+}
+
+/**
+ * The body of a reranking request, in the shape Cohere set and Jina, vLLM and the gateways
+ * in front of them follow: a query, the texts to put in order, how many to keep.
+ */
+export function buildRerankBody(model: string, query: string, documents: string[]): Record<string, unknown> {
+  return { model, query, documents, top_n: documents.length }
+}
+
+/**
+ * How relevant each text is to the query, in the order the texts were sent. The reply
+ * lists them best first, each by its index: `results` with `relevance_score` as Cohere
+ * and vLLM write it, `data` with `score` as some gateways do. A text the reply leaves
+ * out scores nothing.
+ */
+export function readRerank(payload: unknown, count: number): number[] {
+  const body = payload as { results?: unknown; data?: unknown } | null
+  const rows = Array.isArray(body?.results) ? body.results : Array.isArray(body?.data) ? body.data : null
+  if (!rows) throw new LlmError('shape', 'The reply carried no ranking.')
+  const scores = new Array<number>(count).fill(Number.NEGATIVE_INFINITY)
+  for (const row of rows as { index?: unknown; relevance_score?: unknown; score?: unknown }[]) {
+    const index = row?.index
+    const score = typeof row?.relevance_score === 'number' ? row.relevance_score : row?.score
+    if (typeof index !== 'number' || typeof score !== 'number' || index < 0 || index >= count) continue
+    scores[index] = score
+  }
+  if (scores.every((score) => score === Number.NEGATIVE_INFINITY)) {
+    throw new LlmError('shape', 'The ranking named none of the texts sent.')
+  }
+  return scores
+}
+
+/** `base` + `path`, whichever way the reader typed the trailing slash. */
+export function joinUrl(base: string, path: string): string {
+  return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+}
+
+interface ChatChoice {
+  message?: { content?: unknown }
+}
+
+/**
+ * What the model said.
+ *
+ * A reply that is the right shape but empty is a failure, not an empty answer: it means
+ * the request was refused or the generation was cut before the first token, and letting
+ * it through as `''` would show up much later as a requirement translated to nothing.
+ */
+export function readChatContent(payload: unknown): string {
+  const choices = (payload as { choices?: ChatChoice[] } | null)?.choices
+  if (!Array.isArray(choices) || choices.length === 0) {
+    throw new LlmError('shape', 'The reply carried no choices.')
+  }
+  const content = choices[0]?.message?.content
+  if (typeof content !== 'string' || !content.trim()) {
+    throw new LlmError('shape', 'The reply carried no text.')
+  }
+  return content
+}
+
+export function readEmbeddings(payload: unknown): number[][] {
+  const data = (payload as { data?: { embedding?: unknown; index?: unknown }[] } | null)?.data
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new LlmError('shape', 'The reply carried no embeddings.')
+  }
+  // In the order the texts were sent, by the index each carries, when all of them do.
+  const ordered = data.every((row) => typeof row?.index === 'number')
+    ? [...data].sort((a, b) => (a.index as number) - (b.index as number))
+    : data
+  return ordered.map((row) => {
+    const vector = row?.embedding
+    if (!Array.isArray(vector) || vector.some((value) => typeof value !== 'number')) {
+      throw new LlmError('shape', 'An embedding was not a vector of numbers.')
+    }
+    return vector as number[]
+  })
+}
+
+/** The model names the gateway offers, so nobody has to type one from memory. */
+export function readModels(payload: unknown): string[] {
+  const data = (payload as { data?: { id?: unknown }[] } | null)?.data
+  if (!Array.isArray(data)) throw new LlmError('shape', 'The reply carried no model list.')
+  return data.map((row) => row?.id).filter((id): id is string => typeof id === 'string' && id.length > 0)
+}
+
+/**
+ * The JSON a model was asked for, out of the text it actually sent.
+ *
+ * A schema-enforcing gateway returns bare JSON and this is one `JSON.parse`. The fallback
+ * is for the day it does not — a fenced block, or a sentence of preamble before the
+ * object — because a feature built on an optional parameter should degrade rather than
+ * break when the parameter is not honoured.
+ */
+export function parseJsonContent<T>(content: string): T {
+  const fenced = /```(?:json)?\s*([\s\S]*?)```/.exec(content)
+  const candidates = [content, fenced?.[1] ?? '', sliceBraces(content)]
+  for (const candidate of candidates) {
+    const text = candidate.trim()
+    if (!text) continue
+    try {
+      return JSON.parse(text) as T
+    } catch {
+      continue
+    }
+  }
+  throw new LlmError('shape', 'The reply was not the JSON it was asked for.')
+}
+
+/** From the first brace to the last: enough to lift an object out of a sentence. */
+function sliceBraces(text: string): string {
+  const open = text.indexOf('{')
+  const close = text.lastIndexOf('}')
+  return open === -1 || close <= open ? '' : text.slice(open, close + 1)
+}
+
+/**
+ * How alike two embeddings are, from -1 to 1.
+ *
+ * Here rather than anywhere else because it is what an embedding is *for* in a
+ * requirements library: the same need written twice, in two languages, by two people.
+ */
+export function cosine(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0
+  let dot = 0
+  let normA = 0
+  let normB = 0
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i]
+    normA += a[i] * a[i]
+    normB += b[i] * b[i]
+  }
+  const size = Math.sqrt(normA) * Math.sqrt(normB)
+  return size === 0 ? 0 : dot / size
+}

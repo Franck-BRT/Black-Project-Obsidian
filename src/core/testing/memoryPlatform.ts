@@ -10,6 +10,7 @@
 import { parse as parseYaml } from 'yaml'
 import type {
   Choice,
+  HttpRequest,
   ListAnswer,
   ListView,
   ConfirmView,
@@ -52,6 +53,11 @@ export interface MemoryPlatform extends Platform {
   /** Les réponses des prochaines listes (par défaut : fermée), et les listes montrées. */
   listAnswers: (ListAnswer | null)[]
   lists: ListView[]
+  /** Le trousseau, en mémoire. */
+  secretValues: Map<string, string>
+  /** Les réponses du réseau, dans l'ordre (par défaut : 404), et les requêtes reçues. */
+  httpAnswers: { status: number; text: string }[]
+  requests: HttpRequest[]
 }
 
 export function memoryPlatform(files: Record<string, string | Uint8Array> = {}): MemoryPlatform {
@@ -92,6 +98,13 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
     messages: [],
     listAnswers: [],
     lists: [],
+    secretValues: new Map(),
+    httpAnswers: [],
+    requests: [],
+    secrets: {
+      get: (id) => platform.secretValues.get(id) ?? null,
+      set: (id, value) => void (value ? platform.secretValues.set(id, value) : platform.secretValues.delete(id))
+    },
     yaml: { parse: (text) => parseYaml(text) as unknown },
     info: { name: 'test', version: '0.0.0' },
     fs: {
@@ -123,7 +136,12 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
         return { files: [...store.keys()].filter(direct), folders: [...folders].filter(direct) }
       }
     },
-    http: { request: async () => ({ status: 404, text: '' }) },
+    http: {
+      request: async (request) => {
+        platform.requests.push(request)
+        return platform.httpAnswers.shift() ?? { status: 404, text: '' }
+      }
+    },
     notifier: { notify: (message) => void platform.notices.push(message) },
     ui: {
       pickFile: async (options) => {

@@ -5,11 +5,12 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.4.0 (Black Projects 0.7.0) |
+| Version | 0.5.0 (Black Projects 0.8.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
-| Utilisé par | Analyse d'appels d'offres (`ao`) : extraction des exigences des pièces |
+| Utilisé par | Analyse d'appels d'offres (`ao`) : extraction des exigences des pièces, qualité, relecture |
+| S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : relecture, traduction, doublons par le sens |
 | Étape | 3 du [plan d'intégration](../plan-integration.md) — le socle des exigences |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/exigences/doc/Exigences.md`.
@@ -101,12 +102,35 @@ L'aperçu d'import (`previewImport`) accepte aussi des lignes venues de plusieur
 | --- | --- | --- |
 | `quality/rules.ts` | `checkWording` : les défauts de rédaction, par langue (FR, EN) ; à définir et « et/ou » dans toute langue | repris |
 | `quality/score.ts` | `assessRequirement(exigence, langues, portée)` : six axes ISO/IEC/IEEE 29148, pondérés, en étoiles ; portée `record` (bibliothèque) ou `wording` (rédaction seule, plafond à deux étoiles sans obligation) | repris, portée ajoutée |
-| `quality/similar.ts` | doublons par trigrammes (Jaccard) ; seuils strict / normal / large ; la partie par le sens attend l'étape 6 | repris |
+| `quality/similar.ts` | doublons par trigrammes (Jaccard) et par le sens (cosinus d'embeddings) ; seuils strict / normal / large | repris |
 | `quality/library.ts` | `coverageOf` : rattachements (citée, satisfaite, vérifiée, liens à revoir, formulation) | repris |
 | `quality/report.ts` | `qualityMarkdown` : le rapport (vue d'ensemble, répartition, axes, défauts, doublons, non vérifiables, faibles, rattachements, toutes) ; `withQuality` le réécrit en gardant les Notes | nouveau |
 
 Commande **Analyser la qualité de la bibliothèque d'exigences** ; la note est aussi dans
 la liste (colonne, filtre), la fiche et la colonne `rating` d'un bloc `brt-req`.
+
+## Avec l'IA (`ai/`, étape 6)
+
+Le client vient du module [IA](ia.md) (`aiClient()`) ; sans lui, les commandes le disent
+et ne font rien. Rien n'est écrit dans une formulation sans l'accord de l'utilisateur.
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| Relire l'exigence avec l'IA (note ouverte ; aussi dans le menu d'une ligne de la liste) | la note et les axes faibles calculés par les règles (`improvementPlan`) sont donnés au modèle (`deepReview`) ; il rend un avis, les défauts que les règles ne voient pas, et des reformulations par axe. La relecture est écrite dans la note, section « Relecture par l'IA » (`<!-- bp:relecture:debut -->` … `fin`, remplacée à chaque fois) ; une reformulation choisie devient la formulation (révision suivante, origine `machine` acceptée par l'utilisateur), « Ne rien changer » la laisse |
+| Traduire l'exigence avec l'IA | dans une autre langue de rédaction (choisie s'il y en a plusieurs) ; marquée `origin: machine`, non relue ; chiffres et unités comparés à la source (`quantityDrift`) : un écart est signalé |
+| Analyser la qualité… (bibliothèque et dossier) | avec un **modèle d'embeddings** réglé, les doublons par le sens s'ajoutent à ceux par les lettres (`semanticDuplicates`, seuil « normal » 0,88), marqués « par le sens » ; sans lui, ou si le serveur échoue, rien de plus |
+
+| Fichier | Rôle | Origine |
+| --- | --- | --- |
+| `ai/promptTemplate.ts` | gabarits de consignes à variables | repris |
+| `ai/reqQualityLlm.ts` | schémas, consignes, lecture des réponses ; `deepReview`, `reviewWording` (fonctions à la place de la classe d'origine), `mergeFindings` | repris, réécrit en fonctions |
+| `ai/reqAdvice.ts` | `improvementPlan` : les axes qui rapportent le plus | repris |
+| `ai/translate.ts` | requête, lecture, garde des chiffres et unités | repris (la partie utile) |
+| `ai/semantic.ts` | `semanticDuplicates` : embeddings par lots de 64 | nouveau (d'après `ReqEmbeddings`) |
+| `ai/actions.ts` | relire et traduire une exigence ; `withReview` | nouveau |
+
+`sessionAt(dossier, ui, notifier)` et `reviewRequirement(…, { scope, offerRewrite, quiet })`
+sont publics : l'AO relit les exigences d'une analyse avec eux (portée `wording`).
 
 ## Le format
 

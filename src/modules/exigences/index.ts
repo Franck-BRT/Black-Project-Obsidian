@@ -16,7 +16,7 @@
  */
 
 import { fillTemplate } from '../../core/docs'
-import type { ExternalFile } from '../../core/ports'
+import type { ExternalFile, Notifier, Ui } from '../../core/ports'
 import { extensionOf, LECTURE_FICHIERS } from '../lecture-fichiers'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import { cleanFolder } from '../../core/settings'
@@ -41,6 +41,9 @@ import { canExtract, EXTRACTABLE, extractRequirements } from './import/extract'
 import { previewImport, type ImportReport } from './import/preview'
 import { assessAll, qualityMarkdown, withQuality } from './quality/report'
 import { localToday } from '../../core/dates'
+import { aiClient } from '../ia'
+import { reviewRequirement, translateRequirement } from './ai/actions'
+import { semanticDuplicates } from './ai/semantic'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { RequirementStore, RequirementExists } from './store'
@@ -48,6 +51,9 @@ export { readReqSettings, type ReqSettings } from './settings'
 export { REQ_BLOCK_LANGUAGE } from './model/block'
 export { canExtract, EXTRACTABLE, extractRequirements, type Extraction } from './import/extract'
 export { type ReqLocation } from './import/document'
+export { semanticDuplicates } from './ai/semantic'
+export { reviewRequirement, translateRequirement, withReview, type ReviewOptions, type ReviewOutcome } from './ai/actions'
+export { type Session as RequirementSession } from './flows'
 export { describeLocation, previewImport, type ImportReport, type ImportRequest } from './import/preview'
 export { type ImportOutcome } from './import/apply'
 export { type ReqOrigin } from './model/requirement'
@@ -110,6 +116,20 @@ export function requirementsAt(folder: string): RequirementStore {
   })
 }
 
+/** De quoi relire ou traduire les exigences d'un dossier, avec la fenêtre de l'appelant. */
+export function sessionAt(folder: string, ui: Ui, notifier: Notifier): Session {
+  if (!active) throw new Error('Le module Exigences n’est pas actif.')
+  const context = active
+  return {
+    store: requirementsAt(folder),
+    ui,
+    notifier,
+    t: (key, vars) => context.i18n.t(key, vars),
+    settings: () => ({ ...readReqSettings(context.settings.get()), folder }),
+    ai: () => aiClient()
+  }
+}
+
 /** Les langues de rédaction réglées ; la première est la langue source. */
 export function requirementLanguages(): string[] {
   return active ? readReqSettings(active.settings.get()).languages : ['fr', 'en']
@@ -163,13 +183,12 @@ export function exigencesFeatures(): ModuleDetails {
         features: [feature('rating', 'available'), feature('qualityReport', 'available')]
       },
       {
+        titleKey: 'exigences.feature.section.ai',
+        features: [feature('aiReview', 'available', 6), feature('translate', 'available', 6)]
+      },
+      {
         titleKey: 'exigences.feature.section.next',
-        features: [
-
-
-          feature('translate', 'in-progress', 6),
-          feature('matrix', 'in-progress', 7)
-        ]
+        features: [feature('matrix', 'in-progress', 7)]
       }
     ]
   }
@@ -187,7 +206,8 @@ function sessionFor(context: ModuleContext): Session {
     ui: platform.ui,
     notifier: platform.notifier,
     t: (key, vars) => i18n.t(key, vars),
-    settings: () => readReqSettings(settings.get())
+    settings: () => readReqSettings(settings.get()),
+    ai: () => aiClient()
   }
 }
 
@@ -244,7 +264,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.4.0',
+  version: '0.5.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -290,19 +310,49 @@ export const exigencesModule: BlackModule = {
       }
     })
 
+    // L'IA (le module IA, réglé sur Sidonie) relit et traduit la note ouverte.
+    const withAi = (run: (client: NonNullable<ReturnType<typeof aiClient>>, path: string) => Promise<unknown>) => async () => {
+      const note = platform.ui.activeNote()
+      if (!note || !(await session.store.load(note))) {
+        platform.notifier.notify(session.t('exigences.notRequirement'), 6000)
+        return
+      }
+      const client = aiClient()
+      if (!client) {
+        platform.notifier.notify(session.t('ia.unavailable'), 10000)
+        return
+      }
+      await run(client, note)
+    }
+
+    commands.register({
+      id: 'relire-ia',
+      nameKey: 'exigences.command.review',
+      run: withAi((client, path) => reviewRequirement(session, client, path, localToday()))
+    })
+
+    commands.register({
+      id: 'traduire-ia',
+      nameKey: 'exigences.command.translate',
+      run: withAi((client, path) => translateRequirement(session, client, path))
+    })
+
     commands.register({
       id: 'qualite',
       nameKey: 'exigences.command.quality',
       async run() {
         const settings = readReqSettings(context.settings.get())
         const t = session.t
-        const runs = assessAll(await session.store.all(), settings.languages, 'record')
+        const library = await session.store.all()
+        const runs = assessAll(library, settings.languages, 'record')
+        const semantic = await semanticDuplicates(aiClient(), library)
         const path = `${settings.folder}/${t('exigences.quality.title')}.md`
         const content = qualityMarkdown(runs, {
           t,
           scope: 'record',
           languages: settings.languages,
           date: localToday(),
+          semantic,
           link: (requirement) => (requirement.filePath ? `[[${requirement.filePath.replace(/\.md$/, '')}|${requirement.id}]]` : requirement.id)
         })
         const existing = (await platform.fs.exists(path)) ? await platform.fs.readText(path) : null

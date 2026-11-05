@@ -46,7 +46,7 @@ de défilement est gardée (v0.4.8).
 
 **La couleur de la fiche** (`cardLook`) : **verte** si les trois sont oui ; **rouge** si
 elle n'est ni lue ni écrite — son badge dit alors si c'est à venir (« Ni lu ni écrit · à
-venir, étape 6 ») ou pas prévu ; **orange** sinon (« En partie »). Le résumé en tête de
+venir, étape 7 ») ou pas prévu ; **orange** sinon (« En partie »). Le résumé en tête de
 fenêtre compte les fiches par couleur.
 
 ### Afficher ou masquer un type dans Obsidian

@@ -9,10 +9,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 01 — Importer un dossier de consultation | 2 ✅ (page *Analyse d'appels d'offres* dans le coffre) |
 | 02 — Extraire les exigences | 3-4 |
 | 03 — Analyser la qualité | 5 |
-| 04 — Interroger le dossier avec l'IA | 6 |
+| 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA (Sidonie)* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.7.0)
+## Aujourd'hui (version 0.8.0)
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à
@@ -55,6 +55,19 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   `Analyse/Qualité des exigences` (répartition des notes, défauts, doublons, exigences non
   vérifiables), hors ligne ; la note de chaque exigence est aussi dans la liste et la
   fiche de la bibliothèque.
+
+- **Calendrier de l'appel d'offres** (sans IA) : la note `Analyse/Calendrier` — date
+  limite de remise, validité des offres, délais et livraisons, chacun avec sa phrase et
+  sa pièce.
+
+- **IA (Sidonie)** : Paramètres → Black Projects → **IA (Sidonie)** — adresse du
+  serveur, clé (rangée dans le trousseau, jamais dans le coffre), **Tester la
+  connexion** pour choisir le modèle. Ensuite : **Relire l'exigence avec l'IA** (un avis,
+  des reformulations à choisir ou non), **Traduire l'exigence avec l'IA** (marquée à
+  relire), les doublons par le sens dans la qualité (avec un modèle d'embeddings) ;
+  pour un appel d'offres, **Interroger le dossier** (la réponse cite ses sources, liées
+  aux pièces ; rien trouvé, l'IA n'est pas appelée), le **Questionnaire du dossier**
+  (six questions prêtes) et **Relire les exigences du dossier avec l'IA**.
 
 - **Documentation dans le coffre** : Réglages → Documentation → **Créer / mettre à jour**
   (ou la commande « Créer ou mettre à jour la documentation ») écrit l'accueil, la prise

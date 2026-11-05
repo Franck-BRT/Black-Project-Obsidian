@@ -217,7 +217,7 @@ et pandoc (`test/dce.test.ts`) ; à refaire sur un dossier réel anonymisé du C
 - v0.6.1 : **vérifier les exigences du dossier** — quatre commandes (tout extraire,
   exigences oubliées, cohérence entre pièces, couverture par la réponse) et une qui les
   enchaîne ; un rapport dans l'analyse. Sans IA : la couverture est une estimation par
-  les mots, que l'étape 6 affinera
+  les mots, que l'IA affinera avec la matrice de conformité (étape 7)
 
 **Jalon de démo n° 2 :** les exigences du CCTP extraites et tracées jusqu'à leur pièce —
 vérifié sur le dossier d'exemple, en Word, PDF et Markdown (`test/dce-exigences.test.ts`,
@@ -227,7 +227,7 @@ vérifié sur le dossier d'exemple, en Word, PDF et Markdown (`test/dce-exigence
 
 - Repris dans le module `exigences` (`quality/`) : `reqQuality` (règles de rédaction FR/EN),
   `reqScore` (six axes ISO/IEC/IEEE 29148, étoiles), `reqSimilar` (doublons par les
-  lettres ; la partie par le sens attend l'étape 6), `ReqCoverage` (rattachements) — et
+  lettres ; la partie par le sens est venue à l'étape 6), `ReqCoverage` (rattachements) — et
   leurs tests (81)
 - Ajout : une note **sur la seule rédaction** (`wording`) pour les exigences d'un
   dossier, qui n'ont ni responsable, ni fiche, ni liens chez nous ; une phrase sans
@@ -245,24 +245,48 @@ vérifié sur le dossier d'exemple, en Word, PDF et Markdown (`test/dce-exigence
 **Jalon de démo n° 3 :** analyse complète hors ligne, sans serveur d'IA — vérifié sur le
 CCTP d'exemple (`test/ao-qualite.test.ts`).
 
-### Étape 6 — IA locale
+### Étape 6 — IA locale ✅ *terminée (v0.8.0)*
 
-- Repris : `llm/protocol`, `llm/client` (types réécrits), `promptTemplate`,
-  `reqQualityLlm`, `reqAdvice`, `ReqEmbeddings`, la partie utile de `translate`
-- Réglages de connexion à **Sidonie** (CNES) : adresse, modèle, clé dans le trousseau
-  d'Obsidian (jamais dans le coffre), bouton « Tester la connexion » ; tout serveur
-  compatible OpenAI reste utilisable
-- Calendrier de l'AO (`deadlines`) : date limite de remise, validité de l'offre, délais,
-  avec la phrase source
-- « Interroger le dossier » (`libraryRetrieval`, `eachDocument`) avec un questionnaire
-  prêt à l'emploi : critères d'attribution, pénalités, garanties, propriété
-  intellectuelle, confidentialité, contrôle export
+- Nouveau module **`ia`** : repris `llm/protocol` (et ses tests), `llm/client` réécrit
+  sur le port `Http` (types de la version complète) ; les autres modules s'en servent
+  s'il est actif (`aiClient()`), sinon le disent
+- Repris dans le module `exigences` (`ai/`) : `promptTemplate`, `reqQualityLlm` (la
+  classe de relecture réécrite en fonctions `deepReview` / `reviewWording`), `reqAdvice`,
+  la partie utile de `translate` (garde des chiffres et unités), `ReqEmbeddings`
+  (`semanticDuplicates`) — et leurs tests
+- Réglages de connexion à **Sidonie** (CNES) : adresse, modèle (choisi par « Tester la
+  connexion » parmi ceux du serveur), modèle d'embeddings facultatif, longueur des
+  réponses ; la **clé dans le trousseau d'Obsidian** (nouveau port `SecretStore`, champ
+  de réglage `secret`), jamais dans le coffre ; tout serveur compatible OpenAI reste
+  utilisable
+- Exigences : « Relire l'exigence avec l'IA » (avis, défauts que les règles ne voient
+  pas, reformulations par axe faible ; la relecture dans la note, une reformulation
+  retenue seulement si on la choisit) et « Traduire l'exigence avec l'IA » (marquée à
+  relire, chiffres comparés) ; aussi dans le menu de la liste
+- Qualité (bibliothèque et dossier) : les **doublons par le sens** avec un modèle
+  d'embeddings
+- AO : **Calendrier de l'appel d'offres** (`deadlines`, sans IA) — date limite de
+  remise, validité des offres, délais, livraisons, chacun avec sa phrase source et sa
+  pièce (`Analyse/Calendrier.md`)
+- AO : **Interroger le dossier** (`libraryRetrieval`, `eachDocument`) — recherche des
+  passages ou lecture de chaque pièce ; réponse qui cite ses sources `[n]`, liées aux
+  pièces ; rien trouvé, l'IA n'est pas appelée (`Analyse/Questions/`) ; et le
+  **questionnaire** prêt à l'emploi : critères d'attribution, pénalités, garanties,
+  propriété intellectuelle, confidentialité, contrôle export (`Analyse/Questionnaire.md`)
+- AO : **Relire les exigences du dossier avec l'IA** — les plus faibles cochées ; côté
+  candidat, la formulation de l'acheteur n'est jamais changée
+- Doc : [modules/ia.md](modules/ia.md), [modules/exigences.md](modules/exigences.md),
+  [modules/ao.md](modules/ao.md) ; recette : [recette/etape-6.md](recette/etape-6.md)
 
-**Jalon de démo n° 4 :** l'IA relit, conseille et répond en citant ses sources.
+**Jalon de démo n° 4 :** l'IA relit, conseille et répond en citant ses sources — vérifié
+sur le dossier d'exemple avec un serveur simulé (`test/ao-ia.test.ts`).
 
 ### Étape 7 — Livrables
 
 - Repris : générateurs `xlsx` et `docx`, `reqXlsx`, `reqDocx`
+- Reporté de l'étape 6 : la couverture des exigences par la réponse affinée par l'IA
+  (pour la matrice) ; la lecture des scans et des images par le modèle de vision de
+  Sidonie
 - Matrice de conformité (Excel), rapport d'analyse (Word)
 - Deux modes d'analyse, choisis à la création de l'analyse :
   - **émetteur** : relecture de son propre dossier avant publication — qualité des

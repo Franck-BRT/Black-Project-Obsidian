@@ -11,3 +11,4 @@ Un cahier par étape du [plan d'intégration](../plan-integration.md). À dérou
 - [Étape 3 — Socle des exigences](etape-3.md)
 - [Étape 4 — Extraction des exigences](etape-4.md)
 - [Étape 5 — Analyse qualité sans IA](etape-5.md)
+- [Étape 6 — IA locale](etape-6.md)

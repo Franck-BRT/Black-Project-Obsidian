@@ -74,7 +74,7 @@ describe('la couleur et le badge d’une fiche', () => {
   })
 
   it('rouge quand ni lu ni écrit, en disant si c’est à venir', () => {
-    expect(look('lecture-fichiers.format.png')).toEqual(['no', 'step', 6])
+    expect(look('lecture-fichiers.format.png')).toEqual(['no', 'step', 7])
     expect(look('lecture-fichiers.format.reqif')).toEqual(['no', 'step', 4])
     expect(look('lecture-fichiers.format.odt')).toEqual(['no', 'coming', undefined])
   })

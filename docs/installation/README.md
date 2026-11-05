@@ -25,5 +25,4 @@
 
 ## À venir
 
-- Connexion au serveur d'IA (étape 6).
 - Coffre préconfiguré et installation hors ligne (étape 8).

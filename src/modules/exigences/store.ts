@@ -159,6 +159,16 @@ export class RequirementStore {
     return wanted
   }
 
+  /** Le texte brut d'une note, pour y ranger ce que l'exigence ne porte pas (une relecture). */
+  async readNote(path: string): Promise<string> {
+    return this.deps.fs.readText(path)
+  }
+
+  /** Réécrit la note telle quelle : à réserver à ce qui vit sous les sections générées. */
+  async writeNote(path: string, text: string): Promise<void> {
+    await this.deps.fs.writeText(path, text)
+  }
+
   /**
    * Écrit la note. Une note existante garde les clés d'en-tête d'autres outils et ce que
    * l'utilisateur a écrit sous les sections générées.

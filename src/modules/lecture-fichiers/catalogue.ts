@@ -43,7 +43,7 @@ const card = (extension: string, key: string, status: FeatureStatus, extra: { st
   ...extra
 })
 
-const image = (extension: string, key: string) => card(extension, key, 'in-progress', { step: 6, noteKey: k('image.note') })
+const image = (extension: string, key: string) => card(extension, key, 'in-progress', { step: 7, noteKey: k('image.note') })
 
 export const FORMAT_SECTIONS: readonly FormatSection[] = [
   {
@@ -51,7 +51,7 @@ export const FORMAT_SECTIONS: readonly FormatSection[] = [
     cards: [
       card('pdf', 'pdf-text', 'available'),
       card('pdf', 'pdf-protected', 'available'),
-      card('pdf', 'pdf-scan', 'in-progress', { step: 6 }),
+      card('pdf', 'pdf-scan', 'in-progress', { step: 7 }),
       card('pdf', 'pdf-password', 'planned')
     ]
   },

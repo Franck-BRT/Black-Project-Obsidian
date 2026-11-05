@@ -15,6 +15,7 @@ import {
   type FeatureStatus,
   type ActionsField,
   type BooleanField,
+  type SecretField,
   type MappingChange,
   type ModuleFeature,
   type MappingField,
@@ -70,6 +71,7 @@ export class ModuleDetailsModal extends Modal {
       else if (field.kind === 'actions') this.renderActions(contentEl.createDiv(), field)
       else if (field.kind === 'toggles') this.renderToggles(contentEl.createDiv(), field)
       else if (field.kind === 'boolean') this.renderBoolean(contentEl.createDiv(), field)
+      else if (field.kind === 'secret') this.renderSecret(contentEl.createDiv(), field)
       else this.renderText(contentEl.createDiv(), field)
     }
     if (details) this.renderDetails(contentEl.createDiv(), details)
@@ -354,6 +356,38 @@ export class ModuleDetailsModal extends Modal {
       values.item,
       field.columns.filter((column) => values[`c:${column.id}`] === 'true').map((column) => column.id)
     )
+  }
+
+  /**
+   * Un secret : un champ masqué, rangé dans le trousseau à chaque saisie — jamais dans les
+   * réglages. La fenêtre dit s'il est enregistré, sans jamais le montrer.
+   */
+  private renderSecret(block: HTMLElement, field: SecretField): void {
+    const t = this.t.bind(this)
+    const secrets = this.plugin.platform.secrets
+    block.addClass('bp-module-settings')
+    const setting = new Setting(block).setName(t(field.nameKey))
+    const describe = () =>
+      setting.setDesc(
+        [field.descKey ? t(field.descKey) : '', t(secrets?.get(field.secretId) ? 'settings.secret.saved' : 'settings.secret.empty')]
+          .filter(Boolean)
+          .join(' ')
+      )
+    if (!secrets) {
+      setting.setDesc(t('settings.secret.unavailable'))
+      return
+    }
+    describe()
+    setting.addText((text) => {
+      text.inputEl.type = 'password'
+      text.inputEl.autocomplete = 'off'
+      text.setPlaceholder(field.placeholderKey ? t(field.placeholderKey) : '')
+      if (field.tooltipKey) setTooltip(text.inputEl, t(field.tooltipKey))
+      text.onChange((value) => {
+        secrets.set(field.secretId, value.trim())
+        describe()
+      })
+    })
   }
 
   /** Un réglage oui / non : un interrupteur, enregistré aussitôt. */

@@ -4,7 +4,7 @@
 
 /**
  * Trouver l'exigence écrite deux fois — ici par la seule comparaison des lettres (trigrammes),
- * sans IA ; la comparaison par le sens viendra avec l'IA de Sidonie (étape 6). Repris de la
+ * sans IA ; la comparaison par le sens se fait avec l'IA de Sidonie (`ai/semantic.ts`). Repris de la
  * version complète de Black Projects (Black Room Technologies).
  *
  * Finding the requirement that was written twice.
@@ -114,7 +114,7 @@ export function lexicalPairs(items: SimilarItem[], threshold: number): SimilarPa
 
 /* ---- Semantic ------------------------------------------------------------- */
 
-/** La proximité de deux vecteurs (cosinus), pour la comparaison par le sens (étape 6). */
+/** La proximité de deux vecteurs (cosinus), pour la comparaison par le sens (`ai/semantic.ts`). */
 function cosine(a: readonly number[], b: readonly number[]): number {
   let dot = 0
   let na = 0

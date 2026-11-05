@@ -4,14 +4,16 @@
 /**
  * La qualité des exigences d'un dossier de consultation (étape 5) : combien, la répartition
  * des notes, les défauts les plus fréquents, les doublons probables, les exigences non
- * vérifiables, les plus faibles. Hors ligne, sans IA. Les exigences sont notées sur leur
+ * vérifiables, les plus faibles. Hors ligne, sans IA — sauf les doublons par le sens, quand
+ * un modèle d'embeddings est réglé dans le module IA. Les exigences sont notées sur leur
  * seule rédaction : elles sont de l'acheteur, et n'ont chez nous ni responsable ni liens.
  *
  * Les règles et le rapport sont ceux du module Exigences ; l'AO choisit les exigences (celles
  * de l'analyse) et où va le rapport : `Analyse/Qualité des exigences.md`.
  */
 
-import { assessAll, qualityMarkdown, requirementLanguages, requirementsAt, withQuality, type QualityRun } from '../exigences'
+import { assessAll, qualityMarkdown, requirementLanguages, requirementsAt, semanticDuplicates, withQuality, type QualityRun } from '../exigences'
+import { aiClient } from '../ia'
 import { ANALYSIS, wikiLink, type Analysis } from './notes'
 import { requirementsFolder } from './requirements'
 import type { Services } from './service'
@@ -24,12 +26,16 @@ export function qualityPath(analysis: Analysis): string {
 export async function analyseQuality(services: Services, analysis: Analysis): Promise<QualityRun[]> {
   const { fs, t } = services
   const languages = requirementLanguages()
-  const runs = assessAll(await requirementsAt(requirementsFolder(analysis)).all(), languages, 'wording')
+  const requirements = await requirementsAt(requirementsFolder(analysis)).all()
+  const runs = assessAll(requirements, languages, 'wording')
+  // Avec un modèle d'embeddings réglé dans le module IA : les doublons par le sens en plus.
+  const semantic = await semanticDuplicates(aiClient(), requirements)
   const content = qualityMarkdown(runs, {
     t,
     scope: 'wording',
     languages,
     date: services.today(),
+    semantic,
     link: (requirement) => (requirement.filePath ? wikiLink(requirement.filePath, requirement.id) : requirement.id)
   })
   const path = qualityPath(analysis)

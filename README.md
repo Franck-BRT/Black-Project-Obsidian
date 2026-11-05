@@ -13,8 +13,15 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.7.0 — étape 5 du [plan d'intégration](docs/plan-integration.md) :
-l'analyse qualité sans IA.** Chaque exigence notée en étoiles selon l'ISO/IEC/IEEE 29148
+**Version 0.8.0 — étape 6 du [plan d'intégration](docs/plan-integration.md) : l'IA
+locale.** Le module IA se connecte à **Sidonie** (ou tout serveur compatible OpenAI ; la
+clé reste dans le trousseau) : relire une exigence et choisir une reformulation, la
+traduire, trouver les doublons par le sens ; **interroger le dossier** d'un appel
+d'offres — la réponse cite ses sources, liées aux pièces — et un questionnaire prêt à
+l'emploi (critères d'attribution, pénalités, garanties, propriété intellectuelle,
+confidentialité, contrôle export) ; et, sans IA, le **calendrier de l'appel d'offres**
+(date limite de remise, validité des offres, délais, avec leur phrase). Étape 5 :
+l'analyse qualité sans IA. Chaque exigence notée en étoiles selon l'ISO/IEC/IEEE 29148
 (défauts de rédaction, doublons probables, exigences non vérifiables), et une note
 « Qualité des exigences » pour le dossier et pour la bibliothèque, hors ligne. Étape 4,
 l'extraction des exigences : sur la note d'une pièce (le CCTP), « Extraire les
@@ -64,6 +71,8 @@ src/
 ├── modules/    un répertoire fermé par module
 │   ├── lecture-fichiers/   lecture des documents (voir son README.md)
 │   ├── typage-pieces/      reconnaissance du type des pièces (voir son README.md)
+│   ├── exigences/          bibliothèque d'exigences, extraction, qualité
+│   ├── ia/                 connexion au serveur d'IA (Sidonie)
 │   └── ao/                 analyse d'appels d'offres
 └── obsidian/   adaptateur Obsidian : point d'entrée, ports, réglages
 docs/           documentation

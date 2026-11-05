@@ -138,7 +138,23 @@ traductions à jour) et **traçable** (liens).
   (satisfaite par rien, sans méthode de vérification, liens à revoir, sans formulation),
   puis chaque exigence. Réécrite à chaque analyse ; la section Notes est gardée.
 
-## 8. Ce qui arrive
+## 8. Avec l'IA de Sidonie
 
-Traductions et relecture assistées par l'IA de Sidonie, doublons par le sens (étape 6),
-matrice de conformité (étape 7). Voir {{link:Accueil|l'accueil}}.
+Quand le module **IA (Sidonie)** est réglé (voir {{link:Modules/IA|IA (Sidonie)}}) :
+
+- **Relire l'exigence avec l'IA** (note ouverte, ou une ligne de la liste) : un avis, les
+  défauts que les règles ne voient pas, et des **reformulations** qui visent les axes
+  faibles. La relecture est écrite dans la note (section « Relecture par l'IA », remplacée
+  à la relecture suivante). Choisissez une reformulation : elle devient la formulation
+  (révision suivante) ; « Ne rien changer » : rien ne bouge.
+- **Traduire l'exigence avec l'IA** : dans une autre langue de rédaction ; la traduction
+  est marquée « automatique, à relire ». Si un chiffre ou une unité diffère de la source,
+  le message le dit.
+- **Doublons par le sens** : avec un modèle d'embeddings réglé, l'analyse de qualité
+  ajoute les exigences qui disent la même chose en d'autres mots, marquées « par le sens ».
+
+Rien n'est écrit dans une formulation sans votre accord.
+
+## 9. Ce qui arrive
+
+Matrice de conformité (étape 7). Voir {{link:Accueil|l'accueil}}.

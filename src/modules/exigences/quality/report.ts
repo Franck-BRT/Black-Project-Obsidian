@@ -15,7 +15,7 @@ import type { Requirement } from '../model/requirement'
 import { countGaps, coverageOf, COVERAGE_GAPS } from './library'
 import { QUALITY_RULES, type QualityFinding, type QualityRule } from './rules'
 import { assessRequirement, isWeak, QUALITY_AXES, type QualityReport, type QualityScope } from './score'
-import { lexicalPairs, thresholdsFor, type SimilarPair } from './similar'
+import { lexicalPairs, mergePairs, thresholdsFor, type SimilarPair } from './similar'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -45,10 +45,13 @@ export function assessAll(requirements: readonly Requirement[], languages: strin
 }
 
 /** Les doublons probables : au moins 60 % des trigrammes en commun. */
-export function probableDuplicates(requirements: readonly Requirement[]): SimilarPair[] {
-  const pairs = lexicalPairs(
-    requirements.map((requirement) => ({ id: requirement.id, text: wordingOf(requirement) })),
-    thresholdsFor('normal').lexical
+export function probableDuplicates(requirements: readonly Requirement[], semantic: SimilarPair[] = []): SimilarPair[] {
+  const pairs = mergePairs(
+    lexicalPairs(
+      requirements.map((requirement) => ({ id: requirement.id, text: wordingOf(requirement) })),
+      thresholdsFor('normal').lexical
+    ),
+    semantic
   )
   return pairs.sort((a, b) => b.score - a.score || a.a.localeCompare(b.a, undefined, { numeric: true }))
 }
@@ -67,6 +70,8 @@ export interface QualityNoteOptions {
   link: (requirement: Requirement) => string
   languages: string[]
   date: string
+  /** Les paires proches par le sens, trouvées par le modèle d'embeddings (facultatif). */
+  semantic?: SimilarPair[]
 }
 
 /** Le contenu de l'analyse, en Markdown (sans en-tête de note). */
@@ -130,7 +135,7 @@ export function qualityMarkdown(runs: readonly QualityRun[], options: QualityNot
   }
 
   // Doublons probables
-  const pairs = probableDuplicates(requirements)
+  const pairs = probableDuplicates(requirements, options.semantic)
   const byId = new Map(requirements.map((requirement) => [requirement.id, requirement]))
   out.push('', `## ${t('exigences.quality.duplicates')}`, '')
   if (pairs.length === 0) out.push(`*${t('exigences.quality.noDuplicate')}*`)
@@ -140,7 +145,7 @@ export function qualityMarkdown(runs: readonly QualityRun[], options: QualityNot
       const a = byId.get(pair.a)
       const b = byId.get(pair.b)
       if (!a || !b) continue
-      out.push(`| ${cell(`${link(a)} — ${excerpt(wordingOf(a), 80)}`)} | ${cell(`${link(b)} — ${excerpt(wordingOf(b), 80)}`)} | ${Math.round(pair.score * 100)} % |`)
+      out.push(`| ${cell(`${link(a)} — ${excerpt(wordingOf(a), 80)}`)} | ${cell(`${link(b)} — ${excerpt(wordingOf(b), 80)}`)} | ${Math.round(pair.score * 100)} %${pair.semantic !== undefined && pair.semantic >= pair.lexical ? ` (${t('exigences.quality.bySense')})` : ''} |`)
     }
   }
 

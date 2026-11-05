@@ -181,7 +181,7 @@ section Notes, jamais touchée.
 | **Extraire les exigences de toutes les pièces** | Toutes les pièces de l'appel d'offres en un seul aperçu (chaque exigence avec sa pièce entre crochets) ; un identifiant déjà trouvé dans une autre pièce est refusé, la première pièce fait foi. Le rapport donne le nombre d'exigences par pièce, et les pièces sans exigence |
 | **Chercher les exigences oubliées** | Les phrases qui ont la tournure d'une exigence (« doit », « devra », « est tenu de », « s'engage à », « obligatoirement », « shall », « must »…) mais qu'aucune exigence ne reprend — ni par son identifiant, ni par ses mots. Elles sont proposées à l'ajout (rien n'est coché d'avance) ; celles ajoutées reçoivent un identifiant sous le type de leur pièce |
 | **Vérifier la cohérence des exigences entre pièces** | Un même identifiant écrit différemment d'une pièce à l'autre ; présent dans une version d'un document (deux pièces du même type, CCTP en Word et en PDF par exemple) et absent de l'autre ; en double dans une pièce ; un même texte sous deux identifiants ; une exigence rangée qui ne dit plus ce que dit sa pièce |
-| **Vérifier la couverture des exigences par la réponse** | Pour chaque exigence de l'analyse, l'endroit des pièces de **réponse** qui la **cite** (identifiant ou alias), la **traite** (au moins 60 % de ses mots), est **à vérifier** (35 à 60 %), ou son **absence**. Pour l'émetteur, un tableau par candidat. Une estimation sans IA, à relire : l'IA de Sidonie l'affinera à l'étape 6 |
+| **Vérifier la couverture des exigences par la réponse** | Pour chaque exigence de l'analyse, l'endroit des pièces de **réponse** qui la **cite** (identifiant ou alias), la **traite** (au moins 60 % de ses mots), est **à vérifier** (35 à 60 %), ou son **absence**. Pour l'émetteur, un tableau par candidat. Une estimation sans IA, à relire : l'IA de Sidonie l'affinera avec la matrice de conformité (étape 7) |
 
 ## 8. La qualité des exigences du dossier
 
@@ -196,13 +196,49 @@ ambiguïté, vérifiable, avec un acteur) : elles sont de l'acheteur, et n'ont c
 responsable ni liens. Une phrase qui n'oblige personne a deux étoiles au plus. Le détail
 des règles est dans la page {{link:Modules/Exigences|Exigences}}.
 
+## 9. Le calendrier de l'appel d'offres
+
+Commande **Calendrier de l'appel d'offres** : la note `Analyse/Calendrier` de l'analyse,
+relevée dans les pièces de l'appel d'offres, **sans IA** :
+
+- **À retenir** : la **date limite de remise des offres** et la **validité des offres** ;
+- les **dates**, par ordre chronologique, chacune avec sa nature (remise, questions,
+  visite, notification, démarrage, livraison, pénalités…), la **phrase d'où elle vient** et
+  sa pièce ;
+- les **délais** (« sous 15 jours après la notification », « fixé à 120 jours »…), de même.
+
+Une date écrite sans année prend l'année la plus présente dans le document, et le dit.
+Vérifiez toujours dans la pièce avant de vous engager. La section Notes est gardée.
+
+## 10. Interroger le dossier avec l'IA
+
+Avec le module **IA (Sidonie)** réglé (voir {{link:Modules/IA|IA (Sidonie)}}) :
+
+- **Interroger le dossier (IA)** : posez une question (« Quelles sont les pénalités de
+  retard ? », « Que dit l'article 7.2 ? »). **Recherche dans les pièces** (par défaut) :
+  Black Projects trouve les passages des pièces qui y répondent le mieux, les numérote et
+  ne donne qu'eux à l'IA, qui répond en citant leurs numéros. **Lecture de chaque pièce** :
+  chaque pièce est lue en entière par l'IA — plus long, rien n'échappe. La réponse va dans
+  `Analyse/Questions/<date> <question>` : chaque renvoi **[1]** mène à la pièce ; sous la
+  réponse, les sources (citées ou non) et les extraits transmis. Si rien dans les pièces
+  ne parle de la question, l'IA n'est **pas** interrogée : elle n'a rien à inventer.
+- **Questionnaire du dossier (IA)** : six questions prêtes — **critères d'attribution**,
+  **pénalités**, **garanties**, **propriété intellectuelle**, **confidentialité**,
+  **contrôle export** — posées en une fois ; les réponses, avec leurs sources, dans
+  `Analyse/Questionnaire`. Relancer remplace les réponses, vos notes restent.
+- **Relire les exigences du dossier avec l'IA** : les plus faibles sont cochées ; la
+  relecture de l'IA est écrite dans la note de chaque exigence. Côté **candidat**, la
+  formulation de l'acheteur n'est jamais changée (de quoi préparer vos questions) ; côté
+  **émetteur**, vous pouvez retenir une reformulation.
+
+Rien ne quitte votre réseau : les questions vont au serveur que vous avez réglé.
+
 ## Ce qui arrive ensuite
 
 Paramètres → Black Projects → **Fonctions** montre où en est le module :
 
 | Fonction | Étape |
 | --- | --- |
-| Relecture et conseils par l'IA (Sidonie), calendrier de l'appel d'offres, questions posées à tout le dossier | 6 |
 | Matrice de conformité (Excel), rapport (Word), fiche de synthèse, comparaison de deux versions du dossier | 7 |
 
 Cette page s'enrichit à chaque étape : mettez la documentation à jour après chaque
