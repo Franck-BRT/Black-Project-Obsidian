@@ -25,10 +25,10 @@ const TODAY = new Date().toISOString().slice(0, 10)
 /** Une date à `days` jours d'aujourd'hui, en toutes lettres (« 12 décembre 2026 »). */
 const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
-async function start(platform: MemoryPlatform, withPages: boolean, ia: Record<string, unknown> = {}) {
+async function start(platform: MemoryPlatform, withPages: boolean, ia: Record<string, unknown> = {}, ao: Record<string, unknown> = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, ia }
+  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false, ...ao }, ia }
   const commands = new Map<string, ModuleCommand>()
   const views = new ViewsRegistry()
   const shown: string[] = []
@@ -1068,6 +1068,60 @@ describe('changer le type d’une pièce depuis l’interface', () => {
     const again = (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((each) => each.title === 'RC.md')!
     expect(again.subtitle).toMatch(/^RC — /)
     expect(shown.length).toBe(before)
+    expect(platform.opened).toEqual([])
+  })
+})
+
+describe('changer le type : proposer de déplacer la pièce selon le routage du nouveau type', () => {
+  const ROUTAGE = { rangement: { CCTP: 'reponse', RC: 'appel-d-offres', CCAP: 'appel-d-offres' } }
+
+  it('candidat : le nouveau type va avec la réponse — « Déplacer avec Réponse » ; la fiche suit la pièce ; « La laisser » la garde', async () => {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, {}, ROUTAGE)
+    const { station, views, shown } = run
+    const piece = views.pages().find((each) => each.id === 'ao.piece')!
+    const rc = `${station.folder}/Pièces/Appel d'offres/RC.md`
+    platform.choices.push('CCTP', 'move')
+    await (await piece.load(encodeURIComponent(rc))).actions!.find((action) => action.id === 'type')!.run()
+    expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Déplacer avec Réponse', 'La laisser avec Appel d’offres'])
+    const moved = decodeURIComponent(shown.at(-1)!.replace(/^ao\.piece\?/, ''))
+    expect(moved).not.toBe(rc)
+    expect((await piece.load(encodeURIComponent(moved))).subtitle).toMatch(/^CCTP — .* · Réponse · Station sol$/)
+    expect(platform.opened).toEqual([])
+    // Revenue au type RC, routé avec l'appel d'offres : on propose le retour ; « La laisser » la garde.
+    platform.choices.push('RC', 'keep')
+    await (await piece.load(encodeURIComponent(moved))).actions!.find((action) => action.id === 'type')!.run()
+    expect((await piece.load(encodeURIComponent(moved))).subtitle).toMatch(/^RC — .* · Réponse · Station sol$/)
+  })
+
+  it('un type routé là où est déjà la pièce, ou pas routé : aucune question', async () => {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, {}, ROUTAGE)
+    const piece = run.views.pages().find((each) => each.id === 'ao.piece')!
+    const rc = `${run.station.folder}/Pièces/Appel d'offres/RC.md`
+    platform.choices.push('CCAP')
+    await (await piece.load(encodeURIComponent(rc))).actions!.find((action) => action.id === 'type')!.run()
+    platform.choices.push('BPU')
+    await (await piece.load(encodeURIComponent(rc))).actions!.find((action) => action.id === 'type')!.run()
+    // Deux fois le choix du type, et rien d'autre.
+    expect(platform.offered).toHaveLength(2)
+    expect((await piece.load(encodeURIComponent(rc))).subtitle).toMatch(/^BPU — .* · Appel d’offres · Station sol$/)
+  })
+
+  it('émetteur : vers l’appel d’offres, puis vers la réponse d’un candidat (ou d’un nouveau)', async () => {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, {}, ROUTAGE)
+    await run.respond('Acme', 'Mémoire.md', '# Mémoire\n\nNous fournissons une antenne.\n')
+    const fiche = run.views.pages().find((each) => each.id === 'ao.fiche')!
+    const cardOf = async () => (await fiche.load(encodeURIComponent(run.maintenance.note))).blocks.flatMap((block) => (block.kind === 'cards' && block.title !== 'Candidats (1)' ? block.cards.map((card) => ({ ...card, group: block.title })) : [])).find((card) => card.title === 'Mémoire.md')!
+    expect((await cardOf()).group).toBe('Réponse — Acme (1)')
+    platform.choices.push('RC', 'move')
+    await (await cardOf()).actions!.find((action) => action.id === 'type')!.run()
+    expect((await cardOf()).group).toBe('Appel d’offres (1)')
+    platform.choices.push('CCTP', 'c:Acme')
+    await (await cardOf()).actions!.find((action) => action.id === 'type')!.run()
+    expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Déplacer avec la réponse de Acme', 'La réponse d’un nouveau candidat…', 'La laisser avec Appel d’offres'])
+    expect((await cardOf()).group).toBe('Réponse — Acme (1)')
     expect(platform.opened).toEqual([])
   })
 })

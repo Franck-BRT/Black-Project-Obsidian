@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Changer le type, puis le routage (v0.42.0)
+
+- [ ] Routage : CCTP → Réponse AO seulement. Fiche d'une pièce de l'appel d'offres →
+      **Changer le type** → CCTP : « Le type CCTP — … est routé avec Réponse : déplacer la
+      pièce ? » ; **Déplacer avec Réponse** : la fiche suit la pièce (« · Réponse · »)
+- [ ] **La laisser avec Appel d'offres** : le type change, la pièce reste
+- [ ] Un type routé là où est déjà la pièce, ou routé « les deux » : aucune question
+- [ ] Émetteur, vers la réponse : un choix par candidat (« Déplacer avec la réponse de
+      Acme »), « La réponse d'un nouveau candidat… », « La laisser… »
+
 ## Déplacer une pièce depuis l'interface (v0.41.0)
 
 - [ ] Fiche d'une pièce → **Déplacer** → « Réponse » : la fiche de la pièce, à sa nouvelle

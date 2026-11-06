@@ -430,7 +430,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.26.0',
+  version: '0.27.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -642,6 +642,38 @@ export const aoModule: BlackModule = {
         if (!type || type === piece.type) return
         await setPieceType(services, note, type)
         platform.notifier.notify(t('ao.type.done', { type: `${type} — ${typeLabel(type, t)}` }), 5000)
+        // Le routage du nouveau type la met ailleurs : proposer de la déplacer.
+        const routed = placeOf(type, rangementOf(context.settings.get()))
+        if (routed === 'les-deux' || routed === piece.destination.place) return
+        const emitter = routed === 'reponse' && (await analysisPosition(services.fs, piece.analysis)) === 'emetteur'
+        const label = `${type} — ${typeLabel(type, t)}`
+        const here = destinationLabel(piece.destination, t)
+        const candidates = emitter ? await listCandidates(services.fs, piece.analysis) : []
+        const choices = [
+          ...(emitter
+            ? [
+                ...candidates.map((candidate) => ({ value: `c:${candidate}`, label: t('ao.type.route.moveCandidate', { candidate }), description: t('ao.type.route.move.desc') })),
+                { value: 'new', label: t('ao.move.newCandidate'), description: t('ao.type.route.move.desc') }
+              ]
+            : [{ value: 'move', label: t('ao.type.route.move', { place: destinationLabel({ place: routed }, t) }), description: t('ao.type.route.move.desc') }]),
+          { value: 'keep', label: t('ao.type.route.keep', { place: here }), description: t('ao.type.route.keep.desc') }
+        ]
+        const answer = await platform.ui.pickOption(choices, t('ao.type.route.placeholder', { type: label, place: destinationLabel({ place: routed }, t) }))
+        if (!answer || answer === 'keep') return
+        let destination: Destination = { place: routed }
+        if (answer === 'new') {
+          const values = await platform.ui.askForm({
+            title: t('ao.move.newCandidate'),
+            fields: [{ kind: 'text', key: 'name', label: t('ao.ask.candidate.name'), placeholder: t('ao.ask.candidate.placeholder'), required: true }],
+            submit: t('ao.move.submit')
+          })
+          if (!values) return
+          destination = { place: 'reponse', candidate: (values.name ?? '').trim() }
+        } else if (answer.startsWith('c:')) destination = { place: 'reponse', candidate: answer.slice(2) }
+        const moved = await movePiece(services, note, destination)
+        platform.notifier.notify(t('ao.move.done', { place: destinationLabel(destination, t) }), 5000)
+        // Depuis l'interface : la page suit la pièce, ou se redessine ; depuis la palette, la note ouverte suit d'elle-même.
+        if (targeted.stay) targeted.moved?.(moved)
       }
     })
 

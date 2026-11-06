@@ -404,6 +404,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   puis la page se redessine (plus la note de la pièce)
 - v0.41.0 : **déplacer une pièce** depuis l'interface : la fiche suit la pièce (ou celle de
   l'analyse se redessine), plus sa note
+- v0.42.0 : **changer le type** d'une pièce propose de la déplacer selon le routage du
+  nouveau type (ou de la laisser)
 
 ### Étape 7 — Livrables
 

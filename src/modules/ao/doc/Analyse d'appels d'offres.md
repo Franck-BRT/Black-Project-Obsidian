@@ -61,7 +61,9 @@ analyse ? » :
   exigences** (fiche d'une pièce, ou sa carte) : l'aperçu, puis la page se redessine avec
   les exigences rangées, sans ouvrir la note de la pièce ; **Déplacer** (appel d'offres ↔
   réponse) : la fiche suit la pièce à sa nouvelle place, ou la fiche de l'analyse se
-  redessine — sans ouvrir la note ;
+  redessine — sans ouvrir la note ; **Changer le type** : si le routage du nouveau type
+  range la pièce ailleurs (« Où vont les types de pièces »), Black Projects propose de la
+  déplacer — ou de la laisser où elle est ;
 - sur le **tableau de bord** et l'accueil, les raccourcis **Calendrier**, **Interroger**,
   **Questionnaire** (et les tuiles Vérifier, Qualité) ouvrent la page de l'analyse —
   choisie dans « Dans quelle analyse ? » s'il y en a plusieurs ; le bouton Calendrier d'une

@@ -380,6 +380,15 @@ s'ouvre plus ; depuis la palette, comme avant. La fiche d'une pièce qui n'est p
 cette place (« Retour » vers l'ancienne) montre la même pièce — même nom, même analyse —
 là où elle est maintenant.
 
+**Changer le type, puis le routage** (v0.27.0, Black Projects 0.42.0) : après « Changer le
+type », si le routage du nouveau type (`placeOf(type, rangementOf(…))`) met la pièce
+ailleurs que là où elle est — et n'est pas « les deux » —, la commande propose de la
+déplacer : « Déplacer avec Réponse » (ou l'appel d'offres) ; pour l'émetteur vers la
+réponse, « Déplacer avec la réponse de X » par candidat, ou un nouveau candidat ; ou « La
+laisser avec … » (le routage du type ne change pas). Déplacée depuis sa fiche, la fiche
+suit la pièce ; depuis sa carte, la fiche de l'analyse se redessine (`moved`, comme
+« Déplacer »). Aucune question si le type n'est pas routé ou l'est déjà là où est la pièce.
+
 ## Dans le coffre
 
 ```
