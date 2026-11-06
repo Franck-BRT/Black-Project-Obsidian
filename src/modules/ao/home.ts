@@ -1378,6 +1378,8 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   tile('ao.relire', t('ao.tile.review'), 'spark', 'violet', 18, false, 'relire-exigences-ia', t('ao.tile.review.desc'))
   views.home({ id: 'ao.analyses', title: t('ao.home.title'), icon: 'folder', order: 10, area: 'main', load: () => analysesSection(deps) })
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
+  // Les notes d'une analyse qui ont une page : un autre module qui les ouvre (un workflow) ouvre la page.
+  if (deps.showPage) views.notePage?.((path) => notePageOf(deps, path))
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
   views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
   views.page({ id: CALENDAR_PAGE, title: t('ao.cp.title'), icon: 'calendar', parent: ANALYSES_PAGE, load: (param) => calendarPage(deps, param) })
@@ -1389,6 +1391,27 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: PRODUCED_PAGE, title: t('ao.note.page.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => producedPage(deps, param) })
   views.page({ id: CANDIDATE_PAGE, title: t('ao.candidat.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => candidatePage(deps, param) })
   views.nav({ id: 'ao.analyses', label: t('ao.home.nav'), icon: 'folder', order: 10, ...(deps.showPage ? { page: ANALYSES_PAGE } : {}), run: () => openAnalyses(deps) })
+}
+
+/**
+ * La page d'une note d'analyse : la fiche de l'analyse pour sa note ; celle d'une pièce,
+ * d'une exigence ; le calendrier, la vérification, la qualité, le questionnaire, une
+ * question ; une autre note du dossier Analyse, lisible en page. `null` : pas une note
+ * d'analyse.
+ */
+export async function notePageOf(deps: HomeDeps, path: string): Promise<string | null> {
+  const services = deps.services()
+  const analysis = (await listAnalyses(services)).find((each) => path === each.note || path.startsWith(`${each.folder}/`))
+  if (!analysis) return null
+  if (path === analysis.note) return analysisPageOf(analysis)
+  if (path === calendarPath(analysis)) return calendarPageOf(path)
+  if (path === reportPath(analysis)) return verificationPageOf(path)
+  if (path === qualityPath(analysis)) return qualityPageOf(path)
+  if (path === questionnairePath(analysis)) return questionnairePageOf(path)
+  if (path.startsWith(`${questionsFolder(analysis)}/`)) return questionPageOf(path)
+  if (path.startsWith(`${analysis.folder}/Analyse/`) && path.endsWith('.md')) return producedPageOf(path)
+  if (path.startsWith(`${requirementsFolder(analysis)}/`) && path.endsWith('.md')) return requirementPageOf(path)
+  return (await pieceAt(services, path)) ? piecePageOf(path) : null
 }
 
 /** Les analyses : leur page, quand la plateforme en a ; sinon la fenêtre pour en choisir une. */

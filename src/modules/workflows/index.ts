@@ -140,7 +140,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.6.0',
+  version: '0.7.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -181,7 +181,8 @@ export const workflowsModule: BlackModule = {
         await context.commands.run?.(id)
       },
       openJournal: () => openJournal(current),
-      openNote: (path) => platform.ui.openNote(path),
+      // Le sujet d'une exécution, les notes qu'elle a écrites : leur page quand un module en a une.
+      openNote: (path) => (context.showNote ? context.showNote(path) : platform.ui.openNote(path)),
       ...(showPage ? { showPage } : {}),
       page: {
         t,

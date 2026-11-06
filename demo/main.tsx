@@ -133,6 +133,11 @@ async function start(): Promise<void> {
       },
       views,
       showPage: (id) => mounted?.show(id),
+      showNote: async (path) => {
+        const page = await views.pageForNote(path)
+        if (page) mounted?.show(page)
+        else await platform.ui.openNote(path)
+      },
       // « Régler », « Formats de fichiers »… : la page « Fonctions » du module, dans l'onglet.
       openWindow: () => mounted?.show(modulePageOf(module.id))
     })
@@ -210,7 +215,7 @@ async function start(): Promise<void> {
   )
   await platform.fs.writeText(
     'Black Projects/Workflows/Journal des workflows.md',
-    `<!-- bp:journal:debut -->\n- ${stamp} 09:12 · ✅ fait · **À l’import des pièces : relever le calendrier** · sur « Station sol de télémesure » — 1. Calendrier : 2 date(s), 1 délai(s) dans 3 pièce(s).\n- ${stamp} 08:30 · ❌ échec · **Questionnaire (IA)** · sur « Maintenance des antennes » — Étape 1 (Questionnaire du dossier) a échoué : serveur injoignable\n<!-- bp:journal:fin -->\n`
+    `<!-- bp:journal:debut -->\n- ${stamp} 09:12 · ✅ fait · **À l’import des pièces : relever le calendrier** · sur « Station sol de télémesure » ([[${station.note.replace(/\.md$/, '')}]]) — 1. Calendrier : 2 date(s), 1 délai(s) dans 3 pièce(s). · [[${station.folder}/Analyse/Calendrier]]\n- ${stamp} 08:30 · ❌ échec · **Questionnaire (IA)** · sur « Maintenance des antennes » — Étape 1 (Questionnaire du dossier) a échoué : serveur injoignable\n<!-- bp:journal:fin -->\n`
   )
 
   // Les paramètres, en page comme dans Obsidian ; gardés le temps de la visite.

@@ -212,6 +212,13 @@ export default class BlackProjectsPlugin extends Plugin {
     return openModuleWindow(this.moduleWindowHost(module))
   }
 
+  /** Une note : sa page dans l'onglet quand un module en a une, sinon la note dans Obsidian. */
+  async showNote(path: string): Promise<void> {
+    const page = await this.views.pageForNote(path)
+    if (page) await this.openHome(page)
+    else await this.platform.ui.openNote(path)
+  }
+
   /** La page « Fonctions » d'un module, dans l'onglet de Black Projects. */
   openModulePage(module: ModuleDescriptor): Promise<void> {
     return this.openHome(modulePageOf(module.id))
@@ -364,6 +371,7 @@ export default class BlackProjectsPlugin extends Plugin {
       },
       views: this.views,
       showPage: (id) => void this.openHome(id),
+      showNote: (path) => this.showNote(path),
       // « Régler », « Formats de fichiers »… : la page « Fonctions » du module, dans l'onglet.
       openWindow: () => void this.openModulePage(module),
       timers: {

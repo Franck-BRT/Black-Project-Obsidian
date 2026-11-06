@@ -322,7 +322,11 @@ export function registerExigencesHome(views: ViewsRegistrar | undefined, session
     }
   })
   views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage) })
-  if (showPage && sessionFor) views.page({ id: REQUIREMENT_PAGE, title: t('exigences.fiche.title'), icon: 'list', parent: LIBRARY_PAGE, load: (param) => requirementPage(sessionFor, showPage, param) })
+  if (showPage && sessionFor) {
+    views.page({ id: REQUIREMENT_PAGE, title: t('exigences.fiche.title'), icon: 'list', parent: LIBRARY_PAGE, load: (param) => requirementPage(sessionFor, showPage, param) })
+    // Une exigence de la bibliothèque, ouverte par un autre module : sa fiche.
+    views.notePage?.((path) => (path.startsWith(`${session.settings().folder}/`) && path.endsWith('.md') ? requirementPageOf(path) : null))
+  }
   views.nav({ id: 'exigences', label: t('exigences.home.nav'), icon: 'list', order: 20, ...page, run: open })
   const group = t('exigences.name')
   views.tile({

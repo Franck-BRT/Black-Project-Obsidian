@@ -390,6 +390,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   liens entre pages, précédente / suivante) sans l'écrire d'abord ; le lecteur Markdown
   passe dans le cœur (`src/core/markdown.ts`) : blocs de code, phrase et liste dans un
   cadre, puces de texte
+- v0.36.0 : depuis le journal des workflows, la fiche d'une exécution ouvre son **sujet** et
+  ses **notes écrites en page** (la fiche de l'analyse, le calendrier, une exigence) :
+  `views.notePage` et `ModuleContext.showNote`
 
 ### Étape 7 — Livrables
 

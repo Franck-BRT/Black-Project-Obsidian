@@ -176,6 +176,13 @@ les autres en texte (« • ») ; une phrase suivie de sa liste dans le même ca
 code tel quel (fermé par la même clôture : « ```` » autour d'un exemple qui contient
 « ``` ») ; une puce qui continue à la ligne suivante, rejointe.
 
+**Les notes qui ont une page** (0.36.0) : un module déclare, par `views.notePage(résolveur)`,
+lesquelles de ses notes il sait montrer en page (une analyse, une pièce, une exigence, le
+calendrier…) ; `ViewsRegistry.pageForNote(chemin)` interroge les modules dans l'ordre (le
+premier qui la connaît ; une erreur n'arrête pas les autres). L'hôte en fait
+`ModuleContext.showNote(chemin)` : la page dans l'onglet, sinon la note. Ainsi un module
+ouvre la note d'un autre (un workflow, le calendrier qu'il a écrit) sans le connaître.
+
 **La documentation en page** (0.35.0) : `DOCS_PAGE` (`core.documentation`, `docsPage`,
 `src/core/docsPage.ts`) — sans paramètre, le sommaire (l'accueil de la documentation, une
 carte par page) ; `docPageOf(chemin)`, une page, lue par `noteBlocks` sans son en-tête ni

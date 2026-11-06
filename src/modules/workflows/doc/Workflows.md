@@ -59,9 +59,11 @@ Palette de commandes :
   ✅ fait, ❌ échec (et pourquoi), ⏭️ refusé, ⛔ arrêté. **Un clic sur une exécution ouvre
   sa fiche** (aussi depuis la page Workflows, l'historique d'un workflow et le tableau de
   bord) : son issue et son heure, son sujet, ce que chaque étape a fait (une étape en échec
-  en rouge, avec la raison), les notes qu'elle a écrites (un clic les ouvre), les autres
-  exécutions du même workflow ; et les boutons Ouvrir la fiche du workflow, Exécuter de
-  nouveau, Ouvrir la note du sujet ; une
+  en rouge, avec la raison), les notes qu'elle a écrites, les autres exécutions du même
+  workflow ; et les boutons Ouvrir la fiche du workflow, Exécuter de nouveau, Ouvrir le
+  sujet. Le sujet et les notes écrites s'ouvrent **en page** dans l'onglet quand un module
+  en a une — l'analyse visée ouvre sa fiche, « Calendrier » la page du calendrier, une
+  exigence sa fiche — et sinon dans le coffre ; une
   recherche et des filtres par issue ; « Ouvrir la note du journal » montre la note, avec
   ses liens vers ce que chaque exécution a écrit ;
 - **Exporter des workflows** / **Importer des workflows** — un fichier JSON pour un autre

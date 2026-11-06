@@ -384,6 +384,11 @@ export interface ModuleContext {
   readonly views?: ViewsRegistrar
   /** Ouvre une page (déclarée par `views.page`) dans l'onglet de Black Projects. */
   showPage?(id: string): void
+  /**
+   * Ouvre une note : sa page dans l'onglet quand un module en a une (`views.notePage` : une
+   * analyse, une pièce, une exigence, le calendrier…), sinon la note elle-même.
+   */
+  showNote?(path: string): Promise<void>
 }
 
 /** Ce qu'un bloc de code devient : un tableau, et des messages au-dessus. */

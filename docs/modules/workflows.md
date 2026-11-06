@@ -101,6 +101,13 @@ La ligne même désigne l'exécution ; sortie du journal (il n'en garde que 300)
 dit. Un clic sur une exécution — journal, page Workflows, historique d'une fiche, tableau
 de bord — ouvre cette fiche ; elle mène à la fiche du workflow.
 
+**Le sujet et les notes écrites, en page (Black Projects 0.36.0)** : la fiche d'une
+exécution ouvre son sujet (« Ouvrir le sujet ») et les notes écrites par
+`ModuleContext.showNote` : la page qu'un module déclare pour cette note
+(`views.notePage`) — l'analyse ouvre sa fiche, « Calendrier » la page du calendrier, une
+exigence de la bibliothèque sa fiche —, sinon la note dans le coffre. Les workflows ne
+connaissent pas ces pages : chaque module dit lesquelles de ses notes en ont une.
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

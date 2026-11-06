@@ -328,6 +328,16 @@ calendrier** / **Mettre à jour la note** (`runFor('calendrier', { analysis, sta
 la note n'est pas ouverte), **Ouvrir la note** si elle existe, l'analyse. Sans pièce lue :
 un message dit d'importer le dossier.
 
+## Les notes d'une analyse ouvertes par un autre module (v0.21.0, Black Projects 0.36.0)
+
+`notePageOf` (`home.ts`), déclaré par `views.notePage` quand la plateforme a des pages :
+la note de l'analyse → sa fiche ; une pièce → sa fiche ; une exigence de l'analyse → sa
+fiche ; `Analyse/Calendrier.md`, `Vérification des exigences.md`, `Qualité des
+exigences.md`, `Questionnaire.md` → leur page ; `Analyse/Questions/…` → la page de la
+question ; une autre note du dossier Analyse → la page générique ; sinon rien (la note
+s'ouvre). Un workflow qui a écrit le calendrier d'une analyse y mène ainsi, sans connaître
+le module.
+
 ## Dans le coffre
 
 ```

@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.35.0)
+## Aujourd'hui (version 0.36.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -39,7 +39,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   qu'il sait faire, en page dans l'onglet —, Activer ou
   Désactiver). La **documentation** se lit dans l'onglet (Paramètres → « Lire la
   documentation », ou la tuile Documentation) : un sommaire, puis chaque page, avec page
-  précédente et suivante ; « Écrire dans le coffre » la garde en notes. **Modifier le menu** (en bas de la barre de gauche, au-dessus de Paramètres) pour déplacer, retirer ou
+  précédente et suivante ; « Écrire dans le coffre » la garde en notes. Depuis le **journal
+  des workflows**, le sujet d'une exécution et les notes qu'elle a écrites s'ouvrent en page
+  (la fiche de l'analyse, le calendrier, une exigence). **Modifier le menu** (en bas de la barre de gauche, au-dessus de Paramètres) pour déplacer, retirer ou
   ajouter des entrées — toute fonction des modules peut y figurer ; Accueil reste en
   haut et Paramètres en bas. Le bouton
   **Apparence** règle le mode (clair, sombre, automatique), les couleurs pour les

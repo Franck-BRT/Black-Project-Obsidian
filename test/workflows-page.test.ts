@@ -48,6 +48,7 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
   const commands = new Map<string, ModuleCommand>()
   const views = new ViewsRegistry()
   const shown: string[] = []
+  const noted: string[] = []
   const context: ModuleContext = {
     moduleId: 'workflows',
     platform,
@@ -55,10 +56,10 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
     settings: { get: () => settings.workflows ?? {}, save: async (values) => void (settings.workflows = values), onChange: () => () => {} },
     commands: { register: (command) => void commands.set(command.id, command), run: async (id) => commands.get(id)?.run() },
     views,
-    ...(withPages ? { showPage: (id: string) => void shown.push(id) } : {})
+    ...(withPages ? { showPage: (id: string) => void shown.push(id), showNote: async (path: string) => void noted.push(path) } : {})
   }
   await (workflowsModule as BlackModule).activate(context)
-  return { views, shown, settings, run: (id: string) => commands.get(id)!.run() }
+  return { views, shown, noted, settings, run: (id: string) => commands.get(id)!.run() }
 }
 
 const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
@@ -255,6 +256,21 @@ describe('la fiche d’une exécution, en page', () => {
     const lists = done.blocks.filter((block) => block.kind === 'list')
     expect(lists[0]!.kind === 'list' && lists[0]!.items.map((item) => `${item.when}:${item.title}:${item.tone}`)).toEqual(['étape 1:Prévenir : envoyé:success', 'étape 2:Créer une note : écrite:success'])
     expect(lists[1]!.kind === 'list' && lists[1]!.items.map((item) => item.detail)).toEqual(['Black Projects/Rappels/Rappel du 4.md'])
+  })
+
+  it('son sujet et les notes qu’elle a écrites s’ouvrent par la plateforme : leur page quand un module en a une', async () => {
+    const platform = memoryPlatform()
+    const { views, noted } = await start(platform, true)
+    const page = views.pages().find((each) => each.id === 'workflows.execution')!
+    const failed = await page.load(encodeURIComponent(JOURNAL_LINES[0]!))
+    const subject = failed.actions!.find((action) => action.id === 'subject')!
+    expect(subject.label).toBe('Ouvrir le sujet')
+    await subject.run()
+    const done = await page.load(encodeURIComponent(JOURNAL_LINES[1]!))
+    const written = done.blocks.filter((block) => block.kind === 'list')[1]
+    await (written?.kind === 'list' ? written.items[0]! : null)!.open!.run()
+    expect(noted).toEqual([expect.stringMatching(/Station sol/), 'Black Projects/Rappels/Rappel du 4.md'])
+    expect(platform.opened).toEqual([])
   })
 
   it('une exécution sortie du journal : la page le dit', async () => {

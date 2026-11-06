@@ -53,7 +53,9 @@ page de vos workflows : une carte par workflow (Modifier, Exécuter, Activer ou 
 et les dernières exécutions ; un clic sur un workflow ouvre sa fiche, en page : ses
 conditions et ses actions, chacune avec ses boutons. Le **journal** des workflows est une
 page aussi : jour par jour ; un clic sur une exécution ouvre sa fiche (ses étapes, les notes
-qu'elle a écrites), d'où l'on va à la fiche du workflow. **IA** ouvre la page de l'IA : la connexion, un modèle par
+qu'elle a écrites ; un clic sur le sujet ou une note écrite ouvre sa page — la fiche de
+l'analyse, le calendrier, la fiche d'une exigence — quand elle en a une), d'où l'on va à
+la fiche du workflow. **IA** ouvre la page de l'IA : la connexion, un modèle par
 usage (« Choisir le modèle »), et ce qui se sert de l'IA.
 
 **Retour** : « ← Retour : … », sous le titre, ramène à la page d'où vous venez — comme

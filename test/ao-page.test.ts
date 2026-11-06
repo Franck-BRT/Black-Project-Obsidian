@@ -823,3 +823,25 @@ describe('le calendrier, en page', () => {
     expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Calendrier.md'))).title).toBe('Calendrier introuvable')
   })
 })
+
+describe('une note d’analyse ouverte par un autre module (un workflow) : sa page', () => {
+  it('l’analyse, une pièce, une exigence, le calendrier, la vérification, la qualité, le questionnaire, une question, une autre note', async () => {
+    const run = await start(memoryPlatform(), true)
+    const { station } = run
+    const text = (body: string) => ({ fr: { body, lang: 'fr', origin: 'human' as const, reviewed: true, by: '', at: '', fromRev: 1 } })
+    const requirement = await requirementsAt(`${station.folder}/Exigences`).create({ category: 'SOL', title: 'Antenne', text: text('Le titulaire doit fournir une antenne.') })
+    const page = (path: string) => run.views.pageForNote(path)
+    const rc = `${station.folder}/Pièces/Appel d'offres/RC.md`
+    const enc = encodeURIComponent
+    expect(await page(station.note)).toBe(`ao.fiche?${enc(station.note)}`)
+    expect(await page(rc)).toBe(`ao.piece?${enc(rc)}`)
+    expect(await page(requirement.filePath!)).toBe(`exigences.fiche?${enc(requirement.filePath!)}`)
+    for (const [name, id] of [['Calendrier', 'ao.calendrier'], ['Vérification des exigences', 'ao.verification'], ['Qualité des exigences', 'ao.qualite'], ['Questionnaire', 'ao.questionnaire'], ['Questions/2026-11-06 Pénalités', 'ao.question'], ['Synthèse', 'ao.note']] as const) {
+      const path = `${station.folder}/Analyse/${name}.md`
+      expect(await page(path)).toBe(`${id}?${enc(path)}`)
+    }
+    // Une note hors des analyses : pas de page, elle s'ouvre telle quelle.
+    expect(await page('Black Projects/Rappels/Rappel du 4.md')).toBeNull()
+    expect(await page(`${station.folder}/Pièces/Appel d'offres/Inconnue.md`)).toBeNull()
+  })
+})

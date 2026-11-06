@@ -266,6 +266,12 @@ export interface NavLayout {
 }
 
 /** Ce qu'un module peut déclarer à l'interface, par son contexte. */
+/**
+ * La page d'une note, pour un module qui sait la montrer : la fiche d'une analyse pour sa
+ * note, la page du calendrier pour « Calendrier.md »… `null` : ce n'est pas une des siennes.
+ */
+export type NotePageResolver = (path: string) => Promise<string | null> | string | null
+
 export interface ViewsRegistrar {
   /** Une section du tableau de bord. */
   home(section: HomeSection): void
@@ -274,6 +280,11 @@ export interface ViewsRegistrar {
   tile(spec: TileSpec): void
   /** Une page du module, ouverte dans l'onglet de Black Projects. */
   page(spec: PageSpec): void
+  /**
+   * Les notes que le module sait montrer en page : un autre module qui ouvre une de ces notes
+   * (`ModuleContext.showNote`) ouvre sa page, dans l'onglet, plutôt que la note.
+   */
+  notePage?(resolver: NotePageResolver): void
 }
 
 /** Les déclarations de tous les modules actifs, rangées. */
@@ -282,6 +293,24 @@ export class ViewsRegistry implements ViewsRegistrar {
   private readonly entries = new Map<string, NavEntry>()
   private readonly tiles = new Map<string, TileSpec>()
   private readonly modulePages = new Map<string, PageSpec>()
+  private readonly noteResolvers: NotePageResolver[] = []
+
+  notePage(resolver: NotePageResolver): void {
+    this.noteResolvers.push(resolver)
+  }
+
+  /** La page qui montre une note, si un module en a une ; `null` sinon (la note s'ouvre). */
+  async pageForNote(path: string): Promise<string | null> {
+    for (const resolver of this.noteResolvers) {
+      try {
+        const page = await resolver(path)
+        if (page) return page
+      } catch {
+        // Un module qui se trompe sur une note ne l'empêche pas de s'ouvrir.
+      }
+    }
+    return null
+  }
 
   page(spec: PageSpec): void {
     this.modulePages.set(spec.id, spec)

@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le journal des workflows : sujet et notes en page (v0.36.0)
+
+- [ ] Workflows → **Journal** → une exécution (« À l'import des pièces : relever le
+      calendrier ») : **Ouvrir le sujet** ouvre la fiche de l'analyse dans l'onglet, pas la
+      note
+- [ ] Dans « Notes écrites », **Calendrier** ouvre la page du calendrier ; une exigence, sa
+      fiche ; une note sans page (un rappel) s'ouvre dans le coffre
+- [ ] « Retour » ramène à l'exécution, puis au journal ; « Ouvrir la note du journal » ouvre
+      toujours la note du journal
+
 ## La documentation, en page (v0.35.0)
 
 - [ ] Paramètres → **Lire la documentation** (ou la tuile Documentation) : le sommaire
