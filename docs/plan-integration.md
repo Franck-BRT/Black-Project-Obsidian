@@ -406,6 +406,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   l'analyse se redessine), plus sa note
 - v0.42.0 : **changer le type** d'une pièce propose de la déplacer selon le routage du
   nouveau type (ou de la laisser)
+- v0.43.0 : **relire les exigences** : la page Qualité ensuite, les relues marquées ; la
+  relecture se lit sur la fiche de l'exigence
 
 ### Étape 7 — Livrables
 

@@ -13,7 +13,7 @@ import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
-import { exigencesModule, requirementsAt } from '../src/modules/exigences'
+import { exigencesModule, lastReview, requirementsAt, withReview } from '../src/modules/exigences'
 import { iaModule } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 
@@ -148,6 +148,24 @@ describe('la fiche d’une exigence, en page', () => {
     expect(details).not.toMatch(/no-modal|weak-word|text\.en|\blinks\b|\bowner\b/)
     expect(details).toContain('formulation EN absente, en retard ou à relire')
     expect(details).toContain('aucun lien vers une autre exigence')
+  })
+
+  it('la dernière relecture par l’IA, écrite dans la note : son avis, ses constats, ses propositions', async () => {
+    const { weak, page, platform } = await fiche()
+    expect((await page.load(encodeURIComponent(weak.filePath!))).blocks.some((block) => 'title' in block && block.title?.startsWith('Relecture'))).toBe(false)
+    const note = await platform.fs.readText(weak.filePath!)
+    const review = ['## Relecture par l’IA — 2026-11-06', '', 'La formulation laisse le titulaire juge de journaliser.', '', '**Constats**', '', '- terme vague (« si possible »)', '', '**Propositions**', '', '- *Non ambiguë* — Retirer « si possible ».', '  > Les accès doivent être journalisés.'].join('\n')
+    await platform.fs.writeText(weak.filePath!, withReview(note, review))
+    const view = await page.load(encodeURIComponent(weak.filePath!))
+    const block = view.blocks.find((each) => each.kind === 'text' && each.title === 'Relecture par l’IA — 2026-11-06')
+    expect(block?.kind === 'text' && block.paragraphs).toEqual([
+      'La formulation laisse le titulaire juge de journaliser.',
+      'Constats',
+      '• terme vague (« si possible »)',
+      'Propositions',
+      '• Non ambiguë — Retirer « si possible ». — Les accès doivent être journalisés.'
+    ])
+    expect(lastReview(await platform.fs.readText(weak.filePath!))).toEqual({ date: '2026-11-06', assessment: 'La formulation laisse le titulaire juge de journaliser.' })
   })
 
   it('une exigence disparue : la page le dit', async () => {

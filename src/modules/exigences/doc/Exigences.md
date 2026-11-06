@@ -170,7 +170,9 @@ Quand le module **IA** est réglé (voir {{link:Modules/IA|IA}}) :
 
 - **Relire l'exigence avec l'IA** (note ouverte, ou une ligne de la liste) : un avis, les
   défauts que les règles ne voient pas, et des **reformulations** qui visent les axes
-  faibles. La relecture est écrite dans la note (section « Relecture par l'IA », remplacée
+  faibles. La relecture se lit sur la **fiche** de l'exigence, juste après ses formulations
+  (l'avis, les défauts relevés, les reformulations proposées) ; elle est écrite dans la
+  note (section « Relecture par l'IA », remplacée
   à la relecture suivante). Choisissez une reformulation : elle devient la formulation
   (révision suivante) ; « Ne rien changer » : rien ne bouge.
 - **Traduire l'exigence avec l'IA** : dans une autre langue de rédaction ; la traduction

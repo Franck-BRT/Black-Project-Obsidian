@@ -64,6 +64,9 @@ analyse ? » :
   redessine — sans ouvrir la note ; **Changer le type** : si le routage du nouveau type
   range la pièce ailleurs (« Où vont les types de pièces »), Black Projects propose de la
   déplacer — ou de la laisser où elle est ;
+- **Relire (IA)** (fiche de l'analyse, page Qualité, tuile) : choisissez les exigences,
+  puis la page **Qualité** s'ouvre — chaque exigence relue marquée « Relue (IA) le … »,
+  un filtre « Relues (IA) » ; un clic sur l'une montre sa relecture sur sa fiche ;
 - sur le **tableau de bord** et l'accueil, les raccourcis **Calendrier**, **Interroger**,
   **Questionnaire** (et les tuiles Vérifier, Qualité) ouvrent la page de l'analyse —
   choisie dans « Dans quelle analyse ? » s'il y en a plusieurs ; le bouton Calendrier d'une

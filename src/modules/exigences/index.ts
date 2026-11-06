@@ -53,7 +53,7 @@ export { REQ_BLOCK_LANGUAGE } from './model/block'
 export { canExtract, EXTRACTABLE, extractRequirements, type Extraction } from './import/extract'
 export { type ReqLocation } from './import/document'
 export { semanticDuplicates } from './ai/semantic'
-export { reviewRequirement, translateRequirement, withReview, type ReviewOptions, type ReviewOutcome } from './ai/actions'
+export { lastReview, reviewRequirement, reviewSection, translateRequirement, withReview, type ReviewOptions, type ReviewOutcome } from './ai/actions'
 export { type Session as RequirementSession } from './flows'
 export { describeLocation, previewImport, type ImportReport, type ImportRequest } from './import/preview'
 export { type ImportOutcome } from './import/apply'
@@ -266,7 +266,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.10.0',
+  version: '0.11.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },

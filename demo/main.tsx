@@ -83,8 +83,18 @@ platform.http = {
   request: async (request) => {
     if (!request.url.endsWith('/chat/completions')) return { status: 404, text: '' }
     const sent = JSON.parse(request.body ?? '{}') as { messages?: { content: string }[] }
+    const asked = (sent.messages ?? []).map((message) => message.content).join('\n')
     const question = (sent.messages?.at(-1)?.content ?? '').split('\n').filter(Boolean).at(-1) ?? ''
-    const content = `Réponse de démonstration, sans IA réelle : le premier extrait transmis répond à « ${question.slice(0, 120)} » [1].`
+    // Relire une exigence : un avis, des constats, des propositions, en JSON comme le ferait le serveur.
+    const content = asked.includes('"assessment"')
+      ? JSON.stringify({
+          assessment: 'Relecture de démonstration, sans IA réelle : la formulation laisse au titulaire une marge d’appréciation ; le seuil attendu n’est pas dit.',
+          findings: [],
+          proposals: [{ axis: 'verifiable', action: 'Dire le seuil attendu et comment il sera mesuré.', rewrite: '' }]
+        })
+      : asked.includes('"findings"')
+        ? JSON.stringify({ findings: [] })
+        : `Réponse de démonstration, sans IA réelle : le premier extrait transmis répond à « ${question.slice(0, 120)} » [1].`
     return { status: 200, text: JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }) }
   }
 }

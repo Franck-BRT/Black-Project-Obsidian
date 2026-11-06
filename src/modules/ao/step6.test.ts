@@ -261,7 +261,7 @@ describe('relire les exigences du dossier', () => {
     expect(note).toContain('Non vérifiable : aucun seuil.')
     expect(note).toContain('Disponibilité maximale si possible.')
     expect(platform.offered).toHaveLength(0)
-    expect(platform.notices.at(-1)).toBe('1 exigence(s) relue(s), 0 reformulée(s). La relecture est dans chaque note.')
+    expect(platform.notices.at(-1)).toBe('1 exigence(s) relue(s), 0 reformulée(s). La relecture se lit sur la fiche de chaque exigence (et dans sa note).')
   })
 })
 

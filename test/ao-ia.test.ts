@@ -112,7 +112,7 @@ describe('jalon n° 4 — l’IA relit, conseille et répond en citant ses sourc
     const note = await platform.fs.readText(path)
     expect(note).toContain('Le système doit être disponible 99,5 % du temps.\n')
     expect(note).toContain('laisse le titulaire juge')
-    expect(platform.notices.at(-1)).toBe('1 exigence(s) relue(s), 1 reformulée(s). La relecture est dans chaque note.')
+    expect(platform.notices.at(-1)).toBe('1 exigence(s) relue(s), 1 reformulée(s). La relecture se lit sur la fiche de chaque exigence (et dans sa note).')
   })
 
   it('la qualité, avec un modèle d’embeddings : les doublons par le sens en plus', async () => {

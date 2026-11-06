@@ -648,7 +648,7 @@ describe('la qualité des exigences, en page', () => {
   it('une carte par exigence, les plus faibles d’abord : étoiles, défauts, ce qui lui coûte ; un clic ouvre sa fiche', async () => {
     const { page, path, shown } = await quality()
     const view = await page.load(encodeURIComponent(path))
-    expect(view.filters?.map((filter) => filter.id)).toEqual(['faibles', 'non-verifiables', 'doublons', 'bonnes'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['faibles', 'non-verifiables', 'doublons', 'bonnes', 'relues'])
     const cards = cardsOf(view)
     expect(cards.map((card) => `${card.title}:${card.tags!.join('+')}`)).toEqual(['REQ-SOL-0002 — Disponibilité:faibles+non-verifiables', 'REQ-SOL-0001 — Antenne:doublons+bonnes', 'REQ-SOL-0003 — Antenne bis:doublons+bonnes'])
     expect(cards[0]).toMatchObject({
@@ -1123,5 +1123,30 @@ describe('changer le type : proposer de déplacer la pièce selon le routage du 
     expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Déplacer avec la réponse de Acme', 'La réponse d’un nouveau candidat…', 'La laisser avec Appel d’offres'])
     expect((await cardOf()).group).toBe('Réponse — Acme (1)')
     expect(platform.opened).toEqual([])
+  })
+})
+
+describe('relire les exigences avec l’IA depuis l’interface', () => {
+  it('la fiche de l’analyse : les exigences à relire, la relecture, puis la page Qualité, les relues marquées ; leur fiche montre la relecture', async () => {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' })
+    const { station, views, shown } = run
+    const text = (body: string) => ({ fr: { body, lang: 'fr', origin: 'human' as const, reviewed: true, by: '', at: '', fromRev: 1 } })
+    const weak = await requirementsAt(`${station.folder}/Exigences`).create({ category: 'SOL', title: 'Disponibilité', text: text('Le système sera disponible le cas échéant.') })
+    platform.httpAnswers.push({ status: 200, text: JSON.stringify({ choices: [{ message: { content: JSON.stringify({ assessment: 'Le cas échéant laisse le titulaire juge.', findings: [], proposals: [{ axis: 'unambiguous', action: 'Retirer « le cas échéant ».', rewrite: 'Le système doit être disponible 99,5 % du temps.' }] }) }, finish_reason: 'stop' }] }) })
+    const fiche = await views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(station.note))
+    await fiche.actions!.find((action) => action.id === 'review')!.run()
+    const quality = `${station.folder}/Analyse/Qualité des exigences.md`
+    expect(shown.at(-1)).toBe(`ao.qualite?${encodeURIComponent(quality)}`)
+    expect(platform.opened).toEqual([])
+    const view = await views.pages().find((each) => each.id === 'ao.qualite')!.load(encodeURIComponent(quality))
+    expect(view.filters?.map((filter) => filter.id)).toContain('relues')
+    const card = cardsOf(view).find((each) => each.title.startsWith(weak.id))!
+    expect(card.tags).toContain('relues')
+    expect(card.badges!.map((badge) => badge.label)).toContain(`Relue (IA) le ${TODAY}`)
+    // Sa fiche montre la relecture.
+    await card.open!.run()
+    const page = await views.pages().find((each) => each.id === 'exigences.fiche')!.load(shown.at(-1)!.replace(/^exigences\.fiche\?/, ''))
+    expect(page.blocks.some((block) => block.kind === 'text' && block.title?.startsWith('Relecture par l’IA') && block.paragraphs[0] === 'Le cas échéant laisse le titulaire juge.')).toBe(true)
   })
 })

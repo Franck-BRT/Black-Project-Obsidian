@@ -389,6 +389,13 @@ laisser avec … » (le routage du type ne change pas). Déplacée depuis sa fic
 suit la pièce ; depuis sa carte, la fiche de l'analyse se redessine (`moved`, comme
 « Déplacer »). Aucune question si le type n'est pas routé ou l'est déjà là où est la pièce.
 
+**Relire les exigences** depuis l'interface (v0.28.0, Black Projects 0.43.0) : « Relire
+(IA) » de la fiche de l'analyse, de la page Qualité ou de la tuile (`stay`) : le choix des
+exigences, la relecture de chacune, puis la **page Qualité**, où chaque exigence relue
+porte « Relue (IA) le … » (`lastReview` du module Exigences) et répond au filtre « Relues
+(IA) » ; un clic ouvre sa fiche, qui montre la relecture. Depuis la palette, le message
+seul, comme avant.
+
 ## Dans le coffre
 
 ```

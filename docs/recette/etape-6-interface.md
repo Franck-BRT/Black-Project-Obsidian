@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Relire les exigences, et lire la relecture (v0.43.0)
+
+- [ ] IA réglée ; fiche d'une analyse avec des exigences → **Relire (IA)** : la fenêtre des
+      exigences à relire (les plus faibles cochées) ; après la relecture, la page **Qualité**
+      s'ouvre ; aucune note ouverte
+- [ ] Les exigences relues portent « Relue (IA) le … » ; filtre **Relues (IA)**
+- [ ] Un clic sur une exigence relue : sa fiche montre, après les formulations, « Relecture
+      par l'IA — date » : l'avis, les défauts relevés, les reformulations proposées
+- [ ] Sur la fiche d'une exigence, **Relire (IA)** : la relecture apparaît sur la fiche
+
 ## Changer le type, puis le routage (v0.42.0)
 
 - [ ] Routage : CCTP → Réponse AO seulement. Fiche d'une pièce de l'appel d'offres →

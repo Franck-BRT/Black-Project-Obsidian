@@ -33,6 +33,22 @@ export const REVIEW_START = '<!-- bp:relecture:debut — écrit par Black Projec
 export const REVIEW_END = '<!-- bp:relecture:fin -->'
 
 /** La section « Relecture par l'IA » de la note : remplacée si elle y est, ajoutée sinon. */
+/** La dernière relecture par l'IA écrite dans une note : sa section, sans ses marques ; `null` s'il n'y en a pas. */
+export function reviewSection(note: string): string | null {
+  const from = note.indexOf(REVIEW_START)
+  const to = note.indexOf(REVIEW_END)
+  return from !== -1 && to > from ? note.slice(from + REVIEW_START.length, to).trim() : null
+}
+
+/** La dernière relecture d'une note, en bref : sa date et l'avis de l'IA ; `null` s'il n'y en a pas. */
+export function lastReview(note: string): { date: string; assessment: string } | null {
+  const section = reviewSection(note)
+  if (!section) return null
+  const date = /^#+[^\n]*?(\d{4}-\d{2}-\d{2})/m.exec(section)?.[1] ?? ''
+  const assessment = section.replace(/^#+[^\n]*\n+/, '').split(/\n\s*\n/)[0]?.replace(/\s+/g, ' ').trim() ?? ''
+  return { date, assessment }
+}
+
 export function withReview(note: string, content: string): string {
   const block = `${REVIEW_START}\n${content}\n${REVIEW_END}`
   const from = note.indexOf(REVIEW_START)

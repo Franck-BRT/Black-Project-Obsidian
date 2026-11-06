@@ -90,7 +90,7 @@ import { answerQuestion, QUESTIONNAIRE, runQuestionnaire, writeQuestionNote, typ
 import { pieceSources } from './ask/sources'
 import { reviewAnalysisRequirements } from './review'
 import { emitCreated, emitExtracted, emitImported, registerAoWorkflows } from './workflows'
-import { analysisPageOf, openAnalyses, questionPageOf, registerAoHome, type HomeDeps } from './home'
+import { analysisPageOf, openAnalyses, qualityPageOf, questionPageOf, registerAoHome, type HomeDeps } from './home'
 import { requirementsAt } from '../exigences'
 import { requirementsFolder } from './requirements'
 
@@ -430,7 +430,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.27.0',
+  version: '0.28.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -920,6 +920,8 @@ export const aoModule: BlackModule = {
         const run = await reviewAnalysisRequirements(services, window, client, analysis, position)
         if (!run) return
         platform.notifier.notify(t(run.failed ? 'ao.review.stopped' : 'ao.review.done', { reviewed: run.reviewed, rewritten: run.rewritten }), 10000)
+        // Depuis l'interface : la page Qualité, les relues marquées ; leur fiche montre la relecture.
+        if (targeted.stay && context.showPage) context.showPage(qualityPageOf(qualityPath(analysis)))
       }
     })
 

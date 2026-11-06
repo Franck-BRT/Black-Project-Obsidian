@@ -172,6 +172,12 @@ lien) ; la fiche, les liens, l'historique. La carte d'une exigence (bibliothèqu
 d'une analyse) ouvre la fiche quand la plateforme a des pages, sa note sinon.
 Tests : `test/exigences-page.test.ts`.
 
+**La relecture sur la fiche (v0.11.0, Black Projects 0.43.0)** : la dernière relecture par
+l'IA, écrite dans la note entre ses marques (`reviewSection`), s'affiche sur la fiche juste
+après les formulations, lue en blocs (`noteBlocks`) : l'avis, les défauts relevés, les
+reformulations proposées. `lastReview(note)` (exporté) en donne la date et l'avis, pour
+d'autres pages (la qualité des exigences d'une analyse marque les relues).
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

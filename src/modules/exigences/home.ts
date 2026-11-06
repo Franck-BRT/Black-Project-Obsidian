@@ -11,7 +11,8 @@
 
 import { localToday } from '../../core/dates'
 import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
-import { reviewRequirement, translateRequirement } from './ai/actions'
+import { noteBlocks } from '../../core/markdown'
+import { reviewRequirement, reviewSection, translateRequirement } from './ai/actions'
 import { editRequirement, flagsOf, type Session } from './flows'
 import { textOf, type Requirement } from './model/requirement'
 import { assessAll } from './quality/report'
@@ -265,6 +266,8 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
     detail: [revision.note, revision.was ? t('exigences.fiche.was', { was: revision.was }) : ''].filter(Boolean).join(' — ')
   }))
 
+  // La dernière relecture par l'IA, écrite dans la note : son avis, ses constats, ses propositions.
+  const review = reviewSection(await session.store.readNote(path).catch(() => ''))
   return {
     title: requirement.title ? `${requirement.id} — ${requirement.title}` : requirement.id,
     back,
@@ -273,6 +276,8 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
     blocks: [
       { kind: 'stats', stats },
       { kind: 'cards', title: t('exigences.fiche.wordings', { count: langs.length }), cards: wordings },
+      // La relecture d'abord : c'est ce qu'on vient lire après « Relire (IA) ».
+      ...(review ? noteBlocks(review, () => undefined) : []),
       { kind: 'list', title: t('exigences.fiche.quality', { stars: stars(quality.stars) }), items: axes },
       { kind: 'list', title: t('exigences.fiche.attributes'), items: attributes },
       { kind: 'list', title: t('exigences.fiche.links', { count: links.length }), items: links, empty: t('exigences.fiche.links.none') },
