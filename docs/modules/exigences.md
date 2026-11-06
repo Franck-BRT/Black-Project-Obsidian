@@ -213,6 +213,20 @@ exigence, la page se retrouve après coup : la ligne « Extraite de » de la fic
 exigence de la bibliothèque y mène. Depuis la palette, ou sans page chez la plateforme :
 le message seul, comme avant.
 
+**La qualité en page (v0.14.0, Black Projects 0.46.0)** : la page `exigences.qualite`
+(`qualityPage.ts`, `libraryQualityPage`, fille de la bibliothèque), calculée à
+l'ouverture sur la rédaction et la fiche (`assessAll(…, 'record')`), comme celle d'une
+analyse : chiffres, une carte par exigence (les plus faibles d'abord, tags `faibles`,
+`non-verifiables`, `doublons`, `bonnes`, `relues`), défauts, doublons probables (par les
+lettres ; ceux par le sens restent au rapport, qui interroge le modèle de vecteurs), axes,
+répartition, rattachements (`coverageOf`). « Analyser la qualité » de la bibliothèque, de
+la section du tableau de bord et la tuile *Qualité* (qui porte `page`) l'ouvrent ; rien
+n'est écrit. En tête : **Écrire / Mettre à jour le rapport** (`writeLibraryQuality`, sans
+quitter la page), **Ouvrir le rapport**. La note du rapport (`libraryQualityPath`) ouverte
+par un autre module mène à cette page. Depuis la palette, ou sans page chez la
+plateforme : le rapport écrit et ouvert, comme avant. Une note vide se lit comme absente
+(une plateforme peut lire vide une note qui n'existe pas).
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

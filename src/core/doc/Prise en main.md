@@ -155,7 +155,7 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Vérifier la cohérence des exigences entre pièces | identifiants écrits différemment, absents d'une version, en double… |
 | Vérifier la couverture des exigences par la réponse | pour chaque exigence : citée, traitée, à vérifier ou absente dans la réponse |
 | Analyser la qualité des exigences du dossier | la note `Analyse/Qualité des exigences` : notes, défauts, doublons, non vérifiables |
-| Analyser la qualité de la bibliothèque d'exigences | la même analyse pour la bibliothèque, rattachements compris |
+| Analyser la qualité de la bibliothèque d'exigences | la même analyse pour la bibliothèque, rattachements compris ; depuis l'onglet, en page (le rapport s'écrit depuis la page) |
 | Calendrier de l'appel d'offres | la note `Analyse/Calendrier` : remise, validité des offres, délais, chacun avec sa phrase (sans IA) |
 | Tester la connexion au serveur d'IA | liste les modèles du serveur et fait choisir le modèle de texte ; voir {{link:Modules/IA|IA}} |
 | Relire l'exigence avec l'IA | avis, défauts, reformulations à choisir ou non ; la relecture dans la note |

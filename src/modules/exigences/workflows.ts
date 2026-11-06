@@ -40,6 +40,9 @@ export async function emitRequirementCreated(requirement: Requirement): Promise<
   })
 }
 
+/** La note du rapport de qualité de la bibliothèque. */
+export const libraryQualityPath = (session: Session): string => `${session.settings().folder}/${session.t('exigences.quality.title')}.md`
+
 /** Le rapport de qualité de la bibliothèque, écrit ; rend son chemin et son résumé. */
 export async function writeLibraryQuality(session: Session, date: string): Promise<{ path: string; text: string; count: number }> {
   const { t } = session
@@ -48,7 +51,7 @@ export async function writeLibraryQuality(session: Session, date: string): Promi
   const runs = assessAll(library, settings.languages, 'record')
   // Avec un modèle de vecteurs réglé dans le module IA : les doublons par le sens en plus.
   const semantic = await semanticDuplicates(aiClient(), library)
-  const path = `${settings.folder}/${t('exigences.quality.title')}.md`
+  const path = libraryQualityPath(session)
   const content = qualityMarkdown(runs, {
     t,
     scope: 'record',

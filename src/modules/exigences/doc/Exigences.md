@@ -175,6 +175,15 @@ traductions à jour) et **traçable** (liens).
   commun), exigences **non vérifiables**, les plus faibles, les **rattachements**
   (satisfaite par rien, sans méthode de vérification, liens à revoir, sans formulation),
   puis chaque exigence. Réécrite à chaque analyse ; la section Notes est gardée.
+- Dans l'onglet de Black Projects, **Analyser la qualité** (page Exigences, tableau de
+  bord, tuile *Qualité*) ouvre la page **Qualité des exigences**, calculée à l'ouverture,
+  sans rien écrire : les chiffres (exigences, note moyenne, faibles, non vérifiables,
+  doublons probables), une carte par exigence, les plus faibles d'abord — ses étoiles, ses
+  défauts, ce qui lui coûte ; un clic ouvre sa fiche —, puis les défauts les plus
+  fréquents, les doublons, chaque axe, la répartition des notes et les rattachements.
+  Filtres : faibles, non vérifiables, doublons, bonnes, relues (IA). **Écrire le
+  rapport** (puis **Mettre à jour le rapport**) écrit la note sans quitter la page ;
+  **Ouvrir le rapport** l'ouvre.
 
 ## 8. Avec l'IA
 

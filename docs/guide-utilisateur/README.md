@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.45.0)
+## Aujourd'hui (version 0.46.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -102,7 +102,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 - **Qualité des exigences** : « Analyser la qualité des exigences du dossier » écrit la note
   `Analyse/Qualité des exigences` (répartition des notes, défauts, doublons, exigences non
   vérifiables), hors ligne ; la note de chaque exigence est aussi dans la liste et la
-  fiche de la bibliothèque.
+  fiche de la bibliothèque. Pour la bibliothèque, « Analyser la qualité » (page
+  Exigences, tableau de bord, tuile) ouvre la page **Qualité des exigences**, calculée à
+  l'ouverture ; « Écrire le rapport » la garde dans une note.
 
 - **Calendrier de l'appel d'offres** (sans IA) : la note `Analyse/Calendrier` — date
   limite de remise, validité des offres, délais et livraisons, chacun avec sa phrase et

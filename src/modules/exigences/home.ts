@@ -18,6 +18,8 @@ import { editRequirement, flagsOf, type Session } from './flows'
 import { isUnreviewedMachine, textOf, type Requirement } from './model/requirement'
 import { assessAll } from './quality/report'
 import { assessRequirement, isWeak } from './quality/score'
+import { libraryQualityPage, QUALITY_PAGE } from './qualityPage'
+import { libraryQualityPath } from './workflows'
 import { vocabularyLabel } from './vocabulary'
 
 /** La page de la bibliothèque. */
@@ -165,7 +167,8 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
     actions: [
       { id: 'new', label: t('exigences.command.create'), icon: 'plus', primary: true, run: () => run('nouvelle') },
       { id: 'import', label: t('exigences.tile.import'), icon: 'upload', run: () => (imports ? imports.run() : run('importer')) },
-      { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => run('qualite') },
+      // Avec des pages, la qualité s'ouvre en page (rien n'est écrit) ; sinon, le rapport.
+      { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => (showPage ? showPage(QUALITY_PAGE) : run('qualite')) },
       ...(session.ai?.() && settings.languages.length > 1 ? [{ id: 'translate', label: t('exigences.page.translate'), tooltip: t('exigences.command.translateMany'), icon: 'chat' as const, run: () => run('traduire-ia-serie') }] : [])
     ],
     search: { label: t('exigences.page.search'), placeholder: t('exigences.page.search.placeholder') },
@@ -445,6 +448,7 @@ export function registerExigencesHome(
   const { t } = session
   const page = showPage ? { page: LIBRARY_PAGE } : {}
   const open = () => (showPage ? showPage(LIBRARY_PAGE) : run('liste'))
+  const quality = () => (showPage ? showPage(QUALITY_PAGE) : run('qualite'))
   views.home({
     id: 'exigences.library',
     title: t('exigences.home.title'),
@@ -467,7 +471,7 @@ export function registerExigencesHome(
               { id: 'new', label: t('exigences.command.create'), icon: 'plus', run: () => run('nouvelle') },
               // Avec une page, le lien d'en-tête y mène déjà.
               ...(showPage ? [] : [{ id: 'list', label: t('exigences.home.browse'), icon: 'search' as const, run: open }]),
-              { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => run('qualite') }
+              { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: quality }
             ]
           }
         ]
@@ -479,9 +483,11 @@ export function registerExigencesHome(
   views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage, importHere) })
   if (showPage && sessionFor) {
     views.page({ id: REQUIREMENT_PAGE, title: t('exigences.fiche.title'), icon: 'list', parent: LIBRARY_PAGE, load: (param) => requirementPage(sessionFor, showPage, param, () => session.settings().folder) })
-    // Une exigence de la bibliothèque, ouverte par un autre module : sa fiche.
+    views.page({ id: QUALITY_PAGE, title: t('exigences.quality.title'), icon: 'star', parent: LIBRARY_PAGE, load: () => libraryQualityPage({ session, showPage, library: LIBRARY_PAGE, requirementPageOf }) })
     views.page({ id: IMPORT_PAGE, title: t('exigences.importPage.nav'), icon: 'upload', parent: LIBRARY_PAGE, load: (param) => importPage(session, showPage, importHere, param) })
-    views.notePage?.((path) => (path.startsWith(`${session.settings().folder}/`) && path.endsWith('.md') ? requirementPageOf(path) : null))
+    // Une exigence de la bibliothèque, ouverte par un autre module : sa fiche.
+    // Le rapport de qualité, lui, est la page de la qualité.
+    views.notePage?.((path) => (path === libraryQualityPath(session) ? QUALITY_PAGE : path.startsWith(`${session.settings().folder}/`) && path.endsWith('.md') ? requirementPageOf(path) : null))
   }
   views.nav({ id: 'exigences', label: t('exigences.home.nav'), icon: 'list', order: 20, ...page, run: open })
   const group = t('exigences.name')
@@ -503,6 +509,6 @@ export function registerExigencesHome(
     }
   })
   views.tile({ id: 'exigences.nouvelle', label: t('exigences.tile.new'), icon: 'plus', color: 'green', group, order: 21, description: t('exigences.tile.new.desc'), run: () => run('nouvelle') })
-  views.tile({ id: 'exigences.qualite', label: t('exigences.tile.quality'), icon: 'star', color: 'green', group, order: 22, description: t('exigences.tile.quality.desc'), run: () => run('qualite') })
+  views.tile({ id: 'exigences.qualite', label: t('exigences.tile.quality'), icon: 'star', color: 'green', group, order: 22, description: t('exigences.tile.quality.desc'), ...(showPage ? { page: QUALITY_PAGE } : {}), run: quality })
   views.tile({ id: 'exigences.importer', label: t('exigences.tile.import'), icon: 'upload', color: 'green', group, order: 23, description: t('exigences.tile.import.desc'), run: () => (importHere ? importHere.run() : run('importer')) })
 }

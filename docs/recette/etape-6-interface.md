@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Analyser la qualité de la bibliothèque, en page (v0.46.0)
+
+- [ ] Page **Exigences** → **Analyser la qualité** : la page **Qualité des exigences** ;
+      aucune note écrite ni ouverte ; même chose depuis le tableau de bord et la tuile
+      *Qualité*
+- [ ] Ses chiffres (exigences, note moyenne, faibles, non vérifiables, doublons) ; une
+      carte par exigence, les plus faibles d'abord ; un clic ouvre sa fiche
+- [ ] Les listes : défauts, doublons probables, axes, répartition, rattachements ; les
+      filtres Faibles, Non vérifiables, Doublons, Bonnes, Relues (IA)
+- [ ] **Écrire le rapport** : un message, on reste sur la page ; le bouton devient
+      **Mettre à jour le rapport**, et **Ouvrir le rapport** apparaît
+- [ ] Depuis la palette, *Analyser la qualité de la bibliothèque* : le rapport écrit et
+      ouvert, comme avant
+
 ## Importer des exigences, en page (v0.45.0)
 
 - [ ] Page **Exigences** → **Importer** : où est le fichier, l'aperçu, la catégorie si

@@ -413,6 +413,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   « Traductions à relire »
 - v0.45.0 : **importer des exigences** : la page de l'import ensuite (« Importées de … » :
   créées, mises à jour, non importées, d'où chacune vient), retrouvée depuis la fiche
+- v0.46.0 : **analyser la qualité** de la bibliothèque : une page calculée à l'ouverture
+  (chiffres, une carte par exigence, défauts, doublons, axes, rattachements), le rapport
+  écrit depuis la page
 
 ### Étape 7 — Livrables
 

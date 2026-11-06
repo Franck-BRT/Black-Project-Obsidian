@@ -352,3 +352,77 @@ describe('importer des exigences, en page', () => {
     expect(platform.notices.at(-1)).toBe('Exigences client.csv : 2 exigence(s) créée(s), 0 mise(s) à jour.')
   })
 })
+
+describe('analyser la qualité, en page', () => {
+  const REPORT = 'Exigences/Qualité des exigences.md'
+
+  it('« Analyser la qualité » de la bibliothèque, la tuile et le tableau de bord ouvrent la page ; rien n’est écrit ni ouvert', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    const library = await views.pages().find((each) => each.id === 'exigences.bibliotheque')!.load()
+    await library.actions!.find((action) => action.id === 'quality')!.run()
+    const tile = views.allTiles().find((each) => each.id === 'exigences.qualite')!
+    expect(tile.page).toBe('exigences.qualite')
+    await tile.run()
+    const section = await views.homeSections().find((each) => each.id === 'exigences.library')!.load()
+    const blocks = section!.blocks.flatMap((block) => (block.kind === 'actions' ? block.actions : []))
+    await blocks.find((action) => action.id === 'quality')!.run()
+    expect(shown).toEqual(Array(3).fill('exigences.qualite'))
+    expect(await platform.fs.exists(REPORT)).toBe(false)
+    expect(platform.opened).toEqual([])
+  })
+
+  it('la page : ses chiffres, une carte par exigence (les plus faibles d’abord), les défauts, les axes, les rattachements', async () => {
+    const { views, shown } = await start(memoryPlatform(), true)
+    const page = views.pages().find((each) => each.id === 'exigences.qualite')!
+    expect(page.title).toBe('Qualité des exigences')
+    expect(page.parent).toBe('exigences.bibliotheque')
+    const view = await page.load()
+    expect(view.back?.label).toBe('Toute la bibliothèque')
+    expect(view.actions?.map((action) => `${action.id}:${action.label}`)).toEqual(['report:Écrire le rapport', 'library:Toute la bibliothèque'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['faibles', 'non-verifiables', 'doublons', 'bonnes', 'relues'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => stat.label)).toEqual(['Exigences', 'Note moyenne', 'Faibles', 'Non vérifiables', 'Doublons probables'])
+    expect(stats?.kind === 'stats' && stats.stats[0]!.value).toBe('2')
+    const cards = cardsOf(view)
+    expect(cards.map((card) => card.title)).toEqual(['REQ-SEC-0001 — Journalisation', 'REQ-SOL-0001 — Maintien en température'])
+    expect(cards[0]!.subtitle).toMatch(/si possible/)
+    expect(cards[0]!.tags).toContain('faibles')
+    await cards[0]!.open!.run()
+    expect(shown.at(-1)).toMatch(/^exigences\.fiche\?/)
+    const lists = view.blocks.filter((block) => block.kind === 'list').map((block) => block.kind === 'list' && block.title)
+    expect(lists).toEqual(['Défauts les plus fréquents', 'Doublons probables', 'Par axe de la norme', 'Répartition des notes', 'Rattachements'])
+    expect(view.blocks.find((block) => block.kind === 'message')).toMatchObject({ tone: 'info', text: expect.stringContaining('rien n’est écrit') })
+  })
+
+  it('« Écrire le rapport » : la note écrite sans quitter la page ; puis « Ouvrir le rapport »', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    const page = views.pages().find((each) => each.id === 'exigences.qualite')!
+    await (await page.load()).actions!.find((action) => action.id === 'report')!.run()
+    expect(await platform.fs.exists(REPORT)).toBe(true)
+    expect(platform.notices.at(-1)).toMatch(/^Qualité des exigences : 2 exigence\(s\).*Le rapport est écrit dans la bibliothèque\.$/)
+    expect(platform.opened).toEqual([])
+    expect(shown).toEqual([])
+    const after = await page.load()
+    expect(after.actions?.map((action) => `${action.id}:${action.label}`)).toEqual(['report:Mettre à jour le rapport', 'note:Ouvrir le rapport', 'library:Toute la bibliothèque'])
+    await after.actions!.find((action) => action.id === 'note')!.run()
+    expect(platform.opened).toEqual([REPORT])
+    // Une note vide (une plateforme qui lit vide une note absente) n'est pas un rapport.
+    await platform.fs.writeText(REPORT, '')
+    expect((await page.load()).actions?.map((action) => action.id)).toEqual(['report', 'library'])
+    // Le rapport, ouvert par un autre module : la page de la qualité, pas une fiche introuvable.
+    expect(await views.pageForNote(REPORT)).toBe('exigences.qualite')
+  })
+
+  it('depuis la palette, ou sans page chez la plateforme : le rapport écrit et ouvert, comme avant', async () => {
+    const platform = memoryPlatform()
+    const { run } = await start(platform, true)
+    await run('exigences-qualite')
+    expect(platform.opened).toEqual([REPORT])
+    const other = memoryPlatform()
+    const { views } = await start(other, false)
+    await views.allTiles().find((each) => each.id === 'exigences.qualite')!.run()
+    expect(other.opened).toEqual([REPORT])
+  })
+})
