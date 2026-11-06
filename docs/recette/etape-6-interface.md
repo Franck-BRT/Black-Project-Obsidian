@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'une exécution, en page (v0.26.0)
+
+- [ ] Dans le journal (ou « Dernières exécutions », ou l'historique d'un workflow, ou le
+      tableau de bord), un clic sur une exécution : sa fiche — « nom — date heure », son
+      sujet, son issue, ce que chaque étape a fait, les notes écrites, les autres exécutions
+- [ ] Une exécution en échec : l'étape en rouge avec la raison ; **Exécuter de nouveau** mis
+      en avant
+- [ ] **Ouvrir la fiche du workflow** ; **Ouvrir la note du sujet** (l'analyse visée) ; un
+      clic sur une note écrite l'ouvre
+- [ ] Un workflow supprimé depuis : un message le dit, la fiche de l'exécution reste
+
 ## Le journal des workflows, en page (v0.25.0)
 
 - [ ] Page Workflows → **Journal** (ou la tuile Journal, ou la commande « Journal des

@@ -94,6 +94,13 @@ Workflows, dans la section du tableau de bord — ouvre la fiche du workflow qu'
 (`journalOpen`) ; un workflow supprimé depuis : la note du journal. La tuile Journal,
 l'action « Journal », l'historique d'une fiche et la commande `journal` ouvrent la page.
 
+**La fiche d'une exécution (Black Projects 0.26.0)** : `workflows.execution?<ligne encodée>`
+(`parent` : la liste). Le journal est relu en exécutions (`journalRuns`, l'inverse de
+`journalLine`) : quand, issue, workflow, sujet et note du sujet, étapes, notes écrites.
+La ligne même désigne l'exécution ; sortie du journal (il n'en garde que 300), la page le
+dit. Un clic sur une exécution — journal, page Workflows, historique d'une fiche, tableau
+de bord — ouvre cette fiche ; elle mène à la fiche du workflow.
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

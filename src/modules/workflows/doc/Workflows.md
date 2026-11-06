@@ -57,7 +57,11 @@ Palette de commandes :
 - **Journal des workflows** — en page : combien d'exécutions, réussies, en échec,
   refusées ou arrêtées ; puis chaque exécution, jour par jour, la plus récente en tête —
   ✅ fait, ❌ échec (et pourquoi), ⏭️ refusé, ⛔ arrêté. **Un clic sur une exécution ouvre
-  la fiche du workflow** (aussi depuis la page Workflows et le tableau de bord) ; une
+  sa fiche** (aussi depuis la page Workflows, l'historique d'un workflow et le tableau de
+  bord) : son issue et son heure, son sujet, ce que chaque étape a fait (une étape en échec
+  en rouge, avec la raison), les notes qu'elle a écrites (un clic les ouvre), les autres
+  exécutions du même workflow ; et les boutons Ouvrir la fiche du workflow, Exécuter de
+  nouveau, Ouvrir la note du sujet ; une
   recherche et des filtres par issue ; « Ouvrir la note du journal » montre la note, avec
   ses liens vers ce que chaque exécution a écrit ;
 - **Exporter des workflows** / **Importer des workflows** — un fichier JSON pour un autre

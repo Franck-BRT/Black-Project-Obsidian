@@ -27,6 +27,12 @@ const workflow = (id: string, name: string, extra: Partial<Workflow> = {}): Work
   ...extra
 })
 
+/** Le journal d'exemple : un échec avec son sujet et sa note, une réussite qui a écrit une note. */
+const JOURNAL_LINES = [
+  '- 2026-11-05 08:30 · ❌ échec · **Rappel du matin** · sur « Station sol » ([[Appels d’offres/Station sol/Station sol]]) — Étape 1 (Prévenir) a échoué : le serveur ne répond pas',
+  '- 2026-11-04 08:30 · ✅ fait · **Rappel du matin** — 1. Prévenir : envoyé ; 2. Créer une note : écrite · [[Black Projects/Rappels/Rappel du 4]]'
+]
+
 async function start(platform: MemoryPlatform, withPages: boolean) {
   const i18n = createI18n('fr')
   i18n.register('fr', workflowsModule.texts.fr)
@@ -38,7 +44,7 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
       ]
     }
   }
-  await platform.fs.writeText('Black Projects/Workflows/Journal des workflows.md', '# Journal\n\n- 2026-11-05 08:30 · ❌ Échec · **Rappel du matin** · le serveur ne répond pas\n- 2026-11-04 08:30 · ✅ Réussi · **Rappel du matin**\n')
+  await platform.fs.writeText('Black Projects/Workflows/Journal des workflows.md', `# Journal\n\n${JOURNAL_LINES.join('\n')}\n`)
   const commands = new Map<string, ModuleCommand>()
   const views = new ViewsRegistry()
   const shown: string[] = []
@@ -199,7 +205,7 @@ describe('la fiche d’un workflow, en page', () => {
 })
 
 describe('le journal, en page', () => {
-  it('les chiffres, jour par jour ; un clic sur une exécution ouvre la fiche du workflow', async () => {
+  it('les chiffres, jour par jour ; un clic sur une exécution ouvre sa fiche', async () => {
     const { views, shown } = await start(memoryPlatform(), true)
     const page = views.pages().find((each) => each.id === 'workflows.journal')!
     expect(page.parent).toBe('workflows.liste')
@@ -211,7 +217,7 @@ describe('le journal, en page', () => {
     const failed = days[0]!.kind === 'list' ? days[0]!.items[0]! : null
     expect(failed).toMatchObject({ title: 'Rappel du matin', when: '08:30', tone: 'danger', tags: ['echecs'] })
     await failed!.open!.run()
-    expect(shown.at(-1)).toBe('workflows.fiche?wf-1')
+    expect(shown.at(-1)).toBe(`workflows.execution?${encodeURIComponent(JOURNAL_LINES[0])}`)
     expect(view.filters?.map((filter) => filter.id)).toEqual(['reussies', 'echecs', 'refusees', 'arretees'])
   })
 
@@ -224,6 +230,35 @@ describe('le journal, en page', () => {
     const section = await views.homeSections()[0]!.load()
     const items = section!.blocks.find((block) => block.kind === 'list')
     await (items?.kind === 'list' ? items.items[0]! : null)!.open!.run()
-    expect(shown).toEqual(['workflows.journal', 'workflows.journal', 'workflows.fiche?wf-1'])
+    expect(shown).toEqual(['workflows.journal', 'workflows.journal', `workflows.execution?${encodeURIComponent(JOURNAL_LINES[0])}`])
+  })
+})
+
+describe('la fiche d’une exécution, en page', () => {
+  it('issue, heure, sujet, étapes (l’échec en rouge), notes écrites, autres exécutions', async () => {
+    const { views, shown } = await start(memoryPlatform(), true)
+    const page = views.pages().find((each) => each.id === 'workflows.execution')!
+    expect(page.parent).toBe('workflows.liste')
+    const failed = await page.load(encodeURIComponent(JOURNAL_LINES[0]!))
+    expect(failed.title).toBe('Rappel du matin — 2026-11-05 08:30')
+    expect(failed.subtitle).toBe('sur « Station sol » · 2026-11-05 08:30')
+    expect(failed.actions?.map((action) => action.id)).toEqual(['workflow', 'again', 'subject', 'journal'])
+    expect(failed.actions?.find((action) => action.id === 'again')?.primary).toBe(true)
+    const stats = failed.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Issue=Échec', 'Heure=08:30', 'Étapes=1', 'Notes écrites=0'])
+    const [steps, , others] = failed.blocks.filter((block) => block.kind === 'list')
+    expect(steps?.kind === 'list' && steps.items.map((item) => item.tone)).toEqual(['danger'])
+    expect(others?.kind === 'list' && others.items.map((item) => item.title)).toEqual(['fait — sans sujet'])
+    await failed.actions!.find((action) => action.id === 'workflow')!.run()
+    expect(shown.at(-1)).toBe('workflows.fiche?wf-1')
+    const done = await page.load(encodeURIComponent(JOURNAL_LINES[1]!))
+    const lists = done.blocks.filter((block) => block.kind === 'list')
+    expect(lists[0]!.kind === 'list' && lists[0]!.items.map((item) => `${item.when}:${item.title}:${item.tone}`)).toEqual(['étape 1:Prévenir : envoyé:success', 'étape 2:Créer une note : écrite:success'])
+    expect(lists[1]!.kind === 'list' && lists[1]!.items.map((item) => item.detail)).toEqual(['Black Projects/Rappels/Rappel du 4.md'])
+  })
+
+  it('une exécution sortie du journal : la page le dit', async () => {
+    const { views } = await start(memoryPlatform(), true)
+    expect((await views.pages().find((each) => each.id === 'workflows.execution')!.load(encodeURIComponent('- disparue'))).title).toBe('Exécution introuvable')
   })
 })

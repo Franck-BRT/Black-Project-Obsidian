@@ -20,6 +20,9 @@ export const WORKFLOWS_PAGE = 'workflows.liste'
 export const WORKFLOW_PAGE = 'workflows.fiche'
 /** Le journal des workflows, en page. */
 export const JOURNAL_PAGE = 'workflows.journal'
+/** La fiche d'une exécution : `pageWith(RUN_PAGE, ligne du journal encodée)`. */
+export const RUN_PAGE = 'workflows.execution'
+const runPageOf = (line: string) => pageWith(RUN_PAGE, encodeURIComponent(line))
 
 /** Le filtre du journal qui répond à chaque issue. */
 const OUTCOME_TAG: Record<Tone, string> = { success: 'reussies', danger: 'echecs', neutral: 'refusees', warning: 'arretees', info: 'autres' }
@@ -57,17 +60,63 @@ export interface WorkflowFicheDeps {
 
 const TONES: Record<string, Tone> = { '✅': 'success', '❌': 'danger', '⏭️': 'neutral', '⛔': 'warning' }
 
-/** Les dernières lignes du journal, comme éléments de liste. */
-export function journalItems(journal: string, count: number): Omit<ListItem, 'open'>[] {
-  const out: Omit<ListItem, 'open'>[] = []
+/**
+ * Une exécution, telle que le journal l'a écrite (`journalLine`) : quand, son issue, son
+ * workflow, son sujet et la note du sujet, ce que chaque étape a fait, les notes écrites.
+ */
+export interface Run {
+  /** La ligne même : ce qui désigne l'exécution (la fiche d'une exécution la retrouve par elle). */
+  line: string
+  when: string
+  tone: Tone
+  /** L'issue en mots : « fait », « échec »… */
+  outcome: string
+  name: string
+  /** « sur « Station sol » » ; vide si l'exécution n'avait pas de sujet. */
+  subject: string
+  /** La note du sujet (une analyse, une exigence) ; vide s'il n'y en a pas. */
+  subjectPath: string
+  steps: string[]
+  /** Les notes que l'exécution a écrites. */
+  paths: string[]
+}
+
+const asNote = (target: string) => (/\.[a-z0-9]+$/i.test(target) ? target : `${target}.md`)
+const linkTarget = (link: string) => asNote((/^\[\[([^\]|]+)/.exec(link.trim())?.[1] ?? '').trim())
+/** Un texte de journal lisible : chaque lien [[…]] devient son nom. */
+const unlink = (text: string) => text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, path: string, label?: string) => label ?? path.slice(path.lastIndexOf('/') + 1))
+
+/** Les exécutions du journal, la plus récente en tête (le journal l'est déjà). */
+export function journalRuns(journal: string, count: number): Run[] {
+  const out: Run[] = []
   for (const line of journal.split('\n')) {
-    const found = /^- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) · (✅|❌|⏭️|⛔) [^·]+ · \*\*(.+?)\*\*(.*)$/u.exec(line)
+    const found = /^- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) · (✅|❌|⏭️|⛔) ([^·]+) · \*\*(.+?)\*\*(.*)$/u.exec(line)
     if (!found) continue
-    const detail = found[4]!.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, path: string, label?: string) => label ?? path.slice(path.lastIndexOf('/') + 1))
-    out.push({ id: `${out.length}`, title: found[3]!, when: found[1]!, tone: TONES[found[2]!] ?? 'neutral', detail: detail.replace(/^ · /, '').trim() })
+    let rest = found[5]!
+    // À la fin, les notes écrites : « · [[a]], [[b]] ».
+    const wrote = /\s·\s((?:\[\[[^\]]+\]\](?:,\s*)?)+)\s*$/.exec(rest)
+    const paths = wrote ? (wrote[1]!.match(/\[\[[^\]]+\]\]/g) ?? []).map(linkTarget) : []
+    if (wrote) rest = rest.slice(0, wrote.index)
+    // Puis ce que chaque étape a fait : « — 1. … ; 2. … ».
+    const dash = rest.indexOf(' — ')
+    const steps = dash >= 0 ? rest.slice(dash + 3).split(' ; ').map((step) => unlink(step).trim()).filter(Boolean) : []
+    if (dash >= 0) rest = rest.slice(0, dash)
+    // Puis la note du sujet : « ([[…]]) ».
+    const from = /\s\((\[\[[^\]]+\]\])\)\s*$/.exec(rest)
+    const subjectPath = from ? linkTarget(from[1]!) : ''
+    if (from) rest = rest.slice(0, from.index)
+    out.push({ line, when: found[1]!, tone: TONES[found[2]!] ?? 'neutral', outcome: found[3]!.trim(), name: found[4]!, subject: rest.replace(/^\s·\s/, '').trim(), subjectPath, steps, paths })
     if (out.length >= count) break
   }
   return out
+}
+
+/** Les dernières lignes du journal, comme éléments de liste. */
+export function journalItems(journal: string, count: number): (Omit<ListItem, 'open'> & { line: string })[] {
+  return journalRuns(journal, count).map((run, index) => {
+    const detail = [run.subject, run.steps.join(' ; '), run.paths.length ? run.paths.map((path) => path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, '')).join(', ') : ''].filter(Boolean).join(' — ')
+    return { id: `${index}`, title: run.name, when: run.when, tone: run.tone, detail, line: run.line }
+  })
 }
 
 /** Le journal : son texte, vide s'il n'existe pas encore. */
@@ -77,13 +126,12 @@ async function readJournal(deps: { t: Translate; fs: FileSystem; folder(): strin
 }
 
 /**
- * Un clic sur une ligne du journal : la fiche du workflow qu'elle nomme, quand il existe
- * encore et que la plateforme a des pages ; sinon la note du journal.
+ * Un clic sur une ligne du journal : la fiche de cette exécution, quand la plateforme a
+ * des pages ; sinon la note du journal.
  */
-function journalOpen(deps: HomeDeps, name: string) {
-  const workflow = deps.showPage && deps.page ? deps.page.load().find((each) => each.name === name) : undefined
-  return workflow
-    ? { id: 'fiche', label: deps.t('workflows.journal.fiche', { name }), run: () => deps.showPage?.(pageWith(WORKFLOW_PAGE, workflow.id)) }
+function runOpen(deps: HomeDeps, line: string) {
+  return deps.showPage && deps.page
+    ? { id: 'run', label: deps.t('workflows.run.open'), run: () => deps.showPage?.(runPageOf(line)) }
     : { id: 'journal', label: deps.t('workflows.home.journal'), run: deps.openJournal }
 }
 
@@ -92,7 +140,7 @@ function openJournalPage(deps: HomeDeps): () => Promise<void> | void {
   return deps.showPage && deps.page ? () => deps.showPage?.(JOURNAL_PAGE) : deps.openJournal
 }
 
-type HomeDeps = { t: Translate; fs: FileSystem; folder(): string; load(): Workflow[]; run(id: string): Promise<void>; openJournal(): Promise<void>; showPage?(id: string): void; page?: WorkflowsPageDeps }
+type HomeDeps = { t: Translate; fs: FileSystem; folder(): string; load(): Workflow[]; run(id: string): Promise<void>; openJournal(): Promise<void>; openNote(path: string): Promise<void>; showPage?(id: string): void; page?: WorkflowsPageDeps }
 
 /** Ce que le journal récent dit d'un workflow : sa dernière issue, quand, et combien de lignes. */
 interface Logged {
@@ -190,7 +238,7 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
       workflows.length
         ? { kind: 'cards', cards: workflows.map((workflow) => workflowCard(deps.page, workflow, logged.get(workflow.name))) }
         : { kind: 'message', tone: 'info', text: t('workflows.list.empty') },
-      { kind: 'list', title: t('workflows.page.journal'), items: recent.slice(0, 10).map((item) => ({ ...item, open: journalOpen(deps, item.title) })), empty: t('workflows.journal.none') }
+      { kind: 'list', title: t('workflows.page.journal'), items: recent.slice(0, 10).map((item) => ({ ...item, open: runOpen(deps, item.line) })), empty: t('workflows.journal.none') }
     ]
   }
 }
@@ -209,7 +257,6 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
   const workflow = page.load().find((each) => each.id === id)
   if (!workflow) return { title: t('workflows.page.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('workflows.page.missing') }] }
   const history = journalItems(await readJournal(deps), 200).filter((item) => item.title === workflow.name)
-  const journal = { id: 'journal', label: t('workflows.home.journal'), run: openJournalPage(deps) }
   const last = workflow.lastRun ? page.stamp(workflow.lastRun) : (history[0]?.when ?? '—')
   const failed = history[0]?.tone === 'danger'
   const count = workflow.actions.length
@@ -280,7 +327,7 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
           ]
         }))
       },
-      { kind: 'list', title: t('workflows.page.fiche.history'), items: history.slice(0, 10).map((item) => ({ ...item, open: journal })), empty: t('workflows.page.fiche.never') }
+      { kind: 'list', title: t('workflows.page.fiche.history'), items: history.slice(0, 10).map((item) => ({ ...item, open: runOpen(deps, item.line) })), empty: t('workflows.page.fiche.never') }
     ]
   }
 }
@@ -298,7 +345,7 @@ export async function journalPage(deps: HomeDeps): Promise<PageView> {
   const days = new Map<string, ListItem[]>()
   for (const item of items) {
     const day = (item.when ?? '').slice(0, 10)
-    days.set(day, [...(days.get(day) ?? []), { ...item, when: (item.when ?? '').slice(11), open: journalOpen(deps, item.title), tags: [OUTCOME_TAG[item.tone ?? 'neutral']] }])
+    days.set(day, [...(days.get(day) ?? []), { ...item, when: (item.when ?? '').slice(11), open: runOpen(deps, item.line), tags: [OUTCOME_TAG[item.tone ?? 'neutral']] }])
   }
   const dayTitle = (day: string) => {
     const date = new Date(`${day}T12:00:00`)
@@ -334,6 +381,55 @@ export async function journalPage(deps: HomeDeps): Promise<PageView> {
   }
 }
 
+/**
+ * La **fiche** d'une exécution : son issue et quand, son workflow, son sujet (« sur « Station
+ * sol » ») ; ce que chaque étape a fait (une étape en échec, en rouge) ; les notes qu'elle a
+ * écrites ; les autres exécutions du même workflow. En tête : la fiche du workflow, le
+ * relancer, ouvrir la note du sujet, le journal.
+ */
+export async function runPage(deps: HomeDeps & { page: WorkflowsPageDeps }, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const line = param ? decodeURIComponent(param) : ''
+  const runs = journalRuns(await readJournal(deps), 500)
+  const run = runs.find((each) => each.line === line)
+  const back: ViewAction = { id: 'back', label: t('workflows.journal.title'), run: () => deps.showPage?.(JOURNAL_PAGE) }
+  if (!run) return { title: t('workflows.run.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('workflows.run.missing') }] }
+  const workflow = deps.page.load().find((each) => each.name === run.name)
+  const failed = (step: string) => /a échoué|failed|manque|missing|inconnue|unknown/i.test(step)
+  const stepItems: ListItem[] = run.steps.map((step, index) => ({ id: `step-${index}`, title: step.replace(/^\d+\.\s*/, ''), when: t('workflows.run.step', { step: index + 1 }), tone: failed(step) ? 'danger' : 'success' }))
+  const noteItems: ListItem[] = run.paths.map((path) => ({ id: path, title: path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, ''), detail: path, open: { id: 'open', label: t('workflows.run.note'), run: () => deps.openNote(path) } }))
+  const others: ListItem[] = runs
+    .filter((each) => each.name === run.name && each.line !== run.line)
+    .slice(0, 10)
+    .map((each, index) => ({ id: `other-${index}`, title: `${each.outcome} — ${each.subject || t('workflows.run.noSubject')}`, when: each.when, tone: each.tone, open: runOpen(deps, each.line) }))
+  return {
+    title: t('workflows.run.title', { name: run.name, when: run.when }),
+    back,
+    subtitle: [run.subject, run.when].filter(Boolean).join(' · '),
+    actions: [
+      ...(workflow && deps.showPage ? [{ id: 'workflow', label: t('workflows.run.workflow'), icon: 'flow' as const, run: () => deps.showPage?.(pageWith(WORKFLOW_PAGE, workflow.id)) }] : []),
+      ...(workflow ? [{ id: 'again', label: t('workflows.run.again'), icon: 'play' as const, primary: run.tone === 'danger', run: () => deps.page.runNow(workflow.id) }] : []),
+      ...(run.subjectPath ? [{ id: 'subject', label: t('workflows.run.subject'), icon: 'file' as const, run: () => deps.openNote(run.subjectPath) }] : []),
+      { id: 'journal', label: t('workflows.journal.note'), icon: 'book', run: deps.openJournal }
+    ],
+    blocks: [
+      ...(workflow ? [] : [{ kind: 'message' as const, tone: 'info' as const, text: t('workflows.run.deleted') }]),
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('workflows.run.outcome'), value: run.outcome.charAt(0).toUpperCase() + run.outcome.slice(1), icon: run.tone === 'success' ? 'check' : run.tone === 'danger' ? 'alert' : 'hide', tone: run.tone },
+          { label: t('workflows.run.when'), value: run.when.slice(11), icon: 'clock', hint: run.when.slice(0, 10) },
+          { label: t('workflows.run.steps'), value: String(run.steps.length), icon: 'flow' },
+          { label: t('workflows.run.notes'), value: String(run.paths.length), icon: 'file' }
+        ]
+      },
+      { kind: 'list', title: t('workflows.run.stepsTitle', { count: run.steps.length }), items: stepItems, empty: t('workflows.run.stepsNone') },
+      { kind: 'list', title: t('workflows.run.notesTitle', { count: run.paths.length }), items: noteItems, empty: t('workflows.run.notesNone') },
+      { kind: 'list', title: t('workflows.run.others', { name: run.name }), items: others, empty: t('workflows.run.othersNone') }
+    ]
+  }
+}
+
 /** Les workflows : leur page, quand la plateforme en a ; sinon la liste en fenêtre. */
 export async function openWorkflows(showPage: ((id: string) => void) | undefined, browse: () => Promise<void>): Promise<void> {
   if (showPage) showPage(WORKFLOWS_PAGE)
@@ -353,7 +449,7 @@ export function registerWorkflowsHome(views: ViewsRegistrar | undefined, deps: H
     area: 'side',
     async load(): Promise<HomeSectionView> {
       const workflows = deps.load()
-      const items = journalItems(await readJournal(deps), 5).map((item) => ({ ...item, open: journalOpen(deps, item.title) }))
+      const items = journalItems(await readJournal(deps), 5).map((item) => ({ ...item, open: runOpen(deps, item.line) }))
       return {
         title: t('workflows.home.title'),
         subtitle: t('workflows.home.subtitle', { active: workflows.filter((each) => each.enabled).length, count: workflows.length }),
@@ -377,7 +473,10 @@ export function registerWorkflowsHome(views: ViewsRegistrar | undefined, deps: H
   if (deps.page) {
     const page = deps.page
     views.page({ id: WORKFLOWS_PAGE, title: t('workflows.page.title'), icon: 'flow', load: () => workflowsPage({ ...deps, page }) })
-    if (deps.showPage) views.page({ id: JOURNAL_PAGE, title: t('workflows.journal.title'), icon: 'book', parent: WORKFLOWS_PAGE, load: () => journalPage(deps) })
+    if (deps.showPage) {
+      views.page({ id: JOURNAL_PAGE, title: t('workflows.journal.title'), icon: 'book', parent: WORKFLOWS_PAGE, load: () => journalPage(deps) })
+      views.page({ id: RUN_PAGE, title: t('workflows.run.page'), icon: 'play', parent: WORKFLOWS_PAGE, load: (param) => runPage({ ...deps, page }, param) })
+    }
     const fiche = page.fiche
     if (fiche) views.page({ id: WORKFLOW_PAGE, title: t('workflows.page.fiche.title'), icon: 'flow', parent: WORKFLOWS_PAGE, load: (id) => workflowPage({ ...deps, page: { ...page, fiche } }, id) })
   }

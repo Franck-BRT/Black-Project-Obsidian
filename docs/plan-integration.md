@@ -361,6 +361,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   exigences par elle, les absentes d'abord)
 - v0.25.0 : le **journal des workflows en page** ; un clic sur une exécution ouvre la fiche
   du workflow
+- v0.26.0 : la **fiche d'une exécution** (issue, sujet, étapes, notes écrites, autres
+  exécutions) ; un clic sur une exécution y mène
 
 ### Étape 7 — Livrables
 
