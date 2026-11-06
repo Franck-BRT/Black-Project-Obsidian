@@ -104,7 +104,16 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
   const ai = session.ai?.() ?? null
   const actions: ViewAction[] = path
     ? [
-        { id: 'edit', label: t('exigences.page.edit'), icon: 'edit', run: async () => void (await editRequirement(session, path)) },
+        {
+          id: 'edit',
+          label: t('exigences.page.edit'),
+          icon: 'edit',
+          // La fiche modifiée se lit sur sa fiche : on y va (sous son nouveau nom, si le titre a changé).
+          run: async () => {
+            const next = await editRequirement(session, path)
+            if (next && showPage) showPage(requirementPageOf(next))
+          }
+        },
         ...(ai
           ? [
               { id: 'review', label: t('exigences.page.review'), icon: 'spark' as const, run: async () => void (await reviewRequirement(session, ai, path, localToday())) },
@@ -191,6 +200,14 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
 
 const folderOf = (path: string) => path.slice(0, Math.max(0, path.lastIndexOf('/')))
 
+/** La note d'une exigence renommée : « REQ-SOL-0001 Ancien titre.md » → celle qui porte REQ-SOL-0001 aujourd'hui. */
+async function renamedFrom(session: Session, path: string): Promise<string | null> {
+  const id = /^(\S+?)(?:\s.*)?\.md$/.exec(path.slice(path.lastIndexOf('/') + 1))?.[1]
+  if (!id) return null
+  const found = (await session.store.all().catch(() => [])).find((requirement) => requirement.id === id && requirement.filePath && requirement.filePath !== path)
+  return found?.filePath ?? null
+}
+
 /** Ce qui coûte à un axe de qualité, en mots : une règle, un manque, un champ vide. */
 export function describeMiss(miss: string, t: Session['t']): string {
   const known = (key: string) => {
@@ -219,13 +236,28 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
   const { t } = session
   const back: ViewAction = { id: 'back', label: t('exigences.fiche.back'), run: () => showPage(LIBRARY_PAGE) }
   const requirement = path ? await session.store.load(path).catch(() => null) : null
+  if (!requirement && path) {
+    // Renommée depuis (un titre modifié, « Retour » vers son ancien nom) : la même exigence, par son identifiant.
+    const renamed = await renamedFrom(session, path)
+    if (renamed) return requirementPage(sessionFor, showPage, encodeURIComponent(renamed), libraryFolder)
+  }
   if (!requirement) return { title: t('exigences.fiche.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('exigences.fiche.missing') }] }
 
   const languages = session.settings().languages
   const quality = assessRequirement(requirement, languages)
   const ai = session.ai?.() ?? null
   const actions: ViewAction[] = [
-    { id: 'edit', label: t('exigences.row.edit'), icon: 'edit', primary: true, run: async () => void (await editRequirement(session, path)) },
+    {
+      id: 'edit',
+      label: t('exigences.row.edit'),
+      icon: 'edit',
+      primary: true,
+      // Un titre modifié renomme la note : la fiche la suit.
+      run: async () => {
+        const next = await editRequirement(session, path)
+        if (next && next !== path) showPage(requirementPageOf(next))
+      }
+    },
     ...(ai
       ? [
           { id: 'review', label: t('exigences.page.review'), icon: 'spark' as const, run: async () => void (await reviewRequirement(session, ai, path, localToday())) },

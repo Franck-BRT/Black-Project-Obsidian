@@ -473,3 +473,63 @@ describe('nouvelle exigence, en page', () => {
     expect(other.opened).toEqual(['Exigences/REQ-GEN-0001 Reprise.md'])
   })
 })
+
+describe('modifier la fiche, en page', () => {
+  const edit = (title: string, text: string) => ({ title, text, type: 'security', status: 'proposed', criticality: 'high', verification: 'inspection', source: 'CCTP § 3', rationale: 'Traçabilité des accès.', owner: 'Équipe sol', tags: '', aliases: '' })
+
+  it('sur la fiche : la fiche modifiée, redessinée ; un titre modifié renomme la note, la fiche la suit', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    const weak = (await requirementsAt('Exigences').all()).find((each) => each.title === 'Journalisation')!
+    const page = views.pages().find((each) => each.id === 'exigences.fiche')!
+    const fiche = await page.load(encodeURIComponent(weak.filePath!))
+    platform.forms.push(edit('Journalisation', 'Les accès doivent être journalisés.'))
+    await fiche.actions!.find((action) => action.id === 'edit')!.run()
+    // Même titre, même note : la page se redessine, sans aller ailleurs.
+    expect(shown).toEqual([])
+    expect(platform.notices.at(-1)).toBe(`Exigence ${weak.id} enregistrée (révision 2).`)
+    const after = await page.load(encodeURIComponent(weak.filePath!))
+    expect(cardsOf(after).find((card) => card.id === 'text-fr')!.text).toBe('Les accès doivent être journalisés.')
+    platform.forms.push(edit('Journal des accès', 'Les accès doivent être journalisés.'))
+    await after.actions!.find((action) => action.id === 'edit')!.run()
+    const renamed = `Exigences/${weak.id} Journal des accès.md`
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent(renamed)}`)
+    expect(platform.opened).toEqual([])
+  })
+
+  it('« Retour » vers l’ancien nom d’une exigence renommée : sa fiche, pas « introuvable »', async () => {
+    const platform = memoryPlatform()
+    const { views } = await start(platform, true)
+    const weak = (await requirementsAt('Exigences').all()).find((each) => each.title === 'Journalisation')!
+    const page = views.pages().find((each) => each.id === 'exigences.fiche')!
+    platform.forms.push(edit('Journal des accès', 'Les accès doivent être journalisés.'))
+    await (await page.load(encodeURIComponent(weak.filePath!))).actions!.find((action) => action.id === 'edit')!.run()
+    const old = await page.load(encodeURIComponent(weak.filePath!))
+    expect(old.title).toBe(`${weak.id} — Journal des accès`)
+    expect(old.actions?.map((action) => action.id)).toEqual(['edit', 'note'])
+  })
+
+  it('« Modifier » d’une carte de la bibliothèque mène à la fiche modifiée', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    const weak = (await requirementsAt('Exigences').all()).find((each) => each.title === 'Journalisation')!
+    const card = cardsOf(await views.pages().find((each) => each.id === 'exigences.bibliotheque')!.load()).find((each) => each.id === weak.filePath)!
+    platform.forms.push(edit('Journal des accès', 'Les accès doivent être journalisés.'))
+    await card.actions!.find((action) => action.id === 'edit')!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent(`Exigences/${weak.id} Journal des accès.md`)}`)
+  })
+
+  it('le formulaire abandonné : rien ne bouge ; depuis la palette, la note renommée s’ouvre, comme avant', async () => {
+    const platform = memoryPlatform()
+    const { views, shown, run } = await start(platform, true)
+    const weak = (await requirementsAt('Exigences').all()).find((each) => each.title === 'Journalisation')!
+    const card = cardsOf(await views.pages().find((each) => each.id === 'exigences.bibliotheque')!.load()).find((each) => each.id === weak.filePath)!
+    await card.actions!.find((action) => action.id === 'edit')!.run()
+    expect(shown).toEqual([])
+    platform.active = weak.filePath!
+    platform.forms.push(edit('Journal des accès', 'Les accès doivent être journalisés.'))
+    await run('exigences-modifier')
+    expect(platform.opened).toEqual([`Exigences/${weak.id} Journal des accès.md`])
+    expect(shown).toEqual([])
+  })
+})

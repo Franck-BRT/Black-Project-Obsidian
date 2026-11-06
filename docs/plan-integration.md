@@ -418,6 +418,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   écrit depuis la page
 - v0.47.0 : **nouvelle exigence** : depuis l'interface, la fiche de l'exigence créée
   ensuite (sa note depuis la palette)
+- v0.48.0 : **modifier la fiche** : la fiche redessinée, ou suivie sous son nouveau nom
+  quand le titre change ; depuis une carte de la bibliothèque, la fiche modifiée ensuite
 
 ### Étape 7 — Livrables
 

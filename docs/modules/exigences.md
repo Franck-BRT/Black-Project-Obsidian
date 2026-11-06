@@ -233,6 +233,14 @@ bibliothèque, de la section du tableau de bord et de la tuile passe par `create
 (`requirementPageOf`) ; un formulaire abandonné laisse la page où elle est. Depuis la
 palette, ou sans page chez la plateforme : la commande `nouvelle`, qui ouvre la note.
 
+**Modifier dans l'interface (v0.16.0, Black Projects 0.48.0)** : « Modifier la fiche »
+sur la fiche passe par `editRequirement`, qui rend le chemin de la note ; renommée (un
+titre modifié), la fiche suit (`requirementPageOf(nouveau chemin)`). « Modifier » d'une
+carte de la bibliothèque (et des pages qui en reprennent les cartes, comme celle d'un
+import) mène à la fiche modifiée. Une fiche demandée sous un ancien nom (« Retour »)
+retrouve l'exigence par l'identifiant en tête du nom de la note (`renamedFrom`) plutôt
+que de dire « introuvable ». Depuis la palette : la note, comme avant.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

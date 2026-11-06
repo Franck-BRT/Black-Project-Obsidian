@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Modifier la fiche, en page (v0.48.0)
+
+- [ ] Sur la fiche d'une exigence, **Modifier la fiche** : changer la formulation ; la
+      fiche redessinée (nouvelle formulation, révision dans l'historique) ; aucune note
+      ouverte
+- [ ] Changer le titre : la fiche suit l'exigence sous son nouveau nom (pas
+      « Exigence introuvable ») ; « Retour » retrouve aussi l'exigence
+- [ ] Page **Exigences**, **Modifier** sur une carte : la fiche modifiée s'ouvre
+- [ ] Depuis la palette, *Modifier l'exigence* sur sa note : la note (renommée) s'ouvre
+
 ## Nouvelle exigence, en page (v0.47.0)
 
 - [ ] Page **Exigences** → **Nouvelle exigence** : le formulaire, puis la **fiche** de

@@ -77,6 +77,12 @@ La fiche en fenêtre (bouton **Modifier la fiche**) propose :
 
 Sur la note d'une exigence ouverte, la commande **Modifier l'exigence** ouvre la même fiche.
 
+Dans l'onglet de Black Projects, **Modifier la fiche** (sur la fiche d'une exigence) la
+redessine une fois enregistrée ; un titre modifié renomme la note, et la fiche la suit
+(même « Retour » vers l'ancien nom retrouve l'exigence). **Modifier** sur une carte de la
+page Exigences mène à la fiche modifiée. Aucune note ne s'ouvre ; depuis la palette, la
+note (renommée s'il le faut) s'ouvre, comme avant.
+
 Hors de l'onglet Black Projects (une plateforme sans pages), la commande ouvre la liste en
 fenêtre, avec ses filtres par catégorie, type, statut et criticité.
 
