@@ -15,6 +15,7 @@
 
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
+import { modulePageOf } from '../../core/settingsPage'
 import type { ActionsField, BlackModule, MappingField, ModuleContext, TextField } from '../../core/modules/module'
 import { cleanFolder } from '../../core/settings'
 import { typingDetails } from './catalogue'
@@ -358,7 +359,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.4.4',
+  version: '0.5.0',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),
@@ -372,11 +373,24 @@ export const typagePiecesModule: BlackModule = {
   migrateSettings: migrateFromAo,
   activate(context) {
     configureTyping(context.settings.get())
-    // L'accueil : une tuile pour la fenêtre des types.
-    const window = context.openWindow
-    if (context.views && window) {
+    // L'accueil : une tuile pour les types — leur page (« Fonctions » du module) quand la
+    // plateforme a des pages, marquée « page en cours » quand on y est ; sinon la fenêtre.
+    const types = modulePageOf(TYPAGE_PIECES)
+    const showPage = context.showPage
+    const open = showPage ? () => showPage(types) : context.openWindow
+    if (context.views && open) {
       const t = (key: string) => context.i18n.t(key)
-      context.views.tile({ id: 'typage.types', label: t('typage-pieces.details.title'), icon: 'list', color: 'slate', group: t('typage-pieces.name'), description: t('typage-pieces.tile.types'), order: 81, run: () => window() })
+      context.views.tile({
+        id: 'typage.types',
+        label: t('typage-pieces.details.title'),
+        icon: 'list',
+        color: 'slate',
+        group: t('typage-pieces.name'),
+        description: t('typage-pieces.tile.types'),
+        order: 81,
+        ...(showPage ? { page: types } : {}),
+        run: () => open()
+      })
     }
     unsubscribe = context.settings.onChange((values) => configureTyping(values))
     context.commands.register({ id: 'exporter-types', nameKey: 'typage-pieces.command.export', run: () => exportCommand(context) })

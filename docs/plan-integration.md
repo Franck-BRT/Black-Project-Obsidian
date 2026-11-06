@@ -437,6 +437,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   dans les deux sens
 - v0.56.0 : **module Lecture de fichiers** : sa tuile « Formats de fichiers » ouvre la page
   du module et la déclare (le module n'a pas d'autre entrée)
+- v0.57.0 : **module Typage des pièces** : sa tuile « Types de pièces » ouvre la page du
+  module et la déclare ; importer et exporter des types s'y font sans la quitter
 
 ### Étape 7 — Livrables
 

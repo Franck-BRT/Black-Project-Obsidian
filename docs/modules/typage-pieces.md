@@ -51,6 +51,14 @@ Dans l'ordre : **Échanger des types** (Importer…, Exporter…), **Dossier des
 section **Types de pièces et leur détection** (une fiche par type, avec son
 interrupteur).
 
+**La tuile, en page (v0.5.0, Black Projects 0.57.0)** : revue du module — ses deux
+commandes (`importer-types`, `exporter-types`) se lancent depuis la page du module (le
+champ d'actions), qui reste affichée ; la tuile `typage.types` ouvrait déjà cette page
+(`core.fonctions?typage-pieces`) par `openWindow`. Avec des pages
+(`ModuleContext.showPage`), elle l'ouvre maintenant directement et la déclare (`page`),
+comme la tuile des formats de Lecture de fichiers ; sans page, la fenêtre du module.
+Tests : `test/typage-page.test.ts`.
+
 ## L'échange de types
 
 Commandes « Exporter des types de pièces » et « Importer des types de pièces », aussi en

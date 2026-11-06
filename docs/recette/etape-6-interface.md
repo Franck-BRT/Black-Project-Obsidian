@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le module Typage des pièces : la tuile des types (v0.57.0)
+
+- [ ] **Modifier l'accueil** → ajouter **Types de pièces** → **Terminé** ; la tuile ouvre
+      la page « Typage des pièces — Types de pièces » ; aucune fenêtre
+- [ ] Sur la page, **Exporter…** puis **Importer…** : leurs fenêtres, puis on reste sur la
+      page (le message dit le résultat)
+
 ## Le module Lecture de fichiers : la tuile des formats (v0.56.0)
 
 - [ ] **Modifier l'accueil** → ajouter **Formats de fichiers** → **Terminé** ; la tuile

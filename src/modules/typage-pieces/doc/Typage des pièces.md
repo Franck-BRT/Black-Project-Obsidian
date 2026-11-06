@@ -8,7 +8,9 @@ texte. L'{{link:Modules/Analyse d'appels d'offres|analyse d'appels d'offres}} s'
 à l'import de chaque pièce.
 
 Tout se règle dans Paramètres → Black Projects → bouton **Types de pièces** de la ligne
-« Typage des pièces ».
+« Typage des pièces ». Dans l'onglet de Black Projects, la tuile **Types de pièces** (à
+ajouter à l'accueil par « Modifier l'accueil ») ouvre la même chose en page ; **Importer…**
+et **Exporter…** s'y lancent sans la quitter.
 
 ## La reconnaissance
 
