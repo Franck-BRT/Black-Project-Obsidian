@@ -448,6 +448,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.60.0 : **module IA** : un workflow système, *Vérifier la connexion à l'IA, à
   l'ouverture* (actif d'origine) — la liste des modèles à jour, prévient d'un serveur en
   panne ou d'un modèle retiré
+- v0.61.0 : **module Bibliothèque de documents** : tout fichier déposé (pièces d'une
+  analyse, import d'exigences, échanges de types et de workflows, versement à la main) y est
+  rangé une fois, avec sa fiche (origines, catégorie, versions reconnues au nom) ; page,
+  fiche, classer, relier les versions, retirer
 
 ### Étape 7 — Livrables
 

@@ -11,6 +11,7 @@
 import { localToday } from '../../core/dates'
 import { parseFrontmatter, setFrontmatterField } from '../../core/frontmatter'
 import type { ExternalFile, FileSystem } from '../../core/ports'
+import { pourIntoLibrary } from '../bibliotheque'
 import { FileReadError, fileText, isArchive, isImage, isReadable, readArchive } from '../lecture-fichiers'
 import { classifyPiece, currentCode, currentTyping, OTHER, type CustomKeywords } from '../typage-pieces'
 import {
@@ -317,6 +318,7 @@ export async function importFiles(
     placement = answer
   }
 
+  const poured: { name: string; path: string; bytes: Uint8Array; category: string }[] = []
   for (const piece of pieces) {
     const place: PiecePlace = piece.place === 'les-deux' ? (placement.places[piece.path] ?? 'appel-d-offres') : piece.place
     const destination: Destination =
@@ -331,7 +333,10 @@ export async function importFiles(
     const original = await freePath(fs, wanted)
     await fs.writeBinary(original, piece.bytes.slice().buffer)
     report.imported.push(await writePieceNote(services, analysis, destination, original, piece.read, piece.type))
+    poured.push({ name: original.slice(original.lastIndexOf('/') + 1), path: original, bytes: piece.bytes, category: piece.type === OTHER ? '' : piece.type })
   }
+  // Chaque pièce rangée dans la bibliothèque de documents (laissée à sa place, décrite) — sans le module, rien.
+  await pourIntoLibrary(poured, { module: 'ao', label: analysis.name, link: analysis.note })
   // Le tableau de la note : par son workflow système, quand il y en a un (à l'évènement « pièces importées »).
   if (!services.noteByWorkflow?.('pieces') || !report.imported.length) await refreshTable(services, analysis)
   return report
@@ -445,6 +450,7 @@ export async function updateAnalysis(services: Services, analysis: Analysis): Pr
   const custom = services.keywords ?? currentTyping().custom
   const report: ImportReport = { imported: [], duplicates: [], archives: 0, brokenArchives: [] }
   const known = new Set((await pieceNotes(fs, analysis)).map((piece) => piece.original))
+  const poured: { name: string; path: string; category: string }[] = []
   for (const original of await filesUnder(fs, piecesFolder(analysis))) {
     const destination = destinationOf(analysis, original)
     if (!destination || known.has(original)) continue
@@ -452,7 +458,10 @@ export async function updateAnalysis(services: Services, analysis: Analysis): Pr
     const read = await readPiece(name, new Uint8Array(await fs.readBinary(original)))
     const type = classifyPiece(name, read.text, custom)
     report.imported.push(await writePieceNote(services, analysis, destination, original, read, type))
+    poured.push({ name, path: original, category: type === OTHER ? '' : type })
   }
+  // Les fichiers déposés à la main dans les originaux : dans la bibliothèque aussi.
+  await pourIntoLibrary(poured, { module: 'ao', label: analysis.name, link: analysis.note })
   if (!services.noteByWorkflow?.('pieces') || !report.imported.length) await refreshTable(services, analysis)
   return report
 }

@@ -13,6 +13,7 @@
  * `pnpm check:modules` le vérifie. Voir README.md pour la maintenance.
  */
 
+import { pourIntoLibrary } from '../bibliotheque'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import { modulePageOf } from '../../core/settingsPage'
@@ -291,12 +292,19 @@ async function importCommand(context: ModuleContext): Promise<void> {
     t('typage-pieces.exchange.from')
   )
   let text: string | null = null
+  let deposited: { name: string; bytes?: Uint8Array; path?: string } | null = null
   if (source === 'computer') {
     const [file] = await platform.ui.pickExternalFiles({ accept: ['json'], multiple: false })
-    if (file) text = new TextDecoder().decode(file.bytes)
+    if (file) {
+      text = new TextDecoder().decode(file.bytes)
+      deposited = { name: file.name, bytes: file.bytes }
+    }
   } else if (source === 'vault') {
     const path = await platform.ui.pickFile({ extensions: ['json'], placeholder: t('typage-pieces.exchange.from.vault.pick') })
-    if (path) text = await platform.fs.readText(path)
+    if (path) {
+      text = await platform.fs.readText(path)
+      deposited = { name: path.slice(path.lastIndexOf('/') + 1), path }
+    }
   }
   if (text === null) return
   const parsed = parseTypesFile(text)
@@ -324,6 +332,8 @@ async function importCommand(context: ModuleContext): Promise<void> {
   if (!chosen || chosen.length === 0) return
   const result = applyImport(settings.get(), parsed.file, chosen)
   await settings.save(result.settings)
+  // Le fichier d'échange, rangé dans la bibliothèque de documents.
+  if (deposited) await pourIntoLibrary([deposited], { module: TYPAGE_PIECES, label: t('typage-pieces.exchange.origin') }, { category: 'Échange' })
   // Puis ce que d'autres modules joignaient aux types : chacun reprend le sien.
   const extras: string[] = []
   const ignored: string[] = []
@@ -359,7 +369,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.5.0',
+  version: '0.6.0',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),

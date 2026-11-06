@@ -228,6 +228,11 @@ quand le module Workflows est actif (l'accueil, une fois, reste). Les trois mod�
 l'emploi (calendrier, contrôle, questionnaire) sont devenus des workflows système, avec la
 couverture d'une réponse importée et le rappel des remises.
 
+**La bibliothèque de documents (v0.31.0, Black Projects 0.61.0)** : `importFiles` et
+`updateAnalysis` versent chaque pièce dans la [bibliothèque](bibliotheque.md)
+(`pourIntoLibrary`, en place : les originaux de l'analyse ; catégorie : le type de pièce ;
+origine : l'analyse et sa note). Sans le module Bibliothèque, rien.
+
 ## Une note produite, en page (v0.15.0, Black Projects 0.27.0)
 
 Sur la fiche d'une analyse, « Ce que l'analyse a produit » liste les notes du dossier

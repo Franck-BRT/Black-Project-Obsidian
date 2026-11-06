@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.60.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+**Version 0.61.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
 l'accueil et l'interface.** L'accueil est une grille de tuiles que chacun compose (avec
 leurs pastilles : prochaine remise, exigences faibles…) ; les informations sont dans un
 tableau de bord et une barre de gauche que chacun range aussi (Accueil toujours en haut,
@@ -87,6 +87,7 @@ src/
 ├── modules/    un répertoire fermé par module
 │   ├── lecture-fichiers/   lecture des documents (voir son README.md)
 │   ├── typage-pieces/      reconnaissance du type des pièces (voir son README.md)
+│   ├── bibliotheque/       bibliothèque de documents : tout fichier déposé (voir son README.md)
 │   ├── exigences/          bibliothèque d'exigences, extraction, qualité
 │   ├── ia/                 connexion au serveur d'IA de l'entreprise
 │   ├── workflows/          automatisation : déclencheurs, conditions, actions

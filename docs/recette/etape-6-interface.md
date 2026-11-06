@@ -70,6 +70,25 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La bibliothèque de documents (v0.61.0)
+
+- [ ] Importer un DCE (ZIP) dans une analyse : menu **Bibliothèque**, une carte par pièce,
+      « Analyse d'appels d'offres — <analyse> », le type de pièce pour catégorie ; les
+      fichiers restent dans l'analyse (rien dans `_fichiers`)
+- [ ] Le même fichier importé de nouveau (autre analyse) : pas de nouvelle carte, une
+      origine de plus sur sa fiche
+- [ ] **Verser des documents** → Sur l'ordinateur : copié dans `Bibliothèque/_fichiers`,
+      sa fiche s'ouvre
+- [ ] « CCTP ind A.pdf » puis « CCTP ind B.pdf » : la seconde « Nouvelle version
+      probable » ; **Relier comme nouvelle version** ; la première « Remplacé… » ; filtre
+      **Dernières versions**
+- [ ] **Classer…** : titre, catégorie, référence, édition, révision, émetteur, étiquettes
+- [ ] Une origine : un clic mène à l'analyse (sa fiche en page)
+- [ ] Importer des exigences d'un fichier, des types de pièces, des workflows : le fichier
+      est dans la bibliothèque
+- [ ] **Retirer de la bibliothèque** (confirmé) : dans `Bibliothèque/_retirés`, rien
+      d'effacé ; une pièce d'analyse reste en place
+
 ## Le module IA : vérifier la connexion à l'ouverture (v0.60.0)
 
 - [ ] Page **Workflows**, filtre **Système** : « Vérifier la connexion à l'IA, à

@@ -138,6 +138,10 @@ Black Projects propose ensuite de mettre les pièces dans l'analyse.
 
 ## 2. Mettre les pièces du dossier
 
+Chaque pièce importée (ou déposée à la main) est aussi rangée dans la
+{{link:Modules/Bibliothèque|bibliothèque de documents}}, laissée à sa place dans
+l'analyse, avec son type pour catégorie et l'analyse pour origine.
+
 Deux façons, au choix :
 
 - **Importer** : commande **Importer des pièces dans une analyse (ZIP compris)**, puis

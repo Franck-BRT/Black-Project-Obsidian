@@ -282,6 +282,11 @@ bibliothèque chaque lundi » est devenu le workflow système `sys.exigences.qua
 une exigence créée dans les autres langues de rédaction, par la nouvelle action
 `exigences.traduire` (`translateRequirement` en série, chaque traduction « à relire »).
 
+**La bibliothèque de documents (v0.22.0, Black Projects 0.61.0)** : le fichier d'un import
+réussi est versé dans la [bibliothèque](bibliotheque.md) (`pourIntoLibrary` : copié s'il
+vient de l'ordinateur, en place s'il est dans le coffre ; origine « Import d'exigences
+(nom) »).
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

@@ -15,6 +15,7 @@
  * sont son affaire.
  */
 
+import { pourIntoLibrary } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
 import type { ExternalFile, Notifier, Ui } from '../../core/ports'
 import { extensionOf, LECTURE_FICHIERS } from '../lecture-fichiers'
@@ -247,6 +248,7 @@ async function importFromFile(context: ModuleContext, store: RequirementStore): 
   )
   let file: ExternalFile | null = null
   let piece = ''
+  let vaultPath = ''
   if (source === 'computer') {
     const [picked] = await platform.ui.pickExternalFiles({ accept: [...EXTRACTABLE], multiple: false })
     if (picked) {
@@ -258,6 +260,7 @@ async function importFromFile(context: ModuleContext, store: RequirementStore): 
     if (path) {
       file = { name: path.slice(path.lastIndexOf('/') + 1), bytes: new Uint8Array(await platform.fs.readBinary(path)) }
       piece = `[[${path}|${file.name}]]`
+      vaultPath = path
     }
   }
   if (!file) return null
@@ -277,7 +280,13 @@ async function importFromFile(context: ModuleContext, store: RequirementStore): 
     extension,
     piece
   })
-  return report ? { ...report, piece, name: file.name } : null
+  if (!report) return null
+  // Le fichier importé, rangé dans la bibliothèque de documents (copié s'il vient de l'ordinateur).
+  await pourIntoLibrary([vaultPath ? { name: file.name, path: vaultPath, bytes: file.bytes } : { name: file.name, bytes: file.bytes }], {
+    module: EXIGENCES,
+    label: t('exigences.import.origin', { name: file.name })
+  })
+  return { ...report, piece, name: file.name }
 }
 
 /** Ce qu'un import a fait, en bref, pour sa page. */
@@ -290,7 +299,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.21.0',
+  version: '0.22.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },

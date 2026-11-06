@@ -169,6 +169,10 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Vérifier la connexion à l'IA, à l'ouverture (v0.60.0) | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas ou si un modèle choisi n'y est plus | actif |
 
+**La bibliothèque de documents (v0.11.0, Black Projects 0.61.0)** : le fichier d'un import
+de workflows réussi est versé dans la [bibliothèque](bibliotheque.md) (catégorie
+« Échange »). Nouveau déclencheur d'un autre module : *Bibliothèque : document versé*.
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

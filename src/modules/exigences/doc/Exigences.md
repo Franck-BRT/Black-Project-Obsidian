@@ -136,7 +136,8 @@ le préfixe des identifiants (`REQ`), le nombre de chiffres (4), les langues de 
 ## 6. Importer des exigences d'un fichier
 
 Commande **Importer des exigences d'un fichier (Excel, CSV, Word, PDF, ReqIF…)** : un
-fichier de l'ordinateur ou du coffre. Les exigences sont reconnues dans les tableaux dont
+fichier de l'ordinateur ou du coffre (une fois l'import fait, le fichier est rangé dans la
+{{link:Modules/Bibliothèque|bibliothèque de documents}}). Les exigences sont reconnues dans les tableaux dont
 l'en-tête nomme un identifiant ou une exigence, et dans les paragraphes qui commencent par
 un identifiant ; un **ReqIF** (ou ReqIFz) venu de DOORS, Polarion ou Jama est lu avec ses
 attributs et ses liens.

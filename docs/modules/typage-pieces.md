@@ -59,6 +59,9 @@ champ d'actions), qui reste affichée ; la tuile `typage.types` ouvrait déjà c
 comme la tuile des formats de Lecture de fichiers ; sans page, la fenêtre du module.
 Tests : `test/typage-page.test.ts`.
 
+**La bibliothèque de documents (v0.6.0, Black Projects 0.61.0)** : le fichier d'un import
+de types réussi est versé dans la [bibliothèque](bibliotheque.md) (catégorie « Échange »).
+
 ## L'échange de types
 
 Commandes « Exporter des types de pièces » et « Importer des types de pièces », aussi en

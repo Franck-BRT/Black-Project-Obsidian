@@ -9,6 +9,7 @@
  * tests.
  */
 
+import { pourIntoLibrary } from '../bibliotheque'
 import type { FileSystem, FormField, ListRow, ListState, Notifier, Ui } from '../../core/ports'
 import { journalPath, type WorkflowEngine } from './engine'
 import {
@@ -647,12 +648,19 @@ export async function importFromFile(session: Session): Promise<Workflow[]> {
     t('workflows.import.from')
   )
   let content: string | null = null
+  let deposited: { name: string; bytes?: Uint8Array; path?: string } | null = null
   if (from === 'computer') {
     const [file] = await ui.pickExternalFiles({ accept: ['json'], multiple: false })
-    if (file) content = new TextDecoder().decode(file.bytes)
+    if (file) {
+      content = new TextDecoder().decode(file.bytes)
+      deposited = { name: file.name, bytes: file.bytes }
+    }
   } else if (from === 'vault') {
     const path = await ui.pickFile({ extensions: ['json'], placeholder: t('workflows.import.vault.pick') })
-    if (path) content = await fs.readText(path)
+    if (path) {
+      content = await fs.readText(path)
+      deposited = { name: path.slice(path.lastIndexOf('/') + 1), path }
+    }
   }
   if (content === null) return []
   const result = importWorkflows(content, { trigger: (id) => !!triggerSpec(id), action: (id) => !!actionSpec(id) }, session.now())
@@ -661,6 +669,8 @@ export async function importFromFile(session: Session): Promise<Workflow[]> {
     return []
   }
   await session.save([...session.load(), ...result.workflows])
+  // Le fichier d'échange, rangé dans la bibliothèque de documents.
+  if (deposited) await pourIntoLibrary([deposited], { module: 'workflows', label: t('workflows.import.origin') }, { category: 'Échange' })
   notifier.notify(
     [t('workflows.import.done', { count: result.workflows.length }), ...(result.skipped ? [t('workflows.import.skipped', { count: result.skipped })] : [])].join(' '),
     10000

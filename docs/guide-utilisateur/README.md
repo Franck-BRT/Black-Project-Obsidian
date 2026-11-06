@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.60.0)
+## Aujourd'hui (version 0.61.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -128,6 +128,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   aux pièces ; rien trouvé, l'IA n'est pas appelée), le **Questionnaire du dossier**
   (six questions prêtes) et **Relire les exigences du dossier avec l'IA**.
 
+- **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une
+  fois, avec sa fiche — les pièces importées dans une analyse (laissées à leur place), le
+  fichier d'un import d'exigences, les échanges de types et de workflows, et ce que vous
+  versez vous-même (« Verser des documents », depuis l'ordinateur ou le coffre). Menu
+  **Bibliothèque** : une carte par document (famille, catégorie, d'où il vient), une
+  recherche et des filtres ; la fiche d'un document : Classer…, ses origines (un clic y
+  mène), ses versions — une nouvelle version est reconnue à son nom (« ind B », « v2 ») et
+  se relie d'un clic ; « Retirer » met de côté, sans rien effacer.
 - **Workflows** : les **workflows système** — ce que l'application fait d'elle-même (la
   note de l'analyse, le calendrier à l'import, le contrôle des exigences extraites, les
   rappels des remises et du rangement, et, désactivés d'origine, le questionnaire avec
