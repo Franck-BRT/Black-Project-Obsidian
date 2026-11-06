@@ -81,12 +81,14 @@ describe('la barre de gauche', () => {
   it('Accueil en premier, Paramètres en dernier, et le menu rangé entre les deux', () => {
     const html = renderToString(<App host={host({ shown: ['workflows', `${TILE_PREFIX}ao.calendrier`], hidden: ['ui.dashboard', 'exigences'] })} generation={0} />)
     expect(labels(html)).toEqual(['Accueil', 'Workflows', 'Calendrier', 'Paramètres'])
-    expect(html).toMatch(/class="bp-nav-bottom"><button type="button" class="bp-nav-item">.*Paramètres<\/button><\/div>/)
-    expect(html).toContain('Modifier le menu')
+    // En bas, sous la séparation : « Modifier le menu », puis Paramètres en dernier.
+    expect(html).toMatch(/class="bp-nav-bottom"><button type="button" class="bp-menu-link" data-tool="edit"[^>]*>.*?Modifier le menu<\/span><\/button><button type="button" class="bp-nav-item">.*?Paramètres<\/button><\/div><\/nav>/)
   })
 
-  it('par défaut : le tableau de bord et les entrées des modules ; sans paramètres chez l’hôte, pas d’entrée du bas', () => {
+  it('par défaut : le tableau de bord et les entrées des modules ; sans paramètres chez l’hôte, seulement « Modifier le menu » en bas', () => {
     expect(labels(renderToString(<App host={host(null)} generation={0} />))).toEqual(['Accueil', 'Tableau de bord', 'Exigences', 'Workflows', 'Paramètres'])
-    expect(renderToString(<App host={host(null, false)} generation={0} />)).not.toContain('bp-nav-bottom')
+    const bare = renderToString(<App host={host(null, false)} generation={0} />)
+    expect(bare).not.toContain('Paramètres')
+    expect(bare).toContain('Modifier le menu')
   })
 })

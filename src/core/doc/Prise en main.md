@@ -24,7 +24,8 @@ Il se met à jour quand le coffre change. La flèche à gauche du titre d'une se
 
 **La barre de gauche** se range aussi : **Accueil** reste toujours en premier et
 **Paramètres** toujours en bas — ni l'un ni l'autre ne se déplace ni ne se masque. Entre
-les deux, **Modifier le menu** : glissez une entrée (ou ses boutons monter, descendre),
+les deux se range votre menu : **Modifier le menu** (en bas, juste au-dessus de
+Paramètres) : glissez une entrée (ou ses boutons monter, descendre),
 retirez-la, ou ajoutez-en depuis « Ajouter au menu » — les entrées retirées et toutes les
 fonctions des modules (calendrier, interroger le dossier, documentation…). « Rétablir le
 menu par défaut » remet tout en place. Votre menu est gardé.

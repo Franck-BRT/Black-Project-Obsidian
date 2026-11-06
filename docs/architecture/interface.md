@@ -156,7 +156,8 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
-- **Modifier le menu** : glisser-déposer, boutons Monter, Descendre, Retirer ; « Ajouter au
+- **Modifier le menu** (en bas, sous la séparation, juste au-dessus de Paramètres ; en
+  modification, ce bas de barre reste visible pendant qu'on fait défiler) : glisser-déposer, boutons Monter, Descendre, Retirer ; « Ajouter au
   menu », rangé par module ; « Rétablir le menu par défaut ». Le focus suit l'entrée
   déplacée (après un retrait, l'entrée voisine), chaque changement est annoncé ; Accueil
   et Paramètres sont marqués d'un cadenas ; la barre s'élargit à 300 px le temps de ranger ;

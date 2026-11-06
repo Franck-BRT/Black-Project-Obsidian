@@ -339,6 +339,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.13.2 : un même écart entre les blocs de chaque section du tableau de bord
 - v0.14.0 : **barre de gauche rangée par l'utilisateur** — Accueil toujours en haut,
   Paramètres toujours en bas ; entre les deux, déplacer, retirer, ajouter toute fonction
+- v0.14.1 : « Modifier le menu » en bas, sous la séparation, juste au-dessus de Paramètres
 
 ### Étape 7 — Livrables
 

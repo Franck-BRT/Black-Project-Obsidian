@@ -72,9 +72,13 @@ Sur le coffre de test.
 
 ## La barre de gauche rangée par l'utilisateur (v0.14.0)
 
+- [ ] (v0.14.1) En bas de la barre, sous la ligne de séparation : « Modifier le menu »,
+      puis Paramètres en dernier ; en modification, « Terminé » et Paramètres restent
+      visibles pendant qu'on fait défiler la liste
+
 - [ ] Accueil en premier, Paramètres tout en bas (au-dessus de la version) ; Paramètres
       ouvre Paramètres → Black Projects
-- [ ] **Modifier le menu** (sous les entrées) : Accueil et Paramètres sont marqués d'un
+- [ ] **Modifier le menu** (en bas, sous la séparation, juste au-dessus de Paramètres) : Accueil et Paramètres sont marqués d'un
       cadenas, sans bouton — ni déplacés ni masqués
 - [ ] Monter, descendre (boutons ou glisser-déposer) ; retirer « IA » ; dans « Ajouter au
       menu », ajouter « Calendrier » (une fonction d'un module) et « IA » de nouveau

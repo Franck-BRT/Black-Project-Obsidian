@@ -42,7 +42,9 @@ const COMPONENTS_CSS = String.raw`
 /* Le menu de gauche : Accueil en haut, Paramètres en bas, le reste rangé par l'utilisateur */
 .bp-side .bp-nav { flex: 1 1 auto; }
 .bp-nav-top, .bp-nav-middle { display: flex; flex-direction: column; gap: 2px; }
-.bp-nav-bottom { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--bp-border); }
+.bp-nav-bottom { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--bp-border); display: flex; flex-direction: column; gap: 2px; }
+.bp-nav-bottom .bp-menu-link { margin-top: 0; }
+.bp-nav.is-editing .bp-nav-bottom { position: sticky; bottom: -20px; padding-bottom: 20px; background: var(--bp-surface); z-index: 1; }
 .bp-shell.is-menu-editing { grid-template-columns: 300px 1fr; }
 .bp-menu-pinned { color: var(--bp-text-muted); cursor: default; }
 .bp-menu-pinned:hover { background: transparent; }
@@ -370,7 +372,9 @@ const COMPONENTS_CSS = String.raw`
   .bp-shell.is-menu-editing { grid-template-columns: 1fr; }
   .bp-nav.is-editing { flex-direction: column; }
   .bp-nav-top, .bp-nav-middle { flex-direction: row; flex-wrap: wrap; }
-  .bp-nav-top .bp-nav-item, .bp-nav-middle .bp-nav-item, .bp-nav-bottom .bp-nav-item, .bp-nav > .bp-menu-link { width: auto; }
+  .bp-nav-bottom { flex-direction: row; flex-wrap: wrap; }
+  .bp-nav-top .bp-nav-item, .bp-nav-middle .bp-nav-item, .bp-nav-bottom .bp-nav-item, .bp-nav-bottom .bp-menu-link { width: auto; }
+  .bp-nav.is-editing .bp-nav-bottom { flex-direction: column; position: static; padding-bottom: 0; }
   .bp-nav.is-editing .bp-menu-link { width: 100%; }
   .bp-nav.is-editing .bp-nav-middle { flex-direction: column; }
   .bp-main { padding: 18px 14px 32px; }
