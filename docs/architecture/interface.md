@@ -218,6 +218,10 @@ désactivé) ramène à l'accueil. Le dessin est dans `page.tsx` (`ModulePage`, 
 testés seuls). Chaque demande d'affichage compte, même pour la page déjà demandée : on
 a pu aller ailleurs entre-temps.
 
+Les **faits** d'une carte (`Card.facts`) sont des cases courtes (un chiffre et ce qu'il
+compte) ; une valeur longue — une phrase, comme la note de l'IA sur une traduction —
+prend toute la largeur de la carte, en texte courant (`bp-fact is-long`, v0.44.0).
+
 ## Le retour à la page précédente (v0.22.0)
 
 L'onglet garde un **historique** (`history.ts`, testé seul) : chaque page quittée y entre

@@ -20,10 +20,10 @@ import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 const MODULES = [lectureFichiersModule, exigencesModule, iaModule]
 const text = (body: string) => ({ fr: { body, lang: 'fr', origin: 'human' as const, reviewed: true, by: '', at: '', fromRev: 1 } })
 
-async function start(platform: MemoryPlatform, withPages: boolean) {
+async function start(platform: MemoryPlatform, withPages: boolean, withAi = false) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = {}
+  const settings: Record<string, Record<string, unknown>> = withAi ? { ia: { adresse: 'http://ia.exemple/v1', modele: 'mistral' } } : {}
   const commands = new Map<string, ModuleCommand>()
   const views = new ViewsRegistry()
   const shown: string[] = []
@@ -76,7 +76,7 @@ describe('la page Exigences', () => {
     const page = views.pages().find((each) => each.id === 'exigences.bibliotheque')!
     expect(page.title).toBe('Bibliothèque d’exigences')
     const view = await page.load()
-    expect(view.filters?.map((filter) => filter.id)).toEqual(['faibles', 'a-revoir', 'critiques', 'brouillons', 'approuvees'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['faibles', 'a-revoir', 'critiques', 'brouillons', 'approuvees', 'traductions'])
     expect(view.actions?.map((action) => action.id)).toEqual(['new', 'import', 'quality'])
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats[0]!.value).toBe('2')
@@ -171,5 +171,93 @@ describe('la fiche d’une exigence, en page', () => {
   it('une exigence disparue : la page le dit', async () => {
     const { page } = await fiche()
     expect((await page.load(encodeURIComponent('Exigences/Disparue.md'))).title).toBe('Exigence introuvable')
+  })
+})
+
+/** Une réponse de serveur compatible OpenAI dont le message est `content`. */
+const chat = (content: unknown) => ({
+  status: 200,
+  text: JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) }, finish_reason: 'stop' }] })
+})
+
+describe('traduire les exigences, en page', () => {
+  async function withAi() {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, true)
+    const all = await requirementsAt('Exigences').all()
+    const hot = all.find((each) => each.title === 'Maintien en température')!
+    const fiche = run.views.pages().find((each) => each.id === 'exigences.fiche')!
+    const library = run.views.pages().find((each) => each.id === 'exigences.bibliotheque')!
+    return { ...run, platform, hot, fiche, library }
+  }
+  const wording = (view: PageView, lang: string) => cardsOf(view).find((card) => card.id === `text-${lang}`)!
+
+  it('la carte d’une langue traduit vers elle, sans la redemander ; la fiche montre la traduction, ses chiffres, la note de l’IA', async () => {
+    const { platform, hot, fiche } = await withAi()
+    const param = encodeURIComponent(hot.filePath!)
+    const before = wording(await fiche.load(param), 'en')
+    expect(before.actions?.map((action) => action.id)).toEqual(['translate'])
+    platform.httpAnswers.push(chat({ text: 'The system shall keep the hold between 5 °C and 35 °C.', notes: '« soute » rendu par « hold ».' }))
+    await before.actions![0]!.run()
+    expect(platform.offered).toEqual([])
+    expect(platform.opened).toEqual([])
+    const card = wording(await fiche.load(param), 'en')
+    expect(card.text).toBe('The system shall keep the hold between 5 °C and 35 °C.')
+    expect(card.badges?.map((badge) => badge.label)).toEqual(['Chiffres ou unités différents', 'traduction automatique à relire'])
+    expect(card.facts).toEqual([
+      { label: 'Chiffres ou unités différents', value: 'absents : 30 ; ajoutés : 35', tone: 'warning' },
+      { label: expect.stringMatching(/^Note de l’IA \(\d{4}-\d{2}-\d{2}\)$/), value: '« soute » rendu par « hold ».' }
+    ])
+    expect(card.actions?.map((action) => action.id)).toEqual(['accept', 'translate'])
+    // La note de l'IA est écrite dans la note de l'exigence, comme la relecture.
+    expect(await platform.fs.readText(hot.filePath!)).toContain('« soute » rendu par « hold ».')
+  })
+
+  it('« Valider la traduction » : elle n’est plus à relire, la fiche le dit', async () => {
+    const { platform, hot, fiche, library } = await withAi()
+    const param = encodeURIComponent(hot.filePath!)
+    platform.httpAnswers.push(chat({ text: 'The system shall keep the hold between 5 °C and 30 °C.', notes: '' }))
+    await wording(await fiche.load(param), 'en').actions![0]!.run()
+    expect(cardsOf(await library.load()).find((card) => card.id === hot.filePath)!.tags).toContain('traductions')
+    const accept = wording(await fiche.load(param), 'en').actions!.find((action) => action.id === 'accept')!
+    expect(accept.label).toBe('Valider la traduction')
+    await accept.run()
+    expect(platform.notices.at(-1)).toBe(`${hot.id} : traduction EN validée.`)
+    const card = wording(await fiche.load(param), 'en')
+    expect(card.badges?.map((badge) => badge.label)).toEqual(['À jour'])
+    expect(card.subtitle).toMatch(/^Traduite par la machine \(IA\), validée le /)
+    expect(card.actions).toEqual([])
+    expect(cardsOf(await library.load()).find((card) => card.id === hot.filePath)!.tags).not.toContain('traductions')
+  })
+
+  it('« Traduire (IA) » d’une exigence de la bibliothèque mène à sa fiche', async () => {
+    const { platform, hot, shown, library } = await withAi()
+    const card = cardsOf(await library.load()).find((each) => each.id === hot.filePath)!
+    platform.httpAnswers.push(chat({ text: 'The system shall keep the hold between 5 °C and 30 °C.', notes: '' }))
+    await card.actions!.find((action) => action.id === 'translate')!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent(hot.filePath!)}`)
+    expect(platform.opened).toEqual([])
+  })
+
+  it('traduire des exigences en série depuis la bibliothèque : les absentes cochées, un résumé, le filtre « Traductions à relire »', async () => {
+    const { platform, library } = await withAi()
+    const view = await library.load()
+    expect(view.filters?.map((filter) => filter.id)).toContain('traductions')
+    const action = view.actions!.find((each) => each.id === 'translate')!
+    platform.httpAnswers.push(chat({ text: 'Access shall be logged if possible.', notes: '' }), chat({ text: 'The system shall keep the hold between 5 °C and 35 °C.', notes: '' }))
+    await action.run()
+    const asked = platform.manyAsked.at(-1)!
+    expect(asked.title).toBe('Traduire en EN avec l’IA')
+    expect(asked.choices.map((choice) => choice.description)).toEqual(['traduction absente', 'traduction absente'])
+    expect(asked.selected).toHaveLength(2)
+    expect(platform.notices.at(-1)).toBe('2 exigence(s) traduite(s) en EN, à relire puis valider sur leur fiche (filtre « Traductions à relire »). Chiffres ou unités différents de la source dans 1 : leur fiche le montre.')
+    expect(cardsOf(await library.load()).every((card) => card.tags?.includes('traductions'))).toBe(true)
+    expect(platform.opened).toEqual([])
+  })
+
+  it('sans IA : pas de « Traduire (IA) » sur la bibliothèque', async () => {
+    const { views } = await start(memoryPlatform(), true)
+    const view = await views.pages().find((each) => each.id === 'exigences.bibliotheque')!.load()
+    expect(view.actions?.map((action) => action.id)).toEqual(['new', 'import', 'quality'])
   })
 })

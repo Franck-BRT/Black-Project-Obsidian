@@ -159,7 +159,8 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Calendrier de l'appel d'offres | la note `Analyse/Calendrier` : remise, validité des offres, délais, chacun avec sa phrase (sans IA) |
 | Tester la connexion au serveur d'IA | liste les modèles du serveur et fait choisir le modèle de texte ; voir {{link:Modules/IA|IA}} |
 | Relire l'exigence avec l'IA | avis, défauts, reformulations à choisir ou non ; la relecture dans la note |
-| Traduire l'exigence avec l'IA | dans une autre langue de rédaction, marquée à relire |
+| Traduire l'exigence avec l'IA | dans une autre langue de rédaction, marquée à relire ; à valider sur sa fiche |
+| Traduire des exigences avec l'IA | plusieurs d'un coup, vers une langue ; les absentes ou en retard cochées |
 | Interroger le dossier (IA) | une question aux pièces ; la réponse cite ses sources, liées aux pièces (`Analyse/Questions`) |
 | Questionnaire du dossier (IA) | attribution, pénalités, garanties, propriété intellectuelle, confidentialité, contrôle export (`Analyse/Questionnaire`) |
 | Relire les exigences du dossier avec l'IA | les plus faibles relues ; côté candidat, la formulation de l'acheteur reste |

@@ -408,6 +408,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   nouveau type (ou de la laisser)
 - v0.43.0 : **relire les exigences** : la page Qualité ensuite, les relues marquées ; la
   relecture se lit sur la fiche de l'exigence
+- v0.44.0 : **traduire les exigences** : la fiche ensuite, où la traduction se lit (chiffres
+  qui diffèrent, note de l'IA) et se valide ; en série depuis la bibliothèque, filtre
+  « Traductions à relire »
 
 ### Étape 7 — Livrables
 

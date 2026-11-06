@@ -112,7 +112,7 @@ describe('les blocs', () => {
           subtitle: 'Agence',
           badges: [{ label: '2 pièce(s) non lue(s)', tone: 'warning' }],
           deadline: { date: '2026-11-11', label: 'Date limite de remise des offres' },
-          facts: [{ label: 'Pièces', value: '10' }],
+          facts: [{ label: 'Pièces', value: '10' }, { label: 'Note de l’IA', value: '« soute » rendu par « hold », le terme du domaine.' }],
           rating: { stars: 3.8, label: 'qualité moyenne' },
           open: { id: 'o', label: 'Ouvrir', run: () => undefined },
           actions: [{ id: 'c', label: 'Calendrier', icon: 'calendar', run: () => undefined }]
@@ -125,6 +125,9 @@ describe('les blocs', () => {
     expect(html).toContain('J-5')
     expect(html).toContain('mercredi 11 novembre 2026 · dans 5 jour(s)')
     expect(html).toContain('<dt>Pièces</dt><dd>10</dd>')
+    // Une phrase prend toute la largeur de la carte ; un chiffre, sa case.
+    expect(html).toContain('<div class="bp-fact is-long"><dt>Note de l’IA</dt>')
+    expect(html).toContain('<div class="bp-fact"><dt>Pièces</dt>')
     expect(html).toContain('★★★★☆')
     expect(html).toContain('4 étoile(s) sur 5')
   })

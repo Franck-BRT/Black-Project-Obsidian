@@ -12,9 +12,10 @@
 import { localToday } from '../../core/dates'
 import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { noteBlocks } from '../../core/markdown'
-import { reviewRequirement, reviewSection, translateRequirement } from './ai/actions'
+import { acceptTranslation, reviewRequirement, reviewSection, translateRequirement, translationNote } from './ai/actions'
+import { hasDrifted, quantityDrift } from './ai/translate'
 import { editRequirement, flagsOf, type Session } from './flows'
-import { textOf, type Requirement } from './model/requirement'
+import { isUnreviewedMachine, textOf, type Requirement } from './model/requirement'
 import { assessAll } from './quality/report'
 import { assessRequirement, isWeak } from './quality/score'
 import { vocabularyLabel } from './vocabulary'
@@ -77,7 +78,15 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
         ...(ai
           ? [
               { id: 'review', label: t('exigences.page.review'), icon: 'spark' as const, run: async () => void (await reviewRequirement(session, ai, path, localToday())) },
-              { id: 'translate', label: t('exigences.page.translate'), icon: 'chat' as const, run: async () => void (await translateRequirement(session, ai, path)) }
+              {
+                id: 'translate',
+                label: t('exigences.page.translate'),
+                icon: 'chat' as const,
+                // La traduction se lit sur la fiche : on y va, comme après « Relire » d'une analyse.
+                run: async () => {
+                  if ((await translateRequirement(session, ai, path, { date: localToday() })) === 'translated' && showPage) showPage(requirementPageOf(path))
+                }
+              }
             ]
           : [])
       ]
@@ -87,7 +96,8 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
     ...(flags.length ? ['a-revoir'] : []),
     ...(requirement.criticality === 'high' ? ['critiques'] : []),
     ...(DRAFT_STATUSES.includes(requirement.status) ? ['brouillons'] : []),
-    ...(DONE_STATUSES.includes(requirement.status) ? ['approuvees'] : [])
+    ...(DONE_STATUSES.includes(requirement.status) ? ['approuvees'] : []),
+    ...(Object.keys(requirement.text).some((lang) => isUnreviewedMachine(requirement, lang)) ? ['traductions'] : [])
   ]
   return {
     id: path ?? requirement.id,
@@ -127,7 +137,8 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
     actions: [
       { id: 'new', label: t('exigences.command.create'), icon: 'plus', primary: true, run: () => run('nouvelle') },
       { id: 'import', label: t('exigences.tile.import'), icon: 'upload', run: () => run('importer') },
-      { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => run('qualite') }
+      { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => run('qualite') },
+      ...(session.ai?.() && settings.languages.length > 1 ? [{ id: 'translate', label: t('exigences.page.translate'), tooltip: t('exigences.command.translateMany'), icon: 'chat' as const, run: () => run('traduire-ia-serie') }] : [])
     ],
     search: { label: t('exigences.page.search'), placeholder: t('exigences.page.search.placeholder') },
     filters: [
@@ -135,7 +146,8 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
       { id: 'a-revoir', label: t('exigences.page.filter.review') },
       { id: 'critiques', label: t('exigences.page.filter.critical') },
       { id: 'brouillons', label: t('exigences.page.filter.draft') },
-      { id: 'approuvees', label: t('exigences.page.filter.approved') }
+      { id: 'approuvees', label: t('exigences.page.filter.approved') },
+      { id: 'traductions', label: t('exigences.page.filter.translations') }
     ],
     blocks: library.length
       ? [
@@ -186,7 +198,7 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
     ...(ai
       ? [
           { id: 'review', label: t('exigences.page.review'), icon: 'spark' as const, run: async () => void (await reviewRequirement(session, ai, path, localToday())) },
-          { id: 'translate', label: t('exigences.page.translate'), icon: 'chat' as const, run: async () => void (await translateRequirement(session, ai, path)) }
+          { id: 'translate', label: t('exigences.page.translate'), icon: 'chat' as const, run: async () => void (await translateRequirement(session, ai, path, { date: localToday() })) }
         ]
       : []),
     { id: 'note', label: t('exigences.row.open'), icon: 'file', run: () => session.ui.openNote(path) }
@@ -200,6 +212,8 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
   ]
 
   // Les formulations : la langue source, puis chaque langue réglée ou déjà écrite.
+  const note = await session.store.readNote(path).catch(() => '')
+  const sourceBody = textOf(requirement, requirement.sourceLang)?.body ?? ''
   const langs = [...new Set([requirement.sourceLang, ...languages, ...Object.keys(requirement.text)])]
   const wordings: Card[] = langs.map((lang) => {
     const text = requirement.text[lang]
@@ -213,6 +227,22 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
             ...(text.origin === 'machine' && !text.reviewed ? [{ label: t('exigences.flag.unreviewed'), tone: 'warning' as const }] : []),
             ...(text.fromRev >= requirement.rev && (text.origin === 'human' || text.reviewed) ? [{ label: t('exigences.fiche.upToDate'), tone: 'success' as const }] : [])
           ]
+    // Ce qu'il faut voir avant de valider une traduction : les chiffres ou unités qui diffèrent, la note de l'IA.
+    const drift = !source && text ? quantityDrift(sourceBody, text.body) : null
+    const said = !source && text?.origin === 'machine' ? translationNote(note, lang) : null
+    const facts = [
+      ...(drift && hasDrifted(drift) ? [{ label: t('exigences.fiche.drift'), value: t('exigences.fiche.drift.detail', { missing: drift.missing.join(', ') || '—', added: drift.added.join(', ') || '—' }), tone: 'warning' as const }] : []),
+      ...(said ? [{ label: said.date ? t('exigences.fiche.aiNote.on', { date: said.date }) : t('exigences.fiche.aiNote'), value: said.text }] : [])
+    ]
+    if (drift && hasDrifted(drift)) badges.unshift({ label: t('exigences.fiche.drift'), tone: 'warning' })
+    const unreviewed = !source && text?.origin === 'machine' && !text.reviewed
+    const cardActions: ViewAction[] = [
+      ...(unreviewed ? [{ id: 'accept', label: t('exigences.fiche.accept'), tooltip: t('exigences.fiche.accept.tip'), icon: 'check' as const, run: async () => void (await acceptTranslation(session, path, lang)) }] : []),
+      // Traduire vers la langue de la carte, sans la redemander.
+      ...(!source && ai && (!text || text.fromRev < requirement.rev || unreviewed)
+        ? [{ id: 'translate', label: t('exigences.page.translate'), icon: 'chat' as const, run: async () => void (await translateRequirement(session, ai, path, { lang, date: localToday() })) }]
+        : [])
+    ]
     return {
       id: `text-${lang}`,
       title: lang.toUpperCase(),
@@ -220,7 +250,7 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
         ? {
             subtitle:
               text.by || text.at
-                ? t(text.origin === 'machine' ? 'exigences.fiche.byMachine' : 'exigences.fiche.byHuman', { by: text.by || '—', at: text.at.slice(0, 10) || '—' })
+                ? t(text.origin === 'machine' ? (text.reviewed ? 'exigences.fiche.byMachine.accepted' : 'exigences.fiche.byMachine') : 'exigences.fiche.byHuman', { by: text.by || '—', at: text.at.slice(0, 10) || '—' })
                 : t(text.origin === 'machine' ? 'exigences.fiche.machine' : 'exigences.fiche.human')
           }
         : {}),
@@ -228,7 +258,8 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
       badges,
       text: text?.body || t('exigences.fiche.noText'),
       wrap: true,
-      actions: !source && ai && (!text || text.fromRev < requirement.rev || (text.origin === 'machine' && !text.reviewed)) ? [{ id: 'translate', label: t('exigences.page.translate'), icon: 'chat', run: async () => void (await translateRequirement(session, ai, path)) }] : []
+      ...(facts.length ? { facts } : {}),
+      actions: cardActions
     }
   })
 
@@ -267,7 +298,7 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
   }))
 
   // La dernière relecture par l'IA, écrite dans la note : son avis, ses constats, ses propositions.
-  const review = reviewSection(await session.store.readNote(path).catch(() => ''))
+  const review = reviewSection(note)
   return {
     title: requirement.title ? `${requirement.id} — ${requirement.title}` : requirement.id,
     back,

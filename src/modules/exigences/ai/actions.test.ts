@@ -10,7 +10,7 @@ import { memoryPlatform, type MemoryPlatform } from '../../../core/testing/memor
 import { iaModule } from '../../ia'
 import { exigencesModule } from '..'
 import { exigencesFr } from '../i18n'
-import { withReview, REVIEW_END, REVIEW_START } from './actions'
+import { translationNote, withReview, REVIEW_END, REVIEW_START } from './actions'
 
 const i18n = createI18n('fr')
 i18n.register('fr', exigencesFr)
@@ -159,6 +159,18 @@ describe('la traduction par l’IA', () => {
     platform.httpAnswers.push(chat({ text: 'The system shall start in 5 s.', notes: '' }))
     await exigences.run('traduire-ia')
     expect(JSON.parse(platform.requests[0]!.body!).model).toBe('rapide')
+  })
+
+  it('la note de l’IA est écrite dans la note de l’exigence ; une traduction sans note retire l’ancienne', async () => {
+    const { platform, run } = await setup()
+    platform.httpAnswers.push(chat({ text: 'The system shall keep the hold between 5 °C and 30 °C.', notes: '« soute » rendu par « hold ».' }))
+    await run('traduire-ia')
+    expect(translationNote(read(platform), 'en')).toEqual({ date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), text: '« soute » rendu par « hold ».' })
+    expect(platform.notices.at(-1)).toContain('Note de l’IA : « soute » rendu par « hold ».')
+    platform.httpAnswers.push(chat({ text: 'The system shall keep the cargo bay between 5 °C and 30 °C.', notes: '' }))
+    await run('traduire-ia')
+    expect(translationNote(read(platform), 'en')).toBeNull()
+    expect(read(platform)).not.toContain('bp:traduction')
   })
 
   it('prévient quand un chiffre a changé', async () => {

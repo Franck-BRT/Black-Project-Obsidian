@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Traduire les exigences, et valider la traduction (v0.44.0)
+
+- [ ] IA réglée, deux langues de rédaction ; page **Exigences** : **Traduire (IA)** d'une
+      carte → la traduction faite, la **fiche** de l'exigence s'ouvre ; aucune note ouverte
+- [ ] Sur la fiche, la carte de la langue traduite : « traduction automatique à relire »,
+      la note de l'IA, et « Chiffres ou unités différents » si un chiffre a changé
+- [ ] **Traduire (IA)** sur la carte d'une langue : pas de question sur la langue
+- [ ] **Valider la traduction** : la carte passe « À jour », « validée le … »
+- [ ] En tête de la bibliothèque, **Traduire (IA)** : la langue (s'il y en a plusieurs),
+      les exigences (absentes ou en retard cochées), un message qui résume ; le filtre
+      **Traductions à relire** les retrouve
+- [ ] Depuis la palette, *Traduire l'exigence avec l'IA* sur une note ouverte : le
+      message, comme avant (avec la note de l'IA)
+
 ## Relire les exigences, et lire la relecture (v0.43.0)
 
 - [ ] IA réglée ; fiche d'une analyse avec des exigences → **Relire (IA)** : la fenêtre des

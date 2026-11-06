@@ -13,7 +13,7 @@
 
 import { describeAiError, type AiClient } from '../../ia'
 import type { Session } from '../flows'
-import { acceptText, setText, textOf } from '../model/requirement'
+import { acceptText, setText, textOf, type Requirement } from '../model/requirement'
 import { describeFinding } from '../quality/report'
 import { assessRequirement, type QualityScope } from '../quality/score'
 import { deepReview, mergeFindings, type DeepReview } from './reqQualityLlm'
@@ -50,11 +50,37 @@ export function lastReview(note: string): { date: string; assessment: string } |
 }
 
 export function withReview(note: string, content: string): string {
-  const block = `${REVIEW_START}\n${content}\n${REVIEW_END}`
-  const from = note.indexOf(REVIEW_START)
-  const to = note.indexOf(REVIEW_END)
-  if (from !== -1 && to > from) return note.slice(0, from) + block + note.slice(to + REVIEW_END.length)
+  return withSection(note, REVIEW_START, REVIEW_END, content)
+}
+
+/** Une section entre deux marques : remplacée si elle y est, ajoutée sinon ; `null` la retire. */
+function withSection(note: string, start: string, end: string, content: string | null): string {
+  const from = note.indexOf(start)
+  const to = note.indexOf(end)
+  const found = from !== -1 && to > from
+  if (content === null) return found ? `${note.slice(0, from).trimEnd()}\n${note.slice(to + end.length).replace(/^\n+/, '\n')}` : note
+  const block = `${start}\n${content}\n${end}`
+  if (found) return note.slice(0, from) + block + note.slice(to + end.length)
   return `${note.trimEnd()}\n\n${block}\n`
+}
+
+/** Les marques de ce que l'IA a dit en traduisant vers une langue (une section par langue). */
+const translationStart = (lang: string) => `<!-- bp:traduction:${lang}:debut — écrit par Black Projects -->`
+const translationEnd = (lang: string) => `<!-- bp:traduction:${lang}:fin -->`
+
+/**
+ * Ce que l'IA a dit de sa dernière traduction vers `lang`, écrit dans la note : la date et
+ * sa note (un terme, un choix) ; `null` si elle n'a rien dit.
+ */
+export function translationNote(note: string, lang: string): { date: string; text: string } | null {
+  const start = translationStart(lang)
+  const from = note.indexOf(start)
+  const to = note.indexOf(translationEnd(lang))
+  if (from === -1 || to < from) return null
+  const section = note.slice(from + start.length, to).trim()
+  const date = /^#+[^\n]*?(\d{4}-\d{2}-\d{2})/m.exec(section)?.[1] ?? ''
+  const text = section.replace(/^#+[^\n]*\n+/, '').replace(/\s+/g, ' ').trim()
+  return text ? { date, text } : null
 }
 
 function reviewMarkdown(review: DeepReview, merged: ReturnType<typeof mergeFindings>, session: Session, date: string): string {
@@ -156,26 +182,48 @@ export async function reviewRequirement(
   return 'rewritten'
 }
 
-/** Traduire une exigence dans une des langues de rédaction ; la traduction est marquée à relire. */
-export async function translateRequirement(session: Session, client: AiClient, path: string): Promise<boolean> {
+/** Ce qu'a donné une traduction : écrite, l'IA sans réponse (déjà dit ; une série s'arrête), rien à traduire. */
+export type TranslateOutcome = 'translated' | 'failed' | 'none'
+
+export interface TranslateOptions {
+  /** La langue visée : sans elle, on la demande (s'il y en a plusieurs). */
+  lang?: string
+  /** Ne rien dire : une traduction en série a son propre résumé. */
+  quiet?: boolean
+  /** Le jour, pour dater la note de l'IA. */
+  date?: string
+}
+
+/** Les langues vers lesquelles une exigence peut être traduite : les langues de rédaction, sauf la source. */
+export function translationTargets(session: Session, sourceLang: string): string[] {
+  return session.settings().languages.filter((lang) => lang !== sourceLang)
+}
+
+/**
+ * Traduire une exigence dans une des langues de rédaction ; la traduction est marquée à
+ * relire. Ce que l'IA en dit (un terme, un choix) est écrit dans la note, pour être lu au
+ * moment de valider la traduction.
+ */
+export async function translateRequirement(session: Session, client: AiClient, path: string, options: TranslateOptions = {}): Promise<TranslateOutcome> {
   const { store, ui, notifier, t } = session
   const requirement = await store.load(path)
   if (!requirement) {
     notifier.notify(t('exigences.notRequirement'), 6000)
-    return false
+    return 'none'
   }
   const source = textOf(requirement, requirement.sourceLang)?.body ?? ''
   if (!source.trim()) {
     notifier.notify(t('exigences.ai.noWording'), 6000)
-    return false
+    return 'none'
   }
-  const targets = session.settings().languages.filter((lang) => lang !== requirement.sourceLang)
+  const targets = translationTargets(session, requirement.sourceLang)
   if (targets.length === 0) {
     notifier.notify(t('exigences.ai.translate.noTarget'), 8000)
-    return false
+    return 'none'
   }
   const lang =
-    targets.length === 1
+    options.lang ??
+    (targets.length === 1
       ? targets[0]!
       : await ui.pickOption(
           targets.map((each) => ({
@@ -184,9 +232,9 @@ export async function translateRequirement(session: Session, client: AiClient, p
             ...(textOf(requirement, each) ? { description: t('exigences.ai.translate.exists') } : {})
           })),
           t('exigences.ai.translate.pick', { id: requirement.id })
-        )
-  if (!lang) return false
-  notifier.notify(t('exigences.ai.translate.running', { id: requirement.id, lang: lang.toUpperCase() }), 4000)
+        ))
+  if (!lang || lang === requirement.sourceLang) return 'none'
+  if (!options.quiet) notifier.notify(t('exigences.ai.translate.running', { id: requirement.id, lang: lang.toUpperCase() }), 4000)
   let text: string
   let notes: string
   try {
@@ -196,9 +244,16 @@ export async function translateRequirement(session: Session, client: AiClient, p
     notes = reply.notes
   } catch (error) {
     notifier.notify(t('exigences.ai.failed', { reason: describeAiError(error, t) }), 12000)
-    return false
+    return 'failed'
   }
   await store.save(path, (current) => setText(current, lang, text, 'IA', 'machine'))
+  // La note de l'IA remplace celle d'une traduction précédente ; sans note, l'ancienne s'en va.
+  const said = notes.trim() ? `### ${t('exigences.ai.translate.noteTitle', { lang: lang.toUpperCase(), date: options.date ?? new Date().toISOString().slice(0, 10) })}\n\n${notes.trim()}` : null
+  const note = await store.readNote(path)
+  const written = withSection(note, translationStart(lang), translationEnd(lang), said)
+  if (written !== note) await store.writeNote(path, written)
+  // En série, le résumé compte les traductions dont les chiffres diffèrent ; la fiche le montre.
+  if (options.quiet) return 'translated'
   const drift = quantityDrift(source, text)
   notifier.notify(
     [
@@ -208,5 +263,92 @@ export async function translateRequirement(session: Session, client: AiClient, p
     ].join(' '),
     hasDrifted(drift) ? 15000 : 8000
   )
+  return 'translated'
+}
+
+/** Valider une traduction de machine : une personne l'a lue ; elle compte alors comme relue. */
+export async function acceptTranslation(session: Session, path: string, lang: string): Promise<boolean> {
+  const saved = await session.store.save(path, (current) => acceptText(current, lang, textOf(current, lang)?.by ?? ''))
+  if (!saved) return false
+  session.notifier.notify(session.t('exigences.ai.translate.accepted', { id: saved.requirement.id, lang: lang.toUpperCase() }), 6000)
   return true
+}
+
+/** Ce qu'il reste à faire pour une langue : traduction absente, en retard, ou de machine à relire. */
+export type TranslationState = 'missing' | 'stale' | 'unreviewed' | 'ok'
+
+export function translationState(requirement: Requirement, lang: string): TranslationState {
+  const text = textOf(requirement, lang)
+  if (!text || !text.body.trim()) return 'missing'
+  if (text.fromRev < requirement.rev) return 'stale'
+  if (text.origin === 'machine' && !text.reviewed) return 'unreviewed'
+  return 'ok'
+}
+
+export interface TranslateRun {
+  lang: string
+  translated: number
+  drifted: number
+  failed: boolean
+}
+
+/**
+ * Traduire des exigences en série : la langue (s'il y en a plusieurs), puis les exigences,
+ * cochées d'avance celles dont la traduction manque ou est en retard ; chacune traduite,
+ * marquée à relire. `null` : rien à faire, ou l'utilisateur a renoncé.
+ */
+export async function translateRequirements(session: Session, client: AiClient, date: string): Promise<TranslateRun | null> {
+  const { store, ui, notifier, t } = session
+  const library = (await store.all()).filter((requirement) => requirement.filePath && (textOf(requirement, requirement.sourceLang)?.body ?? '').trim())
+  const targets = [...new Set(library.flatMap((requirement) => translationTargets(session, requirement.sourceLang)))]
+  if (library.length === 0) {
+    notifier.notify(t('exigences.ai.translate.many.none'), 8000)
+    return null
+  }
+  if (targets.length === 0) {
+    notifier.notify(t('exigences.ai.translate.noTarget'), 8000)
+    return null
+  }
+  const lang =
+    targets.length === 1
+      ? targets[0]!
+      : await ui.pickOption(
+          targets.map((each) => ({
+            value: each,
+            label: each.toUpperCase(),
+            description: t('exigences.ai.translate.many.lang', { count: library.filter((requirement) => requirement.sourceLang !== each && translationState(requirement, each) !== 'ok').length })
+          })),
+          t('exigences.ai.translate.many.pickLang')
+        )
+  if (!lang) return null
+  const candidates = library.filter((requirement) => requirement.sourceLang !== lang)
+  const order: Record<TranslationState, number> = { missing: 0, stale: 1, unreviewed: 2, ok: 3 }
+  candidates.sort((a, b) => order[translationState(a, lang)] - order[translationState(b, lang)] || a.id.localeCompare(b.id, undefined, { numeric: true }))
+  const chosen = await ui.pickMany({
+    title: t('exigences.ai.translate.many.title', { lang: lang.toUpperCase() }),
+    intro: t('exigences.ai.translate.many.intro'),
+    choices: candidates.map((requirement) => ({
+      value: requirement.filePath!,
+      label: requirement.title ? `${requirement.id} — ${requirement.title}` : requirement.id,
+      description: t(`exigences.ai.translate.state.${translationState(requirement, lang)}`)
+    })),
+    selected: candidates.filter((requirement) => ['missing', 'stale'].includes(translationState(requirement, lang))).map((requirement) => requirement.filePath!),
+    submit: t('exigences.ai.translate.many.submit')
+  })
+  if (!chosen || chosen.length === 0) return null
+  const run: TranslateRun = { lang, translated: 0, drifted: 0, failed: false }
+  for (const [index, path] of chosen.entries()) {
+    notifier.notify(t('exigences.ai.translate.many.progress', { index: index + 1, total: chosen.length, lang: lang.toUpperCase() }), 3000)
+    const outcome = await translateRequirement(session, client, path, { lang, quiet: true, date })
+    if (outcome === 'failed') {
+      run.failed = true
+      break
+    }
+    if (outcome === 'translated') {
+      run.translated++
+      const saved = await store.load(path)
+      if (saved && hasDrifted(quantityDrift(textOf(saved, saved.sourceLang)?.body ?? '', textOf(saved, lang)?.body ?? ''))) run.drifted++
+    }
+  }
+  return run
 }

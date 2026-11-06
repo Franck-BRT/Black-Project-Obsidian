@@ -178,6 +178,27 @@ après les formulations, lue en blocs (`noteBlocks`) : l'avis, les défauts rele
 reformulations proposées. `lastReview(note)` (exporté) en donne la date et l'avis, pour
 d'autres pages (la qualité des exigences d'une analyse marque les relues).
 
+**Traduire dans l'interface (v0.12.0, Black Projects 0.44.0)** :
+
+- `translateRequirement(session, client, path, { lang?, quiet?, date? })` rend
+  `'translated' | 'failed' | 'none'`. Avec `lang`, la langue n'est pas redemandée (la carte
+  d'une langue sur la fiche traduit vers elle) ; ce que l'IA dit de sa traduction (un
+  terme, un choix) est écrit dans la note, une section par langue entre ses marques
+  (`bp:traduction:<langue>:debut/fin`), remplacée à la traduction suivante, retirée si
+  l'IA n'a rien dit ; `translationNote(note, lang)` la relit.
+- La carte d'une traduction de machine montre les **chiffres ou unités** qui diffèrent de la
+  source (`quantityDrift`, calculé à l'affichage, badge et fait) et la **note de l'IA** ;
+  **Valider la traduction** (`acceptTranslation`, qui passe par `acceptText`) la marque
+  relue — la seule façon de le faire, désormais aussi depuis la fiche.
+- « Traduire (IA) » d'une carte de la bibliothèque mène à la fiche de l'exigence, où la
+  traduction se lit ; depuis la fiche, on y reste.
+- **En série** : la commande *Traduire des exigences avec l'IA* (`traduire-ia-serie`,
+  `translateRequirements`), aussi en tête de la bibliothèque quand l'IA est réglée et qu'il
+  y a plus d'une langue : la langue, puis les exigences (absentes ou en retard cochées,
+  `translationState`), chacune traduite sans message, et un résumé (combien, combien
+  dont les chiffres diffèrent). Le filtre **Traductions à relire** (`traductions`) de la
+  bibliothèque les retrouve.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

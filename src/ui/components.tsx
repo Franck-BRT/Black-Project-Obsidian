@@ -21,6 +21,9 @@ import { daysUntil, deadlineTone, starGlyphs, TONE_ICON } from './logic'
 export const AfterAction = createContext<() => void>(() => {})
 
 /** Un bouton d'action ; occupé (désactivé) pendant que l'action tourne. */
+/** Au-delà, la valeur d'un fait est une phrase, pas un chiffre. */
+const LONG_FACT = 32
+
 export function ActionButton({ action, compact }: { action: ViewAction; compact?: boolean }) {
   const [busy, setBusy] = useState(false)
   const after = useContext(AfterAction)
@@ -118,7 +121,8 @@ export function CardView({ card, t, now, locale }: { card: CardView; t: Translat
       {!!card.facts?.length && (
         <dl class="bp-facts">
           {card.facts.map((fact) => (
-            <div class={`bp-fact${fact.tone ? ` bp-tone-${fact.tone}` : ''}`} key={fact.label}>
+            // Une phrase (la note de l'IA sur une traduction) prend toute la largeur, en texte courant.
+            <div class={`bp-fact${fact.tone ? ` bp-tone-${fact.tone}` : ''}${fact.value.length > LONG_FACT ? ' is-long' : ''}`} key={fact.label}>
               <dt>{fact.label}</dt>
               <dd>{fact.value}</dd>
             </div>

@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.43.0)
+## Aujourd'hui (version 0.44.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -48,7 +48,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   déplacer (appel d'offres ↔ réponse) y mène à sa nouvelle place ; changer son type
   propose de la déplacer si le routage du nouveau type la range ailleurs. Relire les
   exigences avec l'IA mène à la page Qualité (les relues marquées) ; la relecture se lit
-  sur la fiche de chaque exigence.
+  sur la fiche de chaque exigence. Traduire une exigence mène à sa fiche : la traduction,
+  ce que l'IA en dit, les chiffres qui diffèrent, et **Valider la traduction** ; la page
+  Exigences traduit aussi plusieurs exigences d'un coup.
   **Modifier le menu** (en bas de la barre de gauche, au-dessus de Paramètres) pour déplacer, retirer ou
   ajouter des entrées — toute fonction des modules peut y figurer ; Accueil reste en
   haut et Paramètres en bas. Le bouton
@@ -110,7 +112,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   connexion**, puis un modèle par usage — analyse, traduction, vecteurs, reranking,
   lecture OCR, lecture par vision —, chacun dans le menu de sa ligne (ou « Saisir un autre nom… »). Ensuite : **Relire l'exigence avec l'IA** (un avis,
   des reformulations à choisir ou non), **Traduire l'exigence avec l'IA** (marquée à
-  relire), les doublons par le sens dans la qualité (avec un modèle d'embeddings) ;
+  relire, à valider sur sa fiche), **Traduire des exigences avec l'IA** (plusieurs d'un coup), les doublons par le sens dans la qualité (avec un modèle d'embeddings) ;
   pour un appel d'offres, **Interroger le dossier** (la réponse cite ses sources, liées
   aux pièces ; rien trouvé, l'IA n'est pas appelée), le **Questionnaire du dossier**
   (six questions prêtes) et **Relire les exigences du dossier avec l'IA**.

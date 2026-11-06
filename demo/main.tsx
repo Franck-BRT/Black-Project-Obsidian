@@ -85,16 +85,19 @@ platform.http = {
     const sent = JSON.parse(request.body ?? '{}') as { messages?: { content: string }[] }
     const asked = (sent.messages ?? []).map((message) => message.content).join('\n')
     const question = (sent.messages?.at(-1)?.content ?? '').split('\n').filter(Boolean).at(-1) ?? ''
+    // Traduire une exigence : le texte repris tel quel (les chiffres ne bougent pas), et une note.
     // Relire une exigence : un avis, des constats, des propositions, en JSON comme le ferait le serveur.
-    const content = asked.includes('"assessment"')
-      ? JSON.stringify({
-          assessment: 'Relecture de démonstration, sans IA réelle : la formulation laisse au titulaire une marge d’appréciation ; le seuil attendu n’est pas dit.',
-          findings: [],
-          proposals: [{ axis: 'verifiable', action: 'Dire le seuil attendu et comment il sera mesuré.', rewrite: '' }]
-        })
-      : asked.includes('"findings"')
-        ? JSON.stringify({ findings: [] })
-        : `Réponse de démonstration, sans IA réelle : le premier extrait transmis répond à « ${question.slice(0, 120)} » [1].`
+    const content = asked.includes('You translate requirements')
+      ? JSON.stringify({ text: `[EN] ${sent.messages?.at(-1)?.content.trim() ?? ''}`, notes: 'Traduction de démonstration, sans IA réelle : le texte source est repris tel quel.' })
+      : asked.includes('"assessment"')
+        ? JSON.stringify({
+            assessment: 'Relecture de démonstration, sans IA réelle : la formulation laisse au titulaire une marge d’appréciation ; le seuil attendu n’est pas dit.',
+            findings: [],
+            proposals: [{ axis: 'verifiable', action: 'Dire le seuil attendu et comment il sera mesuré.', rewrite: '' }]
+          })
+        : asked.includes('"findings"')
+          ? JSON.stringify({ findings: [] })
+          : `Réponse de démonstration, sans IA réelle : le premier extrait transmis répond à « ${question.slice(0, 120)} » [1].`
     return { status: 200, text: JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }) }
   }
 }

@@ -35,13 +35,16 @@ et fiches** ouvrent la **page de la bibliothèque**, dans l'onglet Black Project
 
 - en chiffres : le nombre d'exigences, la note moyenne, les faibles, les traductions à
   revoir ;
-- les actions : nouvelle exigence, importer, analyser la qualité ;
+- les actions : nouvelle exigence, importer, analyser la qualité, et **Traduire (IA)**
+  (plusieurs exigences d'un coup) quand l'IA est réglée ;
 - une **carte par exigence**, les plus faibles d'abord : identifiant et titre, catégorie,
   type, statut, criticité, sa formulation, sa note en étoiles, et ce qui reste à revoir
   (traduction absente, en retard ou à relire, lien à revoir). Son titre ouvre la note ;
-  **Modifier** ouvre la fiche ; **Relire (IA)** et **Traduire (IA)** quand l'IA est réglée ;
+  **Modifier** ouvre la fiche ; **Relire (IA)** et **Traduire (IA)** quand l'IA est réglée
+  (la traduction faite, la fiche de l'exigence s'ouvre) ;
 - une **recherche** (identifiant, titre, formulation…, sans tenir compte des accents) et
-  des **filtres** : faibles, à revoir, criticité haute, brouillons, approuvées.
+  des **filtres** : faibles, à revoir, criticité haute, brouillons, approuvées, traductions
+  à relire.
 
 Un clic sur une exigence (son nom, sur la page Exigences ou sur la fiche d'une analyse)
 ouvre sa **fiche en page**, où tout se voit :
@@ -50,7 +53,9 @@ ouvre sa **fiche en page**, où tout se voit :
 - ses chiffres : la qualité de la formulation, le type, le statut, la criticité ;
 - ses **formulations**, une carte par langue : la langue source, et chaque traduction à
   jour, en retard sur la source, à relire (machine) ou absente — avec **Traduire (IA)**
-  sur celles qui en ont besoin ;
+  sur celles qui en ont besoin (vers la langue de la carte, sans la redemander). Une
+  traduction de machine montre les chiffres ou unités qui diffèrent de la source et la
+  note de l'IA ; **Valider la traduction** la marque relue, une fois lue ;
 - la **qualité, axe par axe** (unique, non ambiguë, vérifiable, attribuable, complète,
   traçable), et ce qui coûte à chacun, en mots ;
 - **la fiche** (catégorie, vérification, source, justification, responsable, mots-clés,
@@ -177,7 +182,11 @@ Quand le module **IA** est réglé (voir {{link:Modules/IA|IA}}) :
   (révision suivante) ; « Ne rien changer » : rien ne bouge.
 - **Traduire l'exigence avec l'IA** : dans une autre langue de rédaction ; la traduction
   est marquée « automatique, à relire ». Si un chiffre ou une unité diffère de la source,
-  le message le dit.
+  le message le dit, et la fiche aussi ; ce que l'IA dit de sa traduction est écrit dans
+  la note et se lit sur la carte de la langue. Relisez-la, puis **Valider la traduction**.
+- **Traduire des exigences avec l'IA** : plusieurs d'un coup, vers une langue — celles
+  dont la traduction manque ou est en retard sont cochées d'avance ; un message résume, et
+  le filtre « Traductions à relire » les retrouve.
 - **Doublons par le sens** : avec un modèle d'embeddings réglé, l'analyse de qualité
   ajoute les exigences qui disent la même chose en d'autres mots, marquées « par le sens ».
 

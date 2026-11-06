@@ -181,6 +181,8 @@ const COMPONENTS_CSS = String.raw`
 .bp-fact { background: var(--bp-surface-2); border-radius: var(--bp-radius-small); padding: 8px 10px; }
 .bp-fact dt { font-size: 0.78em; color: var(--bp-text-muted); }
 .bp-fact dd { margin: 0; font-weight: 700; }
+.bp-fact.is-long { grid-column: 1 / -1; }
+.bp-fact.is-long dd { font-weight: 400; line-height: 1.45; }
 
 /* Les badges : une couleur, une icône et un mot — jamais la couleur seule */
 .bp-badges { display: flex; flex-wrap: wrap; gap: 6px; }

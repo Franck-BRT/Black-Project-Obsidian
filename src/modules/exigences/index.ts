@@ -41,7 +41,7 @@ import { canExtract, EXTRACTABLE, extractRequirements } from './import/extract'
 import { previewImport, type ImportReport } from './import/preview'
 import { localToday } from '../../core/dates'
 import { aiClient } from '../ia'
-import { reviewRequirement, translateRequirement } from './ai/actions'
+import { reviewRequirement, translateRequirement, translateRequirements } from './ai/actions'
 import { emitRequirementCreated, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
 import { openLibrary, registerExigencesHome } from './home'
 export { requirementPageOf } from './home'
@@ -53,7 +53,23 @@ export { REQ_BLOCK_LANGUAGE } from './model/block'
 export { canExtract, EXTRACTABLE, extractRequirements, type Extraction } from './import/extract'
 export { type ReqLocation } from './import/document'
 export { semanticDuplicates } from './ai/semantic'
-export { lastReview, reviewRequirement, reviewSection, translateRequirement, withReview, type ReviewOptions, type ReviewOutcome } from './ai/actions'
+export {
+  acceptTranslation,
+  lastReview,
+  reviewRequirement,
+  reviewSection,
+  translateRequirement,
+  translateRequirements,
+  translationNote,
+  translationState,
+  withReview,
+  type ReviewOptions,
+  type ReviewOutcome,
+  type TranslateOptions,
+  type TranslateOutcome,
+  type TranslateRun,
+  type TranslationState
+} from './ai/actions'
 export { type Session as RequirementSession } from './flows'
 export { describeLocation, previewImport, type ImportReport, type ImportRequest } from './import/preview'
 export { type ImportOutcome } from './import/apply'
@@ -266,7 +282,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.11.0',
+  version: '0.12.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -351,7 +367,27 @@ export const exigencesModule: BlackModule = {
     commands.register({
       id: 'traduire-ia',
       nameKey: 'exigences.command.translate',
-      run: withAi((client, path) => translateRequirement(session, client, path))
+      run: withAi((client, path) => translateRequirement(session, client, path, { date: localToday() }))
+    })
+
+    // Plusieurs exigences d'un coup : la langue, les exigences (absentes ou en retard cochées), puis le résumé.
+    commands.register({
+      id: 'traduire-ia-serie',
+      nameKey: 'exigences.command.translateMany',
+      async run() {
+        const client = aiClient()
+        if (!client) {
+          platform.notifier.notify(session.t('ia.unavailable'), 10000)
+          return
+        }
+        const run = await translateRequirements(session, client, localToday())
+        if (!run) return
+        const vars = { translated: run.translated, lang: run.lang.toUpperCase(), drifted: run.drifted }
+        platform.notifier.notify(
+          [session.t(run.failed ? 'exigences.ai.translate.many.stopped' : 'exigences.ai.translate.many.done', vars), ...(run.drifted ? [session.t('exigences.ai.translate.many.drift', vars)] : [])].join(' '),
+          run.drifted ? 15000 : 10000
+        )
+      }
     })
 
     commands.register({
