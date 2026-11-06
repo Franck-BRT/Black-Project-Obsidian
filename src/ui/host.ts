@@ -8,7 +8,7 @@
  */
 
 import type { Appearance } from '../core/appearance'
-import type { HomeSection, NavEntry, TileSpec } from '../core/views'
+import type { DashboardLayout, HomeSection, NavEntry, TileSpec } from '../core/views'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -24,6 +24,9 @@ export interface AppHost {
   /** Les tuiles choisies, dans l'ordre ; `null` : celles par défaut. */
   homeTiles(): string[] | null
   saveHomeTiles(ids: string[] | null): Promise<void>
+  /** Le rangement du tableau de bord ; `null` : celui des modules. */
+  dashboard(): DashboardLayout | null
+  saveDashboard(layout: DashboardLayout | null): Promise<void>
   /** Les entrées de navigation déclarées par les modules actifs. */
   nav(): NavEntry[]
   appearance(): Appearance

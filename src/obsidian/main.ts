@@ -168,6 +168,11 @@ export default class BlackProjectsPlugin extends Plugin {
         this.config = { ...this.config, homeTiles: ids }
         await this.saveSettings()
       },
+      dashboard: () => this.config.dashboard,
+      saveDashboard: async (layout) => {
+        this.config = { ...this.config, dashboard: layout }
+        await this.saveSettings()
+      },
       nav: () => this.views.navEntries(),
       appearance: () => this.config.appearance,
       saveAppearance: (appearance) => this.saveAppearance(appearance),

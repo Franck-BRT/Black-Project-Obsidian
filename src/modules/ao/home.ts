@@ -173,7 +173,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   tile('ao.verifier', t('ao.tile.verify'), 'check', 'green', 16, false, 'verifier-exigences', t('ao.tile.verify.desc'))
   tile('ao.qualite', t('ao.tile.quality'), 'star', 'green', 17, false, 'qualite-exigences', t('ao.tile.quality.desc'))
   tile('ao.relire', t('ao.tile.review'), 'spark', 'violet', 18, false, 'relire-exigences-ia', t('ao.tile.review.desc'))
-  views.home({ id: 'ao.analyses', order: 10, area: 'main', load: () => analysesSection(deps) })
+  views.home({ id: 'ao.analyses', title: t('ao.home.title'), icon: 'folder', order: 10, area: 'main', load: () => analysesSection(deps) })
   views.nav({ id: 'ao.analyses', label: t('ao.home.nav'), icon: 'folder', order: 10, run: () => openAnalysis(deps) })
 }
 

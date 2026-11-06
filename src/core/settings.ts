@@ -10,6 +10,7 @@
  */
 
 import { DEFAULT_APPEARANCE, readAppearance, type Appearance } from './appearance'
+import type { DashboardLayout } from './views'
 
 export type Language = 'fr' | 'en'
 
@@ -31,6 +32,8 @@ export interface CoreSettings {
   openHomeAtStart: boolean
   /** Les tuiles de l'accueil, dans l'ordre choisi ; `null` : celles par défaut. */
   homeTiles: string[] | null
+  /** Le rangement du tableau de bord ; `null` : celui des modules. */
+  dashboard: DashboardLayout | null
 }
 
 export const DEFAULT_DOCS_FOLDER = 'Black Projects/Documentation'
@@ -43,7 +46,8 @@ export const DEFAULT_SETTINGS: CoreSettings = Object.freeze({
   docsFolder: DEFAULT_DOCS_FOLDER,
   appearance: DEFAULT_APPEARANCE,
   openHomeAtStart: true,
-  homeTiles: null
+  homeTiles: null,
+  dashboard: null
 })
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -79,7 +83,26 @@ export function readSettings(raw: unknown): CoreSettings {
 
   const homeTiles = Array.isArray(source.homeTiles) ? [...new Set(source.homeTiles.filter((id): id is string => typeof id === 'string' && id !== ''))] : null
 
-  return { format: 1, language, disabledModules, modules, docsFolder, appearance, openHomeAtStart, homeTiles }
+  const dashboard = readDashboard(source.dashboard)
+
+  return { format: 1, language, disabledModules, modules, docsFolder, appearance, openHomeAtStart, homeTiles, dashboard }
+}
+
+/** Des identifiants distincts et non vides ; autre chose : aucun. */
+function idList(value: unknown): string[] {
+  return Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && id !== ''))] : []
+}
+
+/** Le rangement du tableau de bord ; illisible : `null` (celui des modules). */
+export function readDashboard(value: unknown): DashboardLayout | null {
+  if (!isRecord(value)) return null
+  const seen = new Set<string>()
+  // Une section n'est qu'à un endroit : la première place lue l'emporte.
+  const only = (ids: string[]) => ids.filter((id) => !seen.has(id) && seen.add(id))
+  const main = only(idList(value.main))
+  const side = only(idList(value.side))
+  const hidden = only(idList(value.hidden))
+  return { main, side, hidden, collapsed: idList(value.collapsed) }
 }
 
 /** Un dossier du coffre tel qu'on le saisit : sans « / » au début ni à la fin, ni doubles. */

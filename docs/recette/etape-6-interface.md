@@ -70,6 +70,26 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le tableau de bord rangé par l'utilisateur (v0.13.0)
+
+- [ ] La flèche à gauche du titre d'une section la réduit à son titre, puis la déplie ;
+      l'état est gardé après fermeture d'Obsidian
+- [ ] **Modifier le tableau de bord** : les sections deviennent des fiches, dans « Colonne
+      principale » et « Colonne de côté »
+- [ ] Glisser une fiche sur une autre (même colonne, puis l'autre colonne) ; sur
+      « Déposer ici » d'une colonne vide
+- [ ] Au clavier : Tab jusqu'à Monter / Descendre / Changer de colonne ; Entrée ; le focus
+      reste sur la section déplacée, le lecteur d'écran annonce sa colonne et sa place
+- [ ] Masquer « Workflows » : elle passe dans « Sections masquées » ; « Afficher » la remet
+- [ ] **Terminé** : le tableau suit le rangement ; une seule colonne remplie prend toute
+      la largeur ; tout masqué : un message dit comment réafficher
+- [ ] Fermer et rouvrir Obsidian : le rangement est gardé ; « Rétablir le tableau de bord
+      par défaut » le remet
+- [ ] Désactiver puis réactiver le module Workflows : sa section disparaît, puis revient
+      à la fin de la colonne de côté
+- [ ] En thème sombre, en couleurs monochromes et en lecture dys : fiches et boutons
+      lisibles
+
 ## Les fenêtres (v0.11.0)
 
 - [ ] **Nouvelle analyse** : le formulaire s'ouvre, le focus sur « Nom » ; « Créer » sans

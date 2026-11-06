@@ -19,7 +19,14 @@ Le **Tableau de bord** (à gauche, ou sa tuile, ou la commande **Ouvrir le table
 de Black Projects**) donne les informations : une carte par analyse d'appel d'offres (sa
 date limite de remise en jours restants, ses pièces, ses exigences et leur note), l'état
 de l'IA, la bibliothèque d'exigences en chiffres, les dernières exécutions des workflows.
-Il se met à jour quand le coffre change.
+Il se met à jour quand le coffre change. La flèche à gauche du titre d'une section la
+**réduit** à son titre (ou la déplie).
+
+**Modifier le tableau de bord** : chaque section devient une fiche. Glissez-la pour la
+déplacer, y compris d'une colonne à l'autre, ou utilisez ses boutons : monter, descendre,
+changer de colonne, masquer. Les **sections masquées** se réaffichent d'un clic ;
+« Rétablir le tableau de bord par défaut » remet tout en place. Votre rangement est gardé ;
+si une seule colonne est remplie, elle prend toute la largeur.
 
 Le bouton **Apparence** règle, au choix et ensemble :
 

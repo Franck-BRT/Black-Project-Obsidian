@@ -184,6 +184,8 @@ export const iaModule: BlackModule = {
       const test = { id: 'test', label: tr('ia.setting.test.button'), icon: 'refresh' as const, run: () => context.commands.run?.('tester') ?? Promise.resolve() }
       context.views.home({
         id: 'ia.status',
+        title: tr('ia.home.title'),
+        icon: 'spark',
         order: 20,
         area: 'side',
         async load() {

@@ -44,6 +44,11 @@ export type IconName =
   | 'chevron'
   | 'chart'
   | 'grid'
+  | 'up'
+  | 'down'
+  | 'columns'
+  | 'hide'
+  | 'grip'
 
 /** Un bouton : ce qu'il dit, ce qu'il fait. */
 export interface ViewAction {
@@ -132,11 +137,26 @@ export interface HomeSectionView {
  */
 export interface HomeSection {
   id: string
+  /** Son nom, sans la charger : pour la ranger ou la réafficher dans le tableau de bord. */
+  title: string
+  icon?: IconName
   /** Plus petit : plus haut. */
   order: number
-  /** La colonne principale, ou la colonne de côté. */
+  /** La colonne principale, ou la colonne de côté — par défaut ; l'utilisateur la déplace. */
   area: 'main' | 'side'
   load(): Promise<HomeSectionView | null>
+}
+
+/**
+ * Le tableau de bord tel que l'utilisateur l'a rangé : les sections de chaque colonne dans
+ * l'ordre, celles masquées et celles réduites (leur titre seul). Une section qui n'y figure
+ * pas (un module activé depuis) se place d'elle-même dans sa colonne par défaut.
+ */
+export interface DashboardLayout {
+  main: string[]
+  side: string[]
+  hidden: string[]
+  collapsed: string[]
 }
 
 /** Les couleurs de tuile : décoratives (le libellé dit tout), définies par chaque thème. */

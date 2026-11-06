@@ -65,7 +65,8 @@ exécutions), l'IA (la connexion et un modèle par usage).
 | `shell.tsx` | la coquille : marque, navigation, en-tête (bonjour, date, rafraîchir, apparence), page ; les attributs du thème sur la racine |
 | `springboard.tsx` | l'**accueil** à tuiles, modifiable par l'utilisateur |
 | `tiles.ts` | l'agencement des tuiles (choisies, par défaut, à ajouter, déplacer) : testé seul |
-| `home.tsx` | le **tableau de bord** : les sections des modules, en deux colonnes |
+| `home.tsx` | le **tableau de bord** : les sections des modules, en deux colonnes, rangées par l'utilisateur |
+| `dashboard.ts` | le rangement du tableau de bord (monter, changer de colonne, masquer, réduire), sans rien dessiner |
 | `components.tsx` | boutons, badges, échéances, cartes, indicateurs, listes, messages |
 | `appearance.tsx` | le panneau d'apparence |
 | `theme.ts`, `styles.ts` | les thèmes (variables CSS) et les styles, posés une fois dans le document |
@@ -157,6 +158,18 @@ Deux pages, dans la navigation de gauche :
 - **Tableau de bord** — les informations des modules (les sections décrites plus haut).
   Une tuile y mène, présente par défaut ; aussi la commande « Ouvrir le tableau de bord de
   Black Projects ».
+  **Rangé par l'utilisateur (v0.13.0)** : chaque section se **réduit** à son titre (bouton
+  à flèche, `aria-expanded`) — elle n'est alors plus chargée. **Modifier le tableau de
+  bord** montre les sections en fiches, dans leurs deux colonnes : glisser-déposer (sur une
+  autre fiche ou sur « Déposer ici », y compris d'une colonne à l'autre), ou les boutons
+  Monter, Descendre, Changer de colonne, Masquer ; chaque changement est annoncé, et le
+  focus suit la section déplacée. **Sections masquées** : « Afficher » la remet à la fin de
+  sa colonne par défaut. Le rangement (`DashboardLayout` : `main`, `side`, `hidden`,
+  `collapsed`) est gardé dans les réglages communs (`dashboard`, `null` : celui des
+  modules) ; une section d'un module activé depuis se place d'elle-même dans sa colonne
+  par défaut, celle d'un module désactivé disparaît. La logique est dans `dashboard.ts`,
+  testée seule. Pour la nommer sans la charger, chaque `HomeSection` porte un `title`
+  (et une `icon`).
 
 ## Les fenêtres (v0.11.0)
 

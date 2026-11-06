@@ -32,6 +32,8 @@ export function registerWorkflowsHome(
   const { t } = deps
   views.home({
     id: 'workflows.recent',
+    title: t('workflows.home.title'),
+    icon: 'flow',
     order: 40,
     area: 'side',
     async load(): Promise<HomeSectionView> {

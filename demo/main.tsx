@@ -12,6 +12,7 @@
  */
 
 import { readAppearance, type Appearance } from '../src/core/appearance'
+import { readDashboard } from '../src/core/settings'
 import { createI18n } from '../src/core/i18n'
 import { EVALUATION } from '../src/core/licence'
 import type { ModuleContext } from '../src/core/modules/module'
@@ -174,6 +175,14 @@ async function start(): Promise<void> {
       return stored ? (JSON.parse(stored) as string[]) : null
     },
     saveHomeTiles: async (ids) => void safeStorage(ids ? 'set' : 'remove', ids ? JSON.stringify(ids) : undefined, 'bp-demo-tiles'),
+    dashboard: () => {
+      try {
+        return readDashboard(JSON.parse(safeStorage('get', undefined, 'bp-demo-dashboard') ?? 'null'))
+      } catch {
+        return null
+      }
+    },
+    saveDashboard: async (layout) => void safeStorage(layout ? 'set' : 'remove', layout ? JSON.stringify(layout) : undefined, 'bp-demo-dashboard'),
     nav: () => views.navEntries(),
     appearance: () => appearance,
     saveAppearance: async (next) => {

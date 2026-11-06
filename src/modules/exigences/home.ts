@@ -12,6 +12,8 @@ export function registerExigencesHome(views: ViewsRegistrar | undefined, session
   const { t } = session
   views.home({
     id: 'exigences.library',
+    title: t('exigences.home.title'),
+    icon: 'list',
     order: 30,
     area: 'side',
     async load(): Promise<HomeSectionView> {

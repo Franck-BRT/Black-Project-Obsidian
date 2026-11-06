@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.12.1)
+## Aujourd'hui (version 0.13.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -21,7 +21,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   **Modifier l'accueil** pour en ajouter, en retirer ou les déplacer. Le **Tableau de
   bord** (navigation, tuile, ou commande) donne les informations : une carte par analyse
   avec sa date limite de remise, l'état de l'IA, la bibliothèque d'exigences, les derniers
-  workflows. Le bouton
+  workflows. **Modifier le tableau de bord** pour masquer une section, la déplacer
+  (glisser, ou boutons monter, descendre, changer de colonne) ; la flèche d'une section la
+  réduit à son titre. Le bouton
   **Apparence** règle le mode (clair, sombre, automatique), les couleurs pour les
   daltonismes (rouge-vert, bleu-jaune, monochrome), la lecture facilitée pour les
   troubles dys, la taille du texte et le mouvement — aussi dans Paramètres → *Accueil et

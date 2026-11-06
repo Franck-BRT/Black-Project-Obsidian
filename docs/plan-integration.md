@@ -333,6 +333,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   workflows, IA pas réglée) ; les informations passent dans une page **Tableau de bord**
 - v0.12.1 : correctif d'affichage dans Obsidian — les styles des boutons d'Obsidian ne
   déforment plus les tuiles, la navigation ni les boutons de l'interface
+- v0.13.0 : **tableau de bord rangé par l'utilisateur** — réduire une section, la masquer,
+  la déplacer (glisser-déposer ou boutons, d'une colonne à l'autre) ; rangement gardé
 
 ### Étape 7 — Livrables
 
