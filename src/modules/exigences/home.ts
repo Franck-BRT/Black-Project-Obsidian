@@ -10,7 +10,7 @@
  */
 
 import { localToday } from '../../core/dates'
-import type { Badge, Card, HomeSectionView, PageView, Stat, ViewAction, ViewsRegistrar } from '../../core/views'
+import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { reviewRequirement, translateRequirement } from './ai/actions'
 import { editRequirement, flagsOf, type Session } from './flows'
 import { textOf, type Requirement } from './model/requirement'
@@ -20,6 +20,9 @@ import { vocabularyLabel } from './vocabulary'
 
 /** La page de la bibliothèque. */
 export const LIBRARY_PAGE = 'exigences.bibliotheque'
+/** La fiche d'une exigence : `requirementPageOf(chemin de sa note)`. */
+export const REQUIREMENT_PAGE = 'exigences.fiche'
+export const requirementPageOf = (path: string): string => pageWith(REQUIREMENT_PAGE, encodeURIComponent(path))
 
 /** Les chiffres de la bibliothèque : combien, la note moyenne, les faibles, les traductions à revoir. */
 function libraryStats(session: Session, library: readonly Requirement[]): Stat[] {
@@ -51,7 +54,7 @@ const DONE_STATUSES = ['approved', 'implemented', 'verified']
 const DRAFT_STATUSES = ['draft', 'proposed']
 
 /** La carte d'une exigence. */
-function requirementCard(session: Session, requirement: Requirement): Card {
+function requirementCard(session: Session, requirement: Requirement, showPage?: (id: string) => void): Card {
   const { t } = session
   const languages = session.settings().languages
   const quality = assessRequirement(requirement, languages)
@@ -93,7 +96,14 @@ function requirementCard(session: Session, requirement: Requirement): Card {
     badges,
     text: textOf(requirement, requirement.sourceLang)?.body ?? '',
     rating: { stars: quality.stars, label: t('exigences.page.rating') },
-    ...(path ? { open: { id: 'open', label: t('exigences.row.open'), tooltip: t('exigences.row.open'), run: () => session.ui.openNote(path) } } : {}),
+    // Avec des pages, un clic sur l'exigence ouvre sa fiche ; sinon, sa note.
+    ...(path
+      ? {
+          open: showPage
+            ? { id: 'open', label: t('exigences.fiche.open'), tooltip: t('exigences.fiche.open'), run: () => showPage(requirementPageOf(path)) }
+            : { id: 'open', label: t('exigences.row.open'), tooltip: t('exigences.row.open'), run: () => session.ui.openNote(path) }
+        }
+      : {}),
     actions,
     tags
   }
@@ -104,7 +114,7 @@ function requirementCard(session: Session, requirement: Requirement): Card {
  * qualité), et une carte par exigence, les plus faibles d'abord — avec une recherche
  * (identifiant, titre, formulation…) et des filtres.
  */
-export async function libraryPage(session: Session, run: (id: string) => Promise<void>): Promise<PageView> {
+export async function libraryPage(session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void): Promise<PageView> {
   const { t } = session
   const settings = session.settings()
   const library = await session.store.all()
@@ -129,9 +139,145 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
     blocks: library.length
       ? [
           { kind: 'stats', stats: libraryStats(session, library) },
-          { kind: 'cards', cards: sorted.map((requirement) => requirementCard(session, requirement)) }
+          { kind: 'cards', cards: sorted.map((requirement) => requirementCard(session, requirement, showPage)) }
         ]
       : [{ kind: 'message', tone: 'info', text: t('exigences.list.empty') }]
+  }
+}
+
+const folderOf = (path: string) => path.slice(0, Math.max(0, path.lastIndexOf('/')))
+
+/** Ce qui coûte à un axe de qualité, en mots : une règle, un manque, un champ vide. */
+export function describeMiss(miss: string, t: Session['t']): string {
+  const known = (key: string) => {
+    const text = t(key)
+    return text === key ? null : text
+  }
+  const lang = /^text\.(.+)$/.exec(miss)?.[1]
+  if (lang) return t('exigences.fiche.miss.text', { lang: lang.toUpperCase() })
+  if (miss === 'links') return t('exigences.fiche.miss.links')
+  if (miss === 'suspect') return t('exigences.flag.suspect')
+  const field = known(`exigences.field.${miss}`)
+  return known(`exigences.rule.${miss}`) ?? known(`exigences.miss.${miss}`) ?? (field ? t('exigences.fiche.miss.field', { field: field.toLowerCase() }) : miss)
+}
+const stars = (count: number) => '★'.repeat(count) + '☆'.repeat(Math.max(0, 5 - count))
+
+/**
+ * La **fiche** d'une exigence, en page : en tête Modifier la fiche, Relire et Traduire
+ * (IA), Ouvrir la note ; ses chiffres (note, type, statut, criticité) ; ses formulations,
+ * une carte par langue (source, traduction à jour, en retard ou à relire) ; la qualité
+ * axe par axe ; ses attributs ; ses liens ; son historique. Celle de la bibliothèque comme
+ * celle d'une analyse : le dossier de sa note dit où elle est rangée.
+ */
+export async function requirementPage(sessionFor: (folder: string) => Session, showPage: (id: string) => void, param: string | undefined): Promise<PageView> {
+  const path = param ? decodeURIComponent(param) : ''
+  const session = sessionFor(folderOf(path))
+  const { t } = session
+  const back: ViewAction = { id: 'back', label: t('exigences.fiche.back'), run: () => showPage(LIBRARY_PAGE) }
+  const requirement = path ? await session.store.load(path).catch(() => null) : null
+  if (!requirement) return { title: t('exigences.fiche.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('exigences.fiche.missing') }] }
+
+  const languages = session.settings().languages
+  const quality = assessRequirement(requirement, languages)
+  const ai = session.ai?.() ?? null
+  const actions: ViewAction[] = [
+    { id: 'edit', label: t('exigences.row.edit'), icon: 'edit', primary: true, run: async () => void (await editRequirement(session, path)) },
+    ...(ai
+      ? [
+          { id: 'review', label: t('exigences.page.review'), icon: 'spark' as const, run: async () => void (await reviewRequirement(session, ai, path, localToday())) },
+          { id: 'translate', label: t('exigences.page.translate'), icon: 'chat' as const, run: async () => void (await translateRequirement(session, ai, path)) }
+        ]
+      : []),
+    { id: 'note', label: t('exigences.row.open'), icon: 'file', run: () => session.ui.openNote(path) }
+  ]
+
+  const stats: Stat[] = [
+    { label: t('exigences.fiche.rating'), value: `${Math.round(quality.score * 100)} %`, icon: 'star', tone: isWeak(quality) ? 'warning' : 'success', hint: stars(quality.stars) },
+    { label: t('exigences.field.type'), value: vocabularyLabel('type', requirement.type, t), icon: 'list' },
+    { label: t('exigences.field.status'), value: vocabularyLabel('status', requirement.status, t), icon: 'check', tone: DONE_STATUSES.includes(requirement.status) ? 'success' : 'neutral' },
+    { label: t('exigences.field.criticality'), value: vocabularyLabel('criticality', requirement.criticality, t), icon: 'alert', ...(requirement.criticality === 'high' ? { tone: 'warning' as const } : {}) }
+  ]
+
+  // Les formulations : la langue source, puis chaque langue réglée ou déjà écrite.
+  const langs = [...new Set([requirement.sourceLang, ...languages, ...Object.keys(requirement.text)])]
+  const wordings: Card[] = langs.map((lang) => {
+    const text = requirement.text[lang]
+    const source = lang === requirement.sourceLang
+    const badges: Badge[] = source
+      ? [{ label: t('exigences.fiche.source'), tone: 'info' }]
+      : !text
+        ? [{ label: t('exigences.fiche.missingText'), tone: 'warning' }]
+        : [
+            ...(text.fromRev < requirement.rev ? [{ label: t('exigences.fiche.stale', { from: text.fromRev, rev: requirement.rev }), tone: 'warning' as const }] : []),
+            ...(text.origin === 'machine' && !text.reviewed ? [{ label: t('exigences.flag.unreviewed'), tone: 'warning' as const }] : []),
+            ...(text.fromRev >= requirement.rev && (text.origin === 'human' || text.reviewed) ? [{ label: t('exigences.fiche.upToDate'), tone: 'success' as const }] : [])
+          ]
+    return {
+      id: `text-${lang}`,
+      title: lang.toUpperCase(),
+      ...(text
+        ? {
+            subtitle:
+              text.by || text.at
+                ? t(text.origin === 'machine' ? 'exigences.fiche.byMachine' : 'exigences.fiche.byHuman', { by: text.by || '—', at: text.at.slice(0, 10) || '—' })
+                : t(text.origin === 'machine' ? 'exigences.fiche.machine' : 'exigences.fiche.human')
+          }
+        : {}),
+      icon: 'chat',
+      badges,
+      text: text?.body || t('exigences.fiche.noText'),
+      wrap: true,
+      actions: !source && ai && (!text || text.fromRev < requirement.rev || (text.origin === 'machine' && !text.reviewed)) ? [{ id: 'translate', label: t('exigences.page.translate'), icon: 'chat', run: async () => void (await translateRequirement(session, ai, path)) }] : []
+    }
+  })
+
+  const axes: ListItem[] = quality.axes.map((axis) => ({
+    id: axis.id,
+    title: t(`exigences.axis.${axis.id}`),
+    detail: axis.misses.length ? axis.misses.map((miss) => describeMiss(miss, t)).join(' · ') : t('exigences.fiche.axisOk'),
+    tone: (axis.score >= 0.99 ? 'success' : axis.score >= 0.5 ? 'warning' : 'danger') as Tone,
+    when: `${Math.round(axis.score * 100)} %`
+  }))
+
+  const attribute = (key: string, value: string): ListItem => ({ id: key, title: t(`exigences.field.${key}`), detail: value || '—' })
+  const attributes: ListItem[] = [
+    attribute('category', requirement.category),
+    { id: 'verification', title: t('exigences.field.verification'), detail: t(`exigences.verification.${requirement.verification}`) },
+    attribute('source', requirement.source),
+    attribute('rationale', requirement.rationale),
+    attribute('owner', requirement.owner),
+    attribute('tags', requirement.tags.join(', ')),
+    attribute('aliases', requirement.aliases.join(', ')),
+    ...(requirement.origin
+      ? [{ id: 'origin', title: t('exigences.fiche.origin'), detail: [requirement.origin.piece.replace(/^\[\[|\]\]$/g, '').split('|')[0], requirement.origin.locator].filter(Boolean).join(' — ') }]
+      : []),
+    { id: 'dates', title: t('exigences.fiche.dates'), detail: t('exigences.fiche.dates.detail', { created: requirement.createdAt.slice(0, 10) || '—', updated: requirement.updatedAt.slice(0, 10) || '—', rev: requirement.rev }) }
+  ]
+  const links: ListItem[] = requirement.links.map((link, index) => ({
+    id: `link-${index}`,
+    title: `${t(`exigences.fiche.link.${link.kind}`)} ${link.to}`,
+    ...(link.suspect ? { detail: t('exigences.flag.suspect'), tone: 'warning' as const } : { tone: 'info' as const })
+  }))
+  const history: ListItem[] = [...requirement.history].reverse().map((revision, index) => ({
+    id: `rev-${index}`,
+    title: t('exigences.fiche.revision', { rev: revision.rev, lang: revision.lang.toUpperCase() }),
+    when: revision.at.slice(0, 16).replace('T', ' '),
+    detail: [revision.note, revision.was ? t('exigences.fiche.was', { was: revision.was }) : ''].filter(Boolean).join(' — ')
+  }))
+
+  return {
+    title: requirement.title ? `${requirement.id} — ${requirement.title}` : requirement.id,
+    back,
+    subtitle: [requirement.category, folderOf(path)].filter(Boolean).join(' · '),
+    actions,
+    blocks: [
+      { kind: 'stats', stats },
+      { kind: 'cards', title: t('exigences.fiche.wordings', { count: langs.length }), cards: wordings },
+      { kind: 'list', title: t('exigences.fiche.quality', { stars: stars(quality.stars) }), items: axes },
+      { kind: 'list', title: t('exigences.fiche.attributes'), items: attributes },
+      { kind: 'list', title: t('exigences.fiche.links', { count: links.length }), items: links, empty: t('exigences.fiche.links.none') },
+      { kind: 'list', title: t('exigences.fiche.history', { count: history.length }), items: history, empty: t('exigences.fiche.history.none') }
+    ]
   }
 }
 
@@ -141,7 +287,7 @@ export async function openLibrary(showPage: ((id: string) => void) | undefined, 
   else await browse()
 }
 
-export function registerExigencesHome(views: ViewsRegistrar | undefined, session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void): void {
+export function registerExigencesHome(views: ViewsRegistrar | undefined, session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void, sessionFor?: (folder: string) => Session): void {
   if (!views) return
   const { t } = session
   const page = showPage ? { page: LIBRARY_PAGE } : {}
@@ -175,7 +321,8 @@ export function registerExigencesHome(views: ViewsRegistrar | undefined, session
       }
     }
   })
-  views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run) })
+  views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage) })
+  if (showPage && sessionFor) views.page({ id: REQUIREMENT_PAGE, title: t('exigences.fiche.title'), icon: 'list', parent: LIBRARY_PAGE, load: (param) => requirementPage(sessionFor, showPage, param) })
   views.nav({ id: 'exigences', label: t('exigences.home.nav'), icon: 'list', order: 20, ...page, run: open })
   const group = t('exigences.name')
   views.tile({

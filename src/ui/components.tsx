@@ -113,7 +113,7 @@ export function CardView({ card, t, now, locale }: { card: CardView; t: Translat
           ))}
         </div>
       )}
-      {card.text && <p class="bp-card-text">{card.text}</p>}
+      {card.text && <p class={`bp-card-text${card.wrap ? ' is-full' : ''}`}>{card.text}</p>}
       {card.deadline && <DeadlineView deadline={card.deadline} t={t} now={now} locale={locale} />}
       {!!card.facts?.length && (
         <dl class="bp-facts">

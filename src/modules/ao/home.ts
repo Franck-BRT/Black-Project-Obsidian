@@ -13,7 +13,7 @@ import { parseFrontmatter } from '../../core/frontmatter'
 import type { Notifier, Ui } from '../../core/ports'
 import { pageWith, type Card, type HomeBlock, type HomeSectionView, type ListItem, type PageView, type Stat, type TileBadge, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { typeLabel } from '../typage-pieces'
-import { assessAll, requirementLanguages, requirementsAt } from '../exigences'
+import { assessAll, requirementLanguages, requirementPageOf, requirementsAt } from '../exigences'
 import { aiClient } from '../ia'
 import { calendarOf, calendarPath, writeCalendar } from './calendar'
 import { pieceSources } from './ask/sources'
@@ -326,7 +326,14 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     title: requirement.title ? `${requirement.id} — ${requirement.title}` : requirement.id,
     detail: `${'★'.repeat(report.stars)}${'☆'.repeat(5 - report.stars)} · ${(requirement.text[requirement.sourceLang]?.body ?? '').slice(0, 160)}`,
     tone: report.stars < 3 ? 'warning' : 'success',
-    ...(requirement.filePath ? { open: { id: 'open', label: t('ao.fiche.requirement.open'), run: () => deps.ui.openNote(requirement.filePath!) } } : {})
+    // Sa fiche, quand la plateforme a des pages ; sinon sa note.
+    ...(requirement.filePath
+      ? {
+          open: deps.showPage
+            ? { id: 'open', label: t('ao.fiche.requirement.card'), run: () => deps.showPage?.(requirementPageOf(requirement.filePath!)) }
+            : { id: 'open', label: t('ao.fiche.requirement.open'), run: () => deps.ui.openNote(requirement.filePath!) }
+        }
+      : {})
   }))
   const produced = (await services.fs.exists(`${analysis.folder}/Analyse`)) ? await listNotes(services, `${analysis.folder}/Analyse`) : []
   const notes: ListItem[] = produced.map((path) => ({ id: path, title: baseName(path).replace(/\.md$/, ''), detail: path.slice(analysis.folder.length + 1), open: { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) } }))

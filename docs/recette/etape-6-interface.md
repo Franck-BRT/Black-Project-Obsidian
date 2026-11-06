@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'une exigence, en page (v0.21.0)
+
+- [ ] Sur la page Exigences, un clic sur le nom d'une exigence : sa fiche s'ouvre en page,
+      titrée « identifiant — titre », l'entrée Exigences marquée ; « ← Toute la
+      bibliothèque » ramène à la liste
+- [ ] Depuis la fiche d'une analyse, un clic sur une de ses exigences ouvre aussi sa fiche
+      (le sous-titre dit le dossier de l'analyse) ; **Modifier la fiche** agit sur elle
+- [ ] Les formulations : la source, puis chaque langue — à jour, en retard, à relire ou
+      absente ; **Traduire (IA)** sur celles qui en ont besoin
+- [ ] La qualité axe par axe, en mots (« aucune obligation », « responsable à renseigner »,
+      « formulation EN absente… », « aucun lien… ») — jamais de code
+- [ ] La fiche, les liens, l'historique ; en lecture dys, « Brouillon » et « Performance »
+      tiennent sur une ligne dans les cases du haut
+
 ## La fiche d'une analyse, en page (v0.20.0)
 
 - [ ] Sur la page Analyses (ou le tableau de bord), un clic sur le nom d'une analyse : sa

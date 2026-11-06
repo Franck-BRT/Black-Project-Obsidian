@@ -165,8 +165,11 @@ que la recherche lit aussi. Il la déclare par
   — ne compte pas avec lui). Un bloc vidé dit, à sa place, que rien ne correspond.
 
 Une page peut prendre un **paramètre** : `showPage('workflows.fiche?wf-1')` (`pageWith`)
-appelle `load('wf-1')` — la fiche d'un workflow ; la fiche d'une analyse prend le chemin
-de sa note, encodé (`ao.fiche?Appels%20d'offres%2F…`). Elle peut donner son propre titre
+appelle `load('wf-1')` — la fiche d'un workflow ; la fiche d'une analyse ou d'une exigence prend
+le chemin de sa note, encodé (`ao.fiche?Appels%20d'offres%2F…`). Une carte peut montrer
+son texte en entier (`Card.wrap` : la formulation d'une exigence). En lecture dys, les
+cases de chiffres s'élargissent et leurs valeurs rapetissent un peu : un mot n'y est
+jamais coupé. Elle peut donner son propre titre
 (`PageView.title` : le nom du workflow), un lien de retour (`back` : « ← Tous les
 workflows »), et dépendre d'une autre page (`PageSpec.parent`) : l'entrée du menu de la
 liste reste marquée. Des cartes peuvent former un groupe titré avec ses boutons

@@ -87,7 +87,7 @@ describe('la page Exigences', () => {
     expect(cards[0]!.tags).toContain('brouillons')
     expect(cards[1]!.tags).toEqual(expect.arrayContaining(['critiques', 'approuvees']))
     expect(cards[1]!.badges?.map((badge) => badge.label)).toEqual(expect.arrayContaining(['Criticité : Haute']))
-    expect(cards[1]!.open?.label).toBe('Ouvrir la note')
+    expect(cards[1]!.open?.label).toBe('Ouvrir la fiche de l’exigence')
     expect(cards[1]!.actions?.map((action) => action.id)).toEqual(['edit'])
     // Une traduction absente (anglais) : à revoir, comme dans les chiffres.
     expect(cards[1]!.badges?.map((badge) => badge.label)).toContain('traduction absente : EN')
@@ -107,5 +107,51 @@ describe('la page Exigences', () => {
     expect(nav.page).toBeUndefined()
     await nav.run()
     expect(lists).toEqual(['Exigences (2)'])
+  })
+})
+
+describe('la fiche d’une exigence, en page', () => {
+  async function fiche() {
+    const platform = memoryPlatform()
+    const run = await start(platform, true)
+    const library = requirementsAt('Exigences')
+    const all = await library.all()
+    const weak = all.find((each) => each.title === 'Journalisation')!
+    return { ...run, platform, weak, page: run.views.pages().find((each) => each.id === 'exigences.fiche')! }
+  }
+
+  it('un clic sur une exigence ouvre sa fiche ; elle dépend de la bibliothèque', async () => {
+    const { views, shown, weak, page } = await fiche()
+    const card = cardsOf(await views.pages().find((each) => each.id === 'exigences.bibliotheque')!.load()).find((each) => each.title.endsWith('Journalisation'))!
+    await card.open!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent(weak.filePath!)}`)
+    expect(page.parent).toBe('exigences.bibliotheque')
+  })
+
+  it('tout d’un coup d’œil : chiffres, formulations par langue, qualité par axe, fiche, liens, historique', async () => {
+    const { weak, page } = await fiche()
+    const view = await page.load(encodeURIComponent(weak.filePath!))
+    expect(view.title).toBe(`${weak.id} — Journalisation`)
+    expect(view.back?.label).toBe('Toute la bibliothèque')
+    expect(view.actions?.map((action) => action.id)).toEqual(['edit', 'note'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => stat.label)).toEqual(['Qualité de la formulation', 'Type', 'Statut', 'Criticité'])
+    const wordings = view.blocks.find((block) => block.kind === 'cards')
+    expect(wordings?.kind === 'cards' && wordings.cards.map((card) => `${card.title}:${card.badges![0]!.label}`)).toEqual(['FR:Langue source', 'EN:Traduction absente'])
+    expect(wordings?.kind === 'cards' && wordings.cards[0]!).toMatchObject({ text: 'Les accès seront journalisés si possible.', wrap: true })
+    const lists = view.blocks.filter((block) => block.kind === 'list')
+    expect(lists.map((block) => block.kind === 'list' && block.title)).toEqual(['Qualité, axe par axe : ★★☆☆☆', 'La fiche', 'Liens (0)', 'Historique (0 révision(s))'])
+    const axes = lists[0]!.kind === 'list' ? lists[0]!.items : []
+    expect(axes.some((axis) => axis.tone !== 'success')).toBe(true)
+    // Des mots, pas des codes : « aucune obligation (« doit ») », « formulation EN absente… ».
+    const details = axes.map((axis) => axis.detail).join(' · ')
+    expect(details).not.toMatch(/no-modal|weak-word|text\.en|\blinks\b|\bowner\b/)
+    expect(details).toContain('formulation EN absente, en retard ou à relire')
+    expect(details).toContain('aucun lien vers une autre exigence')
+  })
+
+  it('une exigence disparue : la page le dit', async () => {
+    const { page } = await fiche()
+    expect((await page.load(encodeURIComponent('Exigences/Disparue.md'))).title).toBe('Exigence introuvable')
   })
 })

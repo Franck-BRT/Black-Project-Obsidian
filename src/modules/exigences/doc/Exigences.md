@@ -43,7 +43,21 @@ et fiches** ouvrent la **page de la bibliothèque**, dans l'onglet Black Project
 - une **recherche** (identifiant, titre, formulation…, sans tenir compte des accents) et
   des **filtres** : faibles, à revoir, criticité haute, brouillons, approuvées.
 
-La fiche (bouton **Modifier**) propose :
+Un clic sur une exigence (son nom, sur la page Exigences ou sur la fiche d'une analyse)
+ouvre sa **fiche en page**, où tout se voit :
+
+- en tête **Modifier la fiche**, **Relire (IA)**, **Traduire (IA)**, **Ouvrir la note** ;
+- ses chiffres : la qualité de la formulation, le type, le statut, la criticité ;
+- ses **formulations**, une carte par langue : la langue source, et chaque traduction à
+  jour, en retard sur la source, à relire (machine) ou absente — avec **Traduire (IA)**
+  sur celles qui en ont besoin ;
+- la **qualité, axe par axe** (unique, non ambiguë, vérifiable, attribuable, complète,
+  traçable), et ce qui coûte à chacun, en mots ;
+- **la fiche** (catégorie, vérification, source, justification, responsable, mots-clés,
+  alias, pièce d'origine, dates), ses **liens** et son **historique** de révisions ;
+- « ← Toute la bibliothèque » ramène à la liste.
+
+La fiche en fenêtre (bouton **Modifier la fiche**) propose :
 
 - **Modifier la fiche** — formulation, attributs, responsable, mots-clés, **alias** ;
   changer la formulation crée une **révision** (l'ancienne est gardée dans l'historique),

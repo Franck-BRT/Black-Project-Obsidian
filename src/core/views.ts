@@ -90,6 +90,8 @@ export interface Card {
   badges?: Badge[]
   /** Un extrait (la formulation d'une exigence) : trois lignes au plus, le reste coupé. */
   text?: string
+  /** Le texte en entier, sans le couper (la formulation sur la fiche d'une exigence). */
+  wrap?: boolean
   facts?: Fact[]
   deadline?: Deadline
   /** Une note sur cinq (étoiles), avec ce qu'elle mesure. */

@@ -352,6 +352,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   bouton une opération) au lieu d'une suite de fenêtres ; pages à paramètre
 - v0.20.0 : la **fiche d'une analyse en page** (pièces, calendrier, exigences, ce qu'elle a
   produit ; chaque bouton agit sur elle, sans « Dans quelle analyse ? »)
+- v0.21.0 : la **fiche d'une exigence en page** (formulations par langue, qualité axe par
+  axe en mots, fiche, liens, historique), depuis la bibliothèque ou une analyse
 
 ### Étape 7 — Livrables
 

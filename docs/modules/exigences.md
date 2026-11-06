@@ -158,6 +158,20 @@ avec une recherche et des filtres (`tags` : `faibles`/`bonnes`, `a-revoir`, `cri
 `context.showPage` ; sans page chez la plateforme, la commande retrouve la liste en fenêtre
 (`browseRequirements`). Tests : `test/exigences-page.test.ts`.
 
+## La fiche d'une exigence (Black Projects 0.21.0)
+
+`home.ts` déclare la page `exigences.fiche?<note encodée>` (`requirementPageOf`, exporté
+pour l'AO ; `parent` : la bibliothèque). Le dossier de la note dit où l'exigence est
+rangée — bibliothèque ou analyse : la page prend une session sur ce dossier
+(`sessionAt`), si bien que Modifier, Relire et Traduire agissent au bon endroit. En tête
+les actions ; les chiffres (qualité, type, statut, criticité) ; les formulations en
+cartes par langue (`Card.wrap` : le texte en entier ; source, à jour, en retard, à relire,
+absente ; Traduire (IA) quand il le faut) ; la qualité axe par axe, chaque manque dit en
+mots (`describeMiss` : règle, manque, champ à renseigner, formulation absente, aucun
+lien) ; la fiche, les liens, l'historique. La carte d'une exigence (bibliothèque, fiche
+d'une analyse) ouvre la fiche quand la plateforme a des pages, sa note sinon.
+Tests : `test/exigences-page.test.ts`.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

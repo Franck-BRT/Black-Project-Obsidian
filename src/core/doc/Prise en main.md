@@ -27,7 +27,9 @@ l'onglet : leurs chiffres, une carte par analyse, une recherche et des filtres (
 venir, pièces à lire, candidat, émetteur…). Un clic sur une analyse ouvre sa fiche : ses
 pièces, son calendrier, ses exigences, et des boutons qui agissent sur elle. **Exigences** ouvre de même la page de la
 bibliothèque : une carte par exigence, les plus faibles d'abord, avec sa formulation, et des
-filtres (faibles, à revoir, criticité haute, brouillons, approuvées). **Workflows** ouvre la
+filtres (faibles, à revoir, criticité haute, brouillons, approuvées) ; un clic sur une
+exigence ouvre sa fiche : ses formulations par langue, sa qualité axe par axe, ses liens,
+son historique. **Workflows** ouvre la
 page de vos workflows : une carte par workflow (Modifier, Exécuter, Activer ou Désactiver)
 et les dernières exécutions ; un clic sur un workflow ouvre sa fiche, en page : ses
 conditions et ses actions, chacune avec ses boutons. **IA** ouvre la page de l'IA : la connexion, un modèle par

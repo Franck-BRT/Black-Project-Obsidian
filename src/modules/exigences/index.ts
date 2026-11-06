@@ -44,6 +44,7 @@ import { aiClient } from '../ia'
 import { reviewRequirement, translateRequirement } from './ai/actions'
 import { emitRequirementCreated, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
 import { openLibrary, registerExigencesHome } from './home'
+export { requirementPageOf } from './home'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { RequirementStore, RequirementExists } from './store'
@@ -265,7 +266,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.8.0',
+  version: '0.9.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -291,7 +292,9 @@ export const exigencesModule: BlackModule = {
       async (id) => {
         await context.commands.run?.(id)
       },
-      showPage
+      showPage,
+      // La fiche d'une exigence, où qu'elle soit rangée (la bibliothèque, une analyse).
+      (folder) => ({ ...sessionAt(folder, platform.ui, platform.notifier), created: session.created })
     )
 
     commands.register({
