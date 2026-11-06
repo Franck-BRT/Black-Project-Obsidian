@@ -1048,3 +1048,26 @@ describe('déplacer une pièce depuis l’interface', () => {
     expect(platform.opened).toEqual([moved])
   })
 })
+
+describe('changer le type d’une pièce depuis l’interface', () => {
+  it('le choix du type, puis la page se redessine (fiche de la pièce, carte sur la fiche de l’analyse) ; aucune note ouverte', async () => {
+    const platform = memoryPlatform()
+    const run = await start(platform, true)
+    const { station, views, shown } = run
+    const rc = `${station.folder}/Pièces/Appel d'offres/RC.md`
+    const piece = views.pages().find((each) => each.id === 'ao.piece')!
+    const before = shown.length
+    platform.choices.push('CCTP')
+    await (await piece.load(encodeURIComponent(rc))).actions!.find((action) => action.id === 'type')!.run()
+    expect((await piece.load(encodeURIComponent(rc))).subtitle).toMatch(/^CCTP — /)
+    const fiche = views.pages().find((each) => each.id === 'ao.fiche')!
+    const card = (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((each) => each.title === 'RC.md')!
+    expect(card.subtitle).toMatch(/^CCTP — /)
+    platform.choices.push('RC')
+    await card.actions!.find((action) => action.id === 'type')!.run()
+    const again = (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((each) => each.title === 'RC.md')!
+    expect(again.subtitle).toMatch(/^RC — /)
+    expect(shown.length).toBe(before)
+    expect(platform.opened).toEqual([])
+  })
+})
