@@ -227,6 +227,12 @@ par un autre module mène à cette page. Depuis la palette, ou sans page chez la
 plateforme : le rapport écrit et ouvert, comme avant. Une note vide se lit comme absente
 (une plateforme peut lire vide une note qui n'existe pas).
 
+**Créer dans l'interface (v0.15.0, Black Projects 0.47.0)** : « Nouvelle exigence » de la
+bibliothèque, de la section du tableau de bord et de la tuile passe par `create`
+(`registerExigencesHome`) : `createRequirement`, puis la fiche de l'exigence créée
+(`requirementPageOf`) ; un formulaire abandonné laisse la page où elle est. Depuis la
+palette, ou sans page chez la plateforme : la commande `nouvelle`, qui ouvre la note.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

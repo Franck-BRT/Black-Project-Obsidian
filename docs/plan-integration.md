@@ -416,6 +416,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.46.0 : **analyser la qualité** de la bibliothèque : une page calculée à l'ouverture
   (chiffres, une carte par exigence, défauts, doublons, axes, rattachements), le rapport
   écrit depuis la page
+- v0.47.0 : **nouvelle exigence** : depuis l'interface, la fiche de l'exigence créée
+  ensuite (sa note depuis la palette)
 
 ### Étape 7 — Livrables
 

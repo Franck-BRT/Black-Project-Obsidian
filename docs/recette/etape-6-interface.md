@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Nouvelle exigence, en page (v0.47.0)
+
+- [ ] Page **Exigences** → **Nouvelle exigence** : le formulaire, puis la **fiche** de
+      l'exigence créée ; le message « Exigence … créée » ; aucune note ouverte
+- [ ] Même chose depuis le tableau de bord et la tuile *Nouvelle exigence*
+- [ ] Formulaire abandonné : on reste sur la page
+- [ ] Depuis la palette, *Nouvelle exigence* : la note s'ouvre, comme avant
+
 ## Analyser la qualité de la bibliothèque, en page (v0.46.0)
 
 - [ ] Page **Exigences** → **Analyser la qualité** : la page **Qualité des exigences** ;

@@ -426,3 +426,50 @@ describe('analyser la qualité, en page', () => {
     expect(other.opened).toEqual([REPORT])
   })
 })
+
+describe('nouvelle exigence, en page', () => {
+  const form = (title: string) => ({ category: 'gen', title, text: 'Le système doit redémarrer en moins de 2 min.', type: 'performance', status: 'draft', criticality: 'medium', verification: 'test', source: '', rationale: '' })
+
+  it('la bibliothèque, le tableau de bord et la tuile : la fiche de l’exigence créée, pas sa note', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    const library = await views.pages().find((each) => each.id === 'exigences.bibliotheque')!.load()
+    platform.forms.push(form('Redémarrage'))
+    await library.actions!.find((action) => action.id === 'new')!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent('Exigences/REQ-GEN-0001 Redémarrage.md')}`)
+    expect(platform.notices.at(-1)).toBe('Exigence REQ-GEN-0001 créée.')
+    const section = await views.homeSections().find((each) => each.id === 'exigences.library')!.load()
+    platform.forms.push(form('Reprise'))
+    await section!.blocks.flatMap((block) => (block.kind === 'actions' ? block.actions : [])).find((action) => action.id === 'new')!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent('Exigences/REQ-GEN-0002 Reprise.md')}`)
+    platform.forms.push(form('Arrêt'))
+    await views.allTiles().find((each) => each.id === 'exigences.nouvelle')!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent('Exigences/REQ-GEN-0003 Arrêt.md')}`)
+    expect(platform.opened).toEqual([])
+    // La fiche est celle de l'exigence créée.
+    const fiche = await views.pages().find((each) => each.id === 'exigences.fiche')!.load(encodeURIComponent('Exigences/REQ-GEN-0003 Arrêt.md'))
+    expect(fiche.title).toBe('REQ-GEN-0003 — Arrêt')
+  })
+
+  it('le formulaire abandonné : on reste où l’on est', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    await views.allTiles().find((each) => each.id === 'exigences.nouvelle')!.run()
+    expect(shown).toEqual([])
+    expect(platform.opened).toEqual([])
+  })
+
+  it('depuis la palette, ou sans page chez la plateforme : la note, comme avant', async () => {
+    const platform = memoryPlatform()
+    const { run, shown } = await start(platform, true)
+    platform.forms.push(form('Redémarrage'))
+    await run('exigences-nouvelle')
+    expect(platform.opened).toEqual(['Exigences/REQ-GEN-0001 Redémarrage.md'])
+    expect(shown).toEqual([])
+    const other = memoryPlatform()
+    const { views } = await start(other, false)
+    other.forms.push(form('Reprise'))
+    await views.allTiles().find((each) => each.id === 'exigences.nouvelle')!.run()
+    expect(other.opened).toEqual(['Exigences/REQ-GEN-0001 Reprise.md'])
+  })
+})

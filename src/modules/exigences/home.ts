@@ -14,7 +14,7 @@ import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, t
 import { noteBlocks } from '../../core/markdown'
 import { acceptTranslation, reviewRequirement, reviewSection, translateRequirement, translationNote } from './ai/actions'
 import { hasDrifted, quantityDrift } from './ai/translate'
-import { editRequirement, flagsOf, type Session } from './flows'
+import { createRequirement, editRequirement, flagsOf, type Session } from './flows'
 import { isUnreviewedMachine, textOf, type Requirement } from './model/requirement'
 import { assessAll } from './quality/report'
 import { assessRequirement, isWeak } from './quality/score'
@@ -155,7 +155,7 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
  * qualité), et une carte par exigence, les plus faibles d'abord — avec une recherche
  * (identifiant, titre, formulation…) et des filtres.
  */
-export async function libraryPage(session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void, imports?: ImportHooks): Promise<PageView> {
+export async function libraryPage(session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void, imports?: ImportHooks, create?: () => Promise<void>): Promise<PageView> {
   const { t } = session
   const settings = session.settings()
   const library = await session.store.all()
@@ -165,7 +165,7 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
   return {
     subtitle: t('exigences.page.subtitle', { folder: settings.folder }),
     actions: [
-      { id: 'new', label: t('exigences.command.create'), icon: 'plus', primary: true, run: () => run('nouvelle') },
+      { id: 'new', label: t('exigences.command.create'), icon: 'plus', primary: true, run: create ?? (() => run('nouvelle')) },
       { id: 'import', label: t('exigences.tile.import'), icon: 'upload', run: () => (imports ? imports.run() : run('importer')) },
       // Avec des pages, la qualité s'ouvre en page (rien n'est écrit) ; sinon, le rapport.
       { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => (showPage ? showPage(QUALITY_PAGE) : run('qualite')) },
@@ -449,6 +449,12 @@ export function registerExigencesHome(
   const page = showPage ? { page: LIBRARY_PAGE } : {}
   const open = () => (showPage ? showPage(LIBRARY_PAGE) : run('liste'))
   const quality = () => (showPage ? showPage(QUALITY_PAGE) : run('qualite'))
+  // Avec des pages, une exigence créée depuis l'interface s'ouvre en fiche ; sinon, sa note (la commande).
+  const create = async () => {
+    if (!showPage || !sessionFor) return run('nouvelle')
+    const created = await createRequirement(session)
+    if (created?.filePath) showPage(requirementPageOf(created.filePath))
+  }
   views.home({
     id: 'exigences.library',
     title: t('exigences.home.title'),
@@ -468,7 +474,7 @@ export function registerExigencesHome(
           {
             kind: 'actions',
             actions: [
-              { id: 'new', label: t('exigences.command.create'), icon: 'plus', run: () => run('nouvelle') },
+              { id: 'new', label: t('exigences.command.create'), icon: 'plus', run: create },
               // Avec une page, le lien d'en-tête y mène déjà.
               ...(showPage ? [] : [{ id: 'list', label: t('exigences.home.browse'), icon: 'search' as const, run: open }]),
               { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: quality }
@@ -480,7 +486,7 @@ export function registerExigencesHome(
   })
   // Avec des pages, un import lancé de l'interface finit sur sa page ; sinon, le message seul.
   const importHere = showPage ? imports : undefined
-  views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage, importHere) })
+  views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage, importHere, create) })
   if (showPage && sessionFor) {
     views.page({ id: REQUIREMENT_PAGE, title: t('exigences.fiche.title'), icon: 'list', parent: LIBRARY_PAGE, load: (param) => requirementPage(sessionFor, showPage, param, () => session.settings().folder) })
     views.page({ id: QUALITY_PAGE, title: t('exigences.quality.title'), icon: 'star', parent: LIBRARY_PAGE, load: () => libraryQualityPage({ session, showPage, library: LIBRARY_PAGE, requirementPageOf }) })
@@ -508,7 +514,7 @@ export function registerExigencesHome(
       return weak ? { text: String(weak), tone: 'warning', label: t('exigences.tile.weak', { count: weak }) } : null
     }
   })
-  views.tile({ id: 'exigences.nouvelle', label: t('exigences.tile.new'), icon: 'plus', color: 'green', group, order: 21, description: t('exigences.tile.new.desc'), run: () => run('nouvelle') })
+  views.tile({ id: 'exigences.nouvelle', label: t('exigences.tile.new'), icon: 'plus', color: 'green', group, order: 21, description: t('exigences.tile.new.desc'), run: create })
   views.tile({ id: 'exigences.qualite', label: t('exigences.tile.quality'), icon: 'star', color: 'green', group, order: 22, description: t('exigences.tile.quality.desc'), ...(showPage ? { page: QUALITY_PAGE } : {}), run: quality })
   views.tile({ id: 'exigences.importer', label: t('exigences.tile.import'), icon: 'upload', color: 'green', group, order: 23, description: t('exigences.tile.import.desc'), run: () => (importHere ? importHere.run() : run('importer')) })
 }

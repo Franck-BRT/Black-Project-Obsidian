@@ -20,6 +20,12 @@ réutilisé** : le numéro suivant part du plus haut qui ait existé dans la cat
 si l'exigence qui le portait a été supprimée. Un document qui citait `REQ-SYS-0042` ne se
 retrouve jamais à citer autre chose.
 
+Depuis l'onglet de Black Projects (**Nouvelle exigence** sur la page Exigences, sur le
+tableau de bord ou la tuile), le même formulaire ; puis la **fiche** de l'exigence créée
+s'ouvre, en page — sa note, sa formulation, ce qui lui manque (une traduction, une
+justification…), avec Modifier, Relire et Traduire (IA). Depuis la palette, sa note
+s'ouvre, comme avant.
+
 ## 2. La note d'une exigence
 
 La note s'appelle `REQ-SYS-0001 Titre.md`. Son en-tête est l'enregistrement (identifiant,
