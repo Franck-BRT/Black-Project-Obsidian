@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Une question au dossier, en page (v0.28.0)
+
+- [ ] IA réglée ; fiche d'une analyse → **Interroger** : la question, puis la réponse
+      s'ouvre **sur sa page** (pas dans une note Obsidian)
+- [ ] La page : la question en titre, « analyse · date · mode », les chiffres (sources
+      transmises, citées, non citées, extraits), la réponse avec ses « [1] », une carte par
+      source (Citée en vert, Non citée en gris, les extraits) ; filtre **Non citées**
+- [ ] Un clic sur une source ouvre la fiche de la pièce ; « Retour » ramène à la question
+- [ ] **Reposer la question** : la fenêtre, la question déjà écrite ; la nouvelle réponse
+      s'ouvre sur sa page, une nouvelle note est écrite
+- [ ] La fiche de l'analyse liste « Questions au dossier (n) », la plus récente d'abord
+- [ ] La commande « Interroger le dossier » (palette) ouvre toujours la note
+- [ ] Démonstration : Station sol → « Quelles pénalités en cas de retard de livraison ? »
+
 ## Une note produite, en page (v0.27.0)
 
 - [ ] Fiche d'une analyse → **Calendrier**, puis dans « Ce que l'analyse a produit » un clic

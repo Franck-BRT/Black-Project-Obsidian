@@ -366,6 +366,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.27.0 : une **note produite en page** (calendrier, vérification, qualité,
   questionnaire, question) : lisible sans la syntaxe, les liens vers les fiches, « Mettre
   à jour » sans quitter la page ; le bloc `text` du cœur
+- v0.28.0 : une **question au dossier en page** (la réponse, une carte par source citée ou
+  non avec ses extraits, « Reposer la question ») ; « Interroger » depuis l'interface y
+  mène
 
 ### Étape 7 — Livrables
 

@@ -60,6 +60,12 @@ analyse ? » :
   un clic sur une ligne ouvre la fiche de la pièce ou de l'exigence qu'elle cite ;
   **Mettre à jour** refait la note (sans quitter la page), **Ouvrir la note** l'ouvre dans
   le coffre, une recherche porte sur toute la note ;
+- ses **questions au dossier** (« Interroger ») : la question, sa date, combien de sources
+  sont citées ; un clic ouvre la **page de la question** — la réponse, le rappel de la
+  vérifier, une carte par source (citée ou non, les extraits donnés à l'IA ; un clic ouvre
+  la fiche de la pièce), vos notes ; **Reposer la question** rouvre la fenêtre avec la
+  question déjà écrite (la nouvelle réponse va dans une nouvelle note), **Nouvelle
+  question**. « Interroger », depuis la fiche, ouvre la réponse sur sa page ;
 - une recherche et des filtres (pièces à lire, appel d'offres, réponse) ; « ← Toutes les
   analyses » ramène à la liste.
 

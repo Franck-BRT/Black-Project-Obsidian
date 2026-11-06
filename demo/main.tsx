@@ -75,6 +75,16 @@ platform.ui = {
     })
 }
 platform.notifier = { notify: (message) => toast(message) }
+// Un serveur d'IA simulé : il répond en citant le premier extrait transmis (aucune IA réelle).
+platform.http = {
+  request: async (request) => {
+    if (!request.url.endsWith('/chat/completions')) return { status: 404, text: '' }
+    const sent = JSON.parse(request.body ?? '{}') as { messages?: { content: string }[] }
+    const question = (sent.messages?.at(-1)?.content ?? '').split('\n').filter(Boolean).at(-1) ?? ''
+    const content = `Réponse de démonstration, sans IA réelle : le premier extrait transmis répond à « ${question.slice(0, 120)} » [1].`
+    return { status: 200, text: JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }) }
+  }
+}
 const views = new ViewsRegistry()
 const settings: Record<string, Record<string, unknown>> = {
   ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false },
@@ -133,7 +143,7 @@ async function start(): Promise<void> {
   // Le dossier fictif : deux analyses, des pièces avec leurs dates, des exigences, un workflow.
   const services = { fs: platform.fs, t, root: "Appels d'offres", today: () => new Date().toISOString().slice(0, 10) }
   const station = await createAnalysis(services, 'Station sol de télémesure', { position: 'candidat', buyer: 'Agence spatiale', reference: 'AO-2026-118' })
-  await importFiles(services, station, [
+  const imported = await importFiles(services, station, [
     { name: 'RC.md', bytes: utf8(`# Règlement de la consultation\n\nLa date limite de remise des offres est fixée au ${day(68)} à 12 h 00.\n\nLe délai de validité des offres est fixé à 120 jours.`) },
     { name: 'CCTP.md', bytes: utf8(`# CCTP\n\n| Identifiant | Exigence |\n|---|---|\n| EX-SOL-001 | Le titulaire doit fournir une antenne de 3,7 m. |\n\nLa livraison intervient sous 15 jours après la notification.`) },
     { name: 'CCAP.md', bytes: utf8('# CCAP\n\nPénalités : 500 € par jour de retard.') }
@@ -164,6 +174,42 @@ async function start(): Promise<void> {
     workflows: [{ id: 'wf-1', name: 'À l’import des pièces : relever le calendrier', enabled: true, mode: 'auto', trigger: { kind: 'ao.pieces-importees' }, conditions: [], actions: [{ kind: 'ao.calendrier', fields: { analyse: '{analyse}' } }], created: new Date().toISOString() }]
   }
   const stamp = new Date().toISOString().slice(0, 10)
+  // Une question déjà posée au dossier de la station, pour sa page.
+  const noteOf = (name: string) => imported.imported.find((piece) => piece.note.endsWith(`/${name}.md`))?.note.replace(/\.md$/, '') ?? name
+  await platform.fs.writeText(
+    `${station.folder}/Analyse/Questions/${stamp} Quelles pénalités en cas de retard.md`,
+    [
+      '---',
+      'bp-type: ao-question',
+      `analyse: "[[${station.note.replace(/\.md$/, '')}]]"`,
+      `date: ${stamp}`,
+      'mode: recherche',
+      'sources: 2',
+      '---',
+      `# Question au dossier — ${station.name}`,
+      '',
+      '> [!question] Quelles pénalités en cas de retard de livraison ?',
+      '> *Recherche dans les pièces — réponse de l’IA, à vérifier dans les pièces citées*',
+      '',
+      '## Réponse',
+      '',
+      `Le CCAP fixe les pénalités de retard à 500 € par jour de retard \\[[[${noteOf('CCAP')}|1]]\\]. Le règlement de la consultation n’en dit rien ; aucun plafond n’est indiqué dans les pièces transmises.`,
+      '',
+      '## Sources',
+      '',
+      `1. [[${noteOf('CCAP')}|CCAP]] — CCAP · Appel d’offres — *citée*`,
+      '   > [!quote]- Extraits transmis (1)',
+      '   > Pénalités : 500 € par jour de retard.',
+      `2. [[${noteOf('RC')}|RC]] — RC · Appel d’offres — *transmise, non citée*`,
+      '   > [!quote]- Extraits transmis (1)',
+      '   > Le délai de validité des offres est fixé à 120 jours.',
+      '',
+      '## Notes',
+      '',
+      'À rapprocher du planning : la livraison intervient sous 15 jours après la notification.',
+      ''
+    ].join('\n')
+  )
   await platform.fs.writeText(
     'Black Projects/Workflows/Journal des workflows.md',
     `<!-- bp:journal:debut -->\n- ${stamp} 09:12 · ✅ fait · **À l’import des pièces : relever le calendrier** · sur « Station sol de télémesure » — 1. Calendrier : 2 date(s), 1 délai(s) dans 3 pièce(s).\n- ${stamp} 08:30 · ❌ échec · **Questionnaire (IA)** · sur « Maintenance des antennes » — Étape 1 (Questionnaire du dossier) a échoué : serveur injoignable\n<!-- bp:journal:fin -->\n`

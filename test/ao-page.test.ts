@@ -25,10 +25,10 @@ const TODAY = new Date().toISOString().slice(0, 10)
 /** Une date à `days` jours d'aujourd'hui, en toutes lettres (« 12 décembre 2026 »). */
 const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
-async function start(platform: MemoryPlatform, withPages: boolean) {
+async function start(platform: MemoryPlatform, withPages: boolean, ia: Record<string, unknown> = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false } }
+  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, ia }
   const commands = new Map<string, ModuleCommand>()
   const views = new ViewsRegistry()
   const shown: string[] = []
@@ -387,5 +387,85 @@ describe('une note produite par l’analyse, en page', () => {
     expect(views.pages().find((each) => each.id === 'ao.note')).toBeDefined()
     const { page } = await calendar()
     expect((await page!.load(encodeURIComponent('Appels d’offres/X/Analyse/Disparue.md'))).title).toBe('Note introuvable')
+  })
+})
+
+describe('une question au dossier, en page', () => {
+  const chat = (content: string) => ({ status: 200, text: JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }) })
+  const QUESTION = 'Quelle est la date limite de remise des offres ?'
+
+  /** Interroger depuis la fiche de l'analyse : la réponse de l'IA (simulée) cite le RC. */
+  async function asked(withPages = true) {
+    const platform = memoryPlatform()
+    const run = await start(platform, withPages, { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' })
+    const fiche = run.views.pages().find((each) => each.id === 'ao.fiche')!
+    platform.forms.push({ question: QUESTION, mode: 'search' })
+    platform.httpAnswers.push(chat('Les offres sont à remettre dans 12 jours, selon le règlement [1].'))
+    await (await fiche.load(encodeURIComponent(run.station.note))).actions!.find((action) => action.id === 'ask')!.run()
+    const path = [...platform.files.keys()].find((each) => each.includes('/Analyse/Questions/'))!
+    return { ...run, platform, fiche, path, page: run.views.pages().find((each) => each.id === 'ao.question')! }
+  }
+
+  it('« Interroger » depuis l’interface : la réponse s’ouvre sur sa page, plus dans la note', async () => {
+    const { shown, path, platform, page } = await asked()
+    expect(shown.at(-1)).toBe(`ao.question?${encodeURIComponent(path)}`)
+    expect(platform.opened).toEqual([])
+    expect(page.parent).toBe('ao.analyses')
+  })
+
+  it('la question en titre, ses chiffres, la réponse, une carte par source qui ouvre la fiche de la pièce', async () => {
+    const { page, path, shown } = await asked()
+    const view = await page.load(encodeURIComponent(path))
+    expect(view.title).toBe(QUESTION)
+    expect(view.back?.label).toBe('L’analyse « Station sol »')
+    expect(view.subtitle).toBe(`Station sol · ${TODAY} · Recherche dans les pièces`)
+    expect(view.actions?.map((action) => action.id)).toEqual(['again', 'ask', 'note', 'analysis'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['citees', 'non-citees'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Sources transmises=1', 'Citées dans la réponse=1', 'Transmises, non citées=0', 'Extraits transmis=2'])
+    expect(view.blocks.find((block) => block.kind === 'text')).toEqual({ kind: 'text', title: 'Réponse', paragraphs: ['Les offres sont à remettre dans 12 jours, selon le règlement [1].'], empty: 'Pas de réponse dans la note.' })
+    const sources = view.blocks.find((block) => block.kind === 'cards')
+    const rc = sources?.kind === 'cards' ? sources.cards[0]! : null
+    expect(sources?.kind === 'cards' && sources.title).toBe('Sources (1)')
+    expect(rc).toMatchObject({ title: '[1] RC', badges: [{ label: 'Citée', tone: 'success' }], tags: ['citees'] })
+    expect(rc!.text).toContain('La date limite de remise des offres est fixée au')
+    await rc!.open!.run()
+    expect(shown.at(-1)).toMatch(/^ao\.piece\?.*RC\.md$/)
+  })
+
+  it('la fiche de l’analyse liste les questions posées ; la note produite d’une question mène à sa page', async () => {
+    const { fiche, station, path, shown, views } = await asked()
+    const view = await fiche.load(encodeURIComponent(station.note))
+    const lists = view.blocks.filter((block) => block.kind === 'list')
+    const produced = lists.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    expect(produced?.kind === 'list' && produced.items).toEqual([])
+    const questions = lists.find((block) => block.kind === 'list' && block.title === 'Questions au dossier (1)')
+    const item = questions?.kind === 'list' ? questions.items[0]! : null
+    expect(item).toMatchObject({ title: QUESTION, when: TODAY, detail: '1 source(s) citée(s) sur 1', tone: 'success' })
+    await item!.open!.run()
+    expect(shown.at(-1)).toBe(`ao.question?${encodeURIComponent(path)}`)
+    const produite = await views.pages().find((each) => each.id === 'ao.note')!.load(encodeURIComponent(path))
+    expect(produite.title).toBe(QUESTION)
+  })
+
+  it('« Reposer la question » : la fenêtre, la question déjà écrite ; la nouvelle réponse dans une nouvelle note', async () => {
+    const { page, path, platform, shown } = await asked()
+    const view = await page.load(encodeURIComponent(path))
+    platform.forms.push({ question: QUESTION, mode: 'each' })
+    platform.httpAnswers.push(chat('Rien de plus.'), chat('Dans 12 jours [1].'))
+    await view.actions!.find((action) => action.id === 'again')!.run()
+    const form = platform.asked.at(-1)!
+    expect(form.fields.find((field) => field.key === 'question')).toMatchObject({ value: QUESTION })
+    expect(form.fields.find((field) => field.key === 'mode')).toMatchObject({ value: 'search' })
+    const notes = [...platform.files.keys()].filter((each) => each.includes('/Analyse/Questions/'))
+    expect(notes).toHaveLength(2)
+    expect(shown.at(-1)).toBe(`ao.question?${encodeURIComponent(notes.find((each) => each !== path)!)}`)
+  })
+
+  it('sans page chez la plateforme : la note de la réponse s’ouvre ; une question disparue : la page le dit', async () => {
+    const { platform, path } = await asked(false)
+    expect(platform.opened).toEqual([path])
+    const { page } = await asked()
+    expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Questions/x.md'))).title).toBe('Question introuvable')
   })
 })

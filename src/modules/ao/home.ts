@@ -16,8 +16,8 @@ import { typeLabel } from '../typage-pieces'
 import { assessAll, requirementLanguages, requirementPageOf, requirementsAt } from '../exigences'
 import { aiClient } from '../ia'
 import { calendarOf, calendarPath, delayLabel, writeCalendar } from './calendar'
-import { questionnairePath } from './ask/dossier'
-import { noteBlocks } from './produced'
+import { questionnairePath, questionsFolder, QUESTION_TYPE } from './ask/dossier'
+import { noteBlocks, readQuestion, type QuestionNote } from './produced'
 import { qualityPath } from './quality'
 import { pieceSources, pieceText } from './ask/sources'
 import { destinationLabel, type Analysis, type PieceRow, type ReadingState } from './notes'
@@ -33,7 +33,8 @@ export interface HomeDeps {
   /** Lance une commande de l'AO (nouvelle analyse, importer…). */
   run(id: string): Promise<void>
   importInto(analysis: Analysis): Promise<void>
-  ask(analysis: Analysis): Promise<void>
+  /** Interroger le dossier ; `preset` : la question (et son mode) déjà écrite, à reposer. */
+  ask(analysis: Analysis, preset?: { question: string; mode: 'search' | 'each' }): Promise<void>
   today(): string
   /** Ouvre une page dans l'onglet de Black Projects, quand la plateforme en a un. */
   showPage?(id: string): void
@@ -61,6 +62,10 @@ export const piecePageOf = (note: string): string => pageWith(PIECE_PAGE, encode
 /** La page d'une note produite par l'analyse (calendrier, vérification, questionnaire…) : `producedPageOf(chemin)`. */
 export const PRODUCED_PAGE = 'ao.note'
 export const producedPageOf = (note: string): string => pageWith(PRODUCED_PAGE, encodeURIComponent(note))
+
+/** La page d'une question au dossier : `questionPageOf(chemin de sa note)`. */
+export const QUESTION_PAGE = 'ao.question'
+export const questionPageOf = (note: string): string => pageWith(QUESTION_PAGE, encodeURIComponent(note))
 
 /** La page des analyses. */
 export const ANALYSES_PAGE = 'ao.analyses'
@@ -391,7 +396,24 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
         }
       : {})
   }))
-  const produced = (await services.fs.exists(`${analysis.folder}/Analyse`)) ? await listNotes(services, `${analysis.folder}/Analyse`) : []
+  const asked = `${questionsFolder(analysis)}/`
+  const everything = (await services.fs.exists(`${analysis.folder}/Analyse`)) ? await listNotes(services, `${analysis.folder}/Analyse`) : []
+  const produced = everything.filter((path) => !path.startsWith(asked))
+  // Les questions posées au dossier : la plus récente d'abord, chacune ouvre sa page.
+  const questions = (await Promise.all(everything.filter((path) => path.startsWith(asked)).map(async (path) => ({ path, note: readQuestion(await services.fs.readText(path), questionWords(t)) }))))
+    .filter((each): each is { path: string; note: QuestionNote } => each.note !== null)
+    .sort((a, b) => b.note.date.localeCompare(a.note.date) || b.path.localeCompare(a.path))
+  const questionItems: ListItem[] = questions.map(({ path, note }) => {
+    const cited = note.sources.filter((source) => source.cited).length
+    return {
+      id: path,
+      title: note.question,
+      ...(note.date ? { when: note.date } : {}),
+      detail: note.sources.length ? t('ao.question.cited', { cited, count: note.sources.length }) : t('ao.question.noSource'),
+      tone: cited ? 'success' : 'warning',
+      open: deps.showPage ? { id: 'open', label: t('ao.question.open'), run: () => deps.showPage?.(questionPageOf(path)) } : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
+    }
+  })
   // Chaque note produite s'ouvre en page, quand la plateforme en a ; sinon dans le coffre.
   const notes: ListItem[] = produced.map((path) => ({
     id: path,
@@ -419,7 +441,8 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
       ...pieceBlocks,
       { kind: 'list', title: t('ao.fiche.calendar', { count: calendar.dates.length }), items: dates, empty: t('ao.fiche.calendar.none') },
       { kind: 'list', title: t('ao.fiche.requirements', { count: requirements.length }), items: reqItems, empty: t('ao.home.noRequirement') },
-      { kind: 'list', title: t('ao.fiche.notes'), items: notes, empty: t('ao.fiche.notes.none') }
+      { kind: 'list', title: t('ao.fiche.notes'), items: notes, empty: t('ao.fiche.notes.none') },
+      ...(questionItems.length || ai ? [{ kind: 'list' as const, title: t('ao.question.list', { count: questionItems.length }), items: questionItems, empty: t('ao.question.none') }] : [])
     ]
   }
 }
@@ -649,6 +672,8 @@ export async function producedPage(deps: HomeDeps, param: string | undefined): P
     return { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
   }
   const markdown = await services.fs.readText(note)
+  // Une question a sa page à elle.
+  if (parseFrontmatter(markdown).data['bp-type'] === QUESTION_TYPE && readQuestion(markdown, questionWords(t))) return questionPage(deps, param)
   const blocks = noteBlocks(markdown, opener)
   const heading = /^#\s+(.+)$/m.exec(markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, ''))?.[1]?.trim()
 
@@ -665,6 +690,84 @@ export async function producedPage(deps: HomeDeps, param: string | undefined): P
     actions,
     search: { label: t('ao.note.page.search'), placeholder: t('ao.note.page.search.placeholder') },
     blocks: blocks.length ? blocks : [{ kind: 'message', tone: 'info', text: t('ao.note.page.empty') }]
+  }
+}
+
+/** Les titres d'une note de question, pour la relire. */
+const questionWords = (t: Translate) => ({ answer: t('ao.ask.answer'), sources: t('ao.ask.sources'), notes: t('ao.note.notes'), cited: t('ao.ask.cited') })
+
+/**
+ * La **page** d'une question au dossier : la question en titre ; ses chiffres (sources
+ * transmises, citées, non citées, extraits ; le mode et la date en sous-titre) ; la réponse, et ce qui doit faire douter (une source
+ * citée qui n'existe pas, aucune citée) ; une carte par source — citée ou non, ce que l'IA
+ * en a reçu, un clic ouvre la fiche de la pièce ; vos notes. En tête : Reposer la
+ * question (la fenêtre, la question déjà écrite), Nouvelle question, la note, l'analyse.
+ */
+export async function questionPage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const services = deps.services()
+  const note = param ? decodeURIComponent(param) : ''
+  const analysis = note ? (await listAnalyses(services)).find((each) => note.startsWith(`${each.folder}/`)) : undefined
+  const read = analysis && (await services.fs.exists(note)) ? readQuestion(await services.fs.readText(note), questionWords(t)) : null
+  if (!analysis || !read)
+    return { title: t('ao.question.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.question.missing') }] }
+  const pieces = new Set((await listPieces(services, analysis)).map((piece) => piece.note))
+  const cited = read.sources.filter((source) => source.cited).length
+  const ai = aiClient() !== null
+  const actions: ViewAction[] = [
+    ...(ai
+      ? [
+          { id: 'again', label: t('ao.question.again'), tooltip: t('ao.question.again.tip'), icon: 'refresh' as const, run: () => deps.ask(analysis, { question: read.question, mode: read.mode }) },
+          { id: 'ask', label: t('ao.question.new'), icon: 'chat' as const, run: () => deps.ask(analysis) }
+        ]
+      : []),
+    { id: 'note', label: t('ao.fiche.note.open'), icon: 'file', run: () => deps.ui.openNote(note) },
+    ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
+  ]
+  const cards: Card[] = read.sources.map((source) => {
+    const path = source.link && !source.link.includes('/') ? `${analysis.folder}/${source.link}` : source.link
+    const open: ViewAction | undefined = !path
+      ? undefined
+      : deps.showPage && pieces.has(path)
+        ? { id: 'open', label: t('ao.piece.fiche.open'), tooltip: t('ao.piece.fiche.open'), run: () => deps.showPage?.(piecePageOf(path)) }
+        : { id: 'open', label: t('ao.fiche.note.open'), tooltip: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
+    return {
+      id: `source-${source.number}`,
+      title: `[${source.number}] ${source.title}`,
+      ...(source.detail ? { subtitle: source.detail } : {}),
+      icon: 'file' as const,
+      badges: [{ label: t(source.cited ? 'ao.question.badge.cited' : 'ao.question.badge.notCited'), tone: source.cited ? ('success' as const) : ('neutral' as const) }],
+      ...(source.extracts.length ? { text: source.extracts.map((extract) => `« ${extract} »`).join('\n\n'), wrap: true } : {}),
+      ...(open ? { open } : {}),
+      tags: [source.cited ? 'citees' : 'non-citees']
+    }
+  })
+  return {
+    title: read.question,
+    back: { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) },
+    subtitle: [analysis.name, read.date, t(read.mode === 'each' ? 'ao.ask.mode.each' : 'ao.ask.mode.search')].filter(Boolean).join(' · '),
+    actions,
+    search: { label: t('ao.question.search'), placeholder: t('ao.question.search.placeholder') },
+    filters: [
+      { id: 'citees', label: t('ao.question.filter.cited') },
+      { id: 'non-citees', label: t('ao.question.filter.notCited') }
+    ],
+    blocks: [
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('ao.question.stat.sources'), value: String(read.sources.length), icon: 'file', hint: t('ao.question.stat.sources.hint') },
+          { label: t('ao.question.stat.cited'), value: String(cited), icon: 'check', tone: cited ? 'success' : 'warning' },
+          { label: t('ao.question.stat.notCited'), value: String(read.sources.length - cited), icon: 'info' },
+          { label: t('ao.question.stat.extracts'), value: String(read.sources.reduce((sum, source) => sum + source.extracts.length, 0)), icon: 'list', hint: t('ao.question.stat.extracts.hint') }
+        ]
+      },
+      ...read.warnings.map((text) => ({ kind: 'message' as const, tone: 'warning' as const, text })),
+      { kind: 'message', tone: 'info', text: t('ao.question.check') },
+      { kind: 'text', title: t('ao.ask.answer'), paragraphs: read.answer, empty: t('ao.question.noAnswer') },
+      { kind: 'cards', title: t('ao.question.sources', { count: read.sources.length }), cards, empty: t('ao.question.noSource') },
+      ...(read.notes.length ? [{ kind: 'text' as const, title: t('ao.question.notes'), paragraphs: read.notes }] : [])
+    ]
   }
 }
 
@@ -725,6 +828,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
   views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
+  views.page({ id: QUESTION_PAGE, title: t('ao.question.title'), icon: 'chat', parent: ANALYSES_PAGE, load: (param) => questionPage(deps, param) })
   views.page({ id: PRODUCED_PAGE, title: t('ao.note.page.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => producedPage(deps, param) })
   views.page({ id: CANDIDATE_PAGE, title: t('ao.candidat.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => candidatePage(deps, param) })
   views.nav({ id: 'ao.analyses', label: t('ao.home.nav'), icon: 'folder', order: 10, ...(deps.showPage ? { page: ANALYSES_PAGE } : {}), run: () => openAnalyses(deps) })

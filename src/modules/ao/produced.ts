@@ -31,7 +31,7 @@ const CALLOUT_TONE: Record<string, Tone> = { warning: 'warning', caution: 'warni
 /** Le premier lien Obsidian d'un texte, en chemin de note (`.md` compris) ; « » s'il n'y en a pas. */
 export function firstLink(text: string): string {
   // Dans un tableau, le « | » du lien est échappé (« [[Pièces/RC\|RC]] »).
-  const link = /\[\[([^\]|#\\]+)(?:#[^\]|]*)?(?:\\?\|[^\]]*)?\]\]/.exec(text.replace(/\\\|/g, '|'))
+  const link = /\[\[([^\]|#\\[]+)(?:#[^\]|]*)?(?:\\?\|[^\]]*)?\]\]/.exec(text.replace(/\\\|/g, '|'))
   if (!link) return ''
   const target = link[1]!.trim()
   return target.endsWith('.md') || /\.[a-z0-9]{2,4}$/i.test(target) ? target : `${target}.md`
@@ -41,9 +41,11 @@ export function firstLink(text: string): string {
 export function plainText(text: string): string {
   return text
     .replace(/\\\|/g, '|')
-    .replace(/!?\[\[([^\]|]+)\|([^\]]*)\]\]/g, '$2')
-    .replace(/!?\[\[([^\]]+)\]\]/g, (_, target: string) => target.slice(target.lastIndexOf('/') + 1).replace(/#.*$/, '').replace(/\.md$/, ''))
+    .replace(/!?\[\[([^\]|[]+)\|([^\]]*)\]\]/g, '$2')
+    .replace(/!?\[\[([^\][]+)\]\]/g, (_, target: string) => target.slice(target.lastIndexOf('/') + 1).replace(/#.*$/, '').replace(/\.md$/, ''))
     .replace(/!?\[([^\]]*)\]\(([^)]*)\)/g, '$1')
+    // Les citations « \[[[pièce|1]]\] » : le lien d'abord, puis les crochets échappés.
+    .replace(/\\([[\]])/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/__([^_]+)__/g, '$1')
     .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, '$1$2')
@@ -208,4 +210,134 @@ export function noteBlocks(markdown: string, opener: LinkOpener): HomeBlock[] {
   }
   flush()
   return blocks
+}
+
+/** Les mots d'une note de question, dans la langue où elle a été écrite (les titres de ses sections). */
+export interface QuestionWords {
+  answer: string
+  sources: string
+  notes: string
+  cited: string
+}
+
+/** Une source de la réponse : la pièce, l'endroit, citée ou non, et ce qui a été transmis. */
+export interface QuestionSource {
+  number: number
+  link: string
+  title: string
+  detail: string
+  cited: boolean
+  /** « Extraits transmis (2) », « Ce que l'IA y a relevé ». */
+  label: string
+  extracts: string[]
+}
+
+/** Une question au dossier, relue depuis sa note (`Analyse/Questions/…`). */
+export interface QuestionNote {
+  question: string
+  mode: 'search' | 'each'
+  date: string
+  answer: string[]
+  warnings: string[]
+  sources: QuestionSource[]
+  /** Ce que l'utilisateur a écrit dans la section Notes. */
+  notes: string[]
+}
+
+/** Les paragraphes d'un texte Markdown, lisibles ; les encadrés « [!warning] » à part. */
+function paragraphsOf(lines: readonly string[]): { paragraphs: string[]; warnings: string[] } {
+  const paragraphs: string[] = []
+  const warnings: string[] = []
+  let current: string[] = []
+  const end = () => {
+    const text = plainText(current.join(' '))
+    if (text) paragraphs.push(text)
+    current = []
+  }
+  for (const line of lines) {
+    const callout = /^\s*>\s*\[!\w+\][+-]?\s*(.*)$/.exec(line)
+    if (callout) {
+      end()
+      const text = plainText(callout[1]!)
+      if (text) warnings.push(text)
+    } else if (!line.trim()) end()
+    else current.push(line.replace(/^\s*>\s?/, ''))
+  }
+  end()
+  return { paragraphs, warnings }
+}
+
+/**
+ * Relit la note d'une question : la question (l'encadré « [!question] »), le mode et la
+ * date (l'en-tête), la réponse et ses avertissements, les sources — chacune citée ou non,
+ * avec les extraits transmis à l'IA —, et les notes de l'utilisateur. `null` : ce n'est pas
+ * la note d'une question.
+ */
+export function readQuestion(markdown: string, words: QuestionWords): QuestionNote | null {
+  const head = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(markdown)
+  const field = (key: string) => (head ? new RegExp(`^${key}:\\s*"?([^"\\n]*)"?\\s*$`, 'm').exec(head[1]!)?.[1]?.trim() ?? '' : '')
+  const lines = markdown
+    .slice(head ? head[0].length : 0)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split(/\r?\n/)
+  const start = lines.findIndex((line) => /^>\s*\[!question\]/i.test(line))
+  if (start === -1) return null
+  const asked = [lines[start]!.replace(/^>\s*\[!question\][+-]?\s*/i, '')]
+  let index = start + 1
+  // La suite de l'encadré ; la ligne en italique (« *Recherche dans les pièces — …* ») n'en est pas.
+  for (; index < lines.length && /^>/.test(lines[index]!); index++) {
+    const text = lines[index]!.replace(/^>\s?/, '')
+    if (!/^\*[^*].*\*$/.test(text.trim())) asked.push(text)
+  }
+  const sections: { title: string; lines: string[] }[] = []
+  for (; index < lines.length; index++) {
+    const heading = /^\s*#{2,6}\s+(.*?)\s*$/.exec(lines[index]!)
+    if (heading) sections.push({ title: plainText(heading[1]!), lines: [] })
+    else sections.at(-1)?.lines.push(lines[index]!)
+  }
+  const named = (title: string) => sections.find((section) => section.title === title)
+  const answerSection = named(words.answer) ?? sections.find((section) => section.title !== words.sources && section.title !== words.notes)
+  const answer = paragraphsOf(answerSection?.lines ?? [])
+  const sources: QuestionSource[] = []
+  let passage: string[] = []
+  const endPassage = () => {
+    const text = passage.join(' ').replace(/\s+/g, ' ').trim()
+    if (text && sources.length) sources[sources.length - 1]!.extracts.push(text)
+    passage = []
+  }
+  for (const line of named(words.sources)?.lines ?? []) {
+    const item = /^(\d+)\.\s+(.*)$/.exec(line)
+    if (item) {
+      endPassage()
+      const link = firstLink(item[2]!)
+      const parts = item[2]!.split(' — ')
+      const mark = /^\*(.+)\*$/.exec(parts.at(-1)!.trim())
+      sources.push({
+        number: Number(item[1]),
+        link,
+        title: plainText(parts[0]!),
+        detail: plainText(parts.slice(1, mark ? -1 : undefined).join(' — ')),
+        cited: mark ? mark[1]!.trim() === words.cited : false,
+        label: '',
+        extracts: []
+      })
+      continue
+    }
+    const quoted = /^\s+>\s?(.*)$/.exec(line)
+    if (!quoted || !sources.length) continue
+    const label = /^\[!quote\][+-]?\s*(.*)$/.exec(quoted[1]!.trim())
+    if (label) sources[sources.length - 1]!.label = plainText(label[1]!)
+    else if (/^>?\s*$/.test(quoted[1]!)) endPassage()
+    else passage.push(quoted[1]!.replace(/^>\s?/, ''))
+  }
+  endPassage()
+  return {
+    question: plainText(asked.join(' ')),
+    mode: field('mode') === 'lecture' ? 'each' : 'search',
+    date: field('date'),
+    answer: answer.paragraphs,
+    warnings: answer.warnings,
+    sources,
+    notes: paragraphsOf(named(words.notes)?.lines ?? []).paragraphs
+  }
 }

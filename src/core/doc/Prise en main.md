@@ -29,7 +29,9 @@ pièces, son calendrier, ses exigences, et des boutons qui agissent sur elle ; u
 une pièce ouvre la sienne : son texte, ses dates et délais, les exigences qui en viennent ;
 pour l'émetteur, un clic sur un candidat ouvre la sienne : sa réponse et la couverture des
 exigences par elle ; un clic sur une note qu'elle a produite (calendrier, vérification,
-qualité, questionnaire, une question) l'ouvre en page, lisible, avec « Mettre à jour ». **Exigences** ouvre de même la page de la
+qualité, questionnaire) l'ouvre en page, lisible, avec « Mettre à jour » ; une question
+posée au dossier (« Interroger ») a sa page : la réponse, chaque source citée ou non avec
+les extraits transmis à l'IA, et « Reposer la question ». **Exigences** ouvre de même la page de la
 bibliothèque : une carte par exigence, les plus faibles d'abord, avec sa formulation, et des
 filtres (faibles, à revoir, criticité haute, brouillons, approuvées) ; un clic sur une
 exigence ouvre sa fiche : ses formulations par langue, sa qualité axe par axe, ses liens,

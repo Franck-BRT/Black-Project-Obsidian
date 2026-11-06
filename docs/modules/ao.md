@@ -225,6 +225,27 @@ Questionnaire → `questionnaire`), lancée avec `runFor(…, { analysis, stay: 
 la commande réécrit la note sans l'ouvrir dans le coffre, la page se redessine ;
 **Ouvrir la note** ; **Ouvrir l'analyse**. Une note disparue : la page le dit.
 
+## Une question au dossier, en page (v0.16.0, Black Projects 0.28.0)
+
+La fiche d'une analyse liste « Questions au dossier (n) » — les notes de
+`Analyse/Questions/`, la plus récente d'abord : la question en titre, la date, « k
+source(s) citée(s) sur n » (vert si au moins une citée, orange sinon) ; elles ne sont plus
+dans « Ce que l'analyse a produit ». Un clic ouvre `ao.question?<chemin encodé>`
+(`questionPageOf`, `parent` : les analyses ; la page `ao.note` d'une question y renvoie).
+`readQuestion` (`produced.ts`) relit la note : la question (l'encadré `[!question]`), le mode
+et la date (l'en-tête), la réponse et ses avertissements, les sources (`1. [[pièce|titre]] —
+endroit — *citée*` et leurs extraits `   > …`), les notes de l'utilisateur. La page : la
+question en titre, « analyse · date · mode » ; les chiffres (sources transmises, citées,
+non citées, extraits) ; le rappel de vérifier ; la réponse (les citations `\[[[…|1]]\]`
+lues « [1] ») ; une carte par source — « [n] titre », l'endroit, Citée / Non citée, les
+extraits entre guillemets, un clic ouvre la fiche de la pièce — filtres Citées / Non
+citées ; vos notes. En tête, avec l'IA : **Reposer la question** (la fenêtre d'« Interroger »,
+la question et le mode déjà remplis ; la réponse va dans une nouvelle note) et **Nouvelle
+question** ; puis la note, l'analyse. `HomeDeps.ask(analysis, preset?)` : depuis
+l'interface, la réponse s'ouvre sur sa page (`askAnalysis(…, preset, show)`) ; la commande
+de la palette ouvre toujours la note. La démonstration a une question posée (les
+pénalités, Station sol) et un serveur d'IA simulé qui répond en citant le premier extrait.
+
 ## Dans le coffre
 
 ```
