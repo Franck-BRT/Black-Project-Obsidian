@@ -49,7 +49,7 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
   const station = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: 'Agence spatiale', reference: 'AO-118' })
   await importFiles(services, station, [{ name: 'RC.md', bytes: enc(`# Règlement de la consultation\n\nLa date limite de remise des offres est fixée au ${inDays(12)}.\n`) }])
   await createAnalysis(services, 'Maintenance antennes', { position: 'emetteur', buyer: 'Centre spatial', reference: 'MA-07' })
-  return { views, shown, station, run: (id: string) => commands.get(id)!.run() }
+  return { views, shown, station, run: (id: string) => commands.get(id)!.run(), importInto: (markdown: string) => importFiles(services, station, [{ name: 'CCTP.md', bytes: enc(markdown) }]) }
 }
 
 const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
@@ -161,5 +161,59 @@ describe('la fiche d’une analyse, en page', () => {
     const { views } = await start(memoryPlatform(), true)
     const view = await views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent('Appels d’offres/Disparue/Disparue.md'))
     expect(view.title).toBe('Analyse introuvable')
+  })
+})
+
+describe('la fiche d’une pièce, en page', () => {
+  async function fiche() {
+    const run = await start(memoryPlatform(), true)
+    const analysis = await run.views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(run.station.note))
+    const pieces = analysis.blocks.find((block) => block.kind === 'cards')
+    const rc = pieces?.kind === 'cards' ? pieces.cards[0]! : null
+    return { ...run, rc: rc!, page: run.views.pages().find((each) => each.id === 'ao.piece')! }
+  }
+
+  it('un clic sur une pièce (fiche de l’analyse) ouvre sa fiche ; elle dépend des analyses', async () => {
+    const { rc, shown, page } = await fiche()
+    await rc.open!.run()
+    expect(shown.at(-1)).toBe(`ao.piece?${encodeURIComponent(rc.id)}`)
+    expect(page.parent).toBe('ao.analyses')
+  })
+
+  it('tout d’un coup d’œil : chiffres, début du texte, dates relevées, exigences extraites', async () => {
+    const { rc, page } = await fiche()
+    const view = await page.load(encodeURIComponent(rc.id))
+    expect(view.title).toBe('RC.md')
+    expect(view.back?.label).toBe('L’analyse « Station sol »')
+    expect(view.subtitle).toMatch(/^RC — .* · Appel d’offres · Station sol$/)
+    expect(view.actions?.map((action) => action.id)).toEqual(['type', 'move', 'extract', 'note', 'original', 'analysis'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => stat.label)).toEqual(['Lecture', 'Type', 'Caractères lus', 'Exigences'])
+    const text = view.blocks.find((block) => block.kind === 'cards')
+    expect(text?.kind === 'cards' && text.cards[0]!.text).toContain('La date limite de remise des offres')
+    const lists = view.blocks.filter((block) => block.kind === 'list')
+    expect(lists.map((block) => block.kind === 'list' && block.items.length)).toEqual([1, 0])
+  })
+
+  it('une pièce disparue : la page le dit', async () => {
+    const { page } = await fiche()
+    expect((await page.load(encodeURIComponent('Appels d’offres/X/Pièces/x.md'))).title).toBe('Pièce introuvable')
+  })
+})
+
+describe('le texte d’une pièce, lisible', () => {
+  it('sans « ### » ni syntaxe de tableau ; une ligne de tableau devient ses cellules ; les délais relevés', async () => {
+    const run = await start(memoryPlatform(), true)
+    const md = '### CCTP\n\n| Identifiant | Exigence |\n|---|---|\n| EX-1 | Le titulaire doit fournir une antenne. |\n\nLa livraison intervient sous 15 jours après la notification.\n'
+    await run.importInto(md)
+    const analysis = await run.views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(run.station.note))
+    const cards = analysis.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+    const cctp = cards.find((card) => card.title === 'CCTP.md')!
+    const view = await run.views.pages().find((each) => each.id === 'ao.piece')!.load(encodeURIComponent(cctp.id))
+    const text = view.blocks.find((block) => block.kind === 'cards')
+    expect(text?.kind === 'cards' && text.cards[0]!.text).toBe('CCTP\n\nIdentifiant — Exigence\nEX-1 — Le titulaire doit fournir une antenne.\n\nLa livraison intervient sous 15 jours après la notification.')
+    expect(text?.kind === 'cards' && text.cards[0]!.title).toMatch(/^Le texte \(\d+ caractères\)$/)
+    const dates = view.blocks.find((block) => block.kind === 'list')
+    expect(dates?.kind === 'list' && dates.items.map((item) => item.title)).toEqual(['Livraison, recette — sous 15 jours après la notification'])
   })
 })

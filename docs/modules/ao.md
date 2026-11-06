@@ -182,6 +182,17 @@ et les commandes de pièce la prennent avant la note ouverte). La carte d'une an
 (liste, tableau de bord) ouvre la fiche quand la plateforme a des pages, sa note sinon.
 Tests : `test/ao-page.test.ts`.
 
+## La fiche d'une pièce (v0.13.0, Black Projects 0.23.0)
+
+`home.ts` déclare la page `ao.piece?<note encodée>` (`piecePageOf`, `parent` : les
+analyses) : le nom du fichier d'origine en titre, « type — libellé · destination · analyse »,
+en tête Changer le type, Déplacer (si la pièce a bougé, retour à son analyse), Extraire les
+exigences (pièce lue), sa note, son fichier d'origine, son analyse ; l'aide de son état
+quand elle n'est pas lue ; les chiffres ; le début du texte (`readableText` : sans titres
+« ### » ni syntaxe de tableau, 1 500 caractères au plus) ; les dates et délais relevés dans
+elle seule (`calendarOf` sur sa source) ; les exigences dont l'origine la désigne
+(`linkedNote`). La carte d'une pièce, sur la fiche de l'analyse, ouvre sa fiche.
+
 ## Dans le coffre
 
 ```

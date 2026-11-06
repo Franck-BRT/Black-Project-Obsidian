@@ -25,7 +25,8 @@ Il se met à jour quand le coffre change. La flèche à gauche du titre d'une se
 **Analyses** (menu de gauche ou tuile) ouvre la page de toutes vos analyses, dans
 l'onglet : leurs chiffres, une carte par analyse, une recherche et des filtres (remise à
 venir, pièces à lire, candidat, émetteur…). Un clic sur une analyse ouvre sa fiche : ses
-pièces, son calendrier, ses exigences, et des boutons qui agissent sur elle. **Exigences** ouvre de même la page de la
+pièces, son calendrier, ses exigences, et des boutons qui agissent sur elle ; un clic sur
+une pièce ouvre la sienne : son texte, ses dates et délais, les exigences qui en viennent. **Exigences** ouvre de même la page de la
 bibliothèque : une carte par exigence, les plus faibles d'abord, avec sa formulation, et des
 filtres (faibles, à revoir, criticité haute, brouillons, approuvées) ; un clic sur une
 exigence ouvre sa fiche : ses formulations par langue, sa qualité axe par axe, ses liens,

@@ -15,11 +15,11 @@ import { pageWith, type Card, type HomeBlock, type HomeSectionView, type ListIte
 import { typeLabel } from '../typage-pieces'
 import { assessAll, requirementLanguages, requirementPageOf, requirementsAt } from '../exigences'
 import { aiClient } from '../ia'
-import { calendarOf, calendarPath, writeCalendar } from './calendar'
-import { pieceSources } from './ask/sources'
+import { calendarOf, calendarPath, delayLabel, writeCalendar } from './calendar'
+import { pieceSources, pieceText } from './ask/sources'
 import { destinationLabel, type Analysis, type PieceRow, type ReadingState } from './notes'
-import { requirementsFolder } from './requirements'
-import { analysisPosition, listAnalyses, listPieces, type Services, type Translate } from './service'
+import { linkedNote, requirementsFolder } from './requirements'
+import { analysisPosition, listAnalyses, listPieces, pieceAt, type Services, type Translate } from './service'
 
 export interface HomeDeps {
   services(): Services
@@ -42,6 +42,10 @@ export const ANALYSIS_PAGE = 'ao.fiche'
 
 /** La page de la fiche d'une analyse. */
 export const analysisPageOf = (analysis: Analysis): string => pageWith(ANALYSIS_PAGE, encodeURIComponent(analysis.note))
+
+/** La fiche d'une pièce : `piecePageOf(chemin de sa note)`. */
+export const PIECE_PAGE = 'ao.piece'
+export const piecePageOf = (note: string): string => pageWith(PIECE_PAGE, encodeURIComponent(note))
 
 /** La page des analyses. */
 export const ANALYSES_PAGE = 'ao.analyses'
@@ -227,7 +231,10 @@ function pieceCard(deps: HomeDeps, piece: PieceRow): Card {
     icon: 'file',
     badges: [{ label: t(`ao.state.${piece.state}`), tone: STATE_TONE[piece.state] }],
     ...(piece.characters ? { facts: [{ label: t('ao.fiche.characters'), value: piece.characters.toLocaleString('fr-FR') }] } : {}),
-    open: { id: 'open', label: t('ao.fiche.piece.open'), tooltip: t('ao.fiche.piece.open'), run: () => deps.ui.openNote(piece.note) },
+    // Sa fiche, quand la plateforme a des pages ; sinon sa note.
+    open: deps.showPage
+      ? { id: 'open', label: t('ao.piece.fiche.open'), tooltip: t('ao.piece.fiche.open'), run: () => deps.showPage?.(piecePageOf(piece.note)) }
+      : { id: 'open', label: t('ao.fiche.piece.open'), tooltip: t('ao.fiche.piece.open'), run: () => deps.ui.openNote(piece.note) },
     actions: deps.runFor
       ? [
           { id: 'type', label: t('ao.fiche.piece.type'), icon: 'edit', run: run('type-piece') },
@@ -361,6 +368,128 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
   }
 }
 
+const PIECE_PREVIEW = 1500
+
+/**
+ * Le texte d'une pièce, lisible tel quel : sans les marques de titres (« ### ») ni la
+ * syntaxe des tableaux — une ligne de tableau devient ses cellules, séparées par « — ».
+ */
+export function readableText(markdown: string): string {
+  return markdown
+    .split('\n')
+    .filter((line) => !/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(line))
+    .map((line) => {
+      const heading = /^\s*#{1,6}\s+(.*)$/.exec(line)
+      if (heading) return heading[1]!.trim()
+      if (/^\s*\|.*\|\s*$/.test(line))
+        return line
+          .trim()
+          .replace(/^\||\|$/g, '')
+          .split('|')
+          .map((cell) => cell.trim())
+          .filter(Boolean)
+          .join(' — ')
+      return line
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/**
+ * La **fiche** d'une pièce, en page : en tête Changer le type, Déplacer, Extraire les
+ * exigences, ouvrir sa note, son original et son analyse ; ce qui empêche de la lire, s'il
+ * le faut ; ses chiffres (état, type, caractères lus, exigences extraites) ; le début de
+ * son texte ; les dates relevées dans elle ; les exigences qui en viennent.
+ */
+export async function piecePage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const services = deps.services()
+  const note = param ? decodeURIComponent(param) : ''
+  const info = note ? await pieceAt(services, note) : null
+  const row = info ? (await listPieces(services, info.analysis)).find((each) => each.note === note) : undefined
+  if (!info || !row) return { title: t('ao.piece.fiche.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.piece.fiche.missing') }] }
+  const { analysis } = info
+  const back: ViewAction = { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) }
+  const read = row.state === 'lue'
+  const text = read ? readableText(pieceText(await services.fs.readText(note), [t('ao.piece.text'), 'Texte extrait', 'Extracted text'])) : ''
+
+  // Une commande sur cette pièce ; si elle a bougé (déplacée), on revient à son analyse.
+  const run = (id: string) => async () => {
+    await deps.runFor?.(id, { note })
+    if (!(await services.fs.exists(note))) deps.showPage?.(analysisPageOf(analysis))
+  }
+  const original = row.original && (await services.fs.exists(row.original)) ? row.original : ''
+  const actions: ViewAction[] = [
+    ...(deps.runFor
+      ? [
+          { id: 'type', label: t('ao.fiche.piece.type'), icon: 'edit' as const, run: run('type-piece') },
+          { id: 'move', label: t('ao.fiche.piece.move'), icon: 'flow' as const, run: run('deplacer-piece') },
+          ...(read ? [{ id: 'extract', label: t('ao.fiche.piece.extract'), icon: 'list' as const, primary: true, run: run('extraire-exigences') }] : [])
+        ]
+      : []),
+    { id: 'note', label: t('ao.fiche.piece.open'), icon: 'file', run: () => deps.ui.openNote(note) },
+    ...(original ? [{ id: 'original', label: t('ao.piece.fiche.original'), icon: 'upload' as const, run: () => deps.ui.openNote(original) }] : []),
+    ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
+  ]
+
+  // Les exigences extraites de cette pièce : leur origine désigne sa note.
+  const requirements = (await requirementsAt(requirementsFolder(analysis)).all()).filter((requirement) => requirement.origin && linkedNote(requirement.origin.piece) === note)
+  const runs = assessAll(requirements, requirementLanguages(), 'wording').sort((a, b) => a.report.score - b.report.score)
+  const reqItems: ListItem[] = runs.map(({ requirement, report }) => ({
+    id: requirement.filePath ?? requirement.id,
+    title: requirement.title ? `${requirement.id} — ${requirement.title}` : requirement.id,
+    detail: `${'★'.repeat(report.stars)}${'☆'.repeat(5 - report.stars)}${requirement.origin?.locator ? ` · ${requirement.origin.locator}` : ''}`,
+    tone: report.stars < 3 ? 'warning' : 'success',
+    ...(requirement.filePath
+      ? {
+          open: deps.showPage
+            ? { id: 'open', label: t('ao.fiche.requirement.card'), run: () => deps.showPage?.(requirementPageOf(requirement.filePath!)) }
+            : { id: 'open', label: t('ao.fiche.requirement.open'), run: () => deps.ui.openNote(requirement.filePath!) }
+        }
+      : {})
+  }))
+  // Les dates relevées dans cette pièce seule.
+  const own = (await pieceSources(services, analysis)).filter((source) => source.path === note)
+  const calendar = calendarOf(own, Number(deps.today().slice(0, 4)))
+  const dates: ListItem[] = [
+    ...calendar.dates.map((date, index): ListItem => ({ id: `date-${index}`, title: t(`ao.calendar.kind.${date.kind}`), when: date.date, detail: date.sentence, tone: date.kind === 'remise' ? 'warning' : 'info' })),
+    // Les délais (« sous 15 jours après la notification ») : pas de date, mais à tenir.
+    ...calendar.delays.map((delay, index): ListItem => ({ id: `delay-${index}`, title: `${t(`ao.calendar.kind.${delay.kind}`)} — ${delayLabel(delay.written)}`, detail: delay.sentence, tone: 'neutral' }))
+  ]
+
+  return {
+    title: baseName(row.original || note),
+    back,
+    subtitle: [`${row.type} — ${typeLabel(row.type, t)}`, destinationLabel(row.destination, t), analysis.name].join(' · '),
+    actions,
+    search: { label: t('ao.piece.fiche.search'), placeholder: t('ao.piece.fiche.search.placeholder') },
+    blocks: [
+      ...(read ? [] : [{ kind: 'message' as const, tone: STATE_TONE[row.state], text: t(`ao.state.${row.state}.help`) }]),
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('ao.piece.fiche.state'), value: t(`ao.state.${row.state}`), icon: read ? 'check' : 'alert', tone: STATE_TONE[row.state] },
+          { label: t('ao.piece.fiche.type'), value: row.type, icon: 'list', hint: typeLabel(row.type, t) },
+          { label: t('ao.fiche.characters'), value: row.characters ? row.characters.toLocaleString('fr-FR') : '—', icon: 'file' },
+          { label: t('ao.home.requirements'), value: String(requirements.length), icon: 'star', hint: t('ao.piece.fiche.extracted') }
+        ]
+      },
+      ...(read
+        ? [
+            {
+              kind: 'cards' as const,
+              title: t('ao.piece.text'),
+              cards: [{ id: 'text', title: text.length > PIECE_PREVIEW ? t('ao.piece.fiche.preview', { count: PIECE_PREVIEW, total: text.length }) : t('ao.piece.fiche.whole', { total: text.length }), icon: 'file' as const, text: text.length > PIECE_PREVIEW ? `${text.slice(0, PIECE_PREVIEW).trimEnd()}…` : text || t('ao.piece.noText'), wrap: true, actions: [{ id: 'note', label: t('ao.piece.fiche.all'), icon: 'file' as const, run: () => deps.ui.openNote(note) }] }]
+            }
+          ]
+        : []),
+      { kind: 'list', title: t('ao.piece.fiche.dates', { count: dates.length }), items: dates, empty: t(read ? 'ao.piece.fiche.dates.none' : 'ao.piece.fiche.unread') },
+      { kind: 'list', title: t('ao.piece.fiche.requirements', { count: requirements.length }), items: reqItems, empty: t(read ? 'ao.piece.fiche.requirements.none' : 'ao.piece.fiche.unread') }
+    ]
+  }
+}
+
 /** Les notes d'un dossier et de ses sous-dossiers, par ordre alphabétique. */
 async function listNotes(services: Services, folder: string): Promise<string[]> {
   const listing = await services.fs.list(folder)
@@ -417,6 +546,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.home({ id: 'ao.analyses', title: t('ao.home.title'), icon: 'folder', order: 10, area: 'main', load: () => analysesSection(deps) })
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
+  views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
   views.nav({ id: 'ao.analyses', label: t('ao.home.nav'), icon: 'folder', order: 10, ...(deps.showPage ? { page: ANALYSES_PAGE } : {}), run: () => openAnalyses(deps) })
 }
 

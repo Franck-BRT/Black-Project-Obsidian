@@ -41,8 +41,12 @@ analyse ? » :
 - ses chiffres : la date limite de remise (jours restants), les pièces (lues ou non), les
   exigences, leur qualité ;
 - ses **pièces**, par destination (appel d'offres, réponse ou chaque candidat) : type,
-  état de lecture, caractères lus ; le nom ouvre la note de la pièce ; **Changer le type**,
-  **Déplacer**, **Extraire les exigences** ;
+  état de lecture, caractères lus ; **Changer le type**, **Déplacer**, **Extraire les
+  exigences** ; le nom ouvre la **fiche de la pièce** : ce qui empêche de la lire s'il le
+  faut, ses chiffres (lecture, type, caractères lus, exigences extraites), le début de son
+  texte (lisible, sans la syntaxe Markdown), les dates et délais relevés dans elle, les
+  exigences qui en viennent (un clic ouvre leur fiche), et les boutons Changer le type,
+  Déplacer, Extraire les exigences, ouvrir sa note, son fichier d'origine, son analyse ;
 - son **calendrier** (les dates relevées et leur pièce), ses **exigences** (les plus faibles
   d'abord), et **ce qu'elle a produit** (calendrier, vérification, questionnaire, questions…) ;
 - une recherche et des filtres (pièces à lire, appel d'offres, réponse) ; « ← Toutes les

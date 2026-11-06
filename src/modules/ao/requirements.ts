@@ -45,7 +45,8 @@ const wordingOf = (requirement: Requirement) =>
 const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/\n/g, ' ')
 
 /** Le chemin de note qu'un lien `[[chemin|libellé]]` désigne, `.md` compris. */
-function linkedNote(link: string): string {
+/** La note qu’un lien Obsidian désigne (« [[Pièces/CCTP|CCTP]] » → « Pièces/CCTP.md ») ; « » si ce n’en est pas un. */
+export function linkedNote(link: string): string {
   const inner = /^\[\[([^\]|]+)(?:\|[^\]]*)?\]\]$/.exec(link.trim())
   if (!inner) return ''
   const target = inner[1]!.trim()

@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'une pièce, en page (v0.23.0)
+
+- [ ] Sur la fiche d'une analyse, un clic sur le nom d'une pièce : sa fiche s'ouvre,
+      titrée du nom du fichier ; l'entrée Analyses reste marquée
+- [ ] Les chiffres (lecture, type, caractères lus, exigences extraites) ; le texte lisible
+      (pas de « ### » ni de « |---| ») ; les dates **et délais** relevés dans la pièce
+- [ ] **Extraire les exigences** : après l'import, elles apparaissent dans la fiche ; un clic
+      ouvre la fiche de l'exigence, « Retour » ramène à la pièce
+- [ ] **Changer le type** : la fiche change aussitôt ; **Déplacer** : retour à l'analyse
+- [ ] Une image ou un scan : un message dit qu'elle sera lue par la vision (étape 7)
+
 ## Le retour à la page précédente (v0.22.0)
 
 - [ ] Accueil → tuile Analyses → une analyse → une de ses exigences : à chaque page,
