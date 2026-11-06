@@ -70,7 +70,10 @@ Palette de commandes :
   recherche et des filtres par issue ; « Ouvrir la note du journal » montre la note, avec
   ses liens vers ce que chaque exécution a écrit ;
 - **Exporter des workflows** / **Importer des workflows** — un fichier JSON pour un autre
-  coffre ; un workflow importé arrive **désactivé**, à relire avant de l'activer.
+  coffre ; un workflow importé arrive **désactivé**, à relire avant de l'activer. Depuis la
+  page Workflows, **Importer** finit sur la fiche du workflow importé (s'il n'y en a qu'un)
+  ou sur la liste : les importés en tête, marqués « Importé — désactivé, à relire », un
+  filtre « Importés », et un message tant qu'il en reste à activer.
 
 ## 4. Les garde-fous
 

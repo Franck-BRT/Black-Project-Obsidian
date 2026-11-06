@@ -343,3 +343,57 @@ describe('exécuter et créer un workflow, en page', () => {
     expect(platform.offered.length - before).toBeGreaterThan(0)
   })
 })
+
+describe('importer des workflows, en page', () => {
+  /** Exporter des workflows (par la commande), et rendre le chemin du fichier écrit. */
+  async function exported(platform: MemoryPlatform, run: (id: string) => unknown, ids: string[]): Promise<string> {
+    platform.manyAnswers.push(ids)
+    await run('exporter')
+    return [...platform.files.keys()].find((path) => path.startsWith('Black Projects/Échanges/') && path.endsWith('.json'))!
+  }
+
+  it('un workflow importé : sa fiche ensuite, qui dit qu’il est désactivé et à relire ; la liste le marque', async () => {
+    const platform = memoryPlatform()
+    const { views, shown, run, settings } = await start(platform, true)
+    const path = await exported(platform, run, ['wf-1'])
+    platform.choices.push('vault')
+    platform.nextPick = path
+    await (await views.pages().find((each) => each.id === 'workflows.liste')!.load()).actions!.find((action) => action.id === 'import')!.run()
+    const all = settings.workflows!.workflows as Workflow[]
+    const copy = all.at(-1)!
+    expect(copy.enabled).toBe(false)
+    expect(shown.at(-1)).toBe(`workflows.fiche?${copy.id}`)
+    const fiche = await views.pages().find((each) => each.id === 'workflows.fiche')!.load(copy.id)
+    expect(fiche.blocks[0]).toMatchObject({ kind: 'message', tone: 'info', text: expect.stringMatching(/^Importé, et donc désactivé/) })
+    const list = await views.pages().find((each) => each.id === 'workflows.liste')!.load()
+    expect(list.filters?.map((filter) => filter.id)).toContain('importes')
+    expect(list.blocks[0]).toMatchObject({ kind: 'message', text: expect.stringMatching(/^1 workflow\(s\) importé\(s\) attendent/) })
+    const first = cardsOf(list)[0]!
+    expect(first.id).toBe(copy.id)
+    expect(first.badges?.map((badge) => badge.label)).toContain('Importé — désactivé, à relire')
+    expect(first.tags).toContain('importes')
+    // Activé : plus de message en tête de la liste, la carte reste « Importé ».
+    await first.actions!.find((action) => action.id === 'enable')!.run()
+    const after = await views.pages().find((each) => each.id === 'workflows.liste')!.load()
+    expect(after.blocks[0]!.kind).toBe('stats')
+    expect(cardsOf(after)[0]!.badges?.map((badge) => badge.label)).toContain('Importé')
+  })
+
+  it('plusieurs workflows importés : la liste, eux en tête ; depuis la palette, le message seul', async () => {
+    const platform = memoryPlatform()
+    const { views, shown, run } = await start(platform, true)
+    const path = await exported(platform, run, ['wf-1', 'wf-2'])
+    platform.choices.push('vault')
+    platform.nextPick = path
+    await (await views.pages().find((each) => each.id === 'workflows.liste')!.load()).actions!.find((action) => action.id === 'import')!.run()
+    expect(shown.at(-1)).toBe('workflows.liste')
+    const cards = cardsOf(await views.pages().find((each) => each.id === 'workflows.liste')!.load())
+    expect(cards.slice(0, 2).every((card) => card.tags?.includes('importes'))).toBe(true)
+    shown.length = 0
+    platform.choices.push('vault')
+    platform.nextPick = path
+    await run('importer')
+    expect(shown).toEqual([])
+    expect(platform.notices.at(-1)).toMatch(/^2 workflow/)
+  })
+})

@@ -117,6 +117,15 @@ lit la dernière ligne du journal pour ce workflow (`lastRunLine`) avant et apr�
 (aucune action, sujet non choisi) : on reste où l'on est. Depuis la palette, ou sans
 page : la fenêtre et les messages, comme avant.
 
+**Importer, en page (v0.9.0, Black Projects 0.58.0)** : `importFromFile` rend les
+workflows importés (toujours désactivés, `share.ts`). « Importer » de la page passe par
+`HomeDeps.imports.run` : un seul importé, sa fiche (`workflows.fiche?<id>`) ; plusieurs,
+la liste. Les identifiants du dernier import (`imports.last()`, gardés tant que le module
+est actif) mettent ces workflows en tête de la liste, avec « Importé — désactivé, à
+relire » (« Importé » une fois activé), le tag `importes` et son filtre ; un message en
+tête de la liste compte ceux qui restent désactivés ; leur fiche le rappelle. Depuis la
+palette, le message seul, comme avant.
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

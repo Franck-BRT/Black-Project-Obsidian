@@ -50,7 +50,7 @@ import {
   type Session
 } from './flows'
 import { workflowsEn, workflowsFr } from './i18n'
-import { JOURNAL_PAGE, lastRunLine, openWorkflows, registerWorkflowsHome, runPageOf, WORKFLOW_PAGE } from './home'
+import { JOURNAL_PAGE, lastRunLine, openWorkflows, registerWorkflowsHome, runPageOf, WORKFLOW_PAGE, WORKFLOWS_PAGE } from './home'
 import { pageWith } from '../../core/views'
 import { triggerSpec } from './registry'
 import type { Subject, Workflow } from './model'
@@ -140,7 +140,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.8.0',
+  version: '0.9.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -162,6 +162,8 @@ export const workflowsModule: BlackModule = {
     session = current
 
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
+    // Les workflows du dernier import (tant que le module est actif), pour la liste.
+    let lastImported: string[] = []
     // La page des workflows quand la plateforme en a une ; sinon la liste en fenêtre.
     commands.register({ id: 'liste', nameKey: 'workflows.command.list', run: () => openWorkflows(showPage, () => browseWorkflows(current)) })
     commands.register({ id: 'nouveau', nameKey: 'workflows.command.new', run: async () => void (await createWorkflow(current)) })
@@ -183,7 +185,22 @@ export const workflowsModule: BlackModule = {
       openJournal: () => openJournal(current),
       // Le sujet d'une exécution, les notes qu'elle a écrites : leur page quand un module en a une.
       openNote: (path) => (context.showNote ? context.showNote(path) : platform.ui.openNote(path)),
-      ...(showPage ? { showPage, create: () => createWorkflow(current, { open: false }) } : {}),
+      ...(showPage
+        ? {
+            showPage,
+            create: () => createWorkflow(current, { open: false }),
+            // Importés : un seul, sa fiche ; plusieurs, la liste, eux en tête et marqués.
+            imports: {
+              async run() {
+                const imported = await importFromFile(current)
+                if (!imported.length) return
+                lastImported = imported.map((each) => each.id)
+                showPage(imported.length === 1 ? pageWith(WORKFLOW_PAGE, imported[0]!.id) : WORKFLOWS_PAGE)
+              },
+              last: () => lastImported
+            }
+          }
+        : {}),
       page: {
         t,
         load,

@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le module Workflows : importer, en page (v0.58.0)
+
+- [ ] Page **Workflows** → **Importer** un fichier d'un seul workflow : sa **fiche**, qui
+      dit « Importé, et donc désactivé… » ; aucune note ouverte
+- [ ] Un fichier de plusieurs workflows : la **liste**, eux en tête, « Importé — désactivé,
+      à relire », filtre **Importés**, et le message « n workflow(s) importé(s) attendent… »
+- [ ] **Activer** chacun : le message disparaît quand tous le sont ; la carte reste
+      « Importé »
+- [ ] Depuis la palette, *Importer des workflows* : le message seul
+
 ## Le module Typage des pièces : la tuile des types (v0.57.0)
 
 - [ ] **Modifier l'accueil** → ajouter **Types de pièces** → **Terminé** ; la tuile ouvre

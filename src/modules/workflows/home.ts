@@ -152,6 +152,8 @@ type HomeDeps = {
   page?: WorkflowsPageDeps
   /** Un nouveau workflow, sans la fenêtre de sa fiche ; rend son identifiant. */
   create?(): Promise<string | null>
+  /** Importer des workflows depuis l'interface (puis les montrer), et ceux du dernier import. */
+  imports?: { run(): Promise<void>; last(): readonly string[] }
 }
 
 /** La dernière ligne du journal d'un workflow (son nom), pour retrouver l'exécution qu'on vient de lancer. */
@@ -176,14 +178,16 @@ interface Logged {
 }
 
 /** La carte d'un workflow, complétée par ce qu'en dit le journal (un compteur pas encore à jour). */
-function workflowCard(deps: WorkflowsPageDeps, workflow: Workflow, logged: Logged | undefined): Card {
+function workflowCard(deps: WorkflowsPageDeps, workflow: Workflow, logged: Logged | undefined, imported = false): Card {
   const { t } = deps
   const failed = logged?.tone === 'danger'
   const last = workflow.lastRun ? deps.stamp(workflow.lastRun) : (logged?.when ?? '—')
   const badges: Badge[] = [
     { label: t(workflow.enabled ? 'workflows.state.on' : 'workflows.state.off'), tone: workflow.enabled ? 'success' : 'neutral' },
     { label: t(`workflows.mode.${workflow.mode}`), tone: 'info' },
-    ...(failed ? [{ label: t('workflows.page.failed'), tone: 'danger' as const }] : [])
+    ...(failed ? [{ label: t('workflows.page.failed'), tone: 'danger' as const }] : []),
+    // Importé tout juste : désactivé, à relire avant de l'activer.
+    ...(imported ? [{ label: t(workflow.enabled ? 'workflows.page.imported' : 'workflows.page.imported.off'), tone: 'info' as const }] : [])
   ]
   const actions = deps.describeActions(workflow)
   return {
@@ -209,7 +213,8 @@ function workflowCard(deps: WorkflowsPageDeps, workflow: Workflow, logged: Logge
       workflow.enabled ? 'actifs' : 'desactives',
       ...(failed ? ['en-echec'] : []),
       ...(workflow.trigger.kind === 'planifie' ? ['planifies'] : workflow.trigger.kind === 'manuel' ? ['manuels'] : ['sur-evenement']),
-      workflow.mode === 'auto' ? 'tout-seuls' : 'demandent'
+      workflow.mode === 'auto' ? 'tout-seuls' : 'demandent',
+      ...(imported ? ['importes'] : [])
     ]
   }
 }
@@ -232,11 +237,14 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
   }
   const failures = recent.filter((item) => item.tone === 'danger').length
   const active = workflows.filter((each) => each.enabled).length
+  // Ceux du dernier import (en tête), et combien attendent encore d'être relus puis activés.
+  const imported = new Set((deps.imports?.last() ?? []).filter((id) => workflows.some((each) => each.id === id)))
+  const waiting = workflows.filter((each) => imported.has(each.id) && !each.enabled).length
   return {
     subtitle: t('workflows.page.subtitle', { active, count: workflows.length }),
     actions: [
       { id: 'new', label: t('workflows.command.new'), icon: 'plus', primary: true, run: newWorkflow(deps) },
-      { id: 'import', label: t('workflows.list.import'), icon: 'upload', run: () => deps.run('importer') },
+      { id: 'import', label: t('workflows.list.import'), icon: 'upload', run: () => (deps.showPage && deps.imports ? deps.imports.run() : deps.run('importer')) },
       { id: 'export', label: t('workflows.list.export'), icon: 'copy', run: () => deps.run('exporter') },
       { id: 'journal', label: t('workflows.home.journal'), icon: 'book', run: openJournalPage(deps) }
     ],
@@ -249,9 +257,11 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
       { id: 'sur-evenement', label: t('workflows.page.filter.event') },
       { id: 'manuels', label: t('workflows.page.filter.manual') },
       { id: 'tout-seuls', label: t('workflows.mode.auto') },
-      { id: 'demandent', label: t('workflows.mode.ask') }
+      { id: 'demandent', label: t('workflows.mode.ask') },
+      ...(imported.size ? [{ id: 'importes', label: t('workflows.page.filter.imported') }] : [])
     ],
     blocks: [
+      ...(waiting ? [{ kind: 'message' as const, tone: 'info' as const, text: t('workflows.page.imported.message', { count: waiting }) }] : []),
       {
         kind: 'stats',
         stats: [
@@ -262,7 +272,7 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
         ]
       },
       workflows.length
-        ? { kind: 'cards', cards: workflows.map((workflow) => workflowCard(deps.page, workflow, logged.get(workflow.name))) }
+        ? { kind: 'cards', cards: [...workflows].sort((a, b) => Number(imported.has(b.id)) - Number(imported.has(a.id))).map((workflow) => workflowCard(deps.page, workflow, logged.get(workflow.name), imported.has(workflow.id))) }
         : { kind: 'message', tone: 'info', text: t('workflows.list.empty') },
       { kind: 'list', title: t('workflows.page.journal'), items: recent.slice(0, 10).map((item) => ({ ...item, open: runOpen(deps, item.line) })), empty: t('workflows.journal.none') }
     ]
@@ -315,6 +325,8 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
       }
     ],
     blocks: [
+      // Importé, donc désactivé : à relire avant de l'activer.
+      ...(!workflow.enabled && deps.imports?.last().includes(workflow.id) ? [{ kind: 'message' as const, tone: 'info' as const, text: t('workflows.page.imported.fiche') }] : []),
       {
         kind: 'stats',
         stats: [

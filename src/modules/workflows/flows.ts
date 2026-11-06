@@ -628,7 +628,8 @@ export async function exportToFile(session: Session): Promise<string | null> {
   return path
 }
 
-export async function importFromFile(session: Session): Promise<number> {
+/** Importer des workflows d'un fichier ; rend ceux qui l'ont été (désactivés, à relire). */
+export async function importFromFile(session: Session): Promise<Workflow[]> {
   const { ui, t, fs, notifier } = session
   const from = await ui.pickOption(
     [
@@ -645,16 +646,16 @@ export async function importFromFile(session: Session): Promise<number> {
     const path = await ui.pickFile({ extensions: ['json'], placeholder: t('workflows.import.vault.pick') })
     if (path) content = await fs.readText(path)
   }
-  if (content === null) return 0
+  if (content === null) return []
   const result = importWorkflows(content, { trigger: (id) => !!triggerSpec(id), action: (id) => !!actionSpec(id) }, session.now())
   if (typeof result === 'string') {
     notifier.notify(t(`workflows.import.problem.${result}`), 8000)
-    return 0
+    return []
   }
   await session.save([...session.load(), ...result.workflows])
   notifier.notify(
     [t('workflows.import.done', { count: result.workflows.length }), ...(result.skipped ? [t('workflows.import.skipped', { count: result.skipped })] : [])].join(' '),
     10000
   )
-  return result.workflows.length
+  return result.workflows
 }
