@@ -66,6 +66,8 @@ const COMPONENTS_CSS = String.raw`
 .bp-menu-link.is-done { background: var(--bp-accent); color: var(--bp-accent-text); font-weight: 650; justify-content: center; }
 .bp-menu-link.is-done:hover { background: var(--bp-accent); filter: brightness(1.08); }
 .bp-main { padding: 28px 32px 48px; min-width: 0; min-height: 0; overflow-y: auto; }
+/* Focalisable (un clic sur la page y garde le clavier : Alt + ← pour revenir), sans contour. */
+.bp-main:focus { outline: none; }
 
 /* L'en-tête */
 .bp-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
@@ -107,6 +109,9 @@ const COMPONENTS_CSS = String.raw`
 .bp-page-body .bp-cards { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 .bp-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin: -14px 0 -6px -8px; padding: 6px 8px; border: 0; border-radius: var(--bp-radius-small); background: transparent; color: var(--bp-accent); cursor: pointer; font-weight: 600; }
 .bp-back:hover { background: var(--bp-accent-soft); }
+/* Le « Retour » de l'interface, sous l'en-tête : un peu d'air avant le sous-titre de la page. */
+.bp-main > .bp-back { margin: -14px 0 12px -8px; }
+.bp-main > .bp-back + .bp-page > .bp-page-sub { margin-top: 0; }
 .bp-group { display: flex; flex-direction: column; gap: 12px; }
 .bp-group-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .bp-group-title { margin: 0; font-size: 1.12em; font-weight: 700; }

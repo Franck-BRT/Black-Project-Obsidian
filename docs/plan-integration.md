@@ -354,6 +354,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   produit ; chaque bouton agit sur elle, sans « Dans quelle analyse ? »)
 - v0.21.0 : la **fiche d'une exigence en page** (formulations par langue, qualité axe par
   axe en mots, fiche, liens, historique), depuis la bibliothèque ou une analyse
+- v0.22.0 : un vrai **retour à la page précédente** (bouton, Alt + ←, souris)
 
 ### Étape 7 — Livrables
 

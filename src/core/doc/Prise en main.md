@@ -35,6 +35,9 @@ et les dernières exécutions ; un clic sur un workflow ouvre sa fiche, en page 
 conditions et ses actions, chacune avec ses boutons. **IA** ouvre la page de l'IA : la connexion, un modèle par
 usage (« Choisir le modèle »), et ce qui se sert de l'IA.
 
+**Retour** : « ← Retour : … », sous le titre, ramène à la page d'où vous venez — comme
+dans un navigateur (aussi **Alt + ←**, ou le bouton « précédent » de la souris).
+
 **La barre de gauche** se range aussi : **Accueil** reste toujours en premier et
 **Paramètres** toujours en bas — ni l'un ni l'autre ne se déplace ni ne se masque. Entre
 les deux se range votre menu : **Modifier le menu** (en bas, juste au-dessus de

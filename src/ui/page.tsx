@@ -58,7 +58,12 @@ export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter
   return { blocks: out, hits, total }
 }
 
-export function ModulePage({ spec, param, host, generation, onTitle }: { spec: PageSpec; param?: string; host: AppHost; generation: number; onTitle?: (title: string | undefined) => void }) {
+/**
+ * `hasHistory` : l'interface a un vrai « Retour » (la page précédente) ; le lien de la page
+ * (« ← Toutes les analyses ») ne sert alors plus — il ne reste que quand on arrive tout
+ * droit sur la page (une commande, l'ouverture de l'onglet).
+ */
+export function ModulePage({ spec, param, host, generation, onTitle, hasHistory }: { spec: PageSpec; param?: string; host: AppHost; generation: number; onTitle?: (title: string | undefined) => void; hasHistory?: boolean }) {
   const { t } = host
   const [state, setState] = useState<State>({ status: 'loading' })
   const [query, setQuery] = useState('')
@@ -94,7 +99,7 @@ export function ModulePage({ spec, param, host, generation, onTitle }: { spec: P
   const searchId = `bp-page-search-${spec.id}`
   return (
     <div class="bp-page" data-page={spec.id}>
-      {view.back && (
+      {view.back && !hasHistory && (
         <button type="button" class="bp-back" onClick={() => void view.back!.run()}>
           <Icon name="back" />
           {view.back.label}

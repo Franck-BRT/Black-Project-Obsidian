@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le retour à la page précédente (v0.22.0)
+
+- [ ] Accueil → tuile Analyses → une analyse → une de ses exigences : à chaque page,
+      « ← Retour : <la page d'avant> » sous l'en-tête
+- [ ] **Retour** depuis l'exigence ramène à la fiche de l'analyse (pas à la bibliothèque),
+      puis aux Analyses, puis à l'Accueil ; sur l'Accueil d'origine, plus de bouton
+- [ ] **Alt + ←** (après un clic dans la page) et le bouton « précédent » de la souris font
+      de même
+- [ ] Menu Workflows puis IA, **Retour** : Workflows ; une page ouverte par une commande
+      (palette) entre aussi dans l'historique
+
 ## La fiche d'une exigence, en page (v0.21.0)
 
 - [ ] Sur la page Exigences, un clic sur le nom d'une exigence : sa fiche s'ouvre en page,

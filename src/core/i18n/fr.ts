@@ -35,6 +35,8 @@ export const fr: Record<string, string> = {
   'home.tile.docs.desc': 'Créer ou mettre à jour la documentation dans le coffre.',
   'ui.nav.dashboard': 'Tableau de bord',
   'ui.dashboard.title': 'Tableau de bord',
+  'ui.back': 'Retour : {title}',
+  'ui.back.label': 'Revenir à la page précédente : {title} (Alt + ←)',
   'ui.page.filters': 'Filtres',
   'ui.page.all': 'Tout',
   'ui.page.count': '{hits} sur {total} affiché(s).',

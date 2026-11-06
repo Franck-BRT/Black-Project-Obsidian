@@ -35,6 +35,8 @@ export const en: Record<string, string> = {
   'home.tile.docs.desc': 'Create or update the documentation in the vault.',
   'ui.nav.dashboard': 'Dashboard',
   'ui.dashboard.title': 'Dashboard',
+  'ui.back': 'Back: {title}',
+  'ui.back.label': 'Go back to the previous page: {title} (Alt + ←)',
   'ui.page.filters': 'Filters',
   'ui.page.all': 'All',
   'ui.page.count': '{hits} of {total} shown.',

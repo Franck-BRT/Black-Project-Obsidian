@@ -19,6 +19,7 @@ import { Icon } from './icons'
 import { greetingKey } from './logic'
 import { SideMenu } from './sidemenu'
 import { Springboard } from './springboard'
+import { back as backFrom, leave, type Visit } from './history'
 import type { TileSpec } from '../core/views'
 
 /** L'accueil, le tableau de bord, ou la page d'un module (son identifiant : « ao.analyses »). */
@@ -35,6 +36,14 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
   const [pageTitle, setPageTitle] = useState<string | undefined>(undefined)
   const [page, setPageState] = useState<Page>(wanted)
   useEffect(() => setPageState(wanted), [wanted, request])
+  // L'historique : chaque page quittée, avec son titre ; « Retour » ramène à la dernière.
+  const [trail, setTrail] = useState<Visit[]>([])
+  const shownVisit = useRef<Visit | null>(null)
+  const goingBack = useRef(false)
+  useEffect(() => {
+    if (goingBack.current) goingBack.current = false
+    else setTrail((previous) => leave(previous, shownVisit.current, page))
+  }, [page])
   // La page défile seule (la navigation reste en place) : une nouvelle page part du haut.
   const main = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -67,6 +76,19 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
   const shown = modulePage ? pageId : page === 'dashboard' ? 'dashboard' : 'home'
   // L'entrée du menu marquée : celle de la page, ou de celle dont elle dépend (la liste d'une fiche).
   const current = modulePage?.parent ?? shown
+  // Le titre de la page montrée : ce que « Retour » dira pour y revenir.
+  const title = modulePage ? (pageTitle ?? modulePage.title) : shown === 'dashboard' ? t('ui.dashboard.title') : t('ui.nav.home')
+  useEffect(() => {
+    shownVisit.current = { page, title }
+  })
+  const previous = trail.at(-1)
+  const goBack = () => {
+    const step = backFrom(trail)
+    if (!step) return
+    goingBack.current = true
+    setTrail(step.trail)
+    setPage(step.to.page)
+  }
   const now = host.now()
   const today = now.toLocaleDateString(host.locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -80,6 +102,19 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
         data-size={appearance.size}
         data-motion={appearance.motion}
         lang={host.locale.slice(0, 2)}
+        // Alt + ← et le bouton « précédent » de la souris, comme dans un navigateur.
+        onKeyDown={(event) => {
+          if (event.altKey && event.key === 'ArrowLeft' && !event.defaultPrevented && previous) {
+            event.preventDefault()
+            goBack()
+          }
+        }}
+        onMouseUp={(event) => {
+          if (event.button === 3 && previous) {
+            event.preventDefault()
+            goBack()
+          }
+        }}
       >
         <div class={`bp-shell${menuEditing ? ' is-menu-editing' : ''}`}>
           <aside class="bp-side">
@@ -107,7 +142,7 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
               {t('ui.version', { version: host.version })}
             </div>
           </aside>
-          <main class="bp-main" ref={main}>
+          <main class="bp-main" ref={main} tabIndex={-1}>
             <header class="bp-header">
               <div>
                 <h1 class="bp-hello">
@@ -136,8 +171,14 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
                 {panel && <AppearancePanel appearance={appearance} change={change} close={() => setPanel(false)} t={t} />}
               </div>
             </header>
+            {previous && (
+              <button type="button" class="bp-back" aria-label={t('ui.back.label', { title: previous.title })} title={t('ui.back.label', { title: previous.title })} onClick={goBack}>
+                <Icon name="back" />
+                {t('ui.back', { title: previous.title })}
+              </button>
+            )}
             {modulePage ? (
-              <ModulePage spec={modulePage} param={param} host={host} generation={generation + local} onTitle={setPageTitle} />
+              <ModulePage spec={modulePage} param={param} host={host} generation={generation + local} onTitle={setPageTitle} hasHistory={!!previous} />
             ) : shown === 'home' ? (
               <Springboard host={host} generation={generation + local} tiles={tiles} />
             ) : (

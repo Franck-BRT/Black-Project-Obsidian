@@ -66,6 +66,7 @@ exécutions), l'IA (la connexion et un modèle par usage).
 | `springboard.tsx` | l'**accueil** à tuiles, modifiable par l'utilisateur |
 | `tiles.ts` | l'agencement des tuiles (choisies, par défaut, à ajouter, déplacer) : testé seul |
 | `home.tsx` | le **tableau de bord** : les sections des modules, en deux colonnes, rangées par l'utilisateur |
+| `history.ts` | l'historique de navigation : la page précédente et son titre, pour « Retour » |
 | `page.tsx` | la page d'un module (les analyses…) : chiffres, actions, cartes, recherche et filtres |
 | `sidemenu.tsx`, `menu.ts` | la barre de gauche rangée par l'utilisateur (Accueil en haut, Paramètres en bas) ; son rangement, sans rien dessiner |
 | `dashboard.ts` | le rangement du tableau de bord (monter, changer de colonne, masquer, réduire), sans rien dessiner |
@@ -188,6 +189,17 @@ y est. Le titre de la page et son icône sont en tête ; une page inconnue (modu
 désactivé) ramène à l'accueil. Le dessin est dans `page.tsx` (`ModulePage`, `filterBlocks`,
 testés seuls). Chaque demande d'affichage compte, même pour la page déjà demandée : on
 a pu aller ailleurs entre-temps.
+
+## Le retour à la page précédente (v0.22.0)
+
+L'onglet garde un **historique** (`history.ts`, testé seul) : chaque page quittée y entre
+avec son titre, d'où qu'on soit venu — menu, tuile, carte, lien, commande de l'hôte
+(`showPage`). **« ← Retour : <page précédente> »** s'affiche sous l'en-tête dès qu'il y a
+une page avant, et y ramène ; aussi **Alt + ←** et le bouton « précédent » de la souris.
+La zone de page est focalisable (sans contour) pour qu'un clic y garde le clavier. Trente
+pages au plus sont retenues. Quand il y a un historique, le lien propre à une page
+(« ← Toutes les analyses », `PageView.back`) s'efface : il ne reste que quand on arrive
+tout droit sur la page (une commande à l'ouverture de l'onglet).
 
 ## La barre de gauche (v0.14.0)
 
