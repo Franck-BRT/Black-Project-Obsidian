@@ -31,7 +31,8 @@ archive ZIP est ouverte, et chacun de ses fichiers lu à son tour.
 
 Paramètres → Black Projects → **Formats de fichiers** (le bouton de la ligne « Lecture de
 fichiers ») montre la même liste : une fiche par extension, trois par ligne — plusieurs
-fiches pour le PDF, une par cas.
+fiches pour le PDF, une par cas. Dans l'onglet de Black Projects, la tuile **Formats de
+fichiers** (à ajouter à l'accueil par « Modifier l'accueil ») ouvre la même chose en page.
 
 Chaque fiche dit si le format est **lu** par Black Projects, **écrit** — les notes `.md`
 par Black Projects, ou par export (« Export uniquement » : les types de pièces en

@@ -435,6 +435,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   s'écrit sans quitter sa fiche (sa note ne s'ouvre plus) ; « Ouvrir la vérification »
 - v0.55.0 : **module Exigences** : les liens d'une exigence, navigables de fiche en fiche,
   dans les deux sens
+- v0.56.0 : **module Lecture de fichiers** : sa tuile « Formats de fichiers » ouvre la page
+  du module et la déclare (le module n'a pas d'autre entrée)
 
 ### Étape 7 — Livrables
 

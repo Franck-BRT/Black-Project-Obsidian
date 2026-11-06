@@ -30,6 +30,13 @@ extension** (v0.4.0 du module) — plusieurs pour une même extension quand ses 
 diffèrent : le PDF a quatre fiches (texte natif, protégé contre la modification, scan,
 protégé par mot de passe).
 
+**La tuile, en page (v0.5.0, Black Projects 0.56.0)** : revue du module — il n'a pas de
+commande ; sa seule entrée dans l'interface, la tuile `lecture.formats`, ouvrait déjà la
+page « Fonctions » du module (`core.fonctions?lecture-fichiers`, par `openWindow`). Avec
+des pages (`ModuleContext.showPage`), la tuile l'ouvre maintenant directement et déclare
+cette page (`page`), comme les autres tuiles qui mènent à une page ; sans page chez la
+plateforme, la fenêtre du module, comme avant. Tests : `test/lecture-page.test.ts`.
+
 ### Lu, écrit, affiché
 
 Chaque fiche porte trois constats, **Lu**, **Écrit**, **Affiché**, en pastilles vertes

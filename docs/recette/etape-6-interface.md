@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le module Lecture de fichiers : la tuile des formats (v0.56.0)
+
+- [ ] **Modifier l'accueil** → ajouter **Formats de fichiers** → **Terminé** ; la tuile
+      ouvre la page « Lecture de fichiers — Formats de fichiers » ; aucune fenêtre
+- [ ] La page : les formats, une fiche par extension (lu, écrit, affiché), les extensions
+      équivalentes
+
 ## Le module Exigences : les liens, de fiche en fiche (v0.55.0)
 
 - [ ] Une exigence liée à une autre (« Découle de ») : sur sa fiche, le lien montre le nom

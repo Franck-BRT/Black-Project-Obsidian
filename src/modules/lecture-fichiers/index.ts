@@ -13,6 +13,7 @@
  */
 
 import type { BlackModule, MappingField } from '../../core/modules/module'
+import { modulePageOf } from '../../core/settingsPage'
 import {
   ALIASES_KEY,
   aliasTargets,
@@ -112,17 +113,30 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.4.0',
+  version: '0.5.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings), display),
   settingsFields: [aliasesField],
   docs: (input) => lectureDocs(input, display),
-  activate({ settings, platform, views, openWindow, i18n }) {
+  activate({ settings, platform, views, openWindow, showPage, i18n }) {
     display = platform.display
-    // L'accueil : une tuile pour la fenêtre des formats.
-    if (views && openWindow) {
-      views.tile({ id: 'lecture.formats', label: i18n.t('lecture-fichiers.details.title'), icon: 'file', color: 'slate', group: i18n.t('lecture-fichiers.name'), description: i18n.t('lecture-fichiers.tile.formats'), order: 80, run: () => openWindow() })
+    // L'accueil : une tuile pour les formats — leur page (« Fonctions » du module) quand la
+    // plateforme a des pages, marquée « page en cours » quand on y est ; sinon la fenêtre.
+    const formats = modulePageOf(LECTURE_FICHIERS)
+    const open = showPage ? () => showPage(formats) : openWindow
+    if (views && open) {
+      views.tile({
+        id: 'lecture.formats',
+        label: i18n.t('lecture-fichiers.details.title'),
+        icon: 'file',
+        color: 'slate',
+        group: i18n.t('lecture-fichiers.name'),
+        description: i18n.t('lecture-fichiers.tile.formats'),
+        order: 80,
+        ...(showPage ? { page: formats } : {}),
+        run: () => open()
+      })
     }
     configureAliases(readAliases(settings.get()))
     // Les types que l'utilisateur a choisi d'afficher : la plateforme les montre.
