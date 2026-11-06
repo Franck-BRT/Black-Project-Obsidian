@@ -66,6 +66,7 @@ exécutions), l'IA (la connexion et un modèle par usage).
 | `springboard.tsx` | l'**accueil** à tuiles, modifiable par l'utilisateur |
 | `tiles.ts` | l'agencement des tuiles (choisies, par défaut, à ajouter, déplacer) : testé seul |
 | `home.tsx` | le **tableau de bord** : les sections des modules, en deux colonnes, rangées par l'utilisateur |
+| `page.tsx` | la page d'un module (les analyses…) : chiffres, actions, cartes, recherche et filtres |
 | `sidemenu.tsx`, `menu.ts` | la barre de gauche rangée par l'utilisateur (Accueil en haut, Paramètres en bas) ; son rangement, sans rien dessiner |
 | `dashboard.ts` | le rangement du tableau de bord (monter, changer de colonne, masquer, réduire), sans rien dessiner |
 | `components.tsx` | boutons, badges, échéances, cartes, indicateurs, listes, messages |
@@ -144,6 +145,28 @@ Et partout :
 garni d'un dossier fictif, et la même interface — la preuve qu'elle tourne sans Obsidian,
 et le point de départ de `desktop/`. L'adresse accepte `?mode=dark&vision=red-green&reading=dys&size=large`
 pour forcer une apparence (captures, recette).
+
+## Les pages des modules (v0.15.0)
+
+Un module peut ouvrir une **page** dans l'onglet de Black Projects, comme le tableau de
+bord, plutôt qu'une fenêtre : la liste des analyses, par exemple. Il la déclare par
+`views.page({ id, title, icon, load })` ; `load` rend une `PageView` en données :
+
+- un sous-titre, des boutons en tête ;
+- des blocs (indicateurs, cartes, listes, messages — les mêmes que le tableau de bord) ;
+- une **recherche** facultative : elle garde les cartes et les éléments de liste qui
+  contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
+  des accents ni des majuscules ;
+- des **filtres** facultatifs, à bascule (« Tout » en plus) : une carte répond à ceux de ses
+  `tags`. Le nombre affiché est annoncé (« 1 sur 2 affiché(s) »).
+
+On ouvre une page par `context.showPage(id)` : l'hôte Obsidian ouvre (ou montre) l'onglet
+de Black Projects sur cette page ; la démonstration change de page. Une entrée du menu ou
+une tuile qui ouvre une page le dit (`page`) : elle est marquée « page en cours » quand on
+y est. Le titre de la page et son icône sont en tête ; une page inconnue (module
+désactivé) ramène à l'accueil. Le dessin est dans `page.tsx` (`ModulePage`, `filterBlocks`,
+testés seuls). Chaque demande d'affichage compte, même pour la page déjà demandée : on
+a pu aller ailleurs entre-temps.
 
 ## La barre de gauche (v0.14.0)
 

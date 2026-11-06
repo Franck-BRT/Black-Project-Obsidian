@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { resolvedMode, type Appearance } from '../core/appearance'
 import { AppearancePanel } from './appearance'
 import { HomePage } from './home'
+import { ModulePage } from './page'
 import type { AppHost } from './host'
 import { Icon } from './icons'
 import { greetingKey } from './logic'
@@ -19,9 +20,10 @@ import { SideMenu } from './sidemenu'
 import { Springboard } from './springboard'
 import type { TileSpec } from '../core/views'
 
-export type Page = 'home' | 'dashboard'
+/** L'accueil, le tableau de bord, ou la page d'un module (son identifiant : « ao.analyses »). */
+export type Page = string
 
-export function App({ host, generation, page: wanted = 'home', onPage }: { host: AppHost; generation: number; page?: Page; onPage?: (page: Page) => void }) {
+export function App({ host, generation, page: wanted = 'home', request = 0, onPage }: { host: AppHost; generation: number; page?: Page; request?: number; onPage?: (page: Page) => void }) {
   const { t } = host
   const [appearance, setAppearance] = useState<Appearance>(host.appearance())
   const [dark, setDark] = useState(host.hostIsDark())
@@ -29,7 +31,7 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
   const [local, setLocal] = useState(0)
   const [menuEditing, setMenuEditing] = useState(false)
   const [page, setPageState] = useState<Page>(wanted)
-  useEffect(() => setPageState(wanted), [wanted])
+  useEffect(() => setPageState(wanted), [wanted, request])
   // La page défile seule (la navigation reste en place) : une nouvelle page part du haut.
   const main = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -42,7 +44,7 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
   // La tuile du tableau de bord est celle de l'interface même.
   const tiles = useMemo<TileSpec[]>(
     () => [
-      { id: 'ui.tableau', label: t('ui.nav.dashboard'), icon: 'chart', color: 'indigo', group: t('home.tile.group'), order: 0, byDefault: true, description: t('ui.tile.dashboard.desc'), run: () => setPage('dashboard') },
+      { id: 'ui.tableau', label: t('ui.nav.dashboard'), icon: 'chart', color: 'indigo', group: t('home.tile.group'), order: 0, byDefault: true, description: t('ui.tile.dashboard.desc'), page: 'dashboard', run: () => setPage('dashboard') },
       ...host.tiles()
     ],
     [generation]
@@ -54,6 +56,9 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
     setAppearance(next)
     void host.saveAppearance(next)
   }
+  // La page d'un module, si c'en est une ; une page inconnue (module désactivé) : l'accueil.
+  const modulePage = page === 'home' || page === 'dashboard' ? undefined : host.pages().find((each) => each.id === page)
+  const shown = modulePage ? page : page === 'dashboard' ? 'dashboard' : 'home'
   const now = host.now()
   const today = now.toLocaleDateString(host.locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -83,7 +88,7 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
             host={host}
             generation={generation + local}
             tiles={tiles}
-            page={page}
+            page={shown}
             goHome={() => setPage('home')}
             goDashboard={() => setPage('dashboard')}
             editing={menuEditing}
@@ -96,7 +101,18 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
         <main class="bp-main" ref={main}>
           <header class="bp-header">
             <div>
-              <h1 class="bp-hello">{page === 'home' ? t(greetingKey(now)) : t('ui.dashboard.title')}</h1>
+              <h1 class="bp-hello">
+                {modulePage ? (
+                  <>
+                    <Icon name={modulePage.icon} />
+                    {modulePage.title}
+                  </>
+                ) : shown === 'home' ? (
+                  t(greetingKey(now))
+                ) : (
+                  t('ui.dashboard.title')
+                )}
+              </h1>
               <p class="bp-today">{today}</p>
             </div>
             <div class="bp-header-tools">
@@ -111,7 +127,13 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
               {panel && <AppearancePanel appearance={appearance} change={change} close={() => setPanel(false)} t={t} />}
             </div>
           </header>
-          {page === 'home' ? <Springboard host={host} generation={generation + local} tiles={tiles} /> : <HomePage host={host} generation={generation + local} />}
+          {modulePage ? (
+            <ModulePage spec={modulePage} host={host} generation={generation + local} />
+          ) : shown === 'home' ? (
+            <Springboard host={host} generation={generation + local} tiles={tiles} />
+          ) : (
+            <HomePage host={host} generation={generation + local} />
+          )}
         </main>
       </div>
     </div>

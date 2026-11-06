@@ -155,6 +155,18 @@ interroger le dossier et questionnaire avec l'IA ; chacune vise l'analyse nommé
 
 `home.ts` décrit la section « Analyses d'appels d'offres » de l'[accueil](../architecture/interface.md) : les actions rapides, et une carte par analyse — date limite de remise (relevée dans les pièces de l'appel d'offres, la prochaine, sinon la dernière), pièces et non lues, exigences, qualité moyenne (portée `wording`), badges de ce qui reste à faire ; « Ouvrir », « Importer des pièces », « Calendrier », « Interroger » (si l'IA est réglée). Navigation « Analyses ».
 
+## La page « Analyses » (v0.15.0)
+
+`home.ts` déclare aussi la **page** `ao.analyses` (`views.page`, voir
+[l'interface](../architecture/interface.md#les-pages-des-modules-v0150)) : les chiffres
+(analyses, remises sous 30 jours, pièces à lire, exigences faibles), les actions rapides,
+une carte par analyse (la même que sur le tableau de bord, avec ses `tags` : position,
+`a-venir`, `sous-30-jours`, `a-lire`, `faibles`), une recherche et des filtres. L'entrée
+« Analyses », la tuile « Analyses », la commande `analyses` (« Ouvrir les analyses
+d'appels d'offres ») et le lien « Toutes les analyses » de la section du tableau de bord
+l'ouvrent par `context.showPage`. Sans page chez la plateforme (`showPage` absent), on
+retrouve la fenêtre pour choisir une analyse. Tests : `test/ao-page.test.ts`.
+
 ## Dans le coffre
 
 ```

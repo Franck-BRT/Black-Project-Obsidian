@@ -382,6 +382,8 @@ export interface ModuleContext {
     every(milliseconds: number, run: () => void): void
   }  /** Ce que le module montre dans l'interface : sections de l'accueil, entrées de navigation. */
   readonly views?: ViewsRegistrar
+  /** Ouvre une page (déclarée par `views.page`) dans l'onglet de Black Projects. */
+  showPage?(id: string): void
 }
 
 /** Ce qu'un bloc de code devient : un tableau, et des messages au-dessus. */

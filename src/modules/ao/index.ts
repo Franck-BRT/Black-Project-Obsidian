@@ -90,7 +90,7 @@ import { answerQuestion, QUESTIONNAIRE, runQuestionnaire, writeQuestionNote, typ
 import { pieceSources } from './ask/sources'
 import { reviewAnalysisRequirements } from './review'
 import { emitCreated, emitExtracted, emitImported, registerAoWorkflows } from './workflows'
-import { registerAoHome } from './home'
+import { openAnalyses, registerAoHome, type HomeDeps } from './home'
 import { requirementsAt } from '../exigences'
 import { requirementsFolder } from './requirements'
 
@@ -410,7 +410,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.10.0',
+  version: '0.11.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -763,8 +763,8 @@ export const aoModule: BlackModule = {
       }
     }
 
-    // L'accueil : les actions rapides et une carte par analyse.
-    registerAoHome(context.views, {
+    // L'interface : les actions rapides, une carte par analyse (tableau de bord), la page des analyses.
+    const homeDeps: HomeDeps = {
       services: () => servicesFor(context),
       t,
       ui: platform.ui,
@@ -774,8 +774,11 @@ export const aoModule: BlackModule = {
       },
       importInto: (analysis) => importInto(context, servicesFor(context), analysis),
       ask: (analysis) => askAnalysis(servicesFor(context), analysis),
-      today: localToday
-    })
+      today: localToday,
+      ...(context.showPage ? { showPage: (id: string) => context.showPage?.(id) } : {})
+    }
+    registerAoHome(context.views, homeDeps)
+    commands.register({ id: 'analyses', nameKey: 'ao.command.analyses', run: () => openAnalyses(homeDeps) })
 
     commands.register({
       id: 'interroger',

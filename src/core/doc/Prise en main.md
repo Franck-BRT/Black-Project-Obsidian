@@ -22,6 +22,10 @@ de l'IA, la bibliothèque d'exigences en chiffres, les dernières exécutions de
 Il se met à jour quand le coffre change. La flèche à gauche du titre d'une section la
 **réduit** à son titre (ou la déplie).
 
+**Analyses** (menu de gauche ou tuile) ouvre la page de toutes vos analyses, dans
+l'onglet : leurs chiffres, une carte par analyse, une recherche et des filtres (remise à
+venir, pièces à lire, candidat, émetteur…).
+
 **La barre de gauche** se range aussi : **Accueil** reste toujours en premier et
 **Paramètres** toujours en bas — ni l'un ni l'autre ne se déplace ni ne se masque. Entre
 les deux se range votre menu : **Modifier le menu** (en bas, juste au-dessus de

@@ -30,6 +30,7 @@ function host(appearance: Appearance = DEFAULT_APPEARANCE, sections: HomeSection
     locale: 'fr-FR',
     version: '0.10.0',
     sections: () => views.homeSections(),
+    pages: () => views.pages(),
     tiles: () => views.allTiles(),
     homeTiles: () => null,
     saveHomeTiles: async () => undefined,

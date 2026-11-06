@@ -89,6 +89,23 @@ const COMPONENTS_CSS = String.raw`
 .bp-column { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .bp-home.is-single { grid-template-columns: minmax(0, 1fr); }
 
+/* La page d'un module (les analyses…) */
+.bp-hello .bp-icon { color: var(--bp-accent); margin-right: 10px; vertical-align: -0.12em; }
+.bp-page { display: flex; flex-direction: column; gap: 18px; }
+.bp-page-sub { margin: -12px 0 0; color: var(--bp-text-muted); }
+.bp-page-tools { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.bp-page-search { position: relative; flex: 1 1 260px; max-width: 420px; }
+.bp-page-search .bp-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--bp-text-muted); pointer-events: none; }
+.bp-page-search .bp-input { padding-left: 38px; }
+.bp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.bp-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px; border: 1px solid var(--bp-border); border-radius: 999px; background: var(--bp-surface); color: var(--bp-text); cursor: pointer; font-size: 0.9em; }
+.bp-chip:hover { background: var(--bp-surface-2); }
+.bp-chip[aria-pressed="true"] { background: var(--bp-accent-soft); border-color: var(--bp-accent); color: var(--bp-accent); font-weight: 650; }
+.bp-page-count { margin: -6px 0 0; color: var(--bp-text-muted); font-size: 0.9em; }
+.bp-page-body { display: flex; flex-direction: column; gap: 18px; }
+.bp-page-body > * { margin: 0; }
+.bp-page-body .bp-cards { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+
 /* Le tableau de bord rangé par l'utilisateur */
 .bp-dashboard { display: flex; flex-direction: column; gap: 18px; }
 .bp-section-heading { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }

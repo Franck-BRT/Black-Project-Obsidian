@@ -29,7 +29,9 @@ export function mountApp(element: HTMLElement, host: AppHost, initial: Page = 'h
   installStyles(element)
   let generation = 0
   let page = initial
-  const draw = () => render(<App host={host} generation={generation} page={page} onPage={(next) => (page = next)} />, element)
+  // Chaque demande compte, même pour la page déjà demandée : l'utilisateur a pu aller ailleurs entre-temps.
+  let request = 0
+  const draw = () => render(<App host={host} generation={generation} page={page} request={request} onPage={(next) => (page = next)} />, element)
   draw()
   return {
     refresh() {
@@ -38,6 +40,7 @@ export function mountApp(element: HTMLElement, host: AppHost, initial: Page = 'h
     },
     show(next) {
       page = next
+      request++
       draw()
     },
     destroy() {

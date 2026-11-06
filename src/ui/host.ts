@@ -8,7 +8,7 @@
  */
 
 import type { Appearance } from '../core/appearance'
-import type { DashboardLayout, HomeSection, NavEntry, NavLayout, TileSpec } from '../core/views'
+import type { DashboardLayout, HomeSection, NavEntry, NavLayout, PageSpec, TileSpec } from '../core/views'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -19,6 +19,8 @@ export interface AppHost {
   version: string
   /** Les sections de l'accueil déclarées par les modules actifs. */
   sections(): HomeSection[]
+  /** Les pages déclarées par les modules actifs. */
+  pages(): PageSpec[]
   /** Les tuiles proposées par les modules actifs (et l'hôte). */
   tiles(): TileSpec[]
   /** Les tuiles choisies, dans l'ordre ; `null` : celles par défaut. */

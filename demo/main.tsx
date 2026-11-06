@@ -114,6 +114,7 @@ async function start(): Promise<void> {
         }
       },
       views,
+      showPage: (id) => mounted?.show(id),
       openWindow: () =>
         void openModuleWindow({
           ...dialogHost,
@@ -169,6 +170,7 @@ async function start(): Promise<void> {
     locale: language === 'en' ? 'en-GB' : 'fr-FR',
     version: 'démonstration',
     sections: () => views.homeSections(),
+    pages: () => views.pages(),
     tiles: () => views.allTiles(),
     homeTiles: () => {
       const stored = safeStorage('get', undefined, 'bp-demo-tiles')

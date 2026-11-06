@@ -15,6 +15,20 @@ Il s'appuie sur le module {{link:Modules/Lecture de fichiers|Lecture de fichiers
 lire les pièces, et sur {{link:Modules/Typage des pièces|Typage des pièces}} pour
 reconnaître leur type.
 
+## La page « Analyses »
+
+L'entrée **Analyses** du menu de gauche, la tuile **Analyses** de l'accueil, le lien
+« Toutes les analyses » du tableau de bord et la commande **Ouvrir les analyses d'appels
+d'offres** ouvrent la **page des analyses**, dans l'onglet Black Projects :
+
+- en chiffres : le nombre d'analyses, les remises dans les 30 jours, les pièces à lire,
+  les exigences faibles ;
+- les actions rapides (nouvelle analyse, importer des pièces, calendrier, interroger…) ;
+- une **carte par analyse**, la date limite de remise la plus proche en tête ; son titre
+  ouvre la note de l'analyse ;
+- une **recherche** (nom, acheteur, référence…) et des **filtres** : remise à venir, remise
+  sous 30 jours, pièces à lire, exigences faibles, candidat, émetteur.
+
 ## 1. Créer une analyse
 
 Palette de commandes (Ctrl/Cmd + P) → **Nouvelle analyse d'appel d'offres** :

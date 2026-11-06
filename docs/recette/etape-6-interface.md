@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La page « Analyses » (v0.15.0)
+
+- [ ] L'entrée **Analyses** du menu : plus de fenêtre « Dans quelle analyse ? » ; la page
+      **Analyses d'appels d'offres** s'ouvre dans l'onglet, l'entrée est marquée en cours
+- [ ] Les chiffres (analyses, remises sous 30 jours, pièces à lire, exigences faibles), les
+      actions rapides, une carte par analyse, la remise la plus proche en tête
+- [ ] Le titre d'une carte ouvre la note de l'analyse ; « Importer des pièces »,
+      « Calendrier », « Interroger » agissent sur cette analyse
+- [ ] Taper « agence » dans la recherche : seules les analyses qui le contiennent restent,
+      « 1 sur 2 affiché(s) » ; sans accents (« telemesure ») ça marche aussi
+- [ ] Les filtres Remise à venir, Remise sous 30 jours, Pièces à lire, Exigences faibles,
+      Candidat, Émetteur ; « Tout » les retire
+- [ ] La tuile **Analyses** de l'accueil, le lien « Toutes les analyses » du tableau de bord
+      et la commande **Ouvrir les analyses d'appels d'offres** mènent à la même page
+- [ ] Sans analyse : un message dit comment en créer une
+
 ## La barre de gauche rangée par l'utilisateur (v0.14.0)
 
 - [ ] (v0.14.1) En bas de la barre, sous la ligne de séparation : « Modifier le menu »,

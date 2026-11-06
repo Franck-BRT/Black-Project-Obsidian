@@ -20,6 +20,8 @@ export interface MenuItem {
   /** Présente tant que l'utilisateur ne l'a pas retirée. */
   byDefault: boolean
   run(): void | Promise<void>
+  /** La page qu'elle ouvre : marquée « page en cours » quand on y est. */
+  page?: string
 }
 
 /** Le préfixe d'une entrée tirée d'une tuile : les identifiants des deux ne se mêlent pas. */
@@ -34,12 +36,12 @@ const same = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivi
  */
 export function menuCatalog(entries: readonly NavEntry[], tiles: readonly TileSpec[], defaultGroup: string, pinned: readonly string[]): MenuItem[] {
   const fixed = entries.filter((entry) => !pinned.some((label) => same(label, entry.label)))
-  const items: MenuItem[] = fixed.map((entry) => ({ id: entry.id, label: entry.label, icon: entry.icon, group: defaultGroup, byDefault: true, run: entry.run }))
+  const items: MenuItem[] = fixed.map((entry) => ({ id: entry.id, label: entry.label, icon: entry.icon, group: defaultGroup, byDefault: true, run: entry.run, ...(entry.page ? { page: entry.page } : {}) }))
   const labels = [...pinned, ...fixed.map((entry) => entry.label)]
   for (const tile of tiles) {
     if (labels.some((label) => same(label, tile.label))) continue
     labels.push(tile.label)
-    items.push({ id: `${TILE_PREFIX}${tile.id}`, label: tile.label, icon: tile.icon, group: tile.group, byDefault: false, run: tile.run })
+    items.push({ id: `${TILE_PREFIX}${tile.id}`, label: tile.label, icon: tile.icon, group: tile.group, byDefault: false, run: tile.run, ...(tile.page ? { page: tile.page } : {}) })
   }
   return items
 }

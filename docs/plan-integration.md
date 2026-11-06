@@ -340,6 +340,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.14.0 : **barre de gauche rangée par l'utilisateur** — Accueil toujours en haut,
   Paramètres toujours en bas ; entre les deux, déplacer, retirer, ajouter toute fonction
 - v0.14.1 : « Modifier le menu » en bas, sous la séparation, juste au-dessus de Paramètres
+- v0.15.0 : **pages des modules** — « Analyses » ouvre une page (chiffres, cartes,
+  recherche, filtres) au lieu d'une fenêtre de choix
 
 ### Étape 7 — Livrables
 

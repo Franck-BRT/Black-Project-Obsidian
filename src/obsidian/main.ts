@@ -161,6 +161,7 @@ export default class BlackProjectsPlugin extends Plugin {
       locale: this.config.language === 'en' ? 'en-GB' : 'fr-FR',
       version: this.manifest.version,
       sections: () => this.views.homeSections(),
+      pages: () => this.views.pages(),
       tiles: () => this.views.allTiles(),
       homeTiles: () => this.config.homeTiles,
       saveHomeTiles: async (ids) => {
@@ -285,6 +286,7 @@ export default class BlackProjectsPlugin extends Plugin {
         run: (id) => this.runModuleCommand(module.id, id)
       },
       views: this.views,
+      showPage: (id) => void this.openHome(id),
       openWindow: () => void this.openModuleWindow(module),
       timers: {
         every: (milliseconds, run) => {

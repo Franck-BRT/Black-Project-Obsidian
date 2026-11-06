@@ -79,6 +79,7 @@ describe('la page du tableau de bord', () => {
       locale: 'fr-FR',
       version: '0.13.0',
       sections: () => views.homeSections(),
+      pages: () => views.pages(),
       tiles: () => [],
       homeTiles: () => null,
       saveHomeTiles: async () => undefined,

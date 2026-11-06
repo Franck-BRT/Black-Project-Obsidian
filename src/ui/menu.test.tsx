@@ -61,6 +61,7 @@ describe('la barre de gauche', () => {
       locale: 'fr-FR',
       version: '0.14.0',
       sections: () => [],
+      pages: () => [],
       tiles: () => views.allTiles(),
       homeTiles: () => null,
       saveHomeTiles: async () => undefined,

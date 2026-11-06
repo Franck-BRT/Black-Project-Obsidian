@@ -94,6 +94,8 @@ export interface Card {
   /** L'action d'un clic sur la carte. */
   open?: ViewAction
   actions?: ViewAction[]
+  /** Les filtres d'une page auxquels la carte répond (`PageView.filters`). */
+  tags?: string[]
 }
 
 /** Un indicateur : un chiffre et ce qu'il compte. */
@@ -160,6 +162,30 @@ export interface DashboardLayout {
   collapsed: string[]
 }
 
+/**
+ * Une page qu'un module ouvre dans l'onglet de Black Projects, comme le tableau de bord :
+ * la liste des analyses, plutôt qu'une fenêtre pour en choisir une. On y va par
+ * `ModuleContext.showPage(id)` (une entrée du menu, une tuile, une commande).
+ */
+export interface PageSpec {
+  id: string
+  title: string
+  icon: IconName
+  /** Appelé à chaque affichage ou rafraîchissement. */
+  load(): Promise<PageView>
+}
+
+export interface PageView {
+  subtitle?: string
+  /** Les boutons en tête de page. */
+  actions?: ViewAction[]
+  blocks: HomeBlock[]
+  /** Un champ de recherche : il filtre les cartes et les listes de la page par leur texte. */
+  search?: { label: string; placeholder?: string }
+  /** Des filtres à bascule (en plus de « Tout ») : une carte répond à ceux de ses `tags`. */
+  filters?: { id: string; label: string }[]
+}
+
 /** Les couleurs de tuile : décoratives (le libellé dit tout), définies par chaque thème. */
 export type TileColor = 'indigo' | 'blue' | 'teal' | 'green' | 'orange' | 'rose' | 'violet' | 'slate'
 
@@ -189,6 +215,8 @@ export interface TileSpec {
   /** Plus petit : plus tôt dans l'ordre par défaut. */
   order: number
   run(): void | Promise<void>
+  /** La page qu'elle ouvre, s'il y en a une. */
+  page?: string
   /** Une pastille calculée à chaque affichage ; `null` : aucune. */
   badge?(): Promise<TileBadge | null>
 }
@@ -200,6 +228,8 @@ export interface NavEntry {
   icon: IconName
   order: number
   run(): void | Promise<void>
+  /** La page qu'elle ouvre : l'entrée est marquée « page en cours » quand on y est. */
+  page?: string
 }
 
 /**
@@ -219,6 +249,8 @@ export interface ViewsRegistrar {
   nav(entry: NavEntry): void
   /** Une tuile proposée pour l'accueil. */
   tile(spec: TileSpec): void
+  /** Une page du module, ouverte dans l'onglet de Black Projects. */
+  page(spec: PageSpec): void
 }
 
 /** Les déclarations de tous les modules actifs, rangées. */
@@ -226,6 +258,16 @@ export class ViewsRegistry implements ViewsRegistrar {
   private readonly sections = new Map<string, HomeSection>()
   private readonly entries = new Map<string, NavEntry>()
   private readonly tiles = new Map<string, TileSpec>()
+  private readonly modulePages = new Map<string, PageSpec>()
+
+  page(spec: PageSpec): void {
+    this.modulePages.set(spec.id, spec)
+  }
+
+  /** Les pages des modules actifs. */
+  pages(): PageSpec[] {
+    return [...this.modulePages.values()]
+  }
 
   tile(spec: TileSpec): void {
     this.tiles.set(spec.id, spec)

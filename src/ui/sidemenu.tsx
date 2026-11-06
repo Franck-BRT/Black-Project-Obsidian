@@ -32,7 +32,7 @@ export function SideMenu({
   host: AppHost
   generation: number
   tiles: TileSpec[]
-  page: 'home' | 'dashboard'
+  page: string
   goHome: () => void
   goDashboard: () => void
   editing: boolean
@@ -47,6 +47,7 @@ export function SideMenu({
       label: t('ui.nav.dashboard'),
       icon: 'chart',
       order: 0,
+      page: 'dashboard',
       run: goDashboard
     },
     ...host.nav()
@@ -207,7 +208,7 @@ export function SideMenu({
           </>
         ) : (
           shown.map((item) => (
-            <button type="button" class="bp-nav-item" key={item.id} aria-current={item.id === DASHBOARD_ENTRY && page === 'dashboard' ? 'page' : undefined} onClick={() => void item.run()}>
+            <button type="button" class="bp-nav-item" key={item.id} aria-current={item.page !== undefined && item.page === page ? 'page' : undefined} onClick={() => void item.run()}>
               <Icon name={item.icon} />
               {item.label}
             </button>
