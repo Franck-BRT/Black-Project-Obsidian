@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La vérification des exigences, en page (v0.31.0)
+
+- [ ] Fiche d'une analyse → **Vérifier** : sa page, sans fenêtre ni note ouverte ;
+      « Calculée à l'ouverture de la page, sans rien écrire »
+- [ ] Les chiffres (exigences dans les pièces, oubliées, incohérences, couverture) ; les
+      quatre listes numérotées : extraction par pièce, phrases oubliées, constats de
+      cohérence, couverture
+- [ ] Émetteur avec deux candidats : une couverture par candidat, les absentes d'abord
+      (rouge), la couverture « 0–100 % » dans les chiffres
+- [ ] Filtres **Extraction**, **Exigences oubliées**, **Cohérence**, **Couverture** ; un
+      clic ouvre la fiche de la pièce ou de l'exigence, « Retour » ramène à la vérification
+- [ ] **Tout vérifier** : les aperçus d'ajout s'ouvrent, le rapport est écrit, Obsidian
+      ne l'ouvre pas ; « Ouvrir le rapport » apparaît
+- [ ] **Tout extraire** / **Ajouter des oubliées** : l'aperçu, puis la page se redessine
+
 ## La qualité des exigences, en page (v0.30.0)
 
 - [ ] Fiche d'une analyse avec des exigences → **Qualité du dossier** : sa page, sans

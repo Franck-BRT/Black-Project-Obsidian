@@ -378,6 +378,55 @@ export async function checkCoverage(services: Services, analysis: Analysis): Pro
   return summary
 }
 
+// ── Maintenant, sans rien écrire ─────────────────────────────────────────────────
+
+/** Les quatre vérifications telles qu'elles sont maintenant, pour la page : rien n'est écrit ni proposé. */
+export interface VerificationNow {
+  /** Chaque pièce de l'appel d'offres d'où l'on sait extraire : combien d'exigences elle porte, ou ce qui l'empêche. */
+  extraction: { note: string; name: string; found: number; problem?: string }[]
+  /** Les phrases à tournure d'exigence qu'aucune exigence ne reprend. */
+  missed: Missed[]
+  /** Les pièces lues pour les chercher. */
+  documents: number
+  findings: Finding[]
+  /** La couverture des exigences par chaque réponse (`candidate` vide : la réponse unique). */
+  coverage: { candidate: string; rows: Coverage[] }[]
+  requirements: number
+  /** Les pièces de réponse. */
+  responses: number
+}
+
+/**
+ * Les quatre vérifications, calculées sans rien écrire : la page de la vérification les
+ * montre telles qu'elles sont à son ouverture. Les pièces de l'appel d'offres ne sont lues
+ * qu'une fois (l'extraction sert aussi à la cohérence).
+ */
+export async function verificationNow(services: Services, analysis: Analysis): Promise<VerificationNow> {
+  const tender = await pieceFiles(services, analysis, 'appel-d-offres')
+  const results = await extractEach(services, tender)
+  const documents = await readDocuments(services, tender)
+  const requirements = await requirementsAt(requirementsFolder(analysis)).all()
+  const findings = coherence(
+    results.map(({ file, extraction }) => ({ piece: file.link, type: file.row.type, rows: extraction.rows, where: extraction.where })),
+    requirements
+  )
+  const responses = await pieceFiles(services, analysis, 'reponse')
+  const groups = new Map<string, PieceFile[]>()
+  for (const file of responses) groups.set(file.row.destination.candidate ?? '', [...(groups.get(file.row.destination.candidate ?? '') ?? []), file])
+  const covered: VerificationNow['coverage'] = []
+  if (requirements.length)
+    for (const [candidate, files] of [...groups].sort(([a], [b]) => a.localeCompare(b))) covered.push({ candidate, rows: coverage(requirements, await readDocuments(services, files)) })
+  return {
+    extraction: results.map(({ file, extraction }) => ({ note: file.row.note, name: file.name, found: extraction.rows.length, ...(extraction.problem ? { problem: extraction.problem } : {}) })),
+    missed: missedRequirements(documents, requirements),
+    documents: documents.length,
+    findings,
+    coverage: covered,
+    requirements: requirements.length,
+    responses: responses.length
+  }
+}
+
 // ── Les quatre ───────────────────────────────────────────────────────────────────
 
 /** Les quatre vérifications, l'une après l'autre ; rend le chemin du rapport. */

@@ -23,7 +23,7 @@ import { pieceSources, pieceText } from './ask/sources'
 import { destinationLabel, type Analysis, type PieceRow, type ReadingState } from './notes'
 import { linkedNote, requirementsFolder } from './requirements'
 import { analysisPosition, listAnalyses, listCandidates, listPieces, pieceAt, type Services, type Translate } from './service'
-import { candidateCoverage, describeWhere, reportPath } from './verification'
+import { candidateCoverage, describeWhere, reportPath, verificationNow } from './verification'
 
 export interface HomeDeps {
   services(): Services
@@ -77,6 +77,10 @@ export const questionnaireItemPageOf = (note: string, key: string): string => pa
 /** La page de la qualité des exigences d'une analyse : `qualityPageOf(chemin de son rapport)`. */
 export const QUALITY_PAGE = 'ao.qualite'
 export const qualityPageOf = (note: string): string => pageWith(QUALITY_PAGE, encodeURIComponent(note))
+
+/** La page de la vérification des exigences d'une analyse : `verificationPageOf(chemin de son rapport)`. */
+export const VERIFICATION_PAGE = 'ao.verification'
+export const verificationPageOf = (note: string): string => pageWith(VERIFICATION_PAGE, encodeURIComponent(note))
 
 /** La page des analyses. */
 export const ANALYSES_PAGE = 'ao.analyses'
@@ -313,7 +317,8 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
         { id: 'import', label: t('ao.home.import'), icon: 'upload', primary: pieces.length === 0, run: () => deps.importInto(analysis) },
         { id: 'update', label: t('ao.fiche.update'), icon: 'refresh', run: run('mettre-a-jour') },
         { id: 'calendar', label: t('ao.home.calendar'), icon: 'calendar', run: run('calendrier') },
-        { id: 'verify', label: t('ao.tile.verify'), icon: 'check', run: run('verifier-exigences') },
+        // La vérification a sa page : calculée à l'ouverture, le rapport s'écrit de là.
+        { id: 'verify', label: t('ao.tile.verify'), icon: 'check', run: deps.showPage ? () => deps.showPage?.(verificationPageOf(reportPath(analysis))) : run('verifier-exigences') },
         // La qualité a sa page : calculée à l'ouverture, le rapport s'écrit de là.
         { id: 'quality', label: t('ao.tile.quality'), icon: 'star', run: deps.showPage ? () => deps.showPage?.(qualityPageOf(qualityPath(analysis))) : run('qualite-exigences') },
         ...(ai
@@ -433,7 +438,7 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     title: baseName(path).replace(/\.md$/, ''),
     detail: path.slice(analysis.folder.length + 1),
     open: deps.showPage
-      ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(path === questionnairePath(analysis) ? questionnairePageOf(path) : path === qualityPath(analysis) ? qualityPageOf(path) : producedPageOf(path)) }
+      ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(path === questionnairePath(analysis) ? questionnairePageOf(path) : path === qualityPath(analysis) ? qualityPageOf(path) : path === reportPath(analysis) ? verificationPageOf(path) : producedPageOf(path)) }
       : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
   }))
 
@@ -692,6 +697,7 @@ export async function producedPage(deps: HomeDeps, param: string | undefined): P
   if (type === QUESTION_TYPE && readQuestion(markdown, questionWords(t))) return questionPage(deps, param)
   if (type === QUESTIONNAIRE_TYPE && note === questionnairePath(analysis)) return questionnairePage(deps, param)
   if (note === qualityPath(analysis)) return qualityPage(deps, param)
+  if (note === reportPath(analysis)) return verificationPage(deps, param)
   const blocks = noteBlocks(markdown, opener)
   const heading = /^#\s+(.+)$/m.exec(markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, ''))?.[1]?.trim()
 
@@ -1067,6 +1073,141 @@ export async function qualityPage(deps: HomeDeps, param: string | undefined): Pr
   }
 }
 
+/** Le libellé d'un lien Obsidian (« [[Pièces/RC|RC]] » → « RC ») ; le texte tel quel sinon. */
+const linkLabel = (link: string) => /\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/.exec(link)?.[1] ?? link
+const COVERAGE_ORDER: Record<string, number> = { absent: 0, partial: 1, addressed: 2, cited: 3 }
+
+/**
+ * La **page de la vérification** des exigences d'une analyse, calculée à l'ouverture
+ * (`verificationNow` : rien n'est écrit ni proposé) : ses chiffres ; puis les quatre
+ * vérifications — ce que chaque pièce de l'appel d'offres porte d'exigences ; les phrases à
+ * tournure d'exigence qu'aucune ne reprend ; les incohérences entre pièces ; la couverture
+ * des exigences par chaque réponse, les absentes d'abord. Un clic ouvre la fiche de la pièce
+ * ou de l'exigence ; un filtre par vérification. En tête : Tout vérifier (le rapport, avec
+ * les aperçus d'ajout), Tout extraire, Ajouter des oubliées, le rapport, l'analyse.
+ */
+export async function verificationPage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const services = deps.services()
+  const note = param ? decodeURIComponent(param) : ''
+  const analysis = note ? (await listAnalyses(services)).find((each) => reportPath(each) === note) : undefined
+  if (!analysis)
+    return { title: t('ao.vp.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.vp.missing') }] }
+  const exists = await services.fs.exists(note)
+  const now = await verificationNow(services, analysis)
+  const found = now.extraction.reduce((sum, each) => sum + each.found, 0)
+  const run = (id: string) => () => deps.runFor?.(id, { analysis, stay: true }) ?? Promise.resolve()
+  const actions: ViewAction[] = [
+    ...(deps.runFor
+      ? [
+          { id: 'all', label: t('ao.vp.all'), tooltip: t('ao.vp.all.tip'), icon: 'check' as const, primary: !exists, run: run('verifier-exigences') },
+          ...(found ? [{ id: 'extract', label: t('ao.vp.extract'), tooltip: t('ao.vp.extract.tip'), icon: 'list' as const, run: run('extraire-tout') }] : []),
+          ...(now.missed.length ? [{ id: 'missed', label: t('ao.vp.missed'), tooltip: t('ao.vp.missed.tip'), icon: 'plus' as const, run: run('exigences-oubliees') }] : [])
+        ]
+      : []),
+    ...(exists ? [{ id: 'note', label: t('ao.qp.report.open'), icon: 'file' as const, run: () => deps.ui.openNote(note) }] : []),
+    ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
+  ]
+  const pieceOpen = (path: string): ViewAction | undefined =>
+    path ? (deps.showPage ? { id: 'open', label: t('ao.piece.fiche.open'), run: () => deps.showPage?.(piecePageOf(path)) } : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }) : undefined
+  const requirementOpen = (path: string | undefined): ViewAction | undefined =>
+    path ? (deps.showPage ? { id: 'open', label: t('ao.fiche.requirement.card'), run: () => deps.showPage?.(requirementPageOf(path)) } : { id: 'open', label: t('ao.fiche.requirement.open'), run: () => deps.ui.openNote(path) }) : undefined
+  const stored = new Map((await requirementsAt(requirementsFolder(analysis)).all()).map((requirement) => [requirement.id, requirement.filePath]))
+
+  // 1. Ce que chaque pièce de l'appel d'offres porte d'exigences.
+  const extraction: ListItem[] = now.extraction.map((each) => {
+    const open = pieceOpen(each.note)
+    return {
+      id: `extraction-${each.note}`,
+      title: each.name,
+      detail: each.problem ? t(`exigences.import.problem.${each.problem}`, { name: each.name }) : t('ao.vp.extraction.found', { count: each.found }),
+      tone: each.problem ? 'warning' : each.found ? 'success' : 'neutral',
+      ...(open ? { open } : {}),
+      tags: ['extraction']
+    }
+  })
+  // 2. Les phrases qu'aucune exigence ne reprend.
+  const missed: ListItem[] = now.missed.map((each, index) => {
+    const open = pieceOpen(linkedNote(each.piece))
+    return {
+      id: `oubliee-${index}`,
+      title: each.sentence.length > 200 ? `${each.sentence.slice(0, 199)}…` : each.sentence,
+      detail: [placeOf([each.piece, ...each.alsoIn].map(linkLabel).join(', '), describeWhere(each.where, t)), `« ${each.marker} »`].join(' — '),
+      tone: 'warning' as const,
+      ...(open ? { open } : {}),
+      tags: ['oubliees']
+    }
+  })
+  // 3. Les incohérences entre pièces.
+  const findings: ListItem[] = now.findings.map((finding, index) => {
+    const open = requirementOpen(finding.ids.map((id) => stored.get(id)).find(Boolean)) ?? pieceOpen(finding.pieces.map(linkedNote).find(Boolean) ?? '')
+    return {
+      id: `coherence-${index}`,
+      title: `${t(`ao.verif.finding.${finding.kind}`)} — ${finding.ids.join(', ')}`,
+      detail: [finding.pieces.map(linkLabel).join(', '), finding.texts.map((text) => `« ${text.length > 120 ? `${text.slice(0, 119)}…` : text} »`).join(' ≠ ')].filter(Boolean).join(' — '),
+      tone: finding.kind === 'divergent' || finding.kind === 'library-differs' ? ('danger' as const) : ('warning' as const),
+      ...(open ? { open } : {}),
+      tags: ['coherence']
+    }
+  })
+  // 4. La couverture par chaque réponse : les absentes d'abord.
+  const coverageBlocks: HomeBlock[] = now.coverage.map(({ candidate, rows }) => {
+    const covered = rows.filter((row) => row.status === 'cited' || row.status === 'addressed').length
+    const share = rows.length ? Math.round((covered / rows.length) * 100) : 0
+    return {
+      kind: 'list',
+      title: candidate ? t('ao.vp.coverage.candidate', { candidate, percent: share }) : t('ao.vp.coverage.title', { percent: share }),
+      items: [...rows]
+        .sort((a, b) => (COVERAGE_ORDER[a.status] ?? 0) - (COVERAGE_ORDER[b.status] ?? 0) || a.requirement.id.localeCompare(b.requirement.id, undefined, { numeric: true }))
+        .map((row): ListItem => {
+          const open = requirementOpen(row.requirement.filePath)
+          return {
+            id: `couverture-${candidate}-${row.requirement.id}`,
+            title: row.requirement.title ? `${row.requirement.id} — ${row.requirement.title}` : row.requirement.id,
+            detail: [t(`ao.verif.status.${row.status}`, { score: Math.round(row.score * 100) }), row.piece ? placeOf(linkLabel(row.piece), describeWhere(row.where, t)) : '', row.excerpt ? `« ${row.excerpt.length > 140 ? `${row.excerpt.slice(0, 139)}…` : row.excerpt} »` : ''].filter(Boolean).join(' · '),
+            tone: COVERAGE_TONE[row.status] ?? 'neutral',
+            ...(open ? { open } : {}),
+            tags: ['couverture']
+          }
+        })
+    }
+  })
+  const shares = now.coverage.map(({ rows }) => (rows.length ? Math.round((rows.filter((row) => row.status === 'cited' || row.status === 'addressed').length / rows.length) * 100) : 0))
+  const coverageValue = !shares.length ? '—' : shares.length === 1 ? `${shares[0]} %` : `${Math.min(...shares)}–${Math.max(...shares)} %`
+  const worst = shares.length ? Math.min(...shares) : null
+  return {
+    title: t('ao.vp.page.title', { name: analysis.name }),
+    back: { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) },
+    subtitle: t('ao.vp.subtitle'),
+    actions,
+    search: { label: t('ao.vp.search'), placeholder: t('ao.vp.search.placeholder') },
+    filters: [
+      { id: 'extraction', label: t('ao.verif.extraction.title') },
+      { id: 'oubliees', label: t('ao.verif.oubliees.title') },
+      { id: 'coherence', label: t('ao.verif.coherence.title') },
+      { id: 'couverture', label: t('ao.verif.couverture.title') }
+    ],
+    blocks: [
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('ao.vp.stat.found'), value: String(found), icon: 'list', hint: t('ao.vp.stat.found.hint', { pieces: now.extraction.length, stored: now.requirements }) },
+          { label: t('ao.verif.oubliees.title'), value: String(now.missed.length), icon: 'alert', ...(now.missed.length ? { tone: 'warning' as const } : {}) },
+          { label: t('ao.vp.stat.findings'), value: String(now.findings.length), icon: 'columns', ...(now.findings.length ? { tone: 'danger' as const } : {}) },
+          { label: t('ao.vp.stat.coverage'), value: coverageValue, icon: 'check', ...(worst === null ? { hint: t(now.requirements ? 'ao.verif.couverture.noResponse' : 'ao.verif.couverture.noRequirements') } : { tone: worst >= 80 ? ('success' as const) : worst >= 50 ? ('warning' as const) : ('danger' as const) }) }
+        ]
+      },
+      { kind: 'message', tone: 'info', text: t(exists ? 'ao.vp.live' : 'ao.vp.live.noReport') },
+      { kind: 'list', title: t('ao.vp.extraction.title', { count: found }), items: extraction, empty: t('ao.verif.noTender') },
+      { kind: 'list', title: t('ao.vp.missed.title', { count: now.missed.length }), items: missed, empty: t('ao.verif.oubliees.none') },
+      { kind: 'list', title: t('ao.vp.coherence.title', { count: now.findings.length }), items: findings, empty: t('ao.verif.coherence.none') },
+      ...(coverageBlocks.length
+        ? coverageBlocks
+        : [{ kind: 'list' as const, title: `4. ${t('ao.verif.couverture.title')}`, items: [], empty: t(now.requirements ? 'ao.verif.couverture.noResponse' : 'ao.verif.couverture.noRequirements') }])
+    ]
+  }
+}
+
 /** Les notes d'un dossier et de ses sous-dossiers, par ordre alphabétique. */
 async function listNotes(services: Services, folder: string): Promise<string[]> {
   const listing = await services.fs.list(folder)
@@ -1124,6 +1265,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
   views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
+  views.page({ id: VERIFICATION_PAGE, title: t('ao.vp.title'), icon: 'check', parent: ANALYSES_PAGE, load: (param) => verificationPage(deps, param) })
   views.page({ id: QUALITY_PAGE, title: t('ao.qp.title'), icon: 'star', parent: ANALYSES_PAGE, load: (param) => qualityPage(deps, param) })
   views.page({ id: QUESTIONNAIRE_PAGE, title: t('ao.qn.title'), icon: 'list', parent: ANALYSES_PAGE, load: (param) => questionnairePage(deps, param) })
   views.page({ id: QUESTIONNAIRE_ITEM_PAGE, title: t('ao.qn.title'), icon: 'chat', parent: ANALYSES_PAGE, load: (param) => questionnaireItemPage(deps, param) })

@@ -38,7 +38,11 @@ montre sa réponse et ses sources, avec « Reposer cette question ». **Qualité
 ouvre la page de la qualité des exigences, calculée à l'ouverture : les chiffres, une
 carte par exigence (la plus faible d'abord, ses étoiles, ses défauts ; un clic ouvre sa
 fiche), les défauts les plus fréquents, les doublons probables, chaque axe de la norme ;
-« Écrire le rapport » la garde dans une note. **Exigences** ouvre de même la page de la
+« Écrire le rapport » la garde dans une note. **Vérifier** ouvre la page de la vérification
+des exigences, calculée à l'ouverture sans rien écrire : ce que chaque pièce porte
+d'exigences, les phrases qu'aucune exigence ne reprend, les incohérences entre pièces, la
+couverture par la réponse (par candidat pour l'émetteur) ; « Tout vérifier » écrit le
+rapport et propose d'ajouter ce qui manque. **Exigences** ouvre de même la page de la
 bibliothèque : une carte par exigence, les plus faibles d'abord, avec sa formulation, et des
 filtres (faibles, à revoir, criticité haute, brouillons, approuvées) ; un clic sur une
 exigence ouvre sa fiche : ses formulations par langue, sa qualité axe par axe, ses liens,

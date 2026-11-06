@@ -655,3 +655,77 @@ describe('la qualité des exigences, en page', () => {
     expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Qualité des exigences.md'))).title).toBe('Qualité introuvable')
   })
 })
+
+describe('la vérification des exigences, en page', () => {
+  /** La station : un CCTP qui porte EX-1 et une phrase en « doit » qu'aucune exigence ne reprend. */
+  async function verification() {
+    const platform = memoryPlatform()
+    const run = await start(platform, true)
+    await run.importInto('# CCTP\n\n| Identifiant | Exigence |\n|---|---|\n| EX-1 | Le titulaire doit fournir une antenne de 3,7 m. |\n\nLe titulaire doit assurer la maintenance pendant deux ans.\n')
+    const page = run.views.pages().find((each) => each.id === 'ao.verification')!
+    const path = (analysis: { folder: string }) => `${analysis.folder}/Analyse/Vérification des exigences.md`
+    return { ...run, platform, page, path, fiche: run.views.pages().find((each) => each.id === 'ao.fiche')! }
+  }
+  const listsOf = (view: PageView) => view.blocks.filter((block) => block.kind === 'list').map((block) => (block.kind === 'list' ? block : null)!)
+
+  it('« Vérifier » sur la fiche ouvre sa page, calculée à l’ouverture, sans rien écrire', async () => {
+    const { fiche, station, shown, page, path, platform } = await verification()
+    await (await fiche.load(encodeURIComponent(station.note))).actions!.find((action) => action.id === 'verify')!.run()
+    expect(shown.at(-1)).toBe(`ao.verification?${encodeURIComponent(path(station))}`)
+    expect(page.parent).toBe('ao.analyses')
+    const view = await page.load(encodeURIComponent(path(station)))
+    expect(platform.files.has(path(station))).toBe(false)
+    expect(view.title).toBe('Vérification des exigences — Station sol')
+    expect(view.actions?.map((action) => `${action.id}:${action.primary ?? false}`)).toEqual(['all:true', 'extract:false', 'missed:false', 'analysis:false'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['extraction', 'oubliees', 'coherence', 'couverture'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Exigences dans les pièces=1', 'Exigences oubliées=2', 'Incohérences=0', 'Couverture par la réponse=—'])
+    const lists = listsOf(view)
+    expect(lists.map((list) => list.title)).toEqual(['1. Extraction (1 exigence(s) dans les pièces)', '2. Exigences oubliées (2)', '3. Cohérence entre pièces (0 constat(s))', '4. Couverture par la réponse'])
+    expect(lists[0]!.items.map((item) => `${item.title}:${item.detail}:${item.tone}`)).toEqual(['RC:0 exigence(s) trouvée(s):neutral', 'CCTP:1 exigence(s) trouvée(s):success'])
+    expect(lists[1]!.items[1]).toMatchObject({ title: 'Le titulaire doit assurer la maintenance pendant deux ans.', detail: 'CCTP, paragraphe 1 — « doit »', tone: 'warning', tags: ['oubliees'] })
+    expect(lists[3]!.empty).toBe('Aucune exigence dans l’analyse : extrayez-les d’abord.')
+  })
+
+  it('un clic sur une pièce ou une phrase oubliée ouvre la fiche de la pièce ; un filtre par vérification', async () => {
+    const { page, path, station, shown } = await verification()
+    const view = await page.load(encodeURIComponent(path(station)))
+    await listsOf(view)[1]!.items[1]!.open!.run()
+    expect(shown.at(-1)).toMatch(/^ao\.piece\?.*CCTP\.md$/)
+    const { filterBlocks } = await import('../src/ui/page')
+    const filtered = filterBlocks(view.blocks, '', 'oubliees', 'Rien')
+    expect(filtered.hits).toBe(2)
+  })
+
+  it('l’émetteur : la couverture par la réponse de chaque candidat, les absentes d’abord ; un clic ouvre la fiche de l’exigence', async () => {
+    const run = await verification()
+    const text = (body: string) => ({ fr: { body, lang: 'fr', origin: 'human' as const, reviewed: true, by: '', at: '', fromRev: 1 } })
+    const store = requirementsAt(`${run.maintenance.folder}/Exigences`)
+    await store.create({ category: 'MA', title: 'Antenne', text: text('Le titulaire doit fournir une antenne parabolique de 3,7 m de diamètre.') })
+    await store.create({ category: 'MA', title: 'Astreinte', text: text('Le titulaire doit assurer une astreinte téléphonique 24 heures sur 24.') })
+    await run.respond('Acme', 'Mémoire technique.md', '# Mémoire technique\n\nNous fournissons une antenne parabolique de 3,7 m de diamètre, livrée et posée.\n')
+    const view = await run.page.load(encodeURIComponent(run.path(run.maintenance)))
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.at(-1)).toMatchObject({ value: '50 %', tone: 'warning' })
+    const coverage = listsOf(view).at(-1)!
+    expect(coverage.title).toBe('4. Couverture par la réponse de Acme : 50 % couvertes')
+    expect(coverage.items.map((item) => `${item.title}:${item.tone}`)).toEqual(['REQ-MA-0002 — Astreinte:danger', 'REQ-MA-0001 — Antenne:success'])
+    expect(coverage.items[1]!.detail).toMatch(/^Traitée \(\d+ %\) · Mémoire technique, paragraphe 1 · « Nous fournissons/)
+    await coverage.items[0]!.open!.run()
+    expect(run.shown.at(-1)).toMatch(/^exigences\.fiche\?/)
+  })
+
+  it('« Tout vérifier » écrit le rapport sans quitter la page ; la note produite y mène ; hors d’une analyse : la page le dit', async () => {
+    const { page, path, maintenance, platform, fiche, shown } = await verification()
+    const view = await page.load(encodeURIComponent(path(maintenance)))
+    await view.actions!.find((action) => action.id === 'all')!.run()
+    expect(platform.files.has(path(maintenance))).toBe(true)
+    expect(platform.opened).toEqual([])
+    const after = await page.load(encodeURIComponent(path(maintenance)))
+    expect(after.actions?.map((action) => `${action.id}:${action.primary ?? false}`)).toEqual(['all:false', 'note:false', 'analysis:false'])
+    const produced = (await fiche.load(encodeURIComponent(maintenance.note))).blocks.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    await (produced?.kind === 'list' ? produced.items : []).find((item) => item.title === 'Vérification des exigences')!.open!.run()
+    expect(shown.at(-1)).toBe(`ao.verification?${encodeURIComponent(path(maintenance))}`)
+    expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Vérification des exigences.md'))).title).toBe('Vérification introuvable')
+  })
+})

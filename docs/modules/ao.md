@@ -290,6 +290,27 @@ rapport** (`runFor('qualite-exigences', { analysis, stay: true })` : la note n'e
 ouverte), **Ouvrir le rapport** s'il existe, **Relire (IA)**, l'analyse. Sans exigence :
 un message dit comment en avoir.
 
+## La vérification des exigences, en page (v0.19.0, Black Projects 0.31.0)
+
+« Vérifier », sur la fiche d'une analyse (quand la plateforme a des pages), ouvre
+`ao.verification?<chemin encodé de Analyse/Vérification des exigences.md>`
+(`verificationPageOf`, `parent` : les analyses) — aussi la note « Vérification des
+exigences » de « Ce que l'analyse a produit », et la page `ao.note` de cette note. La page
+est **calculée à l'ouverture** par `verificationNow` (`verification.ts`), qui ne propose
+ni n'écrit rien et ne lit qu'une fois les pièces de l'appel d'offres : ce que chaque pièce
+porte d'exigences (ou ce qui empêche de les extraire), les phrases à tournure d'exigence
+qu'aucune ne reprend (`missedRequirements`), les constats de cohérence (`coherence`), la
+couverture des exigences par chaque réponse (`coverage`, une par candidat pour
+l'émetteur). Elle montre les chiffres (exigences dans les pièces, oubliées, incohérences,
+couverture — l'écart entre candidats s'il y en a plusieurs), puis une liste par
+vérification, numérotée comme le rapport, chaque élément avec son filtre (Extraction,
+Exigences oubliées, Cohérence, Couverture) : un clic ouvre la fiche de la pièce ou de
+l'exigence ; la couverture, les absentes d'abord. En tête : **Tout vérifier**
+(`verifier-exigences`, mis en avant tant qu'il n'y a pas de rapport), **Tout extraire**
+(s'il y a des exigences dans les pièces), **Ajouter des oubliées** (s'il y en a), le
+rapport, l'analyse — tous par `runFor(…, { analysis, stay: true })` : les aperçus d'ajout
+s'ouvrent, la note n'est pas ouverte, la page se redessine.
+
 ## Dans le coffre
 
 ```

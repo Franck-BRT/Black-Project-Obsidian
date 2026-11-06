@@ -374,6 +374,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   sources)
 - v0.30.0 : la **qualité des exigences en page**, calculée à l'ouverture (une carte par
   exigence, la plus faible d'abord ; défauts, doublons, axes) ; « Écrire le rapport »
+- v0.31.0 : la **vérification des exigences en page**, calculée à l'ouverture (extraction,
+  oubliées, cohérence, couverture par candidat) ; « Tout vérifier », « Tout extraire »,
+  « Ajouter des oubliées » sans quitter la page
 
 ### Étape 7 — Livrables
 

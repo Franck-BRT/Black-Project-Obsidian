@@ -76,6 +76,13 @@ analyse ? » :
   une carte par exigence, la plus faible d'abord, avec ses étoiles et ce qui lui coûte (un
   clic ouvre sa fiche) ; les défauts les plus fréquents, chaque axe de la norme ;
   **Écrire le rapport** la garde dans la note « Qualité des exigences » ;
+- la **vérification de ses exigences** : **Vérifier** ouvre sa page, calculée à
+  l'ouverture sans rien écrire — 1. ce que chaque pièce de l'appel d'offres porte
+  d'exigences, 2. les phrases en « doit » qu'aucune exigence ne reprend, 3. les
+  incohérences entre pièces, 4. la couverture par la réponse (une par candidat pour
+  l'émetteur), les absentes d'abord ; un clic ouvre la fiche de la pièce ou de
+  l'exigence, un filtre par vérification ; **Tout vérifier** écrit le rapport (les aperçus
+  d'ajout s'ouvrent), **Tout extraire**, **Ajouter des oubliées** ;
 - une recherche et des filtres (pièces à lire, appel d'offres, réponse) ; « ← Toutes les
   analyses » ramène à la liste.
 
