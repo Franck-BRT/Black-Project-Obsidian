@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le calendrier, en page (v0.32.0)
+
+- [ ] Fiche d'une analyse → **Calendrier** : sa page, sans fenêtre ni note ouverte ;
+      « Relevé à l'ouverture de la page »
+- [ ] Les chiffres : la date limite de remise (« J-n », rouge à une semaine, orange à trois,
+      verte au-delà ; la même couleur dans « À retenir » et dans les dates), la validité
+      des offres, les dates à venir, les délais
+- [ ] « À retenir », les dates dans l'ordre (« J-n », la phrase, la pièce), les délais ;
+      filtres **À venir**, **Passées**, **Délais**
+- [ ] Un clic sur une date ou un délai ouvre la fiche de la pièce ; « Retour » ramène au
+      calendrier
+- [ ] **Écrire le calendrier** : la note est écrite, Obsidian ne l'ouvre pas ; le bouton
+      devient « Mettre à jour la note », « Ouvrir la note » apparaît
+- [ ] « Ce que l'analyse a produit » → Calendrier : la même page ; une autre note du
+      dossier Analyse (une synthèse à soi) s'ouvre toujours lisible, en page
+
 ## La vérification des exigences, en page (v0.31.0)
 
 - [ ] Fiche d'une analyse → **Vérifier** : sa page, sans fenêtre ni note ouverte ;

@@ -53,13 +53,17 @@ analyse ? » :
   exigences par elle, maintenant — les absentes d'abord, puis à vérifier, traitées,
   citées, chacune avec l'endroit de la réponse et l'extrait ; un clic ouvre la fiche de
   l'exigence ; **Importer des pièces de sa réponse**, **Écrire le rapport de couverture** ;
-- son **calendrier** (les dates relevées et leur pièce), ses **exigences** (les plus faibles
-  d'abord), et **ce qu'elle a produit** (calendrier, vérification, qualité, questionnaire,
-  questions…) : un clic ouvre la note **en page**, lisible sans la syntaxe — une section
-  par titre, chaque tableau en liste avec la couleur de ses lignes (vert, orange, rouge) ;
-  un clic sur une ligne ouvre la fiche de la pièce ou de l'exigence qu'elle cite ;
-  **Mettre à jour** refait la note (sans quitter la page), **Ouvrir la note** l'ouvre dans
-  le coffre, une recherche porte sur toute la note ;
+- son **calendrier** : **Calendrier** ouvre sa page, relevée à l'ouverture dans les
+  pièces de l'appel d'offres — la date limite de remise et ses jours restants (rouge à une
+  semaine, orange à trois), la validité des offres, « À retenir », les dates dans l'ordre
+  et les délais, chacun avec sa phrase et sa pièce (un clic ouvre la fiche de la pièce) ;
+  filtres À venir, Passées, Délais ; **Écrire le calendrier** le garde dans une note, sans
+  quitter la page ;
+- ses **exigences** (les plus faibles d'abord), et **ce qu'elle a produit** : chaque note
+  écrite par Black Projects ouvre sa page (calendrier, vérification, qualité,
+  questionnaire, questions) ; une autre note du dossier Analyse (une synthèse à vous)
+  s'ouvre en page, lisible sans la syntaxe — une section par titre, chaque tableau en
+  liste ; un clic sur une ligne ouvre la fiche de la pièce ou de l'exigence qu'elle cite ;
 - ses **questions au dossier** (« Interroger ») : la question, sa date, combien de sources
   sont citées ; un clic ouvre la **page de la question** — la réponse, le rappel de la
   vérifier, une carte par source (citée ou non, les extraits donnés à l'IA ; un clic ouvre

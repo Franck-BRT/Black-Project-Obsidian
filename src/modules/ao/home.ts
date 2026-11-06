@@ -19,7 +19,7 @@ import { calendarOf, calendarPath, delayLabel, writeCalendar } from './calendar'
 import { QUESTIONNAIRE, questionnairePath, questionsFolder, QUESTION_TYPE, QUESTIONNAIRE_TYPE, type QuestionKey } from './ask/dossier'
 import { noteBlocks, readQuestion, readQuestionnaire, type QuestionNote, type QuestionnaireItem, type QuestionSource } from './produced'
 import { qualityPath } from './quality'
-import { pieceSources, pieceText } from './ask/sources'
+import { pieceSources, pieceText, type PieceSource } from './ask/sources'
 import { destinationLabel, type Analysis, type PieceRow, type ReadingState } from './notes'
 import { linkedNote, requirementsFolder } from './requirements'
 import { analysisPosition, listAnalyses, listCandidates, listPieces, pieceAt, type Services, type Translate } from './service'
@@ -81,6 +81,10 @@ export const qualityPageOf = (note: string): string => pageWith(QUALITY_PAGE, en
 /** La page de la vérification des exigences d'une analyse : `verificationPageOf(chemin de son rapport)`. */
 export const VERIFICATION_PAGE = 'ao.verification'
 export const verificationPageOf = (note: string): string => pageWith(VERIFICATION_PAGE, encodeURIComponent(note))
+
+/** La page du calendrier d'une analyse : `calendarPageOf(chemin de sa note)`. */
+export const CALENDAR_PAGE = 'ao.calendrier'
+export const calendarPageOf = (note: string): string => pageWith(CALENDAR_PAGE, encodeURIComponent(note))
 
 /** La page des analyses. */
 export const ANALYSES_PAGE = 'ao.analyses'
@@ -316,7 +320,8 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     ? [
         { id: 'import', label: t('ao.home.import'), icon: 'upload', primary: pieces.length === 0, run: () => deps.importInto(analysis) },
         { id: 'update', label: t('ao.fiche.update'), icon: 'refresh', run: run('mettre-a-jour') },
-        { id: 'calendar', label: t('ao.home.calendar'), icon: 'calendar', run: run('calendrier') },
+        // Le calendrier a sa page : relevé à l'ouverture, la note s'écrit de là.
+        { id: 'calendar', label: t('ao.home.calendar'), icon: 'calendar', run: deps.showPage ? () => deps.showPage?.(calendarPageOf(calendarPath(analysis))) : run('calendrier') },
         // La vérification a sa page : calculée à l'ouverture, le rapport s'écrit de là.
         { id: 'verify', label: t('ao.tile.verify'), icon: 'check', run: deps.showPage ? () => deps.showPage?.(verificationPageOf(reportPath(analysis))) : run('verifier-exigences') },
         // La qualité a sa page : calculée à l'ouverture, le rapport s'écrit de là.
@@ -438,7 +443,7 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     title: baseName(path).replace(/\.md$/, ''),
     detail: path.slice(analysis.folder.length + 1),
     open: deps.showPage
-      ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(path === questionnairePath(analysis) ? questionnairePageOf(path) : path === qualityPath(analysis) ? qualityPageOf(path) : path === reportPath(analysis) ? verificationPageOf(path) : producedPageOf(path)) }
+      ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(path === calendarPath(analysis) ? calendarPageOf(path) : path === questionnairePath(analysis) ? questionnairePageOf(path) : path === qualityPath(analysis) ? qualityPageOf(path) : path === reportPath(analysis) ? verificationPageOf(path) : producedPageOf(path)) }
       : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
   }))
 
@@ -654,21 +659,13 @@ export async function piecePage(deps: HomeDeps, param: string | undefined): Prom
   }
 }
 
-/** La commande qui réécrit une note produite, selon la note : le calendrier, la vérification… */
-function producerOf(analysis: Analysis, note: string): string | null {
-  if (note === calendarPath(analysis)) return 'calendrier'
-  if (note === reportPath(analysis)) return 'verifier-exigences'
-  if (note === qualityPath(analysis)) return 'qualite-exigences'
-  if (note === questionnairePath(analysis)) return 'questionnaire'
-  return null
-}
-
 /**
- * La **page** d'une note produite par l'analyse (le calendrier, la vérification des
- * exigences, la qualité, le questionnaire, une question) : son contenu, lisible sans la
- * syntaxe — une section par titre, un tableau en liste, chaque ligne avec son ton (🟩 🟧 🟥)
- * et, si elle a un lien, la fiche qu'il désigne (une pièce, une exigence) ; en tête la
- * mettre à jour (la commande qui l'écrit), ouvrir la note dans le coffre, ou son analyse.
+ * La **page** d'une note rangée dans le dossier Analyse qui n'a pas de page à elle (une
+ * synthèse écrite à la main, par exemple ; le calendrier, la vérification, la qualité, le
+ * questionnaire et les questions ont la leur) : son contenu, lisible sans la syntaxe — une
+ * section par titre, un tableau en liste, chaque ligne avec son ton (🟩 🟧 🟥) et, si elle
+ * a un lien, la fiche qu'il désigne (une pièce, une exigence) ; en tête ouvrir la note dans
+ * le coffre, ou son analyse.
  */
 export async function producedPage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
   const { t } = deps
@@ -697,13 +694,12 @@ export async function producedPage(deps: HomeDeps, param: string | undefined): P
   if (type === QUESTION_TYPE && readQuestion(markdown, questionWords(t))) return questionPage(deps, param)
   if (type === QUESTIONNAIRE_TYPE && note === questionnairePath(analysis)) return questionnairePage(deps, param)
   if (note === qualityPath(analysis)) return qualityPage(deps, param)
+  if (note === calendarPath(analysis)) return calendarPage(deps, param)
   if (note === reportPath(analysis)) return verificationPage(deps, param)
   const blocks = noteBlocks(markdown, opener)
   const heading = /^#\s+(.+)$/m.exec(markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, ''))?.[1]?.trim()
 
-  const producer = deps.runFor ? producerOf(analysis, note) : null
   const actions: ViewAction[] = [
-    ...(producer ? [{ id: 'update', label: t('ao.note.page.update'), tooltip: t('ao.note.page.update.tip'), icon: 'refresh' as const, primary: true, run: () => deps.runFor?.(producer, { analysis, stay: true }) ?? Promise.resolve() }] : []),
     { id: 'note', label: t('ao.fiche.note.open'), icon: 'file', run: () => deps.ui.openNote(note) },
     ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
   ]
@@ -1073,6 +1069,124 @@ export async function qualityPage(deps: HomeDeps, param: string | undefined): Pr
   }
 }
 
+/**
+ * La **page du calendrier** d'une analyse, relevé à l'ouverture dans les pièces de l'appel
+ * d'offres (sans IA, sans rien écrire) : ses chiffres (la date limite de remise et les jours
+ * restants, la validité des offres, les dates à venir, les délais) ; « À retenir » ; les
+ * dates dans l'ordre, chacune avec sa phrase et sa pièce ; les délais. Un clic ouvre la
+ * fiche de la pièce ; les filtres À venir, Passées, Délais. En tête : écrire (ou mettre à
+ * jour) la note du calendrier sans quitter la page, l'ouvrir, l'analyse.
+ */
+export async function calendarPage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const services = deps.services()
+  const note = param ? decodeURIComponent(param) : ''
+  const analysis = note ? (await listAnalyses(services)).find((each) => calendarPath(each) === note) : undefined
+  if (!analysis)
+    return { title: t('ao.cp.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.cp.missing') }] }
+  const exists = await services.fs.exists(note)
+  const today = deps.today()
+  const calendar = calendarOf(await pieceSources(services, analysis, 'appel-d-offres'), Number(today.slice(0, 4)))
+  const longDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString(t('ao.fiche.locale'), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const relative = (date: string) => {
+    const days = daysUntil(date, today)
+    return days > 0 ? `J-${days}` : days === 0 ? t('ao.cp.today') : t('ao.fiche.past')
+  }
+  const sourcesOf = (sources: readonly PieceSource[]) => sources.map((source) => source.title).join(', ')
+  const openSource = (sources: readonly PieceSource[]): ViewAction | undefined => {
+    const path = sources[0]?.row.note
+    if (!path) return undefined
+    return deps.showPage ? { id: 'open', label: t('ao.piece.fiche.open'), run: () => deps.showPage?.(piecePageOf(path)) } : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
+  }
+  const withOpen = (sources: readonly PieceSource[]) => {
+    const open = openSource(sources)
+    return open ? { open } : {}
+  }
+  const quoted = (sentence: string) => `« ${sentence.replace(/\s+/g, ' ').trim()} »`
+  // Une remise : rouge à une semaine, orange à trois, verte au-delà ; passée, neutre.
+  const remiseTone = (until: number): Tone => (until < 0 ? 'neutral' : until <= 7 ? 'danger' : until <= 21 ? 'warning' : 'success')
+
+  const actions: ViewAction[] = [
+    ...(deps.runFor ? [{ id: 'write', label: t(exists ? 'ao.cp.write.update' : 'ao.cp.write'), tooltip: t('ao.cp.write.tip'), icon: 'refresh' as const, run: () => deps.runFor?.('calendrier', { analysis, stay: true }) ?? Promise.resolve() }] : []),
+    ...(exists ? [{ id: 'note', label: t('ao.fiche.note.open'), icon: 'file' as const, run: () => deps.ui.openNote(note) }] : []),
+    ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
+  ]
+  const head = {
+    title: t('ao.calendar.title', { name: analysis.name }),
+    back: { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) },
+    subtitle: t('ao.calendar.intro'),
+    actions
+  }
+  if (!calendar.read) return { ...head, blocks: [{ kind: 'message', tone: 'info', text: t('ao.cp.noPiece') }] }
+
+  // La remise : la prochaine, sinon la dernière passée.
+  const remises = calendar.dates.filter((date) => date.kind === 'remise')
+  const due = remises.find((date) => date.date >= today) ?? remises.at(-1)
+  const days = due ? daysUntil(due.date, today) : null
+  const validity = calendar.dates.find((date) => date.kind === 'validite')
+  const validityDelay = calendar.delays.find((delay) => delay.kind === 'validite')
+  const coming = calendar.dates.filter((date) => date.date >= today)
+
+  const keep: ListItem[] = (['remise', 'validite'] as const).map((kind) => {
+    const date = calendar.dates.find((each) => each.kind === kind && (kind !== 'remise' || each === due))
+    const delay = calendar.delays.find((each) => each.kind === kind)
+    if (date)
+      return { id: `retenir-${kind}`, title: t(`ao.calendar.kind.${kind}`), when: date.date, detail: `${longDate(date.date)} (${relative(date.date)}) — ${quoted(date.sentence)} — ${sourcesOf(date.sources)}`, tone: kind === 'remise' ? remiseTone(daysUntil(date.date, today)) : 'info', ...withOpen(date.sources) }
+    if (delay) return { id: `retenir-${kind}`, title: t(`ao.calendar.kind.${kind}`), detail: `${delayLabel(delay.written)} — ${quoted(delay.sentence)} — ${sourcesOf(delay.sources)}`, tone: 'info', ...withOpen(delay.sources) }
+    return { id: `retenir-${kind}`, title: t(`ao.calendar.kind.${kind}`), detail: t('ao.calendar.notFound'), tone: 'warning' }
+  })
+  const dates: ListItem[] = calendar.dates.map((date, index) => {
+    const past = date.date < today
+    const until = daysUntil(date.date, today)
+    return {
+      id: `date-${index}`,
+      title: `${t(`ao.calendar.kind.${date.kind}`)}${date.guessedYear ? ` (${t('ao.calendar.guessed')})` : ''}`,
+      when: date.date,
+      detail: `${relative(date.date)} — ${quoted(date.sentence)} — ${sourcesOf(date.sources)}`,
+      tone: past ? 'neutral' : date.kind === 'remise' ? remiseTone(until) : 'info',
+      ...withOpen(date.sources),
+      tags: [past ? 'passees' : 'a-venir']
+    }
+  })
+  const delays: ListItem[] = calendar.delays.map((delay, index) => ({
+    id: `delai-${index}`,
+    title: `${t(`ao.calendar.kind.${delay.kind}`)} — ${delayLabel(delay.written)}`,
+    detail: `${quoted(delay.sentence)} — ${sourcesOf(delay.sources)}`,
+    tone: 'info',
+    ...withOpen(delay.sources),
+    tags: ['delais']
+  }))
+  return {
+    ...head,
+    search: { label: t('ao.cp.search'), placeholder: t('ao.cp.search.placeholder') },
+    filters: [
+      { id: 'a-venir', label: t('ao.cp.filter.coming') },
+      { id: 'passees', label: t('ao.cp.filter.past') },
+      { id: 'delais', label: t('ao.calendar.delays') }
+    ],
+    blocks: [
+      {
+        kind: 'stats',
+        stats: [
+          days === null
+            ? { label: t('ao.calendar.kind.remise'), value: '—', icon: 'clock', hint: t('ao.fiche.noDeadline') }
+            : { label: t('ao.calendar.kind.remise'), value: days >= 0 ? `J-${days}` : t('ao.fiche.past'), icon: days >= 0 && days <= 7 ? 'alert' : 'clock', tone: remiseTone(days), hint: longDate(due!.date) },
+          validity
+            ? { label: t('ao.calendar.kind.validite'), value: validity.date, icon: 'calendar' }
+            : { label: t('ao.calendar.kind.validite'), value: validityDelay ? delayLabel(validityDelay.written) : '—', icon: 'calendar', ...(validityDelay ? {} : { hint: t('ao.calendar.notFound') }) },
+          { label: t('ao.cp.stat.coming'), value: String(coming.length), icon: 'calendar', hint: t('ao.cp.stat.dates', { count: calendar.dates.length }) },
+          { label: t('ao.calendar.delays'), value: String(calendar.delays.length), icon: 'clock', hint: t('ao.cp.stat.read', { count: calendar.read }) }
+        ]
+      },
+      ...(calendar.dates.some((date) => date.guessedYear) ? [{ kind: 'message' as const, tone: 'warning' as const, text: t('ao.calendar.guessedWarning') }] : []),
+      { kind: 'message', tone: 'info', text: t(exists ? 'ao.cp.live' : 'ao.cp.live.noNote') },
+      { kind: 'list', title: t('ao.calendar.keep'), items: keep },
+      { kind: 'list', title: t('ao.cp.dates', { count: calendar.dates.length }), items: dates, empty: t('ao.calendar.noDate') },
+      { kind: 'list', title: t('ao.cp.delays', { count: calendar.delays.length }), items: delays, empty: t('ao.calendar.noDelay') }
+    ]
+  }
+}
+
 /** Le libellé d'un lien Obsidian (« [[Pièces/RC|RC]] » → « RC ») ; le texte tel quel sinon. */
 const linkLabel = (link: string) => /\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/.exec(link)?.[1] ?? link
 const COVERAGE_ORDER: Record<string, number> = { absent: 0, partial: 1, addressed: 2, cited: 3 }
@@ -1265,6 +1379,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
   views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
+  views.page({ id: CALENDAR_PAGE, title: t('ao.cp.title'), icon: 'calendar', parent: ANALYSES_PAGE, load: (param) => calendarPage(deps, param) })
   views.page({ id: VERIFICATION_PAGE, title: t('ao.vp.title'), icon: 'check', parent: ANALYSES_PAGE, load: (param) => verificationPage(deps, param) })
   views.page({ id: QUALITY_PAGE, title: t('ao.qp.title'), icon: 'star', parent: ANALYSES_PAGE, load: (param) => qualityPage(deps, param) })
   views.page({ id: QUESTIONNAIRE_PAGE, title: t('ao.qn.title'), icon: 'list', parent: ANALYSES_PAGE, load: (param) => questionnairePage(deps, param) })

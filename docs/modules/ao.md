@@ -219,11 +219,11 @@ une puce ou un passage cité en retrait complète l'élément du dessus ; un enc
 cherché comme les listes). Les marques 🟩 ✅ / 🟧 ⚠️ / 🟥 ❌ donnent le ton de la ligne et
 disparaissent ; liens, gras, italique, code sont lus sans leur syntaxe. Le premier lien
 d'une ligne dit ce qu'elle ouvre : la fiche de la pièce, de l'exigence, de l'analyse, sinon
-la note. En tête : **Mettre à jour** quand la note a une commande qui l'écrit (Calendrier
-→ `calendrier`, Vérification → `verifier-exigences`, Qualité → `qualite-exigences`,
-Questionnaire → `questionnaire`), lancée avec `runFor(…, { analysis, stay: true })` :
-la commande réécrit la note sans l'ouvrir dans le coffre, la page se redessine ;
-**Ouvrir la note** ; **Ouvrir l'analyse**. Une note disparue : la page le dit.
+la note. En tête : **Ouvrir la note** ; **Ouvrir l'analyse**. Une note disparue : la page
+le dit. Depuis Black Projects 0.32.0, chaque note écrite par Black Projects a sa page à
+elle (calendrier, vérification, qualité, questionnaire, questions) : cette page générique
+ne sert plus qu'aux autres notes rangées dans `Analyse/` (une synthèse écrite à la main),
+et son « Mettre à jour » a disparu avec elles.
 
 ## Une question au dossier, en page (v0.16.0, Black Projects 0.28.0)
 
@@ -310,6 +310,23 @@ l'exigence ; la couverture, les absentes d'abord. En tête : **Tout vérifier**
 (s'il y a des exigences dans les pièces), **Ajouter des oubliées** (s'il y en a), le
 rapport, l'analyse — tous par `runFor(…, { analysis, stay: true })` : les aperçus d'ajout
 s'ouvrent, la note n'est pas ouverte, la page se redessine.
+
+## Le calendrier, en page (v0.20.0, Black Projects 0.32.0)
+
+« Calendrier », sur la fiche d'une analyse (quand la plateforme a des pages), ouvre
+`ao.calendrier?<chemin encodé de Analyse/Calendrier.md>` (`calendarPageOf`, `parent` : les
+analyses) — aussi la note « Calendrier » de « Ce que l'analyse a produit », et la page
+`ao.note` de cette note. La page est **relevée à l'ouverture** (`calendarOf` sur les pièces
+lues de l'appel d'offres, sans IA, sans rien écrire) : les chiffres (la date limite de
+remise et ses jours restants — la prochaine, sinon la dernière passée —, la validité des
+offres, les dates à venir, les délais) ; l'avertissement des années supposées s'il le
+faut ; « À retenir » (la remise, la validité, ou « non trouvé ») ; les dates dans l'ordre,
+chacune avec « J-n », sa phrase et ses pièces ; les délais. Une remise est rouge à une
+semaine, orange à trois, verte au-delà, partout pareil. Un clic ouvre la fiche de la
+première pièce qui la porte ; filtres À venir, Passées, Délais. En tête : **Écrire le
+calendrier** / **Mettre à jour la note** (`runFor('calendrier', { analysis, stay: true })` :
+la note n'est pas ouverte), **Ouvrir la note** si elle existe, l'analyse. Sans pièce lue :
+un message dit d'importer le dossier.
 
 ## Dans le coffre
 

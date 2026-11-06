@@ -377,6 +377,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.31.0 : la **vérification des exigences en page**, calculée à l'ouverture (extraction,
   oubliées, cohérence, couverture par candidat) ; « Tout vérifier », « Tout extraire »,
   « Ajouter des oubliées » sans quitter la page
+- v0.32.0 : le **calendrier en page**, relevé à l'ouverture (la remise et ses jours
+  restants, « À retenir », les dates dans l'ordre, les délais) ; « Écrire le calendrier » ;
+  la page générique d'une note produite ne sert plus qu'aux notes sans page à elles
 
 ### Étape 7 — Livrables
 

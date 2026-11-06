@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.31.0)
+## Aujourd'hui (version 0.32.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -21,9 +21,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   **Analyses**, **Exigences**, **Workflows** et **IA** (menu ou tuile) ouvrent chacune
   leur page — toutes les analyses, toute la bibliothèque d'exigences, tous les workflows, la
   connexion à l'IA et un modèle par usage — avec une recherche et des filtres ; un clic sur
-  un élément ouvre sa fiche — jusqu'aux notes qu'une analyse a produites (calendrier,
-  vérification, qualité, questionnaire), lues en page sans la syntaxe Markdown, avec
-  « Mettre à jour », et aux questions posées au dossier (la réponse, ses sources citées ou
+  un élément ouvre sa fiche — jusqu'au calendrier d'une analyse (relevé à l'ouverture, la
+  remise et ses jours restants, les dates et délais, « Écrire le calendrier »), aux
+  questions posées au dossier (la réponse, ses sources citées ou
   non, « Reposer la question »), et au questionnaire (une carte par thème, « Remplir le
   questionnaire », « Reposer » un thème), et à la qualité des exigences (calculée à
   l'ouverture, une carte par exigence, « Écrire le rapport »), et à leur vérification

@@ -28,8 +28,10 @@ venir, pièces à lire, candidat, émetteur…). Un clic sur une analyse ouvre s
 pièces, son calendrier, ses exigences, et des boutons qui agissent sur elle ; un clic sur
 une pièce ouvre la sienne : son texte, ses dates et délais, les exigences qui en viennent ;
 pour l'émetteur, un clic sur un candidat ouvre la sienne : sa réponse et la couverture des
-exigences par elle ; un clic sur une note qu'elle a produite (calendrier, vérification,
-qualité, questionnaire) l'ouvre en page, lisible, avec « Mettre à jour » ; une question
+exigences par elle. **Calendrier**, sur la fiche, ouvre la page du calendrier, relevé à
+l'ouverture : la date limite de remise et ses jours restants, la validité des offres, les
+dates dans l'ordre et les délais, chacun avec sa phrase et sa pièce ; « Écrire le
+calendrier » le garde dans une note. Une question
 posée au dossier (« Interroger ») a sa page : la réponse, chaque source citée ou non avec
 les extraits transmis à l'IA, et « Reposer la question ». **Questionnaire**, sur la fiche,
 ouvre la page du questionnaire : une carte par thème (répondu, sans source citée, rien
