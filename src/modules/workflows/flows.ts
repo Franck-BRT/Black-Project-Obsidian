@@ -88,7 +88,7 @@ export function describeAction(action: WorkflowAction, t: Translate): string {
 }
 
 /** Un moment à l'heure de l'utilisateur : AAAA-MM-JJ HH:MM. */
-function localStamp(at: Date): string {
+export function localStamp(at: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${dayOf(at)} ${pad(at.getHours())}:${pad(at.getMinutes())}`
 }
@@ -299,6 +299,14 @@ async function askSchedule(session: Session, trigger: WorkflowTrigger): Promise<
 }
 
 // ── Modifier ─────────────────────────────────────────────────────────────────────
+
+/** Activer ou désactiver un workflow (depuis sa carte). */
+export async function setEnabled(session: Session, id: string, enabled: boolean): Promise<void> {
+  const workflow = session.load().find((each) => each.id === id)
+  if (!workflow || workflow.enabled === enabled) return
+  await store(session, { ...workflow, enabled })
+  session.notifier.notify(session.t(enabled ? 'workflows.page.enabled' : 'workflows.page.disabled', { name: workflow.name }), 4000)
+}
 
 export async function editWorkflow(session: Session, id: string): Promise<void> {
   const { ui, t, notifier } = session

@@ -61,6 +61,21 @@ de lui pour fonctionner.
 
 `home.ts` : la section « Workflows » (actifs sur le total, les cinq dernières exécutions lues dans le journal) et l'entrée de navigation.
 
+## La page « Workflows » (v0.3.0, Black Projects 0.17.0)
+
+`home.ts` déclare la **page** `workflows.liste` (`views.page`, voir
+[l'interface](../architecture/interface.md#les-pages-des-modules-v0150)) : les chiffres
+(workflows, actifs, exécutions et échecs parmi les 20 dernières lignes du journal), les
+actions (nouveau, importer, exporter, journal), une carte par workflow — déclencheur,
+actions (`Card.text`), mode, état, exécutions et dernière exécution (le compteur du
+workflow, complété par le journal), échec récent — avec **Modifier** (`editWorkflow`),
+**Exécuter** (`runByHand`), **Activer**/**Désactiver** (`setEnabled`), puis les dernières
+lignes du journal (une liste titrée). Filtres (`tags`) : `actifs`, `desactives`,
+`en-echec`, `planifies`, `sur-evenement`, `manuels`, `tout-seuls`, `demandent`. L'entrée,
+la tuile, la commande `liste` et le lien « Tous les workflows » du tableau de bord
+l'ouvrent par `context.showPage` ; sans page chez la plateforme, la liste en fenêtre reste.
+Tests : `test/workflows-page.test.ts`.
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

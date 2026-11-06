@@ -31,6 +31,15 @@ describe('la recherche et les filtres d’une page', () => {
     expect(filterBlocks(BLOCKS, 'echeance', null).hits).toBe(1)
   })
 
+  it('avec un filtre, seules les cartes comptent ; un bloc vidé dit que rien ne correspond', () => {
+    const found = filterBlocks(BLOCKS, '', 'emetteur', 'Rien')
+    expect([found.hits, found.total]).toEqual([1, 3])
+    const none = filterBlocks(BLOCKS, '', 'inconnu', 'Rien')
+    expect(none.blocks[1]).toMatchObject({ kind: 'cards', cards: [], empty: 'Rien' })
+    expect(none.blocks[2]).toMatchObject({ kind: 'list', items: [{ id: '1' }] })
+    expect(filterBlocks(BLOCKS, 'zzz', null, 'Rien').blocks[2]).toMatchObject({ items: [], empty: 'Rien' })
+  })
+
   it('un filtre garde les cartes qui y répondent ; avec la recherche, les deux', () => {
     const found = filterBlocks(BLOCKS, '', 'candidat')
     expect(found.blocks[1]!.kind === 'cards' && found.blocks[1]!.cards.map((each) => each.id)).toEqual(['a', 'c'])

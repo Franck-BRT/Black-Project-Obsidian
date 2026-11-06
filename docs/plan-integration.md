@@ -344,6 +344,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   recherche, filtres) au lieu d'une fenêtre de choix
 - v0.16.0 : la page **Exigences** (la bibliothèque en chiffres, une carte par exigence,
   recherche et filtres) au lieu de la liste en fenêtre
+- v0.17.0 : la page **Workflows** (chiffres, une carte par workflow avec Exécuter et
+  Activer/Désactiver, le journal récent) au lieu de la liste en fenêtre
 
 ### Étape 7 — Livrables
 

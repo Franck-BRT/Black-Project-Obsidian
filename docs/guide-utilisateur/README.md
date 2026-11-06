@@ -12,14 +12,15 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.16.0)
+## Aujourd'hui (version 0.17.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
   date, et vos **tuiles** — des raccourcis vers les modules, avec des pastilles (« J-5 »
   pour la prochaine remise, exigences faibles, échecs de workflows, IA pas réglée).
-  **Analyses** et **Exigences** (menu ou tuile) ouvrent chacune leur page — toutes les
-  analyses, toute la bibliothèque d'exigences — avec une recherche et des filtres. **Modifier l'accueil** pour en ajouter, en retirer ou les déplacer. Le **Tableau de
+  **Analyses**, **Exigences** et **Workflows** (menu ou tuile) ouvrent chacune leur page —
+  toutes les analyses, toute la bibliothèque d'exigences, tous les workflows — avec une
+  recherche et des filtres. **Modifier l'accueil** pour en ajouter, en retirer ou les déplacer. Le **Tableau de
   bord** (navigation, tuile, ou commande) donne les informations : une carte par analyse
   avec sa date limite de remise, l'état de l'IA, la bibliothèque d'exigences, les derniers
   workflows. **Modifier le tableau de bord** pour masquer une section, la déplacer

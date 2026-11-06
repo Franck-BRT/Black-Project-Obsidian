@@ -150,7 +150,7 @@ pour forcer une apparence (captures, recette).
 
 Un module peut ouvrir une **page** dans l'onglet de Black Projects, comme le tableau de
 bord, plutôt qu'une fenêtre : la liste des analyses (v0.15.0), la bibliothèque d'exigences
-(v0.16.0). Une carte peut porter un extrait de texte (`Card.text`, trois lignes au plus),
+(v0.16.0), les workflows (v0.17.0). Une carte peut porter un extrait de texte (`Card.text`, trois lignes au plus),
 que la recherche lit aussi. Il la déclare par
 `views.page({ id, title, icon, load })` ; `load` rend une `PageView` en données :
 
@@ -160,7 +160,13 @@ que la recherche lit aussi. Il la déclare par
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;
 - des **filtres** facultatifs, à bascule (« Tout » en plus) : une carte répond à ceux de ses
-  `tags`. Le nombre affiché est annoncé (« 1 sur 2 affiché(s) »).
+  `tags`. Le nombre affiché est annoncé (« 1 sur 2 affiché(s) ») ; il ne compte que ce que
+  la recherche ou le filtre trie (un filtre ne vise que les cartes : une liste — un journal
+  — ne compte pas avec lui). Un bloc vidé dit, à sa place, que rien ne correspond.
+
+Une liste peut porter un intitulé (`title` : « Dernières exécutions »). Après chaque bouton
+d'action, l'interface redessine pages, tableau de bord et pastilles (`AfterAction`) : une
+action peut changer ce qui est montré sans toucher au coffre (activer un workflow).
 
 On ouvre une page par `context.showPage(id)` : l'hôte Obsidian ouvre (ou montre) l'onglet
 de Black Projects sur cette page ; la démonstration change de page. Une entrée du menu ou

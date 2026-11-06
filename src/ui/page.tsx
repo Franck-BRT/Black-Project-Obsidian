@@ -29,8 +29,11 @@ const itemText = (item: ListItem) => [item.title, item.detail].filter(Boolean).j
 /**
  * Les blocs, filtrés : les cartes et les éléments de liste qui contiennent tous les mots
  * cherchés et, si un filtre est choisi, les cartes qui y répondent. Le reste ne bouge pas.
+ * Les nombres ne comptent que ce que la recherche ou le filtre trie : un filtre ne
+ * s'applique qu'aux cartes, alors les listes (un journal) ne comptent pas avec lui. Un bloc
+ * vidé dit que rien ne correspond (`none`), à sa place.
  */
-export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter: string | null): { blocks: HomeBlock[]; hits: number; total: number } {
+export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter: string | null, none?: string): { blocks: HomeBlock[]; hits: number; total: number } {
   const words = fold(query).split(/\s+/).filter(Boolean)
   const matches = (text: string) => words.every((word) => fold(text).includes(word))
   let hits = 0
@@ -40,13 +43,15 @@ export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter
       total += block.cards.length
       const cards = block.cards.filter((card) => matches(cardText(card)) && (!filter || (card.tags ?? []).includes(filter)))
       hits += cards.length
-      return { ...block, cards }
+      return { ...block, cards, ...(none && block.cards.length && !cards.length ? { empty: none } : {}) }
     }
     if (block.kind === 'list') {
-      total += block.items.length
       const items = block.items.filter((item) => matches(itemText(item)))
-      hits += items.length
-      return { ...block, items }
+      if (!filter) {
+        total += block.items.length
+        hits += items.length
+      }
+      return { ...block, items, ...(none && block.items.length && !items.length ? { empty: none } : {}) }
     }
     return block
   })
@@ -79,7 +84,7 @@ export function ModulePage({ spec, host, generation }: { spec: PageSpec; host: A
   if (state.status === 'failed') return <BlockView block={{ kind: 'message', tone: 'danger', text: t('ui.section.failed', { reason: state.reason }) }} t={t} now={host.now()} locale={host.locale} />
   const { view } = state
   const narrowed = query.trim() !== '' || filter !== null
-  const { blocks, hits, total } = filterBlocks(view.blocks, query, filter)
+  const { blocks, hits, total } = filterBlocks(view.blocks, query, filter, t('ui.page.none'))
   const searchId = `bp-page-search-${spec.id}`
   return (
     <div class="bp-page" data-page={spec.id}>
@@ -120,11 +125,9 @@ export function ModulePage({ spec, host, generation }: { spec: PageSpec; host: A
         </p>
       )}
       <div class="bp-page-body">
-        {narrowed && hits === 0 && total > 0 ? (
-          <p class="bp-empty">{t('ui.page.none')}</p>
-        ) : (
-          blocks.map((block, index) => <BlockView key={index} block={block} t={t} now={host.now()} locale={host.locale} />)
-        )}
+        {blocks.map((block, index) => (
+          <BlockView key={index} block={block} t={t} now={host.now()} locale={host.locale} />
+        ))}
       </div>
     </div>
   )

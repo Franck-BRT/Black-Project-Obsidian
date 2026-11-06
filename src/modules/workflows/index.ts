@@ -24,9 +24,9 @@ import { cleanFolder } from '../../core/settings'
 import { registerBuiltins } from './builtins'
 import page from './doc/Workflows.md'
 import { WorkflowEngine } from './engine'
-import { browseWorkflows, createWorkflow, exportToFile, importFromFile, openJournal, pickAndRun, type Session } from './flows'
+import { browseWorkflows, createWorkflow, describeAction, describeTrigger, editWorkflow, exportToFile, importFromFile, localStamp, openJournal, pickAndRun, runByHand, setEnabled, type Session } from './flows'
 import { workflowsEn, workflowsFr } from './i18n'
-import { registerWorkflowsHome } from './home'
+import { openWorkflows, registerWorkflowsHome } from './home'
 import type { Subject, Workflow } from './model'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.2.0',
+  version: '0.3.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -135,7 +135,9 @@ export const workflowsModule: BlackModule = {
     const current: Session = { ui: platform.ui, notifier: platform.notifier, fs: platform.fs, t, engine, load, save, folder, now }
     session = current
 
-    commands.register({ id: 'liste', nameKey: 'workflows.command.list', run: () => browseWorkflows(current) })
+    const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
+    // La page des workflows quand la plateforme en a une ; sinon la liste en fenêtre.
+    commands.register({ id: 'liste', nameKey: 'workflows.command.list', run: () => openWorkflows(showPage, () => browseWorkflows(current)) })
     commands.register({ id: 'nouveau', nameKey: 'workflows.command.new', run: async () => void (await createWorkflow(current)) })
     commands.register({ id: 'executer', nameKey: 'workflows.command.run', run: () => pickAndRun(current) })
     commands.register({ id: 'journal', nameKey: 'workflows.command.journal', run: () => openJournal(current) })
@@ -151,7 +153,21 @@ export const workflowsModule: BlackModule = {
       run: async (id) => {
         await context.commands.run?.(id)
       },
-      openJournal: () => openJournal(current)
+      openJournal: () => openJournal(current),
+      ...(showPage ? { showPage } : {}),
+      page: {
+        t,
+        load,
+        describeTrigger: (workflow) => describeTrigger(workflow.trigger, t),
+        describeActions: (workflow) => workflow.actions.map((action) => describeAction(action, t)),
+        stamp: (iso) => localStamp(new Date(iso)),
+        edit: (id) => editWorkflow(current, id),
+        runNow: async (id) => {
+          const workflow = load().find((each) => each.id === id)
+          if (workflow) await runByHand(current, workflow)
+        },
+        setEnabled: (id, enabled) => setEnabled(current, id, enabled)
+      }
     })
 
     // Les workflows planifiés : à l'ouverture, puis toutes les minutes.

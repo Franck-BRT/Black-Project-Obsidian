@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La page « Workflows » (v0.17.0)
+
+- [ ] L'entrée **Workflows** du menu : plus de liste en fenêtre ; la page **Workflows**
+      s'ouvre dans l'onglet, l'entrée est marquée en cours
+- [ ] Les chiffres (workflows, actifs, exécutions récentes, échecs récents), les actions
+      (nouveau, importer, exporter, journal), une carte par workflow, puis « Dernières
+      exécutions »
+- [ ] Une carte : déclencheur, actions, mode, état, exécutions, dernière exécution (celle du
+      journal si le compteur n'est pas à jour), « Dernière exécution en échec » s'il le faut
+- [ ] **Désactiver** : la carte passe à « Désactivé » aussitôt ; **Activer** la remet ;
+      **Exécuter** lance le workflow ; **Modifier** ouvre sa fiche
+- [ ] Filtre « Désactivés » : « 1 sur 1 affiché(s) » (le journal ne compte pas) ; plus
+      aucune carte : « Rien ne correspond… » à la place des cartes, le journal reste
+- [ ] La tuile **Workflows**, le lien « Tous les workflows » du tableau de bord et la
+      commande **Workflows : liste et modification** mènent à la même page
+
 ## La page « Exigences » (v0.16.0)
 
 - [ ] L'entrée **Exigences** du menu : plus de liste en fenêtre ; la page **Bibliothèque

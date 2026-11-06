@@ -123,7 +123,7 @@ export type HomeBlock =
   | { kind: 'actions'; actions: ViewAction[] }
   | { kind: 'cards'; cards: Card[]; empty?: string }
   | { kind: 'stats'; stats: Stat[] }
-  | { kind: 'list'; items: ListItem[]; empty?: string }
+  | { kind: 'list'; items: ListItem[]; empty?: string; /** Un intitulé au-dessus de la liste. */ title?: string }
   | { kind: 'message'; tone: Tone; text: string; actions?: ViewAction[] }
 
 /** Une section de l'accueil, telle qu'elle est à cet instant. */

@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { resolvedMode, type Appearance } from '../core/appearance'
 import { AppearancePanel } from './appearance'
+import { AfterAction } from './components'
 import { HomePage } from './home'
 import { ModulePage } from './page'
 import type { AppHost } from './host'
@@ -63,79 +64,81 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
   const today = now.toLocaleDateString(host.locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <div
-      class="bp-ui"
-      data-mode={resolvedMode(appearance, dark)}
-      data-vision={appearance.vision}
-      data-reading={appearance.reading}
-      data-size={appearance.size}
-      data-motion={appearance.motion}
-      lang={host.locale.slice(0, 2)}
-    >
-      <div class={`bp-shell${menuEditing ? ' is-menu-editing' : ''}`}>
-        <aside class="bp-side">
-          <div class="bp-brand">
-            <span class="bp-brand-mark" aria-hidden="true">
-              BP
-            </span>
-            <span>
-              <span class="bp-brand-name">Black Projects</span>
-              <br />
-              <span class="bp-brand-by">by Black Room Technologies</span>
-            </span>
-          </div>
-          <SideMenu
-            host={host}
-            generation={generation + local}
-            tiles={tiles}
-            page={shown}
-            goHome={() => setPage('home')}
-            goDashboard={() => setPage('dashboard')}
-            editing={menuEditing}
-            setEditing={setMenuEditing}
-          />
-          <div class="bp-side-foot">
-            {t('ui.version', { version: host.version })}
-          </div>
-        </aside>
-        <main class="bp-main" ref={main}>
-          <header class="bp-header">
-            <div>
-              <h1 class="bp-hello">
-                {modulePage ? (
-                  <>
-                    <Icon name={modulePage.icon} />
-                    {modulePage.title}
-                  </>
-                ) : shown === 'home' ? (
-                  t(greetingKey(now))
-                ) : (
-                  t('ui.dashboard.title')
-                )}
-              </h1>
-              <p class="bp-today">{today}</p>
+    <AfterAction.Provider value={() => setLocal((n) => n + 1)}>
+      <div
+        class="bp-ui"
+        data-mode={resolvedMode(appearance, dark)}
+        data-vision={appearance.vision}
+        data-reading={appearance.reading}
+        data-size={appearance.size}
+        data-motion={appearance.motion}
+        lang={host.locale.slice(0, 2)}
+      >
+        <div class={`bp-shell${menuEditing ? ' is-menu-editing' : ''}`}>
+          <aside class="bp-side">
+            <div class="bp-brand">
+              <span class="bp-brand-mark" aria-hidden="true">
+                BP
+              </span>
+              <span>
+                <span class="bp-brand-name">Black Projects</span>
+                <br />
+                <span class="bp-brand-by">by Black Room Technologies</span>
+              </span>
             </div>
-            <div class="bp-header-tools">
-              <button type="button" class="bp-button" onClick={() => setLocal(local + 1)}>
-                <Icon name="refresh" />
-                <span>{t('ui.refresh')}</span>
-              </button>
-              <button type="button" class="bp-button" aria-expanded={panel} aria-haspopup="dialog" onClick={() => setPanel(!panel)}>
-                <Icon name="eye" />
-                <span>{t('ui.appearance.button')}</span>
-              </button>
-              {panel && <AppearancePanel appearance={appearance} change={change} close={() => setPanel(false)} t={t} />}
+            <SideMenu
+              host={host}
+              generation={generation + local}
+              tiles={tiles}
+              page={shown}
+              goHome={() => setPage('home')}
+              goDashboard={() => setPage('dashboard')}
+              editing={menuEditing}
+              setEditing={setMenuEditing}
+            />
+            <div class="bp-side-foot">
+              {t('ui.version', { version: host.version })}
             </div>
-          </header>
-          {modulePage ? (
-            <ModulePage spec={modulePage} host={host} generation={generation + local} />
-          ) : shown === 'home' ? (
-            <Springboard host={host} generation={generation + local} tiles={tiles} />
-          ) : (
-            <HomePage host={host} generation={generation + local} />
-          )}
-        </main>
+          </aside>
+          <main class="bp-main" ref={main}>
+            <header class="bp-header">
+              <div>
+                <h1 class="bp-hello">
+                  {modulePage ? (
+                    <>
+                      <Icon name={modulePage.icon} />
+                      {modulePage.title}
+                    </>
+                  ) : shown === 'home' ? (
+                    t(greetingKey(now))
+                  ) : (
+                    t('ui.dashboard.title')
+                  )}
+                </h1>
+                <p class="bp-today">{today}</p>
+              </div>
+              <div class="bp-header-tools">
+                <button type="button" class="bp-button" onClick={() => setLocal(local + 1)}>
+                  <Icon name="refresh" />
+                  <span>{t('ui.refresh')}</span>
+                </button>
+                <button type="button" class="bp-button" aria-expanded={panel} aria-haspopup="dialog" onClick={() => setPanel(!panel)}>
+                  <Icon name="eye" />
+                  <span>{t('ui.appearance.button')}</span>
+                </button>
+                {panel && <AppearancePanel appearance={appearance} change={change} close={() => setPanel(false)} t={t} />}
+              </div>
+            </header>
+            {modulePage ? (
+              <ModulePage spec={modulePage} host={host} generation={generation + local} />
+            ) : shown === 'home' ? (
+              <Springboard host={host} generation={generation + local} tiles={tiles} />
+            ) : (
+              <HomePage host={host} generation={generation + local} />
+            )}
+          </main>
+        </div>
       </div>
-    </div>
+    </AfterAction.Provider>
   )
 }

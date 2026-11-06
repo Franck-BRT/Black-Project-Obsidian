@@ -37,9 +37,16 @@ Palette de commandes :
   - *À l'extraction des exigences : qualité et cohérence* ;
   - *À l'import du CCAP, du RC ou du CCTP : questionnaire (IA)* ;
   - *Chaque lundi : qualité de la bibliothèque d'exigences* ;
-- **Workflows : liste et modification** — tous vos workflows ; une ligne ouvre sa fiche :
-  nom, mode et déclencheur, conditions, actions (ajouter, modifier, monter, descendre,
-  retirer), **Exécuter maintenant**, activer ou désactiver, dupliquer, supprimer ;
+- **Workflows : liste et modification** — la **page Workflows**, dans l'onglet Black
+  Projects (aussi par l'entrée **Workflows** du menu de gauche, sa tuile, ou le lien « Tous
+  les workflows » du tableau de bord) : les chiffres (workflows, actifs, exécutions et
+  échecs récents), une **carte par workflow** — déclencheur, actions, mode, état, nombre
+  d'exécutions, la dernière, « Dernière exécution en échec » s'il le faut — avec
+  **Modifier**, **Exécuter**, **Activer** ou **Désactiver** ; puis les dernières lignes du
+  journal. Une recherche (nom, déclencheur, action) et des filtres : actifs, désactivés, en
+  échec, planifiés, sur événement, manuels, tout seul, demander d'abord. **Modifier** ouvre
+  la fiche : nom, mode et déclencheur, conditions, actions (ajouter, modifier, monter,
+  descendre, retirer), exécuter maintenant, activer ou désactiver, dupliquer, supprimer ;
 - **Exécuter un workflow** — à la main, sans attendre son déclencheur ; l'analyse est
   demandée quand il en faut une ;
 - **Journal des workflows** — chaque exécution, la plus récente en tête : ✅ fait,

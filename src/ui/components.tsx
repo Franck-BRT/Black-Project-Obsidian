@@ -7,21 +7,30 @@
  * icône et un mot avec chaque couleur, des libellés pour les lecteurs d'écran.
  */
 
-import { useState } from 'preact/hooks'
+import { createContext } from 'preact'
+import { useContext, useState } from 'preact/hooks'
 import type { Badge as BadgeView, Card as CardView, Deadline, HomeBlock, ListItem, Stat as StatView, Tone, ViewAction } from '../core/views'
 import type { Translate } from './host'
 import { Icon } from './icons'
 import { daysUntil, deadlineTone, starGlyphs, TONE_ICON } from './logic'
 
+/**
+ * Ce qu'il faut faire quand une action est finie : redessiner (une action peut changer ce
+ * qui est montré sans toucher au coffre — activer un workflow change un réglage).
+ */
+export const AfterAction = createContext<() => void>(() => {})
+
 /** Un bouton d'action ; occupé (désactivé) pendant que l'action tourne. */
 export function ActionButton({ action, compact }: { action: ViewAction; compact?: boolean }) {
   const [busy, setBusy] = useState(false)
+  const after = useContext(AfterAction)
   const run = async () => {
     setBusy(true)
     try {
       await action.run()
     } finally {
       setBusy(false)
+      after()
     }
   }
   const iconOnly = compact && action.icon
@@ -206,8 +215,8 @@ export function BlockView({ block, t, now, locale }: { block: HomeBlock; t: Tran
           ))}
         </div>
       )
-    case 'list':
-      return block.items.length ? (
+    case 'list': {
+      const list = block.items.length ? (
         <ul class="bp-list">
           {block.items.map((item) => (
             <ListItemView key={item.id} item={item} />
@@ -216,6 +225,15 @@ export function BlockView({ block, t, now, locale }: { block: HomeBlock; t: Tran
       ) : (
         <p class="bp-empty">{block.empty ?? t('ui.empty')}</p>
       )
+      return block.title ? (
+        <div class="bp-block">
+          <h3 class="bp-block-title">{block.title}</h3>
+          {list}
+        </div>
+      ) : (
+        list
+      )
+    }
     case 'message':
       return (
         <div class={`bp-message bp-tone-${block.tone}`} role={block.tone === 'danger' ? 'alert' : undefined}>
