@@ -106,6 +106,11 @@ modules par les ports.
   `styles.ts`) : deux classes l'emportent sur tout sélecteur d'élément de l'hôte ; et
   `.bp-ui button` remet à zéro hauteur, ombre, alignement et retour à la ligne (v0.12.1,
   après des tuiles écrasées sur une pastille blanche dans Obsidian).
+- La navigation de gauche reste en place : seule la page (`.bp-main`) défile, la barre
+  (`.bp-side`) a son propre défilement si elle dépasse ; changer de page repart du haut.
+  Dans Obsidian, la zone de contenu de l'onglet perd sa marge et son défilement
+  (`styles.css`, `.bp-home-host`) pour ne pas tout faire défiler autour. Sur un écran
+  étroit (moins de 700 px), la navigation passe en haut et tout défile ensemble (v0.13.1).
 
 ## Thèmes et accessibilité
 

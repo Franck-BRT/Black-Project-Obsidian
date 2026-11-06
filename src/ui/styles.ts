@@ -26,8 +26,9 @@ const COMPONENTS_CSS = String.raw`
 .bp-ui svg.bp-icon { width: 1.15em; height: 1.15em; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* La coquille */
-.bp-shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100%; }
-.bp-side { background: var(--bp-surface); border-right: 1px solid var(--bp-border); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+/* La barre de gauche reste en place : seule la page (à droite) défile. */
+.bp-shell { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
+.bp-side { background: var(--bp-surface); border-right: 1px solid var(--bp-border); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; }
 .bp-brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 18px; }
 .bp-brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--bp-accent); color: var(--bp-accent-text); display: grid; place-items: center; font-weight: 800; }
 .bp-brand-name { font-weight: 700; line-height: 1.2; }
@@ -37,7 +38,7 @@ const COMPONENTS_CSS = String.raw`
 .bp-nav-item:hover { background: var(--bp-surface-2); }
 .bp-nav-item[aria-current="page"] { background: var(--bp-accent-soft); color: var(--bp-accent); font-weight: 650; }
 .bp-side-foot { margin-top: auto; padding: 12px 10px 0; font-size: 0.8em; color: var(--bp-text-muted); }
-.bp-main { padding: 28px 32px 48px; min-width: 0; }
+.bp-main { padding: 28px 32px 48px; min-width: 0; min-height: 0; overflow-y: auto; }
 
 /* L'en-tête */
 .bp-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
@@ -328,8 +329,10 @@ const COMPONENTS_CSS = String.raw`
   .bp-home { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
-  .bp-shell { grid-template-columns: 1fr; }
-  .bp-side { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--bp-border); padding: 10px; }
+  /* Petit écran : la navigation passe en haut, et tout défile ensemble. */
+  .bp-shell { grid-template-columns: 1fr; height: auto; min-height: 100%; }
+  .bp-main { overflow-y: visible; }
+  .bp-side { overflow-y: visible; flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--bp-border); padding: 10px; }
   .bp-brand { padding: 4px 8px; }
   .bp-nav { flex-direction: row; flex-wrap: wrap; }
   .bp-side-foot { display: none; }

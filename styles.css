@@ -3,6 +3,16 @@
  * Copyright © 2026 Black Room Technologies. Tous droits réservés.
  */
 
+/*
+ * L'onglet d'accueil : l'interface occupe tout l'onglet et gère seule son défilement
+ * (la page défile, la navigation de gauche reste en place). Sans marge ni défilement du
+ * conteneur d'Obsidian autour.
+ */
+.workspace-leaf-content[data-type="black-projects-home"] .view-content.bp-home-host {
+  padding: 0;
+  overflow: hidden;
+}
+
 .bp-modules-list {
   display: flex;
   flex-direction: column;

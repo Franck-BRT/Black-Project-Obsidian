@@ -335,6 +335,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   déforment plus les tuiles, la navigation ni les boutons de l'interface
 - v0.13.0 : **tableau de bord rangé par l'utilisateur** — réduire une section, la masquer,
   la déplacer (glisser-déposer ou boutons, d'une colonne à l'autre) ; rangement gardé
+- v0.13.1 : la navigation de gauche reste en place quand la page défile
 
 ### Étape 7 — Livrables
 

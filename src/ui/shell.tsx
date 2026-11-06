@@ -8,7 +8,7 @@
  * mode « auto » suit l'hôte, et le suit encore quand il change.
  */
 
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { resolvedMode, type Appearance } from '../core/appearance'
 import { AppearancePanel } from './appearance'
 import { HomePage } from './home'
@@ -28,6 +28,11 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
   const [local, setLocal] = useState(0)
   const [page, setPageState] = useState<Page>(wanted)
   useEffect(() => setPageState(wanted), [wanted])
+  // La page défile seule (la navigation reste en place) : une nouvelle page part du haut.
+  const main = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (main.current) main.current.scrollTop = 0
+  }, [page])
   const setPage = (next: Page) => {
     setPageState(next)
     onPage?.(next)
@@ -92,7 +97,7 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
             {t('ui.version', { version: host.version })}
           </div>
         </aside>
-        <main class="bp-main">
+        <main class="bp-main" ref={main}>
           <header class="bp-header">
             <div>
               <h1 class="bp-hello">{page === 'home' ? t(greetingKey(now)) : t('ui.dashboard.title')}</h1>
