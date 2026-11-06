@@ -84,6 +84,14 @@ tuile et du tableau de bord teste puis ouvre la page ; celui de la page y reste.
 message de réussite renvoie à la page IA (plus à la fenêtre du module). La démonstration
 répond à la liste des modèles.
 
+**Le workflow système (v0.7.0, Black Projects 0.60.0)** : `sys.ia.verifier-connexion`,
+actif d'origine, déclencheur « À l'ouverture d'Obsidian », action `ia.verifier`
+(`checkConnection`) : sans adresse, rien (« rien à vérifier ») ; sinon la liste des
+modèles (`LISTED_KEY`) mise à jour et le dernier test (`lastTest`) gardé pour la page,
+sans rien dire ; un serveur qui ne répond pas lève (le workflow échoue et le dit, ❌ au
+journal) ; un modèle réglé pour un usage (`USE_FIELD`) absent du serveur est dit.
+Tests : `test/ia-workflows.test.ts`.
+
 ## Interface publique
 
 | Nom | Rôle |

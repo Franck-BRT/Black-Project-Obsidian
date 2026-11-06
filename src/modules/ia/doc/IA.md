@@ -59,6 +59,14 @@ du tableau de bord ouvrent la **page IA**, dans l'onglet Black Projects :
 **Tester la connexion** depuis la tuile ou le tableau de bord mène à la page IA, où le
 résultat se lit ; depuis la page, on y reste. Depuis la palette, le message, comme avant.
 
+**À chaque ouverture d'Obsidian**, le workflow système *Vérifier la connexion à l'IA, à
+l'ouverture* (actif d'origine) interroge le serveur sans rien vous demander : la liste de
+ses modèles est mise à jour, et rien n'est dit si tout va bien (le journal des workflows le
+garde, la page IA montre le dernier test). Il vous prévient si le serveur ne répond pas, ou
+si un modèle que vous avez choisi n'y est plus. Sans adresse réglée, il ne fait rien. Vous
+le désactivez ou le modifiez sur la page {{link:Modules/Workflows|Workflows}} (filtre
+« Système »).
+
 ## 2. Ce que l'IA fait
 
 | Où | Commande | Ce qu'elle fait |

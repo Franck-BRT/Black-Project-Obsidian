@@ -445,6 +445,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   calendrier, contrôle des exigences, rappels des remises et du rangement, questionnaire,
   couverture, qualité hebdomadaire, traduction des nouvelles exigences) deviennent des
   workflows modifiables, désactivables, non supprimables, avec « Rétablir l'original »
+- v0.60.0 : **module IA** : un workflow système, *Vérifier la connexion à l'IA, à
+  l'ouverture* (actif d'origine) — la liste des modèles à jour, prévient d'un serveur en
+  panne ou d'un modèle retiré
 
 ### Étape 7 — Livrables
 

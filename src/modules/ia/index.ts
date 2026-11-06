@@ -12,6 +12,7 @@
  * tout le reste de Black Projects fonctionne : seules ces fonctions le disent.
  */
 
+import { OPENING, registerAction, registerSystemWorkflow } from '../workflows'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import type { ActionsField, BlackModule, ModuleContext, ModuleDetails, ModuleFeature, SecretField, TextField } from '../../core/modules/module'
@@ -19,7 +20,7 @@ import page from './doc/IA.md'
 import { AiClient, type AiConnection } from './client'
 import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
-import { registerIaHome, type ConnectionTest } from './home'
+import { registerIaHome, USE_FIELD, type ConnectionTest } from './home'
 import { registerIaWorkflows } from './workflows'
 import { listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, type ModelUse } from './models'
 
@@ -193,11 +194,45 @@ async function testConnection(context: ModuleContext): Promise<ConnectionTest> {
   return done({ outcome: 'ok', count: models.length, model: chosen ?? '', reason: '' })
 }
 
+/**
+ * Vérifier la connexion sans rien demander (le workflow système, à l'ouverture) : la liste
+ * des modèles du serveur mise à jour, rien de dit si tout va bien ; un serveur qui ne
+ * répond pas lève (le workflow échoue, le dit, le journal le garde) ; un modèle choisi qui
+ * n'est plus sur le serveur est dit. Sans adresse réglée, rien à vérifier.
+ */
+async function checkConnection(context: ModuleContext): Promise<string> {
+  const { platform, i18n, settings } = context
+  const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
+  const now = new Date()
+  const at = `${localToday(now)} ${now.toTimeString().slice(0, 5)}`
+  const connection = connectionOf(settings.get(), platform.secrets?.get(SECRET_ID) ?? '')
+  if (!connection.baseUrl) return t('ia.wf.check.noUrl')
+  let models: string[]
+  try {
+    models = await new AiClient(platform.http, connection).models()
+  } catch (error) {
+    const reason = describeAiError(error, t)
+    lastTest = { at, outcome: 'failed', count: 0, model: '', reason }
+    throw new Error(t('ia.wf.check.unreachable', { reason }))
+  }
+  if (models.length) await settings.save({ ...settings.get(), [LISTED_KEY]: models })
+  lastTest = { at, outcome: models.length ? 'ok' : 'noModel', count: models.length, model: connection.model, reason: '' }
+  // Un modèle réglé (un usage) qui n'est plus sur le serveur : à choisir de nouveau.
+  const chosen = [...new Set(MODEL_USES.map((use) => String(connection[USE_FIELD[use]] ?? '').trim()).filter(Boolean))]
+  const missing = models.length ? chosen.filter((model) => !models.includes(model)) : []
+  if (missing.length) {
+    const text = t('ia.wf.check.missing', { models: missing.join(', ') })
+    platform.notifier.notify(text, 15000)
+    return text
+  }
+  return t('ia.wf.check.ok', { count: models.length })
+}
+
 export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.6.0',
+  version: '0.7.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -231,6 +266,24 @@ export const iaModule: BlackModule = {
       features: () => iaFeatures()
     })
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)))
+    // Vérifier la connexion à l'ouverture : une action, et son workflow système (actif d'origine).
+    registerAction({
+      id: 'ia.verifier',
+      labelKey: 'ia.wf.action.check',
+      descKey: 'ia.wf.action.check.desc',
+      fields: [],
+      results: ['text'],
+      async run() {
+        const text = await checkConnection(context)
+        return { lines: [text], results: { text } }
+      }
+    })
+    registerSystemWorkflow({
+      id: 'sys.ia.verifier-connexion',
+      moduleKey: 'ia.name',
+      enabledByDefault: true,
+      make: (tr) => ({ name: tr('ia.sys.verifier-connexion'), mode: 'auto', trigger: { kind: OPENING }, conditions: [], actions: [{ kind: 'ia.verifier', fields: {} }] })
+    })
 
     context.commands.register({
       id: 'tester',

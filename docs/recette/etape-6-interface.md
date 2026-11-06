@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le module IA : vérifier la connexion à l'ouverture (v0.60.0)
+
+- [ ] Page **Workflows**, filtre **Système** : « Vérifier la connexion à l'IA, à
+      l'ouverture », actif
+- [ ] Serveur réglé et en marche, rouvrir Obsidian : aucun message ; le journal dit
+      « Connexion vérifiée : n modèle(s) » ; la page IA montre le dernier test
+- [ ] Un modèle choisi retiré du serveur : le message le dit, à l'ouverture
+- [ ] Serveur arrêté : « Workflow … en échec : … le serveur d'IA ne répond pas », ❌ au
+      journal
+- [ ] Sans adresse réglée : rien
+
 ## Les workflows système (v0.59.0)
 
 - [ ] Page **Workflows**, filtre **Système** : les dix workflows système, badge
