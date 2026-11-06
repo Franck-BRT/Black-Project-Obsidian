@@ -566,13 +566,16 @@ export async function candidatePage(deps: HomeDeps, param: string | undefined): 
     ...(row.requirement.filePath && deps.showPage ? { open: { id: 'open', label: t('ao.fiche.requirement.card'), run: () => deps.showPage?.(requirementPageOf(row.requirement.filePath!)) } } : {})
   }))
   const percent = rows.length ? Math.round((covered / rows.length) * 100) : null
+  const written = await services.fs.exists(reportPath(analysis))
   return {
     title: name,
     back,
     subtitle: t('ao.candidat.subtitle', { analysis: analysis.name }),
     actions: [
       { id: 'import', label: t('ao.candidat.import'), icon: 'upload', primary: pieces.length === 0, run: () => deps.importInto(analysis) },
-      ...(deps.runFor ? [{ id: 'report', label: t('ao.candidat.report'), icon: 'check' as const, run: () => deps.runFor?.('couverture-reponse', { analysis }) ?? Promise.resolve() }] : []),
+      // Écrit sans quitter la fiche (la couverture est déjà là, calculée) ; la vérification montre le rapport.
+      ...(deps.runFor ? [{ id: 'report', label: t(written ? 'ao.candidat.report.update' : 'ao.candidat.report'), tooltip: t('ao.candidat.report.tip'), icon: 'check' as const, run: () => deps.runFor?.('couverture-reponse', { analysis, stay: true }) ?? Promise.resolve() }] : []),
+      ...(deps.showPage ? [{ id: 'verification', label: t('ao.candidat.verification'), icon: 'check' as const, run: () => deps.showPage?.(verificationPageOf(reportPath(analysis))) }] : []),
       ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
     ],
     search: { label: t('ao.candidat.search'), placeholder: t('ao.candidat.search.placeholder') },

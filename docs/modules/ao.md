@@ -205,6 +205,15 @@ avec l'endroit (`describeWhere`) et l'extrait. « Écrire le rapport de couvertu
 `couverture-reponse` sur l'analyse. La démonstration a deux candidats (Acme Spatial,
 Orbital Services).
 
+**Le rapport de couverture sans quitter la fiche (v0.29.0, Black Projects 0.54.0)** :
+« Écrire le rapport de couverture » lance `couverture-reponse` avec `stay` — le rapport
+de vérification est écrit, sa note ne s'ouvre plus, la fiche se redessine (« Mettre à
+jour le rapport de couverture » une fois écrit) ; le message ajoute « Le rapport de
+vérification de l'analyse est à jour » (comme pour toutes les vérifications lancées de
+l'interface). « Ouvrir la vérification » mène à sa page. Revue du module à cette
+occasion : chaque action lancée de l'interface finit maintenant sur une page ; seules les
+commandes de la palette ouvrent encore des notes, comme avant.
+
 ## Une note produite, en page (v0.15.0, Black Projects 0.27.0)
 
 Sur la fiche d'une analyse, « Ce que l'analyse a produit » liste les notes du dossier

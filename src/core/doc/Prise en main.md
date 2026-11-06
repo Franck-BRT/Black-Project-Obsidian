@@ -28,7 +28,7 @@ venir, pièces à lire, candidat, émetteur…). Un clic sur une analyse ouvre s
 pièces, son calendrier, ses exigences, et des boutons qui agissent sur elle ; un clic sur
 une pièce ouvre la sienne : son texte, ses dates et délais, les exigences qui en viennent ;
 pour l'émetteur, un clic sur un candidat ouvre la sienne : sa réponse et la couverture des
-exigences par elle. **Calendrier**, sur la fiche, ouvre la page du calendrier, relevé à
+exigences par elle (« Écrire le rapport de couverture » l'écrit sans quitter la fiche). **Calendrier**, sur la fiche, ouvre la page du calendrier, relevé à
 l'ouverture : la date limite de remise et ses jours restants, la validité des offres, les
 dates dans l'ordre et les délais, chacun avec sa phrase et sa pièce ; « Écrire le
 calendrier » le garde dans une note. Une question

@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le module Analyse d'appels d'offres : le rapport de couverture, en page (v0.54.0)
+
+- [ ] Analyse côté émetteur, une réponse importée pour un candidat ; sa fiche →
+      **Écrire le rapport de couverture** : on reste sur la fiche, aucune note ouverte ;
+      le message dit « Le rapport de vérification de l'analyse est à jour »
+- [ ] Le bouton devient **Mettre à jour le rapport de couverture**
+- [ ] **Ouvrir la vérification** : la page de la vérification (la couverture par chaque
+      réponse)
+
 ## Le module Workflows : créer et exécuter, en page (v0.53.0)
 
 - [ ] Page **Workflows** → **Nouveau workflow** (de zéro ou d'après un modèle) : la

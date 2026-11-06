@@ -52,7 +52,9 @@ analyse ? » :
   du candidat** : sa réponse (ses pièces, chacune avec ses boutons), et la couverture des
   exigences par elle, maintenant — les absentes d'abord, puis à vérifier, traitées,
   citées, chacune avec l'endroit de la réponse et l'extrait ; un clic ouvre la fiche de
-  l'exigence ; **Importer des pièces de sa réponse**, **Écrire le rapport de couverture** ;
+  l'exigence ; **Importer des pièces de sa réponse**, **Écrire le rapport de couverture**
+  (écrit dans le rapport de vérification sans quitter la fiche ; ensuite « Mettre à jour
+  le rapport de couverture »), **Ouvrir la vérification** ;
 - **Importer des pièces** (depuis sa fiche, une carte, le tableau de bord ou la tuile) se
   termine sur la **fiche de l'analyse**, avec ses pièces, plutôt que sur sa note ; une
   **Nouvelle analyse** ouvre aussitôt sa fiche, et l'import qui suit y revient ;

@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.53.0)
+## Aujourd'hui (version 0.54.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -101,7 +101,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   vérifications) », ou chacune seule — tout extraire, chercher les exigences oubliées
   (phrases en « doit », « devra », « shall »… non reprises), la cohérence entre pièces,
   la couverture par la réponse ; le rapport `Analyse/Vérification des exigences` de
-  l'analyse en garde le résultat.
+  l'analyse en garde le résultat (depuis la fiche d'un candidat, « Écrire le rapport de
+  couverture » l'écrit sans quitter la fiche).
 
 - **Qualité des exigences** : « Analyser la qualité des exigences du dossier » écrit la note
   `Analyse/Qualité des exigences` (répartition des notes, défauts, doublons, exigences non

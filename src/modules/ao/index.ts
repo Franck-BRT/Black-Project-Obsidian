@@ -430,7 +430,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.28.0',
+  version: '0.29.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -727,7 +727,8 @@ export const aoModule: BlackModule = {
           platform.notifier.notify(t('ao.verif.running'), 3000)
           const before = (await requirementsAt(requirementsFolder(analysis)).all()).length
           const summary = await check(services, analysis)
-          platform.notifier.notify(summary, 10000)
+          // Depuis l'interface, on reste sur la page : le message dit où le rapport est écrit.
+          platform.notifier.notify(targeted.stay ? `${summary} ${t('ao.verif.written')}` : summary, 10000)
           await showWritten(context, reportPath(analysis))
           // De nouvelles exigences (tout extraire, oubliées ajoutées) : les workflows qui l'attendent.
           const after = (await requirementsAt(requirementsFolder(analysis)).all()).length

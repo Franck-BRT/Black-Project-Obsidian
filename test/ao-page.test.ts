@@ -233,7 +233,8 @@ describe('le texte d’une pièce, lisible', () => {
 
 describe('la fiche d’un candidat (émetteur), en page', () => {
   async function fiche() {
-    const run = await start(memoryPlatform(), true)
+    const platform = memoryPlatform()
+    const run = { ...(await start(platform, true)), platform }
     const text = (body: string) => ({ fr: { body, lang: 'fr', origin: 'human' as const, reviewed: true, by: '', at: '', fromRev: 1 } })
     const store = requirementsAt(`${run.maintenance.folder}/Exigences`)
     await store.create({ category: 'MA', title: 'Antenne', text: text('Le titulaire doit fournir une antenne parabolique de 3,7 m de diamètre.') })
@@ -265,6 +266,24 @@ describe('la fiche d’un candidat (émetteur), en page', () => {
     expect(response?.kind === 'cards' && response.cards.map((card) => card.title)).toEqual(['Mémoire technique.md'])
     const coverage = view.blocks.find((block) => block.kind === 'list')
     expect(coverage?.kind === 'list' && coverage.items.map((item) => `${item.title.split(' — ')[1]}:${item.tone}`)).toEqual(['Astreinte:danger', 'Antenne:success'])
+  })
+
+  it('« Écrire le rapport de couverture » : écrit sans quitter la fiche ; puis « Mettre à jour… », et « Ouvrir la vérification »', async () => {
+    const { views, maintenance, platform, shown } = await fiche()
+    const page = views.pages().find((each) => each.id === 'ao.candidat')!
+    const param = `${encodeURIComponent(maintenance.note)}&Acme`
+    const before = await page.load(param)
+    expect(before.actions?.map((action) => `${action.id}:${action.label}`)).toEqual(['import:Importer des pièces de sa réponse', 'report:Écrire le rapport de couverture', 'verification:Ouvrir la vérification', 'analysis:Ouvrir l’analyse'])
+    const opened = platform.opened.length
+    shown.length = 0
+    await before.actions!.find((action) => action.id === 'report')!.run()
+    expect(platform.opened.length).toBe(opened)
+    expect(shown).toEqual([])
+    expect(platform.notices.at(-1)).toMatch(/Le rapport de vérification de l’analyse est à jour\.$/)
+    const after = await page.load(param)
+    expect(after.actions?.find((action) => action.id === 'report')?.label).toBe('Mettre à jour le rapport de couverture')
+    await after.actions!.find((action) => action.id === 'verification')!.run()
+    expect(shown.at(-1)).toMatch(/^ao\.verification\?/)
   })
 
   it('un candidat inconnu : la page le dit', async () => {

@@ -431,6 +431,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   dernier test (réussi ou pourquoi pas) et les modèles du serveur, chacun avec son usage
 - v0.53.0 : **module Workflows** : « Nouveau workflow » ouvre sa fiche en page ;
   « Exécuter » mène à la fiche de l'exécution qu'il vient de faire
+- v0.54.0 : **module Analyse d'appels d'offres** : le rapport de couverture d'un candidat
+  s'écrit sans quitter sa fiche (sa note ne s'ouvre plus) ; « Ouvrir la vérification »
 
 ### Étape 7 — Livrables
 
