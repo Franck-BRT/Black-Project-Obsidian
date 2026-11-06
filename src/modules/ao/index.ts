@@ -300,7 +300,10 @@ function describeImport(context: ModuleContext, report: ImportReport): string {
  * Ce que vise une commande lancée depuis la fiche d'une analyse : cette analyse, ou cette
  * pièce — sans demander laquelle. Posé le temps de la commande (`runFor`), puis retiré.
  */
-let targeted: { analysis?: Analysis; note?: string } = {}
+let targeted: { analysis?: Analysis; note?: string; stay?: boolean } = {}
+
+/** Ouvre la note écrite par une commande — sauf lancée depuis sa page, qui se redessine. */
+const showWritten = (context: ModuleContext, path: string) => (targeted.stay ? Promise.resolve() : context.platform.ui.openNote(path))
 
 /** La note visée : celle désignée par la fiche, sinon la note ouverte. */
 const targetNote = (context: ModuleContext): string | null => targeted.note ?? context.platform.ui.activeNote()
@@ -420,7 +423,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.14.0',
+  version: '0.15.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -680,7 +683,7 @@ export const aoModule: BlackModule = {
           const before = (await requirementsAt(requirementsFolder(analysis)).all()).length
           const summary = await check(services, analysis)
           platform.notifier.notify(summary, 10000)
-          await platform.ui.openNote(reportPath(analysis))
+          await showWritten(context, reportPath(analysis))
           // De nouvelles exigences (tout extraire, oubliées ajoutées) : les workflows qui l'attendent.
           const after = (await requirementsAt(requirementsFolder(analysis)).all()).length
           if (after > before) await emitExtracted(services, analysis, '', after - before)
@@ -709,7 +712,7 @@ export const aoModule: BlackModule = {
           t('ao.calendar.done', { dates: calendar.dates.length, delays: calendar.delays.length, pieces: calendar.read }),
           8000
         )
-        await platform.ui.openNote(calendarPath(analysis))
+        await showWritten(context, calendarPath(analysis))
       }
     })
 
@@ -843,7 +846,7 @@ export const aoModule: BlackModule = {
             t('ao.questionnaire.done', { count: answers.length, empty: answers.filter((answer) => answer.nothing).length }),
             8000
           )
-          await platform.ui.openNote(path)
+          await showWritten(context, path)
         } catch (error) {
           failed(error)
         }
@@ -879,7 +882,7 @@ export const aoModule: BlackModule = {
           t('exigences.quality.done', { count: runs.length, mean, weak: runs.filter((run) => run.report.stars < 3).length }),
           8000
         )
-        await platform.ui.openNote(qualityPath(analysis))
+        await showWritten(context, qualityPath(analysis))
       }
     })
 

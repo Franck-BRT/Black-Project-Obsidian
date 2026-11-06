@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Une note produite, en page (v0.27.0)
+
+- [ ] Fiche d'une analyse → **Calendrier**, puis dans « Ce que l'analyse a produit » un clic
+      sur **Calendrier** : sa page — « Calendrier — <analyse> », « À retenir », « Dates »,
+      « Délais » en listes, sans `|`, `**`, `[[` ni marques `<!-- -->`
+- [ ] Un clic sur une date ouvre la fiche de la pièce ; « Retour » ramène à la note
+- [ ] **Vérification des exigences** (après « Vérifier ») : le résumé, une section par
+      vérification ; la couverture d'un candidat en vert / rouge ; un clic sur une exigence
+      ouvre sa fiche
+- [ ] **Mettre à jour** refait la note sans quitter la page (Obsidian n'ouvre pas la note) ;
+      **Ouvrir la note** l'ouvre dans le coffre ; **Ouvrir l'analyse**
+- [ ] La recherche (« pénalité », « RC ») ne garde que les lignes et paragraphes qui
+      répondent ; « n sur N affiché(s) »
+- [ ] Une question (Analyse/Questions) : la réponse en paragraphes, l'avertissement en
+      encadré, les sources avec leurs passages
+
 ## La fiche d'une exécution, en page (v0.26.0)
 
 - [ ] Dans le journal (ou « Dernières exécutions », ou l'historique d'un workflow, ou le

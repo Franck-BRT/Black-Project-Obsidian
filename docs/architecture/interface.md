@@ -156,7 +156,9 @@ que la recherche lit aussi. Il la déclare par
 `views.page({ id, title, icon, load })` ; `load` rend une `PageView` en données :
 
 - un sous-titre, des boutons en tête ;
-- des blocs (indicateurs, cartes, listes, messages — les mêmes que le tableau de bord) ;
+- des blocs (indicateurs, cartes, listes, messages — les mêmes que le tableau de bord — et
+  du **texte** en paragraphes, `{ kind: 'text', title?, paragraphs }`, pour une note lue
+  dans l'interface ; la recherche n'en garde que les paragraphes qui contiennent les mots) ;
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;

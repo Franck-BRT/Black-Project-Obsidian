@@ -228,6 +228,8 @@ const COMPONENTS_CSS = String.raw`
 .bp-message-body { color: var(--bp-text); flex: 1; }
 .bp-message-body .bp-actions { margin-top: 10px; }
 .bp-empty { color: var(--bp-text-muted); padding: 8px 0; margin: 0; }
+.bp-prose { display: flex; flex-direction: column; gap: 8px; max-width: 75ch; }
+.bp-prose .bp-text { margin: 0; line-height: 1.55; overflow-wrap: anywhere; }
 
 /* Le chargement */
 .bp-skeleton { height: 72px; border-radius: var(--bp-radius-small); background: linear-gradient(90deg, var(--bp-surface-2), var(--bp-border), var(--bp-surface-2)); background-size: 200% 100%; animation: bp-wave 1.4s linear infinite; }

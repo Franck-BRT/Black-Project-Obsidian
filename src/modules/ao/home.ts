@@ -16,11 +16,14 @@ import { typeLabel } from '../typage-pieces'
 import { assessAll, requirementLanguages, requirementPageOf, requirementsAt } from '../exigences'
 import { aiClient } from '../ia'
 import { calendarOf, calendarPath, delayLabel, writeCalendar } from './calendar'
+import { questionnairePath } from './ask/dossier'
+import { noteBlocks } from './produced'
+import { qualityPath } from './quality'
 import { pieceSources, pieceText } from './ask/sources'
 import { destinationLabel, type Analysis, type PieceRow, type ReadingState } from './notes'
 import { linkedNote, requirementsFolder } from './requirements'
 import { analysisPosition, listAnalyses, listCandidates, listPieces, pieceAt, type Services, type Translate } from './service'
-import { candidateCoverage, describeWhere } from './verification'
+import { candidateCoverage, describeWhere, reportPath } from './verification'
 
 export interface HomeDeps {
   services(): Services
@@ -34,8 +37,11 @@ export interface HomeDeps {
   today(): string
   /** Ouvre une page dans l'onglet de Black Projects, quand la plateforme en a un. */
   showPage?(id: string): void
-  /** Lance une commande de l'AO sur une analyse ou une pièce précise, sans demander laquelle. */
-  runFor?(id: string, target: { analysis?: Analysis; note?: string }): Promise<void>
+  /**
+   * Lance une commande de l'AO sur une analyse ou une pièce précise, sans demander laquelle.
+   * `stay` : la note que la commande écrit ne s'ouvre pas — la page qui l'a lancée la montre.
+   */
+  runFor?(id: string, target: { analysis?: Analysis; note?: string; stay?: boolean }): Promise<void>
 }
 
 /** La fiche d'une analyse : `pageWith(ANALYSIS_PAGE, …)`, le chemin de sa note en paramètre. */
@@ -51,6 +57,10 @@ export const candidatePageOf = (analysis: Analysis, candidate: string): string =
 /** La fiche d'une pièce : `piecePageOf(chemin de sa note)`. */
 export const PIECE_PAGE = 'ao.piece'
 export const piecePageOf = (note: string): string => pageWith(PIECE_PAGE, encodeURIComponent(note))
+
+/** La page d'une note produite par l'analyse (calendrier, vérification, questionnaire…) : `producedPageOf(chemin)`. */
+export const PRODUCED_PAGE = 'ao.note'
+export const producedPageOf = (note: string): string => pageWith(PRODUCED_PAGE, encodeURIComponent(note))
 
 /** La page des analyses. */
 export const ANALYSES_PAGE = 'ao.analyses'
@@ -382,7 +392,13 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
       : {})
   }))
   const produced = (await services.fs.exists(`${analysis.folder}/Analyse`)) ? await listNotes(services, `${analysis.folder}/Analyse`) : []
-  const notes: ListItem[] = produced.map((path) => ({ id: path, title: baseName(path).replace(/\.md$/, ''), detail: path.slice(analysis.folder.length + 1), open: { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) } }))
+  // Chaque note produite s'ouvre en page, quand la plateforme en a ; sinon dans le coffre.
+  const notes: ListItem[] = produced.map((path) => ({
+    id: path,
+    title: baseName(path).replace(/\.md$/, ''),
+    detail: path.slice(analysis.folder.length + 1),
+    open: deps.showPage ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(producedPageOf(path)) } : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
+  }))
 
   const buyer = typeof data.acheteur === 'string' ? data.acheteur.trim() : ''
   const reference = typeof data.reference === 'string' ? data.reference.trim() : ''
@@ -595,6 +611,63 @@ export async function piecePage(deps: HomeDeps, param: string | undefined): Prom
   }
 }
 
+/** La commande qui réécrit une note produite, selon la note : le calendrier, la vérification… */
+function producerOf(analysis: Analysis, note: string): string | null {
+  if (note === calendarPath(analysis)) return 'calendrier'
+  if (note === reportPath(analysis)) return 'verifier-exigences'
+  if (note === qualityPath(analysis)) return 'qualite-exigences'
+  if (note === questionnairePath(analysis)) return 'questionnaire'
+  return null
+}
+
+/**
+ * La **page** d'une note produite par l'analyse (le calendrier, la vérification des
+ * exigences, la qualité, le questionnaire, une question) : son contenu, lisible sans la
+ * syntaxe — une section par titre, un tableau en liste, chaque ligne avec son ton (🟩 🟧 🟥)
+ * et, si elle a un lien, la fiche qu'il désigne (une pièce, une exigence) ; en tête la
+ * mettre à jour (la commande qui l'écrit), ouvrir la note dans le coffre, ou son analyse.
+ */
+export async function producedPage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const services = deps.services()
+  const note = param ? decodeURIComponent(param) : ''
+  const analysis = note ? (await listAnalyses(services)).find((each) => note.startsWith(`${each.folder}/`)) : undefined
+  if (!analysis || !(await services.fs.exists(note)))
+    return { title: t('ao.note.page.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.note.page.missing') }] }
+  const back: ViewAction = { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) }
+
+  // Ce qu'ouvre un lien : la fiche d'une pièce ou d'une exigence, l'analyse, sinon la note.
+  const pieces = new Set((await listPieces(services, analysis)).map((piece) => piece.note))
+  const requirements = `${requirementsFolder(analysis)}/`
+  const opener = (target: string): ViewAction | undefined => {
+    const path = target.includes('/') ? target : `${analysis.folder}/${target}`
+    if (deps.showPage) {
+      if (pieces.has(path)) return { id: 'open', label: t('ao.piece.fiche.open'), run: () => deps.showPage?.(piecePageOf(path)) }
+      if (path.startsWith(requirements)) return { id: 'open', label: t('ao.fiche.requirement.card'), run: () => deps.showPage?.(requirementPageOf(path)) }
+      if (path === analysis.note) return { id: 'open', label: t('ao.piece.fiche.analysis'), run: () => deps.showPage?.(analysisPageOf(analysis)) }
+    }
+    return { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
+  }
+  const markdown = await services.fs.readText(note)
+  const blocks = noteBlocks(markdown, opener)
+  const heading = /^#\s+(.+)$/m.exec(markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, ''))?.[1]?.trim()
+
+  const producer = deps.runFor ? producerOf(analysis, note) : null
+  const actions: ViewAction[] = [
+    ...(producer ? [{ id: 'update', label: t('ao.note.page.update'), tooltip: t('ao.note.page.update.tip'), icon: 'refresh' as const, primary: true, run: () => deps.runFor?.(producer, { analysis, stay: true }) ?? Promise.resolve() }] : []),
+    { id: 'note', label: t('ao.fiche.note.open'), icon: 'file', run: () => deps.ui.openNote(note) },
+    ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
+  ]
+  return {
+    title: heading || baseName(note).replace(/\.md$/, ''),
+    back,
+    subtitle: [analysis.name, note.slice(analysis.folder.length + 1)].join(' · '),
+    actions,
+    search: { label: t('ao.note.page.search'), placeholder: t('ao.note.page.search.placeholder') },
+    blocks: blocks.length ? blocks : [{ kind: 'message', tone: 'info', text: t('ao.note.page.empty') }]
+  }
+}
+
 /** Les notes d'un dossier et de ses sous-dossiers, par ordre alphabétique. */
 async function listNotes(services: Services, folder: string): Promise<string[]> {
   const listing = await services.fs.list(folder)
@@ -652,6 +725,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
   views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
+  views.page({ id: PRODUCED_PAGE, title: t('ao.note.page.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => producedPage(deps, param) })
   views.page({ id: CANDIDATE_PAGE, title: t('ao.candidat.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => candidatePage(deps, param) })
   views.nav({ id: 'ao.analyses', label: t('ao.home.nav'), icon: 'folder', order: 10, ...(deps.showPage ? { page: ANALYSES_PAGE } : {}), run: () => openAnalyses(deps) })
 }

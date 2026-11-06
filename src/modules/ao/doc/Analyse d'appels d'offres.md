@@ -54,7 +54,12 @@ analyse ? » :
   citées, chacune avec l'endroit de la réponse et l'extrait ; un clic ouvre la fiche de
   l'exigence ; **Importer des pièces de sa réponse**, **Écrire le rapport de couverture** ;
 - son **calendrier** (les dates relevées et leur pièce), ses **exigences** (les plus faibles
-  d'abord), et **ce qu'elle a produit** (calendrier, vérification, questionnaire, questions…) ;
+  d'abord), et **ce qu'elle a produit** (calendrier, vérification, qualité, questionnaire,
+  questions…) : un clic ouvre la note **en page**, lisible sans la syntaxe — une section
+  par titre, chaque tableau en liste avec la couleur de ses lignes (vert, orange, rouge) ;
+  un clic sur une ligne ouvre la fiche de la pièce ou de l'exigence qu'elle cite ;
+  **Mettre à jour** refait la note (sans quitter la page), **Ouvrir la note** l'ouvre dans
+  le coffre, une recherche porte sur toute la note ;
 - une recherche et des filtres (pièces à lire, appel d'offres, réponse) ; « ← Toutes les
   analyses » ramène à la liste.
 

@@ -251,6 +251,27 @@ export function BlockView({ block, t, now, locale }: { block: HomeBlock; t: Tran
         list
       )
     }
+    case 'text': {
+      const body = block.paragraphs.length ? (
+        <div class="bp-prose">
+          {block.paragraphs.map((paragraph, index) => (
+            <p key={index} class="bp-text">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p class="bp-empty">{block.empty ?? t('ui.empty')}</p>
+      )
+      return block.title ? (
+        <div class="bp-block">
+          <h3 class="bp-block-title">{block.title}</h3>
+          {body}
+        </div>
+      ) : (
+        body
+      )
+    }
     case 'message':
       return (
         <div class={`bp-message bp-tone-${block.tone}`} role={block.tone === 'danger' ? 'alert' : undefined}>

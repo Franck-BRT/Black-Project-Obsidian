@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_APPEARANCE } from '../core/appearance'
 import { createI18n } from '../core/i18n'
 import { ViewsRegistry, type Card, type HomeBlock } from '../core/views'
+import { BlockView } from './components'
 import type { AppHost } from './host'
 import { filterBlocks, fold } from './page'
 import { App } from './shell'
@@ -45,6 +46,18 @@ describe('la recherche et les filtres d’une page', () => {
     const found = filterBlocks(journal, '', 'echecs', 'Rien')
     expect(found.blocks[0]!.kind === 'list' && found.blocks[0]!.items.map((item) => item.id)).toEqual(['1'])
     expect([found.hits, found.total]).toEqual([1, 2])
+  })
+
+  it('du texte (une note produite) : la recherche garde les paragraphes qui répondent ; un filtre ne le trie pas', () => {
+    const text: HomeBlock[] = [{ kind: 'text', title: 'Réponse', paragraphs: ['Les pénalités de retard sont de 1/1000.', 'La garantie court deux ans.'] }]
+    const found = filterBlocks(text, 'penalites', null, 'Rien')
+    expect(found.blocks[0]).toEqual({ kind: 'text', title: 'Réponse', paragraphs: ['Les pénalités de retard sont de 1/1000.'] })
+    expect([found.hits, found.total]).toEqual([1, 2])
+    expect(filterBlocks(text, 'zzz', null, 'Rien').blocks[0]).toMatchObject({ paragraphs: [], empty: 'Rien' })
+    expect(filterBlocks(text, '', 'candidat').total).toBe(0)
+    const html = renderToString(<BlockView block={text[0]!} t={(key) => key} now={new Date()} locale="fr" />)
+    expect(html).toContain('<h3 class="bp-block-title">Réponse</h3>')
+    expect(html).toContain('<div class="bp-prose"><p class="bp-text">Les pénalités de retard sont de 1/1000.</p><p class="bp-text">La garantie court deux ans.</p></div>')
   })
 
   it('un filtre garde les cartes qui y répondent ; avec la recherche, les deux', () => {

@@ -363,6 +363,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   du workflow
 - v0.26.0 : la **fiche d'une exécution** (issue, sujet, étapes, notes écrites, autres
   exécutions) ; un clic sur une exécution y mène
+- v0.27.0 : une **note produite en page** (calendrier, vérification, qualité,
+  questionnaire, question) : lisible sans la syntaxe, les liens vers les fiches, « Mettre
+  à jour » sans quitter la page ; le bloc `text` du cœur
 
 ### Étape 7 — Livrables
 

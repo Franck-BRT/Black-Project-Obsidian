@@ -205,6 +205,26 @@ avec l'endroit (`describeWhere`) et l'extrait. « Écrire le rapport de couvertu
 `couverture-reponse` sur l'analyse. La démonstration a deux candidats (Acme Spatial,
 Orbital Services).
 
+## Une note produite, en page (v0.15.0, Black Projects 0.27.0)
+
+Sur la fiche d'une analyse, « Ce que l'analyse a produit » liste les notes du dossier
+`Analyse/` ; un clic ouvre la page `ao.note?<chemin encodé>` (`producedPageOf`, `parent` :
+les analyses ; sans pages chez la plateforme, la note dans le coffre). `produced.ts`
+(`noteBlocks`) lit le Markdown en blocs : sans l'en-tête ni les marques `<!-- bp:… -->` ;
+le `#` est le titre de la page ; chaque `##` / `###` l'intitulé du bloc qui suit ; un
+tableau devient une liste (la première cellule en titre, les autres en détail, « — »
+écartés) ; une liste à puces, une liste (« **Libellé** : suite » : le libellé en titre) ;
+une puce ou un passage cité en retrait complète l'élément du dessus ; un encadré
+`> [!warning]` devient un message ; un paragraphe, un bloc `text` (nouveau bloc du cœur,
+cherché comme les listes). Les marques 🟩 ✅ / 🟧 ⚠️ / 🟥 ❌ donnent le ton de la ligne et
+disparaissent ; liens, gras, italique, code sont lus sans leur syntaxe. Le premier lien
+d'une ligne dit ce qu'elle ouvre : la fiche de la pièce, de l'exigence, de l'analyse, sinon
+la note. En tête : **Mettre à jour** quand la note a une commande qui l'écrit (Calendrier
+→ `calendrier`, Vérification → `verifier-exigences`, Qualité → `qualite-exigences`,
+Questionnaire → `questionnaire`), lancée avec `runFor(…, { analysis, stay: true })` :
+la commande réécrit la note sans l'ouvrir dans le coffre, la page se redessine ;
+**Ouvrir la note** ; **Ouvrir l'analyse**. Une note disparue : la page le dit.
+
 ## Dans le coffre
 
 ```

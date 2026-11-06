@@ -130,6 +130,8 @@ export type HomeBlock =
   | { kind: 'stats'; stats: Stat[] }
   | { kind: 'list'; items: ListItem[]; empty?: string; /** Un intitulé au-dessus de la liste. */ title?: string }
   | { kind: 'message'; tone: Tone; text: string; actions?: ViewAction[] }
+  /** Du texte à lire, en paragraphes (une note produite) ; la recherche ne garde que ceux qui répondent. */
+  | { kind: 'text'; paragraphs: string[]; empty?: string; /** Un intitulé au-dessus du texte. */ title?: string }
 
 /** Une section de l'accueil, telle qu'elle est à cet instant. */
 export interface HomeSectionView {

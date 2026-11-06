@@ -56,6 +56,15 @@ export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter
       }
       return { ...block, items, ...(none && block.items.length && !items.length ? { empty: none } : {}) }
     }
+    if (block.kind === 'text') {
+      // Du texte : les paragraphes qui contiennent les mots ; un filtre ne le trie pas.
+      const paragraphs = block.paragraphs.filter((paragraph) => matches(paragraph))
+      if (!filter) {
+        total += block.paragraphs.length
+        hits += paragraphs.length
+      }
+      return { ...block, paragraphs, ...(none && block.paragraphs.length && !paragraphs.length ? { empty: none } : {}) }
+    }
     return block
   })
   return { blocks: out, hits, total }

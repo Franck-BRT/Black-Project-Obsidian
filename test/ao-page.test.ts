@@ -269,3 +269,123 @@ describe('la fiche d’un candidat (émetteur), en page', () => {
     expect((await views.pages().find((each) => each.id === 'ao.candidat')!.load(`${encodeURIComponent(maintenance.note)}&Inconnu`)).title).toBe('Candidat introuvable')
   })
 })
+
+describe('une note produite par l’analyse, en page', () => {
+  async function calendar(withPages = true) {
+    const platform = memoryPlatform()
+    const opened: string[] = []
+    platform.ui.openNote = async (path) => void opened.push(path)
+    const run = await start(platform, withPages)
+    const fiche = run.views.pages().find((each) => each.id === 'ao.fiche')!
+    await (await fiche.load(encodeURIComponent(run.station.note))).actions!.find((action) => action.id === 'calendar')!.run()
+    const view = await fiche.load(encodeURIComponent(run.station.note))
+    const produced = view.blocks.filter((block) => block.kind === 'list')[2]
+    const item = produced?.kind === 'list' ? produced.items[0]! : null
+    return { ...run, platform, opened, item: item!, path: `${run.station.folder}/Analyse/Calendrier.md`, page: run.views.pages().find((each) => each.id === 'ao.note') }
+  }
+
+  it('un clic sur une note produite (fiche de l’analyse) ouvre sa page ; elle dépend des analyses', async () => {
+    const { item, shown, path, page } = await calendar()
+    expect(item.open?.label).toBe('Voir la note')
+    await item.open!.run()
+    expect(shown.at(-1)).toBe(`ao.note?${encodeURIComponent(path)}`)
+    expect(page!.parent).toBe('ao.analyses')
+  })
+
+  it('le calendrier, lisible : sections en listes, sans en-tête ni marques ; un lien ouvre la fiche de la pièce', async () => {
+    const { page, path, shown } = await calendar()
+    const view = await page!.load(encodeURIComponent(path))
+    expect(view.title).toBe('Calendrier — Station sol')
+    expect(view.back?.label).toBe('L’analyse « Station sol »')
+    expect(view.subtitle).toBe('Station sol · Analyse/Calendrier.md')
+    expect(view.actions?.map((action) => action.id)).toEqual(['update', 'note', 'analysis'])
+    expect(view.search?.label).toBe('Chercher dans la note')
+    expect(view.blocks.map((block) => `${block.kind}:${'title' in block ? (block.title ?? '') : ''}`)).toEqual(['text:', 'list:À retenir', 'list:Dates', 'text:Délais'])
+    const all = JSON.stringify(view.blocks)
+    for (const syntax of ['bp-type', '<!--', '[[', '**', '| ---']) expect(all).not.toContain(syntax)
+    const kept = view.blocks[1]!.kind === 'list' ? view.blocks[1]!.items : []
+    expect(kept.map((item) => item.title)).toEqual(['Date limite de remise des offres', 'Validité des offres'])
+    expect(kept[0]!.detail).toMatch(/« La date limite de remise des offres est fixée au .* » \(RC\)$/)
+    const row = view.blocks[2]!.kind === 'list' ? view.blocks[2]!.items[0]! : null
+    expect(row!.detail).toMatch(/^Date limite de remise des offres — La date limite .* — RC$/)
+    // Le lien d'une cellule de tableau (« [[…|RC]] », le « | » échappé) mène à la fiche de la pièce.
+    await row!.open!.run()
+    expect(shown.at(-1)).toMatch(/^ao\.piece\?.*RC\.md$/)
+  })
+
+  it('« Mettre à jour » relance ce qui écrit la note ; « Ouvrir la note » l’ouvre dans le coffre', async () => {
+    const { page, path, platform, opened } = await calendar()
+    const written = new TextDecoder().decode(platform.files.get(path))
+    await platform.fs.writeText(path, written.replace(/## Dates[\s\S]*?(<!-- bp:calendrier:fin)/, '$1'))
+    expect((await page!.load(encodeURIComponent(path))).blocks.some((block) => block.kind === 'list' && block.title === 'Dates')).toBe(false)
+    const view = await page!.load(encodeURIComponent(path))
+    const before = opened.length
+    await view.actions!.find((action) => action.id === 'update')!.run()
+    expect((await page!.load(encodeURIComponent(path))).blocks.some((block) => block.kind === 'list' && block.title === 'Dates')).toBe(true)
+    // Relancée depuis sa page, la commande ne quitte pas la page pour la note.
+    expect(opened.length).toBe(before)
+    await view.actions!.find((action) => action.id === 'note')!.run()
+    expect(opened.at(-1)).toBe(path)
+  })
+
+  it('une question : paragraphes, encadré, sources avec leurs passages, ton des marques ; la recherche porte sur tout', async () => {
+    const { page, platform, station } = await calendar()
+    const path = `${station.folder}/Analyse/Questions/2026-11-06 Pénalités.md`
+    await platform.fs.writeText(
+      path,
+      [
+        '---',
+        'bp-type: ao-question',
+        '---',
+        '',
+        '# Quelles pénalités ?',
+        '',
+        '## Réponse',
+        '',
+        'Les pénalités de retard sont de **1/1000** par jour',
+        'calendaire [1].',
+        '',
+        '> [!warning] La source [3] n’existe pas.',
+        '',
+        '### Sources',
+        '',
+        `1. [[${station.folder}/Pièces/Appel d'offres/RC|RC]] — article 7`,
+        '   > [!quote]- 1 passage',
+        '   > Le titulaire encourt une pénalité.',
+        '',
+        '---',
+        '',
+        '| Point | État |',
+        '| --- | --- |',
+        '| Plafond | 🟥 absent |',
+        '| Taux | ✅ trouvé |',
+        '',
+        '## Notes',
+        ''
+      ].join('\n')
+    )
+    const view = await page!.load(encodeURIComponent(path))
+    expect(view.title).toBe('Quelles pénalités ?')
+    expect(view.actions?.map((action) => action.id)).toEqual(['note', 'analysis'])
+    expect(view.blocks[0]).toEqual({ kind: 'text', title: 'Réponse', paragraphs: ['Les pénalités de retard sont de 1/1000 par jour calendaire [1].'] })
+    expect(view.blocks[1]).toEqual({ kind: 'message', tone: 'warning', text: 'La source [3] n’existe pas.' })
+    const sources = view.blocks[2]!.kind === 'list' ? view.blocks[2]! : null
+    expect(sources?.title).toBe('Sources')
+    expect(sources?.items[0]).toMatchObject({ title: 'RC — article 7', detail: 'Le titulaire encourt une pénalité.' })
+    expect(sources?.items[0]!.open?.label).toBe('Ouvrir la fiche de la pièce')
+    // Un tableau sans titre à lui reprend celui de sa section : il reste dans un cadre.
+    expect(view.blocks[3]).toMatchObject({ kind: 'list', title: 'Sources' })
+    const table = view.blocks[3]!.kind === 'list' ? view.blocks[3]!.items : []
+    expect(table.map((item) => `${item.title}:${item.detail}:${item.tone}`)).toEqual(['Plafond:absent:danger', 'Taux:trouvé:success'])
+  })
+
+  it('sans page chez la plateforme : la note s’ouvre dans le coffre ; une note disparue : la page le dit', async () => {
+    const { item, opened, path, views } = await calendar(false)
+    // Le calendrier écrit s'est ouvert une fois ; le clic sur la note l'ouvre encore, dans le coffre.
+    await item.open!.run()
+    expect(opened).toEqual([path, path])
+    expect(views.pages().find((each) => each.id === 'ao.note')).toBeDefined()
+    const { page } = await calendar()
+    expect((await page!.load(encodeURIComponent('Appels d’offres/X/Analyse/Disparue.md'))).title).toBe('Note introuvable')
+  })
+})
