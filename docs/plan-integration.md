@@ -424,6 +424,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   lit) ; les relues marquées dans la bibliothèque, filtre « Relues (IA) »
 - v0.50.0 : **traduire l'exigence** : une traduction à jour n'est plus écrasée sans le
   demander ; les langues à faire d'abord ; une traduction identique ne change rien
+- v0.51.0 : **traduire des exigences** : la série finit sur la page « Traductions à
+  relire » (chaque traduction à côté de sa source, à valider), retrouvée depuis la
+  bibliothèque
 
 ### Étape 7 — Livrables
 

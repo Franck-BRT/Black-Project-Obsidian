@@ -19,6 +19,7 @@ import { isUnreviewedMachine, textOf, type Requirement } from './model/requireme
 import { assessAll } from './quality/report'
 import { assessRequirement, isWeak } from './quality/score'
 import { libraryQualityPage, QUALITY_PAGE } from './qualityPage'
+import { TRANSLATIONS_PAGE, translationsPage, translationsPageOf, type TranslationsHooks } from './translationsPage'
 import { libraryQualityPath } from './workflows'
 import { vocabularyLabel } from './vocabulary'
 
@@ -175,7 +176,14 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
  * qualité), et une carte par exigence, les plus faibles d'abord — avec une recherche
  * (identifiant, titre, formulation…) et des filtres.
  */
-export async function libraryPage(session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void, imports?: ImportHooks, create?: () => Promise<void>): Promise<PageView> {
+export async function libraryPage(
+  session: Session,
+  run: (id: string) => Promise<void>,
+  showPage?: (id: string) => void,
+  imports?: ImportHooks,
+  create?: () => Promise<void>,
+  translations?: TranslationsHooks
+): Promise<PageView> {
   const { t } = session
   const settings = session.settings()
   const library = await session.store.all()
@@ -191,7 +199,14 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
       { id: 'import', label: t('exigences.tile.import'), icon: 'upload', run: () => (imports ? imports.run() : run('importer')) },
       // Avec des pages, la qualité s'ouvre en page (rien n'est écrit) ; sinon, le rapport.
       { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => (showPage ? showPage(QUALITY_PAGE) : run('qualite')) },
-      ...(session.ai?.() && settings.languages.length > 1 ? [{ id: 'translate', label: t('exigences.page.translate'), tooltip: t('exigences.command.translateMany'), icon: 'chat' as const, run: () => run('traduire-ia-serie') }] : [])
+      ...(session.ai?.() && settings.languages.length > 1 ? [{ id: 'translate', label: t('exigences.page.translate'), tooltip: t('exigences.command.translateMany'), icon: 'chat' as const, run: () => (translations ? translations.run() : run('traduire-ia-serie')) }] : []),
+      // Des traductions de la machine à relire : leur page (la première langue qui en a).
+      ...(() => {
+        if (!showPage || !translations) return []
+        const lang = settings.languages.find((each) => library.some((requirement) => requirement.sourceLang !== each && isUnreviewedMachine(requirement, each)))
+        const count = lang ? library.filter((requirement) => Object.keys(requirement.text).some((each) => isUnreviewedMachine(requirement, each))).length : 0
+        return lang ? [{ id: 'translations', label: t('exigences.trp.open', { count }), icon: 'check' as const, run: () => showPage(translationsPageOf(lang)) }] : []
+      })()
     ],
     search: { label: t('exigences.page.search'), placeholder: t('exigences.page.search.placeholder') },
     filters: [
@@ -491,7 +506,8 @@ export function registerExigencesHome(
   run: (id: string) => Promise<void>,
   showPage?: (id: string) => void,
   sessionFor?: (folder: string) => Session,
-  imports?: ImportHooks
+  imports?: ImportHooks,
+  translations?: TranslationsHooks
 ): void {
   if (!views) return
   const { t } = session
@@ -535,10 +551,17 @@ export function registerExigencesHome(
   })
   // Avec des pages, un import lancé de l'interface finit sur sa page ; sinon, le message seul.
   const importHere = showPage ? imports : undefined
-  views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage, importHere, create) })
+  views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage, importHere, create, showPage ? translations : undefined) })
   if (showPage && sessionFor) {
     views.page({ id: REQUIREMENT_PAGE, title: t('exigences.fiche.title'), icon: 'list', parent: LIBRARY_PAGE, load: (param) => requirementPage(sessionFor, showPage, param, () => session.settings().folder) })
     views.page({ id: QUALITY_PAGE, title: t('exigences.quality.title'), icon: 'star', parent: LIBRARY_PAGE, load: () => libraryQualityPage({ session, showPage, library: LIBRARY_PAGE, requirementPageOf }) })
+    views.page({
+      id: TRANSLATIONS_PAGE,
+      title: t('exigences.trp.nav'),
+      icon: 'chat',
+      parent: LIBRARY_PAGE,
+      load: (param) => translationsPage({ session, showPage, library: LIBRARY_PAGE, requirementPageOf, ...(translations ? { hooks: translations } : {}) }, param)
+    })
     views.page({ id: IMPORT_PAGE, title: t('exigences.importPage.nav'), icon: 'upload', parent: LIBRARY_PAGE, load: (param) => importPage(session, showPage, importHere, param) })
     // Une exigence de la bibliothèque, ouverte par un autre module : sa fiche.
     // Le rapport de qualité, lui, est la page de la qualité.

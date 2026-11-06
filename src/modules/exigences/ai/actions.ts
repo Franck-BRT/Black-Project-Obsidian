@@ -309,6 +309,8 @@ export function translationState(requirement: Requirement, lang: string): Transl
 
 export interface TranslateRun {
   lang: string
+  /** Les notes traduites par cette série. */
+  paths: string[]
   translated: number
   drifted: number
   failed: boolean
@@ -357,7 +359,7 @@ export async function translateRequirements(session: Session, client: AiClient, 
     submit: t('exigences.ai.translate.many.submit')
   })
   if (!chosen || chosen.length === 0) return null
-  const run: TranslateRun = { lang, translated: 0, drifted: 0, failed: false }
+  const run: TranslateRun = { lang, paths: [], translated: 0, drifted: 0, failed: false }
   for (const [index, path] of chosen.entries()) {
     notifier.notify(t('exigences.ai.translate.many.progress', { index: index + 1, total: chosen.length, lang: lang.toUpperCase() }), 3000)
     const outcome = await translateRequirement(session, client, path, { lang, quiet: true, date })
@@ -367,6 +369,7 @@ export async function translateRequirements(session: Session, client: AiClient, 
     }
     if (outcome === 'translated') {
       run.translated++
+      run.paths.push(path)
       const saved = await store.load(path)
       if (saved && hasDrifted(quantityDrift(textOf(saved, saved.sourceLang)?.body ?? '', textOf(saved, lang)?.body ?? ''))) run.drifted++
     }

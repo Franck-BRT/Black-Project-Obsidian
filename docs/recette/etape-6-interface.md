@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Traduire des exigences, puis les relire en page (v0.51.0)
+
+- [ ] IA réglée ; page **Exigences** → **Traduire (IA)** : la langue (s'il y en a
+      plusieurs), les exigences ; puis la page **Traductions à relire — EN** ; aucune note
+      ouverte
+- [ ] Ses chiffres (à relire, chiffres qui diffèrent, traduites par la série) ; chaque
+      carte : la traduction, la source, les chiffres qui diffèrent, la note de l'IA
+- [ ] **Valider la traduction** : la carte reste, « Validée », passe en bas ; le chiffre
+      « À relire » baisse
+- [ ] **Traduire de nouveau** sur une carte ; un clic ouvre la fiche
+- [ ] La page Exigences : « Traductions à relire (n) » y mène, tant qu'il en reste
+- [ ] Depuis la palette, *Traduire des exigences avec l'IA* : le message seul
+
 ## Traduire l'exigence, sans écraser (v0.50.0)
 
 - [ ] Fiche d'une exigence dont la traduction EN est validée : **Traduire (IA)** → la

@@ -256,6 +256,17 @@ langue propose ce qui est à faire d'abord (`STATE_ORDER`), chaque langue avec s
 Une traduction identique mot pour mot ne change rien (`'none'`, et le message le dit).
 Le message de fin dit de la relire puis de la valider sur sa fiche.
 
+**Les traductions à relire, en page (v0.19.0, Black Projects 0.51.0)** : la page
+`exigences.traductions?<langue>` (`translationsPage.ts`, fille de la bibliothèque) liste
+les exigences dont la traduction vers la langue est de la machine et pas validée
+(`translationState` = `unreviewed`), et celles de la dernière série (`LastTranslations`,
+gardée tant que le module est actif ; `TranslateRun.paths`) même validées depuis.
+Chaque carte : la traduction, la source (fait), les chiffres qui diffèrent, la note de
+l'IA ; « Valider la traduction », « Traduire de nouveau », un clic vers la fiche. Filtres
+à relire, écarts, notes, de cette série, validées. « Traduire (IA) » de la bibliothèque
+passe par `TranslationsHooks.run` et finit sur la page ; « Traductions à relire (n) » y
+mène tant qu'il en reste ; la palette garde le message seul.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

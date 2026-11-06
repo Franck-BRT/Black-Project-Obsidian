@@ -250,7 +250,7 @@ describe('traduire les exigences, en page', () => {
     expect(asked.title).toBe('Traduire en EN avec l’IA')
     expect(asked.choices.map((choice) => choice.description)).toEqual(['traduction absente', 'traduction absente'])
     expect(asked.selected).toHaveLength(2)
-    expect(platform.notices.at(-1)).toBe('2 exigence(s) traduite(s) en EN, à relire puis valider sur leur fiche (filtre « Traductions à relire »). Chiffres ou unités différents de la source dans 1 : leur fiche le montre.')
+    expect(platform.notices.at(-1)).toBe('2 exigence(s) traduite(s) en EN, à relire puis valider : page « Traductions à relire » (depuis la bibliothèque). Chiffres ou unités différents de la source dans 1 : la page le montre.')
     expect(cardsOf(await library.load()).every((card) => card.tags?.includes('traductions'))).toBe(true)
     expect(platform.opened).toEqual([])
   })
@@ -641,5 +641,74 @@ describe('traduire l’exigence : une traduction à jour ne se remplace pas sans
     await (await page.load(param)).actions!.find((action) => action.id === 'translate')!.run()
     expect(platform.notices.at(-1)).toBe('REQ-SOL-0001 : la traduction EN de l’IA est identique à celle en place ; rien ne change.')
     expect(cardsOf(await page.load(param)).find((card) => card.id === 'text-en')!.badges?.map((badge) => badge.label)).toEqual(['À jour'])
+  })
+})
+
+describe('traduire des exigences : la page des traductions à relire', () => {
+  async function batch() {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, true)
+    const library = run.views.pages().find((each) => each.id === 'exigences.bibliotheque')!
+    const page = run.views.pages().find((each) => each.id === 'exigences.traductions')!
+    platform.httpAnswers.push(chat({ text: 'Access shall be logged if possible.', notes: '« si possible » gardé tel quel.' }), chat({ text: 'The system shall keep the hold between 5 °C and 35 °C.', notes: '' }))
+    await (await library.load()).actions!.find((action) => action.id === 'translate')!.run()
+    return { ...run, platform, library, page }
+  }
+
+  it('la série finie, la page des traductions EN : chacune à côté de sa source, les chiffres qui diffèrent d’abord', async () => {
+    const { platform, shown, page } = await batch()
+    expect(shown.at(-1)).toBe('exigences.traductions?en')
+    expect(platform.opened).toEqual([])
+    expect(page.parent).toBe('exigences.bibliotheque')
+    const view = await page.load('en')
+    expect(view.title).toBe('Traductions à relire — EN')
+    expect(view.subtitle).toMatch(/^Série du \d{4}-\d{2}-\d{2} : 2 exigence\(s\) traduite\(s\)\./)
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}:${stat.value}`)).toEqual(['À relire:2', 'Chiffres ou unités différents:1', 'Traduites par la série:2'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['a-relire', 'ecarts', 'notes', 'serie', 'validees'])
+    const cards = cardsOf(view)
+    expect(cards.map((card) => card.title)).toEqual(['REQ-SOL-0001 — Maintien en température', 'REQ-SEC-0001 — Journalisation'])
+    expect(cards[0]!.text).toBe('The system shall keep the hold between 5 °C and 35 °C.')
+    expect(cards[0]!.facts?.map((fact) => `${fact.label}:${fact.value}`)).toEqual(['Source (FR):Le système doit maintenir la soute entre 5 °C et 30 °C.', 'Chiffres ou unités différents:absents : 30 ; ajoutés : 35'])
+    expect(cards[1]!.facts?.at(-1)).toMatchObject({ value: '« si possible » gardé tel quel.' })
+    expect(cards[0]!.actions?.map((action) => action.id)).toEqual(['accept', 'translate'])
+    await cards[0]!.open!.run()
+    expect(shown.at(-1)).toMatch(/^exigences\.fiche\?/)
+  })
+
+  it('« Valider la traduction » sur la page : la carte reste, « Validée » ; il en reste une à relire', async () => {
+    const { page, platform } = await batch()
+    const card = cardsOf(await page.load('en'))[0]!
+    await card.actions!.find((action) => action.id === 'accept')!.run()
+    expect(platform.notices.at(-1)).toBe('REQ-SOL-0001 : traduction EN validée.')
+    const view = await page.load('en')
+    const after = cardsOf(view)
+    expect(after.map((each) => each.badges![0]!.label)).toEqual(['traduction automatique à relire', 'Validée'])
+    expect(after[1]!.actions?.map((action) => action.id)).toEqual(['translate'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats[0]!.value).toBe('1')
+  })
+
+  it('la bibliothèque mène à la page tant qu’il reste des traductions à relire', async () => {
+    const { library, shown, page } = await batch()
+    const action = (await library.load()).actions!.find((each) => each.id === 'translations')!
+    expect(action.label).toBe('Traductions à relire (2)')
+    await action.run()
+    expect(shown.at(-1)).toBe('exigences.traductions?en')
+    for (const card of cardsOf(await page.load('en'))) await card.actions!.find((each) => each.id === 'accept')!.run()
+    expect((await library.load()).actions!.map((each) => each.id)).not.toContain('translations')
+  })
+
+  it('depuis la palette : le message seul ; rien à relire : la page le dit', async () => {
+    const platform = memoryPlatform()
+    const { run, shown, views } = await start(platform, true, true)
+    const page = views.pages().find((each) => each.id === 'exigences.traductions')!
+    const empty = await page.load('en')
+    expect(empty.blocks.at(-1)).toEqual({ kind: 'message', tone: 'success', text: 'Aucune traduction EN à relire.' })
+    platform.httpAnswers.push(chat({ text: 'Access shall be logged if possible.', notes: '' }), chat({ text: 'The system shall keep the hold between 5 °C and 30 °C.', notes: '' }))
+    await run('exigences-traduire-ia-serie')
+    expect(shown).toEqual([])
+    expect(platform.notices.at(-1)).toMatch(/^2 exigence\(s\) traduite\(s\) en EN/)
+    expect(cardsOf(await page.load('en'))).toHaveLength(2)
   })
 })

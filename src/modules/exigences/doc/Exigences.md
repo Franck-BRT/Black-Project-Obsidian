@@ -220,7 +220,12 @@ Quand le module **IA** est réglé (voir {{link:Modules/IA|IA}}) :
   place, rien ne change, et le message le dit.
 - **Traduire des exigences avec l'IA** : plusieurs d'un coup, vers une langue — celles
   dont la traduction manque ou est en retard sont cochées d'avance ; un message résume, et
-  le filtre « Traductions à relire » les retrouve.
+  le filtre « Traductions à relire » les retrouve. Lancée depuis la page Exigences, la
+  série finit sur la page **Traductions à relire — EN** : chaque traduction à côté de sa
+  source, les chiffres qui diffèrent (en tête) et la note de l'IA, avec **Valider la
+  traduction**, **Traduire de nouveau**, et un clic vers la fiche. Celles de la série
+  restent affichées une fois validées (« Validée »). La page se retrouve depuis la
+  bibliothèque (« Traductions à relire (n) ») tant qu'il en reste.
 - **Doublons par le sens** : avec un modèle d'embeddings réglé, l'analyse de qualité
   ajoute les exigences qui disent la même chose en d'autres mots, marquées « par le sens ».
 

@@ -44,6 +44,7 @@ import { aiClient } from '../ia'
 import { reviewRequirement, translateRequirement, translateRequirements } from './ai/actions'
 import { emitRequirementCreated, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
 import { importPageOf, openLibrary, registerExigencesHome, type LastImport } from './home'
+import { translationsPageOf, type LastTranslations } from './translationsPage'
 export { requirementPageOf } from './home'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -289,7 +290,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.18.0',
+  version: '0.19.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -309,6 +310,24 @@ export const exigencesModule: BlackModule = {
     registerExigencesWorkflows(() => session, session.t, localToday)
     // L'accueil : la bibliothèque en chiffres.
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
+    // La dernière série de traductions, pour sa page ; lancée de l'interface, elle finit sur elle.
+    let lastTranslations: LastTranslations | null = null
+    const runTranslations = async () => {
+      const client = aiClient()
+      if (!client) {
+        platform.notifier.notify(session.t('ia.unavailable'), 10000)
+        return null
+      }
+      const run = await translateRequirements(session, client, localToday())
+      if (!run) return null
+      lastTranslations = { lang: run.lang, date: localToday(), paths: run.paths, failed: run.failed }
+      const vars = { translated: run.translated, lang: run.lang.toUpperCase(), drifted: run.drifted }
+      platform.notifier.notify(
+        [session.t(run.failed ? 'exigences.ai.translate.many.stopped' : 'exigences.ai.translate.many.done', vars), ...(run.drifted ? [session.t('exigences.ai.translate.many.drift', vars)] : [])].join(' '),
+        run.drifted ? 15000 : 10000
+      )
+      return run
+    }
     // Le dernier import, pour sa page ; lancé de l'interface, l'import finit sur elle.
     let lastImport: LastImport | null = null
     const runImport = async () => {
@@ -331,6 +350,13 @@ export const exigencesModule: BlackModule = {
           if (report) showPage?.(importPageOf(report.piece))
         },
         last: () => lastImport
+      },
+      {
+        async run() {
+          const run = await runTranslations()
+          if (run) showPage?.(translationsPageOf(run.lang))
+        },
+        last: () => lastTranslations
       }
     )
 
@@ -395,19 +421,9 @@ export const exigencesModule: BlackModule = {
     commands.register({
       id: 'traduire-ia-serie',
       nameKey: 'exigences.command.translateMany',
+      // Depuis la palette : le message seul, comme avant.
       async run() {
-        const client = aiClient()
-        if (!client) {
-          platform.notifier.notify(session.t('ia.unavailable'), 10000)
-          return
-        }
-        const run = await translateRequirements(session, client, localToday())
-        if (!run) return
-        const vars = { translated: run.translated, lang: run.lang.toUpperCase(), drifted: run.drifted }
-        platform.notifier.notify(
-          [session.t(run.failed ? 'exigences.ai.translate.many.stopped' : 'exigences.ai.translate.many.done', vars), ...(run.drifted ? [session.t('exigences.ai.translate.many.drift', vars)] : [])].join(' '),
-          run.drifted ? 15000 : 10000
-        )
+        await runTranslations()
       }
     })
 
