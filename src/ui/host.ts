@@ -36,6 +36,8 @@ export interface AppHost {
   saveNavMenu(layout: NavLayout | null): Promise<void>
   /** Ouvrir les paramètres : l'entrée épinglée en bas de la barre de gauche. */
   openSettings?(): void
+  /** La page des paramètres, quand ils s'ouvrent dans l'onglet : l'entrée est alors « page en cours » sur elle. */
+  settingsPage?: string
   appearance(): Appearance
   saveAppearance(appearance: Appearance): Promise<void>
   /** Le thème de l'hôte est-il sombre (pour le mode « auto ») ? */

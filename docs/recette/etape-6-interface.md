@@ -70,6 +70,24 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les paramètres, en page (v0.33.0)
+
+- [ ] **Paramètres** (en bas de la barre de gauche) : la page s'ouvre dans l'onglet de
+      Black Projects, l'entrée est « page en cours » ; la tuile Paramètres de l'accueil y
+      mène aussi ; la fenêtre de réglages d'Obsidian ne s'ouvre pas
+- [ ] Les chiffres (modules actifs, langue, version) ; Général : **Changer la langue**
+      (un choix, l'actuelle marquée ; au prochain chargement), **Ne plus l'ouvrir au
+      démarrage**, la documentation (**Créer / mettre à jour**, **Changer le dossier**), la
+      licence
+- [ ] Apparence : une carte par choix, **Changer** → la fenêtre de choix ; l'interface
+      change tout de suite
+- [ ] Modules : chaque module, sa version et son état (vert, gris, orange, rouge), ce dont
+      il a besoin ; un clic sur son nom ouvre sa fenêtre **Fonctions** ; **Désactiver** :
+      « Au prochain chargement » sur la carte ; filtres **Modules actifs**, **Désactivés**,
+      **En difficulté**
+- [ ] **Réglages dans Obsidian** ouvre l'onglet de réglages d'Obsidian sur Black Projects ;
+      un réglage changé d'un côté se retrouve de l'autre
+
 ## Le calendrier, en page (v0.32.0)
 
 - [ ] Fiche d'une analyse → **Calendrier** : sa page, sans fenêtre ni note ouverte ;

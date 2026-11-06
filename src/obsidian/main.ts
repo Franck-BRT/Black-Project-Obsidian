@@ -21,6 +21,7 @@ import { FILE_VIEW, obsidianPlatform, pluginSettingsStorage } from './platform'
 import { BlackProjectsSettingTab } from './settingsTab'
 import { BlackHomeView, HOME_VIEW } from './homeView'
 import { ViewsRegistry } from '../core/views'
+import { SETTINGS_PAGE, settingsPage } from '../core/settingsPage'
 import type { Appearance } from '../core/appearance'
 import { dialogWindows, openModuleWindow, type AppHost, type Page } from '../ui'
 import { obsidianDialogHost } from './ui'
@@ -89,7 +90,32 @@ export default class BlackProjectsPlugin extends Plugin {
     this.addRibbonIcon('layout-dashboard', this.i18n.t('command.home'), () => void this.openHome())
     this.addSettingTab(new BlackProjectsSettingTab(this.app, this))
     const group = this.i18n.t('home.tile.group')
-    this.views.tile({ id: 'core.reglages', label: this.i18n.t('home.nav.settings'), icon: 'settings', color: 'slate', group, order: 90, byDefault: true, description: this.i18n.t('home.tile.settings.desc'), run: () => this.openSettings() })
+    this.views.tile({ id: 'core.reglages', label: this.i18n.t('home.nav.settings'), icon: 'settings', color: 'slate', group, order: 90, byDefault: true, description: this.i18n.t('home.tile.settings.desc'), page: SETTINGS_PAGE, run: () => this.openSettings() })
+    // Les paramètres, en page dans l'onglet de Black Projects ; l'onglet de réglages d'Obsidian reste.
+    this.views.page({
+      id: SETTINGS_PAGE,
+      title: this.i18n.t('home.nav.settings'),
+      icon: 'settings',
+      load: async () =>
+        settingsPage({
+          t: (key, vars) => this.i18n.t(key, vars),
+          version: this.manifest.version,
+          config: () => this.config,
+          save: async (config) => {
+            this.config = config
+            await this.saveSettings()
+          },
+          saveAppearance: (appearance) => this.saveAppearance(appearance),
+          modules: () => this.registry.list(),
+          moduleSettings: (id) => moduleSettings(this.config, id),
+          openModule: (module) => this.openModuleWindow(module),
+          createDocumentation: () => this.createDocumentation(),
+          licence: () => this.describeLicence(),
+          ui: this.platform.ui,
+          notify: (message) => this.platform.notifier.notify(message, 8000),
+          openHostSettings: () => this.openHostSettings()
+        })
+    })
     this.views.tile({ id: 'core.documentation', label: this.i18n.t('home.tile.docs'), icon: 'book', color: 'slate', group, order: 91, description: this.i18n.t('home.tile.docs.desc'), run: () => this.createDocumentation() })
 
     await this.registry.activateAll({
@@ -128,7 +154,13 @@ export default class BlackProjectsPlugin extends Plugin {
     }
   }
 
+  /** Les paramètres : leur page, dans l'onglet de Black Projects. */
   openSettings(): void {
+    void this.openHome(SETTINGS_PAGE)
+  }
+
+  /** L'onglet de réglages d'Obsidian, sur Black Projects. */
+  openHostSettings(): void {
     const setting = (this.app as unknown as { setting?: { open(): void; openTabById(id: string): void } }).setting
     setting?.open()
     setting?.openTabById(this.manifest.id)
@@ -180,6 +212,7 @@ export default class BlackProjectsPlugin extends Plugin {
         await this.saveSettings()
       },
       openSettings: () => this.openSettings(),
+      settingsPage: SETTINGS_PAGE,
       appearance: () => this.config.appearance,
       saveAppearance: (appearance) => this.saveAppearance(appearance),
       hostIsDark: () => document.body.classList.contains('theme-dark'),

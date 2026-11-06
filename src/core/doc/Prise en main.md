@@ -86,7 +86,14 @@ Le bouton **Apparence** règle, au choix et ensemble :
 
 ## Les réglages
 
-**Paramètres → Black Projects by Black Room Technologies** :
+**Paramètres**, en bas de la barre de gauche (ou la tuile Paramètres), ouvre la page des
+paramètres dans l'onglet de Black Projects : la langue, l'accueil au démarrage, la
+documentation (son dossier, la créer), la licence ; l'apparence, un choix par carte ; une
+carte par module — son état, ce dont il a besoin, sa fenêtre **Fonctions**, **Activer** ou
+**Désactiver** (au prochain chargement du plugin) — avec une recherche et les filtres
+Modules actifs, Désactivés, En difficulté. **Réglages dans Obsidian** ouvre les mêmes
+réglages dans l'onglet d'Obsidian, **Paramètres → Black Projects by Black Room
+Technologies** :
 
 - **Langue** : français ou anglais, appliquée au prochain chargement du plugin.
 - **Accueil et apparence** : ouvrir l'accueil au démarrage, et les mêmes choix

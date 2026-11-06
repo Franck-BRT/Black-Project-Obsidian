@@ -12,7 +12,8 @@
  */
 
 import { readAppearance, type Appearance } from '../src/core/appearance'
-import { readDashboard, readNavMenu } from '../src/core/settings'
+import { DEFAULT_SETTINGS, readDashboard, readNavMenu, type CoreSettings } from '../src/core/settings'
+import { SETTINGS_PAGE, settingsPage } from '../src/core/settingsPage'
 import { createI18n } from '../src/core/i18n'
 import { EVALUATION } from '../src/core/licence'
 import type { ModuleContext } from '../src/core/modules/module'
@@ -99,6 +100,9 @@ const utf8 = (text: string) => new TextEncoder().encode(text)
 
 let mounted: ReturnType<typeof mountApp> | null = null
 const commands = new Map<string, () => void | Promise<void>>()
+
+/** Les réglages du cœur, le temps de la visite : la démonstration n'a pas de coffre où les garder. */
+let core: CoreSettings = { ...DEFAULT_SETTINGS }
 
 async function start(): Promise<void> {
   const registry = new ModuleRegistry()
@@ -215,6 +219,44 @@ async function start(): Promise<void> {
     `<!-- bp:journal:debut -->\n- ${stamp} 09:12 · ✅ fait · **À l’import des pièces : relever le calendrier** · sur « Station sol de télémesure » — 1. Calendrier : 2 date(s), 1 délai(s) dans 3 pièce(s).\n- ${stamp} 08:30 · ❌ échec · **Questionnaire (IA)** · sur « Maintenance des antennes » — Étape 1 (Questionnaire du dossier) a échoué : serveur injoignable\n<!-- bp:journal:fin -->\n`
   )
 
+  // Les paramètres, en page comme dans Obsidian ; gardés le temps de la visite.
+  const windowOf = (module: Parameters<typeof openModuleWindow>[0]['module']) =>
+    openModuleWindow({
+      ...dialogHost,
+      module,
+      settings: () => settings[module.id] ?? {},
+      save: async (values) => void (settings[module.id] = values),
+      runCommand: async (id) => {
+        await commands.get(`${module.id}-${id}`)?.()
+      },
+      secrets: platform.secrets!,
+      dialogs: windows
+    })
+  views.page({
+    id: SETTINGS_PAGE,
+    title: t('home.nav.settings'),
+    icon: 'settings',
+    load: async () =>
+      settingsPage({
+        t,
+        version: 'démo',
+        config: () => ({ ...core, language, appearance }),
+        save: async (next) => void (core = next),
+        saveAppearance: async (next) => {
+          appearance = next
+          safeStorage('set', JSON.stringify(next))
+          mounted?.refresh()
+        },
+        modules: () => registry.list(),
+        moduleSettings: (id) => settings[id] ?? {},
+        openModule: (module) => windowOf(module),
+        createDocumentation: async () => toast(t('demo.docs')),
+        licence: () => t('settings.licence.evaluation'),
+        ui: platform.ui,
+        notify: (message) => toast(message)
+      })
+  })
+
   appearance = readAppearance({
     ...(JSON.parse(safeStorage('get') ?? '{}') as object),
     ...Object.fromEntries([...params.entries()].filter(([key]) => ['mode', 'vision', 'reading', 'size', 'motion'].includes(key)))
@@ -248,8 +290,8 @@ async function start(): Promise<void> {
       }
     },
     saveNavMenu: async (layout) => void safeStorage(layout ? 'set' : 'remove', layout ? JSON.stringify(layout) : undefined, 'bp-demo-menu'),
-    openSettings: () =>
-      void windows.inform({ title: t('home.nav.settings'), message: t('demo.settings'), actions: [{ value: 'ok', label: t('ui.close'), cta: true }] }),
+    openSettings: () => mounted?.show(SETTINGS_PAGE),
+    settingsPage: SETTINGS_PAGE,
     appearance: () => appearance,
     saveAppearance: async (next) => {
       appearance = next

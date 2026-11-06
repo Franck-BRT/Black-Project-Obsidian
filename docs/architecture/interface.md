@@ -209,6 +209,11 @@ tout droit sur la page (une commande à l'ouverture de l'onglet).
 
 **Accueil** est toujours en haut, **Paramètres** toujours en bas (l'hôte le fournit par
 `openSettings` ; sans lui, pas d'entrée du bas) : ils ne se déplacent ni ne se masquent.
+Depuis la 0.33.0, `openSettings` ouvre la page des paramètres dans l'onglet
+(`SETTINGS_PAGE`, `src/core/settingsPage.ts`, décrite en données comme les pages des
+modules et déclarée par l'hôte) ; `AppHost.settingsPage` la nomme, pour que l'entrée soit
+« page en cours » sur elle. L'onglet de réglages de la plateforme reste, ouvert par le
+bouton « Réglages dans Obsidian » de la page (`openHostSettings`).
 Entre les deux, le menu que l'utilisateur range (`sidemenu.tsx`, logique dans `menu.ts`,
 testée seule) :
 

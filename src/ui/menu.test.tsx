@@ -92,4 +92,13 @@ describe('la barre de gauche', () => {
     expect(bare).not.toContain('Paramètres')
     expect(bare).toContain('Modifier le menu')
   })
+
+  it('les paramètres en page dans l’onglet : sur leur page, l’entrée Paramètres est « page en cours »', () => {
+    const base = host(null)
+    const withPage = { ...base, settingsPage: 'core.parametres', pages: () => [{ id: 'core.parametres', title: 'Paramètres', icon: 'settings' as const, load: async () => ({ blocks: [] }) }] }
+    const on = renderToString(<App host={withPage} generation={0} page="core.parametres" />)
+    expect(on).toMatch(/<button type="button" class="bp-nav-item" aria-current="page">.*?Paramètres<\/button><\/div><\/nav>/)
+    const off = renderToString(<App host={withPage} generation={0} />)
+    expect(off).not.toMatch(/aria-current="page">(?:(?!<button).)*Paramètres<\/button>/)
+  })
 })

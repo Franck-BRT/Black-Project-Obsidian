@@ -228,7 +228,7 @@ export function SideMenu({
           (editing ? (
             pinnedNote(settings, t('ui.menu.pinnedBottom'))
           ) : (
-            <button type="button" class="bp-nav-item" onClick={() => host.openSettings?.()}>
+            <button type="button" class="bp-nav-item" aria-current={host.settingsPage !== undefined && page === host.settingsPage ? 'page' : undefined} onClick={() => host.openSettings?.()}>
               <Icon name="settings" />
               {settings}
             </button>
