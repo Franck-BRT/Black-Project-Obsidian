@@ -50,7 +50,8 @@ et fiches** ouvrent la **page de la bibliothèque**, dans l'onglet Black Project
   (la traduction faite, la fiche de l'exigence s'ouvre) ;
 - une **recherche** (identifiant, titre, formulation…, sans tenir compte des accents) et
   des **filtres** : faibles, à revoir, criticité haute, brouillons, approuvées, traductions
-  à relire.
+  à relire, relues (IA) — une exigence relue porte « Relue (IA) le … ». Une formulation
+  reformulée par l'IA et retenue le dit sur sa carte (« Reformulée par l'IA, retenue le … »).
 
 Un clic sur une exigence (son nom, sur la page Exigences ou sur la fiche d'une analyse)
 ouvre sa **fiche en page**, où tout se voit :
@@ -203,7 +204,8 @@ Quand le module **IA** est réglé (voir {{link:Modules/IA|IA}}) :
 
 - **Relire l'exigence avec l'IA** (note ouverte, ou une ligne de la liste) : un avis, les
   défauts que les règles ne voient pas, et des **reformulations** qui visent les axes
-  faibles. La relecture se lit sur la **fiche** de l'exigence, juste après ses formulations
+  faibles. Depuis une carte de la page Exigences, **Relire (IA)** mène à la fiche de
+  l'exigence ; depuis la fiche, on y reste. La relecture se lit sur la **fiche** de l'exigence, juste après ses formulations
   (l'avis, les défauts relevés, les reformulations proposées) ; elle est écrite dans la
   note (section « Relecture par l'IA », remplacée
   à la relecture suivante). Choisissez une reformulation : elle devient la formulation

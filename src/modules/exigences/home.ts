@@ -12,7 +12,7 @@
 import { localToday } from '../../core/dates'
 import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { noteBlocks } from '../../core/markdown'
-import { acceptTranslation, reviewRequirement, reviewSection, translateRequirement, translationNote } from './ai/actions'
+import { acceptTranslation, lastReview, reviewRequirement, reviewSection, translateRequirement, translationNote } from './ai/actions'
 import { hasDrifted, quantityDrift } from './ai/translate'
 import { createRequirement, editRequirement, flagsOf, type Session } from './flows'
 import { isUnreviewedMachine, textOf, type Requirement } from './model/requirement'
@@ -86,7 +86,7 @@ const DONE_STATUSES = ['approved', 'implemented', 'verified']
 const DRAFT_STATUSES = ['draft', 'proposed']
 
 /** La carte d'une exigence. */
-function requirementCard(session: Session, requirement: Requirement, showPage?: (id: string) => void): Card {
+function requirementCard(session: Session, requirement: Requirement, showPage?: (id: string) => void, reviewed?: { date: string } | null): Card {
   const { t } = session
   const languages = session.settings().languages
   const quality = assessRequirement(requirement, languages)
@@ -99,7 +99,8 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
     ...(requirement.type ? [{ label: vocabularyLabel('type', requirement.type, t), tone: 'neutral' as const }] : []),
     ...(requirement.status ? [{ label: vocabularyLabel('status', requirement.status, t), tone: statusTone }] : []),
     ...(requirement.criticality ? [{ label: t('exigences.page.criticality', { value: vocabularyLabel('criticality', requirement.criticality, t) }), tone: requirement.criticality === 'high' ? ('warning' as const) : ('neutral' as const) }] : []),
-    ...flags.map((flag) => ({ label: flag, tone: 'warning' as const }))
+    ...flags.map((flag) => ({ label: flag, tone: 'warning' as const })),
+    ...(reviewed ? [{ label: reviewed.date ? t('exigences.qp.badge.reviewed.on', { date: reviewed.date }) : t('exigences.qp.badge.reviewed'), tone: 'success' as const }] : [])
   ]
   const ai = session.ai?.() ?? null
   const actions: ViewAction[] = path
@@ -116,7 +117,16 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
         },
         ...(ai
           ? [
-              { id: 'review', label: t('exigences.page.review'), icon: 'spark' as const, run: async () => void (await reviewRequirement(session, ai, path, localToday())) },
+              {
+                id: 'review',
+                label: t('exigences.page.review'),
+                icon: 'spark' as const,
+                // La relecture se lit sur la fiche : on y va.
+                run: async () => {
+                  const outcome = await reviewRequirement(session, ai, path, localToday())
+                  if ((outcome === 'reviewed' || outcome === 'rewritten') && showPage) showPage(requirementPageOf(path))
+                }
+              },
               {
                 id: 'translate',
                 label: t('exigences.page.translate'),
@@ -136,7 +146,8 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
     ...(requirement.criticality === 'high' ? ['critiques'] : []),
     ...(DRAFT_STATUSES.includes(requirement.status) ? ['brouillons'] : []),
     ...(DONE_STATUSES.includes(requirement.status) ? ['approuvees'] : []),
-    ...(Object.keys(requirement.text).some((lang) => isUnreviewedMachine(requirement, lang)) ? ['traductions'] : [])
+    ...(Object.keys(requirement.text).some((lang) => isUnreviewedMachine(requirement, lang)) ? ['traductions'] : []),
+    ...(reviewed ? ['relues'] : [])
   ]
   return {
     id: path ?? requirement.id,
@@ -170,6 +181,8 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
   const library = await session.store.all()
   const languages = settings.languages
   // Les plus faibles d'abord (ce qu'il y a à reprendre), puis par identifiant.
+  // Les relectures par l'IA, écrites dans les notes : pour marquer les exigences relues.
+  const reviews = new Map(await Promise.all(library.map(async (requirement): Promise<[string, ReturnType<typeof lastReview>]> => [requirement.id, requirement.filePath ? lastReview(await session.store.readNote(requirement.filePath).catch(() => '')) : null])))
   const sorted = [...library].sort((a, b) => assessRequirement(a, languages).score - assessRequirement(b, languages).score || a.id.localeCompare(b.id, undefined, { numeric: true }))
   return {
     subtitle: t('exigences.page.subtitle', { folder: settings.folder }),
@@ -187,12 +200,13 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
       { id: 'critiques', label: t('exigences.page.filter.critical') },
       { id: 'brouillons', label: t('exigences.page.filter.draft') },
       { id: 'approuvees', label: t('exigences.page.filter.approved') },
-      { id: 'traductions', label: t('exigences.page.filter.translations') }
+      { id: 'traductions', label: t('exigences.page.filter.translations') },
+      { id: 'relues', label: t('exigences.qp.filter.reviewed') }
     ],
     blocks: library.length
       ? [
           { kind: 'stats', stats: libraryStats(session, library) },
-          { kind: 'cards', cards: sorted.map((requirement) => requirementCard(session, requirement, showPage)) }
+          { kind: 'cards', cards: sorted.map((requirement) => requirementCard(session, requirement, showPage, reviews.get(requirement.id))) }
         ]
       : [{ kind: 'message', tone: 'info', text: t('exigences.list.empty') }]
   }
@@ -312,7 +326,10 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
       ...(text
         ? {
             subtitle:
-              text.by || text.at
+              // Une formulation source écrite par l'IA est une reformulation retenue (Relire), pas une traduction.
+              source && text.origin === 'machine'
+                ? t('exigences.fiche.rewritten', { at: text.at.slice(0, 10) || '—' })
+                : text.by || text.at
                 ? t(text.origin === 'machine' ? (text.reviewed ? 'exigences.fiche.byMachine.accepted' : 'exigences.fiche.byMachine') : 'exigences.fiche.byHuman', { by: text.by || '—', at: text.at.slice(0, 10) || '—' })
                 : t(text.origin === 'machine' ? 'exigences.fiche.machine' : 'exigences.fiche.human')
           }

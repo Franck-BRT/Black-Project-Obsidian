@@ -76,7 +76,7 @@ describe('la page Exigences', () => {
     const page = views.pages().find((each) => each.id === 'exigences.bibliotheque')!
     expect(page.title).toBe('Bibliothèque d’exigences')
     const view = await page.load()
-    expect(view.filters?.map((filter) => filter.id)).toEqual(['faibles', 'a-revoir', 'critiques', 'brouillons', 'approuvees', 'traductions'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['faibles', 'a-revoir', 'critiques', 'brouillons', 'approuvees', 'traductions', 'relues'])
     expect(view.actions?.map((action) => action.id)).toEqual(['new', 'import', 'quality'])
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats[0]!.value).toBe('2')
@@ -531,5 +531,63 @@ describe('modifier la fiche, en page', () => {
     await run('exigences-modifier')
     expect(platform.opened).toEqual([`Exigences/${weak.id} Journal des accès.md`])
     expect(shown).toEqual([])
+  })
+})
+
+describe('relire l’exigence, en page', () => {
+  const review = chat({ assessment: 'La formulation laisse le titulaire juge de journaliser.', findings: [], proposals: [{ axis: 'unambiguous', action: 'Retirer « si possible ».', rewrite: '' }] })
+
+  async function withAi() {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, true)
+    const weak = (await requirementsAt('Exigences').all()).find((each) => each.title === 'Journalisation')!
+    const library = run.views.pages().find((each) => each.id === 'exigences.bibliotheque')!
+    return { ...run, platform, weak, library }
+  }
+
+  it('« Relire (IA) » d’une carte de la bibliothèque mène à la fiche, où se lit la relecture ; la carte est marquée relue', async () => {
+    const { platform, weak, library, shown, views } = await withAi()
+    const card = cardsOf(await library.load()).find((each) => each.id === weak.filePath)!
+    expect(card.tags).not.toContain('relues')
+    platform.httpAnswers.push(review)
+    await card.actions!.find((action) => action.id === 'review')!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent(weak.filePath!)}`)
+    expect(platform.notices.at(-1)).toMatch(/^REQ-SEC-0001 relue : .*La relecture se lit sur sa fiche \(et dans la note\)\.$/)
+    expect(platform.opened).toEqual([])
+    const fiche = await views.pages().find((each) => each.id === 'exigences.fiche')!.load(encodeURIComponent(weak.filePath!))
+    expect(fiche.blocks.some((block) => block.kind === 'text' && block.title?.startsWith('Relecture par l’IA'))).toBe(true)
+    const after = cardsOf(await library.load()).find((each) => each.id === weak.filePath)!
+    expect(after.tags).toContain('relues')
+    expect(after.badges?.map((badge) => badge.label)).toEqual(expect.arrayContaining([expect.stringMatching(/^Relue \(IA\) le \d{4}-\d{2}-\d{2}$/)]))
+  })
+
+  it('l’IA sans réponse : on reste sur la bibliothèque, le message le dit', async () => {
+    const { platform, weak, library, shown } = await withAi()
+    const card = cardsOf(await library.load()).find((each) => each.id === weak.filePath)!
+    platform.httpAnswers.push({ status: 500, text: 'panne' })
+    await card.actions!.find((action) => action.id === 'review')!.run()
+    expect(shown).toEqual([])
+    expect(platform.notices.at(-1)).toMatch(/^L’IA/)
+  })
+
+  it('« Relire (IA) » sur la fiche : on y reste, la relecture apparaît', async () => {
+    const { platform, weak, views, shown } = await withAi()
+    const page = views.pages().find((each) => each.id === 'exigences.fiche')!
+    platform.httpAnswers.push(review)
+    await (await page.load(encodeURIComponent(weak.filePath!))).actions!.find((action) => action.id === 'review')!.run()
+    expect(shown).toEqual([])
+    const fiche = await page.load(encodeURIComponent(weak.filePath!))
+    expect(fiche.blocks.find((block) => block.kind === 'text' && block.title?.startsWith('Relecture par l’IA'))).toBeDefined()
+  })
+
+  it('une reformulation retenue : la formulation source le dit (« Reformulée par l’IA »), pas « traduite »', async () => {
+    const { platform, weak, views } = await withAi()
+    const page = views.pages().find((each) => each.id === 'exigences.fiche')!
+    platform.httpAnswers.push(chat({ assessment: 'Vague.', findings: [], proposals: [{ axis: 'unambiguous', action: 'Retirer « si possible ».', rewrite: 'Les accès doivent être journalisés.' }] }))
+    platform.choices.push('0')
+    await (await page.load(encodeURIComponent(weak.filePath!))).actions!.find((action) => action.id === 'review')!.run()
+    const source = cardsOf(await page.load(encodeURIComponent(weak.filePath!))).find((card) => card.id === 'text-fr')!
+    expect(source.text).toBe('Les accès doivent être journalisés.')
+    expect(source.subtitle).toMatch(/^Reformulée par l’IA, retenue le \d{4}-\d{2}-\d{2}$/)
   })
 })

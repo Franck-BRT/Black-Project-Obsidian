@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Relire l'exigence, en page (v0.49.0)
+
+- [ ] IA réglée ; page **Exigences**, **Relire (IA)** d'une carte : (choisir une
+      reformulation ou « Ne rien changer ») puis la **fiche** s'ouvre, la relecture après
+      les formulations ; aucune note ouverte
+- [ ] Une reformulation retenue : la carte FR dit « Reformulée par l'IA, retenue le … »
+- [ ] Retour à la bibliothèque : la carte porte « Relue (IA) le … » ; filtre **Relues (IA)**
+- [ ] Sur la fiche, **Relire (IA)** : on reste sur la fiche, la relecture y apparaît
+- [ ] L'IA sans réponse : on reste où l'on est, le message le dit
+
 ## Modifier la fiche, en page (v0.48.0)
 
 - [ ] Sur la fiche d'une exigence, **Modifier la fiche** : changer la formulation ; la

@@ -420,6 +420,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   ensuite (sa note depuis la palette)
 - v0.48.0 : **modifier la fiche** : la fiche redessinée, ou suivie sous son nouveau nom
   quand le titre change ; depuis une carte de la bibliothèque, la fiche modifiée ensuite
+- v0.49.0 : **relire l'exigence** : depuis une carte, la fiche ensuite (la relecture s'y
+  lit) ; les relues marquées dans la bibliothèque, filtre « Relues (IA) »
 
 ### Étape 7 — Livrables
 

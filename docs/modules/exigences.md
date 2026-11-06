@@ -241,6 +241,13 @@ import) mène à la fiche modifiée. Une fiche demandée sous un ancien nom (« 
 retrouve l'exigence par l'identifiant en tête du nom de la note (`renamedFrom`) plutôt
 que de dire « introuvable ». Depuis la palette : la note, comme avant.
 
+**Relire dans l'interface (v0.17.0, Black Projects 0.49.0)** : « Relire (IA) » d'une carte
+de la bibliothèque mène à la fiche (relue, ou reformulation retenue ; rien si l'IA ne
+répond pas) ; sur la fiche, on reste. Les cartes de la bibliothèque portent « Relue (IA)
+le … » (`lastReview` de chaque note) et le filtre `relues`. La formulation source écrite
+par l'IA (une reformulation retenue) se dit « Reformulée par l'IA, retenue le … » sur la
+fiche, plus « traduite ». Les messages de fin disent que la relecture se lit sur la fiche.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies
