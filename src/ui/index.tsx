@@ -36,3 +36,7 @@ export function mountApp(element: HTMLElement, host: AppHost): MountedApp {
     }
   }
 }
+
+export { dialogWindows } from './dialogs/windows'
+export { openModuleWindow, type ModuleWindowHost } from './dialogs/moduleWindow'
+export type { DialogHost } from './dialogs/frame'

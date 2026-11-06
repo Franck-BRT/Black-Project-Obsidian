@@ -13,8 +13,10 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.10.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
-l'accueil et l'interface.** Un onglet d'accueil moderne (analyses avec leur date limite
+**Version 0.11.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+l'accueil et l'interface.** Toutes les fenêtres sont redessinées avec les composants de
+l'interface : les mêmes thèmes, la même accessibilité, et les mêmes fenêtres pour la
+future application de bureau. Un onglet d'accueil moderne (analyses avec leur date limite
 de remise, IA, exigences, workflows), des thèmes clair et sombre, des couleurs pour les
 daltonismes, une lecture facilitée pour les troubles dys ; l'interface est écrite une
 fois (`src/ui`, Preact) pour Obsidian et pour la future application de bureau

@@ -42,6 +42,28 @@ Sur le coffre de test.
 - [ ] **Taille du texte** très grande : rien ne déborde ; fenêtre étroite : une colonne
 - [ ] Au clavier seul (Tab, Entrée, flèches dans les choix) : tout se fait, le focus se voit
 
+## Les fenêtres (v0.11.0)
+
+- [ ] **Nouvelle analyse** : le formulaire s'ouvre, le focus sur « Nom » ; « Créer » sans
+      nom : « Des champs obligatoires sont vides », le champ en rouge avec « Obligatoire. » ;
+      Entrée dans un champ valide le formulaire
+- [ ] Le choix suivant (importer, déposer, plus tard) : ↑ ↓ puis Entrée ; taper filtre la
+      liste ; Échap renonce
+- [ ] **Exigences : liste** : recherche, filtres, compte « n sur N », une ligne s'ouvre au
+      clic ou par Tab puis Entrée
+- [ ] Une confirmation de suppression (un workflow) : bouton rouge, focus sur « Annuler »
+- [ ] Paramètres → **Formats de fichiers** : les fiches (Lu, Écrit, Affiché avec icône et
+      mot) ; allumer l'interrupteur `.json` ne fait pas remonter la fenêtre
+- [ ] Paramètres → **Fonctions** de l'AO : « Ajouter un type » ouvre une petite fenêtre
+      par-dessus ; la liste des types rangés reste dépliée ; interrupteurs « AO » et
+      « Réponse AO », corbeille
+- [ ] Paramètres → **Types de pièces** : ajouter, modifier (crayon), supprimer (avec
+      confirmation) un type personnalisé
+- [ ] Paramètres → **Fonctions** de l'IA : menus des modèles, clé masquée, « Tester la
+      connexion »
+- [ ] Dans chaque fenêtre, Tab ne sort jamais de la fenêtre ; Échap la ferme ; le focus
+      revient où il était ; en mode sombre et en monochrome, tout reste lisible
+
 ## Hors d'Obsidian
 
 - [ ] `pnpm run demo`, puis ouvrir `demo/dist/index.html` dans un navigateur : la même

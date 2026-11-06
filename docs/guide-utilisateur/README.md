@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.10.0)
+## Aujourd'hui (version 0.11.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : actions
@@ -21,7 +21,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   **Apparence** règle le mode (clair, sombre, automatique), les couleurs pour les
   daltonismes (rouge-vert, bleu-jaune, monochrome), la lecture facilitée pour les
   troubles dys, la taille du texte et le mouvement — aussi dans Paramètres → *Accueil et
-  apparence*.
+  apparence*. Toutes les fenêtres (formulaires, choix, listes, la fenêtre « Fonctions »
+  des modules) suivent la même apparence et se manient au clavier : Tab pour avancer, ↑ ↓
+  dans un choix, Entrée pour valider, Échap pour fermer.
 
 - **Analyse d'appels d'offres** : « Nouvelle analyse d'appel d'offres », puis importer
   les pièces (ou le ZIP du dossier), ou les déposer dans `Pièces/Originaux` et « Mettre à

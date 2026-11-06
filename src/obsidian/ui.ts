@@ -1,448 +1,28 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
-/** Le port `Ui` du cœur, dessiné avec les fenêtres d'Obsidian. */
-
-import { HOME_VIEW } from './homeView'
-import {
-  ButtonComponent,
-  DropdownComponent,
-  FuzzySuggestModal,
-  Modal,
-  Notice,
-  Setting,
-  SuggestModal,
-  TextComponent,
-  TFile,
-  setTooltip,
-  type App
-} from 'obsidian'
-import type { I18n } from '../core/i18n'
-import type {
-  Choice,
-  ConfirmView,
-  ExternalFile,
-  FilePickOptions,
-  FormView,
-  ListAnswer,
-  ListState,
-  ListView,
-  MessageAnswer,
-  MessageView,
-  PickManyView,
-  TextView,
-  Ui
-} from '../core/ports'
-
-/** Les fichiers du coffre, le fichier ouvert d'abord, puis les plus récents. */
-class FilePickerModal extends FuzzySuggestModal<TFile> {
-  private chosen = false
-
-  constructor(
-    app: App,
-    private readonly files: TFile[],
-    placeholder: string | undefined,
-    private readonly done: (path: string | null) => void
-  ) {
-    super(app)
-    if (placeholder) this.setPlaceholder(placeholder)
-  }
-
-  getItems(): TFile[] {
-    return this.files
-  }
-
-  getItemText(file: TFile): string {
-    return file.path
-  }
-
-  onChooseItem(file: TFile): void {
-    this.chosen = true
-    this.done(file.path)
-  }
-
-  override onClose(): void {
-    // Obsidian ferme la fenêtre avant d'annoncer le choix : on attend un tour avant de
-    // conclure que l'utilisateur a renoncé.
-    window.setTimeout(() => {
-      if (!this.chosen) this.done(null)
-    }, 0)
-  }
-}
-
-/** Un choix dans une liste, avec une précision sous chaque libellé. */
-class ChoiceModal extends SuggestModal<Choice> {
-  private chosen = false
-
-  constructor(
-    app: App,
-    private readonly choices: readonly Choice[],
-    placeholder: string | undefined,
-    private readonly done: (value: string | null) => void
-  ) {
-    super(app)
-    if (placeholder) this.setPlaceholder(placeholder)
-  }
-
-  getSuggestions(query: string): Choice[] {
-    const words = query.toLowerCase().split(/\s+/).filter(Boolean)
-    return this.choices.filter((choice) => {
-      const text = `${choice.label} ${choice.description ?? ''}`.toLowerCase()
-      return words.every((word) => text.includes(word))
-    })
-  }
-
-  renderSuggestion(choice: Choice, el: HTMLElement): void {
-    el.createDiv({ text: choice.label })
-    if (choice.description) el.createEl('small', { text: choice.description, cls: 'bp-choice-description' })
-  }
-
-  onChooseSuggestion(choice: Choice): void {
-    this.chosen = true
-    this.done(choice.value)
-  }
-
-  override onClose(): void {
-    window.setTimeout(() => {
-      if (!this.chosen) this.done(null)
-    }, 0)
-  }
-}
-
-/** Un formulaire : un réglage par champ, puis le bouton qui valide. */
-class FormModal extends Modal {
-  private readonly values: Record<string, string> = {}
-  private submitted = false
-
-  constructor(
-    app: App,
-    private readonly form: FormView,
-    private readonly done: (values: Record<string, string> | null) => void
-  ) {
-    super(app)
-    for (const field of form.fields) {
-      this.values[field.key] =
-        field.kind === 'toggle'
-          ? String(field.value ?? false)
-          : (field.value ?? (field.kind === 'choice' ? (field.options[0]?.value ?? '') : ''))
-    }
-  }
-
-  override onOpen(): void {
-    const { contentEl, form } = this
-    this.modalEl.addClass('bp-form-modal')
-    this.setTitle(form.title)
-    if (form.intro) contentEl.createEl('p', { text: form.intro, cls: 'bp-form-intro' })
-    let first: HTMLInputElement | null = null
-    for (const field of form.fields) {
-      const setting = new Setting(contentEl).setName(field.label)
-      if (field.description) setting.setDesc(field.description)
-      if (field.kind === 'text') {
-        setting.addText((text) => {
-          text.setValue(this.values[field.key] ?? '').onChange((value) => (this.values[field.key] = value))
-          if (field.placeholder) text.setPlaceholder(field.placeholder)
-          if (field.tooltip) setTooltip(text.inputEl, field.tooltip)
-          text.inputEl.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              this.submit()
-            }
-          })
-          first ??= text.inputEl
-        })
-      } else if (field.kind === 'textarea') {
-        // Le texte sous son libellé, sur toute la largeur : une formulation se lit en entier.
-        setting.settingEl.addClass('bp-form-textarea')
-        setting.addTextArea((area) => {
-          area.setValue(this.values[field.key] ?? '').onChange((value) => (this.values[field.key] = value))
-          if (field.placeholder) area.setPlaceholder(field.placeholder)
-          if (field.tooltip) setTooltip(area.inputEl, field.tooltip)
-          area.inputEl.rows = 5
-        })
-      } else if (field.kind === 'toggle') {
-        setting.addToggle((toggle) => {
-          toggle.setValue(this.values[field.key] === 'true').onChange((value) => (this.values[field.key] = String(value)))
-          if (field.tooltip) toggle.setTooltip(field.tooltip)
-        })
-      } else {
-        setting.addDropdown((dropdown) => {
-          for (const option of field.options) dropdown.addOption(option.value, option.label)
-          dropdown.setValue(this.values[field.key] ?? '').onChange((value) => (this.values[field.key] = value))
-          if (field.tooltip) setTooltip(dropdown.selectEl, field.tooltip)
-        })
-      }
-    }
-    new Setting(contentEl).addButton((button) => {
-      button.setButtonText(form.submit).setCta().onClick(() => this.submit())
-      if (form.submitTooltip) button.setTooltip(form.submitTooltip)
-    })
-    window.setTimeout(() => first?.focus(), 0)
-  }
-
-  private submit(): void {
-    for (const field of this.form.fields) {
-      if ((field.kind === 'text' || field.kind === 'textarea') && field.required && !(this.values[field.key] ?? '').trim()) {
-        new Notice(`${field.label} ?`)
-        return
-      }
-    }
-    const error = this.form.validate?.(this.values)
-    if (error) {
-      new Notice(error, 6000)
-      return
-    }
-    this.submitted = true
-    this.done({ ...this.values })
-    this.close()
-  }
-
-  override onClose(): void {
-    this.contentEl.empty()
-    if (!this.submitted) this.done(null)
-  }
-}
-
-/** Une question oui / non, le bouton qui détruit marqué comme tel. */
-class ConfirmModal extends Modal {
-  private answered = false
-
-  constructor(
-    app: App,
-    private readonly view: ConfirmView,
-    private readonly done: (yes: boolean) => void
-  ) {
-    super(app)
-  }
-
-  override onOpen(): void {
-    const { contentEl, view } = this
-    this.setTitle(view.title)
-    contentEl.createEl('p', { text: view.message, cls: 'bp-confirm-message' })
-    new Setting(contentEl)
-      .addButton((button) => button.setButtonText(view.cancel).onClick(() => this.answer(false)))
-      .addButton((button) => {
-        button.setButtonText(view.confirm).onClick(() => this.answer(true))
-        if (view.danger) button.setWarning()
-        else button.setCta()
-      })
-  }
-
-  private answer(yes: boolean): void {
-    this.answered = true
-    this.done(yes)
-    this.close()
-  }
-
-  override onClose(): void {
-    this.contentEl.empty()
-    if (!this.answered) this.done(false)
-  }
-}
-
 /**
- * Une liste qu'on filtre et qu'on parcourt : recherche, menus de filtre, boutons en tête,
- * puis un tableau. Un clic sur une ligne la choisit ; un bouton rend sa valeur.
+ * Le port `Ui` du cœur dans Obsidian. Les fenêtres sont celles de l'interface (`src/ui`),
+ * les mêmes que dans l'application de bureau ; Obsidian ne fournit que ce qui lui est
+ * propre : la liste des fichiers du coffre, la note ouverte, l'ouverture d'une note, et le
+ * thème clair ou sombre de l'hôte.
  */
-class ListModal extends Modal {
-  private answer: ListAnswer | null = null
-  private search: string
-  private readonly filters: Record<string, string>
 
-  constructor(
-    app: App,
-    private readonly view: ListView,
-    private readonly done: (answer: ListAnswer | null) => void
-  ) {
-    super(app)
-    this.search = view.state?.search ?? ''
-    this.filters = { ...(view.state?.filters ?? {}) }
-  }
+import { Notice, TFile, type App } from 'obsidian'
+import type { Appearance } from '../core/appearance'
+import type { I18n } from '../core/i18n'
+import type { ExternalFile, FilePickOptions, Ui } from '../core/ports'
+import { dialogWindows, type DialogHost } from '../ui'
+import { HOME_VIEW } from './homeView'
 
-  private state(): ListState {
-    return { search: this.search, filters: { ...this.filters } }
-  }
-
-  override onOpen(): void {
-    const { contentEl, view } = this
-    this.modalEl.addClass('bp-list-modal')
-    this.setTitle(view.title)
-    if (view.intro) contentEl.createEl('p', { text: view.intro, cls: 'bp-form-intro' })
-
-    const bar = contentEl.createDiv({ cls: 'bp-list-bar' })
-    const search = new TextComponent(bar).setPlaceholder(view.searchPlaceholder ?? '').setValue(this.search)
-    search.inputEl.addClass('bp-list-search')
-    for (const filter of view.filters ?? []) {
-      const dropdown = new DropdownComponent(bar)
-      dropdown.addOption('', filter.label)
-      for (const option of filter.options) dropdown.addOption(option.value, option.label)
-      dropdown.setValue(this.filters[filter.key] ?? '')
-      dropdown.onChange((value) => {
-        this.filters[filter.key] = value
-        draw()
-      })
-    }
-    for (const action of view.actions ?? []) {
-      const button = new ButtonComponent(bar).setButtonText(action.label).onClick(() => {
-        this.answer = { kind: 'action', value: action.value, state: this.state() }
-        this.close()
-      })
-      if (action.cta) button.setCta()
-      if (action.tooltip) button.setTooltip(action.tooltip)
-    }
-
-    const count = contentEl.createDiv({ cls: 'bp-list-count' })
-    const table = contentEl.createEl('table', { cls: 'bp-list-table' })
-    const head = table.createEl('thead').createEl('tr')
-    for (const column of view.columns) head.createEl('th', { text: column.label, cls: column.width ? `is-${column.width}` : '' })
-    const body = table.createEl('tbody')
-
-    const draw = () => {
-      body.empty()
-      const needle = this.search.trim().toLowerCase()
-      const shown = view.rows.filter(
-        (row) =>
-          Object.entries(this.filters).every(([key, value]) => !value || row.values?.[key] === value) &&
-          (!needle || Object.values(row.cells).some((cell) => cell.toLowerCase().includes(needle)))
-      )
-      count.setText(`${shown.length} / ${view.rows.length}`)
-      if (shown.length === 0) {
-        body.createEl('tr').createEl('td', { text: view.empty, cls: 'bp-list-empty', attr: { colspan: String(view.columns.length) } })
-        return
-      }
-      for (const row of shown) {
-        const line = body.createEl('tr', { cls: 'bp-list-row' })
-        view.columns.forEach((column, index) => {
-          const cell = line.createEl('td', { text: row.cells[column.key] ?? '', cls: column.width ? `is-${column.width}` : '' })
-          if (index === 0) for (const flag of row.flags ?? []) cell.createSpan({ text: flag, cls: 'bp-list-flag' })
-        })
-        line.addEventListener('click', () => {
-          this.answer = { kind: 'row', id: row.id, state: this.state() }
-          this.close()
-        })
-      }
-    }
-    search.onChange((value) => {
-      this.search = value
-      draw()
-    })
-    draw()
-    window.setTimeout(() => search.inputEl.focus(), 0)
-  }
-
-  override onClose(): void {
-    this.contentEl.empty()
-    this.done(this.answer)
-  }
-}
-
-/** Un message à lire : des paragraphes, une case éventuelle, des boutons. */
-class MessageModal extends Modal {
-  private action: string | null = null
-  private option: boolean
-
-  constructor(
-    app: App,
-    private readonly view: MessageView,
-    private readonly done: (answer: MessageAnswer) => void
-  ) {
-    super(app)
-    this.option = view.option?.value ?? false
-  }
-
-  override onOpen(): void {
-    const { contentEl, view } = this
-    this.modalEl.addClass('bp-message-modal')
-    this.setTitle(view.title)
-    for (const paragraph of view.message.split(/\n\s*\n/)) contentEl.createEl('p', { text: paragraph.trim() })
-    if (view.option) {
-      const option = view.option
-      new Setting(contentEl).setName(option.label).addToggle((toggle) => {
-        toggle.setValue(this.option).onChange((value) => (this.option = value))
-        if (option.tooltip) toggle.setTooltip(option.tooltip)
-      })
-    }
-    const buttons = new Setting(contentEl)
-    for (const action of view.actions) {
-      buttons.addButton((button) => {
-        button.setButtonText(action.label).onClick(() => {
-          this.action = action.value
-          this.close()
-        })
-        if (action.cta) button.setCta()
-      })
-    }
-  }
-
-  override onClose(): void {
-    this.contentEl.empty()
-    this.done({ action: this.action, option: this.option })
-  }
-}
-
-/** Plusieurs choix à cocher, avec « Tout » et « Rien ». */
-class PickManyModal extends Modal {
-  private readonly chosen: Set<string>
-  private answered = false
-
-  constructor(
-    app: App,
-    private readonly view: PickManyView,
-    private readonly i18n: I18n,
-    private readonly done: (values: string[] | null) => void
-  ) {
-    super(app)
-    this.chosen = new Set(view.selected ?? view.choices.map((choice) => choice.value))
-  }
-
-  override onOpen(): void {
-    this.modalEl.addClass('bp-form-modal')
-    this.render()
-  }
-
-  private render(): void {
-    const { contentEl, view, i18n } = this
-    contentEl.empty()
-    this.setTitle(view.title)
-    if (view.intro) contentEl.createEl('p', { text: view.intro, cls: 'bp-form-intro' })
-    new Setting(contentEl)
-      .addButton((button) =>
-        button.setButtonText(i18n.t('ui.all')).onClick(() => {
-          for (const choice of view.choices) this.chosen.add(choice.value)
-          this.render()
-        })
-      )
-      .addButton((button) =>
-        button.setButtonText(i18n.t('ui.none')).onClick(() => {
-          this.chosen.clear()
-          this.render()
-        })
-      )
-    const list = contentEl.createDiv({ cls: 'bp-pick-many' })
-    for (const choice of view.choices) {
-      const row = new Setting(list).setName(choice.label)
-      if (choice.description) row.setDesc(choice.description)
-      row.addToggle((toggle) =>
-        toggle.setValue(this.chosen.has(choice.value)).onChange((on) => {
-          if (on) this.chosen.add(choice.value)
-          else this.chosen.delete(choice.value)
-        })
-      )
-    }
-    new Setting(contentEl).addButton((button) =>
-      button
-        .setButtonText(view.submit)
-        .setCta()
-        .onClick(() => {
-          this.answered = true
-          this.done(view.choices.map((choice) => choice.value).filter((value) => this.chosen.has(value)))
-          this.close()
-        })
-    )
-  }
-
-  override onClose(): void {
-    this.contentEl.empty()
-    if (!this.answered) this.done(null)
+/** Ce que les fenêtres reçoivent d'Obsidian. */
+export function obsidianDialogHost(app: App, i18n: I18n, appearance: () => Appearance): DialogHost {
+  return {
+    t: (key, vars) => i18n.t(key, vars),
+    appearance,
+    hostIsDark: () => document.body.classList.contains('theme-dark'),
+    notify: (message) => new Notice(message),
+    document
   }
 }
 
@@ -463,10 +43,7 @@ function pickExternal(options: { accept?: readonly string[]; multiple?: boolean 
     input.addEventListener('cancel', () => finish([]))
     input.addEventListener('change', () => {
       const chosen = [...(input.files ?? [])]
-      void Promise.all(chosen.map(async (file) => ({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) }))).then(
-        finish,
-        () => finish([])
-      )
+      void Promise.all(chosen.map(async (file) => ({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) }))).then(finish, () => finish([]))
     })
     input.style.display = 'none'
     document.body.appendChild(input)
@@ -474,56 +51,23 @@ function pickExternal(options: { accept?: readonly string[]; multiple?: boolean 
   })
 }
 
-class TextModal extends Modal {
-  constructor(
-    app: App,
-    private readonly view: TextView,
-    private readonly i18n: I18n
-  ) {
-    super(app)
-  }
-
-  override onOpen(): void {
-    const { contentEl, view, i18n } = this
-    this.modalEl.addClass('bp-text-modal')
-    this.setTitle(view.title)
-    const bar = contentEl.createDiv({ cls: 'bp-text-modal-bar' })
-    if (view.subtitle) bar.createSpan({ text: view.subtitle, cls: 'bp-text-modal-subtitle' })
-    const copy = bar.createEl('button', { text: i18n.t('ui.copy') })
-    setTooltip(copy, i18n.t('tip.copy'))
-    copy.addEventListener('click', () => {
-      void navigator.clipboard.writeText(view.text).then(() => new Notice(i18n.t('ui.copied')))
-    })
-    contentEl.createEl('pre', { text: view.text, cls: 'bp-text-modal-text' })
-  }
-
-  override onClose(): void {
-    this.contentEl.empty()
-  }
-}
-
-export function obsidianUi(app: App, i18n: I18n): Ui {
+export function obsidianUi(app: App, i18n: I18n, appearance: () => Appearance): Ui {
+  const windows = dialogWindows(obsidianDialogHost(app, i18n, appearance))
   return {
     pickFile(options: FilePickOptions) {
+      // Le fichier ouvert d'abord, puis les plus récents.
       const allowed = options.extensions ? new Set(options.extensions) : null
       const active = app.workspace.getActiveFile()?.path
       const files = app.vault
         .getFiles()
         .filter((file) => !allowed || allowed.has(file.extension.toLowerCase()))
         .sort((a, b) => Number(b.path === active) - Number(a.path === active) || b.stat.mtime - a.stat.mtime)
-      return new Promise((resolve) => {
-        let settled = false
-        const done = (path: string | null) => {
-          if (settled) return
-          settled = true
-          resolve(path)
-        }
-        new FilePickerModal(app, files, options.placeholder, done).open()
-      })
+      return windows.pickPath(
+        files.map((file) => file.path),
+        options.placeholder
+      )
     },
-    showText(view) {
-      new TextModal(app, view, i18n).open()
-    },
+    showText: windows.showText,
     async openNote(path) {
       // Jamais par le texte d'un lien : un lien vers une note encore inconnue de l'index
       // en créerait une vide. On attend que la note soit indexée, puis on l'ouvre.
@@ -541,57 +85,15 @@ export function obsidianUi(app: App, i18n: I18n): Ui {
     activeNote() {
       return app.workspace.getActiveFile()?.path ?? null
     },
-    pickOption(choices, placeholder) {
-      return new Promise((resolve) => {
-        let settled = false
-        new ChoiceModal(app, choices, placeholder, (value) => {
-          if (settled) return
-          settled = true
-          resolve(value)
-        }).open()
-      })
-    },
+    pickOption: windows.pickOption,
     pickExternalFiles: pickExternal,
-    pickMany(view) {
-      return new Promise((resolve) => {
-        let settled = false
-        new PickManyModal(app, view, i18n, (values) => {
-          if (settled) return
-          settled = true
-          resolve(values)
-        }).open()
-      })
-    },
-    confirm(view) {
-      return new Promise((resolve) => {
-        let settled = false
-        new ConfirmModal(app, view, (yes) => {
-          if (settled) return
-          settled = true
-          resolve(yes)
-        }).open()
-      })
-    },
+    pickMany: windows.pickMany,
+    confirm: windows.confirm,
     inform(view) {
-      return new Promise((resolve) => {
-        // Au démarrage, attendre que l'espace de travail soit prêt.
-        app.workspace.onLayoutReady(() => new MessageModal(app, view, resolve).open())
-      })
+      // Au démarrage, attendre que l'espace de travail soit prêt.
+      return new Promise((resolve) => app.workspace.onLayoutReady(() => void windows.inform(view).then(resolve)))
     },
-    pickFromList(view) {
-      return new Promise((resolve) => {
-        new ListModal(app, view, resolve).open()
-      })
-    },
-    askForm(form) {
-      return new Promise((resolve) => {
-        let settled = false
-        new FormModal(app, form, (values) => {
-          if (settled) return
-          settled = true
-          resolve(values)
-        }).open()
-      })
-    }
+    pickFromList: windows.pickFromList,
+    askForm: windows.askForm
   }
 }

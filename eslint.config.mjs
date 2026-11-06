@@ -53,7 +53,7 @@ export default tseslint.config(
           paths: PLATFORM_IMPORTS.paths,
           patterns: [
             ...PLATFORM_IMPORTS.patterns,
-            { group: ['**/modules/**', '**/modules'], message: "L'interface ne connaît pas les modules : elle dessine les descriptions qu'ils donnent au cœur." },
+            { group: ['../modules', '../modules/*', '../../modules', '../../modules/*'], message: "L'interface ne connaît pas les modules : elle dessine les descriptions qu'ils donnent au cœur." },
             { group: ['react', 'react-dom', 'react/*'], message: 'L’interface est écrite pour Preact.' }
           ]
         }

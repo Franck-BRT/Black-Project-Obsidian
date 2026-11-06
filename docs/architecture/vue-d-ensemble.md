@@ -47,7 +47,7 @@ Ce que le cœur attend de la plateforme :
 | `FileSystem` | lire, écrire, lister les fichiers du coffre | lectures par `app.vault.adapter`, écritures par l'API du coffre (`create`, `modify`…) pour que l'index d'Obsidian suive sur-le-champ |
 | `Http` | appels réseau (serveur d'IA) | `requestUrl`, qui passe les restrictions d'origine |
 | `Notifier` | messages brefs à l'utilisateur | `Notice` |
-| `Ui` | choisir un fichier, une option ou plusieurs (cases à cocher), formulaire, confirmation, fichiers de l'ordinateur, montrer un texte, ouvrir la note voulue, connaître la note ouverte | `FuzzySuggestModal`, `SuggestModal`, `Modal`, `<input type=file>`, `getLeaf().openFile` |
+| `Ui` | choisir un fichier, une option ou plusieurs (cases à cocher), formulaire, confirmation, fichiers de l'ordinateur, montrer un texte, ouvrir la note voulue, connaître la note ouverte | les fenêtres de `src/ui` (les mêmes que dans l'application de bureau), la liste des fichiers du coffre, `<input type=file>`, `getLeaf().openFile` |
 | `SettingsStorage` | réglages du plugin | `loadData` / `saveData` |
 
 Les tests implémentent ces ports en mémoire ; l'application de bureau les implémentera

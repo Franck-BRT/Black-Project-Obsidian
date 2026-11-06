@@ -10,6 +10,7 @@
 
 import { normalizePath, Notice, parseYaml, requestUrl, TFile, TFolder, type App, type Plugin } from 'obsidian'
 import type { I18n } from '../core/i18n'
+import type { Appearance } from '../core/appearance'
 import type { FileDisplay, FileSystem, FolderListing, Http, Notifier, Platform, SecretStore, SettingsStorage } from '../core/ports'
 import { obsidianUi } from './ui'
 
@@ -217,14 +218,14 @@ export function pluginSettingsStorage(plugin: Plugin): SettingsStorage {
   }
 }
 
-export function obsidianPlatform(plugin: Plugin, version: string, i18n: I18n): Platform {
+export function obsidianPlatform(plugin: Plugin, version: string, i18n: I18n, appearance: () => Appearance): Platform {
   const app = plugin.app
   return {
     info: { name: 'obsidian', version },
     fs: new ObsidianFileSystem(app),
     http: obsidianHttp,
     notifier: obsidianNotifier,
-    ui: obsidianUi(app, i18n),
+    ui: obsidianUi(app, i18n, appearance),
     display: obsidianDisplay(plugin),
     yaml: { parse: (text) => parseYaml(text) as unknown },
     ...obsidianSecrets(app)

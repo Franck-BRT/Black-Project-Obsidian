@@ -9,7 +9,7 @@
 import { debounce, Plugin, TFile } from 'obsidian'
 import { createI18n, type I18n } from '../core/i18n'
 import { describeEntitlements, EVALUATION, type Entitlements } from '../core/licence'
-import type { BlackModule, ModuleCommand, ModuleContext } from '../core/modules/module'
+import type { BlackModule, ModuleCommand, ModuleContext, ModuleDescriptor } from '../core/modules/module'
 import { ModuleRegistry } from '../core/modules/registry'
 import type { Platform, SettingsStorage } from '../core/ports'
 import { docModules, documentationPages, writeDocumentation } from '../core/docs'
@@ -18,12 +18,12 @@ import { MODULES } from '../modules'
 import { drawBlock, drawBlockError } from './blockView'
 import { BlackFileView } from './fileViewer'
 import { FILE_VIEW, obsidianPlatform, pluginSettingsStorage } from './platform'
-import { ModuleDetailsModal } from './moduleDetailsModal'
 import { BlackProjectsSettingTab } from './settingsTab'
 import { BlackHomeView, HOME_VIEW } from './homeView'
 import { ViewsRegistry } from '../core/views'
 import type { Appearance } from '../core/appearance'
-import type { AppHost } from '../ui'
+import { dialogWindows, openModuleWindow, type AppHost } from '../ui'
+import { obsidianDialogHost } from './ui'
 
 export default class BlackProjectsPlugin extends Plugin {
   config!: CoreSettings
@@ -43,7 +43,7 @@ export default class BlackProjectsPlugin extends Plugin {
     this.storage = pluginSettingsStorage(this)
     this.config = readSettings(await this.storage.load())
     this.i18n = createI18n(this.config.language)
-    this.platform = obsidianPlatform(this, this.manifest.version, this.i18n)
+    this.platform = obsidianPlatform(this, this.manifest.version, this.i18n, () => this.config.appearance)
     // La visionneuse des fichiers qu'Obsidian n'ouvre pas, quand l'utilisateur choisit de les afficher.
     this.registerView(FILE_VIEW, (leaf) => new BlackFileView(leaf, this))
     // L'accueil : l'interface de Black Projects (src/ui), montée dans un onglet.
@@ -130,6 +130,19 @@ export default class BlackProjectsPlugin extends Plugin {
     this.config = { ...this.config, appearance }
     await this.saveSettings()
     this.refreshHome()
+  }
+
+  /** La fenêtre « Fonctions » d'un module (src/ui) : ses réglages et ce qu'il sait faire. */
+  openModuleWindow(module: ModuleDescriptor): Promise<void> {
+    return openModuleWindow({
+      ...obsidianDialogHost(this.app, this.i18n, () => this.config.appearance),
+      module,
+      settings: () => moduleSettings(this.config, module.id),
+      save: (values) => this.saveModuleSettings(module.id, values),
+      runCommand: (id) => this.runModuleCommand(module.id, id),
+      ...(this.platform.secrets ? { secrets: this.platform.secrets } : {}),
+      dialogs: dialogWindows(obsidianDialogHost(this.app, this.i18n, () => this.config.appearance))
+    })
   }
 
   /** Ce que l'interface reçoit de l'hôte Obsidian. */
@@ -247,7 +260,7 @@ export default class BlackProjectsPlugin extends Plugin {
         run: (id) => this.runModuleCommand(module.id, id)
       },
       views: this.views,
-      openWindow: () => new ModuleDetailsModal(this.app, this, module).open(),
+      openWindow: () => void this.openModuleWindow(module),
       timers: {
         every: (milliseconds, run) => {
           const safe = () => {

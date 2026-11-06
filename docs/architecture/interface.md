@@ -66,6 +66,9 @@ exécutions), l'IA (la connexion et un modèle par usage).
 | `theme.ts`, `styles.ts` | les thèmes (variables CSS) et les styles, posés une fois dans le document |
 | `icons.tsx` | les icônes, dessinées pour Black Projects |
 | `logic.ts` | ce qui se calcule sans dessiner (jours restants, urgence) : testé seul |
+| `dialogs/frame.tsx` | le cadre de toute fenêtre (`openDialog`) : fond, titre, fermer, Échap, focus gardé dans la fenêtre et rendu à la fermeture, thème appliqué |
+| `dialogs/windows.tsx` | les fenêtres du port `Ui` : choix (et fichier du coffre), formulaire, confirmation, cases à cocher, message, liste filtrable, texte à copier |
+| `dialogs/moduleWindow.tsx` | la fenêtre « Fonctions » d'un module : ses réglages et ses fiches |
 
 **Preact** (licence MIT, environ 4 Ko) : des composants avec état, en JSX, compilés par
 esbuild ; il n'est utilisé que dans `src/ui/`. Les modules ne le voient jamais : changer de
@@ -123,9 +126,40 @@ garni d'un dossier fictif, et la même interface — la preuve qu'elle tourne sa
 et le point de départ de `desktop/`. L'adresse accepte `?mode=dark&vision=red-green&reading=dys&size=large`
 pour forcer une apparence (captures, recette).
 
+## Les fenêtres (v0.11.0)
+
+Toutes les fenêtres de Black Projects sont celles de `src/ui` — plus aucune `Modal`
+d'Obsidian. Le port `Ui` des modules est implémenté par `dialogWindows(hôte)` ; l'hôte
+n'ajoute que ce qui lui est propre :
+
+| Ce que fait le port `Ui` | Qui le fait |
+| --- | --- |
+| choisir une option, remplir un formulaire, confirmer, cocher, lire un message, parcourir une liste, copier un texte | `src/ui` (les mêmes fenêtres partout) |
+| choisir un fichier du coffre | `src/ui` dessine ; l'hôte donne la liste des fichiers (Obsidian : le coffre, le fichier ouvert d'abord) |
+| ouvrir une note, connaître la note ouverte, prendre des fichiers sur l'ordinateur | l'hôte |
+
+La fenêtre « Fonctions » de chaque module (`openModuleWindow`) dessine ses réglages —
+paires (« .tot lu comme .xml »), texte avec ou sans menu de choix, boutons de commande,
+interrupteurs par colonnes (le rangement des types), oui / non, secret (rangé dans le
+trousseau) — puis ses fiches (résumé, familles, faits colorés avec icône et mot,
+étiquettes, interrupteur d'affichage). Elle se redessine sur place : le défilement ne
+bouge pas quand on bascule un interrupteur.
+
+Accessibilité des fenêtres : `role="dialog"` et `aria-modal`, titre qui nomme la fenêtre ;
+le focus va au premier champ, reste dans la fenêtre (Tab, Maj+Tab) et revient où il était
+à la fermeture ; Échap ou un clic sur le fond ferment ; chaque champ a son libellé lié,
+l'obligatoire est marqué et annoncé (`aria-required`, `aria-invalid`, message sous le
+champ, alerte en tête) ; un choix se parcourt aux flèches (`listbox`, option active
+annoncée) ; les lignes d'une liste s'atteignent au clavier (Entrée) ; une confirmation qui
+détruit met le focus sur « Annuler ».
+
+La démonstration (`pnpm run demo`) utilise ces mêmes fenêtres : ses commandes s'exécutent
+pour de vrai (créer une analyse, parcourir les exigences, régler l'IA…), une note s'y lit
+dans une fenêtre de texte.
+
 ## La suite
 
-1. Redessiner les fenêtres actuelles (listes, formulaires, choix — `src/obsidian/ui.ts`)
-   avec les composants de `src/ui`, pour la même apparence partout et pour l'application.
-2. Des pages au-delà de l'accueil (une analyse, la bibliothèque), décrites de la même façon.
-3. `desktop/` : Tauri, les ports en Rust, un lecteur Markdown.
+1. Des pages au-delà de l'accueil (une analyse, la bibliothèque), décrites de la même façon.
+2. `desktop/` : Tauri, les ports en Rust, un lecteur Markdown.
+3. Les réglages généraux (aujourd'hui la page de réglages d'Obsidian) en page de `src/ui`,
+   pour l'application de bureau.

@@ -37,6 +37,10 @@ export type IconName =
   | 'eye'
   | 'chat'
   | 'play'
+  | 'edit'
+  | 'trash'
+  | 'copy'
+  | 'chevron'
 
 /** Un bouton : ce qu'il dit, ce qu'il fait. */
 export interface ViewAction {

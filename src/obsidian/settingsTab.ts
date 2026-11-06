@@ -11,7 +11,6 @@ import { PluginSettingTab, Setting, setTooltip, type App } from 'obsidian'
 import type { ModuleState } from '../core/modules/registry'
 import { cleanFolder, DEFAULT_DOCS_FOLDER, LANGUAGES, moduleSettings, withModuleEnabled, type Language } from '../core/settings'
 import type BlackProjectsPlugin from './main'
-import { ModuleDetailsModal } from './moduleDetailsModal'
 
 const STATE_CLASS: Record<ModuleState, string> = {
   active: 'is-active',
@@ -133,7 +132,7 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
 
       const details = module.details?.(moduleSettings(plugin.config, module.id))
       if (details) {
-        const openDetails = () => new ModuleDetailsModal(this.app, plugin, module).open()
+        const openDetails = () => void plugin.openModuleWindow(module)
         setting.nameEl.addClass('bp-module-name-link')
         setting.nameEl.setAttr('role', 'button')
         setting.nameEl.setAttr('tabindex', '0')

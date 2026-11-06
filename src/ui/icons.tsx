@@ -27,7 +27,11 @@ const PATHS: Record<IconName, string> = {
   book: 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z',
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6',
   chat: 'M4 5h16v11H9l-5 4z',
-  play: 'M7 4l13 8-13 8z'
+  play: 'M7 4l13 8-13 8z',
+  edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4',
+  trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+  copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
+  chevron: 'M9 6l6 6-6 6'
 }
 
 export function Icon({ name, label }: { name: IconName; label?: string }) {

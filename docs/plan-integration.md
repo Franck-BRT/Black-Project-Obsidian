@@ -324,6 +324,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - **Démonstration hors d'Obsidian** (`pnpm run demo`) : la même interface, les vrais
   modules, un coffre en mémoire
 - Recette : [recette/etape-6-interface.md](recette/etape-6-interface.md)
+- v0.11.0 : **toutes les fenêtres redessinées** avec les composants de `src/ui` — choix,
+  formulaires, confirmations, cases à cocher, messages, listes, textes, et la fenêtre
+  « Fonctions » de chaque module ; plus aucune fenêtre propre à Obsidian, mêmes thèmes et
+  même accessibilité partout (focus gardé, clavier, erreurs annoncées)
 
 ### Étape 7 — Livrables
 
