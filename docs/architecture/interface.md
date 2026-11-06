@@ -98,6 +98,13 @@ modules par les ports.
   (`pnpm check:modules`, règle ESLint `no-restricted-imports`).
 - Tous les styles sont sous `.bp-ui` : l'interface ne change rien à l'apparence de l'hôte
   (vérifié par un test).
+- Et l'hôte ne change rien à l'interface : Obsidian habille tous les `<button>`
+  (`button:not(.clickable-icon)` : hauteur fixe de 30 px, fond, ombre, texte sur une
+  ligne) avec une priorité plus forte qu'une classe seule. Chaque règle des composants est
+  donc écrite sous la racine (`.bp-ui .bp-tile`, préfixe posé par `scopeCss` dans
+  `styles.ts`) : deux classes l'emportent sur tout sélecteur d'élément de l'hôte ; et
+  `.bp-ui button` remet à zéro hauteur, ombre, alignement et retour à la ligne (v0.12.1,
+  après des tuiles écrasées sur une pastille blanche dans Obsidian).
 
 ## Thèmes et accessibilité
 

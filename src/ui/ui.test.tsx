@@ -13,7 +13,7 @@ import { BlockView } from './components'
 import type { AppHost } from './host'
 import { daysUntil, deadlineTone, greetingKey, starGlyphs } from './logic'
 import { App } from './shell'
-import { UI_CSS } from './styles'
+import { scopeCss, UI_CSS } from './styles'
 import { addableTiles, moveTile, shownTiles } from './tiles'
 import type { TileSpec } from '../core/views'
 
@@ -138,10 +138,22 @@ describe('les styles', () => {
     // Aucune règle hors de l'interface (hors @media et @keyframes).
     const rules = UI_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@keyframes[^{]+\{(?:[^{}]*\{[^}]*\})*[^}]*\}/g, '').match(/(^|\})\s*([^@{}\s][^{}]*)\{/g) ?? []
     for (const rule of rules) {
-      const selectors = rule.replace(/^\}?\s*/, '').replace(/\{$/, '').split(',')
-      for (const selector of selectors) if (selector.trim()) expect(selector.trim(), selector).toMatch(/^\.bp-/)
+      const selectors = rule.replace(/^\}?\s*/, '').replace(/\{$/, '').replace(/\([^()]*\)/g, '()').split(',')
+      // Sous la racine, pour l'emporter sur les styles d'éléments de l'hôte (les boutons d'Obsidian).
+      for (const selector of selectors) if (selector.trim()) expect(selector.trim(), selector).toMatch(/^\.bp-ui(?=[ .[:]|$)/)
     }
     expect(UI_CSS).not.toMatch(/text-transform:\s*uppercase/)
+  })
+
+  it('les règles des composants sont préfixées par la racine, jusque dans les @media', () => {
+    const css = scopeCss('/* c */ .a, .bp-ui .b, .bp-ui.c, .d:is(.e, .f) { x: 1; }\n@media (max-width: 9px) { .g { y: 2; } }\n@keyframes k { from { z: 0; } to { z: 1; } }')
+    expect(css).toContain('.bp-ui .a, .bp-ui .b, .bp-ui.c, .bp-ui .d:is(.e, .f) { x: 1; }')
+    expect(css).toContain('@media (max-width: 9px) {\n.bp-ui .g { y: 2; }')
+    expect(css).toContain('@keyframes k { from { z: 0; } to { z: 1; } }')
+    expect(css).not.toContain('/* c */')
+    // Les boutons : ce qu'Obsidian leur pose est remis à zéro.
+    expect(UI_CSS).toMatch(/\.bp-ui button \{[^}]*height: auto;[^}]*box-shadow: none;[^}]*white-space: normal;/)
+    expect(UI_CSS).toContain('.bp-ui .bp-tile {')
   })
 })
 

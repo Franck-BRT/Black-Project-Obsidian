@@ -5,6 +5,13 @@
  * Les styles des composants, sur les variables des thèmes (`theme.ts`). Tout est sous
  * `.bp-ui` : rien ne déborde sur l'hôte. Pas de majuscules forcées (difficiles à lire
  * pour les lecteurs dys), des cibles d'au moins 36 px, un contour de focus bien visible.
+ *
+ * L'inverse compte autant : les styles de l'hôte ne doivent pas déborder sur l'interface.
+ * Obsidian habille tous les `<button>` (`button:not(.clickable-icon)` : hauteur fixe,
+ * fond, ombre, pas de retour à la ligne) avec une priorité plus forte qu'une simple
+ * classe. Chaque règle des composants est donc préfixée par `.bp-ui` (`scopeCss`) — deux
+ * classes l'emportent toujours sur les sélecteurs d'éléments de l'hôte — et la règle
+ * `.bp-ui button` remet à zéro ce qu'Obsidian pose et que les composants ne fixent pas.
  */
 
 import { THEME_CSS } from './theme'
@@ -12,7 +19,8 @@ import { THEME_CSS } from './theme'
 const COMPONENTS_CSS = String.raw`
 .bp-ui, .bp-ui * { box-sizing: border-box; }
 .bp-ui { height: 100%; overflow: auto; }
-.bp-ui button { font: inherit; letter-spacing: inherit; word-spacing: inherit; }
+.bp-ui button { font: inherit; letter-spacing: inherit; word-spacing: inherit; height: auto; justify-content: normal; box-shadow: none; white-space: normal; user-select: auto; -webkit-user-select: auto; }
+.bp-ui button:hover, .bp-ui button:active, .bp-ui button:focus { box-shadow: none; }
 .bp-ui :focus-visible { outline: 3px solid var(--bp-focus); outline-offset: 2px; border-radius: 6px; }
 .bp-ui .bp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .bp-ui svg.bp-icon { width: 1.15em; height: 1.15em; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -305,7 +313,59 @@ const COMPONENTS_CSS = String.raw`
 }
 `
 
-export const UI_CSS = `${THEME_CSS}\n${COMPONENTS_CSS}`
+/** L'indice de l'accolade qui ferme celle ouverte en `open`. */
+function closingBrace(css: string, open: number): number {
+  let depth = 0
+  for (let index = open; index < css.length; index++) {
+    if (css[index] === '{') depth++
+    else if (css[index] === '}' && --depth === 0) return index
+  }
+  return css.length
+}
+
+/** Les sélecteurs d'une liste, séparés par les virgules hors parenthèses. */
+function splitSelectors(list: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let start = 0
+  for (let index = 0; index < list.length; index++) {
+    if (list[index] === '(') depth++
+    else if (list[index] === ')') depth--
+    else if (list[index] === ',' && depth === 0) {
+      parts.push(list.slice(start, index))
+      start = index + 1
+    }
+  }
+  parts.push(list.slice(start))
+  return parts
+}
+
+/**
+ * Préfixe chaque sélecteur par `root` (sauf ceux qui commencent déjà par lui), y compris
+ * dans les `@media` ; les `@keyframes` restent tels quels. Les commentaires sont retirés.
+ */
+export function scopeCss(css: string, root = '.bp-ui'): string {
+  const source = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  let out = ''
+  let index = 0
+  while (index < source.length) {
+    const open = source.indexOf('{', index)
+    if (open < 0) break
+    const head = source.slice(index, open).trim()
+    const close = closingBrace(source, open)
+    const body = source.slice(open + 1, close)
+    if (/^@(media|supports)\b/.test(head)) out += `${head} {\n${scopeCss(body, root)}}\n`
+    else if (head.startsWith('@')) out += `${head} {${body}}\n`
+    else {
+      const selectors = splitSelectors(head).map((each) => each.trim()).filter(Boolean)
+      out += `${selectors.map((each) => (each === root || each.startsWith(`${root} `) || each.startsWith(`${root}.`) || each.startsWith(`${root}[`) || each.startsWith(`${root}:`) ? each : `${root} ${each}`)).join(', ')} {${body}}\n`
+    }
+    index = close + 1
+  }
+  return out
+}
+
+export const UI_CSS = `${THEME_CSS}\n${scopeCss(COMPONENTS_CSS)}`
 
 const STYLE_ID = 'bp-ui-styles'
 

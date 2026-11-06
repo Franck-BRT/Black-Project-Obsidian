@@ -44,6 +44,11 @@ Sur le coffre de test.
 
 ## L'accueil à tuiles et le tableau de bord (v0.12.0)
 
+- [ ] **Dans Obsidian** (v0.12.1) : les tuiles sont des icônes carrées de couleur sur fond
+      transparent, nom en dessous sur deux lignes au besoin — pas de pastille blanche
+      ombrée ni d'icône écrasée ; la navigation de gauche est alignée à gauche, sans cadre
+      blanc ; idem en thème sombre d'Obsidian et avec un thème communautaire
+
 - [ ] L'accueil : « Bonjour » (ou « Bon après-midi », « Bonsoir ») et la date, puis les
       tuiles par défaut : Tableau de bord, Nouvelle analyse, Analyses, Importer des pièces,
       Calendrier, Interroger, Exigences, Workflows, IA, Réglages

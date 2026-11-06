@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.12.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+**Version 0.12.1 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
 l'accueil et l'interface.** L'accueil est une grille de tuiles que chacun compose (avec
 leurs pastilles : prochaine remise, exigences faibles…) ; les informations sont dans un
 tableau de bord. Toutes les fenêtres sont redessinées avec les composants de

@@ -331,6 +331,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.12.0 : **accueil à tuiles** modifiable par l'utilisateur (ajouter, retirer, déplacer
   à la souris ou au clavier ; pastilles : prochaine remise, exigences faibles, échecs de
   workflows, IA pas réglée) ; les informations passent dans une page **Tableau de bord**
+- v0.12.1 : correctif d'affichage dans Obsidian — les styles des boutons d'Obsidian ne
+  déforment plus les tuiles, la navigation ni les boutons de l'interface
 
 ### Étape 7 — Livrables
 
