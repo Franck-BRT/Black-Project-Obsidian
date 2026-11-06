@@ -24,7 +24,9 @@ Il se met à jour quand le coffre change. La flèche à gauche du titre d'une se
 
 **Analyses** (menu de gauche ou tuile) ouvre la page de toutes vos analyses, dans
 l'onglet : leurs chiffres, une carte par analyse, une recherche et des filtres (remise à
-venir, pièces à lire, candidat, émetteur…).
+venir, pièces à lire, candidat, émetteur…). **Exigences** ouvre de même la page de la
+bibliothèque : une carte par exigence, les plus faibles d'abord, avec sa formulation, et des
+filtres (faibles, à revoir, criticité haute, brouillons, approuvées).
 
 **La barre de gauche** se range aussi : **Accueil** reste toujours en premier et
 **Paramètres** toujours en bas — ni l'un ni l'autre ne se déplace ni ne se masque. Entre

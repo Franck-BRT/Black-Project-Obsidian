@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La page « Exigences » (v0.16.0)
+
+- [ ] L'entrée **Exigences** du menu : plus de liste en fenêtre ; la page **Bibliothèque
+      d'exigences** s'ouvre dans l'onglet, l'entrée est marquée en cours
+- [ ] Les chiffres (exigences, note moyenne, faibles, traductions à revoir), les actions
+      (nouvelle, importer, analyser la qualité), une carte par exigence, les plus faibles
+      d'abord, avec sa formulation, ses badges et sa note en étoiles
+- [ ] Le titre d'une carte ouvre la note ; **Modifier** ouvre la fiche ; **Relire (IA)** et
+      **Traduire (IA)** quand l'IA est réglée
+- [ ] La recherche trouve un mot de la formulation (« journalises », sans accent)
+- [ ] Les filtres Faibles, À revoir (dont les traductions absentes), Criticité haute,
+      Brouillons, Approuvées ; « À revoir » donne autant d'exigences que le chiffre
+      « Traductions à revoir » quand seules les traductions manquent
+- [ ] La tuile **Exigences**, le lien « Toute la bibliothèque » du tableau de bord et la
+      commande **Exigences : liste, filtres et fiches** mènent à la même page
+
 ## La page « Analyses » (v0.15.0)
 
 - [ ] L'entrée **Analyses** du menu : plus de fenêtre « Dans quelle analyse ? » ; la page

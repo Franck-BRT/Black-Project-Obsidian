@@ -43,7 +43,7 @@ import { localToday } from '../../core/dates'
 import { aiClient } from '../ia'
 import { reviewRequirement, translateRequirement } from './ai/actions'
 import { emitRequirementCreated, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
-import { registerExigencesHome } from './home'
+import { openLibrary, registerExigencesHome } from './home'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { RequirementStore, RequirementExists } from './store'
@@ -265,7 +265,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.7.0',
+  version: '0.8.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -284,9 +284,15 @@ export const exigencesModule: BlackModule = {
     // Ce que les exigences apportent aux workflows.
     registerExigencesWorkflows(() => session, session.t, localToday)
     // L'accueil : la bibliothèque en chiffres.
-    registerExigencesHome(context.views, session, async (id) => {
-      await context.commands.run?.(id)
-    })
+    const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
+    registerExigencesHome(
+      context.views,
+      session,
+      async (id) => {
+        await context.commands.run?.(id)
+      },
+      showPage
+    )
 
     commands.register({
       id: 'nouvelle',
@@ -300,7 +306,8 @@ export const exigencesModule: BlackModule = {
     commands.register({
       id: 'liste',
       nameKey: 'exigences.command.browse',
-      run: () => browseRequirements(session)
+      // La page de la bibliothèque quand la plateforme en a une ; sinon la liste en fenêtre.
+      run: () => openLibrary(showPage, () => browseRequirements(session))
     })
 
     commands.register({

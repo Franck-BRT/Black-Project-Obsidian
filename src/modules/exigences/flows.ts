@@ -271,7 +271,8 @@ export async function editRequirement(session: Session, path: string): Promise<s
 }
 
 /** Ce qui ne va pas avec une exigence, en quelques mots, pour la liste. */
-function flagsOf(requirement: Requirement, languages: string[], t: Translate): string[] {
+/** Ce qui reste à revoir sur une exigence : traductions en retard ou à relire, liens. */
+export function flagsOf(requirement: Requirement, languages: string[], t: Translate): string[] {
   const flags: string[] = []
   const stale = staleLanguages(requirement, languages)
   if (stale.length) flags.push(t('exigences.flag.stale', { langs: stale.join(', ').toUpperCase() }))

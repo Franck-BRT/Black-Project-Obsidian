@@ -27,21 +27,33 @@ formulation par langue, attributs, liens, historique) ; son corps reprend le tit
 chaque formulation, pour qu'elle se lise même sans Black Projects. Ce que vous écrivez
 sous ces sections est gardé à chaque enregistrement.
 
-## 3. La liste, les filtres, la fiche
+## 3. La page Exigences, la fiche
 
-Palette de commandes → **Exigences : liste, filtres et fiches** : toutes les exigences du
-dossier, avec une recherche (identifiant, titre, texte) et des filtres par catégorie,
-type, statut et criticité. Une ligne choisie propose :
+L'entrée **Exigences** du menu de gauche, la tuile **Exigences** de l'accueil, le lien
+« Toute la bibliothèque » du tableau de bord ou la commande **Exigences : liste, filtres
+et fiches** ouvrent la **page de la bibliothèque**, dans l'onglet Black Projects :
+
+- en chiffres : le nombre d'exigences, la note moyenne, les faibles, les traductions à
+  revoir ;
+- les actions : nouvelle exigence, importer, analyser la qualité ;
+- une **carte par exigence**, les plus faibles d'abord : identifiant et titre, catégorie,
+  type, statut, criticité, sa formulation, sa note en étoiles, et ce qui reste à revoir
+  (traduction absente, en retard ou à relire, lien à revoir). Son titre ouvre la note ;
+  **Modifier** ouvre la fiche ; **Relire (IA)** et **Traduire (IA)** quand l'IA est réglée ;
+- une **recherche** (identifiant, titre, formulation…, sans tenir compte des accents) et
+  des **filtres** : faibles, à revoir, criticité haute, brouillons, approuvées.
+
+La fiche (bouton **Modifier**) propose :
 
 - **Modifier la fiche** — formulation, attributs, responsable, mots-clés, **alias** ;
   changer la formulation crée une **révision** (l'ancienne est gardée dans l'historique),
   et les exigences liées à celle-ci sont marquées « lien à revoir » ;
-- **Ouvrir la note** — pour la relire dans le coffre.
+- l'IA, quand elle est réglée, pour relire ou traduire.
 
 Sur la note d'une exigence ouverte, la commande **Modifier l'exigence** ouvre la même fiche.
 
-La liste signale aussi une traduction en retard sur la source, une traduction automatique
-à relire, ou un lien à revoir.
+Hors de l'onglet Black Projects (une plateforme sans pages), la commande ouvre la liste en
+fenêtre, avec ses filtres par catégorie, type, statut et criticité.
 
 ## 4. Citer des exigences dans un document
 

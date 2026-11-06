@@ -87,6 +87,8 @@ export interface Card {
   subtitle?: string
   icon?: IconName
   badges?: Badge[]
+  /** Un extrait (la formulation d'une exigence) : trois lignes au plus, le reste coupé. */
+  text?: string
   facts?: Fact[]
   deadline?: Deadline
   /** Une note sur cinq (étoiles), avec ce qu'elle mesure. */

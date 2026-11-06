@@ -149,7 +149,9 @@ pour forcer une apparence (captures, recette).
 ## Les pages des modules (v0.15.0)
 
 Un module peut ouvrir une **page** dans l'onglet de Black Projects, comme le tableau de
-bord, plutôt qu'une fenêtre : la liste des analyses, par exemple. Il la déclare par
+bord, plutôt qu'une fenêtre : la liste des analyses (v0.15.0), la bibliothèque d'exigences
+(v0.16.0). Une carte peut porter un extrait de texte (`Card.text`, trois lignes au plus),
+que la recherche lit aussi. Il la déclare par
 `views.page({ id, title, icon, load })` ; `load` rend une `PageView` en données :
 
 - un sous-titre, des boutons en tête ;

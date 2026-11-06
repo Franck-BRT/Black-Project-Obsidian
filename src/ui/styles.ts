@@ -159,6 +159,8 @@ const COMPONENTS_CSS = String.raw`
 .bp-card-open::after { content: ""; position: absolute; inset: 0; border-radius: var(--bp-radius); }
 .bp-card-open:focus-visible::after { outline: 3px solid var(--bp-focus); outline-offset: 2px; }
 .bp-card-sub { margin: 2px 0 0; color: var(--bp-text-muted); font-size: 0.88em; }
+.bp-card-text { margin: 0; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.bp-ui[data-reading="dys"] .bp-card-text { -webkit-line-clamp: 4; }
 .bp-card-actions { display: flex; gap: 8px; flex-wrap: wrap; position: relative; z-index: 1; margin-top: auto; }
 .bp-card-actions .bp-button { min-height: 34px; padding: 6px 10px; font-size: 0.9em; }
 .bp-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; margin: 0; }

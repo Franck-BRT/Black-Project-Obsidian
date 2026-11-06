@@ -144,6 +144,20 @@ le workflow prêt à l'emploi « qualité chaque lundi ».
 
 `home.ts` : la section « Bibliothèque d'exigences » (nombre, note moyenne, faibles, traductions à revoir ; nouvelle exigence, parcourir, analyser la qualité) et l'entrée de navigation « Exigences ».
 
+## La page « Exigences » (Black Projects 0.16.0)
+
+`home.ts` déclare la **page** `exigences.bibliotheque` (`views.page`, voir
+[l'interface](../architecture/interface.md#les-pages-des-modules-v0150)) : les chiffres de la
+bibliothèque (les mêmes que la section du tableau de bord, `libraryStats`), les actions
+(nouvelle, importer, qualité), une carte par exigence, les plus faibles d'abord — formulation
+(`Card.text`), type, statut, criticité, note, et ce qui reste à revoir (traduction absente,
+`flagsOf`) ; titre → la note, **Modifier** → la fiche, **Relire (IA)** / **Traduire (IA)** —
+avec une recherche et des filtres (`tags` : `faibles`/`bonnes`, `a-revoir`, `critiques`,
+`brouillons`, `approuvees`). L'entrée « Exigences », la tuile « Exigences », la commande
+`liste` et le lien « Toute la bibliothèque » du tableau de bord l'ouvrent par
+`context.showPage` ; sans page chez la plateforme, la commande retrouve la liste en fenêtre
+(`browseRequirements`). Tests : `test/exigences-page.test.ts`.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies
