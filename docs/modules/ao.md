@@ -372,6 +372,14 @@ d'une pièce et sa carte sur la fiche de l'analyse lancent `extraire-exigences` 
 vient se redessine (le nombre d'exigences de la pièce, la liste de l'analyse) ; la note de
 la pièce ne s'ouvre plus. Depuis la palette, la note, comme avant.
 
+**Déplacer une pièce** depuis l'interface (v0.26.0, Black Projects 0.41.0) : la commande
+reçoit `stay` et `moved` (la suite, une fois la pièce déplacée) — depuis la fiche de la
+pièce, la fiche suit la pièce à sa nouvelle place ; depuis sa carte sur la fiche de
+l'analyse, la fiche se redessine (la pièce sous sa nouvelle destination). Sa note ne
+s'ouvre plus ; depuis la palette, comme avant. La fiche d'une pièce qui n'est plus à
+cette place (« Retour » vers l'ancienne) montre la même pièce — même nom, même analyse —
+là où elle est maintenant.
+
 ## Dans le coffre
 
 ```

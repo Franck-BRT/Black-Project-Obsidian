@@ -1013,3 +1013,38 @@ describe('extraire les exigences depuis l’interface : on reste sur la page', (
     expect(platform.opened.at(-1)).toBe(annexe)
   })
 })
+
+describe('déplacer une pièce depuis l’interface', () => {
+  it('depuis sa fiche : la fiche suit la pièce à sa nouvelle place ; depuis sa carte : la fiche de l’analyse se redessine ; la palette ouvre la note', async () => {
+    const platform = memoryPlatform()
+    const run = await start(platform, true)
+    const { station, views, shown } = run
+    const fiche = views.pages().find((each) => each.id === 'ao.fiche')!
+    const piece = views.pages().find((each) => each.id === 'ao.piece')!
+    const groups = async () => (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' && block.title ? [`${block.title}:${block.cards.map((card) => card.title).join(',')}`] : []))
+    const rc = `${station.folder}/Pièces/Appel d'offres/RC.md`
+    // Depuis la fiche de la pièce : avec la réponse.
+    platform.choices.push('1')
+    await (await piece.load(encodeURIComponent(rc))).actions!.find((action) => action.id === 'move')!.run()
+    const moved = decodeURIComponent(shown.at(-1)!.replace(/^ao\.piece\?/, ''))
+    expect(shown.at(-1)).toMatch(/^ao\.piece\?/)
+    expect(moved).not.toBe(rc)
+    expect((await piece.load(encodeURIComponent(moved))).subtitle).toMatch(/· Réponse · Station sol$/)
+    expect(platform.opened).toEqual([])
+    // « Retour » vers l'ancienne place : la même pièce, là où elle est maintenant.
+    expect((await piece.load(encodeURIComponent(rc))).subtitle).toMatch(/· Réponse · Station sol$/)
+    // Depuis sa carte, sur la fiche de l'analyse : de retour avec l'appel d'offres, on reste sur la fiche.
+    const card = (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((each) => each.title === 'RC.md')!
+    const before = shown.length
+    platform.choices.push('0')
+    await card.actions!.find((action) => action.id === 'move')!.run()
+    expect(shown.length).toBe(before)
+    expect(await groups()).toEqual(['Appel d’offres (1):RC.md'])
+    expect(platform.opened).toEqual([])
+    // La palette, sur la note de la pièce : la note déplacée s'ouvre, comme avant.
+    platform.active = rc
+    platform.choices.push('1')
+    await run.run('ao-deplacer-piece')
+    expect(platform.opened).toEqual([moved])
+  })
+})

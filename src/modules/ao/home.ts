@@ -43,7 +43,7 @@ export interface HomeDeps {
    * Lance une commande de l'AO sur une analyse ou une pièce précise, sans demander laquelle.
    * `stay` : la note que la commande écrit ne s'ouvre pas — la page qui l'a lancée la montre.
    */
-  runFor?(id: string, target: { analysis?: Analysis; note?: string; stay?: boolean; keys?: QuestionKey[] }): Promise<void>
+  runFor?(id: string, target: { analysis?: Analysis; note?: string; stay?: boolean; keys?: QuestionKey[]; moved?: (note: string) => void }): Promise<void>
 }
 
 /** La fiche d'une analyse : `pageWith(ANALYSIS_PAGE, …)`, le chemin de sa note en paramètre. */
@@ -626,6 +626,13 @@ export async function piecePage(deps: HomeDeps, param: string | undefined): Prom
   const note = param ? decodeURIComponent(param) : ''
   const info = note ? await pieceAt(services, note) : null
   const row = info ? (await listPieces(services, info.analysis)).find((each) => each.note === note) : undefined
+  if (!info || !row) {
+    // Déplacée depuis (« Retour » vers son ancienne place) : la même pièce, à sa nouvelle place dans l'analyse.
+    const owner = note ? (await listAnalyses(services)).find((each) => note.startsWith(`${each.folder}/`)) : undefined
+    const name = baseName(note)
+    const moved = owner && !(await services.fs.exists(note)) ? (await listPieces(services, owner)).find((each) => baseName(each.note) === name) : undefined
+    if (moved) return piecePage(deps, encodeURIComponent(moved.note))
+  }
   if (!info || !row) return { title: t('ao.piece.fiche.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.piece.fiche.missing') }] }
   const { analysis } = info
   const back: ViewAction = { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) }
@@ -634,8 +641,11 @@ export async function piecePage(deps: HomeDeps, param: string | undefined): Prom
 
   // Une commande sur cette pièce ; si elle a bougé (déplacée), on revient à son analyse.
   const run = (id: string) => async () => {
-    await deps.runFor?.(id, { note, stay: true })
-    if (!(await services.fs.exists(note))) deps.showPage?.(analysisPageOf(analysis))
+    // Déplacée : la fiche suit la pièce, à sa nouvelle place.
+    let movedTo = ''
+    await deps.runFor?.(id, { note, stay: true, moved: (path) => void (movedTo = path) })
+    if (movedTo) deps.showPage?.(piecePageOf(movedTo))
+    else if (!(await services.fs.exists(note))) deps.showPage?.(analysisPageOf(analysis))
   }
   const original = row.original && (await services.fs.exists(row.original)) ? row.original : ''
   const actions: ViewAction[] = [

@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Déplacer une pièce depuis l'interface (v0.41.0)
+
+- [ ] Fiche d'une pièce → **Déplacer** → « Réponse » : la fiche de la pièce, à sa nouvelle
+      place (« · Réponse · ») ; aucune note ouverte
+- [ ] « Retour » : la même pièce, là où elle est maintenant (pas « Pièce introuvable »)
+- [ ] Sur la fiche de l'analyse, **Déplacer** sur la carte d'une pièce : la fiche reste et
+      se redessine, la pièce dans son nouveau groupe
+- [ ] La palette de commandes (« Déplacer la pièce ») ouvre toujours la note déplacée
+
 ## Extraire les exigences depuis l'interface (v0.40.0)
 
 - [ ] Fiche d'une pièce lue (CCTP.docx) → **Extraire les exigences** : l'aperçu « Exigences

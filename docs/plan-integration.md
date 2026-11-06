@@ -402,6 +402,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   rangés, la fiche se redessine (plus sa note)
 - v0.40.0 : **extraire les exigences** depuis la fiche d'une pièce (ou sa carte) : l'aperçu,
   puis la page se redessine (plus la note de la pièce)
+- v0.41.0 : **déplacer une pièce** depuis l'interface : la fiche suit la pièce (ou celle de
+  l'analyse se redessine), plus sa note
 
 ### Étape 7 — Livrables
 

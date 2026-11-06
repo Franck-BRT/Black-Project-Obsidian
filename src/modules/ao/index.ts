@@ -301,7 +301,7 @@ function describeImport(context: ModuleContext, report: ImportReport): string {
  * Ce que vise une commande lancée depuis la fiche d'une analyse : cette analyse, ou cette
  * pièce — sans demander laquelle. Posé le temps de la commande (`runFor`), puis retiré.
  */
-let targeted: { analysis?: Analysis; note?: string; stay?: boolean; keys?: QuestionKey[] } = {}
+let targeted: { analysis?: Analysis; note?: string; stay?: boolean; keys?: QuestionKey[]; moved?: (note: string) => void } = {}
 
 /** Ouvre la note écrite par une commande — sauf lancée depuis sa page, qui se redessine. */
 const showWritten = (context: ModuleContext, path: string) => (targeted.stay ? Promise.resolve() : context.platform.ui.openNote(path))
@@ -430,7 +430,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.25.0',
+  version: '0.26.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -959,7 +959,9 @@ export const aoModule: BlackModule = {
         if (same(destination, piece.destination)) return
         const moved = await movePiece(services, note, destination)
         platform.notifier.notify(t('ao.move.done', { place: destinationLabel(destination, t) }), 5000)
-        await platform.ui.openNote(moved)
+        // Depuis l'interface : la page suit la pièce (sa fiche), ou se redessine ; depuis la palette, sa note.
+        if (targeted.stay) targeted.moved?.(moved)
+        else await platform.ui.openNote(moved)
       }
     })
   },
