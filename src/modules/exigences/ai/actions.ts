@@ -226,14 +226,28 @@ export async function translateRequirement(session: Session, client: AiClient, p
     (targets.length === 1
       ? targets[0]!
       : await ui.pickOption(
-          targets.map((each) => ({
-            value: each,
-            label: each.toUpperCase(),
-            ...(textOf(requirement, each) ? { description: t('exigences.ai.translate.exists') } : {})
-          })),
+          // Ce qui est à faire d'abord (absente, en retard, à relire), puis ce qui est à jour — et serait remplacé.
+          [...targets]
+            .sort((a, b) => STATE_ORDER[translationState(requirement, a)] - STATE_ORDER[translationState(requirement, b)])
+            .map((each) => {
+              const state = translationState(requirement, each)
+              return { value: each, label: each.toUpperCase(), description: state === 'ok' ? t('exigences.ai.translate.state.ok.replace') : t(`exigences.ai.translate.state.${state}`) }
+            }),
           t('exigences.ai.translate.pick', { id: requirement.id })
         ))
   if (!lang || lang === requirement.sourceLang) return 'none'
+  // Une traduction à jour (écrite par une personne, ou validée) ne se remplace pas sans le demander.
+  if (!options.quiet && translationState(requirement, lang) === 'ok') {
+    const held = textOf(requirement, lang)!
+    const replace = await ui.confirm({
+      title: t('exigences.ai.translate.replace.title', { id: requirement.id, lang: lang.toUpperCase() }),
+      message: t(held.origin === 'human' ? 'exigences.ai.translate.replace.human' : 'exigences.ai.translate.replace.accepted', { lang: lang.toUpperCase() }),
+      confirm: t('exigences.ai.translate.replace.confirm'),
+      cancel: t('exigences.ai.translate.replace.cancel'),
+      danger: true
+    })
+    if (!replace) return 'none'
+  }
   if (!options.quiet) notifier.notify(t('exigences.ai.translate.running', { id: requirement.id, lang: lang.toUpperCase() }), 4000)
   let text: string
   let notes: string
@@ -245,6 +259,11 @@ export async function translateRequirement(session: Session, client: AiClient, p
   } catch (error) {
     notifier.notify(t('exigences.ai.failed', { reason: describeAiError(error, t) }), 12000)
     return 'failed'
+  }
+  // Mot pour mot la traduction en place : rien ne change (elle garde son état), on le dit.
+  if (textOf(requirement, lang)?.body.trim() === text.trim()) {
+    if (!options.quiet) notifier.notify(t('exigences.ai.translate.same', { id: requirement.id, lang: lang.toUpperCase() }), 8000)
+    return 'none'
   }
   await store.save(path, (current) => setText(current, lang, text, 'IA', 'machine'))
   // La note de l'IA remplace celle d'une traduction précédente ; sans note, l'ancienne s'en va.
@@ -273,6 +292,9 @@ export async function acceptTranslation(session: Session, path: string, lang: st
   session.notifier.notify(session.t('exigences.ai.translate.accepted', { id: saved.requirement.id, lang: lang.toUpperCase() }), 6000)
   return true
 }
+
+/** Dans quel ordre proposer les langues : ce qui est à faire d'abord. */
+const STATE_ORDER: Record<TranslationState, number> = { missing: 0, stale: 1, unreviewed: 2, ok: 3 }
 
 /** Ce qu'il reste à faire pour une langue : traduction absente, en retard, ou de machine à relire. */
 export type TranslationState = 'missing' | 'stale' | 'unreviewed' | 'ok'
@@ -322,8 +344,7 @@ export async function translateRequirements(session: Session, client: AiClient, 
         )
   if (!lang) return null
   const candidates = library.filter((requirement) => requirement.sourceLang !== lang)
-  const order: Record<TranslationState, number> = { missing: 0, stale: 1, unreviewed: 2, ok: 3 }
-  candidates.sort((a, b) => order[translationState(a, lang)] - order[translationState(b, lang)] || a.id.localeCompare(b.id, undefined, { numeric: true }))
+  candidates.sort((a, b) => STATE_ORDER[translationState(a, lang)] - STATE_ORDER[translationState(b, lang)] || a.id.localeCompare(b.id, undefined, { numeric: true }))
   const chosen = await ui.pickMany({
     title: t('exigences.ai.translate.many.title', { lang: lang.toUpperCase() }),
     intro: t('exigences.ai.translate.many.intro'),

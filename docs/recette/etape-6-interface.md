@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Traduire l'exigence, sans écraser (v0.50.0)
+
+- [ ] Fiche d'une exigence dont la traduction EN est validée : **Traduire (IA)** → la
+      question « remplacer la traduction EN ? » ; **Garder la traduction** : rien ne change
+- [ ] **Remplacer** : traduite de nouveau, « à relire » ; le message dit de la valider
+      sur sa fiche
+- [ ] Trois langues (fr, en, de) : la fenêtre propose DE (absente) avant EN (à jour)
+- [ ] Depuis une carte de la page Exigences : la fiche ensuite (comme en 0.44.0)
+
 ## Relire l'exigence, en page (v0.49.0)
 
 - [ ] IA réglée ; page **Exigences**, **Relire (IA)** d'une carte : (choisir une

@@ -214,6 +214,10 @@ Quand le module **IA** est réglé (voir {{link:Modules/IA|IA}}) :
   est marquée « automatique, à relire ». Si un chiffre ou une unité diffère de la source,
   le message le dit, et la fiche aussi ; ce que l'IA dit de sa traduction est écrit dans
   la note et se lit sur la carte de la langue. Relisez-la, puis **Valider la traduction**.
+  Une traduction **à jour** (écrite par une personne, ou validée) n'est pas remplacée sans
+  le demander : « Remplacer » ou « Garder la traduction ». Avec plusieurs langues, celles
+  qui sont à faire sont proposées d'abord. Si l'IA rend mot pour mot la traduction en
+  place, rien ne change, et le message le dit.
 - **Traduire des exigences avec l'IA** : plusieurs d'un coup, vers une langue — celles
   dont la traduction manque ou est en retard sont cochées d'avance ; un message résume, et
   le filtre « Traductions à relire » les retrouve.

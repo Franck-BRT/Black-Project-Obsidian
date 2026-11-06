@@ -422,6 +422,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   quand le titre change ; depuis une carte de la bibliothèque, la fiche modifiée ensuite
 - v0.49.0 : **relire l'exigence** : depuis une carte, la fiche ensuite (la relecture s'y
   lit) ; les relues marquées dans la bibliothèque, filtre « Relues (IA) »
+- v0.50.0 : **traduire l'exigence** : une traduction à jour n'est plus écrasée sans le
+  demander ; les langues à faire d'abord ; une traduction identique ne change rien
 
 ### Étape 7 — Livrables
 

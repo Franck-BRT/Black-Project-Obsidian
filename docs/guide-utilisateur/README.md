@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.49.0)
+## Aujourd'hui (version 0.50.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -118,7 +118,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   connexion**, puis un modèle par usage — analyse, traduction, vecteurs, reranking,
   lecture OCR, lecture par vision —, chacun dans le menu de sa ligne (ou « Saisir un autre nom… »). Ensuite : **Relire l'exigence avec l'IA** (un avis,
   des reformulations à choisir ou non), **Traduire l'exigence avec l'IA** (marquée à
-  relire, à valider sur sa fiche), **Traduire des exigences avec l'IA** (plusieurs d'un coup), les doublons par le sens dans la qualité (avec un modèle d'embeddings) ;
+  relire, à valider sur sa fiche ; une traduction à jour n'est remplacée qu'après une
+  question), **Traduire des exigences avec l'IA** (plusieurs d'un coup), les doublons par le sens dans la qualité (avec un modèle d'embeddings) ;
   pour un appel d'offres, **Interroger le dossier** (la réponse cite ses sources, liées
   aux pièces ; rien trouvé, l'IA n'est pas appelée), le **Questionnaire du dossier**
   (six questions prêtes) et **Relire les exigences du dossier avec l'IA**.

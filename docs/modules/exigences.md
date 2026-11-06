@@ -248,6 +248,14 @@ le … » (`lastReview` de chaque note) et le filtre `relues`. La formulation so
 par l'IA (une reformulation retenue) se dit « Reformulée par l'IA, retenue le … » sur la
 fiche, plus « traduite ». Les messages de fin disent que la relecture se lit sur la fiche.
 
+**Traduire sans écraser (v0.18.0, Black Projects 0.50.0)** : `translateRequirement`
+demande avant de remplacer une traduction à jour (`translationState` = `ok` : écrite par
+une personne, ou validée) — `ui.confirm`, « Remplacer » / « Garder la traduction » ; pas
+en série (`quiet`), où la case « traduction à jour » a été cochée exprès. Le choix de la
+langue propose ce qui est à faire d'abord (`STATE_ORDER`), chaque langue avec son état.
+Une traduction identique mot pour mot ne change rien (`'none'`, et le message le dit).
+Le message de fin dit de la relire puis de la valider sur sa fiche.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

@@ -20,10 +20,10 @@ import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 const MODULES = [lectureFichiersModule, exigencesModule, iaModule]
 const text = (body: string) => ({ fr: { body, lang: 'fr', origin: 'human' as const, reviewed: true, by: '', at: '', fromRev: 1 } })
 
-async function start(platform: MemoryPlatform, withPages: boolean, withAi = false) {
+async function start(platform: MemoryPlatform, withPages: boolean, withAi = false, extra: Record<string, Record<string, unknown>> = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = withAi ? { ia: { adresse: 'http://ia.exemple/v1', modele: 'mistral' } } : {}
+  const settings: Record<string, Record<string, unknown>> = { ...(withAi ? { ia: { adresse: 'http://ia.exemple/v1', modele: 'mistral' } } : {}), ...extra }
   const commands = new Map<string, ModuleCommand>()
   const views = new ViewsRegistry()
   const shown: string[] = []
@@ -589,5 +589,57 @@ describe('relire l’exigence, en page', () => {
     const source = cardsOf(await page.load(encodeURIComponent(weak.filePath!))).find((card) => card.id === 'text-fr')!
     expect(source.text).toBe('Les accès doivent être journalisés.')
     expect(source.subtitle).toMatch(/^Reformulée par l’IA, retenue le \d{4}-\d{2}-\d{2}$/)
+  })
+})
+
+describe('traduire l’exigence : une traduction à jour ne se remplace pas sans le demander', () => {
+  async function accepted(extra: Record<string, Record<string, unknown>> = {}) {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, true, extra)
+    const hot = (await requirementsAt('Exigences').all()).find((each) => each.title === 'Maintien en température')!
+    const page = run.views.pages().find((each) => each.id === 'exigences.fiche')!
+    const param = encodeURIComponent(hot.filePath!)
+    // Une traduction EN faite par l'IA, puis validée : à jour.
+    platform.httpAnswers.push(chat({ text: 'The system shall keep the hold between 5 °C and 30 °C.', notes: '' }))
+    await cardsOf(await page.load(param)).find((card) => card.id === 'text-en')!.actions![0]!.run()
+    await cardsOf(await page.load(param)).find((card) => card.id === 'text-en')!.actions!.find((action) => action.id === 'accept')!.run()
+    return { ...run, platform, hot, page, param }
+  }
+
+  it('« Traduire (IA) » vers une traduction validée : la question d’abord ; « Garder » ne touche à rien', async () => {
+    const { platform, page, param } = await accepted()
+    const requests = platform.requests.length
+    platform.confirmations.push(false)
+    await (await page.load(param)).actions!.find((action) => action.id === 'translate')!.run()
+    expect(platform.confirmed.at(-1)).toMatchObject({ title: 'REQ-SOL-0001 — remplacer la traduction EN ?', confirm: 'Remplacer', cancel: 'Garder la traduction', danger: true })
+    expect(platform.confirmed.at(-1)!.message).toContain('a été validée')
+    expect(platform.requests.length).toBe(requests)
+    expect(cardsOf(await page.load(param)).find((card) => card.id === 'text-en')!.badges?.map((badge) => badge.label)).toEqual(['À jour'])
+  })
+
+  it('« Remplacer » : traduite de nouveau, à relire ; le message dit de la valider sur sa fiche', async () => {
+    const { platform, page, param } = await accepted()
+    platform.confirmations.push(true)
+    platform.httpAnswers.push(chat({ text: 'The system shall hold the bay between 5 °C and 30 °C.', notes: '' }))
+    await (await page.load(param)).actions!.find((action) => action.id === 'translate')!.run()
+    const card = cardsOf(await page.load(param)).find((each) => each.id === 'text-en')!
+    expect(card.text).toBe('The system shall hold the bay between 5 °C and 30 °C.')
+    expect(card.badges?.map((badge) => badge.label)).toEqual(['traduction automatique à relire'])
+    expect(platform.notices.at(-1)).toBe('REQ-SOL-0001 traduite en EN, marquée « automatique, à relire » : relisez-la, puis validez-la sur sa fiche.')
+  })
+
+  it('plusieurs langues : ce qui est à faire d’abord, ce qui est à jour en dernier (« elle serait remplacée »)', async () => {
+    const { platform, page, param } = await accepted({ exigences: { langues: 'fr, en, de' } })
+    await (await page.load(param)).actions!.find((action) => action.id === 'translate')!.run()
+    expect(platform.offered.at(-1)?.map((choice) => `${choice.label}:${choice.description}`)).toEqual(['DE:traduction absente', 'EN:traduction à jour : elle serait remplacée'])
+  })
+
+  it('la même traduction, mot pour mot : rien ne change, le message le dit', async () => {
+    const { platform, page, param } = await accepted()
+    platform.confirmations.push(true)
+    platform.httpAnswers.push(chat({ text: 'The system shall keep the hold between 5 °C and 30 °C.', notes: '' }))
+    await (await page.load(param)).actions!.find((action) => action.id === 'translate')!.run()
+    expect(platform.notices.at(-1)).toBe('REQ-SOL-0001 : la traduction EN de l’IA est identique à celle en place ; rien ne change.')
+    expect(cardsOf(await page.load(param)).find((card) => card.id === 'text-en')!.badges?.map((badge) => badge.label)).toEqual(['À jour'])
   })
 })
