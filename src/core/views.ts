@@ -49,6 +49,7 @@ export type IconName =
   | 'columns'
   | 'hide'
   | 'grip'
+  | 'lock'
 
 /** Un bouton : ce qu'il dit, ce qu'il fait. */
 export interface ViewAction {
@@ -199,6 +200,16 @@ export interface NavEntry {
   icon: IconName
   order: number
   run(): void | Promise<void>
+}
+
+/**
+ * La barre de gauche telle que l'utilisateur l'a rangée : les entrées montrées, dans
+ * l'ordre, et celles proposées par défaut qu'il a retirées. Accueil (toujours en haut) et
+ * Paramètres (toujours en bas) n'y figurent pas : ils ne se déplacent ni ne se masquent.
+ */
+export interface NavLayout {
+  shown: string[]
+  hidden: string[]
 }
 
 /** Ce qu'un module peut déclarer à l'interface, par son contexte. */

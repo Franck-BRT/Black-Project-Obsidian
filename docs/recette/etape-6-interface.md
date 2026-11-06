@@ -8,7 +8,7 @@ Sur le coffre de test.
 
 - [ ] À l'ouverture du coffre, l'onglet **Black Projects** s'ouvre : « Bonjour » (ou
       « Bon après-midi », « Bonsoir ») et la date ; à gauche la navigation (Accueil,
-      Analyses, Exigences, Workflows, IA, Réglages)
+      Tableau de bord, Analyses, Exigences, Workflows, IA, et Paramètres tout en bas)
 - [ ] Fermer l'onglet ; l'icône de la barre latérale, ou la commande **Ouvrir l'accueil
       de Black Projects**, le rouvre ; Paramètres → *Accueil et apparence* → « Ouvrir
       l'accueil au démarrage » désactivé : il ne s'ouvre plus seul
@@ -51,7 +51,7 @@ Sur le coffre de test.
 
 - [ ] L'accueil : « Bonjour » (ou « Bon après-midi », « Bonsoir ») et la date, puis les
       tuiles par défaut : Tableau de bord, Nouvelle analyse, Analyses, Importer des pièces,
-      Calendrier, Interroger, Exigences, Workflows, IA, Réglages
+      Calendrier, Interroger, Exigences, Workflows, IA, Paramètres
 - [ ] Les pastilles : « J-n » sur Analyses (prochaine remise, rouge à 7 jours ou moins),
       le nombre d'exigences faibles sur Exigences, les échecs récents sur Workflows, « ! »
       sur IA et Interroger quand l'IA n'est pas réglée ; l'infobulle dit ce qu'elles
@@ -69,6 +69,22 @@ Sur le coffre de test.
 - [ ] **Tableau de bord** (navigation, tuile, ou commande « Ouvrir le tableau de bord de
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
+
+## La barre de gauche rangée par l'utilisateur (v0.14.0)
+
+- [ ] Accueil en premier, Paramètres tout en bas (au-dessus de la version) ; Paramètres
+      ouvre Paramètres → Black Projects
+- [ ] **Modifier le menu** (sous les entrées) : Accueil et Paramètres sont marqués d'un
+      cadenas, sans bouton — ni déplacés ni masqués
+- [ ] Monter, descendre (boutons ou glisser-déposer) ; retirer « IA » ; dans « Ajouter au
+      menu », ajouter « Calendrier » (une fonction d'un module) et « IA » de nouveau
+- [ ] Au clavier : le focus suit l'entrée déplacée ; après « Retirer », il passe à l'entrée
+      voisine ; le lecteur d'écran annonce chaque changement
+- [ ] **Terminé** ; l'entrée « Calendrier » lance bien le calendrier ; fermer et rouvrir
+      Obsidian : le menu est gardé ; « Rétablir le menu par défaut » le remet
+- [ ] Désactiver puis réactiver le module Workflows : son entrée disparaît puis revient ;
+      si on l'avait retirée, elle ne revient pas d'elle-même
+- [ ] Onglet étroit : le menu passe en haut, en rangée ; Paramètres reste le dernier
 
 ## Le tableau de bord rangé par l'utilisateur (v0.13.0)
 

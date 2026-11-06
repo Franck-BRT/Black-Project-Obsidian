@@ -8,7 +8,7 @@
  */
 
 import type { Appearance } from '../core/appearance'
-import type { DashboardLayout, HomeSection, NavEntry, TileSpec } from '../core/views'
+import type { DashboardLayout, HomeSection, NavEntry, NavLayout, TileSpec } from '../core/views'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -29,6 +29,11 @@ export interface AppHost {
   saveDashboard(layout: DashboardLayout | null): Promise<void>
   /** Les entrées de navigation déclarées par les modules actifs. */
   nav(): NavEntry[]
+  /** Le rangement de la barre de gauche ; `null` : celui des modules. */
+  navMenu(): NavLayout | null
+  saveNavMenu(layout: NavLayout | null): Promise<void>
+  /** Ouvrir les paramètres : l'entrée épinglée en bas de la barre de gauche. */
+  openSettings?(): void
   appearance(): Appearance
   saveAppearance(appearance: Appearance): Promise<void>
   /** Le thème de l'hôte est-il sombre (pour le mode « auto ») ? */

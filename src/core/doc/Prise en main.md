@@ -7,7 +7,7 @@
 L'onglet **Black Projects** s'ouvre au démarrage, ou par l'icône de la barre latérale, ou
 par la commande **Ouvrir l'accueil de Black Projects** : le bonjour, la date, et vos
 **tuiles** — un raccourci par fonction (nouvelle analyse, analyses, importer des pièces,
-calendrier, interroger le dossier, exigences, workflows, IA, réglages…), avec des
+calendrier, interroger le dossier, exigences, workflows, IA, paramètres…), avec des
 pastilles : « J-5 » pour la prochaine date limite de remise, le nombre d'exigences
 faibles, les échecs récents des workflows, « ! » si l'IA n'est pas réglée.
 
@@ -21,6 +21,13 @@ date limite de remise en jours restants, ses pièces, ses exigences et leur note
 de l'IA, la bibliothèque d'exigences en chiffres, les dernières exécutions des workflows.
 Il se met à jour quand le coffre change. La flèche à gauche du titre d'une section la
 **réduit** à son titre (ou la déplie).
+
+**La barre de gauche** se range aussi : **Accueil** reste toujours en premier et
+**Paramètres** toujours en bas — ni l'un ni l'autre ne se déplace ni ne se masque. Entre
+les deux, **Modifier le menu** : glissez une entrée (ou ses boutons monter, descendre),
+retirez-la, ou ajoutez-en depuis « Ajouter au menu » — les entrées retirées et toutes les
+fonctions des modules (calendrier, interroger le dossier, documentation…). « Rétablir le
+menu par défaut » remet tout en place. Votre menu est gardé.
 
 **Modifier le tableau de bord** : chaque section devient une fiche. Glissez-la pour la
 déplacer, y compris d'une colonne à l'autre, ou utilisez ses boutons : monter, descendre,

@@ -38,7 +38,8 @@ const PATHS: Record<IconName, string> = {
   down: 'M12 5v14M6 13l6 6 6-6',
   columns: 'M3 5h18v14H3zM14 5v14',
   hide: 'M3 3l18 18M10.6 6.1A10.5 10.5 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.2 3.6M6.6 7.6A17 17 0 0 0 2 12s4 6 10 6a9.6 9.6 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2',
-  grip: 'M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01'
+  grip: 'M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01',
+  lock: 'M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4'
 }
 
 export function Icon({ name, label }: { name: IconName; label?: string }) {

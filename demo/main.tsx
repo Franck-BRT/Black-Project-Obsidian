@@ -12,7 +12,7 @@
  */
 
 import { readAppearance, type Appearance } from '../src/core/appearance'
-import { readDashboard } from '../src/core/settings'
+import { readDashboard, readNavMenu } from '../src/core/settings'
 import { createI18n } from '../src/core/i18n'
 import { EVALUATION } from '../src/core/licence'
 import type { ModuleContext } from '../src/core/modules/module'
@@ -184,6 +184,16 @@ async function start(): Promise<void> {
     },
     saveDashboard: async (layout) => void safeStorage(layout ? 'set' : 'remove', layout ? JSON.stringify(layout) : undefined, 'bp-demo-dashboard'),
     nav: () => views.navEntries(),
+    navMenu: () => {
+      try {
+        return readNavMenu(JSON.parse(safeStorage('get', undefined, 'bp-demo-menu') ?? 'null'))
+      } catch {
+        return null
+      }
+    },
+    saveNavMenu: async (layout) => void safeStorage(layout ? 'set' : 'remove', layout ? JSON.stringify(layout) : undefined, 'bp-demo-menu'),
+    openSettings: () =>
+      void windows.inform({ title: t('home.nav.settings'), message: t('demo.settings'), actions: [{ value: 'ok', label: t('ui.close'), cta: true }] }),
     appearance: () => appearance,
     saveAppearance: async (next) => {
       appearance = next

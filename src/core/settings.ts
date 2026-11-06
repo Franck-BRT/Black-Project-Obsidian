@@ -10,7 +10,7 @@
  */
 
 import { DEFAULT_APPEARANCE, readAppearance, type Appearance } from './appearance'
-import type { DashboardLayout } from './views'
+import type { DashboardLayout, NavLayout } from './views'
 
 export type Language = 'fr' | 'en'
 
@@ -34,6 +34,8 @@ export interface CoreSettings {
   homeTiles: string[] | null
   /** Le rangement du tableau de bord ; `null` : celui des modules. */
   dashboard: DashboardLayout | null
+  /** Le rangement de la barre de gauche ; `null` : celui des modules. */
+  navMenu: NavLayout | null
 }
 
 export const DEFAULT_DOCS_FOLDER = 'Black Projects/Documentation'
@@ -47,7 +49,8 @@ export const DEFAULT_SETTINGS: CoreSettings = Object.freeze({
   appearance: DEFAULT_APPEARANCE,
   openHomeAtStart: true,
   homeTiles: null,
-  dashboard: null
+  dashboard: null,
+  navMenu: null
 })
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -84,13 +87,21 @@ export function readSettings(raw: unknown): CoreSettings {
   const homeTiles = Array.isArray(source.homeTiles) ? [...new Set(source.homeTiles.filter((id): id is string => typeof id === 'string' && id !== ''))] : null
 
   const dashboard = readDashboard(source.dashboard)
+  const navMenu = readNavMenu(source.navMenu)
 
-  return { format: 1, language, disabledModules, modules, docsFolder, appearance, openHomeAtStart, homeTiles, dashboard }
+  return { format: 1, language, disabledModules, modules, docsFolder, appearance, openHomeAtStart, homeTiles, dashboard, navMenu }
 }
 
 /** Des identifiants distincts et non vides ; autre chose : aucun. */
 function idList(value: unknown): string[] {
   return Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && id !== ''))] : []
+}
+
+/** Le rangement de la barre de gauche ; illisible : `null` (celui des modules). */
+export function readNavMenu(value: unknown): NavLayout | null {
+  if (!isRecord(value)) return null
+  const shown = idList(value.shown)
+  return { shown, hidden: idList(value.hidden).filter((id) => !shown.includes(id)) }
 }
 
 /** Le rangement du tableau de bord ; illisible : `null` (celui des modules). */

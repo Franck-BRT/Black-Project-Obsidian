@@ -337,6 +337,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   la déplacer (glisser-déposer ou boutons, d'une colonne à l'autre) ; rangement gardé
 - v0.13.1 : la navigation de gauche reste en place quand la page défile
 - v0.13.2 : un même écart entre les blocs de chaque section du tableau de bord
+- v0.14.0 : **barre de gauche rangée par l'utilisateur** — Accueil toujours en haut,
+  Paramètres toujours en bas ; entre les deux, déplacer, retirer, ajouter toute fonction
 
 ### Étape 7 — Livrables
 

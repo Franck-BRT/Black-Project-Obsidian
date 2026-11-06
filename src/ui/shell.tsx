@@ -15,6 +15,7 @@ import { HomePage } from './home'
 import type { AppHost } from './host'
 import { Icon } from './icons'
 import { greetingKey } from './logic'
+import { SideMenu } from './sidemenu'
 import { Springboard } from './springboard'
 import type { TileSpec } from '../core/views'
 
@@ -26,6 +27,7 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
   const [dark, setDark] = useState(host.hostIsDark())
   const [panel, setPanel] = useState(false)
   const [local, setLocal] = useState(0)
+  const [menuEditing, setMenuEditing] = useState(false)
   const [page, setPageState] = useState<Page>(wanted)
   useEffect(() => setPageState(wanted), [wanted])
   // La page défile seule (la navigation reste en place) : une nouvelle page part du haut.
@@ -65,7 +67,7 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
       data-motion={appearance.motion}
       lang={host.locale.slice(0, 2)}
     >
-      <div class="bp-shell">
+      <div class={`bp-shell${menuEditing ? ' is-menu-editing' : ''}`}>
         <aside class="bp-side">
           <div class="bp-brand">
             <span class="bp-brand-mark" aria-hidden="true">
@@ -77,22 +79,16 @@ export function App({ host, generation, page: wanted = 'home', onPage }: { host:
               <span class="bp-brand-by">by Black Room Technologies</span>
             </span>
           </div>
-          <nav class="bp-nav" aria-label={t('ui.nav')}>
-            <button type="button" class="bp-nav-item" aria-current={page === 'home' ? 'page' : undefined} onClick={() => setPage('home')}>
-              <Icon name="home" />
-              {t('ui.nav.home')}
-            </button>
-            <button type="button" class="bp-nav-item" aria-current={page === 'dashboard' ? 'page' : undefined} onClick={() => setPage('dashboard')}>
-              <Icon name="chart" />
-              {t('ui.nav.dashboard')}
-            </button>
-            {host.nav().map((entry) => (
-              <button type="button" class="bp-nav-item" key={entry.id} onClick={() => void entry.run()}>
-                <Icon name={entry.icon} />
-                {entry.label}
-              </button>
-            ))}
-          </nav>
+          <SideMenu
+            host={host}
+            generation={generation + local}
+            tiles={tiles}
+            page={page}
+            goHome={() => setPage('home')}
+            goDashboard={() => setPage('dashboard')}
+            editing={menuEditing}
+            setEditing={setMenuEditing}
+          />
           <div class="bp-side-foot">
             {t('ui.version', { version: host.version })}
           </div>

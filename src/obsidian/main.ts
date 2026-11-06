@@ -88,7 +88,6 @@ export default class BlackProjectsPlugin extends Plugin {
     })
     this.addRibbonIcon('layout-dashboard', this.i18n.t('command.home'), () => void this.openHome())
     this.addSettingTab(new BlackProjectsSettingTab(this.app, this))
-    this.views.nav({ id: 'settings', label: this.i18n.t('home.nav.settings'), icon: 'settings', order: 90, run: () => this.openSettings() })
     const group = this.i18n.t('home.tile.group')
     this.views.tile({ id: 'core.reglages', label: this.i18n.t('home.nav.settings'), icon: 'settings', color: 'slate', group, order: 90, byDefault: true, description: this.i18n.t('home.tile.settings.desc'), run: () => this.openSettings() })
     this.views.tile({ id: 'core.documentation', label: this.i18n.t('home.tile.docs'), icon: 'book', color: 'slate', group, order: 91, description: this.i18n.t('home.tile.docs.desc'), run: () => this.createDocumentation() })
@@ -174,6 +173,12 @@ export default class BlackProjectsPlugin extends Plugin {
         await this.saveSettings()
       },
       nav: () => this.views.navEntries(),
+      navMenu: () => this.config.navMenu,
+      saveNavMenu: async (layout) => {
+        this.config = { ...this.config, navMenu: layout }
+        await this.saveSettings()
+      },
+      openSettings: () => this.openSettings(),
       appearance: () => this.config.appearance,
       saveAppearance: (appearance) => this.saveAppearance(appearance),
       hostIsDark: () => document.body.classList.contains('theme-dark'),

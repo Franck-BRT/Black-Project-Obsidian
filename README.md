@@ -13,10 +13,11 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.13.2 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+**Version 0.14.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
 l'accueil et l'interface.** L'accueil est une grille de tuiles que chacun compose (avec
 leurs pastilles : prochaine remise, exigences faibles…) ; les informations sont dans un
-tableau de bord que chacun range aussi (réduire, masquer, déplacer les sections). Toutes les fenêtres sont redessinées avec les composants de
+tableau de bord et une barre de gauche que chacun range aussi (Accueil toujours en haut,
+Paramètres toujours en bas). Toutes les fenêtres sont redessinées avec les composants de
 l'interface : les mêmes thèmes, la même accessibilité, et les mêmes fenêtres pour la
 future application de bureau. Un onglet d'accueil moderne (analyses avec leur date limite
 de remise, IA, exigences, workflows), des thèmes clair et sombre, des couleurs pour les

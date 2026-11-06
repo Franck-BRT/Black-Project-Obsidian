@@ -66,6 +66,7 @@ exécutions), l'IA (la connexion et un modèle par usage).
 | `springboard.tsx` | l'**accueil** à tuiles, modifiable par l'utilisateur |
 | `tiles.ts` | l'agencement des tuiles (choisies, par défaut, à ajouter, déplacer) : testé seul |
 | `home.tsx` | le **tableau de bord** : les sections des modules, en deux colonnes, rangées par l'utilisateur |
+| `sidemenu.tsx`, `menu.ts` | la barre de gauche rangée par l'utilisateur (Accueil en haut, Paramètres en bas) ; son rangement, sans rien dessiner |
 | `dashboard.ts` | le rangement du tableau de bord (monter, changer de colonne, masquer, réduire), sans rien dessiner |
 | `components.tsx` | boutons, badges, échéances, cartes, indicateurs, listes, messages |
 | `appearance.tsx` | le panneau d'apparence |
@@ -144,6 +145,29 @@ garni d'un dossier fictif, et la même interface — la preuve qu'elle tourne sa
 et le point de départ de `desktop/`. L'adresse accepte `?mode=dark&vision=red-green&reading=dys&size=large`
 pour forcer une apparence (captures, recette).
 
+## La barre de gauche (v0.14.0)
+
+**Accueil** est toujours en haut, **Paramètres** toujours en bas (l'hôte le fournit par
+`openSettings` ; sans lui, pas d'entrée du bas) : ils ne se déplacent ni ne se masquent.
+Entre les deux, le menu que l'utilisateur range (`sidemenu.tsx`, logique dans `menu.ts`,
+testée seule) :
+
+- le **catalogue** : le tableau de bord et les entrées de navigation des modules (montrées
+  par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
+  entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
+  `tuile:<id de la tuile>` ;
+- **Modifier le menu** : glisser-déposer, boutons Monter, Descendre, Retirer ; « Ajouter au
+  menu », rangé par module ; « Rétablir le menu par défaut ». Le focus suit l'entrée
+  déplacée (après un retrait, l'entrée voisine), chaque changement est annoncé ; Accueil
+  et Paramètres sont marqués d'un cadenas ; la barre s'élargit à 300 px le temps de ranger ;
+- le rangement (`NavLayout` : `shown`, `hidden`) est gardé dans les réglages communs
+  (`navMenu`, `null` : celui des modules). `hidden` retient les entrées par défaut
+  retirées, même celles d'un module désactivé pour l'instant ; l'entrée d'un module
+  activé depuis se place d'elle-même à la fin.
+
+Les trois zones (haut, menu, bas) sont des conteneurs distincts : Preact ne mêle pas leurs
+éléments au passage en modification. Sur écran étroit, le menu passe en haut, en rangée.
+
 ## L'accueil et le tableau de bord (v0.12.0)
 
 Deux pages, dans la navigation de gauche :
@@ -151,7 +175,7 @@ Deux pages, dans la navigation de gauche :
 - **Accueil** — le bonjour (bonjour, bon après-midi, bonsoir) et la date, puis une grille
   de **tuiles**, à la manière d'un écran de téléphone. Chaque tuile lance ce que fait un
   module (nouvelle analyse, analyses, importer des pièces, calendrier, interroger le
-  dossier, exigences, workflows, IA, réglages…) et peut porter une **pastille** : la
+  dossier, exigences, workflows, IA, paramètres…) et peut porter une **pastille** : la
   prochaine date limite de remise (« J-5 », rouge à 7 jours ou moins), le nombre
   d'exigences faibles, les échecs récents des workflows, une IA pas réglée (« ! »). La
   pastille est aussi dite aux lecteurs d'écran, dans le nom de la tuile.
