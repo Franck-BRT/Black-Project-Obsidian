@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.54.0)
+## Aujourd'hui (version 0.55.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -83,7 +83,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 
 - **Exigences** : « Nouvelle exigence » (catégorie, titre, formulation, attributs ;
   l'identifiant REQ-SYS-0001 est attribué et ne sera jamais réutilisé ; depuis l'onglet,
-  la fiche de l'exigence créée s'ouvre ; « Relire (IA) » d'une carte mène aussi à sa fiche,
+  la fiche de l'exigence créée s'ouvre ; ses liens mènent de fiche en fiche, dans les deux
+  sens ; « Relire (IA) » d'une carte mène aussi à sa fiche,
   où la relecture se lit), « Exigences :
   liste, filtres et fiches » pour parcourir la bibliothèque et modifier une fiche (en
   page, la fiche suit l'exigence même quand son titre change), et le

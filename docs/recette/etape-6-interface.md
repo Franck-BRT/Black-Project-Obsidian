@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le module Exigences : les liens, de fiche en fiche (v0.55.0)
+
+- [ ] Une exigence liée à une autre (« Découle de ») : sur sa fiche, le lien montre le nom
+      et la formulation de l'autre ; un clic ouvre sa fiche
+- [ ] Sur la fiche de l'autre : « En découle … », un clic ramène à la première
+- [ ] Un lien « Satisfaite par » un ticket : « hors de la bibliothèque », pas de clic ; un
+      identifiant inconnu : « introuvable dans ce dossier d'exigences »
+
 ## Le module Analyse d'appels d'offres : le rapport de couverture, en page (v0.54.0)
 
 - [ ] Analyse côté émetteur, une réponse importée pour un candidat ; sa fiche →

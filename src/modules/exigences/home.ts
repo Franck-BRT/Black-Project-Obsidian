@@ -390,11 +390,45 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
       : []),
     { id: 'dates', title: t('exigences.fiche.dates'), detail: t('exigences.fiche.dates.detail', { created: requirement.createdAt.slice(0, 10) || '—', updated: requirement.updatedAt.slice(0, 10) || '—', rev: requirement.rev }) }
   ]
-  const links: ListItem[] = requirement.links.map((link, index) => ({
-    id: `link-${index}`,
-    title: `${t(`exigences.fiche.link.${link.kind}`)} ${link.to}`,
-    ...(link.suspect ? { detail: t('exigences.flag.suspect'), tone: 'warning' as const } : { tone: 'info' as const })
-  }))
+  // Les liens, navigables : vers une autre exigence (sa fiche), et ceux des autres vers celle-ci.
+  const others = (await session.store.all().catch(() => [])).filter((each) => each.id !== requirement.id)
+  const named = (name: string) => {
+    const key = name.trim().toUpperCase()
+    return others.find((each) => each.id.toUpperCase() === key || each.aliases.some((alias) => alias.toUpperCase() === key))
+  }
+  const answersTo = (name: string) => [requirement.id, ...requirement.aliases].some((each) => each.toUpperCase() === name.trim().toUpperCase())
+  const ficheOf = (target: Requirement): ViewAction | undefined =>
+    target.filePath ? { id: 'open', label: t('exigences.fiche.open'), tooltip: t('exigences.fiche.open'), run: () => showPage(requirementPageOf(target.filePath!)) } : undefined
+  const excerpt = (target: Requirement) => {
+    const body = (textOf(target, target.sourceLang)?.body ?? '').replace(/\s+/g, ' ').trim()
+    return body.length > 140 ? `${body.slice(0, 139)}…` : body
+  }
+  const outgoing: ListItem[] = requirement.links.map((link, index) => {
+    const target = named(link.to)
+    const open = target ? ficheOf(target) : undefined
+    return {
+      id: `link-${index}`,
+      title: `${t(`exigences.fiche.link.${link.kind}`)} ${target ? (target.title ? `${target.id} — ${target.title}` : target.id) : link.to}`,
+      detail: [link.suspect ? t('exigences.flag.suspect') : '', target ? excerpt(target) : t(link.kind === 'satisfied-by' ? 'exigences.fiche.link.ticket' : 'exigences.fiche.link.outside')].filter(Boolean).join(' — '),
+      tone: link.suspect ? ('warning' as const) : target || link.kind === 'satisfied-by' ? ('info' as const) : ('neutral' as const),
+      ...(open ? { open } : {})
+    }
+  })
+  const incoming: ListItem[] = others.flatMap((other) =>
+    other.links
+      .filter((link) => link.kind !== 'satisfied-by' && answersTo(link.to))
+      .map((link, index) => {
+        const open = ficheOf(other)
+        return {
+          id: `backlink-${other.id}-${index}`,
+          title: `${t(`exigences.fiche.backlink.${link.kind}`)} ${other.title ? `${other.id} — ${other.title}` : other.id}`,
+          detail: [link.suspect ? t('exigences.flag.suspect') : '', excerpt(other)].filter(Boolean).join(' — '),
+          tone: link.suspect ? ('warning' as const) : ('info' as const),
+          ...(open ? { open } : {})
+        }
+      })
+  )
+  const links = [...outgoing, ...incoming]
   const history: ListItem[] = [...requirement.history].reverse().map((revision, index) => ({
     id: `rev-${index}`,
     title: t('exigences.fiche.revision', { rev: revision.rev, lang: revision.lang.toUpperCase() }),

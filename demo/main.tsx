@@ -186,7 +186,9 @@ async function start(): Promise<void> {
   await respond('Orbital Services', 'Offre technique.md', '# Offre technique\n\nNotre équipe intervient dans la journée.')
   const library = requirementsAt('Exigences')
   await library.create({ category: 'SOL', title: 'Maintien en température', text: text('Le système doit maintenir la soute entre 5 °C et 30 °C.'), type: 'performance', status: 'approved', criticality: 'high', verification: 'test' })
-  await library.create({ category: 'SOL', title: 'Disponibilité', text: text('La station doit être disponible 99,5 % du temps, mesuré sur chaque mois.'), type: 'performance', status: 'draft', criticality: 'high', verification: 'analysis' })
+  const disponibilite = await library.create({ category: 'SOL', title: 'Disponibilité', text: text('La station doit être disponible 99,5 % du temps, mesuré sur chaque mois.'), type: 'performance', status: 'draft', criticality: 'high', verification: 'analysis' })
+  // Des liens, pour la fiche : la disponibilité découle du maintien en température, et un ticket la satisfait.
+  if (disponibilite.filePath) await library.save(disponibilite.filePath, (current) => ({ ...current, links: [{ kind: 'derives-from', to: 'REQ-SOL-0001' }, { kind: 'satisfied-by', to: 'TICKET-128' }] }))
   await library.create({ category: 'SEC', title: 'Journalisation', text: text('Les accès seront journalisés si possible.'), type: 'security', status: 'draft', criticality: 'medium' })
   settings.workflows = {
     workflows: [{ id: 'wf-1', name: 'À l’import des pièces : relever le calendrier', enabled: true, mode: 'auto', trigger: { kind: 'ao.pieces-importees' }, conditions: [], actions: [{ kind: 'ao.calendrier', fields: { analyse: '{analyse}' } }], created: new Date().toISOString() }]

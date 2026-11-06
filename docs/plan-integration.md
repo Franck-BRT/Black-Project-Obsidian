@@ -433,6 +433,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   « Exécuter » mène à la fiche de l'exécution qu'il vient de faire
 - v0.54.0 : **module Analyse d'appels d'offres** : le rapport de couverture d'un candidat
   s'écrit sans quitter sa fiche (sa note ne s'ouvre plus) ; « Ouvrir la vérification »
+- v0.55.0 : **module Exigences** : les liens d'une exigence, navigables de fiche en fiche,
+  dans les deux sens
 
 ### Étape 7 — Livrables
 

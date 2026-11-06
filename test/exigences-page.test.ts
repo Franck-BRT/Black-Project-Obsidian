@@ -712,3 +712,45 @@ describe('traduire des exigences : la page des traductions à relire', () => {
     expect(cardsOf(await page.load('en'))).toHaveLength(2)
   })
 })
+
+describe('les liens d’une exigence, navigables en page', () => {
+  async function linked() {
+    const platform = memoryPlatform()
+    const run = await start(platform, true)
+    const store = requirementsAt('Exigences')
+    const all = await store.all()
+    const hot = all.find((each) => each.title === 'Maintien en température')!
+    const log = all.find((each) => each.title === 'Journalisation')!
+    // Journalisation découle de Maintien en température, et est satisfaite par un ticket.
+    await store.save(log.filePath!, (current) => ({ ...current, links: [{ kind: 'derives-from', to: hot.id }, { kind: 'satisfied-by', to: 'JIRA-42' }, { kind: 'refines', to: 'REQ-XXX-0099' }] }))
+    const page = run.views.pages().find((each) => each.id === 'exigences.fiche')!
+    const linksOf = async (path: string) => {
+      const view = await page.load(encodeURIComponent(path))
+      const block = view.blocks.find((each) => each.kind === 'list' && each.title?.startsWith('Liens'))
+      return block?.kind === 'list' ? block : null
+    }
+    return { ...run, hot, log, linksOf }
+  }
+
+  it('un lien vers une autre exigence : son nom, sa formulation, un clic ouvre sa fiche ; hors bibliothèque, il le dit', async () => {
+    const { log, hot, linksOf, shown } = await linked()
+    const block = (await linksOf(log.filePath!))!
+    expect(block.title).toBe('Liens (3)')
+    expect(block.items.map((item) => item.title)).toEqual([`Découle de ${hot.id} — Maintien en température`, 'Satisfaite par JIRA-42', 'Précise REQ-XXX-0099'])
+    expect(block.items[0]!.detail).toBe('Le système doit maintenir la soute entre 5 °C et 30 °C.')
+    expect(block.items[1]).toMatchObject({ detail: 'hors de la bibliothèque (un ticket, un document)', tone: 'info' })
+    expect(block.items[2]).toMatchObject({ detail: 'introuvable dans ce dossier d’exigences', tone: 'neutral' })
+    expect(block.items[1]!.open).toBeUndefined()
+    await block.items[0]!.open!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent(hot.filePath!)}`)
+  })
+
+  it('ce qui pointe vers elle : « En découle », un clic ouvre la fiche de l’autre', async () => {
+    const { log, hot, linksOf, shown } = await linked()
+    const block = (await linksOf(hot.filePath!))!
+    expect(block.title).toBe('Liens (1)')
+    expect(block.items[0]!.title).toBe(`En découle ${log.id} — Journalisation`)
+    await block.items[0]!.open!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent(log.filePath!)}`)
+  })
+})

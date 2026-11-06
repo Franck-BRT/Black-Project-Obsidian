@@ -267,6 +267,15 @@ l'IA ; « Valider la traduction », « Traduire de nouveau », un clic vers la f
 passe par `TranslationsHooks.run` et finit sur la page ; « Traductions à relire (n) » y
 mène tant qu'il en reste ; la palette garde le message seul.
 
+**Les liens, navigables (v0.20.0, Black Projects 0.55.0)** : revue du module à cette
+occasion — chaque action lancée de l'interface finissait déjà sur une page. Sur la fiche,
+la liste des liens résout chaque `to` dans le même dossier (identifiant ou alias, sans
+tenir compte de la casse) : le nom et la formulation de l'exigence visée, et un clic sur
+sa fiche ; `satisfied-by` vers autre chose se dit « hors de la bibliothèque », un nom
+inconnu « introuvable dans ce dossier ». Les liens des autres exigences vers celle-ci
+(sauf `satisfied-by`) s'ajoutent, avec leur sens inverse (`exigences.fiche.backlink.*`).
+La démonstration a deux liens.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

@@ -66,7 +66,11 @@ ouvre sa **fiche en page**, où tout se voit :
 - la **qualité, axe par axe** (unique, non ambiguë, vérifiable, attribuable, complète,
   traçable), et ce qui coûte à chacun, en mots ;
 - **la fiche** (catégorie, vérification, source, justification, responsable, mots-clés,
-  alias, pièce d'origine, dates), ses **liens** et son **historique** de révisions ;
+  alias, pièce d'origine, dates), ses **liens** et son **historique** de révisions. Un
+  lien vers une autre exigence montre son nom et sa formulation, et un clic ouvre sa
+  fiche ; un lien hors de la bibliothèque (un ticket) le dit ; les exigences qui pointent
+  vers celle-ci sont listées aussi (« En découle », « Précisée par », « Contredite par »,
+  « A pour doublon ») — on suit la traçabilité de fiche en fiche ;
 - « ← Toute la bibliothèque » ramène à la liste.
 
 La fiche en fenêtre (bouton **Modifier la fiche**) propose :
