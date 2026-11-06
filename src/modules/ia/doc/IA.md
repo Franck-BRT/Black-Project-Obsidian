@@ -35,6 +35,23 @@ Paramètres → Black Projects → bouton **Fonctions** de la ligne « IA » :
 Un échec est dit en clair : serveur injoignable (êtes-vous sur le bon réseau ?), adresse
 qui ne se termine pas par `/v1`, clé refusée, modèle introuvable.
 
+## La page IA
+
+L'entrée **IA** du menu de gauche, la tuile **IA** de l'accueil ou le lien « Toute l'IA »
+du tableau de bord ouvrent la **page IA**, dans l'onglet Black Projects :
+
+- en chiffres : la connexion (prête ou à régler), les modèles du serveur retenus au dernier
+  « Tester la connexion », les usages couverts, la longueur des réponses ;
+- **Tester la connexion** et **Régler la connexion** (adresse, clé, longueur des réponses :
+  la fenêtre du module) ;
+- une **carte par usage** — analyse, traduction, vecteurs, reranking, OCR, vision : le
+  modèle choisi, ou celui pris à la place, et à quoi il sert. **Choisir le modèle** propose
+  les modèles du serveur qui conviennent à cet usage, et « Aucun (par défaut) » ;
+- **Ce qui se sert de l'IA** : relire et traduire les exigences, interroger le dossier, le
+  questionnaire, les doublons par le sens…, et ce qui arrive à l'étape 7 ;
+- une recherche (usage, nom de modèle) et des filtres : modèle choisi, pris à la place,
+  pas utilisé.
+
 ## 2. Ce que l'IA fait
 
 | Où | Commande | Ce qu'elle fait |

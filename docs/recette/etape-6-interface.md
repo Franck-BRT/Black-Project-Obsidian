@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La page « IA » (v0.18.0)
+
+- [ ] L'entrée **IA** du menu : la page **IA** s'ouvre dans l'onglet (plus la fenêtre de
+      réglages d'emblée), l'entrée est marquée en cours
+- [ ] IA pas réglée : un message le dit, « Connexion : À régler », « Régler la connexion »
+      mis en avant ; il ouvre la fenêtre du module (adresse, clé)
+- [ ] IA réglée puis « Tester la connexion » : « Modèles du serveur » donne leur nombre ;
+      une carte par usage dit le modèle choisi, ou celui pris à la place, ou « Pas utilisé »
+- [ ] **Choisir le modèle** sur « reranking » : seuls les modèles de reranking du serveur, et
+      « Aucun (par défaut) » ; le choix est enregistré et la carte change aussitôt
+- [ ] « Choisir le modèle » sans liste retenue : un message dit de tester d'abord
+- [ ] « Ce qui se sert de l'IA » liste les fonctions (étape 7 marquée pour OCR et vision)
+- [ ] La tuile **IA** et le lien « Toute l'IA » du tableau de bord mènent à la même page
+
 ## La page « Workflows » (v0.17.0)
 
 - [ ] L'entrée **Workflows** du menu : plus de liste en fenêtre ; la page **Workflows**

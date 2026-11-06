@@ -150,7 +150,7 @@ pour forcer une apparence (captures, recette).
 
 Un module peut ouvrir une **page** dans l'onglet de Black Projects, comme le tableau de
 bord, plutôt qu'une fenêtre : la liste des analyses (v0.15.0), la bibliothèque d'exigences
-(v0.16.0), les workflows (v0.17.0). Une carte peut porter un extrait de texte (`Card.text`, trois lignes au plus),
+(v0.16.0), les workflows (v0.17.0), l'IA (v0.18.0). Une carte peut porter un extrait de texte (`Card.text`, trois lignes au plus),
 que la recherche lit aussi. Il la déclare par
 `views.page({ id, title, icon, load })` ; `load` rend une `PageView` en données :
 

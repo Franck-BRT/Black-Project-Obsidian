@@ -58,6 +58,22 @@ passe aux étapes suivantes (`{stepN.text}`).
 
 La section « IA » : l'adresse et chaque usage (réglé, ou le modèle qui le remplace, ou non utilisé) ; non réglée, un message et le bouton « Réglages ». Entrée de navigation « IA ».
 
+## La page « IA » (v0.5.0, Black Projects 0.18.0)
+
+`home.ts` (la section du tableau de bord y est passée aussi) déclare la **page**
+`ia.connexion` (`views.page`, voir
+[l'interface](../architecture/interface.md#les-pages-des-modules-v0150)) : les chiffres
+(connexion, modèles retenus — `LISTED_KEY` —, usages couverts, jetons), **Tester la
+connexion** (commande `tester`) et **Régler la connexion** (`openWindow`, la fenêtre du
+module), une carte par usage (`MODEL_USES`) — modèle choisi, pris à la place
+(`AiClient.modelFor`) ou pas utilisé, sa description, le nombre de modèles possibles
+(`modelsFor`) — avec **Choisir le modèle** (`pickOption` sur les modèles qui conviennent,
+« Aucun » le retire ; enregistré dans `MODEL_KEYS[usage]`), puis « Ce qui se sert de l'IA »
+(la section des usages d'`iaFeatures`). Filtres (`tags`) : `choisis`, `par-defaut`,
+`inutilises`. L'entrée, la tuile et le lien « Toute l'IA » l'ouvrent par
+`context.showPage` ; sans page chez la plateforme, ils ouvrent la fenêtre du module, comme
+avant. Tests : `test/ia-page.test.ts`.
+
 ## Interface publique
 
 | Nom | Rôle |
@@ -81,6 +97,7 @@ CORS, pas de proxy à régler dans le navigateur) ; les tests le simulent
 | `client.ts` | `AiClient` sur le port `Http` ; messages d'erreur HTTP en français | réécrit (types de la version complète) |
 | `models.ts` | un modèle par usage : clés, tri des modèles du serveur | d'après la version complète (`llmModelRows`, `chatModels`) |
 | `index.ts` | réglages, clé, test de connexion, `aiClient()` | nouveau |
+| `home.ts` | la section du tableau de bord et la page IA | nouveau |
 | `i18n.ts`, `doc/IA.md` | textes et page du coffre | nouveau |
 
 Ce que les autres modules ont repris pour s'en servir est chez eux :

@@ -78,7 +78,7 @@ platform.notifier = { notify: (message) => toast(message) }
 const views = new ViewsRegistry()
 const settings: Record<string, Record<string, unknown>> = {
   ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false },
-  ia: { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small-3.2', modeleEmbeddings: 'bge-m3', modeleReranking: 'bge-reranker-v2-m3' }
+  ia: { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small-3.2', modeleEmbeddings: 'bge-m3', modeleReranking: 'bge-reranker-v2-m3', modelesServeur: ['bge-m3', 'bge-reranker-v2-m3', 'mistral-small-3.2', 'qwen2.5-vl-7b-instruct', 'olmocr-7b'] }
 }
 const day = (offset: number) => {
   const date = new Date()
