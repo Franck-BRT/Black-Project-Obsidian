@@ -11,13 +11,13 @@
 
 import { parseFrontmatter } from '../../core/frontmatter'
 import type { Notifier, Ui } from '../../core/ports'
-import { pageWith, type Card, type HomeBlock, type HomeSectionView, type ListItem, type PageView, type Stat, type TileBadge, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Card, type HomeBlock, type HomeSectionView, type IconName, type ListItem, type PageView, type Stat, type TileBadge, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { typeLabel } from '../typage-pieces'
 import { assessAll, requirementLanguages, requirementPageOf, requirementsAt } from '../exigences'
 import { aiClient } from '../ia'
 import { calendarOf, calendarPath, delayLabel, writeCalendar } from './calendar'
-import { questionnairePath, questionsFolder, QUESTION_TYPE } from './ask/dossier'
-import { noteBlocks, readQuestion, type QuestionNote } from './produced'
+import { QUESTIONNAIRE, questionnairePath, questionsFolder, QUESTION_TYPE, QUESTIONNAIRE_TYPE, type QuestionKey } from './ask/dossier'
+import { noteBlocks, readQuestion, readQuestionnaire, type QuestionNote, type QuestionnaireItem, type QuestionSource } from './produced'
 import { qualityPath } from './quality'
 import { pieceSources, pieceText } from './ask/sources'
 import { destinationLabel, type Analysis, type PieceRow, type ReadingState } from './notes'
@@ -42,7 +42,7 @@ export interface HomeDeps {
    * Lance une commande de l'AO sur une analyse ou une pièce précise, sans demander laquelle.
    * `stay` : la note que la commande écrit ne s'ouvre pas — la page qui l'a lancée la montre.
    */
-  runFor?(id: string, target: { analysis?: Analysis; note?: string; stay?: boolean }): Promise<void>
+  runFor?(id: string, target: { analysis?: Analysis; note?: string; stay?: boolean; keys?: QuestionKey[] }): Promise<void>
 }
 
 /** La fiche d'une analyse : `pageWith(ANALYSIS_PAGE, …)`, le chemin de sa note en paramètre. */
@@ -66,6 +66,13 @@ export const producedPageOf = (note: string): string => pageWith(PRODUCED_PAGE, 
 /** La page d'une question au dossier : `questionPageOf(chemin de sa note)`. */
 export const QUESTION_PAGE = 'ao.question'
 export const questionPageOf = (note: string): string => pageWith(QUESTION_PAGE, encodeURIComponent(note))
+
+/** La page du questionnaire d'une analyse : `questionnairePageOf(chemin de sa note)`. */
+export const QUESTIONNAIRE_PAGE = 'ao.questionnaire'
+export const questionnairePageOf = (note: string): string => pageWith(QUESTIONNAIRE_PAGE, encodeURIComponent(note))
+/** La page d'un thème du questionnaire : `questionnaireItemPageOf(chemin, thème)`. */
+export const QUESTIONNAIRE_ITEM_PAGE = 'ao.questionnaire.theme'
+export const questionnaireItemPageOf = (note: string, key: string): string => pageWith(QUESTIONNAIRE_ITEM_PAGE, `${encodeURIComponent(note)}&${encodeURIComponent(key)}`)
 
 /** La page des analyses. */
 export const ANALYSES_PAGE = 'ao.analyses'
@@ -307,7 +314,8 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
         ...(ai
           ? [
               { id: 'ask', label: t('ao.home.ask'), icon: 'chat' as const, run: () => deps.ask(analysis) },
-              { id: 'questionnaire', label: t('ao.tile.questionnaire'), icon: 'list' as const, run: run('questionnaire') },
+              // Le questionnaire a sa page : on y remplit les thèmes, on y lit les réponses.
+              { id: 'questionnaire', label: t('ao.tile.questionnaire'), icon: 'list' as const, run: deps.showPage ? () => deps.showPage?.(questionnairePageOf(questionnairePath(analysis))) : run('questionnaire') },
               { id: 'review', label: t('ao.tile.review'), icon: 'spark' as const, run: run('relire-exigences-ia') }
             ]
           : []),
@@ -419,7 +427,9 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     id: path,
     title: baseName(path).replace(/\.md$/, ''),
     detail: path.slice(analysis.folder.length + 1),
-    open: deps.showPage ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(producedPageOf(path)) } : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
+    open: deps.showPage
+      ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(path === questionnairePath(analysis) ? questionnairePageOf(path) : producedPageOf(path)) }
+      : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
   }))
 
   const buyer = typeof data.acheteur === 'string' ? data.acheteur.trim() : ''
@@ -673,7 +683,9 @@ export async function producedPage(deps: HomeDeps, param: string | undefined): P
   }
   const markdown = await services.fs.readText(note)
   // Une question a sa page à elle.
-  if (parseFrontmatter(markdown).data['bp-type'] === QUESTION_TYPE && readQuestion(markdown, questionWords(t))) return questionPage(deps, param)
+  const type = parseFrontmatter(markdown).data['bp-type']
+  if (type === QUESTION_TYPE && readQuestion(markdown, questionWords(t))) return questionPage(deps, param)
+  if (type === QUESTIONNAIRE_TYPE && note === questionnairePath(analysis)) return questionnairePage(deps, param)
   const blocks = noteBlocks(markdown, opener)
   const heading = /^#\s+(.+)$/m.exec(markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, ''))?.[1]?.trim()
 
@@ -711,8 +723,6 @@ export async function questionPage(deps: HomeDeps, param: string | undefined): P
   const read = analysis && (await services.fs.exists(note)) ? readQuestion(await services.fs.readText(note), questionWords(t)) : null
   if (!analysis || !read)
     return { title: t('ao.question.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.question.missing') }] }
-  const pieces = new Set((await listPieces(services, analysis)).map((piece) => piece.note))
-  const cited = read.sources.filter((source) => source.cited).length
   const ai = aiClient() !== null
   const actions: ViewAction[] = [
     ...(ai
@@ -724,6 +734,33 @@ export async function questionPage(deps: HomeDeps, param: string | undefined): P
     { id: 'note', label: t('ao.fiche.note.open'), icon: 'file', run: () => deps.ui.openNote(note) },
     ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
   ]
+  return {
+    title: read.question,
+    back: { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) },
+    subtitle: [analysis.name, read.date, t(read.mode === 'each' ? 'ao.ask.mode.each' : 'ao.ask.mode.search')].filter(Boolean).join(' · '),
+    actions,
+    ...(await answerView(deps, analysis, read))
+  }
+}
+
+/** Ce qu'on montre d'une réponse de l'IA : une question au dossier, ou un thème du questionnaire. */
+interface AnswerShown {
+  answer: string[]
+  warnings: string[]
+  sources: QuestionSource[]
+  notes?: string[]
+}
+
+/**
+ * Le corps commun d'une réponse de l'IA : ses chiffres (sources transmises, citées, non
+ * citées, extraits), ses avertissements, le rappel de la vérifier, la réponse, une carte par
+ * source — citée ou non, les extraits transmis, un clic ouvre la fiche de la pièce —, avec
+ * une recherche et les filtres Citées / Non citées ; et les notes, s'il y en a.
+ */
+async function answerView(deps: HomeDeps, analysis: Analysis, read: AnswerShown, before: HomeBlock[] = []): Promise<Pick<PageView, 'search' | 'filters' | 'blocks'>> {
+  const { t } = deps
+  const pieces = new Set((await listPieces(deps.services(), analysis)).map((piece) => piece.note))
+  const cited = read.sources.filter((source) => source.cited).length
   const cards: Card[] = read.sources.map((source) => {
     const path = source.link && !source.link.includes('/') ? `${analysis.folder}/${source.link}` : source.link
     const open: ViewAction | undefined = !path
@@ -743,10 +780,6 @@ export async function questionPage(deps: HomeDeps, param: string | undefined): P
     }
   })
   return {
-    title: read.question,
-    back: { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) },
-    subtitle: [analysis.name, read.date, t(read.mode === 'each' ? 'ao.ask.mode.each' : 'ao.ask.mode.search')].filter(Boolean).join(' · '),
-    actions,
     search: { label: t('ao.question.search'), placeholder: t('ao.question.search.placeholder') },
     filters: [
       { id: 'citees', label: t('ao.question.filter.cited') },
@@ -762,13 +795,137 @@ export async function questionPage(deps: HomeDeps, param: string | undefined): P
           { label: t('ao.question.stat.extracts'), value: String(read.sources.reduce((sum, source) => sum + source.extracts.length, 0)), icon: 'list', hint: t('ao.question.stat.extracts.hint') }
         ]
       },
+      ...before,
       ...read.warnings.map((text) => ({ kind: 'message' as const, tone: 'warning' as const, text })),
       { kind: 'message', tone: 'info', text: t('ao.question.check') },
       { kind: 'text', title: t('ao.ask.answer'), paragraphs: read.answer, empty: t('ao.question.noAnswer') },
       { kind: 'cards', title: t('ao.question.sources', { count: read.sources.length }), cards, empty: t('ao.question.noSource') },
+      ...(read.notes?.length ? [{ kind: 'text' as const, title: t('ao.question.notes'), paragraphs: read.notes }] : [])
+    ]
+  }
+}
+
+/** Les mots du questionnaire, pour relire sa note : ses six thèmes, « pas encore lancée ». */
+const questionnaireWords = (t: Translate) => ({ ...questionWords(t), topics: QUESTIONNAIRE.map((key) => ({ key, title: t(`ao.q.${key}`) })), notRun: t('ao.verif.notRun') })
+
+/**
+ * L'état d'un thème du questionnaire : pas posé ; rien dans les pièces (l'IA n'a pas été
+ * interrogée) ; une réponse sans source citée (à vérifier) ; répondu, sources citées.
+ */
+const topicState = (item: QuestionnaireItem) =>
+  !item.asked ? 'a-poser' : !item.sources.length ? 'rien' : item.sources.some((source) => source.cited) ? 'repondues' : 'sans-source'
+const TOPIC_TONE: Record<string, Tone> = { 'a-poser': 'neutral', rien: 'info', 'sans-source': 'warning', repondues: 'success' }
+
+/** L'analyse d'un chemin de note (le questionnaire), et ce que dit la note — vide si elle n'existe pas encore. */
+async function questionnaireOf(deps: HomeDeps, param: string | undefined) {
+  const services = deps.services()
+  const note = param ? decodeURIComponent(param) : ''
+  const analysis = note ? (await listAnalyses(services)).find((each) => questionnairePath(each) === note) : undefined
+  if (!analysis) return null
+  const markdown = (await services.fs.exists(note)) ? await services.fs.readText(note) : ''
+  return { note, analysis, exists: markdown !== '', ...readQuestionnaire(markdown, questionnaireWords(deps.t)) }
+}
+
+/** Remplir le questionnaire (tous les thèmes choisis), ou reposer certains thèmes seulement, sans quitter la page. */
+const fillQuestionnaire = (deps: HomeDeps, analysis: Analysis, keys?: QuestionKey[]) => () => deps.runFor?.('questionnaire', { analysis, stay: true, ...(keys ? { keys } : {}) }) ?? Promise.resolve()
+
+/**
+ * La **page du questionnaire** d'une analyse : ses chiffres (thèmes répondus, sources
+ * citées, sans source citée, pas encore posés) ; une carte par thème — la question, le
+ * début de la réponse, les sources citées, « Reposer » —, un clic ouvre le thème ; en tête
+ * Remplir le questionnaire (choisir les thèmes), la note, l'analyse. Elle s'ouvre aussi
+ * avant que la note existe : les six thèmes, pas encore posés.
+ */
+export async function questionnairePage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const read = await questionnaireOf(deps, param)
+  if (!read)
+    return { title: t('ao.qn.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.qn.missing') }] }
+  const { analysis, note, items } = read
+  const ai = aiClient() !== null && Boolean(deps.runFor)
+  const answered = items.filter((item) => item.asked)
+  const cards: Card[] = items.map((item) => {
+    const state = topicState(item)
+    const cited = item.sources.filter((source) => source.cited).length
+    const first = item.answer[0] ?? ''
+    return {
+      id: item.key,
+      title: item.title,
+      subtitle: item.asked ? t('ao.qn.asked', { date: item.date }) : t('ao.qn.notAsked'),
+      icon: 'chat' as const,
+      badges: [{ label: t(`ao.qn.badge.${state}`), tone: TOPIC_TONE[state]! }],
+      text: item.asked ? first || t('ao.question.noAnswer') : t(`ao.q.${item.key}.ask`),
+      ...(item.sources.length ? { facts: [{ label: t('ao.qn.fact.cited'), value: `${cited} / ${item.sources.length}` }] } : {}),
+      ...(deps.showPage ? { open: { id: 'open', label: t('ao.qn.open'), tooltip: t('ao.qn.open'), run: () => deps.showPage?.(questionnaireItemPageOf(note, item.key)) } } : {}),
+      ...(ai ? { actions: [{ id: 'again', label: t(item.asked ? 'ao.qn.again' : 'ao.qn.ask'), icon: (item.asked ? 'refresh' : 'chat') as IconName, run: fillQuestionnaire(deps, analysis, [item.key as QuestionKey]) }] } : {}),
+      tags: [state]
+    }
+  })
+  const actions: ViewAction[] = [
+    ...(ai ? [{ id: 'fill', label: t('ao.qn.fill'), tooltip: t('ao.qn.fill.tip'), icon: 'list' as const, primary: answered.length === 0, run: fillQuestionnaire(deps, analysis) }] : []),
+    ...(read.exists ? [{ id: 'note', label: t('ao.fiche.note.open'), icon: 'file' as const, run: () => deps.ui.openNote(note) }] : []),
+    ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
+  ]
+  const sansSource = items.filter((item) => topicState(item) === 'sans-source').length
+  return {
+    title: t('ao.questionnaire.title', { name: analysis.name }),
+    back: { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) },
+    subtitle: t('ao.qn.subtitle'),
+    actions,
+    search: { label: t('ao.qn.search'), placeholder: t('ao.qn.search.placeholder') },
+    filters: [
+      { id: 'repondues', label: t('ao.qn.state.repondues') },
+      { id: 'sans-source', label: t('ao.qn.state.sans-source') },
+      { id: 'rien', label: t('ao.qn.state.rien') },
+      { id: 'a-poser', label: t('ao.qn.state.a-poser') }
+    ],
+    blocks: [
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('ao.qn.stat.answered'), value: `${answered.length} / ${items.length}`, icon: 'check', tone: answered.length === items.length ? 'success' : answered.length ? 'warning' : 'neutral' },
+          { label: t('ao.question.stat.cited'), value: String(items.reduce((sum, item) => sum + item.sources.filter((source) => source.cited).length, 0)), icon: 'file' },
+          { label: t('ao.qn.state.sans-source'), value: String(sansSource), icon: 'alert', ...(sansSource ? { tone: 'warning' as const } : {}) },
+          { label: t('ao.qn.state.rien'), value: String(items.filter((item) => topicState(item) === 'rien').length), icon: 'info', hint: t('ao.qn.stat.rien.hint') },
+          { label: t('ao.qn.state.a-poser'), value: String(items.length - answered.length), icon: 'list' }
+        ]
+      },
+      ...(ai ? [] : [{ kind: 'message' as const, tone: 'warning' as const, text: t('ao.qn.noAi') }]),
+      { kind: 'message', tone: 'info', text: t('ao.question.check') },
+      { kind: 'cards', title: t('ao.qn.topics', { count: items.length }), cards },
       ...(read.notes.length ? [{ kind: 'text' as const, title: t('ao.question.notes'), paragraphs: read.notes }] : [])
     ]
   }
+}
+
+/**
+ * La **page d'un thème** du questionnaire : le thème en titre, la question posée, et la
+ * réponse comme pour une question au dossier (chiffres, réponse, une carte par source) ;
+ * en tête Reposer cette question (ce thème seul), le questionnaire, la note.
+ */
+export async function questionnaireItemPage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const [encoded, key] = (param ?? '').split('&')
+  const read = await questionnaireOf(deps, encoded)
+  const item = read?.items.find((each) => each.key === (key ? decodeURIComponent(key) : ''))
+  if (!read || !item)
+    return { title: t('ao.qn.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.qn.missing') }] }
+  const { analysis, note } = read
+  const ai = aiClient() !== null && Boolean(deps.runFor)
+  const actions: ViewAction[] = [
+    ...(ai ? [{ id: 'again', label: t(item.asked ? 'ao.qn.again.one' : 'ao.qn.ask'), icon: (item.asked ? 'refresh' : 'chat') as IconName, primary: !item.asked, run: fillQuestionnaire(deps, analysis, [item.key as QuestionKey]) }] : []),
+    ...(deps.showPage ? [{ id: 'questionnaire', label: t('ao.qn.all'), icon: 'list' as const, run: () => deps.showPage?.(questionnairePageOf(note)) }] : []),
+    ...(read.exists ? [{ id: 'note', label: t('ao.fiche.note.open'), icon: 'file' as const, run: () => deps.ui.openNote(note) }] : [])
+  ]
+  const head = {
+    title: item.title,
+    back: { id: 'back', label: t('ao.qn.back', { name: analysis.name }), run: () => deps.showPage?.(questionnairePageOf(note)) },
+    subtitle: [analysis.name, item.asked ? t('ao.qn.asked', { date: item.date }) : t('ao.qn.notAsked')].join(' · '),
+    actions
+  }
+  const question: HomeBlock = { kind: 'text', title: t('ao.qn.question'), paragraphs: [item.question || t(`ao.q.${item.key}.ask`)] }
+  if (!item.asked) return { ...head, blocks: [question, { kind: 'message', tone: 'info', text: t(ai ? 'ao.qn.notAsked.help' : 'ao.qn.noAi') }] }
+  return { ...head, ...(await answerView(deps, analysis, item, [question])) }
 }
 
 /** Les notes d'un dossier et de ses sous-dossiers, par ordre alphabétique. */
@@ -828,6 +985,8 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
   views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
+  views.page({ id: QUESTIONNAIRE_PAGE, title: t('ao.qn.title'), icon: 'list', parent: ANALYSES_PAGE, load: (param) => questionnairePage(deps, param) })
+  views.page({ id: QUESTIONNAIRE_ITEM_PAGE, title: t('ao.qn.title'), icon: 'chat', parent: ANALYSES_PAGE, load: (param) => questionnaireItemPage(deps, param) })
   views.page({ id: QUESTION_PAGE, title: t('ao.question.title'), icon: 'chat', parent: ANALYSES_PAGE, load: (param) => questionPage(deps, param) })
   views.page({ id: PRODUCED_PAGE, title: t('ao.note.page.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => producedPage(deps, param) })
   views.page({ id: CANDIDATE_PAGE, title: t('ao.candidat.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => candidatePage(deps, param) })

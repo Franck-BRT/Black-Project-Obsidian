@@ -246,6 +246,30 @@ l'interface, la réponse s'ouvre sur sa page (`askAnalysis(…, preset, show)`) 
 de la palette ouvre toujours la note. La démonstration a une question posée (les
 pénalités, Station sol) et un serveur d'IA simulé qui répond en citant le premier extrait.
 
+## Le questionnaire, en page (v0.17.0, Black Projects 0.29.0)
+
+« Questionnaire », sur la fiche d'une analyse (quand la plateforme a des pages), ouvre
+`ao.questionnaire?<chemin encodé de Analyse/Questionnaire.md>` (`questionnairePageOf`,
+`parent` : les analyses) — aussi la note « Questionnaire » de « Ce que l'analyse a
+produit », et la page `ao.note` de cette note. La page s'ouvre avant que la note existe.
+`readQuestionnaire` (`produced.ts`) relit la note : pour chacun des six thèmes
+(`QUESTIONNAIRE`, titres `ao.q.<clé>`), posé ou non, la date et la question (« *Posée le
+… :* … »), la réponse, ses avertissements et ses sources (« ### Sources », lues comme
+pour une question : `sourcesOf`) ; les notes de l'utilisateur. Un thème est **répondu**
+(une source citée), **sans source citée** (l'IA a répondu sans citer : à vérifier),
+**rien dans les pièces** (aucun passage : l'IA n'a pas été interrogée) ou **pas encore
+posé**. La page : les chiffres (thèmes posés, citées, sans source citée, rien dans les
+pièces, pas encore posés), filtres par état, une carte par thème (la question si pas
+posée, sinon le début de la réponse ; sources citées ; **Reposer** / **Poser la
+question**) ; en tête **Remplir le questionnaire** (le choix des thèmes, comme la
+commande), la note, l'analyse. Un thème : `ao.questionnaire.theme?<chemin>&<clé>`
+(`questionnaireItemPageOf`) — la question posée, puis le même corps que la page d'une
+question (`answerView` : chiffres, réponse, une carte par source) ; **Reposer cette
+question**, **Tout le questionnaire**, la note. Reposer et remplir passent par
+`runFor('questionnaire', { analysis, stay: true, keys? })` : `keys` pose ces thèmes sans
+la fenêtre de choix ; la note n'est pas ouverte, la page se redessine. Les extraits
+transmis sont lus sans les titres de la pièce (« ### CCAP »).
+
 ## Dans le coffre
 
 ```

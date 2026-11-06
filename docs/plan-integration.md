@@ -369,6 +369,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.28.0 : une **question au dossier en page** (la réponse, une carte par source citée ou
   non avec ses extraits, « Reposer la question ») ; « Interroger » depuis l'interface y
   mène
+- v0.29.0 : le **questionnaire en page** (une carte par thème et son état, « Remplir le
+  questionnaire », « Reposer » un thème seul) et la page d'un thème (sa réponse, ses
+  sources)
 
 ### Étape 7 — Livrables
 

@@ -422,7 +422,7 @@ describe('une question au dossier, en page', () => {
     expect(view.actions?.map((action) => action.id)).toEqual(['again', 'ask', 'note', 'analysis'])
     expect(view.filters?.map((filter) => filter.id)).toEqual(['citees', 'non-citees'])
     const stats = view.blocks.find((block) => block.kind === 'stats')
-    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Sources transmises=1', 'Citées dans la réponse=1', 'Transmises, non citées=0', 'Extraits transmis=2'])
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Sources transmises=1', 'Citées dans la réponse=1', 'Transmises, non citées=0', 'Extraits transmis=1'])
     expect(view.blocks.find((block) => block.kind === 'text')).toEqual({ kind: 'text', title: 'Réponse', paragraphs: ['Les offres sont à remettre dans 12 jours, selon le règlement [1].'], empty: 'Pas de réponse dans la note.' })
     const sources = view.blocks.find((block) => block.kind === 'cards')
     const rc = sources?.kind === 'cards' ? sources.cards[0]! : null
@@ -467,5 +467,111 @@ describe('une question au dossier, en page', () => {
     expect(platform.opened).toEqual([path])
     const { page } = await asked()
     expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Questions/x.md'))).title).toBe('Question introuvable')
+  })
+})
+
+describe('le questionnaire, en page', () => {
+  const chat = (content: string) => ({ status: 200, text: JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }) })
+
+  async function questionnaire(ia: Record<string, unknown> = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' }) {
+    const platform = memoryPlatform()
+    const run = await start(platform, true, ia)
+    const fiche = run.views.pages().find((each) => each.id === 'ao.fiche')!
+    const path = `${run.station.folder}/Analyse/Questionnaire.md`
+    return {
+      ...run,
+      platform,
+      fiche,
+      path,
+      page: run.views.pages().find((each) => each.id === 'ao.questionnaire')!,
+      theme: run.views.pages().find((each) => each.id === 'ao.questionnaire.theme')!
+    }
+  }
+
+  /** Remplir deux thèmes : les critères d'attribution (le RC cité), les pénalités (rien dans les pièces : l'IA n'est pas appelée). */
+  async function filled() {
+    const run = await questionnaire()
+    run.platform.manyAnswers.push(['attribution', 'penalites'])
+    run.platform.httpAnswers.push(chat('Les offres sont jugées selon le règlement de la consultation [1].'))
+    const view = await run.page.load(encodeURIComponent(run.path))
+    await view.actions!.find((action) => action.id === 'fill')!.run()
+    return run
+  }
+
+  it('« Questionnaire » sur la fiche ouvre sa page : les six thèmes, pas encore posés', async () => {
+    const { fiche, station, shown, page, path } = await questionnaire()
+    await (await fiche.load(encodeURIComponent(station.note))).actions!.find((action) => action.id === 'questionnaire')!.run()
+    expect(shown.at(-1)).toBe(`ao.questionnaire?${encodeURIComponent(path)}`)
+    expect(page.parent).toBe('ao.analyses')
+    const view = await page.load(encodeURIComponent(path))
+    expect(view.title).toBe('Questionnaire — Station sol')
+    expect(view.back?.label).toBe('L’analyse « Station sol »')
+    expect(view.actions?.map((action) => `${action.id}:${action.primary ?? false}`)).toEqual(['fill:true', 'analysis:false'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Thèmes posés=0 / 6', 'Citées dans la réponse=0', 'Sans source citée=0', 'Rien dans les pièces=0', 'Pas encore posées=6'])
+    const cards = cardsOf(view)
+    expect(cards.map((card) => card.title)).toEqual(['Critères d’attribution', 'Pénalités', 'Garanties', 'Propriété intellectuelle', 'Confidentialité', 'Contrôle export'])
+    expect(cards[0]).toMatchObject({ subtitle: 'Pas encore posée', badges: [{ label: 'Pas encore posée', tone: 'neutral' }], tags: ['a-poser'] })
+    expect(cards[0]!.text).toMatch(/^Quels sont les critères d’attribution/)
+    expect(cards[0]!.actions?.map((action) => action.label)).toEqual(['Poser la question'])
+  })
+
+  it('« Remplir le questionnaire » : les thèmes choisis, sans quitter la page ; chacun dit s’il a une source citée', async () => {
+    const { page, path, platform, fiche, station, shown } = await filled()
+    expect(platform.opened).toEqual([])
+    expect(platform.requests).toHaveLength(1)
+    const view = await page.load(encodeURIComponent(path))
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Thèmes posés=2 / 6', 'Citées dans la réponse=1', 'Sans source citée=0', 'Rien dans les pièces=1', 'Pas encore posées=4'])
+    const cards = cardsOf(view)
+    expect(cards.map((card) => card.tags![0])).toEqual(['repondues', 'rien', 'a-poser', 'a-poser', 'a-poser', 'a-poser'])
+    expect(cards[0]).toMatchObject({ subtitle: `Posée le ${TODAY}`, text: 'Les offres sont jugées selon le règlement de la consultation [1].', badges: [{ label: 'Répondue', tone: 'success' }] })
+    expect(cards[0]!.facts).toEqual([{ label: 'Sources citées', value: '1 / 1' }])
+    expect(view.actions?.map((action) => action.id)).toEqual(['fill', 'note', 'analysis'])
+    // La note du questionnaire, dans « Ce que l'analyse a produit », mène à cette page.
+    const analysis = await fiche.load(encodeURIComponent(station.note))
+    const produced = analysis.blocks.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    await (produced?.kind === 'list' ? produced.items : []).find((item) => item.title === 'Questionnaire')!.open!.run()
+    expect(shown.at(-1)).toBe(`ao.questionnaire?${encodeURIComponent(path)}`)
+  })
+
+  it('un thème : la question posée, la réponse, une carte par source ; « Reposer cette question » ne pose que lui', async () => {
+    const { page, theme, path, platform, shown } = await filled()
+    await cardsOf(await page.load(encodeURIComponent(path)))[0]!.open!.run()
+    expect(shown.at(-1)).toBe(`ao.questionnaire.theme?${encodeURIComponent(path)}&attribution`)
+    expect(theme.parent).toBe('ao.analyses')
+    const view = await theme.load(`${encodeURIComponent(path)}&attribution`)
+    expect(view.title).toBe('Critères d’attribution')
+    expect(view.back?.label).toBe('Le questionnaire de « Station sol »')
+    expect(view.subtitle).toBe(`Station sol · Posée le ${TODAY}`)
+    expect(view.actions?.map((action) => action.id)).toEqual(['again', 'questionnaire', 'note'])
+    const texts = view.blocks.filter((block) => block.kind === 'text')
+    expect(texts.map((block) => block.kind === 'text' && block.title)).toEqual(['La question posée', 'Réponse'])
+    expect(texts[0]!.kind === 'text' && texts[0]!.paragraphs[0]).toMatch(/^Quels sont les critères d’attribution/)
+    const sources = view.blocks.find((block) => block.kind === 'cards')
+    expect(sources?.kind === 'cards' && sources.cards.map((card) => `${card.title}:${card.tags![0]}`)).toEqual(['[1] RC:citees'])
+    const asked = platform.manyAsked.length
+    // Reposée, la réponse ne cite plus rien : le thème est « Sans source citée », la page avertit.
+    platform.httpAnswers.push(chat('Selon le règlement, de nouveau.'))
+    await view.actions!.find((action) => action.id === 'again')!.run()
+    expect(platform.manyAsked.length).toBe(asked)
+    const again = await theme.load(`${encodeURIComponent(path)}&attribution`)
+    const answer = again.blocks.filter((block) => block.kind === 'text')[1]
+    expect(answer?.kind === 'text' && answer.paragraphs).toEqual(['Selon le règlement, de nouveau.'])
+    expect(again.blocks.some((block) => block.kind === 'message' && block.tone === 'warning' && block.text.startsWith('La réponse ne cite aucune source'))).toBe(true)
+    const cards = cardsOf(await page.load(encodeURIComponent(path)))
+    expect(cards[0]).toMatchObject({ tags: ['sans-source'], badges: [{ label: 'Sans source citée', tone: 'warning' }] })
+    // Les pénalités, elles, n'ont pas bougé.
+    expect(cards[1]!.tags).toEqual(['rien'])
+  })
+
+  it('sans IA : la page le dit, rien à remplir ; un thème inconnu : la page le dit', async () => {
+    const { page, theme, path } = await questionnaire({})
+    const view = await page.load(encodeURIComponent(path))
+    expect(view.actions?.map((action) => action.id)).toEqual(['analysis'])
+    expect(view.blocks.some((block) => block.kind === 'message' && block.text.startsWith('L’IA n’est pas réglée'))).toBe(true)
+    expect(cardsOf(view)[0]!.actions).toBeUndefined()
+    expect((await theme.load(`${encodeURIComponent(path)}&inconnu`)).title).toBe('Questionnaire introuvable')
+    expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Questionnaire.md'))).title).toBe('Questionnaire introuvable')
   })
 })

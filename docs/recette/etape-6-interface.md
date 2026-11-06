@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le questionnaire, en page (v0.29.0)
+
+- [ ] IA réglée ; fiche d'une analyse → **Questionnaire** : sa page, les six thèmes « Pas
+      encore posée », avec leur question ; « Remplir le questionnaire » mis en avant
+- [ ] **Remplir le questionnaire** : la fenêtre de choix des thèmes ; après, la page se
+      redessine (Obsidian n'ouvre pas la note) : chaque thème Répondue (vert), Sans source
+      citée (orange), Rien dans les pièces (bleu)
+- [ ] Les chiffres (thèmes posés, citées, sans source, rien dans les pièces, pas encore
+      posés) ; les filtres par état
+- [ ] Un clic sur un thème : la question posée, la réponse, une carte par source (les
+      extraits sans « ### ») ; un clic sur une source ouvre la fiche de la pièce
+- [ ] **Reposer cette question** (ou « Reposer » sur sa carte) : sans fenêtre de choix,
+      ce thème seul ; les autres ne bougent pas
+- [ ] Sans IA : un message le dit, pas de bouton pour remplir
+
 ## Une question au dossier, en page (v0.28.0)
 
 - [ ] IA réglée ; fiche d'une analyse → **Interroger** : la question, puis la réponse

@@ -66,6 +66,11 @@ analyse ? » :
   la fiche de la pièce), vos notes ; **Reposer la question** rouvre la fenêtre avec la
   question déjà écrite (la nouvelle réponse va dans une nouvelle note), **Nouvelle
   question**. « Interroger », depuis la fiche, ouvre la réponse sur sa page ;
+- son **questionnaire** : **Questionnaire** ouvre sa page — les six thèmes (critères
+  d'attribution, pénalités, garanties, propriété intellectuelle, confidentialité, contrôle
+  export), chacun répondu, sans source citée (à vérifier), rien dans les pièces, ou pas
+  encore posé ; **Remplir le questionnaire** (choisir les thèmes), **Reposer** un thème
+  seul ; un clic sur un thème montre la question posée, la réponse et ses sources ;
 - une recherche et des filtres (pièces à lire, appel d'offres, réponse) ; « ← Toutes les
   analyses » ramène à la liste.
 

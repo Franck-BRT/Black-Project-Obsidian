@@ -31,7 +31,10 @@ pour l'émetteur, un clic sur un candidat ouvre la sienne : sa réponse et la co
 exigences par elle ; un clic sur une note qu'elle a produite (calendrier, vérification,
 qualité, questionnaire) l'ouvre en page, lisible, avec « Mettre à jour » ; une question
 posée au dossier (« Interroger ») a sa page : la réponse, chaque source citée ou non avec
-les extraits transmis à l'IA, et « Reposer la question ». **Exigences** ouvre de même la page de la
+les extraits transmis à l'IA, et « Reposer la question ». **Questionnaire**, sur la fiche,
+ouvre la page du questionnaire : une carte par thème (répondu, sans source citée, rien
+dans les pièces, pas encore posé), « Remplir le questionnaire », et un clic sur un thème
+montre sa réponse et ses sources, avec « Reposer cette question ». **Exigences** ouvre de même la page de la
 bibliothèque : une carte par exigence, les plus faibles d'abord, avec sa formulation, et des
 filtres (faibles, à revoir, criticité haute, brouillons, approuvées) ; un clic sur une
 exigence ouvre sa fiche : ses formulations par langue, sa qualité axe par axe, ses liens,

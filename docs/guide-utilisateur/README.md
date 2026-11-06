@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.28.0)
+## Aujourd'hui (version 0.29.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -24,7 +24,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   un élément ouvre sa fiche — jusqu'aux notes qu'une analyse a produites (calendrier,
   vérification, qualité, questionnaire), lues en page sans la syntaxe Markdown, avec
   « Mettre à jour », et aux questions posées au dossier (la réponse, ses sources citées ou
-  non, « Reposer la question ») —, et **« ← Retour »** (ou Alt + ←) ramène à la page d'où l'on
+  non, « Reposer la question »), et au questionnaire (une carte par thème, « Remplir le
+  questionnaire », « Reposer » un thème) —, et **« ← Retour »** (ou Alt + ←) ramène à la page d'où l'on
   vient. **Modifier l'accueil** pour en ajouter, en retirer ou les déplacer. Le **Tableau de
   bord** (navigation, tuile, ou commande) donne les informations : une carte par analyse
   avec sa date limite de remise, l'état de l'IA, la bibliothèque d'exigences, les derniers

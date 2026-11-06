@@ -300,7 +300,7 @@ function describeImport(context: ModuleContext, report: ImportReport): string {
  * Ce que vise une commande lancée depuis la fiche d'une analyse : cette analyse, ou cette
  * pièce — sans demander laquelle. Posé le temps de la commande (`runFor`), puis retiré.
  */
-let targeted: { analysis?: Analysis; note?: string; stay?: boolean } = {}
+let targeted: { analysis?: Analysis; note?: string; stay?: boolean; keys?: QuestionKey[] } = {}
 
 /** Ouvre la note écrite par une commande — sauf lancée depuis sa page, qui se redessine. */
 const showWritten = (context: ModuleContext, path: string) => (targeted.stay ? Promise.resolve() : context.platform.ui.openNote(path))
@@ -423,7 +423,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.16.0',
+  version: '0.17.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -833,7 +833,8 @@ export const aoModule: BlackModule = {
           platform.notifier.notify(t('ao.ask.noPiece'), 8000)
           return
         }
-        const keys = await platform.ui.pickMany({
+        // Un thème précis (« Reposer », sur la page du questionnaire) : sans demander lesquels.
+        const keys = targeted.keys ?? await platform.ui.pickMany({
           title: t('ao.questionnaire.pick.title', { name: analysis.name }),
           intro: t('ao.questionnaire.pick.intro'),
           choices: QUESTIONNAIRE.map((key) => ({ value: key, label: t(`ao.q.${key}`), description: t(`ao.q.${key}.ask`) })),
