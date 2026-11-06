@@ -54,8 +54,12 @@ Palette de commandes :
   « ← Tous les workflows » ramène à la liste ;
 - **Exécuter un workflow** — à la main, sans attendre son déclencheur ; l'analyse est
   demandée quand il en faut une ;
-- **Journal des workflows** — chaque exécution, la plus récente en tête : ✅ fait,
-  ❌ échec (et pourquoi), ⏭️ refusé, ⛔ arrêté ; avec des liens vers ce qu'elle a écrit ;
+- **Journal des workflows** — en page : combien d'exécutions, réussies, en échec,
+  refusées ou arrêtées ; puis chaque exécution, jour par jour, la plus récente en tête —
+  ✅ fait, ❌ échec (et pourquoi), ⏭️ refusé, ⛔ arrêté. **Un clic sur une exécution ouvre
+  la fiche du workflow** (aussi depuis la page Workflows et le tableau de bord) ; une
+  recherche et des filtres par issue ; « Ouvrir la note du journal » montre la note, avec
+  ses liens vers ce que chaque exécution a écrit ;
 - **Exporter des workflows** / **Importer des workflows** — un fichier JSON pour un autre
   coffre ; un workflow importé arrive **désactivé**, à relire avant de l'activer.
 

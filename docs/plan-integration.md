@@ -359,6 +359,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   extraites, chaque bouton agit sur elle)
 - v0.24.0 : la **fiche d'un candidat en page** (émetteur : sa réponse et la couverture des
   exigences par elle, les absentes d'abord)
+- v0.25.0 : le **journal des workflows en page** ; un clic sur une exécution ouvre la fiche
+  du workflow
 
 ### Étape 7 — Livrables
 

@@ -50,7 +50,7 @@ import {
   type Session
 } from './flows'
 import { workflowsEn, workflowsFr } from './i18n'
-import { openWorkflows, registerWorkflowsHome, WORKFLOW_PAGE } from './home'
+import { JOURNAL_PAGE, openWorkflows, registerWorkflowsHome, WORKFLOW_PAGE } from './home'
 import { pageWith } from '../../core/views'
 import { triggerSpec } from './registry'
 import type { Subject, Workflow } from './model'
@@ -140,7 +140,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.4.0',
+  version: '0.5.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -166,7 +166,8 @@ export const workflowsModule: BlackModule = {
     commands.register({ id: 'liste', nameKey: 'workflows.command.list', run: () => openWorkflows(showPage, () => browseWorkflows(current)) })
     commands.register({ id: 'nouveau', nameKey: 'workflows.command.new', run: async () => void (await createWorkflow(current)) })
     commands.register({ id: 'executer', nameKey: 'workflows.command.run', run: () => pickAndRun(current) })
-    commands.register({ id: 'journal', nameKey: 'workflows.command.journal', run: () => openJournal(current) })
+    // Le journal : en page quand la plateforme en a une ; sinon sa note.
+    commands.register({ id: 'journal', nameKey: 'workflows.command.journal', run: async () => (context.showPage ? context.showPage(JOURNAL_PAGE) : openJournal(current)) })
     commands.register({ id: 'exporter', nameKey: 'workflows.command.export', run: async () => void (await exportToFile(current)) })
     commands.register({ id: 'importer', nameKey: 'workflows.command.import', run: async () => void (await importFromFile(current)) })
 

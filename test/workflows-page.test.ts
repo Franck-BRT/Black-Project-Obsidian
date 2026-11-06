@@ -197,3 +197,33 @@ describe('la fiche d’un workflow, en page', () => {
     expect(missing.blocks[0]).toMatchObject({ kind: 'message', tone: 'warning' })
   })
 })
+
+describe('le journal, en page', () => {
+  it('les chiffres, jour par jour ; un clic sur une exécution ouvre la fiche du workflow', async () => {
+    const { views, shown } = await start(memoryPlatform(), true)
+    const page = views.pages().find((each) => each.id === 'workflows.journal')!
+    expect(page.parent).toBe('workflows.liste')
+    const view = await page.load()
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Exécutions=2', 'Réussies=1', 'Échecs=1', 'Refusées ou arrêtées=0'])
+    const days = view.blocks.filter((block) => block.kind === 'list')
+    expect(days.map((block) => block.kind === 'list' && block.title)).toEqual(['jeudi 5 novembre 2026', 'mercredi 4 novembre 2026'])
+    const failed = days[0]!.kind === 'list' ? days[0]!.items[0]! : null
+    expect(failed).toMatchObject({ title: 'Rappel du matin', when: '08:30', tone: 'danger', tags: ['echecs'] })
+    await failed!.open!.run()
+    expect(shown.at(-1)).toBe('workflows.fiche?wf-1')
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['reussies', 'echecs', 'refusees', 'arretees'])
+  })
+
+  it('la tuile, le tableau de bord et la commande mènent au journal en page', async () => {
+    const { views, shown, run } = await start(memoryPlatform(), true)
+    const tile = views.allTiles().find((each) => each.id === 'workflows.journal')!
+    expect(tile.page).toBe('workflows.journal')
+    await tile.run()
+    await run('journal')
+    const section = await views.homeSections()[0]!.load()
+    const items = section!.blocks.find((block) => block.kind === 'list')
+    await (items?.kind === 'list' ? items.items[0]! : null)!.open!.run()
+    expect(shown).toEqual(['workflows.journal', 'workflows.journal', 'workflows.fiche?wf-1'])
+  })
+})

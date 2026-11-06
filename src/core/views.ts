@@ -120,6 +120,8 @@ export interface ListItem {
   when?: string
   tone?: Tone
   open?: ViewAction
+  /** Les filtres d'une page auxquels l'élément répond (comme `Card.tags`). */
+  tags?: string[]
 }
 
 export type HomeBlock =

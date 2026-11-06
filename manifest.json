@@ -1,7 +1,7 @@
 {
   "id": "black-projects",
   "name": "Black Projects by Black Room Technologies",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "minAppVersion": "1.13.0",
   "description": "Analyse d'appels d'offres dans votre coffre : pièces du dossier, exigences, qualité, et un assistant IA local.",
   "author": "Black Room Technologies",

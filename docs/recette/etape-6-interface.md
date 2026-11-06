@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le journal des workflows, en page (v0.25.0)
+
+- [ ] Page Workflows → **Journal** (ou la tuile Journal, ou la commande « Journal des
+      workflows ») : la page du journal — exécutions, réussies, échecs, refusées ou
+      arrêtées ; une liste par jour, l'heure en face de chaque exécution
+- [ ] **Un clic sur une exécution ouvre la fiche du workflow** ; « Retour » revient au
+      journal ; de même depuis « Dernières exécutions » (page Workflows) et la section
+      Workflows du tableau de bord
+- [ ] Filtre « Échecs » : seules les exécutions en échec, « 1 sur 2 affiché(s) »
+- [ ] Une exécution d'un workflow supprimé depuis : la note du journal s'ouvre
+
 ## La fiche d'un candidat, en page (v0.24.0)
 
 - [ ] Analyse en position **émetteur**, avec la réponse de deux candidats : la fiche de

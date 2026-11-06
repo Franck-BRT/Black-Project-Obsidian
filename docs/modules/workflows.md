@@ -86,6 +86,14 @@ opérations sont une à une dans `flows.ts` (`editGeneral`, `addCondition`,
 `duplicateWorkflow`, `deleteWorkflow`) ; la fiche en fenêtre (`editWorkflow`, sans page
 chez la plateforme) s'en sert aussi. Un workflow disparu : la page le dit.
 
+**Le journal en page (Black Projects 0.25.0)** : `workflows.journal` (`parent` : la liste)
+lit le journal (`journalItems`, 500 lignes au plus) : les chiffres par issue, une liste par
+jour (l'heure en face de chaque exécution), chaque ligne avec son filtre (`ListItem.tags` :
+`reussies`, `echecs`, `refusees`, `arretees`). Un clic sur une ligne — ici, sur la page
+Workflows, dans la section du tableau de bord — ouvre la fiche du workflow qu'elle nomme
+(`journalOpen`) ; un workflow supprimé depuis : la note du journal. La tuile Journal,
+l'action « Journal », l'historique d'une fiche et la commande `journal` ouvrent la page.
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

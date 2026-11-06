@@ -40,6 +40,13 @@ describe('la recherche et les filtres d’une page', () => {
     expect(filterBlocks(BLOCKS, 'zzz', null, 'Rien').blocks[2]).toMatchObject({ items: [], empty: 'Rien' })
   })
 
+  it('une liste dont les éléments portent des filtres (le journal) se filtre et compte comme des cartes', () => {
+    const journal: HomeBlock[] = [{ kind: 'list', items: [{ id: '1', title: 'A', tags: ['echecs'] }, { id: '2', title: 'B', tags: ['reussies'] }] }]
+    const found = filterBlocks(journal, '', 'echecs', 'Rien')
+    expect(found.blocks[0]!.kind === 'list' && found.blocks[0]!.items.map((item) => item.id)).toEqual(['1'])
+    expect([found.hits, found.total]).toEqual([1, 2])
+  })
+
   it('un filtre garde les cartes qui y répondent ; avec la recherche, les deux', () => {
     const found = filterBlocks(BLOCKS, '', 'candidat')
     expect(found.blocks[1]!.kind === 'cards' && found.blocks[1]!.cards.map((each) => each.id)).toEqual(['a', 'c'])

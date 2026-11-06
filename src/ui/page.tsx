@@ -30,7 +30,8 @@ const itemText = (item: ListItem) => [item.title, item.detail].filter(Boolean).j
  * Les blocs, filtrés : les cartes et les éléments de liste qui contiennent tous les mots
  * cherchés et, si un filtre est choisi, les cartes qui y répondent. Le reste ne bouge pas.
  * Les nombres ne comptent que ce que la recherche ou le filtre trie : un filtre ne
- * s'applique qu'aux cartes, alors les listes (un journal) ne comptent pas avec lui. Un bloc
+ * s'applique qu'aux cartes et aux listes dont les éléments portent des filtres ; les
+ * autres listes ne comptent pas avec lui. Un bloc
  * vidé dit que rien ne correspond (`none`), à sa place.
  */
 export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter: string | null, none?: string): { blocks: HomeBlock[]; hits: number; total: number } {
@@ -46,8 +47,10 @@ export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter
       return { ...block, cards, ...(none && block.cards.length && !cards.length ? { empty: none } : {}) }
     }
     if (block.kind === 'list') {
-      const items = block.items.filter((item) => matches(itemText(item)))
-      if (!filter) {
+      // Une liste dont les éléments portent des filtres (le journal) se filtre comme des cartes.
+      const tagged = block.items.some((item) => item.tags?.length)
+      const items = block.items.filter((item) => matches(itemText(item)) && (!filter || !tagged || (item.tags ?? []).includes(filter)))
+      if (!filter || tagged) {
         total += block.items.length
         hits += items.length
       }
