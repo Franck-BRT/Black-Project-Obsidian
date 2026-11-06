@@ -47,6 +47,12 @@ analyse ? » :
   texte (lisible, sans la syntaxe Markdown), les dates et délais relevés dans elle, les
   exigences qui en viennent (un clic ouvre leur fiche), et les boutons Changer le type,
   Déplacer, Extraire les exigences, ouvrir sa note, son fichier d'origine, son analyse ;
+- pour l'**émetteur**, ses **candidats** : une carte par candidat, avec sa couverture des
+  exigences (« Couverture 100 % », citées ou traitées, absentes) ; un clic ouvre la **fiche
+  du candidat** : sa réponse (ses pièces, chacune avec ses boutons), et la couverture des
+  exigences par elle, maintenant — les absentes d'abord, puis à vérifier, traitées,
+  citées, chacune avec l'endroit de la réponse et l'extrait ; un clic ouvre la fiche de
+  l'exigence ; **Importer des pièces de sa réponse**, **Écrire le rapport de couverture** ;
 - son **calendrier** (les dates relevées et leur pièce), ses **exigences** (les plus faibles
   d'abord), et **ce qu'elle a produit** (calendrier, vérification, questionnaire, questions…) ;
 - une recherche et des filtres (pièces à lire, appel d'offres, réponse) ; « ← Toutes les

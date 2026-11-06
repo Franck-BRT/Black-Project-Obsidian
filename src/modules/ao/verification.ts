@@ -329,6 +329,21 @@ const counts = (rows: readonly Coverage[]) => ({
   absent: rows.filter((row) => row.status === 'absent').length
 })
 
+/** Où, dans une pièce, en mots (« Article 2 — tableau 1, ligne 2 ») ; « — » si on ne sait pas. */
+export const describeWhere = where
+
+/**
+ * La couverture des exigences de l'analyse par la réponse d'un candidat, sans rien écrire :
+ * la fiche du candidat la montre telle qu'elle est maintenant. `candidate` vide : la
+ * réponse unique (position candidat).
+ */
+export async function candidateCoverage(services: Services, analysis: Analysis, candidate: string): Promise<Coverage[]> {
+  const requirements = await requirementsAt(requirementsFolder(analysis)).all()
+  const files = (await pieceFiles(services, analysis, 'reponse')).filter((file) => (file.row.destination.candidate ?? '') === candidate)
+  if (!requirements.length || !files.length) return []
+  return coverage(requirements, await readDocuments(services, files))
+}
+
 export async function checkCoverage(services: Services, analysis: Analysis): Promise<string> {
   const { t } = services
   const requirements = await requirementsAt(requirementsFolder(analysis)).all()

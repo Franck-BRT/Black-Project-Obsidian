@@ -193,6 +193,18 @@ quand elle n'est pas lue ; les chiffres ; le début du texte (`readableText` : s
 elle seule (`calendarOf` sur sa source) ; les exigences dont l'origine la désigne
 (`linkedNote`). La carte d'une pièce, sur la fiche de l'analyse, ouvre sa fiche.
 
+## La fiche d'un candidat (v0.14.0, Black Projects 0.24.0)
+
+Pour l'émetteur, la fiche d'une analyse montre une carte par candidat (`listCandidates`)
+avec sa couverture ; la page `ao.candidat?<note encodée>&<nom encodé>`
+(`candidatePageOf`, `parent` : les analyses) montre sa réponse (les cartes de ses pièces)
+et la couverture des exigences par elle, calculée à l'affichage sans rien écrire
+(`candidateCoverage`, `verification.ts` : les pièces de réponse de ce candidat seulement) :
+le pourcentage citées ou traitées, à vérifier, absentes ; la liste, les absentes d'abord,
+avec l'endroit (`describeWhere`) et l'extrait. « Écrire le rapport de couverture » lance
+`couverture-reponse` sur l'analyse. La démonstration a deux candidats (Acme Spatial,
+Orbital Services).
+
 ## Dans le coffre
 
 ```

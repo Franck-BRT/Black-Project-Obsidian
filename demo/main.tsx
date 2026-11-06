@@ -148,6 +148,14 @@ async function start(): Promise<void> {
   await store.create({ id: 'EX-SOL-001', title: 'Antenne', text: text('Le titulaire doit fournir une antenne de 3,7 m de diamètre.'), verification: 'inspection' })
   await store.create({ id: 'EX-SOL-002', title: 'Réception', text: text('La station doit recevoir en bande S avec un débit de 2 Mbit/s.'), verification: 'test' })
   await store.create({ id: 'EX-SOL-003', title: 'Disponibilité', text: text('Le système sera disponible le cas échéant.') })
+  // L'émetteur : deux exigences, et la réponse de deux candidats, pour la fiche d'un candidat.
+  const maintenance = requirementsAt(`${antennes.folder}/Exigences`)
+  await maintenance.create({ category: 'MA', title: 'Intervention', text: text('Le titulaire doit intervenir sur site sous 4 heures après un appel.'), verification: 'demonstration' })
+  await maintenance.create({ category: 'MA', title: 'Pièces détachées', text: text('Le titulaire doit tenir un stock de pièces détachées pour chaque antenne.'), verification: 'inspection' })
+  const respond = (candidate: string, name: string, body: string) =>
+    importFiles(services, antennes, [{ name, bytes: utf8(body) }], async (request) => ({ places: Object.fromEntries(request.pending.map((piece) => [piece.path, 'reponse' as const])), candidate }))
+  await respond('Acme Spatial', 'Mémoire technique.md', '# Mémoire technique\n\nNous intervenons sur site sous 4 heures après un appel, de jour comme de nuit.\n\nUn stock de pièces détachées est tenu pour chaque antenne, au centre de maintenance.')
+  await respond('Orbital Services', 'Offre technique.md', '# Offre technique\n\nNotre équipe intervient dans la journée.')
   const library = requirementsAt('Exigences')
   await library.create({ category: 'SOL', title: 'Maintien en température', text: text('Le système doit maintenir la soute entre 5 °C et 30 °C.'), type: 'performance', status: 'approved', criticality: 'high', verification: 'test' })
   await library.create({ category: 'SOL', title: 'Disponibilité', text: text('La station doit être disponible 99,5 % du temps, mesuré sur chaque mois.'), type: 'performance', status: 'draft', criticality: 'high', verification: 'analysis' })

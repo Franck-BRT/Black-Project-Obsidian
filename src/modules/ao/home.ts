@@ -19,7 +19,8 @@ import { calendarOf, calendarPath, delayLabel, writeCalendar } from './calendar'
 import { pieceSources, pieceText } from './ask/sources'
 import { destinationLabel, type Analysis, type PieceRow, type ReadingState } from './notes'
 import { linkedNote, requirementsFolder } from './requirements'
-import { analysisPosition, listAnalyses, listPieces, pieceAt, type Services, type Translate } from './service'
+import { analysisPosition, listAnalyses, listCandidates, listPieces, pieceAt, type Services, type Translate } from './service'
+import { candidateCoverage, describeWhere } from './verification'
 
 export interface HomeDeps {
   services(): Services
@@ -42,6 +43,10 @@ export const ANALYSIS_PAGE = 'ao.fiche'
 
 /** La page de la fiche d'une analyse. */
 export const analysisPageOf = (analysis: Analysis): string => pageWith(ANALYSIS_PAGE, encodeURIComponent(analysis.note))
+
+/** La fiche d'un candidat (émetteur) : `candidatePageOf(analyse, nom)`. */
+export const CANDIDATE_PAGE = 'ao.candidat'
+export const candidatePageOf = (analysis: Analysis, candidate: string): string => pageWith(CANDIDATE_PAGE, `${encodeURIComponent(analysis.note)}&${encodeURIComponent(candidate)}`)
 
 /** La fiche d'une pièce : `piecePageOf(chemin de sa note)`. */
 export const PIECE_PAGE = 'ao.piece'
@@ -320,6 +325,40 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     ? [...groups].map(([label, list]) => ({ kind: 'cards', title: t('ao.fiche.pieces', { place: label, count: list.length }), cards: list.map((piece) => pieceCard(deps, piece)) }))
     : [{ kind: 'cards', title: t('ao.fiche.pieces.none.title'), actions: [{ id: 'import', label: t('ao.home.import'), icon: 'upload', primary: true, run: () => deps.importInto(analysis) }], empty: t('ao.fiche.pieces.none'), cards: [] }]
 
+  // L'émetteur : une carte par candidat, qui ouvre sa fiche (sa réponse, sa couverture).
+  const candidates = position === 'emetteur' ? await listCandidates(services.fs, analysis) : []
+  const candidateBlocks: HomeBlock[] = candidates.length
+    ? [
+        {
+          kind: 'cards',
+          title: t('ao.candidat.group', { count: candidates.length }),
+          cards: await Promise.all(candidates.map(async (name) => {
+            const own = pieces.filter((piece) => piece.destination.place === 'reponse' && piece.destination.candidate === name)
+            // Sa couverture des exigences, pour comparer les candidats d'un coup d'œil.
+            const rows = await candidateCoverage(services, analysis, name)
+            const covered = rows.filter((row) => row.status === 'cited' || row.status === 'addressed').length
+            const percent = rows.length ? Math.round((covered / rows.length) * 100) : null
+            return {
+              id: `candidat-${name}`,
+              title: name,
+              subtitle: t('ao.candidat.pieces', { count: own.length }),
+              icon: 'folder' as const,
+              ...(percent === null
+                ? {}
+                : {
+                    badges: [{ label: t('ao.candidat.badge', { percent }), tone: (percent >= 80 ? 'success' : percent >= 50 ? 'warning' : 'danger') as Tone }],
+                    facts: [
+                      { label: t('ao.candidat.stat.coverage'), value: `${covered} / ${rows.length}` },
+                      { label: t('ao.candidat.stat.absent'), value: String(rows.filter((row) => row.status === 'absent').length) }
+                    ]
+                  }),
+              ...(deps.showPage ? { open: { id: 'open', label: t('ao.candidat.open'), tooltip: t('ao.candidat.open'), run: () => deps.showPage?.(candidatePageOf(analysis, name)) } } : {}),
+              tags: ['reponse']
+            }
+          }))
+        }
+      ]
+    : []
   const dates: ListItem[] = calendar.dates.map((date, index) => ({
     id: `date-${index}`,
     title: t(`ao.calendar.kind.${date.kind}`),
@@ -360,10 +399,76 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     ],
     blocks: [
       { kind: 'stats', stats },
+      ...candidateBlocks,
       ...pieceBlocks,
       { kind: 'list', title: t('ao.fiche.calendar', { count: calendar.dates.length }), items: dates, empty: t('ao.fiche.calendar.none') },
       { kind: 'list', title: t('ao.fiche.requirements', { count: requirements.length }), items: reqItems, empty: t('ao.home.noRequirement') },
       { kind: 'list', title: t('ao.fiche.notes'), items: notes, empty: t('ao.fiche.notes.none') }
+    ]
+  }
+}
+
+/** Où une exigence est traitée : la pièce, puis l'endroit — sans redire la pièce quand l'endroit la nomme déjà. */
+const placeOf = (piece: string, where: string) => (where.startsWith(piece) ? where : `${piece} — ${where}`)
+
+const COVERAGE_TONE: Record<string, Tone> = { cited: 'success', addressed: 'success', partial: 'warning', absent: 'danger' }
+const COVERAGE_RANK: Record<string, number> = { absent: 0, partial: 1, addressed: 2, cited: 3 }
+
+/**
+ * La **fiche** d'un candidat (pour l'émetteur) : sa réponse — ses pièces, chacune avec ses
+ * boutons —, et la couverture des exigences de l'analyse par elle, maintenant : combien
+ * sont citées, traitées, à vérifier, absentes ; les absentes d'abord, chacune avec où elle
+ * est traitée et l'extrait ; un clic ouvre la fiche de l'exigence.
+ */
+export async function candidatePage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const services = deps.services()
+  const [rawNote = '', rawName = ''] = (param ?? '').split('&')
+  const note = decodeURIComponent(rawNote)
+  const name = decodeURIComponent(rawName)
+  const analysis = (await listAnalyses(services)).find((each) => each.note === note)
+  const missing = (back: ViewAction): PageView => ({ title: t('ao.candidat.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.candidat.missing') }] })
+  if (!analysis || !name) return missing({ id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) })
+  const back: ViewAction = { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) }
+  const pieces = (await listPieces(services, analysis)).filter((piece) => piece.destination.place === 'reponse' && piece.destination.candidate === name)
+  if (!pieces.length && !(await listCandidates(services.fs, analysis)).includes(name)) return missing(back)
+
+  const rows = (await candidateCoverage(services, analysis, name)).sort((a, b) => COVERAGE_RANK[a.status]! - COVERAGE_RANK[b.status]! || a.score - b.score)
+  const count = (status: string) => rows.filter((row) => row.status === status).length
+  const covered = count('cited') + count('addressed')
+  const unread = pieces.filter((piece) => piece.state !== 'lue').length
+  const items: ListItem[] = rows.map((row) => ({
+    id: row.requirement.filePath ?? row.requirement.id,
+    title: row.requirement.title ? `${row.requirement.id} — ${row.requirement.title}` : row.requirement.id,
+    when: t(`ao.verif.status.${row.status}`, { score: Math.round(row.score * 100) }),
+    detail: row.piece ? `${placeOf(row.piece.replace(/^\[\[[^|\]]*\|?|\]\]$/g, ''), describeWhere(row.where, t))}${row.excerpt ? ` · « ${row.excerpt.slice(0, 160)} »` : ''}` : t('ao.candidat.notFound'),
+    tone: COVERAGE_TONE[row.status] ?? 'neutral',
+    ...(row.requirement.filePath && deps.showPage ? { open: { id: 'open', label: t('ao.fiche.requirement.card'), run: () => deps.showPage?.(requirementPageOf(row.requirement.filePath!)) } } : {})
+  }))
+  const percent = rows.length ? Math.round((covered / rows.length) * 100) : null
+  return {
+    title: name,
+    back,
+    subtitle: t('ao.candidat.subtitle', { analysis: analysis.name }),
+    actions: [
+      { id: 'import', label: t('ao.candidat.import'), icon: 'upload', primary: pieces.length === 0, run: () => deps.importInto(analysis) },
+      ...(deps.runFor ? [{ id: 'report', label: t('ao.candidat.report'), icon: 'check' as const, run: () => deps.runFor?.('couverture-reponse', { analysis }) ?? Promise.resolve() }] : []),
+      ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
+    ],
+    search: { label: t('ao.candidat.search'), placeholder: t('ao.candidat.search.placeholder') },
+    filters: [{ id: 'a-lire', label: t('ao.page.filter.unread') }],
+    blocks: [
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('ao.candidat.stat.coverage'), value: percent === null ? '—' : `${percent} %`, icon: 'check', tone: percent === null ? 'neutral' : percent >= 80 ? 'success' : percent >= 50 ? 'warning' : 'danger', hint: t('ao.candidat.stat.coverage.hint', { covered, total: rows.length }) },
+          { label: t('ao.candidat.stat.partial'), value: String(count('partial')), icon: 'alert', tone: count('partial') ? 'warning' : 'success' },
+          { label: t('ao.candidat.stat.absent'), value: String(count('absent')), icon: 'cross', tone: count('absent') ? 'danger' : 'success' },
+          { label: t('ao.home.pieces'), value: unread ? t('ao.home.piecesRead', { count: pieces.length, read: pieces.length - unread }) : String(pieces.length), icon: 'file', ...(unread ? { tone: 'warning' as const } : {}) }
+        ]
+      },
+      { kind: 'cards', title: t('ao.candidat.response', { count: pieces.length }), empty: t('ao.candidat.noPiece'), cards: pieces.map((piece) => pieceCard(deps, piece)) },
+      { kind: 'list', title: t('ao.candidat.coverage', { count: rows.length }), items, empty: t(pieces.length ? 'ao.verif.couverture.noRequirements' : 'ao.candidat.noPiece') }
     ]
   }
 }
@@ -547,6 +652,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
   views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
+  views.page({ id: CANDIDATE_PAGE, title: t('ao.candidat.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => candidatePage(deps, param) })
   views.nav({ id: 'ao.analyses', label: t('ao.home.nav'), icon: 'folder', order: 10, ...(deps.showPage ? { page: ANALYSES_PAGE } : {}), run: () => openAnalyses(deps) })
 }
 

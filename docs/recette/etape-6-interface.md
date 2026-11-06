@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'un candidat, en page (v0.24.0)
+
+- [ ] Analyse en position **émetteur**, avec la réponse de deux candidats : la fiche de
+      l'analyse montre « Candidats (2) », chaque carte avec sa couverture (« Couverture
+      100 % » en vert, « 0 % » en rouge)
+- [ ] Un clic sur un candidat : sa fiche — sa réponse (ses pièces), les chiffres (exigences
+      couvertes, à vérifier, absentes, pièces), la couverture des exigences, les absentes
+      d'abord, avec l'endroit de la réponse et l'extrait
+- [ ] Un clic sur une exigence ouvre sa fiche ; « Retour » ramène au candidat
+- [ ] **Écrire le rapport de couverture** écrit la section du rapport de vérification
+
 ## La fiche d'une pièce, en page (v0.23.0)
 
 - [ ] Sur la fiche d'une analyse, un clic sur le nom d'une pièce : sa fiche s'ouvre,

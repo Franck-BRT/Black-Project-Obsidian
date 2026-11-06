@@ -357,6 +357,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.22.0 : un vrai **retour à la page précédente** (bouton, Alt + ←, souris)
 - v0.23.0 : la **fiche d'une pièce en page** (texte lisible, dates et délais, exigences
   extraites, chaque bouton agit sur elle)
+- v0.24.0 : la **fiche d'un candidat en page** (émetteur : sa réponse et la couverture des
+  exigences par elle, les absentes d'abord)
 
 ### Étape 7 — Livrables
 

@@ -14,7 +14,7 @@ import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modu
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
 import { aoModule, createAnalysis, importFiles } from '../src/modules/ao'
-import { exigencesModule } from '../src/modules/exigences'
+import { exigencesModule, requirementsAt } from '../src/modules/exigences'
 import { iaModule } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { typagePiecesModule } from '../src/modules/typage-pieces'
@@ -48,8 +48,18 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
   const enc = (text: string) => new TextEncoder().encode(text)
   const station = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: 'Agence spatiale', reference: 'AO-118' })
   await importFiles(services, station, [{ name: 'RC.md', bytes: enc(`# Règlement de la consultation\n\nLa date limite de remise des offres est fixée au ${inDays(12)}.\n`) }])
-  await createAnalysis(services, 'Maintenance antennes', { position: 'emetteur', buyer: 'Centre spatial', reference: 'MA-07' })
-  return { views, shown, station, run: (id: string) => commands.get(id)!.run(), importInto: (markdown: string) => importFiles(services, station, [{ name: 'CCTP.md', bytes: enc(markdown) }]) }
+  const maintenance = await createAnalysis(services, 'Maintenance antennes', { position: 'emetteur', buyer: 'Centre spatial', reference: 'MA-07' })
+  return {
+    views,
+    shown,
+    station,
+    maintenance,
+    run: (id: string) => commands.get(id)!.run(),
+    importInto: (markdown: string) => importFiles(services, station, [{ name: 'CCTP.md', bytes: enc(markdown) }]),
+    // La réponse d'un candidat, pour l'émetteur.
+    respond: (candidate: string, name: string, markdown: string) =>
+      importFiles(services, maintenance, [{ name, bytes: enc(markdown) }], async (request) => ({ places: Object.fromEntries(request.pending.map((piece) => [piece.path, 'reponse' as const])), candidate }))
+  }
 }
 
 const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
@@ -215,5 +225,47 @@ describe('le texte d’une pièce, lisible', () => {
     expect(text?.kind === 'cards' && text.cards[0]!.title).toMatch(/^Le texte \(\d+ caractères\)$/)
     const dates = view.blocks.find((block) => block.kind === 'list')
     expect(dates?.kind === 'list' && dates.items.map((item) => item.title)).toEqual(['Livraison, recette — sous 15 jours après la notification'])
+  })
+})
+
+describe('la fiche d’un candidat (émetteur), en page', () => {
+  async function fiche() {
+    const run = await start(memoryPlatform(), true)
+    const text = (body: string) => ({ fr: { body, lang: 'fr', origin: 'human' as const, reviewed: true, by: '', at: '', fromRev: 1 } })
+    const store = requirementsAt(`${run.maintenance.folder}/Exigences`)
+    await store.create({ category: 'MA', title: 'Antenne', text: text('Le titulaire doit fournir une antenne parabolique de 3,7 m de diamètre.') })
+    await store.create({ category: 'MA', title: 'Astreinte', text: text('Le titulaire doit assurer une astreinte téléphonique 24 heures sur 24.') })
+    await run.respond('Acme', 'Mémoire technique.md', '# Mémoire technique\n\nNous fournissons une antenne parabolique de 3,7 m de diamètre, livrée et posée.\n')
+    return run
+  }
+
+  it('la fiche de l’analyse montre ses candidats ; un clic ouvre la fiche du candidat', async () => {
+    const { views, shown, maintenance } = await fiche()
+    const view = await views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(maintenance.note))
+    const group = view.blocks.find((block) => block.kind === 'cards' && block.title === 'Candidats (1)')
+    const acme = group?.kind === 'cards' ? group.cards[0]! : null
+    expect(acme).toMatchObject({ title: 'Acme', subtitle: '1 pièce(s) de réponse', badges: [{ label: 'Couverture 50 %', tone: 'warning' }] })
+    await acme!.open!.run()
+    expect(shown.at(-1)).toBe(`ao.candidat?${encodeURIComponent(maintenance.note)}&Acme`)
+  })
+
+  it('sa réponse, et la couverture des exigences par elle : les absentes d’abord', async () => {
+    const { views, maintenance } = await fiche()
+    const page = views.pages().find((each) => each.id === 'ao.candidat')!
+    expect(page.parent).toBe('ao.analyses')
+    const view = await page.load(`${encodeURIComponent(maintenance.note)}&Acme`)
+    expect(view.title).toBe('Acme')
+    expect(view.back?.label).toBe('L’analyse « Maintenance antennes »')
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Exigences couvertes=50 %', 'À vérifier=0', 'Absentes=1', 'Pièces=1'])
+    const response = view.blocks.find((block) => block.kind === 'cards')
+    expect(response?.kind === 'cards' && response.cards.map((card) => card.title)).toEqual(['Mémoire technique.md'])
+    const coverage = view.blocks.find((block) => block.kind === 'list')
+    expect(coverage?.kind === 'list' && coverage.items.map((item) => `${item.title.split(' — ')[1]}:${item.tone}`)).toEqual(['Astreinte:danger', 'Antenne:success'])
+  })
+
+  it('un candidat inconnu : la page le dit', async () => {
+    const { views, maintenance } = await fiche()
+    expect((await views.pages().find((each) => each.id === 'ao.candidat')!.load(`${encodeURIComponent(maintenance.note)}&Inconnu`)).title).toBe('Candidat introuvable')
   })
 })
