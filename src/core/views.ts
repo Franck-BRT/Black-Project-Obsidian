@@ -50,6 +50,7 @@ export type IconName =
   | 'hide'
   | 'grip'
   | 'lock'
+  | 'back'
 
 /** Un bouton : ce qu'il dit, ce qu'il fait. */
 export interface ViewAction {
@@ -121,7 +122,7 @@ export interface ListItem {
 
 export type HomeBlock =
   | { kind: 'actions'; actions: ViewAction[] }
-  | { kind: 'cards'; cards: Card[]; empty?: string }
+  | { kind: 'cards'; cards: Card[]; empty?: string; /** Un intitulé au-dessus des cartes. */ title?: string; /** Des boutons à côté de l'intitulé (« Ajouter une action »). */ actions?: ViewAction[] }
   | { kind: 'stats'; stats: Stat[] }
   | { kind: 'list'; items: ListItem[]; empty?: string; /** Un intitulé au-dessus de la liste. */ title?: string }
   | { kind: 'message'; tone: Tone; text: string; actions?: ViewAction[] }
@@ -173,11 +174,25 @@ export interface PageSpec {
   id: string
   title: string
   icon: IconName
-  /** Appelé à chaque affichage ou rafraîchissement. */
-  load(): Promise<PageView>
+  /**
+   * Appelé à chaque affichage ou rafraîchissement. `param` : ce qui suit « ? » dans la page
+   * demandée — `showPage('workflows.fiche?wf-1')` montre la fiche du workflow `wf-1`.
+   */
+  load(param?: string): Promise<PageView>
+  /** La page dont elle dépend (la liste d'une fiche) : son entrée du menu reste marquée. */
+  parent?: string
+}
+
+/** L'identifiant d'une page avec son paramètre : `workflows.fiche?wf-1`. */
+export function pageWith(id: string, param: string): string {
+  return `${id}?${param}`
 }
 
 export interface PageView {
+  /** Le titre de la page, s'il dépend de ce qu'elle montre (le nom d'un workflow). */
+  title?: string
+  /** Un lien de retour, au-dessus (« ← Tous les workflows »). */
+  back?: ViewAction
   subtitle?: string
   /** Les boutons en tête de page. */
   actions?: ViewAction[]

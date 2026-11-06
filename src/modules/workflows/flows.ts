@@ -309,7 +309,7 @@ export async function setEnabled(session: Session, id: string, enabled: boolean)
 }
 
 export async function editWorkflow(session: Session, id: string): Promise<void> {
-  const { ui, t, notifier } = session
+  const { ui, t } = session
   for (;;) {
     const workflow = session.load().find((each) => each.id === id)
     if (!workflow) return
@@ -332,39 +332,151 @@ export async function editWorkflow(session: Session, id: string): Promise<void> 
       `${workflow.name} — ${t(workflow.enabled ? 'workflows.state.on' : 'workflows.state.off')}`
     )
     if (choice === null || choice === 'close') return
-    if (choice === 'general') {
-      const changed = await askGeneral(session, workflow, false)
-      if (changed) await store(session, changed)
-    } else if (choice === 'conditions') await editConditions(session, workflow)
+    if (choice === 'general') await editGeneral(session, id)
+    else if (choice === 'conditions') await editConditions(session, workflow)
     else if (choice === 'actions') await editActions(session, workflow)
     else if (choice === 'run') await runByHand(session, workflow)
     else if (choice === 'toggle') await store(session, { ...workflow, enabled: !workflow.enabled })
-    else if (choice === 'duplicate') {
-      const copy = { ...workflow, id: workflowId(session.now().getTime()), name: t('workflows.copyOf', { name: workflow.name }), created: session.now().toISOString(), runs: 0 }
-      delete copy.lastRun
-      await store(session, copy)
-      notifier.notify(t('workflows.duplicated', { name: copy.name }), 5000)
-    } else if (choice === 'delete') {
-      const sure = await ui.confirm({
-        title: t('workflows.delete.title'),
-        message: t('workflows.delete.message', { name: workflow.name }),
-        confirm: t('workflows.delete.confirm'),
-        cancel: t('workflows.cancel'),
-        danger: true
-      })
-      if (sure) {
-        await session.save(session.load().filter((each) => each.id !== id))
-        notifier.notify(t('workflows.deleted', { name: workflow.name }), 5000)
-        return
-      }
-    }
+    else if (choice === 'duplicate') await duplicateWorkflow(session, id)
+    else if (choice === 'delete' && (await deleteWorkflow(session, id))) return
   }
 }
 
-async function editConditions(session: Session, workflow: Workflow): Promise<void> {
+// ── Les opérations d'une fiche, une à une (la page d'un workflow, et la fiche en fenêtre) ──
+
+const find = (session: Session, id: string) => session.load().find((each) => each.id === id)
+
+/** Nom, mode et déclencheur. */
+export async function editGeneral(session: Session, id: string): Promise<void> {
+  const workflow = find(session, id)
+  if (!workflow) return
+  const changed = await askGeneral(session, workflow, false)
+  if (changed) await store(session, changed)
+}
+
+/** Une copie, nommée « Copie de … » ; rend son identifiant. */
+export async function duplicateWorkflow(session: Session, id: string): Promise<string | null> {
+  const workflow = find(session, id)
+  if (!workflow) return null
+  const copy = { ...workflow, id: workflowId(session.now().getTime()), name: session.t('workflows.copyOf', { name: workflow.name }), created: session.now().toISOString(), runs: 0 }
+  delete copy.lastRun
+  await store(session, copy)
+  session.notifier.notify(session.t('workflows.duplicated', { name: copy.name }), 5000)
+  return copy.id
+}
+
+/** Supprimer, après confirmation ; rend vrai s'il l'a été. */
+export async function deleteWorkflow(session: Session, id: string): Promise<boolean> {
   const { ui, t, notifier } = session
-  let current = workflow
+  const workflow = find(session, id)
+  if (!workflow) return false
+  const sure = await ui.confirm({
+    title: t('workflows.delete.title'),
+    message: t('workflows.delete.message', { name: workflow.name }),
+    confirm: t('workflows.delete.confirm'),
+    cancel: t('workflows.cancel'),
+    danger: true
+  })
+  if (!sure) return false
+  await session.save(session.load().filter((each) => each.id !== id))
+  notifier.notify(t('workflows.deleted', { name: workflow.name }), 5000)
+  return true
+}
+
+/** Ajouter une condition (sur un champ de ce qui est arrivé). */
+export async function addCondition(session: Session, id: string): Promise<void> {
+  const { ui, t, notifier } = session
+  const current = find(session, id)
+  if (!current) return
+  const fields = triggerSpec(current.trigger.kind)?.fields ?? []
+  if (!fields.length) {
+    notifier.notify(t('workflows.conditions.noField'), 8000)
+    return
+  }
+  const form: FormField[] = [
+    ...(current.conditions.length
+      ? [
+          {
+            kind: 'choice' as const,
+            key: 'join',
+            label: t('workflows.conditions.join'),
+            value: 'and',
+            options: [
+              { value: 'and', label: t('workflows.join.and') },
+              { value: 'or', label: t('workflows.join.or') }
+            ]
+          }
+        ]
+      : []),
+    { kind: 'choice', key: 'field', label: t('workflows.conditions.field'), options: fields.map((field) => ({ value: field.key, label: t(field.labelKey) })) },
+    { kind: 'choice', key: 'op', label: t('workflows.conditions.op'), value: 'is', options: CONDITION_OPS.map((op) => ({ value: op, label: t(`workflows.op.${op}`) })) },
+    { kind: 'text', key: 'value', label: t('workflows.conditions.value'), description: t('workflows.conditions.value.desc'), placeholder: 'CCTP, CCAP' }
+  ]
+  const values = await ui.askForm({ title: t('workflows.conditions.add'), fields: form, submit: t('workflows.conditions.add.submit') })
+  if (!values?.field) return
+  const op = (CONDITION_OPS as readonly string[]).includes(values.op ?? '') ? (values.op as ConditionOp) : 'is'
+  const condition: WorkflowCondition = { field: values.field, op, value: (values.value ?? '').trim(), ...(values.join === 'or' ? { join: 'or' as const } : {}) }
+  await store(session, { ...current, conditions: [...current.conditions, condition] })
+}
+
+/** Retirer une condition. */
+export async function removeCondition(session: Session, id: string, index: number): Promise<void> {
+  const current = find(session, id)
+  if (!current?.conditions[index]) return
+  await store(session, { ...current, conditions: current.conditions.filter((_, at) => at !== index) })
+}
+
+/** Ajouter une action, à la fin. */
+export async function addAction(session: Session, id: string): Promise<void> {
+  const { ui, t } = session
+  const current = find(session, id)
+  if (!current) return
+  const specs = allActions().filter((spec) => spec.id !== MANUAL)
+  const kind = await ui.pickOption(
+    specs.map((spec) => ({ value: spec.id, label: `${t(spec.labelKey)}${spec.needsAi ? ` · ${t('workflows.actions.ai')}` : ''}`, description: t(spec.descKey) })),
+    t('workflows.actions.pick')
+  )
+  const spec = kind ? actionSpec(kind) : undefined
+  if (!spec) return
+  const action = await askActionFields(session, spec, current, current.actions.length)
+  if (action) await store(session, { ...current, actions: [...current.actions, action] })
+}
+
+/** Modifier ce que reçoit une action. */
+export async function editAction(session: Session, id: string, index: number): Promise<void> {
+  const current = find(session, id)
+  const action = current?.actions[index]
+  const spec = action ? actionSpec(action.kind) : undefined
+  if (!current || !action || !spec) return
+  const changed = await askActionFields(session, spec, current, index, action)
+  if (!changed) return
+  const actions = [...current.actions]
+  actions[index] = changed
+  await store(session, { ...current, actions })
+}
+
+/** Monter (`-1`) ou descendre (`+1`) une action. */
+export async function moveAction(session: Session, id: string, index: number, delta: -1 | 1): Promise<void> {
+  const current = find(session, id)
+  const other = index + delta
+  if (!current?.actions[index] || !current.actions[other]) return
+  const actions = [...current.actions]
+  ;[actions[index], actions[other]] = [actions[other]!, actions[index]!]
+  await store(session, { ...current, actions })
+}
+
+/** Retirer une action. */
+export async function removeAction(session: Session, id: string, index: number): Promise<void> {
+  const current = find(session, id)
+  if (!current?.actions[index]) return
+  await store(session, { ...current, actions: current.actions.filter((_, at) => at !== index) })
+}
+
+async function editConditions(session: Session, workflow: Workflow): Promise<void> {
+  const { ui, t } = session
   for (;;) {
+    const current = find(session, workflow.id)
+    if (!current) return
     const choice = await ui.pickOption(
       [
         ...current.conditions.map((condition, index) => ({
@@ -378,40 +490,8 @@ async function editConditions(session: Session, workflow: Workflow): Promise<voi
       t('workflows.conditions.title', { name: current.name })
     )
     if (choice === null || choice === 'back') return
-    if (choice === 'add') {
-      const fields = triggerSpec(current.trigger.kind)?.fields ?? []
-      if (!fields.length) {
-        notifier.notify(t('workflows.conditions.noField'), 8000)
-        continue
-      }
-      const form: FormField[] = [
-        ...(current.conditions.length
-          ? [
-              {
-                kind: 'choice' as const,
-                key: 'join',
-                label: t('workflows.conditions.join'),
-                value: 'and',
-                options: [
-                  { value: 'and', label: t('workflows.join.and') },
-                  { value: 'or', label: t('workflows.join.or') }
-                ]
-              }
-            ]
-          : []),
-        { kind: 'choice', key: 'field', label: t('workflows.conditions.field'), options: fields.map((field) => ({ value: field.key, label: t(field.labelKey) })) },
-        { kind: 'choice', key: 'op', label: t('workflows.conditions.op'), value: 'is', options: CONDITION_OPS.map((op) => ({ value: op, label: t(`workflows.op.${op}`) })) },
-        { kind: 'text', key: 'value', label: t('workflows.conditions.value'), description: t('workflows.conditions.value.desc'), placeholder: 'CCTP, CCAP' }
-      ]
-      const values = await ui.askForm({ title: t('workflows.conditions.add'), fields: form, submit: t('workflows.conditions.add.submit') })
-      if (!values?.field) continue
-      const op = (CONDITION_OPS as readonly string[]).includes(values.op ?? '') ? (values.op as ConditionOp) : 'is'
-      const condition: WorkflowCondition = { field: values.field, op, value: (values.value ?? '').trim(), ...(values.join === 'or' ? { join: 'or' as const } : {}) }
-      current = { ...current, conditions: [...current.conditions, condition] }
-    } else {
-      current = { ...current, conditions: current.conditions.filter((_, index) => index !== Number(choice)) }
-    }
-    await store(session, current)
+    if (choice === 'add') await addCondition(session, current.id)
+    else await removeCondition(session, current.id, Number(choice))
   }
 }
 
@@ -455,8 +535,9 @@ async function askActionFields(session: Session, spec: ActionSpec, workflow: Wor
 
 async function editActions(session: Session, workflow: Workflow): Promise<void> {
   const { ui, t } = session
-  let current = workflow
   for (;;) {
+    const current = find(session, workflow.id)
+    if (!current) return
     const choice = await ui.pickOption(
       [
         ...current.actions.map((action, index) => ({ value: String(index), label: `${index + 1}. ${describeAction(action, t)}` })),
@@ -467,17 +548,7 @@ async function editActions(session: Session, workflow: Workflow): Promise<void> 
     )
     if (choice === null || choice === 'back') return
     if (choice === 'add') {
-      const specs = allActions().filter((spec) => spec.id !== MANUAL)
-      const kind = await ui.pickOption(
-        specs.map((spec) => ({ value: spec.id, label: `${t(spec.labelKey)}${spec.needsAi ? ` · ${t('workflows.actions.ai')}` : ''}`, description: t(spec.descKey) })),
-        t('workflows.actions.pick')
-      )
-      const spec = kind ? actionSpec(kind) : undefined
-      if (!spec) continue
-      const action = await askActionFields(session, spec, current, current.actions.length)
-      if (!action) continue
-      current = { ...current, actions: [...current.actions, action] }
-      await store(session, current)
+      await addAction(session, current.id)
       continue
     }
     const index = Number(choice)
@@ -492,20 +563,10 @@ async function editActions(session: Session, workflow: Workflow): Promise<void> 
       ],
       `${index + 1}. ${describeAction(action, t)}`
     )
-    const actions = [...current.actions]
-    if (what === 'edit') {
-      const spec = actionSpec(action.kind)
-      if (!spec) continue
-      const changed = await askActionFields(session, spec, current, index, action)
-      if (!changed) continue
-      actions[index] = changed
-    } else if (what === 'up' || what === 'down') {
-      const other = what === 'up' ? index - 1 : index + 1
-      ;[actions[index], actions[other]] = [actions[other]!, actions[index]!]
-    } else if (what === 'remove') actions.splice(index, 1)
-    else continue
-    current = { ...current, actions }
-    await store(session, current)
+    if (what === 'edit') await editAction(session, current.id, index)
+    else if (what === 'up') await moveAction(session, current.id, index, -1)
+    else if (what === 'down') await moveAction(session, current.id, index, 1)
+    else if (what === 'remove') await removeAction(session, current.id, index)
   }
 }
 

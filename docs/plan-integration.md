@@ -348,6 +348,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   Activer/Désactiver, le journal récent) au lieu de la liste en fenêtre
 - v0.18.0 : la page **IA** (la connexion en chiffres, une carte par usage avec « Choisir le
   modèle », ce qui se sert de l'IA) ; les réglages restent dans la fenêtre du module
+- v0.19.0 : la **fiche d'un workflow en page** (conditions et actions en cartes, chaque
+  bouton une opération) au lieu d'une suite de fenêtres ; pages à paramètre
 
 ### Étape 7 — Livrables
 

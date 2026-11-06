@@ -164,6 +164,13 @@ que la recherche lit aussi. Il la déclare par
   la recherche ou le filtre trie (un filtre ne vise que les cartes : une liste — un journal
   — ne compte pas avec lui). Un bloc vidé dit, à sa place, que rien ne correspond.
 
+Une page peut prendre un **paramètre** : `showPage('workflows.fiche?wf-1')` (`pageWith`)
+appelle `load('wf-1')` — la fiche d'un workflow. Elle peut donner son propre titre
+(`PageView.title` : le nom du workflow), un lien de retour (`back` : « ← Tous les
+workflows »), et dépendre d'une autre page (`PageSpec.parent`) : l'entrée du menu de la
+liste reste marquée. Des cartes peuvent former un groupe titré avec ses boutons
+(`title`, `actions` : « Actions (2) » et « Ajouter une action »).
+
 Une liste peut porter un intitulé (`title` : « Dernières exécutions »). Après chaque bouton
 d'action, l'interface redessine pages, tableau de bord et pastilles (`AfterAction`) : une
 action peut changer ce qui est montré sans toucher au coffre (activer un workflow).

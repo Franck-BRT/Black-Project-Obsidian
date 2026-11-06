@@ -24,9 +24,35 @@ import { cleanFolder } from '../../core/settings'
 import { registerBuiltins } from './builtins'
 import page from './doc/Workflows.md'
 import { WorkflowEngine } from './engine'
-import { browseWorkflows, createWorkflow, describeAction, describeTrigger, editWorkflow, exportToFile, importFromFile, localStamp, openJournal, pickAndRun, runByHand, setEnabled, type Session } from './flows'
+import {
+  addAction,
+  addCondition,
+  browseWorkflows,
+  createWorkflow,
+  deleteWorkflow,
+  describeAction,
+  describeCondition,
+  describeTrigger,
+  duplicateWorkflow,
+  editAction,
+  editGeneral,
+  editWorkflow,
+  exportToFile,
+  importFromFile,
+  localStamp,
+  moveAction,
+  openJournal,
+  pickAndRun,
+  removeAction,
+  removeCondition,
+  runByHand,
+  setEnabled,
+  type Session
+} from './flows'
 import { workflowsEn, workflowsFr } from './i18n'
-import { openWorkflows, registerWorkflowsHome } from './home'
+import { openWorkflows, registerWorkflowsHome, WORKFLOW_PAGE } from './home'
+import { pageWith } from '../../core/views'
+import { triggerSpec } from './registry'
 import type { Subject, Workflow } from './model'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -114,7 +140,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.3.0',
+  version: '0.4.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -161,12 +187,26 @@ export const workflowsModule: BlackModule = {
         describeTrigger: (workflow) => describeTrigger(workflow.trigger, t),
         describeActions: (workflow) => workflow.actions.map((action) => describeAction(action, t)),
         stamp: (iso) => localStamp(new Date(iso)),
-        edit: (id) => editWorkflow(current, id),
+        // Avec des pages, un workflow s'ouvre en fiche ; sinon, la fiche en fenêtre.
+        edit: async (id) => (showPage ? showPage(pageWith(WORKFLOW_PAGE, id)) : editWorkflow(current, id)),
         runNow: async (id) => {
           const workflow = load().find((each) => each.id === id)
           if (workflow) await runByHand(current, workflow)
         },
-        setEnabled: (id, enabled) => setEnabled(current, id, enabled)
+        setEnabled: (id, enabled) => setEnabled(current, id, enabled),
+        fiche: {
+          describeCondition: (workflow, index) => describeCondition(workflow.conditions[index]!, workflow.trigger.kind, t, index === 0),
+          canCondition: (workflow) => (triggerSpec(workflow.trigger.kind)?.fields ?? []).length > 0,
+          editGeneral: (id) => editGeneral(current, id),
+          addCondition: (id) => addCondition(current, id),
+          removeCondition: (id, index) => removeCondition(current, id, index),
+          addAction: (id) => addAction(current, id),
+          editAction: (id, index) => editAction(current, id, index),
+          moveAction: (id, index, delta) => moveAction(current, id, index, delta),
+          removeAction: (id, index) => removeAction(current, id, index),
+          duplicate: (id) => duplicateWorkflow(current, id),
+          remove: (id) => deleteWorkflow(current, id)
+        }
       }
     })
 

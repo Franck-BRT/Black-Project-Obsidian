@@ -44,9 +44,14 @@ Palette de commandes :
   d'exécutions, la dernière, « Dernière exécution en échec » s'il le faut — avec
   **Modifier**, **Exécuter**, **Activer** ou **Désactiver** ; puis les dernières lignes du
   journal. Une recherche (nom, déclencheur, action) et des filtres : actifs, désactivés, en
-  échec, planifiés, sur événement, manuels, tout seul, demander d'abord. **Modifier** ouvre
-  la fiche : nom, mode et déclencheur, conditions, actions (ajouter, modifier, monter,
-  descendre, retirer), exécuter maintenant, activer ou désactiver, dupliquer, supprimer ;
+  échec, planifiés, sur événement, manuels, tout seul, demander d'abord. Un clic sur un
+  workflow (son nom, ou **Modifier**) ouvre sa **fiche**, en page aussi, où tout se voit :
+  en tête **Exécuter**, **Activer** ou **Désactiver**, **Nom, mode et déclencheur**,
+  **Dupliquer** (la copie s'ouvre), **Supprimer** ; ses chiffres (état, mode, exécutions,
+  dernière exécution) ; ses **conditions**, chacune avec **Retirer**, et « Ajouter une
+  condition » ; ses **actions**, dans l'ordre, chacune avec **Modifier**, **Monter**,
+  **Descendre**, **Retirer**, et « Ajouter une action » ; ses dernières exécutions.
+  « ← Tous les workflows » ramène à la liste ;
 - **Exécuter un workflow** — à la main, sans attendre son déclencheur ; l'analyse est
   demandée quand il en faut une ;
 - **Journal des workflows** — chaque exécution, la plus récente en tête : ✅ fait,

@@ -119,10 +119,81 @@ describe('la page Workflows', () => {
       return null
     }
     const { views } = await start(platform, false)
-    expect(views.pages()).toHaveLength(1)
+    expect(views.pages().map((each) => each.id)).toEqual(['workflows.liste', 'workflows.fiche'])
     const nav = views.navEntries().find((entry) => entry.id === 'workflows')!
     expect(nav.page).toBeUndefined()
     await nav.run()
     expect(lists).toHaveLength(1)
+  })
+})
+
+describe('la fiche d’un workflow, en page', () => {
+  async function fiche() {
+    const platform = memoryPlatform()
+    let confirmed = true
+    platform.ui.confirm = async () => confirmed
+    const run = await start(platform, true)
+    // Deux actions et une condition, pour ranger.
+    const stored = run.settings.workflows!.workflows as Workflow[]
+    stored[0] = { ...stored[0]!, conditions: [{ field: 'type', op: 'is', value: 'CCTP' }], actions: [{ kind: 'notifier', fields: { message: 'Un' } }, { kind: 'notifier', fields: { message: 'Deux' } }] }
+    const page = run.views.pages().find((each) => each.id === 'workflows.fiche')!
+    return { ...run, page, platform, refuse: () => void (confirmed = false), stored: () => run.settings.workflows!.workflows as Workflow[] }
+  }
+
+  it('un clic sur un workflow ouvre sa fiche ; elle dépend de la liste (menu marqué)', async () => {
+    const { views, shown, page } = await fiche()
+    const card = (await views.pages()[0]!.load()).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))[0]!
+    await card.open!.run()
+    await card.actions!.find((action) => action.id === 'edit')!.run()
+    expect(shown).toEqual(['workflows.fiche?wf-1', 'workflows.fiche?wf-1'])
+    expect(page.parent).toBe('workflows.liste')
+  })
+
+  it('tout d’un coup d’œil : titre, retour, boutons, chiffres, conditions, actions, historique', async () => {
+    const { page } = await fiche()
+    const view = await page.load('wf-1')
+    expect(view.title).toBe('Rappel du matin')
+    expect(view.back?.label).toBe('Tous les workflows')
+    expect(view.actions?.map((action) => action.id)).toEqual(['run', 'disable', 'general', 'duplicate', 'delete'])
+    const groups = view.blocks.filter((block) => block.kind === 'cards')
+    expect(groups.map((block) => block.kind === 'cards' && block.title)).toEqual(['Conditions (1)', 'Actions (2), dans l’ordre'])
+    const actions = groups[1]!.kind === 'cards' ? groups[1]!.cards : []
+    expect(actions.map((card) => card.actions!.map((action) => action.id))).toEqual([
+      ['edit', 'down', 'remove'],
+      ['edit', 'up', 'remove']
+    ])
+    const history = view.blocks.find((block) => block.kind === 'list')
+    expect(history?.kind === 'list' && history.items.map((item) => item.tone)).toEqual(['danger', 'success'])
+  })
+
+  it('chaque bouton fait une chose : descendre, retirer une action, retirer une condition', async () => {
+    const { page, stored } = await fiche()
+    const groups = (await page.load('wf-1')).blocks.filter((block) => block.kind === 'cards')
+    const first = groups[1]!.kind === 'cards' ? groups[1]!.cards[0]! : null
+    await first!.actions!.find((action) => action.id === 'down')!.run()
+    expect(stored()[0]!.actions.map((action) => action.fields.message)).toEqual(['Deux', 'Un'])
+    const again = (await page.load('wf-1')).blocks.filter((block) => block.kind === 'cards')
+    await (again[1]!.kind === 'cards' ? again[1]!.cards[1]! : null)!.actions!.find((action) => action.id === 'remove')!.run()
+    expect(stored()[0]!.actions.map((action) => action.fields.message)).toEqual(['Deux'])
+    await (again[0]!.kind === 'cards' ? again[0]!.cards[0]! : null)!.actions![0]!.run()
+    expect(stored()[0]!.conditions).toEqual([])
+  })
+
+  it('dupliquer ouvre la copie ; supprimer (confirmé) revient à la liste ; un workflow disparu le dit', async () => {
+    const { page, shown, stored, refuse } = await fiche()
+    const view = await page.load('wf-1')
+    await view.actions!.find((action) => action.id === 'duplicate')!.run()
+    expect(stored()).toHaveLength(3)
+    expect(shown.at(-1)).toBe(`workflows.fiche?${stored()[2]!.id}`)
+    await view.actions!.find((action) => action.id === 'delete')!.run()
+    expect(stored().map((each) => each.id)).not.toContain('wf-1')
+    expect(shown.at(-1)).toBe('workflows.liste')
+    refuse()
+    const other = await page.load('wf-2')
+    await other.actions!.find((action) => action.id === 'delete')!.run()
+    expect(stored().map((each) => each.id)).toContain('wf-2')
+    const missing = await page.load('wf-1')
+    expect(missing.title).toBe('Workflow introuvable')
+    expect(missing.blocks[0]).toMatchObject({ kind: 'message', tone: 'warning' })
   })
 })

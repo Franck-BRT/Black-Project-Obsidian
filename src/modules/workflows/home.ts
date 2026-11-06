@@ -9,13 +9,15 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import type { Badge, Card, HomeSectionView, ListItem, PageView, Tone, ViewsRegistrar } from '../../core/views'
+import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { journalPath } from './engine'
 import type { Workflow } from './model'
 import type { Translate } from './registry'
 
 /** La page des workflows. */
 export const WORKFLOWS_PAGE = 'workflows.liste'
+/** La fiche d'un workflow : `pageWith(WORKFLOW_PAGE, id)`. */
+export const WORKFLOW_PAGE = 'workflows.fiche'
 
 /** Ce que la page sait faire d'un workflow : la fenêtre de modification, l'exécution, l'activation. */
 export interface WorkflowsPageDeps {
@@ -27,6 +29,25 @@ export interface WorkflowsPageDeps {
   edit(id: string): Promise<void>
   runNow(id: string): Promise<void>
   setEnabled(id: string, enabled: boolean): Promise<void>
+  /** La fiche d'un workflow, en page : ce qu'elle sait faire, une opération à la fois. */
+  fiche?: WorkflowFicheDeps
+}
+
+export interface WorkflowFicheDeps {
+  describeCondition(workflow: Workflow, index: number): string
+  /** Le déclencheur a-t-il des champs à tester (sinon, pas de condition possible) ? */
+  canCondition(workflow: Workflow): boolean
+  editGeneral(id: string): Promise<void>
+  addCondition(id: string): Promise<void>
+  removeCondition(id: string, index: number): Promise<void>
+  addAction(id: string): Promise<void>
+  editAction(id: string, index: number): Promise<void>
+  moveAction(id: string, index: number, delta: -1 | 1): Promise<void>
+  removeAction(id: string, index: number): Promise<void>
+  /** Une copie ; rend son identifiant. */
+  duplicate(id: string): Promise<string | null>
+  /** Supprimer, après confirmation ; rend vrai s'il l'a été. */
+  remove(id: string): Promise<boolean>
 }
 
 const TONES: Record<string, Tone> = { '✅': 'success', '❌': 'danger', '⏭️': 'neutral', '⛔': 'warning' }
@@ -154,6 +175,96 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
   }
 }
 
+/**
+ * La **fiche** d'un workflow, en page : en tête, Exécuter, Activer ou Désactiver, « Nom,
+ * mode et déclencheur », Dupliquer, Supprimer ; ses chiffres ; ses conditions et ses
+ * actions, chacune avec ses boutons (modifier, monter, descendre, retirer) ; et ses
+ * dernières exécutions. Plus de suite de fenêtres : tout se voit, chaque bouton fait une chose.
+ */
+export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & { fiche: WorkflowFicheDeps } }, id: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const { page } = deps
+  const fiche = page.fiche
+  const back: ViewAction = { id: 'back', label: t('workflows.page.back'), run: () => deps.showPage?.(WORKFLOWS_PAGE) }
+  const workflow = page.load().find((each) => each.id === id)
+  if (!workflow) return { title: t('workflows.page.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('workflows.page.missing') }] }
+  const history = journalItems(await readJournal(deps), 200).filter((item) => item.title === workflow.name)
+  const journal = { id: 'journal', label: t('workflows.home.journal'), run: deps.openJournal }
+  const last = workflow.lastRun ? page.stamp(workflow.lastRun) : (history[0]?.when ?? '—')
+  const failed = history[0]?.tone === 'danger'
+  const count = workflow.actions.length
+  return {
+    title: workflow.name,
+    back,
+    subtitle: t('workflows.page.fiche.subtitle', { trigger: page.describeTrigger(workflow) }),
+    actions: [
+      { id: 'run', label: t('workflows.page.run'), icon: 'play', primary: true, run: () => page.runNow(workflow.id) },
+      workflow.enabled
+        ? { id: 'disable', label: t('workflows.edit.disable'), icon: 'hide', run: () => page.setEnabled(workflow.id, false) }
+        : { id: 'enable', label: t('workflows.edit.enable'), icon: 'check', run: () => page.setEnabled(workflow.id, true) },
+      { id: 'general', label: t('workflows.edit.general'), icon: 'edit', run: () => fiche.editGeneral(workflow.id) },
+      {
+        id: 'duplicate',
+        label: t('workflows.edit.duplicate'),
+        icon: 'copy',
+        run: async () => {
+          const copy = await fiche.duplicate(workflow.id)
+          if (copy) deps.showPage?.(pageWith(WORKFLOW_PAGE, copy))
+        }
+      },
+      {
+        id: 'delete',
+        label: t('workflows.edit.delete'),
+        icon: 'trash',
+        run: async () => {
+          if (await fiche.remove(workflow.id)) deps.showPage?.(WORKFLOWS_PAGE)
+        }
+      }
+    ],
+    blocks: [
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('workflows.column.state'), value: t(workflow.enabled ? 'workflows.state.on' : 'workflows.state.off'), icon: workflow.enabled ? 'check' : 'hide', tone: workflow.enabled ? 'success' : 'neutral' },
+          { label: t('workflows.column.mode'), value: t(`workflows.mode.${workflow.mode}`), icon: 'flow', hint: t(`workflows.mode.${workflow.mode}.desc`) },
+          { label: t('workflows.page.runs'), value: String(Math.max(workflow.runs ?? 0, history.length)), icon: 'play' },
+          { label: t('workflows.column.last'), value: last, icon: 'clock', ...(failed ? { tone: 'danger' as const, hint: t('workflows.page.failed') } : {}) }
+        ]
+      },
+      {
+        kind: 'cards',
+        title: t('workflows.page.fiche.conditions', { count: workflow.conditions.length }),
+        actions: fiche.canCondition(workflow) ? [{ id: 'add-condition', label: t('workflows.conditions.add'), icon: 'plus', run: () => fiche.addCondition(workflow.id) }] : [],
+        empty: t(fiche.canCondition(workflow) ? 'workflows.edit.conditions.none' : 'workflows.conditions.noField'),
+        cards: workflow.conditions.map((_, index) => ({
+          id: `condition-${index}`,
+          title: fiche.describeCondition(workflow, index),
+          icon: 'check',
+          actions: [{ id: 'remove', label: t('workflows.actions.remove'), icon: 'trash', run: () => fiche.removeCondition(workflow.id, index) }]
+        }))
+      },
+      {
+        kind: 'cards',
+        title: t('workflows.page.fiche.actions', { count }),
+        actions: [{ id: 'add-action', label: t('workflows.actions.add'), icon: 'plus', primary: count === 0, run: () => fiche.addAction(workflow.id) }],
+        empty: t('workflows.edit.actions.none'),
+        cards: page.describeActions(workflow).map((label, index) => ({
+          id: `action-${index}`,
+          title: `${index + 1}. ${label}`,
+          icon: 'play',
+          actions: [
+            { id: 'edit', label: t('workflows.actions.edit'), icon: 'edit', run: () => fiche.editAction(workflow.id, index) },
+            ...(index > 0 ? [{ id: 'up', label: t('workflows.actions.up'), icon: 'up' as const, run: () => fiche.moveAction(workflow.id, index, -1) }] : []),
+            ...(index < count - 1 ? [{ id: 'down', label: t('workflows.actions.down'), icon: 'down' as const, run: () => fiche.moveAction(workflow.id, index, 1) }] : []),
+            { id: 'remove', label: t('workflows.actions.remove'), icon: 'trash', run: () => fiche.removeAction(workflow.id, index) }
+          ]
+        }))
+      },
+      { kind: 'list', title: t('workflows.page.fiche.history'), items: history.slice(0, 10).map((item) => ({ ...item, open: journal })), empty: t('workflows.page.fiche.never') }
+    ]
+  }
+}
+
 /** Les workflows : leur page, quand la plateforme en a ; sinon la liste en fenêtre. */
 export async function openWorkflows(showPage: ((id: string) => void) | undefined, browse: () => Promise<void>): Promise<void> {
   if (showPage) showPage(WORKFLOWS_PAGE)
@@ -197,6 +308,8 @@ export function registerWorkflowsHome(views: ViewsRegistrar | undefined, deps: H
   if (deps.page) {
     const page = deps.page
     views.page({ id: WORKFLOWS_PAGE, title: t('workflows.page.title'), icon: 'flow', load: () => workflowsPage({ ...deps, page }) })
+    const fiche = page.fiche
+    if (fiche) views.page({ id: WORKFLOW_PAGE, title: t('workflows.page.fiche.title'), icon: 'flow', parent: WORKFLOWS_PAGE, load: (id) => workflowPage({ ...deps, page: { ...page, fiche } }, id) })
   }
   views.nav({ id: 'workflows', label: t('workflows.name'), icon: 'flow', order: 30, ...withPage, run: open })
   const group = t('workflows.name')

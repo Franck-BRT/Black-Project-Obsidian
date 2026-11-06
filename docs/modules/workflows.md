@@ -76,6 +76,16 @@ la tuile, la commande `liste` et le lien « Tous les workflows » du tableau de 
 l'ouvrent par `context.showPage` ; sans page chez la plateforme, la liste en fenêtre reste.
 Tests : `test/workflows-page.test.ts`.
 
+**La fiche en page (Black Projects 0.19.0)** : `workflows.fiche?<id>` (`pageWith`), page qui
+dépend de la liste (`parent`). Titre : le nom du workflow ; « ← Tous les workflows » ; en
+tête Exécuter, Activer/Désactiver, Nom, mode et déclencheur, Dupliquer (ouvre la copie),
+Supprimer (confirmé, revient à la liste) ; les chiffres ; les conditions et les actions en
+groupes de cartes titrés, chaque carte avec ses boutons ; l'historique du workflow. Les
+opérations sont une à une dans `flows.ts` (`editGeneral`, `addCondition`,
+`removeCondition`, `addAction`, `editAction`, `moveAction`, `removeAction`,
+`duplicateWorkflow`, `deleteWorkflow`) ; la fiche en fenêtre (`editWorkflow`, sans page
+chez la plateforme) s'en sert aussi. Un workflow disparu : la page le dit.
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

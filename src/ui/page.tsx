@@ -58,7 +58,7 @@ export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter
   return { blocks: out, hits, total }
 }
 
-export function ModulePage({ spec, host, generation }: { spec: PageSpec; host: AppHost; generation: number }) {
+export function ModulePage({ spec, param, host, generation, onTitle }: { spec: PageSpec; param?: string; host: AppHost; generation: number; onTitle?: (title: string | undefined) => void }) {
   const { t } = host
   const [state, setState] = useState<State>({ status: 'loading' })
   const [query, setQuery] = useState('')
@@ -67,18 +67,24 @@ export function ModulePage({ spec, host, generation }: { spec: PageSpec; host: A
     let alive = true
     setState((previous) => (previous.status === 'ready' ? previous : { status: 'loading' }))
     spec
-      .load()
-      .then((view) => alive && setState({ status: 'ready', view }))
+      .load(param)
+      .then((view) => {
+        if (!alive) return
+        setState({ status: 'ready', view })
+        onTitle?.(view.title)
+      })
       .catch((error: unknown) => alive && setState({ status: 'failed', reason: error instanceof Error ? error.message : String(error) }))
     return () => {
       alive = false
     }
-  }, [spec, generation])
-  // Une autre page : on repart sans recherche ni filtre.
+  }, [spec, param, generation])
+  // Une autre page : on repart sans recherche ni filtre, et sans le titre de la précédente.
   useEffect(() => {
     setQuery('')
     setFilter(null)
-  }, [spec.id])
+    setState({ status: 'loading' })
+    onTitle?.(undefined)
+  }, [spec.id, param])
 
   if (state.status === 'loading') return <div class="bp-skeleton" aria-busy="true" aria-label={t('ui.loading')} />
   if (state.status === 'failed') return <BlockView block={{ kind: 'message', tone: 'danger', text: t('ui.section.failed', { reason: state.reason }) }} t={t} now={host.now()} locale={host.locale} />
@@ -88,6 +94,12 @@ export function ModulePage({ spec, host, generation }: { spec: PageSpec; host: A
   const searchId = `bp-page-search-${spec.id}`
   return (
     <div class="bp-page" data-page={spec.id}>
+      {view.back && (
+        <button type="button" class="bp-back" onClick={() => void view.back!.run()}>
+          <Icon name="back" />
+          {view.back.label}
+        </button>
+      )}
       {view.subtitle && <p class="bp-page-sub">{view.subtitle}</p>}
       {!!view.actions?.length && (
         <div class="bp-actions bp-page-actions">

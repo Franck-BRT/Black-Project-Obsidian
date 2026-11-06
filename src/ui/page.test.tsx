@@ -53,6 +53,7 @@ describe('une page de module dans l’onglet', () => {
     const views = new ViewsRegistry()
     views.page({ id: 'ao.analyses', title: 'Analyses d’appels d’offres', icon: 'folder', load: async () => ({ blocks: BLOCKS }) })
     views.nav({ id: 'ao.analyses', label: 'Analyses', icon: 'folder', order: 10, page: 'ao.analyses', run: () => undefined })
+    views.page({ id: 'ao.fiche', title: 'Analyse', icon: 'folder', parent: 'ao.analyses', load: async (param) => ({ title: `Fiche ${param}`, blocks: [] }) })
     return {
       t,
       locale: 'fr-FR',
@@ -80,6 +81,12 @@ describe('une page de module dans l’onglet', () => {
     expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Analyses<\/button>/)
     // Le temps de charger : un squelette.
     expect(html).toContain('bp-skeleton')
+  })
+
+  it('une page avec un paramètre (« ao.fiche?42 ») : la page trouvée, l’entrée de sa page parente marquée', () => {
+    const html = renderToString(<App host={host()} generation={0} page="ao.fiche?42" />)
+    expect(html).toMatch(/<h1 class="bp-hello"><svg[^>]*>.*?<\/svg>Analyse<\/h1>/)
+    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Analyses<\/button>/)
   })
 
   it('une page inconnue (module désactivé) : l’accueil', () => {

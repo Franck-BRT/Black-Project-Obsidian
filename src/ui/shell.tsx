@@ -31,6 +31,8 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
   const [panel, setPanel] = useState(false)
   const [local, setLocal] = useState(0)
   const [menuEditing, setMenuEditing] = useState(false)
+  // Le titre d'une page qui dépend de ce qu'elle montre (le nom d'un workflow).
+  const [pageTitle, setPageTitle] = useState<string | undefined>(undefined)
   const [page, setPageState] = useState<Page>(wanted)
   useEffect(() => setPageState(wanted), [wanted, request])
   // La page défile seule (la navigation reste en place) : une nouvelle page part du haut.
@@ -57,9 +59,14 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
     setAppearance(next)
     void host.saveAppearance(next)
   }
-  // La page d'un module, si c'en est une ; une page inconnue (module désactivé) : l'accueil.
-  const modulePage = page === 'home' || page === 'dashboard' ? undefined : host.pages().find((each) => each.id === page)
-  const shown = modulePage ? page : page === 'dashboard' ? 'dashboard' : 'home'
+  // La page d'un module, si c'en est une (« id?paramètre ») ; une page inconnue (module désactivé) : l'accueil.
+  const cut = page.indexOf('?')
+  const pageId = cut < 0 ? page : page.slice(0, cut)
+  const param = cut < 0 ? undefined : page.slice(cut + 1)
+  const modulePage = pageId === 'home' || pageId === 'dashboard' ? undefined : host.pages().find((each) => each.id === pageId)
+  const shown = modulePage ? pageId : page === 'dashboard' ? 'dashboard' : 'home'
+  // L'entrée du menu marquée : celle de la page, ou de celle dont elle dépend (la liste d'une fiche).
+  const current = modulePage?.parent ?? shown
   const now = host.now()
   const today = now.toLocaleDateString(host.locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -90,7 +97,7 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
               host={host}
               generation={generation + local}
               tiles={tiles}
-              page={shown}
+              page={current}
               goHome={() => setPage('home')}
               goDashboard={() => setPage('dashboard')}
               editing={menuEditing}
@@ -107,7 +114,7 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
                   {modulePage ? (
                     <>
                       <Icon name={modulePage.icon} />
-                      {modulePage.title}
+                      {pageTitle ?? modulePage.title}
                     </>
                   ) : shown === 'home' ? (
                     t(greetingKey(now))
@@ -130,7 +137,7 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
               </div>
             </header>
             {modulePage ? (
-              <ModulePage spec={modulePage} host={host} generation={generation + local} />
+              <ModulePage spec={modulePage} param={param} host={host} generation={generation + local} onTitle={setPageTitle} />
             ) : shown === 'home' ? (
               <Springboard host={host} generation={generation + local} tiles={tiles} />
             ) : (

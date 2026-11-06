@@ -197,8 +197,8 @@ export function BlockView({ block, t, now, locale }: { block: HomeBlock; t: Tran
           ))}
         </div>
       )
-    case 'cards':
-      return block.cards.length ? (
+    case 'cards': {
+      const cards = block.cards.length ? (
         <div class="bp-cards">
           {block.cards.map((card) => (
             <CardView key={card.id} card={card} t={t} now={now} locale={locale} />
@@ -207,6 +207,23 @@ export function BlockView({ block, t, now, locale }: { block: HomeBlock; t: Tran
       ) : (
         <p class="bp-empty">{block.empty ?? t('ui.empty')}</p>
       )
+      if (!block.title && !block.actions?.length) return cards
+      return (
+        <section class="bp-group">
+          <div class="bp-group-head">
+            {block.title && <h2 class="bp-group-title">{block.title}</h2>}
+            {!!block.actions?.length && (
+              <div class="bp-actions">
+                {block.actions.map((action) => (
+                  <ActionButton key={action.id} action={action} />
+                ))}
+              </div>
+            )}
+          </div>
+          {cards}
+        </section>
+      )
+    }
     case 'stats':
       return (
         <div class="bp-stats">

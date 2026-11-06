@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'un workflow, en page (v0.19.0)
+
+- [ ] Sur la page Workflows, un clic sur le nom d'un workflow (ou **Modifier**) : sa fiche
+      s'ouvre en page, titrée de son nom ; l'entrée Workflows du menu reste marquée ;
+      « ← Tous les workflows » ramène à la liste
+- [ ] En tête : Exécuter, Activer/Désactiver, Nom, mode et déclencheur, Dupliquer,
+      Supprimer ; les chiffres (état, mode, exécutions, dernière exécution)
+- [ ] « Ajouter une action » : choisir l'action, remplir, enregistrer — la carte apparaît ;
+      **Monter**, **Descendre**, **Modifier**, **Retirer** sur une action ; l'ordre change
+      aussitôt
+- [ ] « Ajouter une condition » (déclencheur sur événement) puis **Retirer** ; à la main ou
+      à heure fixe : la page dit qu'aucune condition n'est possible
+- [ ] **Dupliquer** ouvre la copie ; **Supprimer** demande confirmation puis revient à la
+      liste ; « Ses dernières exécutions » ne montre que ce workflow
+
 ## La page « IA » (v0.18.0)
 
 - [ ] L'entrée **IA** du menu : la page **IA** s'ouvre dans l'onglet (plus la fenêtre de

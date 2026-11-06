@@ -105,6 +105,11 @@ const COMPONENTS_CSS = String.raw`
 .bp-page-body { display: flex; flex-direction: column; gap: 18px; }
 .bp-page-body > * { margin: 0; }
 .bp-page-body .bp-cards { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.bp-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin: -14px 0 -6px -8px; padding: 6px 8px; border: 0; border-radius: var(--bp-radius-small); background: transparent; color: var(--bp-accent); cursor: pointer; font-weight: 600; }
+.bp-back:hover { background: var(--bp-accent-soft); }
+.bp-group { display: flex; flex-direction: column; gap: 12px; }
+.bp-group-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bp-group-title { margin: 0; font-size: 1.12em; font-weight: 700; }
 
 /* Le tableau de bord rangé par l'utilisateur */
 .bp-dashboard { display: flex; flex-direction: column; gap: 18px; }
