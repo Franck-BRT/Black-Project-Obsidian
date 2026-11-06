@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La qualité des exigences, en page (v0.30.0)
+
+- [ ] Fiche d'une analyse avec des exigences → **Qualité du dossier** : sa page, sans
+      fenêtre ni note ouverte ; « Calculée à l'ouverture de la page »
+- [ ] Les chiffres (exigences, note moyenne avec ses étoiles, faibles, non vérifiables,
+      doublons probables) ; une carte par exigence, la plus faible en tête, avec ses
+      défauts, ses étoiles, les axes qui lui coûtent
+- [ ] Filtres **Faibles**, **Non vérifiables**, **Doublons probables**, **Bonnes** ; un clic
+      sur une exigence ouvre sa fiche, « Retour » ramène à la qualité
+- [ ] Défauts les plus fréquents, doublons probables, axes de la norme, répartition des
+      notes (sans les lignes à zéro)
+- [ ] **Écrire le rapport** : la note est écrite, Obsidian ne l'ouvre pas ; le bouton
+      devient « Mettre à jour le rapport », « Ouvrir le rapport » apparaît
+- [ ] Une analyse sans exigence : un message dit comment en avoir
+
 ## Le questionnaire, en page (v0.29.0)
 
 - [ ] IA réglée ; fiche d'une analyse → **Questionnaire** : sa page, les six thèmes « Pas

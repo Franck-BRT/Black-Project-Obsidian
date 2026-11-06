@@ -13,7 +13,7 @@ import { parseFrontmatter } from '../../core/frontmatter'
 import type { Notifier, Ui } from '../../core/ports'
 import { pageWith, type Card, type HomeBlock, type HomeSectionView, type IconName, type ListItem, type PageView, type Stat, type TileBadge, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { typeLabel } from '../typage-pieces'
-import { assessAll, requirementLanguages, requirementPageOf, requirementsAt } from '../exigences'
+import { assessAll, describeFinding, isWeak, probableDuplicates, QUALITY_AXES, requirementLanguages, requirementPageOf, requirementsAt, type QualityRun } from '../exigences'
 import { aiClient } from '../ia'
 import { calendarOf, calendarPath, delayLabel, writeCalendar } from './calendar'
 import { QUESTIONNAIRE, questionnairePath, questionsFolder, QUESTION_TYPE, QUESTIONNAIRE_TYPE, type QuestionKey } from './ask/dossier'
@@ -73,6 +73,10 @@ export const questionnairePageOf = (note: string): string => pageWith(QUESTIONNA
 /** La page d'un thème du questionnaire : `questionnaireItemPageOf(chemin, thème)`. */
 export const QUESTIONNAIRE_ITEM_PAGE = 'ao.questionnaire.theme'
 export const questionnaireItemPageOf = (note: string, key: string): string => pageWith(QUESTIONNAIRE_ITEM_PAGE, `${encodeURIComponent(note)}&${encodeURIComponent(key)}`)
+
+/** La page de la qualité des exigences d'une analyse : `qualityPageOf(chemin de son rapport)`. */
+export const QUALITY_PAGE = 'ao.qualite'
+export const qualityPageOf = (note: string): string => pageWith(QUALITY_PAGE, encodeURIComponent(note))
 
 /** La page des analyses. */
 export const ANALYSES_PAGE = 'ao.analyses'
@@ -310,7 +314,8 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
         { id: 'update', label: t('ao.fiche.update'), icon: 'refresh', run: run('mettre-a-jour') },
         { id: 'calendar', label: t('ao.home.calendar'), icon: 'calendar', run: run('calendrier') },
         { id: 'verify', label: t('ao.tile.verify'), icon: 'check', run: run('verifier-exigences') },
-        { id: 'quality', label: t('ao.tile.quality'), icon: 'star', run: run('qualite-exigences') },
+        // La qualité a sa page : calculée à l'ouverture, le rapport s'écrit de là.
+        { id: 'quality', label: t('ao.tile.quality'), icon: 'star', run: deps.showPage ? () => deps.showPage?.(qualityPageOf(qualityPath(analysis))) : run('qualite-exigences') },
         ...(ai
           ? [
               { id: 'ask', label: t('ao.home.ask'), icon: 'chat' as const, run: () => deps.ask(analysis) },
@@ -428,7 +433,7 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     title: baseName(path).replace(/\.md$/, ''),
     detail: path.slice(analysis.folder.length + 1),
     open: deps.showPage
-      ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(path === questionnairePath(analysis) ? questionnairePageOf(path) : producedPageOf(path)) }
+      ? { id: 'open', label: t('ao.note.page.open'), run: () => deps.showPage?.(path === questionnairePath(analysis) ? questionnairePageOf(path) : path === qualityPath(analysis) ? qualityPageOf(path) : producedPageOf(path)) }
       : { id: 'open', label: t('ao.fiche.note.open'), run: () => deps.ui.openNote(path) }
   }))
 
@@ -686,6 +691,7 @@ export async function producedPage(deps: HomeDeps, param: string | undefined): P
   const type = parseFrontmatter(markdown).data['bp-type']
   if (type === QUESTION_TYPE && readQuestion(markdown, questionWords(t))) return questionPage(deps, param)
   if (type === QUESTIONNAIRE_TYPE && note === questionnairePath(analysis)) return questionnairePage(deps, param)
+  if (note === qualityPath(analysis)) return qualityPage(deps, param)
   const blocks = noteBlocks(markdown, opener)
   const heading = /^#\s+(.+)$/m.exec(markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, ''))?.[1]?.trim()
 
@@ -928,6 +934,139 @@ export async function questionnaireItemPage(deps: HomeDeps, param: string | unde
   return { ...head, ...(await answerView(deps, analysis, item, [question])) }
 }
 
+/** La formulation d'une exigence, dans sa langue d'origine. */
+const wordingOfRequirement = (run: QualityRun) => run.requirement.text[run.requirement.sourceLang]?.body ?? Object.values(run.requirement.text)[0]?.body ?? run.requirement.title ?? ''
+const percent = (value: number) => `${Math.round(value * 100)} %`
+const capitalized = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+const toneOfScore = (value: number): Tone => (value >= 0.9 ? 'success' : value >= 0.6 ? 'warning' : 'danger')
+
+/**
+ * La **page de la qualité** des exigences d'une analyse, calculée à l'ouverture (sur leur
+ * seule rédaction, comme le rapport) : ses chiffres (exigences, note moyenne, faibles, non
+ * vérifiables, doublons probables) ; une carte par exigence, les plus faibles d'abord —
+ * ses étoiles, sa formulation, ce qui lui coûte —, un clic ouvre sa fiche ; puis les
+ * défauts les plus fréquents, les doublons probables, chaque axe de la norme, la
+ * répartition des notes. En tête : écrire (ou mettre à jour) le rapport sans quitter la page, l'ouvrir,
+ * relire avec l'IA, l'analyse.
+ */
+export async function qualityPage(deps: HomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const services = deps.services()
+  const note = param ? decodeURIComponent(param) : ''
+  const analysis = note ? (await listAnalyses(services)).find((each) => qualityPath(each) === note) : undefined
+  if (!analysis)
+    return { title: t('ao.qp.missing.title'), back: { id: 'back', label: t('ao.fiche.back'), run: () => deps.showPage?.(ANALYSES_PAGE) }, blocks: [{ kind: 'message', tone: 'warning', text: t('ao.qp.missing') }] }
+  const exists = await services.fs.exists(note)
+  const runs = assessAll(await requirementsAt(requirementsFolder(analysis)).all(), requirementLanguages(), 'wording').sort((a, b) => a.report.score - b.report.score || a.requirement.id.localeCompare(b.requirement.id, undefined, { numeric: true }))
+  const ai = aiClient() !== null
+  const run = (id: string) => () => deps.runFor?.(id, { analysis, stay: true }) ?? Promise.resolve()
+  const actions: ViewAction[] = [
+    ...(deps.runFor && runs.length ? [{ id: 'report', label: t(exists ? 'ao.qp.report.update' : 'ao.qp.report.write'), tooltip: t('ao.qp.report.tip'), icon: 'refresh' as const, run: run('qualite-exigences') }] : []),
+    ...(exists ? [{ id: 'note', label: t('ao.qp.report.open'), icon: 'file' as const, run: () => deps.ui.openNote(note) }] : []),
+    ...(deps.runFor && ai && runs.length ? [{ id: 'review', label: t('ao.tile.review'), icon: 'spark' as const, run: () => deps.runFor?.('relire-exigences-ia', { analysis }) ?? Promise.resolve() }] : []),
+    ...(deps.showPage ? [{ id: 'analysis', label: t('ao.piece.fiche.analysis'), icon: 'folder' as const, run: () => deps.showPage?.(analysisPageOf(analysis)) }] : [])
+  ]
+  const head = {
+    title: t('ao.quality.title', { name: analysis.name }),
+    back: { id: 'back', label: t('ao.piece.fiche.back', { name: analysis.name }), run: () => deps.showPage?.(analysisPageOf(analysis)) },
+    subtitle: t('exigences.quality.scope.wording'),
+    actions
+  }
+  if (!runs.length) return { ...head, blocks: [{ kind: 'message', tone: 'info', text: t('ao.qp.none') }] }
+
+  const mean = runs.reduce((sum, each) => sum + each.report.score, 0) / runs.length
+  const weak = runs.filter((each) => isWeak(each.report))
+  const axisOf = (each: QualityRun, id: string) => each.report.axes.find((axis) => axis.id === id)
+  const unverifiable = runs.filter((each) => (axisOf(each, 'verifiable')?.score ?? 1) < 1)
+  const pairs = probableDuplicates(runs.map((each) => each.requirement))
+  const doubled = new Set(pairs.flatMap((pair) => [pair.a, pair.b]))
+  const byId = new Map(runs.map((each) => [each.requirement.id, each]))
+  const fiche = (each: QualityRun): ViewAction | undefined =>
+    each.requirement.filePath
+      ? deps.showPage
+        ? { id: 'open', label: t('ao.fiche.requirement.card'), tooltip: t('ao.fiche.requirement.card'), run: () => deps.showPage?.(requirementPageOf(each.requirement.filePath!)) }
+        : { id: 'open', label: t('ao.fiche.requirement.open'), tooltip: t('ao.fiche.requirement.open'), run: () => deps.ui.openNote(each.requirement.filePath!) }
+      : undefined
+  const named = (each: QualityRun) => (each.requirement.title ? `${each.requirement.id} — ${each.requirement.title}` : each.requirement.id)
+
+  // Les notes données seulement : une ligne « 0 exigence » n'apprend rien.
+  const distribution: ListItem[] = [5, 4, 3, 2, 1, 0].flatMap((count) => {
+    const n = runs.filter((each) => each.report.stars === count).length
+    return n ? [{ id: `stars-${count}`, title: '★'.repeat(count) + '☆'.repeat(5 - count), detail: t('ao.qp.count', { count: n }), tone: (count >= 4 ? 'success' : count >= 3 ? 'info' : 'warning') as Tone }] : []
+  })
+  const axes: ListItem[] = QUALITY_AXES.flatMap((id) => {
+    const scores = runs.flatMap((each) => axisOf(each, id)?.score ?? [])
+    if (!scores.length) return []
+    const value = scores.reduce((a, b) => a + b, 0) / scores.length
+    const below = runs.filter((each) => (axisOf(each, id)?.score ?? 1) < 1).length
+    return [{ id: `axe-${id}`, title: t(`exigences.axis.${id}`), detail: `${percent(value)}${below ? ` — ${t('ao.qp.axis.below', { count: below })}` : ''}`, tone: toneOfScore(value) }]
+  })
+  const byRule = new Map<string, QualityRun[]>()
+  for (const each of runs) for (const rule of new Set(each.report.findings.map((finding) => finding.rule))) byRule.set(rule, [...(byRule.get(rule) ?? []), each])
+  const defects: ListItem[] = [...byRule]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([rule, list]) => ({ id: `defaut-${rule}`, title: capitalized(t(`exigences.rule.${rule}`)), detail: `${t('ao.qp.count', { count: list.length })} — ${list.slice(0, 4).map((each) => each.requirement.id).join(', ')}${list.length > 4 ? '…' : ''}`, tone: 'warning' as const, ...(list.length === 1 && fiche(list[0]!) ? { open: fiche(list[0]!)! } : {}) }))
+  const duplicates: ListItem[] = pairs.flatMap((pair) => {
+    const a = byId.get(pair.a)
+    const b = byId.get(pair.b)
+    if (!a || !b) return []
+    const open = fiche(a)
+    return [{ id: `doublon-${pair.a}-${pair.b}`, title: `${pair.a} ↔ ${pair.b}`, detail: `${t('exigences.quality.likeness')} ${percent(pair.score)} — « ${wordingOfRequirement(a).slice(0, 90)} » / « ${wordingOfRequirement(b).slice(0, 90)} »`, tone: 'warning' as const, ...(open ? { open } : {}) }]
+  })
+  const cards: Card[] = runs.map((each) => {
+    const { report } = each
+    const costly = report.axes.filter((axis) => axis.score < 1).sort((a, b) => a.score - b.score).slice(0, 3)
+    const findings = report.findings.map((finding) => describeFinding(finding, t))
+    const open = fiche(each)
+    const tags = [...(isWeak(report) ? ['faibles'] : []), ...((axisOf(each, 'verifiable')?.score ?? 1) < 1 ? ['non-verifiables'] : []), ...(doubled.has(each.requirement.id) ? ['doublons'] : []), ...(report.stars >= 4 ? ['bonnes'] : [])]
+    return {
+      id: each.requirement.filePath ?? each.requirement.id,
+      title: named(each),
+      subtitle: findings.length ? capitalized(findings.slice(0, 3).join(' · ')) : t('ao.qp.noFinding'),
+      rating: { stars: report.stars, label: t('ao.qp.rating', { percent: percent(report.score) }) },
+      icon: 'star' as const,
+      badges: [
+        ...(isWeak(report) ? [{ label: t('ao.qp.badge.weak'), tone: 'warning' as const }] : []),
+        ...((axisOf(each, 'verifiable')?.score ?? 1) < 1 ? [{ label: t('ao.qp.badge.unverifiable'), tone: 'danger' as const }] : []),
+        ...(doubled.has(each.requirement.id) ? [{ label: t('ao.qp.badge.duplicate'), tone: 'info' as const }] : [])
+      ],
+      text: wordingOfRequirement(each),
+      ...(costly.length ? { facts: costly.map((axis) => ({ label: t(`exigences.axis.${axis.id}`), value: percent(axis.score) })) } : {}),
+      ...(open ? { open } : {}),
+      tags
+    }
+  })
+  return {
+    ...head,
+    search: { label: t('ao.qp.search'), placeholder: t('ao.qp.search.placeholder') },
+    filters: [
+      { id: 'faibles', label: t('ao.qp.filter.weak') },
+      { id: 'non-verifiables', label: t('ao.qp.filter.unverifiable') },
+      { id: 'doublons', label: t('ao.qp.filter.duplicates') },
+      { id: 'bonnes', label: t('ao.qp.filter.good') }
+    ],
+    blocks: [
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('exigences.quality.count'), value: String(runs.length), icon: 'list' },
+          { label: t('exigences.quality.mean'), value: percent(mean), icon: 'star', tone: toneOfScore(mean), hint: '★'.repeat(Math.round(mean * 5)) + '☆'.repeat(5 - Math.round(mean * 5)) },
+          { label: t('ao.qp.stat.weak'), value: String(weak.length), icon: 'alert', ...(weak.length ? { tone: 'warning' as const } : {}), hint: t('ao.qp.stat.weak.hint') },
+          { label: t('ao.qp.stat.unverifiable'), value: String(unverifiable.length), icon: 'check', ...(unverifiable.length ? { tone: 'danger' as const } : {}) },
+          { label: t('exigences.quality.duplicates'), value: String(pairs.length), icon: 'columns', ...(pairs.length ? { tone: 'info' as const } : {}) }
+        ]
+      },
+      ...(exists ? [] : [{ kind: 'message' as const, tone: 'info' as const, text: t('ao.qp.noReport') }]),
+      // Les exigences d'abord, les plus faibles en tête : c'est ce qu'on vient reprendre.
+      { kind: 'cards', title: t('ao.qp.requirements', { count: runs.length }), cards },
+      { kind: 'list', title: t('exigences.quality.defects'), items: defects, empty: t('exigences.quality.noDefect') },
+      { kind: 'list', title: t('exigences.quality.duplicates'), items: duplicates, empty: t('exigences.quality.noDuplicate') },
+      { kind: 'list', title: t('exigences.quality.axes'), items: axes },
+      { kind: 'list', title: t('exigences.quality.distribution'), items: distribution }
+    ]
+  }
+}
+
 /** Les notes d'un dossier et de ses sous-dossiers, par ordre alphabétique. */
 async function listNotes(services: Services, folder: string): Promise<string[]> {
   const listing = await services.fs.list(folder)
@@ -985,6 +1124,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: ANALYSES_PAGE, title: t('ao.home.title'), icon: 'folder', load: () => analysesPage(deps) })
   views.page({ id: ANALYSIS_PAGE, title: t('ao.fiche.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => analysisPage(deps, param) })
   views.page({ id: PIECE_PAGE, title: t('ao.piece.fiche.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => piecePage(deps, param) })
+  views.page({ id: QUALITY_PAGE, title: t('ao.qp.title'), icon: 'star', parent: ANALYSES_PAGE, load: (param) => qualityPage(deps, param) })
   views.page({ id: QUESTIONNAIRE_PAGE, title: t('ao.qn.title'), icon: 'list', parent: ANALYSES_PAGE, load: (param) => questionnairePage(deps, param) })
   views.page({ id: QUESTIONNAIRE_ITEM_PAGE, title: t('ao.qn.title'), icon: 'chat', parent: ANALYSES_PAGE, load: (param) => questionnaireItemPage(deps, param) })
   views.page({ id: QUESTION_PAGE, title: t('ao.question.title'), icon: 'chat', parent: ANALYSES_PAGE, load: (param) => questionPage(deps, param) })

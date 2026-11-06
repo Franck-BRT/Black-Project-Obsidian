@@ -372,6 +372,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.29.0 : le **questionnaire en page** (une carte par thème et son état, « Remplir le
   questionnaire », « Reposer » un thème seul) et la page d'un thème (sa réponse, ses
   sources)
+- v0.30.0 : la **qualité des exigences en page**, calculée à l'ouverture (une carte par
+  exigence, la plus faible d'abord ; défauts, doublons, axes) ; « Écrire le rapport »
 
 ### Étape 7 — Livrables
 

@@ -71,6 +71,11 @@ analyse ? » :
   export), chacun répondu, sans source citée (à vérifier), rien dans les pièces, ou pas
   encore posé ; **Remplir le questionnaire** (choisir les thèmes), **Reposer** un thème
   seul ; un clic sur un thème montre la question posée, la réponse et ses sources ;
+- la **qualité de ses exigences** : **Qualité du dossier** ouvre sa page, calculée à
+  l'ouverture — la note moyenne, les faibles, les non vérifiables, les doublons probables ;
+  une carte par exigence, la plus faible d'abord, avec ses étoiles et ce qui lui coûte (un
+  clic ouvre sa fiche) ; les défauts les plus fréquents, chaque axe de la norme ;
+  **Écrire le rapport** la garde dans la note « Qualité des exigences » ;
 - une recherche et des filtres (pièces à lire, appel d'offres, réponse) ; « ← Toutes les
   analyses » ramène à la liste.
 

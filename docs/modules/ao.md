@@ -270,6 +270,26 @@ question**, **Tout le questionnaire**, la note. Reposer et remplir passent par
 la fenêtre de choix ; la note n'est pas ouverte, la page se redessine. Les extraits
 transmis sont lus sans les titres de la pièce (« ### CCAP »).
 
+## La qualité des exigences, en page (v0.18.0, Black Projects 0.30.0)
+
+« Qualité du dossier », sur la fiche d'une analyse (quand la plateforme a des pages),
+ouvre `ao.qualite?<chemin encodé de Analyse/Qualité des exigences.md>` (`qualityPageOf`,
+`parent` : les analyses) — aussi la note « Qualité des exigences » de « Ce que l'analyse a
+produit », et la page `ao.note` de cette note. Rien n'est relu dans le rapport : la page
+est **calculée à l'ouverture** sur les exigences de l'analyse (`assessAll(…, 'wording')`,
+comme le rapport : la seule rédaction, l'acheteur l'a écrite). Elle montre les chiffres
+(exigences, note moyenne, faibles, non vérifiables, doublons probables) ; une carte par
+exigence, la plus faible d'abord (ses défauts `describeFinding` en sous-titre, ses
+étoiles `rating`, sa formulation, les axes qui lui coûtent, badges Faible / Non
+vérifiable / Doublon probable ; un clic ouvre sa fiche) avec les filtres Faibles, Non
+vérifiables, Doublons probables, Bonnes ; puis les défauts les plus fréquents, les
+doublons probables (`probableDuplicates`, par la lettre : les doublons par le sens, qui
+demandent l'IA, restent au rapport), chaque axe de la norme et la répartition des notes
+(les notes données seulement). En tête : **Écrire le rapport** / **Mettre à jour le
+rapport** (`runFor('qualite-exigences', { analysis, stay: true })` : la note n'est pas
+ouverte), **Ouvrir le rapport** s'il existe, **Relire (IA)**, l'analyse. Sans exigence :
+un message dit comment en avoir.
+
 ## Dans le coffre
 
 ```

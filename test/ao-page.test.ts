@@ -575,3 +575,83 @@ describe('le questionnaire, en page', () => {
     expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Questionnaire.md'))).title).toBe('Questionnaire introuvable')
   })
 })
+
+describe('la qualité des exigences, en page', () => {
+  async function quality(withRequirements = true) {
+    const platform = memoryPlatform()
+    const run = await start(platform, true)
+    if (withRequirements) {
+      const text = (body: string) => ({ fr: { body, lang: 'fr', origin: 'human' as const, reviewed: true, by: '', at: '', fromRev: 1 } })
+      const store = requirementsAt(`${run.station.folder}/Exigences`)
+      await store.create({ category: 'SOL', title: 'Antenne', text: text('Le titulaire doit fournir une antenne de 3,7 m de diamètre.'), verification: 'inspection' })
+      await store.create({ category: 'SOL', title: 'Disponibilité', text: text('Le système sera disponible le cas échéant.') })
+      await store.create({ category: 'SOL', title: 'Antenne bis', text: text('Le titulaire doit fournir une antenne de 3,7 m de diamètre sur le site.'), verification: 'inspection' })
+    }
+    const path = `${run.station.folder}/Analyse/Qualité des exigences.md`
+    return { ...run, platform, path, fiche: run.views.pages().find((each) => each.id === 'ao.fiche')!, page: run.views.pages().find((each) => each.id === 'ao.qualite')! }
+  }
+
+  it('« Qualité du dossier » sur la fiche ouvre sa page, calculée à l’ouverture', async () => {
+    const { fiche, station, shown, path, page } = await quality()
+    await (await fiche.load(encodeURIComponent(station.note))).actions!.find((action) => action.id === 'quality')!.run()
+    expect(shown.at(-1)).toBe(`ao.qualite?${encodeURIComponent(path)}`)
+    expect(page.parent).toBe('ao.analyses')
+    const view = await page.load(encodeURIComponent(path))
+    expect(view.title).toBe('Qualité des exigences — Station sol')
+    expect(view.back?.label).toBe('L’analyse « Station sol »')
+    expect(view.actions?.map((action) => `${action.id}:${action.label}`)).toEqual(['report:Écrire le rapport', 'analysis:Ouvrir l’analyse'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Exigences=3', 'Note moyenne=80 %', 'Faibles=1', 'Non vérifiables=1', 'Doublons probables=1'])
+    const lists = view.blocks.filter((block) => block.kind === 'list')
+    // Les exigences d'abord (les cartes), puis ce qui les résume.
+    expect(view.blocks.map((block) => block.kind)).toEqual(['stats', 'message', 'cards', 'list', 'list', 'list', 'list'])
+    expect(lists.map((block) => block.kind === 'list' && block.title)).toEqual(['Défauts les plus fréquents', 'Doublons probables', 'Par axe de la norme', 'Répartition des notes'])
+    const defects = lists[0]!.kind === 'list' ? lists[0]!.items : []
+    expect(defects.map((item) => item.title)).toEqual(['Aucune obligation (« doit »)', 'Terme vague'])
+    const pair = lists[1]!.kind === 'list' ? lists[1]!.items[0]! : null
+    expect(pair?.title).toBe('REQ-SOL-0001 ↔ REQ-SOL-0003')
+    // La répartition : seulement les notes données.
+    expect(lists[3]!.kind === 'list' && lists[3]!.items.map((item) => `${item.title}=${item.detail}`)).toEqual(['★★★★★=2 exigence(s)', '★★☆☆☆=1 exigence(s)'])
+  })
+
+  it('une carte par exigence, les plus faibles d’abord : étoiles, défauts, ce qui lui coûte ; un clic ouvre sa fiche', async () => {
+    const { page, path, shown } = await quality()
+    const view = await page.load(encodeURIComponent(path))
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['faibles', 'non-verifiables', 'doublons', 'bonnes'])
+    const cards = cardsOf(view)
+    expect(cards.map((card) => `${card.title}:${card.tags!.join('+')}`)).toEqual(['REQ-SOL-0002 — Disponibilité:faibles+non-verifiables', 'REQ-SOL-0001 — Antenne:doublons+bonnes', 'REQ-SOL-0003 — Antenne bis:doublons+bonnes'])
+    expect(cards[0]).toMatchObject({
+      subtitle: 'Aucune obligation (« doit ») · terme vague (« le cas échéant »)',
+      rating: { stars: 2, label: 'Note : 40 %' },
+      badges: [{ label: 'Faible' }, { label: 'Non vérifiable' }],
+      text: 'Le système sera disponible le cas échéant.'
+    })
+    expect(cards[0]!.facts?.map((fact) => fact.label)).toEqual(['Unique (une seule obligation)', 'Non ambiguë', 'Vérifiable'])
+    expect(cards[1]!.subtitle).toBe('Aucun défaut de rédaction relevé')
+    await cards[0]!.open!.run()
+    expect(shown.at(-1)).toMatch(/^exigences\.fiche\?/)
+  })
+
+  it('« Écrire le rapport » sans quitter la page ; la note produite « Qualité des exigences » mène à la page', async () => {
+    const { page, path, platform, fiche, station, shown } = await quality()
+    const view = await page.load(encodeURIComponent(path))
+    expect(view.blocks.some((block) => block.kind === 'message' && block.text.startsWith('Calculée à l’ouverture'))).toBe(true)
+    await view.actions!.find((action) => action.id === 'report')!.run()
+    expect(platform.files.has(path)).toBe(true)
+    expect(platform.opened).toEqual([])
+    const after = await page.load(encodeURIComponent(path))
+    expect(after.actions?.map((action) => `${action.id}:${action.label}`)).toEqual(['report:Mettre à jour le rapport', 'note:Ouvrir le rapport', 'analysis:Ouvrir l’analyse'])
+    expect(after.blocks.some((block) => block.kind === 'message')).toBe(false)
+    const produced = (await fiche.load(encodeURIComponent(station.note))).blocks.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    await (produced?.kind === 'list' ? produced.items : []).find((item) => item.title === 'Qualité des exigences')!.open!.run()
+    expect(shown.at(-1)).toBe(`ao.qualite?${encodeURIComponent(path)}`)
+  })
+
+  it('sans exigence : la page le dit ; un rapport hors d’une analyse : la page le dit', async () => {
+    const { page, path } = await quality(false)
+    const view = await page.load(encodeURIComponent(path))
+    expect(view.actions?.map((action) => action.id)).toEqual(['analysis'])
+    expect(view.blocks).toEqual([{ kind: 'message', tone: 'info', text: expect.stringMatching(/^Aucune exigence dans cette analyse/) }])
+    expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Qualité des exigences.md'))).title).toBe('Qualité introuvable')
+  })
+})
