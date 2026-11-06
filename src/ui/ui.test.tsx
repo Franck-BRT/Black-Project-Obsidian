@@ -14,6 +14,8 @@ import type { AppHost } from './host'
 import { daysUntil, deadlineTone, greetingKey, starGlyphs } from './logic'
 import { App } from './shell'
 import { UI_CSS } from './styles'
+import { addableTiles, moveTile, shownTiles } from './tiles'
+import type { TileSpec } from '../core/views'
 
 const i18n = createI18n('fr')
 const t = i18n.t.bind(i18n)
@@ -28,6 +30,9 @@ function host(appearance: Appearance = DEFAULT_APPEARANCE, sections: HomeSection
     locale: 'fr-FR',
     version: '0.10.0',
     sections: () => views.homeSections(),
+    tiles: () => views.allTiles(),
+    homeTiles: () => null,
+    saveHomeTiles: async () => undefined,
     nav: () => views.navEntries(),
     appearance: () => appearance,
     saveAppearance: async () => undefined,
@@ -67,15 +72,25 @@ describe('la coquille', () => {
     expect(html).toContain('class="bp-ui" data-mode="dark" data-vision="red-green" data-reading="dys" data-size="large" data-motion="reduced" lang="fr"')
   })
 
-  it('la navigation, le bonjour, la date, et l’accueil vide expliqué', () => {
+  it('l’accueil : la navigation, le bonjour, la date, les tuiles', () => {
     const html = renderToString(<App host={host()} generation={0} />)
     expect(html).toContain('<nav class="bp-nav" aria-label="Navigation">')
-    expect(html).toContain('aria-current="page"')
+    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Accueil<\/button>/)
+    expect(html).toContain('>Tableau de bord<')
     expect(html).toContain('>Exigences<')
     expect(html).toContain('<h1 class="bp-hello">Bonjour</h1>')
     expect(html).toContain('vendredi 6 novembre 2026')
-    expect(html).toContain('Aucun module actif n’a de section d’accueil.')
+    // La tuile du tableau de bord est toujours proposée, et présente par défaut.
+    expect(html).toMatch(/data-tile="ui.tableau".*bp-tile-indigo.*<span class="bp-tile-label">Tableau de bord<\/span>/)
+    expect(html).toContain('Modifier l’accueil')
     expect(html).toContain('Version 0.10.0')
+  })
+
+  it('le tableau de bord : son titre, et vide, expliqué', () => {
+    const html = renderToString(<App host={host()} generation={0} page="dashboard" />)
+    expect(html).toContain('<h1 class="bp-hello">Tableau de bord</h1>')
+    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Tableau de bord<\/button>/)
+    expect(html).toContain('Aucun module actif n’a de section d’accueil.')
   })
 })
 
@@ -129,3 +144,25 @@ describe('les styles', () => {
     expect(UI_CSS).not.toMatch(/text-transform:\s*uppercase/)
   })
 })
+
+describe('les tuiles', () => {
+  const tile = (id: string, group: string, byDefault = false): TileSpec => ({ id, label: id, icon: 'plus', color: 'blue', group, order: 0, byDefault, run: () => undefined })
+  const all = [tile('a', 'AO', true), tile('b', 'AO'), tile('c', 'Exigences', true), tile('d', 'IA')]
+
+  it('par défaut, celles marquées ; sinon celles choisies, dans leur ordre, sans celles d’un module absent', () => {
+    expect(shownTiles(all, null).map((each) => each.id)).toEqual(['a', 'c'])
+    expect(shownTiles(all, ['d', 'gone', 'a']).map((each) => each.id)).toEqual(['d', 'a'])
+    expect(shownTiles(all, []).map((each) => each.id)).toEqual([])
+  })
+
+  it('celles à ajouter, rangées par module ; déplacer', () => {
+    expect(addableTiles(all, shownTiles(all, null))).toEqual([
+      { group: 'AO', tiles: [all[1]] },
+      { group: 'IA', tiles: [all[3]] }
+    ])
+    expect(moveTile(['a', 'b', 'c'], 0, 2)).toEqual(['b', 'c', 'a'])
+    expect(moveTile(['a', 'b', 'c'], 2, 0)).toEqual(['c', 'a', 'b'])
+    expect(moveTile(['a', 'b'], 5, 0)).toEqual(['a', 'b'])
+  })
+})
+

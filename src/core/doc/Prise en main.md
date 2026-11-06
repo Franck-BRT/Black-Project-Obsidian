@@ -5,10 +5,21 @@
 ## L'accueil
 
 L'onglet **Black Projects** s'ouvre au démarrage, ou par l'icône de la barre latérale, ou
-par la commande **Ouvrir l'accueil de Black Projects** : les actions rapides, une carte
-par analyse d'appel d'offres (sa date limite de remise en jours restants, ses pièces, ses
-exigences et leur note), l'état de l'IA, la bibliothèque d'exigences en chiffres, les
-dernières exécutions des workflows. Il se met à jour quand le coffre change.
+par la commande **Ouvrir l'accueil de Black Projects** : le bonjour, la date, et vos
+**tuiles** — un raccourci par fonction (nouvelle analyse, analyses, importer des pièces,
+calendrier, interroger le dossier, exigences, workflows, IA, réglages…), avec des
+pastilles : « J-5 » pour la prochaine date limite de remise, le nombre d'exigences
+faibles, les échecs récents des workflows, « ! » si l'IA n'est pas réglée.
+
+**Modifier l'accueil** : − retire une tuile, la liste « Tuiles à ajouter » en ajoute, on
+glisse une tuile pour la déplacer (ou Alt + flèches au clavier) ; **Terminé**. Votre
+agencement est gardé.
+
+Le **Tableau de bord** (à gauche, ou sa tuile, ou la commande **Ouvrir le tableau de bord
+de Black Projects**) donne les informations : une carte par analyse d'appel d'offres (sa
+date limite de remise en jours restants, ses pièces, ses exigences et leur note), l'état
+de l'IA, la bibliothèque d'exigences en chiffres, les dernières exécutions des workflows.
+Il se met à jour quand le coffre change.
 
 Le bouton **Apparence** règle, au choix et ensemble :
 
@@ -57,7 +68,8 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 
 | Commande | Rôle |
 | --- | --- |
-| Ouvrir l'accueil de Black Projects | l'onglet d'accueil |
+| Ouvrir l'accueil de Black Projects | l'onglet d'accueil, ses tuiles |
+| Ouvrir le tableau de bord de Black Projects | les informations des modules |
 | À propos de Black Projects | version, modules actifs, licence |
 | Créer ou mettre à jour la documentation | écrit cette documentation dans le coffre |
 | Nouvelle analyse d'appel d'offres | crée une analyse et propose d'y mettre les pièces ; voir {{link:Modules/Analyse d'appels d'offres|Analyse d'appels d'offres}} |

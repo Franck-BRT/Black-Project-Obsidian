@@ -9,26 +9,35 @@
 
 import { render } from 'preact'
 import type { AppHost } from './host'
-import { App } from './shell'
+import { App, type Page } from './shell'
 import { installStyles } from './styles'
 
 export type { AppHost, Translate } from './host'
 export { UI_CSS } from './styles'
 
+export type { Page } from './shell'
+
 export interface MountedApp {
-  /** Recharge les sections (des fichiers ont changé, une commande s'est exécutée). */
+  /** Recharge les sections et les pastilles (des fichiers ont changé, une commande s'est exécutée). */
   refresh(): void
+  /** Montre une page : l'accueil ou le tableau de bord. */
+  show(page: Page): void
   destroy(): void
 }
 
-export function mountApp(element: HTMLElement, host: AppHost): MountedApp {
+export function mountApp(element: HTMLElement, host: AppHost, initial: Page = 'home'): MountedApp {
   installStyles(element)
   let generation = 0
-  const draw = () => render(<App host={host} generation={generation} />, element)
+  let page = initial
+  const draw = () => render(<App host={host} generation={generation} page={page} onPage={(next) => (page = next)} />, element)
   draw()
   return {
     refresh() {
       generation++
+      draw()
+    },
+    show(next) {
+      page = next
       draw()
     },
     destroy() {

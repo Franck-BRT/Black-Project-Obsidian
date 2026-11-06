@@ -41,7 +41,10 @@ dans les deux.
 
 `src/core/views.ts` définit ce qu'un module peut montrer, **en données** :
 
-- des **sections d'accueil** (`HomeSection`) : un titre, et des blocs — actions, cartes,
+- des **tuiles** pour l'accueil (`TileSpec`) : un libellé, une icône, une couleur
+  (décorative), le module qui la propose, présente ou non par défaut, une action, et une
+  **pastille** facultative calculée à l'affichage (« J-5 », un nombre, « ! ») ;
+- des **sections du tableau de bord** (`HomeSection`) : un titre, et des blocs — actions, cartes,
   indicateurs, listes, messages ; une carte porte des badges, des faits, une échéance, une
   note en étoiles, des actions ;
 - des **entrées de navigation** (`NavEntry`).
@@ -60,7 +63,9 @@ exécutions), l'IA (la connexion et un modèle par usage).
 | `index.tsx` | `mountApp(élément, hôte)` : monte l'interface ; `refresh()`, `destroy()` |
 | `host.ts` | `AppHost` : tout ce que l'hôte donne (textes, langue, sections, navigation, apparence, thème de l'hôte, heure) |
 | `shell.tsx` | la coquille : marque, navigation, en-tête (bonjour, date, rafraîchir, apparence), page ; les attributs du thème sur la racine |
-| `home.tsx` | l'accueil : les sections des modules, en deux colonnes |
+| `springboard.tsx` | l'**accueil** à tuiles, modifiable par l'utilisateur |
+| `tiles.ts` | l'agencement des tuiles (choisies, par défaut, à ajouter, déplacer) : testé seul |
+| `home.tsx` | le **tableau de bord** : les sections des modules, en deux colonnes |
 | `components.tsx` | boutons, badges, échéances, cartes, indicateurs, listes, messages |
 | `appearance.tsx` | le panneau d'apparence |
 | `theme.ts`, `styles.ts` | les thèmes (variables CSS) et les styles, posés une fois dans le document |
@@ -125,6 +130,26 @@ Et partout :
 garni d'un dossier fictif, et la même interface — la preuve qu'elle tourne sans Obsidian,
 et le point de départ de `desktop/`. L'adresse accepte `?mode=dark&vision=red-green&reading=dys&size=large`
 pour forcer une apparence (captures, recette).
+
+## L'accueil et le tableau de bord (v0.12.0)
+
+Deux pages, dans la navigation de gauche :
+
+- **Accueil** — le bonjour (bonjour, bon après-midi, bonsoir) et la date, puis une grille
+  de **tuiles**, à la manière d'un écran de téléphone. Chaque tuile lance ce que fait un
+  module (nouvelle analyse, analyses, importer des pièces, calendrier, interroger le
+  dossier, exigences, workflows, IA, réglages…) et peut porter une **pastille** : la
+  prochaine date limite de remise (« J-5 », rouge à 7 jours ou moins), le nombre
+  d'exigences faibles, les échecs récents des workflows, une IA pas réglée (« ! »). La
+  pastille est aussi dite aux lecteurs d'écran, dans le nom de la tuile.
+  **Modifier l'accueil** : les tuiles tremblent (pas si le mouvement est réduit) ; le bouton
+  − retire, on glisse pour déplacer (ou Alt + flèches au clavier, chaque déplacement
+  annoncé), et la liste **Tuiles à ajouter**, rangée par module, ajoute d'un clic ;
+  « Rétablir l'accueil par défaut ». L'agencement est gardé dans les réglages communs
+  (`homeTiles`) ; une tuile dont le module est désactivé disparaît sans casser le reste.
+- **Tableau de bord** — les informations des modules (les sections décrites plus haut).
+  Une tuile y mène, présente par défaut ; aussi la commande « Ouvrir le tableau de bord de
+  Black Projects ».
 
 ## Les fenêtres (v0.11.0)
 

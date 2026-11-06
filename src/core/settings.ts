@@ -29,6 +29,8 @@ export interface CoreSettings {
   appearance: Appearance
   /** Ouvrir l'accueil de Black Projects au démarrage. */
   openHomeAtStart: boolean
+  /** Les tuiles de l'accueil, dans l'ordre choisi ; `null` : celles par défaut. */
+  homeTiles: string[] | null
 }
 
 export const DEFAULT_DOCS_FOLDER = 'Black Projects/Documentation'
@@ -40,7 +42,8 @@ export const DEFAULT_SETTINGS: CoreSettings = Object.freeze({
   modules: {},
   docsFolder: DEFAULT_DOCS_FOLDER,
   appearance: DEFAULT_APPEARANCE,
-  openHomeAtStart: true
+  openHomeAtStart: true,
+  homeTiles: null
 })
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -74,7 +77,9 @@ export function readSettings(raw: unknown): CoreSettings {
   const appearance = readAppearance(source.appearance)
   const openHomeAtStart = typeof source.openHomeAtStart === 'boolean' ? source.openHomeAtStart : DEFAULT_SETTINGS.openHomeAtStart
 
-  return { format: 1, language, disabledModules, modules, docsFolder, appearance, openHomeAtStart }
+  const homeTiles = Array.isArray(source.homeTiles) ? [...new Set(source.homeTiles.filter((id): id is string => typeof id === 'string' && id !== ''))] : null
+
+  return { format: 1, language, disabledModules, modules, docsFolder, appearance, openHomeAtStart, homeTiles }
 }
 
 /** Un dossier du coffre tel qu'on le saisit : sans « / » au début ni à la fin, ni doubles. */

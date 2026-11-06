@@ -7,7 +7,8 @@
  * page web. C'est ce que fera l'application de bureau (Tauri), les ports en mémoire
  * remplacés par Rust. Sert aussi aux captures des thèmes.
  *
- * Paramètres d'adresse pour forcer l'apparence : ?mode=dark&vision=red-green&reading=dys&size=large
+ * Paramètres d'adresse pour forcer l'apparence : ?mode=dark&vision=red-green&reading=dys&size=large ;
+ * ?page=dashboard pour ouvrir le tableau de bord.
  */
 
 import { readAppearance, type Appearance } from '../src/core/appearance'
@@ -167,6 +168,12 @@ async function start(): Promise<void> {
     locale: language === 'en' ? 'en-GB' : 'fr-FR',
     version: 'démonstration',
     sections: () => views.homeSections(),
+    tiles: () => views.allTiles(),
+    homeTiles: () => {
+      const stored = safeStorage('get', undefined, 'bp-demo-tiles')
+      return stored ? (JSON.parse(stored) as string[]) : null
+    },
+    saveHomeTiles: async (ids) => void safeStorage(ids ? 'set' : 'remove', ids ? JSON.stringify(ids) : undefined, 'bp-demo-tiles'),
     nav: () => views.navEntries(),
     appearance: () => appearance,
     saveAppearance: async (next) => {
@@ -179,14 +186,15 @@ async function start(): Promise<void> {
       return () => dark.removeEventListener('change', listener)
     },
     now: () => new Date()
-  })
+  }, params.get('page') === 'dashboard' ? 'dashboard' : 'home')
   document.documentElement.dataset.ready = 'true'
 }
 
-function safeStorage(action: 'get' | 'set', value?: string): string | null {
+function safeStorage(action: 'get' | 'set' | 'remove', value?: string, key = 'bp-demo-appearance'): string | null {
   try {
-    if (action === 'set') localStorage.setItem('bp-demo-appearance', value!)
-    return localStorage.getItem('bp-demo-appearance')
+    if (action === 'set') localStorage.setItem(key, value!)
+    if (action === 'remove') localStorage.removeItem(key)
+    return localStorage.getItem(key)
   } catch {
     return null
   }

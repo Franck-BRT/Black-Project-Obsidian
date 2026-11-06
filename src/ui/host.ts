@@ -8,7 +8,7 @@
  */
 
 import type { Appearance } from '../core/appearance'
-import type { HomeSection, NavEntry } from '../core/views'
+import type { HomeSection, NavEntry, TileSpec } from '../core/views'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -19,6 +19,11 @@ export interface AppHost {
   version: string
   /** Les sections de l'accueil déclarées par les modules actifs. */
   sections(): HomeSection[]
+  /** Les tuiles proposées par les modules actifs (et l'hôte). */
+  tiles(): TileSpec[]
+  /** Les tuiles choisies, dans l'ordre ; `null` : celles par défaut. */
+  homeTiles(): string[] | null
+  saveHomeTiles(ids: string[] | null): Promise<void>
   /** Les entrées de navigation déclarées par les modules actifs. */
   nav(): NavEntry[]
   appearance(): Appearance

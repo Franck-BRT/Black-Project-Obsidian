@@ -118,8 +118,12 @@ export const lectureFichiersModule: BlackModule = {
   details: (settings) => formatsCatalogue(readAliases(settings), display),
   settingsFields: [aliasesField],
   docs: (input) => lectureDocs(input, display),
-  activate({ settings, platform }) {
+  activate({ settings, platform, views, openWindow, i18n }) {
     display = platform.display
+    // L'accueil : une tuile pour la fenêtre des formats.
+    if (views && openWindow) {
+      views.tile({ id: 'lecture.formats', label: i18n.t('lecture-fichiers.details.title'), icon: 'file', color: 'slate', group: i18n.t('lecture-fichiers.name'), description: i18n.t('lecture-fichiers.tile.formats'), order: 80, run: () => openWindow() })
+    }
     configureAliases(readAliases(settings.get()))
     // Les types que l'utilisateur a choisi d'afficher : la plateforme les montre.
     display?.show(readShown(settings.get()))

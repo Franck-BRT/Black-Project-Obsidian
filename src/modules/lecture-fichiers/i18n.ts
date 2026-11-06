@@ -4,6 +4,7 @@
 /** Les textes du module Lecture de fichiers. Toutes les clés commencent par `lecture-fichiers.`. */
 export const lectureFr: Record<string, string> = {
   'lecture-fichiers.name': 'Lecture de fichiers',
+  'lecture-fichiers.tile.formats': 'Ce qui est lu, écrit et affiché, format par format ; les extensions équivalentes.',
   'lecture-fichiers.description':
     'Lit le texte des documents — PDF, Word, Excel, PowerPoint, RTF, HTML, Markdown, texte — pour les autres modules. Sans dépendance externe, sans réseau.',
   'lecture-fichiers.details.title': 'Formats de fichiers',
@@ -178,6 +179,7 @@ export const lectureFr: Record<string, string> = {
 
 export const lectureEn: Record<string, string> = {
   'lecture-fichiers.name': 'File reading',
+  'lecture-fichiers.tile.formats': 'What is read, written and shown, format by format; equivalent extensions.',
   'lecture-fichiers.description':
     'Reads the text of documents — PDF, Word, Excel, PowerPoint, RTF, HTML, Markdown, text — for the other modules. No external dependency, no network.',
   'lecture-fichiers.details.title': 'File formats',

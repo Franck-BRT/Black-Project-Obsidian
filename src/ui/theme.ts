@@ -180,6 +180,19 @@ export const THEME_CSS = String.raw`
 .bp-ui[data-vision="mono"] :is(.bp-badge, .bp-deadline, .bp-message, .bp-list-mark).bp-tone-danger { border-style: double; border-width: 3px; font-weight: 700; }
 .bp-ui[data-vision="mono"] .bp-stat.bp-tone-warning, .bp-ui[data-vision="mono"] .bp-stat.bp-tone-danger { border-left-style: double; border-left-width: 6px; }
 
+
+/* ── Les couleurs des tuiles (décoratives : le libellé dit tout) ─── */
+.bp-ui {
+  --bp-tile-indigo: #4f46e5; --bp-tile-blue: #1d6fd1; --bp-tile-teal: #0f7f82; --bp-tile-green: #24804a;
+  --bp-tile-orange: #c25400; --bp-tile-rose: #c0245c; --bp-tile-violet: #7c3aed; --bp-tile-slate: #4b5568;
+}
+.bp-ui[data-vision="red-green"] { --bp-tile-green: #0f6aa6; --bp-tile-orange: #9a6a00; --bp-tile-rose: #a8430a; }
+.bp-ui[data-vision="blue-yellow"] { --bp-tile-blue: #00695c; --bp-tile-indigo: #8e1d4f; --bp-tile-violet: #8a1c7c; }
+.bp-ui[data-vision="mono"] {
+  --bp-tile-indigo: #2b2b2b; --bp-tile-blue: #3a3a3a; --bp-tile-teal: #474747; --bp-tile-green: #2b2b2b;
+  --bp-tile-orange: #3a3a3a; --bp-tile-rose: #474747; --bp-tile-violet: #2b2b2b; --bp-tile-slate: #555555;
+}
+
 /* ── Lecture facilitée (dys) ─────────────────────────────────────── */
 .bp-ui[data-reading="dys"] {
   --bp-font: "OpenDyslexic", "Lexend", "Atkinson Hyperlegible", "Andika", Verdana, Tahoma, sans-serif;

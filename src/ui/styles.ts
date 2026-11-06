@@ -147,6 +147,43 @@ const COMPONENTS_CSS = String.raw`
 .bp-swatches { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
 .bp-swatches i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid rgba(0,0,0,0.2); }
 
+/* L'accueil à tuiles */
+.bp-springboard { display: flex; flex-direction: column; gap: 18px; }
+.bp-springboard-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bp-springboard-bar .bp-header-tools { margin-left: auto; }
+.bp-tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 22px 14px; }
+.bp-tile-cell { position: relative; display: flex; flex-direction: column; align-items: center; }
+.bp-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 10px 6px; border: 0; border-radius: 18px; background: transparent; color: var(--bp-text); cursor: pointer; transition: background var(--bp-speed), transform var(--bp-speed); }
+.bp-tile:hover { background: var(--bp-surface-2); }
+.bp-tile:active { transform: scale(0.96); }
+.bp-tile-icon { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; color: #ffffff; box-shadow: 0 6px 16px rgba(20, 24, 40, 0.18), inset 0 1px 0 rgba(255,255,255,0.25); background-image: linear-gradient(160deg, rgba(255,255,255,0.18), rgba(0,0,0,0.12)); }
+.bp-tile-icon svg.bp-icon { width: 30px; height: 30px; stroke-width: 1.8; }
+.bp-tile-indigo { background-color: var(--bp-tile-indigo); }
+.bp-tile-blue { background-color: var(--bp-tile-blue); }
+.bp-tile-teal { background-color: var(--bp-tile-teal); }
+.bp-tile-green { background-color: var(--bp-tile-green); }
+.bp-tile-orange { background-color: var(--bp-tile-orange); }
+.bp-tile-rose { background-color: var(--bp-tile-rose); }
+.bp-tile-violet { background-color: var(--bp-tile-violet); }
+.bp-tile-slate { background-color: var(--bp-tile-slate); }
+.bp-tile-label { font-size: 0.86em; font-weight: 600; text-align: center; line-height: 1.25; max-width: 13ch; overflow-wrap: anywhere; }
+.bp-tile-badge { position: absolute; top: 2px; right: calc(50% - 44px); min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center; font-size: 0.75em; font-weight: 800; border: 2px solid var(--bp-bg); }
+.bp-tile-badge.bp-tone-danger { background: var(--bp-danger); color: var(--bp-surface); }
+.bp-tile-badge.bp-tone-warning { background: var(--bp-warning); color: var(--bp-surface); }
+.bp-tile-badge.bp-tone-info, .bp-tile-badge.bp-tone-success, .bp-tile-badge.bp-tone-neutral { background: var(--bp-info); color: var(--bp-surface); }
+.bp-tile-plus { background: var(--bp-accent); color: var(--bp-accent-text); }
+.bp-tile-remove { position: absolute; top: 0; left: calc(50% - 46px); z-index: 2; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--bp-bg); background: var(--bp-text); color: var(--bp-bg); font-size: 18px; line-height: 1; font-weight: 800; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.bp-springboard.is-editing .bp-tiles .bp-tile-cell[draggable="true"] { cursor: grab; }
+.bp-springboard.is-editing .bp-tiles .bp-tile-cell[draggable="true"] .bp-tile-icon { animation: bp-jiggle 0.3s ease-in-out infinite alternate; }
+.bp-springboard.is-editing .bp-tiles .bp-tile-cell[draggable="true"]:nth-child(2n) .bp-tile-icon { animation-delay: -0.15s; }
+.bp-tile-cell.is-dragged { opacity: 0.4; }
+@keyframes bp-jiggle { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+.bp-ui[data-motion="reduced"] .bp-tile-icon { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .bp-tile-icon { animation: none !important; } }
+.bp-tile-gallery h3 { margin: 12px 0 8px; font-size: 0.95em; color: var(--bp-text-muted); }
+.bp-tile-desc { margin: 4px 0 0; font-size: 0.75em; color: var(--bp-text-muted); text-align: center; max-width: 18ch; }
+.bp-page-title { margin: 0; font-size: 1.6em; line-height: 1.25; font-weight: 750; }
+
 /* Les fenêtres */
 .bp-ui.bp-layer { height: auto; overflow: visible; background: transparent; }
 .bp-backdrop { position: fixed; inset: 0; z-index: calc(var(--layer-modal, 50) + 5); display: grid; place-items: center; padding: 24px; background: rgba(10, 12, 20, 0.45); }

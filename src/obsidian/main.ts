@@ -22,7 +22,7 @@ import { BlackProjectsSettingTab } from './settingsTab'
 import { BlackHomeView, HOME_VIEW } from './homeView'
 import { ViewsRegistry } from '../core/views'
 import type { Appearance } from '../core/appearance'
-import { dialogWindows, openModuleWindow, type AppHost } from '../ui'
+import { dialogWindows, openModuleWindow, type AppHost, type Page } from '../ui'
 import { obsidianDialogHost } from './ui'
 
 export default class BlackProjectsPlugin extends Plugin {
@@ -81,9 +81,17 @@ export default class BlackProjectsPlugin extends Plugin {
       name: this.i18n.t('command.home'),
       callback: () => void this.openHome()
     })
+    this.addCommand({
+      id: 'tableau-de-bord',
+      name: this.i18n.t('command.dashboard'),
+      callback: () => void this.openHome('dashboard')
+    })
     this.addRibbonIcon('layout-dashboard', this.i18n.t('command.home'), () => void this.openHome())
     this.addSettingTab(new BlackProjectsSettingTab(this.app, this))
     this.views.nav({ id: 'settings', label: this.i18n.t('home.nav.settings'), icon: 'settings', order: 90, run: () => this.openSettings() })
+    const group = this.i18n.t('home.tile.group')
+    this.views.tile({ id: 'core.reglages', label: this.i18n.t('home.nav.settings'), icon: 'settings', color: 'slate', group, order: 90, byDefault: true, description: this.i18n.t('home.tile.settings.desc'), run: () => this.openSettings() })
+    this.views.tile({ id: 'core.documentation', label: this.i18n.t('home.tile.docs'), icon: 'book', color: 'slate', group, order: 91, description: this.i18n.t('home.tile.docs.desc'), run: () => this.createDocumentation() })
 
     await this.registry.activateAll({
       disabled: this.config.disabledModules,
@@ -106,11 +114,12 @@ export default class BlackProjectsPlugin extends Plugin {
   }
 
   /** Ouvre l'accueil (ou le montre s'il est déjà ouvert). */
-  async openHome(): Promise<void> {
+  async openHome(page: Page = 'home'): Promise<void> {
     const open = this.app.workspace.getLeavesOfType(HOME_VIEW)[0]
     const leaf = open ?? this.app.workspace.getLeaf('tab')
     if (!open) await leaf.setViewState({ type: HOME_VIEW, active: true })
     await this.app.workspace.revealLeaf(leaf)
+    if (leaf.view instanceof BlackHomeView) leaf.view.show(page)
   }
 
   /** Recharge les sections de chaque accueil ouvert. */
@@ -153,6 +162,12 @@ export default class BlackProjectsPlugin extends Plugin {
       locale: this.config.language === 'en' ? 'en-GB' : 'fr-FR',
       version: this.manifest.version,
       sections: () => this.views.homeSections(),
+      tiles: () => this.views.allTiles(),
+      homeTiles: () => this.config.homeTiles,
+      saveHomeTiles: async (ids) => {
+        this.config = { ...this.config, homeTiles: ids }
+        await this.saveSettings()
+      },
       nav: () => this.views.navEntries(),
       appearance: () => this.config.appearance,
       saveAppearance: (appearance) => this.saveAppearance(appearance),

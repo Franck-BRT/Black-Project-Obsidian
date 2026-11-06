@@ -7,7 +7,7 @@
  */
 
 import { ItemView, type WorkspaceLeaf } from 'obsidian'
-import { mountApp, type AppHost, type MountedApp } from '../ui'
+import { mountApp, type AppHost, type MountedApp, type Page } from '../ui'
 
 export const HOME_VIEW = 'black-projects-home'
 
@@ -41,6 +41,11 @@ export class BlackHomeView extends ItemView {
 
   override async onClose(): Promise<void> {
     this.app_?.destroy()
+  }
+
+  /** Montre l'accueil ou le tableau de bord. */
+  show(page: Page): void {
+    this.app_?.show(page)
   }
 
   /** Recharge les sections : des fichiers ont changé, une commande s'est exécutée. */

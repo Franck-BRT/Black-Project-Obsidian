@@ -372,6 +372,12 @@ export const typagePiecesModule: BlackModule = {
   migrateSettings: migrateFromAo,
   activate(context) {
     configureTyping(context.settings.get())
+    // L'accueil : une tuile pour la fenêtre des types.
+    const window = context.openWindow
+    if (context.views && window) {
+      const t = (key: string) => context.i18n.t(key)
+      context.views.tile({ id: 'typage.types', label: t('typage-pieces.details.title'), icon: 'list', color: 'slate', group: t('typage-pieces.name'), description: t('typage-pieces.tile.types'), order: 81, run: () => window() })
+    }
     unsubscribe = context.settings.onChange((values) => configureTyping(values))
     context.commands.register({ id: 'exporter-types', nameKey: 'typage-pieces.command.export', run: () => exportCommand(context) })
     context.commands.register({ id: 'importer-types', nameKey: 'typage-pieces.command.import', run: () => importCommand(context) })

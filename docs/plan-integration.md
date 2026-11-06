@@ -328,6 +328,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   formulaires, confirmations, cases à cocher, messages, listes, textes, et la fenêtre
   « Fonctions » de chaque module ; plus aucune fenêtre propre à Obsidian, mêmes thèmes et
   même accessibilité partout (focus gardé, clavier, erreurs annoncées)
+- v0.12.0 : **accueil à tuiles** modifiable par l'utilisateur (ajouter, retirer, déplacer
+  à la souris ou au clavier ; pastilles : prochaine remise, exigences faibles, échecs de
+  workflows, IA pas réglée) ; les informations passent dans une page **Tableau de bord**
 
 ### Étape 7 — Livrables
 

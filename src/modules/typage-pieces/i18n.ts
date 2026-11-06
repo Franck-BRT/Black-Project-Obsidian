@@ -4,6 +4,7 @@
 /** Les textes du module Typage des pièces. Toutes les clés commencent par `typage-pieces.`. */
 export const typageFr: Record<string, string> = {
   'typage-pieces.name': 'Typage des pièces',
+  'typage-pieces.tile.types': 'Les types de pièces, vos mots-clés, l’échange avec d’autres coffres.',
   'typage-pieces.description':
     'Reconnaît le type des documents d’un dossier de consultation — RC, CCTP, CCAP, BPU… — d’après le nom du fichier et le titre du texte. Vos types, vos mots-clés, les types désactivés, et leur échange avec d’autres coffres.',
   'typage-pieces.details.title': 'Types de pièces',
@@ -133,6 +134,7 @@ export const typageFr: Record<string, string> = {
 
 export const typageEn: Record<string, string> = {
   'typage-pieces.name': 'Document typing',
+  'typage-pieces.tile.types': 'Document types, your keywords, exchange with other vaults.',
   'typage-pieces.description':
     'Recognises the type of tender package documents — instructions, specification, schedule of prices… — from the file name and the title of the text. Your types, your keywords, disabled types, and their exchange with other vaults.',
   'typage-pieces.details.title': 'Document types',

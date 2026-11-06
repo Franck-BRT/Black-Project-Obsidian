@@ -58,4 +58,25 @@ export function registerWorkflowsHome(
     }
   })
   views.nav({ id: 'workflows', label: t('workflows.name'), icon: 'flow', order: 30, run: () => deps.run('liste') })
+  const group = t('workflows.name')
+  views.tile({
+    id: 'workflows.liste',
+    label: t('workflows.name'),
+    icon: 'flow',
+    color: 'rose',
+    group,
+    order: 30,
+    byDefault: true,
+    description: t('workflows.tile.list.desc'),
+    run: () => deps.run('liste'),
+    async badge() {
+      // Un échec parmi les dernières exécutions : à voir.
+      const path = journalPath(deps.folder(), t)
+      const journal = (await deps.fs.exists(path)) ? await deps.fs.readText(path) : ''
+      const failed = journalItems(journal, 10).filter((item) => item.tone === 'danger').length
+      return failed ? { text: String(failed), tone: 'danger', label: t('workflows.tile.failed', { count: failed }) } : null
+    }
+  })
+  views.tile({ id: 'workflows.nouveau', label: t('workflows.command.new'), icon: 'plus', color: 'rose', group, order: 31, description: t('workflows.tile.new.desc'), run: () => deps.run('nouveau') })
+  views.tile({ id: 'workflows.journal', label: t('workflows.home.journal'), icon: 'book', color: 'rose', group, order: 32, description: t('workflows.tile.journal.desc'), run: deps.openJournal })
 }

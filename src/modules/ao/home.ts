@@ -10,7 +10,7 @@
 
 import { parseFrontmatter } from '../../core/frontmatter'
 import type { Notifier, Ui } from '../../core/ports'
-import type { Card, HomeSectionView, ViewAction, ViewsRegistrar } from '../../core/views'
+import type { Card, HomeSectionView, TileBadge, ViewAction, ViewsRegistrar } from '../../core/views'
 import { assessAll, requirementLanguages, requirementsAt } from '../exigences'
 import { aiClient } from '../ia'
 import { calendarOf, calendarPath, writeCalendar } from './calendar'
@@ -128,25 +128,65 @@ export async function analysesSection(deps: HomeDeps): Promise<HomeSectionView> 
   }
 }
 
+/** La prochaine date limite de remise, toutes analyses confondues : « J-5 » sur la tuile. */
+async function nextDeadline(deps: HomeDeps): Promise<TileBadge | null> {
+  const today = deps.today()
+  let best: { due: string; name: string } | null = null
+  for (const analysis of await listAnalyses(deps.services())) {
+    const calendar = calendarOf(await pieceSources(deps.services(), analysis, 'appel-d-offres'), Number(today.slice(0, 4)))
+    const due = calendar.dates.filter((date) => date.kind === 'remise' && date.date >= today).map((date) => date.date)[0]
+    if (due && (!best || due < best.due)) best = { due, name: analysis.name }
+  }
+  if (!best) return null
+  const days = Math.round((Date.parse(`${best.due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000)
+  return {
+    text: `J-${days}`,
+    tone: days <= 7 ? 'danger' : days <= 21 ? 'warning' : 'info',
+    label: deps.t('ao.tile.next', { name: best.name, date: best.due, days })
+  }
+}
+
 export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps): void {
   if (!views) return
-  views.home({ id: 'ao.analyses', order: 10, area: 'main', load: () => analysesSection(deps) })
-  views.nav({
+  const { t } = deps
+  const group = t('ao.name')
+  const ai = () => aiClient() !== null
+  const tile = (id: string, label: string, icon: Parameters<ViewsRegistrar['tile']>[0]['icon'], color: Parameters<ViewsRegistrar['tile']>[0]['color'], order: number, byDefault: boolean, command: string, description: string) =>
+    views.tile({ id, label, icon, color, group, order, byDefault, description, run: () => deps.run(command) })
+  tile('ao.nouvelle', t('ao.tile.new'), 'plus', 'indigo', 10, true, 'nouvelle-analyse', t('ao.tile.new.desc'))
+  views.tile({
     id: 'ao.analyses',
-    label: deps.t('ao.home.nav'),
+    label: t('ao.home.nav'),
     icon: 'folder',
-    order: 10,
-    async run() {
-      const analyses = await listAnalyses(deps.services())
-      if (!analyses.length) {
-        await deps.run('nouvelle-analyse')
-        return
-      }
-      const chosen = await deps.ui.pickOption(
-        analyses.map((analysis) => ({ value: analysis.note, label: analysis.name, description: analysis.folder })),
-        deps.t('ao.pick.analysis')
-      )
-      if (chosen) await deps.ui.openNote(chosen)
-    }
+    color: 'blue',
+    group,
+    order: 11,
+    byDefault: true,
+    description: t('ao.tile.analyses.desc'),
+    run: () => openAnalysis(deps),
+    badge: () => nextDeadline(deps)
   })
+  tile('ao.importer', t('ao.home.import'), 'upload', 'teal', 12, true, 'importer', t('ao.tile.import.desc'))
+  tile('ao.calendrier', t('ao.home.calendar'), 'calendar', 'orange', 13, true, 'calendrier', t('ao.tile.calendar.desc'))
+  views.tile({ id: 'ao.interroger', label: t('ao.tile.ask'), icon: 'chat', color: 'violet', group, order: 14, byDefault: true, description: t('ao.tile.ask.desc'), run: () => deps.run('interroger'), badge: async () => (ai() ? null : { text: '!', tone: 'warning', label: t('ia.unavailable') }) })
+  tile('ao.questionnaire', t('ao.tile.questionnaire'), 'list', 'violet', 15, false, 'questionnaire', t('ao.tile.questionnaire.desc'))
+  tile('ao.verifier', t('ao.tile.verify'), 'check', 'green', 16, false, 'verifier-exigences', t('ao.tile.verify.desc'))
+  tile('ao.qualite', t('ao.tile.quality'), 'star', 'green', 17, false, 'qualite-exigences', t('ao.tile.quality.desc'))
+  tile('ao.relire', t('ao.tile.review'), 'spark', 'violet', 18, false, 'relire-exigences-ia', t('ao.tile.review.desc'))
+  views.home({ id: 'ao.analyses', order: 10, area: 'main', load: () => analysesSection(deps) })
+  views.nav({ id: 'ao.analyses', label: t('ao.home.nav'), icon: 'folder', order: 10, run: () => openAnalysis(deps) })
+}
+
+/** Choisir une analyse et ouvrir sa note ; sans analyse, en créer une. */
+async function openAnalysis(deps: HomeDeps): Promise<void> {
+  const analyses = await listAnalyses(deps.services())
+  if (!analyses.length) {
+    await deps.run('nouvelle-analyse')
+    return
+  }
+  const chosen = await deps.ui.pickOption(
+    analyses.map((analysis) => ({ value: analysis.note, label: analysis.name, description: analysis.folder })),
+    deps.t('ao.pick.analysis')
+  )
+  if (chosen) await deps.ui.openNote(chosen)
 }

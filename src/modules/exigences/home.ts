@@ -68,4 +68,24 @@ export function registerExigencesHome(views: ViewsRegistrar | undefined, session
     }
   })
   views.nav({ id: 'exigences', label: t('exigences.home.nav'), icon: 'list', order: 20, run: () => run('liste') })
+  const group = t('exigences.name')
+  views.tile({
+    id: 'exigences.liste',
+    label: t('exigences.home.nav'),
+    icon: 'list',
+    color: 'green',
+    group,
+    order: 20,
+    byDefault: true,
+    description: t('exigences.tile.list.desc'),
+    run: () => run('liste'),
+    async badge() {
+      const library = await session.store.all()
+      const weak = assessAll(library, session.settings().languages, 'record').filter((each) => each.report.stars < 3).length
+      return weak ? { text: String(weak), tone: 'warning', label: t('exigences.tile.weak', { count: weak }) } : null
+    }
+  })
+  views.tile({ id: 'exigences.nouvelle', label: t('exigences.tile.new'), icon: 'plus', color: 'green', group, order: 21, description: t('exigences.tile.new.desc'), run: () => run('nouvelle') })
+  views.tile({ id: 'exigences.qualite', label: t('exigences.tile.quality'), icon: 'star', color: 'green', group, order: 22, description: t('exigences.tile.quality.desc'), run: () => run('qualite') })
+  views.tile({ id: 'exigences.importer', label: t('exigences.tile.import'), icon: 'upload', color: 'green', group, order: 23, description: t('exigences.tile.import.desc'), run: () => run('importer') })
 }

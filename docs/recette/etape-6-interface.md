@@ -42,6 +42,29 @@ Sur le coffre de test.
 - [ ] **Taille du texte** très grande : rien ne déborde ; fenêtre étroite : une colonne
 - [ ] Au clavier seul (Tab, Entrée, flèches dans les choix) : tout se fait, le focus se voit
 
+## L'accueil à tuiles et le tableau de bord (v0.12.0)
+
+- [ ] L'accueil : « Bonjour » (ou « Bon après-midi », « Bonsoir ») et la date, puis les
+      tuiles par défaut : Tableau de bord, Nouvelle analyse, Analyses, Importer des pièces,
+      Calendrier, Interroger, Exigences, Workflows, IA, Réglages
+- [ ] Les pastilles : « J-n » sur Analyses (prochaine remise, rouge à 7 jours ou moins),
+      le nombre d'exigences faibles sur Exigences, les échecs récents sur Workflows, « ! »
+      sur IA et Interroger quand l'IA n'est pas réglée ; l'infobulle dit ce qu'elles
+      veulent dire
+- [ ] Chaque tuile lance son action (Exigences ouvre la liste, Tableau de bord change de
+      page…)
+- [ ] **Modifier l'accueil** : les tuiles tremblent ; − en retire une ; « Tuiles à
+      ajouter » (rangées par module) en ajoute ; glisser-déposer en déplace une ; au
+      clavier, Tab jusqu'à une tuile puis Alt + → ou Alt + ← (le déplacement est annoncé) ;
+      **Terminé**
+- [ ] Fermer et rouvrir Obsidian : l'agencement est gardé ; « Rétablir l'accueil par
+      défaut » le remet
+- [ ] Apparence *Mouvement réduit* : les tuiles ne tremblent plus en modification
+- [ ] Désactiver le module Workflows : sa tuile disparaît de l'accueil, rien ne casse
+- [ ] **Tableau de bord** (navigation, tuile, ou commande « Ouvrir le tableau de bord de
+      Black Projects ») : les sections d'informations (analyses et échéances, IA,
+      exigences, workflows)
+
 ## Les fenêtres (v0.11.0)
 
 - [ ] **Nouvelle analyse** : le formulaire s'ouvre, le focus sur « Nom » ; « Créer » sans

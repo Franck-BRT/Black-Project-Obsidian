@@ -7,7 +7,8 @@
  * de bureau ; un module ne connaît ni Preact, ni le DOM, ni l'hôte. Changer la façon de
  * dessiner ne touche donc aucun module.
  *
- * Aujourd'hui : les sections de la **page d'accueil** et les entrées de la **navigation**.
+ * Aujourd'hui : les **tuiles** de l'accueil (que l'utilisateur choisit et range), les
+ * sections du **tableau de bord** et les entrées de la **navigation**.
  */
 
 /** Ce qu'un élément dit de son état. L'interface lui donne une couleur, une icône et un mot. */
@@ -41,6 +42,8 @@ export type IconName =
   | 'trash'
   | 'copy'
   | 'chevron'
+  | 'chart'
+  | 'grid'
 
 /** Un bouton : ce qu'il dit, ce qu'il fait. */
 export interface ViewAction {
@@ -136,6 +139,39 @@ export interface HomeSection {
   load(): Promise<HomeSectionView | null>
 }
 
+/** Les couleurs de tuile : décoratives (le libellé dit tout), définies par chaque thème. */
+export type TileColor = 'indigo' | 'blue' | 'teal' | 'green' | 'orange' | 'rose' | 'violet' | 'slate'
+
+/** Une pastille sur une tuile : un nombre, une échéance (« J-5 »). */
+export interface TileBadge {
+  text: string
+  tone: Tone
+  /** Ce qu'elle veut dire, pour les lecteurs d'écran et l'infobulle. */
+  label: string
+}
+
+/**
+ * Une tuile de l'accueil : un raccourci vers ce que fait un module. L'utilisateur choisit
+ * les siennes et les range ; un module en propose, certaines présentes par défaut.
+ */
+export interface TileSpec {
+  id: string
+  label: string
+  icon: IconName
+  color: TileColor
+  /** Le module qui la propose, pour ranger le catalogue : « Analyse d'appels d'offres ». */
+  group: string
+  /** Une phrase dans le catalogue. */
+  description?: string
+  /** Sur l'accueil tant que l'utilisateur ne l'a pas réglé. */
+  byDefault?: boolean
+  /** Plus petit : plus tôt dans l'ordre par défaut. */
+  order: number
+  run(): void | Promise<void>
+  /** Une pastille calculée à chaque affichage ; `null` : aucune. */
+  badge?(): Promise<TileBadge | null>
+}
+
 /** Une entrée de la barre de navigation. */
 export interface NavEntry {
   id: string
@@ -147,14 +183,27 @@ export interface NavEntry {
 
 /** Ce qu'un module peut déclarer à l'interface, par son contexte. */
 export interface ViewsRegistrar {
+  /** Une section du tableau de bord. */
   home(section: HomeSection): void
   nav(entry: NavEntry): void
+  /** Une tuile proposée pour l'accueil. */
+  tile(spec: TileSpec): void
 }
 
 /** Les déclarations de tous les modules actifs, rangées. */
 export class ViewsRegistry implements ViewsRegistrar {
   private readonly sections = new Map<string, HomeSection>()
   private readonly entries = new Map<string, NavEntry>()
+  private readonly tiles = new Map<string, TileSpec>()
+
+  tile(spec: TileSpec): void {
+    this.tiles.set(spec.id, spec)
+  }
+
+  /** Toutes les tuiles proposées, dans l'ordre par défaut. */
+  allTiles(): TileSpec[] {
+    return [...this.tiles.values()].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
+  }
 
   home(section: HomeSection): void {
     this.sections.set(section.id, section)

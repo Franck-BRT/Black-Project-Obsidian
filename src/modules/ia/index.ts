@@ -215,6 +215,21 @@ export const iaModule: BlackModule = {
         }
       })
       if (settingsWindow) context.views.nav({ id: 'ia', label: tr('ia.name'), icon: 'spark', order: 40, run: () => settingsWindow() })
+      if (settingsWindow) {
+        context.views.tile({
+          id: 'ia.reglages',
+          label: tr('ia.name'),
+          icon: 'spark',
+          color: 'violet',
+          group: tr('ia.name'),
+          order: 40,
+          byDefault: true,
+          description: tr('ia.tile.desc'),
+          run: () => settingsWindow(),
+          badge: async () => (aiClient() ? null : { text: '!', tone: 'warning', label: tr('ia.home.noUrl') })
+        })
+      }
+      context.views.tile({ id: 'ia.tester', label: tr('ia.setting.test.button'), icon: 'refresh', color: 'violet', group: tr('ia.name'), order: 41, description: tr('ia.setting.test.desc'), run: () => context.commands.run?.('tester') ?? Promise.resolve() })
     }
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)))
     const { platform, i18n, settings } = context
