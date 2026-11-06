@@ -209,8 +209,8 @@ Orbital Services).
 
 Sur la fiche d'une analyse, « Ce que l'analyse a produit » liste les notes du dossier
 `Analyse/` ; un clic ouvre la page `ao.note?<chemin encodé>` (`producedPageOf`, `parent` :
-les analyses ; sans pages chez la plateforme, la note dans le coffre). `produced.ts`
-(`noteBlocks`) lit le Markdown en blocs : sans l'en-tête ni les marques `<!-- bp:… -->` ;
+les analyses ; sans pages chez la plateforme, la note dans le coffre). `noteBlocks`
+(`src/core/markdown.ts` depuis Black Projects 0.35.0, la documentation s'en sert aussi) lit le Markdown en blocs : sans l'en-tête ni les marques `<!-- bp:… -->` ;
 le `#` est le titre de la page ; chaque `##` / `###` l'intitulé du bloc qui suit ; un
 tableau devient une liste (la première cellule en titre, les autres en détail, « — »
 écartés) ; une liste à puces, une liste (« **Libellé** : suite » : le libellé en titre) ;

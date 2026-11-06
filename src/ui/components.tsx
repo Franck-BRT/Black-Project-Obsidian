@@ -242,9 +242,18 @@ export function BlockView({ block, t, now, locale }: { block: HomeBlock; t: Tran
       ) : (
         <p class="bp-empty">{block.empty ?? t('ui.empty')}</p>
       )
-      return block.title ? (
+      return block.title || block.intro?.length ? (
         <div class="bp-block">
-          <h3 class="bp-block-title">{block.title}</h3>
+          {block.title && <h3 class="bp-block-title">{block.title}</h3>}
+          {!!block.intro?.length && (
+            <div class="bp-prose">
+              {block.intro.map((paragraph, index) => (
+                <p key={index} class="bp-text">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          )}
           {list}
         </div>
       ) : (
@@ -252,7 +261,9 @@ export function BlockView({ block, t, now, locale }: { block: HomeBlock; t: Tran
       )
     }
     case 'text': {
-      const body = block.paragraphs.length ? (
+      const body = block.paragraphs.length && block.preformatted ? (
+        <pre class="bp-pre">{block.paragraphs.join('\n\n')}</pre>
+      ) : block.paragraphs.length ? (
         <div class="bp-prose">
           {block.paragraphs.map((paragraph, index) => (
             <p key={index} class="bp-text">

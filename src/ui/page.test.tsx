@@ -58,6 +58,9 @@ describe('la recherche et les filtres d’une page', () => {
     const html = renderToString(<BlockView block={text[0]!} t={(key) => key} now={new Date()} locale="fr" />)
     expect(html).toContain('<h3 class="bp-block-title">Réponse</h3>')
     expect(html).toContain('<div class="bp-prose"><p class="bp-text">Les pénalités de retard sont de 1/1000.</p><p class="bp-text">La garantie court deux ans.</p></div>')
+    // Un bloc de code (une arborescence) : tel quel, espaces et retours gardés.
+    const code = renderToString(<BlockView block={{ kind: 'text', paragraphs: ['Essai/\n└── Note.md'], preformatted: true }} t={(key) => key} now={new Date()} locale="fr" />)
+    expect(code).toBe('<pre class="bp-pre">Essai/\n└── Note.md</pre>')
   })
 
   it('un filtre garde les cartes qui y répondent ; avec la recherche, les deux', () => {

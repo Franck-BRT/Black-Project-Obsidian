@@ -157,8 +157,10 @@ que la recherche lit aussi. Il la déclare par
 
 - un sous-titre, des boutons en tête ;
 - des blocs (indicateurs, cartes, listes, messages — les mêmes que le tableau de bord — et
-  du **texte** en paragraphes, `{ kind: 'text', title?, paragraphs }`, pour une note lue
-  dans l'interface ; la recherche n'en garde que les paragraphes qui contiennent les mots) ;
+  du **texte** en paragraphes, `{ kind: 'text', title?, paragraphs, preformatted? }`, pour
+  une note lue dans l'interface — `preformatted` : tel quel, un bloc de code ; la recherche
+  n'en garde que les paragraphes qui contiennent les mots ; une liste peut porter son
+  `intro`, du texte dans le même cadre) ;
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;
@@ -166,6 +168,21 @@ que la recherche lit aussi. Il la déclare par
   `tags`. Le nombre affiché est annoncé (« 1 sur 2 affiché(s) ») ; il ne compte que ce que
   la recherche ou le filtre trie (un filtre ne vise que les cartes : une liste — un journal
   — ne compte pas avec lui). Un bloc vidé dit, à sa place, que rien ne correspond.
+
+**Une note Markdown en blocs** : `noteBlocks` (`src/core/markdown.ts`) lit une note — une
+note produite par l'analyse, une page de la documentation — en blocs : un titre `##` par
+cadre ; un tableau en liste ; des puces avec lien ou intitulé (« **Libellé** : … ») en liste,
+les autres en texte (« • ») ; une phrase suivie de sa liste dans le même cadre ; un bloc de
+code tel quel (fermé par la même clôture : « ```` » autour d'un exemple qui contient
+« ``` ») ; une puce qui continue à la ligne suivante, rejointe.
+
+**La documentation en page** (0.35.0) : `DOCS_PAGE` (`core.documentation`, `docsPage`,
+`src/core/docsPage.ts`) — sans paramètre, le sommaire (l'accueil de la documentation, une
+carte par page) ; `docPageOf(chemin)`, une page, lue par `noteBlocks` sans son en-tête ni
+l'encadré « écrite dans le coffre », ses liens vers d'autres pages ouverts dans l'onglet,
+les pages précédente et suivante. Les pages sont celles que `documentationPages` écrit dans
+le coffre : rien à écrire pour les lire. « Écrire dans le coffre » (sans quitter la page),
+« Ouvrir dans le coffre » quand la note y est.
 
 Une page peut prendre un **paramètre** : `showPage('workflows.fiche?wf-1')` (`pageWith`)
 appelle `load('wf-1')` — la fiche d'un workflow ; la fiche d'une analyse ou d'une exigence prend

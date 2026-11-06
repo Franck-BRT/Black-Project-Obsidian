@@ -128,10 +128,10 @@ export type HomeBlock =
   | { kind: 'actions'; actions: ViewAction[] }
   | { kind: 'cards'; cards: Card[]; empty?: string; /** Un intitulé au-dessus des cartes. */ title?: string; /** Des boutons à côté de l'intitulé (« Ajouter une action »). */ actions?: ViewAction[] }
   | { kind: 'stats'; stats: Stat[] }
-  | { kind: 'list'; items: ListItem[]; empty?: string; /** Un intitulé au-dessus de la liste. */ title?: string }
+  | { kind: 'list'; items: ListItem[]; empty?: string; /** Un intitulé au-dessus de la liste. */ title?: string; /** Du texte avant la liste, dans le même cadre (l'introduction d'une section). */ intro?: string[] }
   | { kind: 'message'; tone: Tone; text: string; actions?: ViewAction[] }
   /** Du texte à lire, en paragraphes (une note produite) ; la recherche ne garde que ceux qui répondent. */
-  | { kind: 'text'; paragraphs: string[]; empty?: string; /** Un intitulé au-dessus du texte. */ title?: string }
+  | { kind: 'text'; paragraphs: string[]; empty?: string; /** Un intitulé au-dessus du texte. */ title?: string; /** Du texte tel quel, espaces et retours gardés (un bloc de code, une arborescence). */ preformatted?: boolean }
 
 /** Une section de l'accueil, telle qu'elle est à cet instant. */
 export interface HomeSectionView {

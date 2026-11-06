@@ -46,6 +46,8 @@ export interface SettingsPageDeps {
   /** La fenêtre « Fonctions » d'un module. */
   openModule(module: ModuleDescriptor): Promise<void>
   createDocumentation(): Promise<void>
+  /** La documentation, à lire dans l'onglet ; sans elle, pas de bouton pour la lire. */
+  readDocumentation?(): void
   /** La licence, en mots. */
   licence(): string
   ui: Pick<Ui, 'pickOption' | 'askForm'>
@@ -182,6 +184,7 @@ export function settingsPage(deps: SettingsPageDeps): PageView {
       icon: 'book',
       text: t('settings.docs.create.desc'),
       actions: [
+        ...(deps.readDocumentation ? [{ id: 'read', label: t('settings.page.docs.read'), icon: 'book' as const, run: () => deps.readDocumentation?.() }] : []),
         { id: 'docs', label: t('settings.docs.button'), icon: 'refresh', tooltip: t('tip.docs.create'), run: () => deps.createDocumentation() },
         {
           id: 'folder',

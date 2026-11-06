@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La documentation, en page (v0.35.0)
+
+- [ ] Paramètres → **Lire la documentation** (ou la tuile Documentation) : le sommaire
+      dans l'onglet — l'accueil de la documentation, puis « Toutes les pages » (l'accueil,
+      la prise en main, une page par module) ; rien n'est écrit dans le coffre
+- [ ] Une page (Exigences) : son titre, « Toute la documentation », « ← page précédente »,
+      « page suivante → » ; les exemples de code tels quels (` ```brt-req `), sans `**`,
+      `[[` ni `{{` ; une phrase suivie de sa liste dans un seul cadre
+- [ ] Un lien vers une autre page de la documentation l'ouvre dans l'onglet ; « Retour »
+      ramène à la page d'avant
+- [ ] **Écrire dans le coffre** : les notes sont écrites, Obsidian ne les ouvre pas ;
+      « Ouvrir dans le coffre » apparaît, et ouvre la note de la page
+- [ ] La recherche (« apparence ») ne garde que ce qui en parle
+
 ## Les fonctions d'un module, en page (v0.34.0)
 
 - [ ] Paramètres → un clic sur le nom d'un module (ou son bouton « Formats de fichiers »,

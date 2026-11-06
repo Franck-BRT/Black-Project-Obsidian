@@ -14,6 +14,8 @@
 import { readAppearance, type Appearance } from '../src/core/appearance'
 import { DEFAULT_SETTINGS, readDashboard, readNavMenu, type CoreSettings } from '../src/core/settings'
 import { modulePageOf, SETTINGS_PAGE, settingsPage } from '../src/core/settingsPage'
+import { docModules, documentationPages } from '../src/core/docs'
+import { DOCS_PAGE, docsPage } from '../src/core/docsPage'
 import { createI18n } from '../src/core/i18n'
 import { EVALUATION } from '../src/core/licence'
 import type { ModuleContext } from '../src/core/modules/module'
@@ -227,6 +229,31 @@ async function start(): Promise<void> {
     const module = registry.status(id)?.module
     return module ? windowOf(module) : null
   }
+  // La documentation, à lire dans l'onglet comme dans Obsidian.
+  views.page({
+    id: DOCS_PAGE,
+    title: t('docs.page.title'),
+    icon: 'book',
+    load: (param) =>
+      docsPage(
+        {
+          t,
+          version: 'démonstration',
+          folder: () => core.docsFolder,
+          pages: () =>
+            documentationPages({
+              version: 'démonstration',
+              folder: core.docsFolder,
+              modules: docModules(registry.list(), { version: 'démonstration', folder: core.docsFolder, t, settingsFor: (id) => settings[id] ?? {} })
+            }),
+          exists: (path) => platform.fs.exists(path),
+          write: async () => toast(t('demo.docs')),
+          openNote: (path) => platform.ui.openNote(path),
+          showPage: (id) => mounted?.show(id)
+        },
+        param
+      )
+  })
   views.page({
     id: SETTINGS_PAGE,
     title: t('home.nav.settings'),
@@ -246,6 +273,7 @@ async function start(): Promise<void> {
         moduleSettings: (id) => settings[id] ?? {},
         openModule: async (module) => mounted?.show(modulePageOf(module.id)),
         createDocumentation: async () => toast(t('demo.docs')),
+        readDocumentation: () => mounted?.show(DOCS_PAGE),
         licence: () => t('settings.licence.evaluation'),
         ui: platform.ui,
         notify: (message) => toast(message)

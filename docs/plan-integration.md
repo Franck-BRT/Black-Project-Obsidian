@@ -386,6 +386,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.34.0 : les **fonctions d'un module en page** dans l'onglet (le contenu de sa fenêtre :
   ses réglages, ce qu'il sait faire) ; les liens des modules et la page Paramètres y
   mènent
+- v0.35.0 : la **documentation en page** dans l'onglet (sommaire, chaque page lisible,
+  liens entre pages, précédente / suivante) sans l'écrire d'abord ; le lecteur Markdown
+  passe dans le cœur (`src/core/markdown.ts`) : blocs de code, phrase et liste dans un
+  cadre, puces de texte
 
 ### Étape 7 — Livrables
 

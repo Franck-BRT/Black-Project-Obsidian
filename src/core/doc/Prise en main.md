@@ -99,7 +99,9 @@ Technologies** :
 - **Langue** : français ou anglais, appliquée au prochain chargement du plugin.
 - **Accueil et apparence** : ouvrir l'accueil au démarrage, et les mêmes choix
   d'apparence que le bouton de l'accueil.
-- **Documentation** : le dossier où cette documentation est créée, et le bouton qui la
+- **Documentation** : **Lire la documentation** l'ouvre dans l'onglet de Black Projects
+  (le sommaire, puis chaque page, lisible, avec ses liens vers les autres pages), sans
+  l'écrire d'abord ; le dossier où elle est écrite dans le coffre, et le bouton qui la
   crée ou la met à jour.
 - **Modules** : chaque module avec sa version et son état. L'interrupteur l'active ou le
   désactive au prochain chargement du plugin ; vos données ne sont jamais supprimées.

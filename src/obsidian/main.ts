@@ -12,7 +12,8 @@ import { describeEntitlements, EVALUATION, type Entitlements } from '../core/lic
 import type { BlackModule, ModuleCommand, ModuleContext, ModuleDescriptor } from '../core/modules/module'
 import { ModuleRegistry } from '../core/modules/registry'
 import type { Platform, SettingsStorage } from '../core/ports'
-import { docModules, documentationPages, writeDocumentation } from '../core/docs'
+import { docModules, documentationPages, writeDocumentation, type DocPage } from '../core/docs'
+import { DOCS_PAGE, docsPage } from '../core/docsPage'
 import { moduleSettings, readSettings, type CoreSettings } from '../core/settings'
 import { MODULES } from '../modules'
 import { drawBlock, drawBlockError } from './blockView'
@@ -110,13 +111,34 @@ export default class BlackProjectsPlugin extends Plugin {
           moduleSettings: (id) => moduleSettings(this.config, id),
           openModule: (module) => this.openModulePage(module),
           createDocumentation: () => this.createDocumentation(),
+          readDocumentation: () => void this.openHome(DOCS_PAGE),
           licence: () => this.describeLicence(),
           ui: this.platform.ui,
           notify: (message) => this.platform.notifier.notify(message, 8000),
           openHostSettings: () => this.openHostSettings()
         })
     })
-    this.views.tile({ id: 'core.documentation', label: this.i18n.t('home.tile.docs'), icon: 'book', color: 'slate', group, order: 91, description: this.i18n.t('home.tile.docs.desc'), run: () => this.createDocumentation() })
+    this.views.tile({ id: 'core.documentation', label: this.i18n.t('home.tile.docs'), icon: 'book', color: 'slate', group, order: 91, description: this.i18n.t('home.tile.docs.desc'), page: DOCS_PAGE, run: () => this.openHome(DOCS_PAGE) })
+    // La documentation, à lire dans l'onglet de Black Projects, sans l'écrire d'abord.
+    this.views.page({
+      id: DOCS_PAGE,
+      title: this.i18n.t('docs.page.title'),
+      icon: 'book',
+      load: (param) =>
+        docsPage(
+          {
+            t: (key, vars) => this.i18n.t(key, vars),
+            version: this.manifest.version,
+            folder: () => this.config.docsFolder,
+            pages: () => this.docPages(),
+            exists: (path) => this.platform.fs.exists(path),
+            write: () => this.createDocumentation(false),
+            openNote: (path) => this.platform.ui.openNote(path),
+            showPage: (id) => void this.openHome(id)
+          },
+          param
+        )
+    })
 
     await this.registry.activateAll({
       disabled: this.config.disabledModules,
@@ -262,21 +284,14 @@ export default class BlackProjectsPlugin extends Plugin {
 
   /**
    * Écrit la documentation de Black Projects et de ses modules dans le dossier choisi,
-   * puis ouvre l'accueil. Les notes de l'utilisateur au même endroit ne sont jamais
-   * remplacées.
+   * puis ouvre l'accueil (`openAfter`, par défaut ; sinon l'onglet se redessine). Les notes
+   * de l'utilisateur au même endroit ne sont jamais remplacées.
    */
-  async createDocumentation(): Promise<void> {
+  async createDocumentation(openAfter = true): Promise<void> {
     const t = (key: string, vars?: Readonly<Record<string, string | number>>) => this.i18n.t(key, vars)
     const folder = this.config.docsFolder
-    const version = this.manifest.version
     try {
-      const modules = docModules(this.registry.list(), {
-        version,
-        folder,
-        t,
-        settingsFor: (id) => moduleSettings(this.config, id)
-      })
-      const report = await writeDocumentation(this.platform.fs, folder, documentationPages({ version, folder, modules }))
+      const report = await writeDocumentation(this.platform.fs, folder, this.docPages())
       this.platform.notifier.notify(
         t('docs.done', {
           folder,
@@ -289,11 +304,26 @@ export default class BlackProjectsPlugin extends Plugin {
       if (report.kept.length > 0) {
         this.platform.notifier.notify(t('docs.kept', { count: report.kept.length, files: report.kept.join(', ') }), 12000)
       }
-      await this.platform.ui.openNote(`${folder}/Accueil.md`)
+      // Depuis la page de la documentation, on y reste : elle propose « Ouvrir dans le coffre ».
+      if (openAfter) await this.platform.ui.openNote(`${folder}/Accueil.md`)
+      else this.refreshHome()
     } catch (error) {
       console.error('[Black Projects] documentation', error)
       this.platform.notifier.notify(t('docs.failed', { error: error instanceof Error ? error.message : String(error) }), 10000)
     }
+  }
+
+  /** Les pages de la documentation, telles qu'écrites dans le coffre ou lues dans l'onglet. */
+  docPages(): DocPage[] {
+    const folder = this.config.docsFolder
+    const version = this.manifest.version
+    const modules = docModules(this.registry.list(), {
+      version,
+      folder,
+      t: (key, vars) => this.i18n.t(key, vars),
+      settingsFor: (id) => moduleSettings(this.config, id)
+    })
+    return documentationPages({ version, folder, modules })
   }
 
   describeLicence(): string {
