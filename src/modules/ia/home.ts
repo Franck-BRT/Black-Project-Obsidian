@@ -9,7 +9,7 @@
  * (adresse, clé) restent dans la fenêtre du module, ouverte par « Régler la connexion ».
  */
 
-import type { Card, HomeSectionView, ListItem, PageView, Tone, ViewAction, ViewsRegistrar } from '../../core/views'
+import type { Card, HomeBlock, HomeSectionView, ListItem, PageView, Tone, ViewAction, ViewsRegistrar } from '../../core/views'
 import type { ModuleDetails } from '../../core/modules/module'
 import type { AiClient, AiConnection } from './client'
 import { listedModels, MODEL_KEYS, MODEL_USES, modelsFor, type ModelUse } from './models'
@@ -18,6 +18,17 @@ import { listedModels, MODEL_KEYS, MODEL_USES, modelsFor, type ModelUse } from '
 export const IA_PAGE = 'ia.connexion'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
+
+/** Le dernier « Tester la connexion » : quand, et ce qu'il a donné. */
+export interface ConnectionTest {
+  /** « 2026-11-06 14:02 ». */
+  at: string
+  outcome: 'ok' | 'failed' | 'noUrl' | 'noModel'
+  /** Les modèles du serveur, le modèle d'analyse (réussi), la raison (échec). */
+  count: number
+  model: string
+  reason: string
+}
 
 export interface IaHomeDeps {
   t: Translate
@@ -31,6 +42,8 @@ export interface IaHomeDeps {
   pick(options: { value: string; label: string; description?: string }[], placeholder: string): Promise<string | null>
   notify(message: string): void
   test(): Promise<void>
+  /** Le dernier test de la connexion, tant que le module est actif. */
+  lastTest?(): ConnectionTest | null
   /** La fenêtre du module (adresse, clé, jetons), quand la plateforme en a une. */
   openSettings?(): void
   showPage?(id: string): void
@@ -75,12 +88,20 @@ async function chooseModel(deps: IaHomeDeps, use: ModelUse): Promise<void> {
   deps.notify(chosen ? t('ia.page.chosen', { use: t(`ia.setting.model.${use}`), model: chosen }) : t('ia.page.cleared', { use: t(`ia.setting.model.${use}`) }))
 }
 
-/** Les boutons communs : tester, régler. */
-function commonActions(deps: IaHomeDeps): { test: ViewAction; configure: ViewAction[] } {
+/** Tester depuis l'interface : le résultat se lit sur la page IA (on y va, si l'on n'y est pas). */
+function testThenShow(deps: IaHomeDeps): () => Promise<void> {
+  return async () => {
+    await deps.test()
+    deps.showPage?.(IA_PAGE)
+  }
+}
+
+/** Les boutons communs : tester (sur la page, on y reste ; ailleurs, la page ensuite), régler. */
+function commonActions(deps: IaHomeDeps, onPage = false): { test: ViewAction; configure: ViewAction[] } {
   const { t } = deps
   const open = deps.openSettings
   return {
-    test: { id: 'test', label: t('ia.setting.test.button'), icon: 'refresh', run: () => deps.test() },
+    test: { id: 'test', label: t('ia.setting.test.button'), icon: 'refresh', run: onPage ? () => deps.test() : testThenShow(deps) },
     configure: open ? [{ id: 'settings', label: t('ia.page.configure'), icon: 'settings', run: () => open() }] : []
   }
 }
@@ -109,6 +130,32 @@ export async function iaSection(deps: IaHomeDeps): Promise<HomeSectionView> {
   }
 }
 
+/** Le dernier test, en tête de la page : réussi (combien de modèles), ou pourquoi pas. */
+function lastTestBlock(deps: IaHomeDeps): HomeBlock[] {
+  const test = deps.lastTest?.()
+  if (!test) return []
+  const { t } = deps
+  const tone: Tone = test.outcome === 'ok' ? 'success' : test.outcome === 'failed' ? 'danger' : 'warning'
+  return [{ kind: 'message', tone, text: t(`ia.page.test.${test.outcome}`, { at: test.at, count: test.count, model: test.model || '—', reason: test.reason }) }]
+}
+
+/** Les modèles du serveur : à quoi chacun peut servir, et pour quoi il est choisi. */
+function serverModels(deps: IaHomeDeps, connection: AiConnection, listed: readonly string[]): ListItem[] {
+  const { t } = deps
+  return listed.map((name) => {
+    const chosenFor = MODEL_USES.filter((use) => String(connection[USE_FIELD[use]] ?? '').trim() === name)
+    const chosen = chosenFor.map((use) => t(`ia.use.${use}`))
+    // Ce à quoi il conviendrait encore (sans redire ce pour quoi il est choisi).
+    const fits = MODEL_USES.filter((use) => !chosenFor.includes(use) && modelsFor(use, listed).includes(name)).map((use) => t(`ia.use.${use}`))
+    return {
+      id: `modele-${name}`,
+      title: name,
+      detail: [chosen.length ? t('ia.page.model.chosen', { uses: chosen.join(', ') }) : '', fits.length ? t(chosen.length ? 'ia.page.model.also' : 'ia.page.model.fits', { uses: fits.join(', ') }) : ''].filter(Boolean).join(' ; ') || t('ia.page.model.unknown'),
+      tone: chosen.length ? ('success' as const) : ('neutral' as const)
+    }
+  })
+}
+
 /** La carte d'un usage. */
 function usageCard(deps: IaHomeDeps, connection: AiConnection, use: ModelUse, fitting: number): Card {
   const { t } = deps
@@ -135,7 +182,7 @@ export async function iaPage(deps: IaHomeDeps): Promise<PageView> {
   const { t } = deps
   const connection = deps.connection()
   const listed = listedModels(deps.settings())
-  const { test, configure } = commonActions(deps)
+  const { test, configure } = commonActions(deps, true)
   const covered = MODEL_USES.filter((use) => usageOf(deps, connection, use).model).length
   const ready = Boolean(connection.baseUrl && connection.model)
   const warning = !connection.baseUrl ? t('ia.home.noUrl') : !connection.model ? t('ia.home.noModel') : ''
@@ -158,6 +205,7 @@ export async function iaPage(deps: IaHomeDeps): Promise<PageView> {
       { id: 'inutilises', label: t('ia.page.state.inutilises') }
     ],
     blocks: [
+      ...lastTestBlock(deps),
       ...(warning ? [{ kind: 'message' as const, tone: 'warning' as const, text: warning }] : []),
       {
         kind: 'stats',
@@ -169,6 +217,7 @@ export async function iaPage(deps: IaHomeDeps): Promise<PageView> {
         ]
       },
       { kind: 'cards', cards: MODEL_USES.map((use) => usageCard(deps, connection, use, listed.length ? modelsFor(use, listed).length : 0)) },
+      { kind: 'list', title: t('ia.page.models', { count: listed.length }), items: serverModels(deps, connection, listed), empty: t('ia.page.models.none') },
       { kind: 'list', title: t('ia.page.uses'), items }
     ]
   }
@@ -200,5 +249,5 @@ export function registerIaHome(views: ViewsRegistrar | undefined, deps: IaHomeDe
       }
     })
   }
-  views.tile({ id: 'ia.tester', label: t('ia.setting.test.button'), icon: 'refresh', color: 'violet', group: t('ia.name'), order: 41, description: t('ia.setting.test.desc'), run: () => deps.test() })
+  views.tile({ id: 'ia.tester', label: t('ia.setting.test.button'), icon: 'refresh', color: 'violet', group: t('ia.name'), order: 41, description: t('ia.setting.test.desc'), run: testThenShow(deps) })
 }

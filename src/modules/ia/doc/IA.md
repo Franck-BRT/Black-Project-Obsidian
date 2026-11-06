@@ -50,7 +50,14 @@ du tableau de bord ouvrent la **page IA**, dans l'onglet Black Projects :
 - **Ce qui se sert de l'IA** : relire et traduire les exigences, interroger le dossier, le
   questionnaire, les doublons par le sens…, et ce qui arrive à l'étape 7 ;
 - une recherche (usage, nom de modèle) et des filtres : modèle choisi, pris à la place,
-  pas utilisé.
+  pas utilisé ;
+- en tête, le **dernier test** : quand, réussi (combien de modèles, le modèle d'analyse) ou
+  pourquoi pas (la raison) ;
+- les **modèles du serveur**, chacun avec ce pour quoi il est choisi et ce à quoi il
+  conviendrait.
+
+**Tester la connexion** depuis la tuile ou le tableau de bord mène à la page IA, où le
+résultat se lit ; depuis la page, on y reste. Depuis la palette, le message, comme avant.
 
 ## 2. Ce que l'IA fait
 

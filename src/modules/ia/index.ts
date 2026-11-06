@@ -12,13 +12,14 @@
  * tout le reste de Black Projects fonctionne : seules ces fonctions le disent.
  */
 
+import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import type { ActionsField, BlackModule, ModuleContext, ModuleDetails, ModuleFeature, SecretField, TextField } from '../../core/modules/module'
 import page from './doc/IA.md'
 import { AiClient, type AiConnection } from './client'
 import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
-import { registerIaHome } from './home'
+import { registerIaHome, type ConnectionTest } from './home'
 import { registerIaWorkflows } from './workflows'
 import { listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, type ModelUse } from './models'
 
@@ -145,11 +146,58 @@ export function iaFeatures(): ModuleDetails {
   }
 }
 
+/** Le dernier test de la connexion, tant que le module est actif : pour la page IA. */
+let lastTest: ConnectionTest | null = null
+
+/**
+ * Tester la connexion : la liste des modèles du serveur, retenue (chaque usage la propose) ;
+ * sans modèle d'analyse, il est demandé tout de suite. Le résultat est dit, et gardé pour
+ * la page IA.
+ */
+async function testConnection(context: ModuleContext): Promise<ConnectionTest> {
+  const { platform, i18n, settings } = context
+  const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
+  const now = new Date()
+  const at = `${localToday(now)} ${now.toTimeString().slice(0, 5)}`
+  const done = (test: Omit<ConnectionTest, 'at'>): ConnectionTest => (lastTest = { at, ...test })
+  const connection = connectionOf(settings.get(), platform.secrets?.get(SECRET_ID) ?? '')
+  if (!connection.baseUrl) {
+    platform.notifier.notify(t('ia.test.noUrl'), 8000)
+    return done({ outcome: 'noUrl', count: 0, model: '', reason: '' })
+  }
+  let models: string[]
+  try {
+    models = await new AiClient(platform.http, connection).models()
+  } catch (error) {
+    const reason = describeAiError(error, t)
+    platform.notifier.notify(t('ia.test.failed', { reason }), 12000)
+    return done({ outcome: 'failed', count: 0, model: '', reason })
+  }
+  if (models.length === 0) {
+    platform.notifier.notify(t('ia.test.noModel'), 8000)
+    return done({ outcome: 'noModel', count: 0, model: '', reason: '' })
+  }
+  // La liste est retenue : chaque usage la propose (page IA, fenêtre du module).
+  await settings.save({ ...settings.get(), [LISTED_KEY]: models })
+  // Sans modèle d'analyse, rien ne marche : il est demandé tout de suite.
+  let chosen: string | null = connection.model || null
+  if (!chosen) {
+    const fitting = modelsFor('text', models)
+    chosen = await platform.ui.pickOption(
+      fitting.map((model) => ({ value: model, label: model })),
+      t('ia.test.pick', { count: fitting.length })
+    )
+    if (chosen) await settings.save({ ...settings.get(), [MODEL_KEYS.text]: chosen })
+  }
+  platform.notifier.notify(t('ia.test.ok', { count: models.length, model: chosen ?? '—' }), 10000)
+  return done({ outcome: 'ok', count: models.length, model: chosen ?? '', reason: '' })
+}
+
 export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.5.0',
+  version: '0.6.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -176,54 +224,23 @@ export const iaModule: BlackModule = {
       client: (connection) => new AiClient(context.platform.http, connection),
       pick: (options, placeholder) => context.platform.ui.pickOption(options, placeholder),
       notify: (message) => context.platform.notifier.notify(message, 6000),
-      test: async () => {
-        await context.commands.run?.('tester')
-      },
+      test: async () => void (await testConnection(context)),
+      lastTest: () => lastTest,
       ...(context.openWindow ? { openSettings: context.openWindow } : {}),
       ...(context.showPage ? { showPage: (id: string) => context.showPage?.(id) } : {}),
       features: () => iaFeatures()
     })
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)))
-    const { platform, i18n, settings } = context
-    const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
 
     context.commands.register({
       id: 'tester',
       nameKey: 'ia.command.test',
-      async run() {
-        const connection = connectionOf(settings.get(), platform.secrets?.get(SECRET_ID) ?? '')
-        if (!connection.baseUrl) {
-          platform.notifier.notify(t('ia.test.noUrl'), 8000)
-          return
-        }
-        let models: string[]
-        try {
-          models = await new AiClient(platform.http, connection).models()
-        } catch (error) {
-          platform.notifier.notify(t('ia.test.failed', { reason: describeAiError(error, t) }), 12000)
-          return
-        }
-        if (models.length === 0) {
-          platform.notifier.notify(t('ia.test.noModel'), 8000)
-          return
-        }
-        // La liste est retenue : chaque usage la propose dans la fenêtre du module.
-        await settings.save({ ...settings.get(), [LISTED_KEY]: models })
-        // Sans modèle d'analyse, rien ne marche : il est demandé tout de suite.
-        let chosen: string | null = connection.model || null
-        if (!chosen) {
-          const fitting = modelsFor('text', models)
-          chosen = await platform.ui.pickOption(
-            fitting.map((model) => ({ value: model, label: model })),
-            t('ia.test.pick', { count: fitting.length })
-          )
-          if (chosen) await settings.save({ ...settings.get(), [MODEL_KEYS.text]: chosen })
-        }
-        platform.notifier.notify(t('ia.test.ok', { count: models.length, model: chosen ?? '—' }), 10000)
-      }
+      // Depuis la palette : les messages, comme avant ; le résultat se lit aussi sur la page IA.
+      run: async () => void (await testConnection(context))
     })
   },
   deactivate() {
     active = null
+    lastTest = null
   }
 }

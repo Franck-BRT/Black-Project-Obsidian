@@ -74,6 +74,16 @@ module), une carte par usage (`MODEL_USES`) — modèle choisi, pris à la place
 `context.showPage` ; sans page chez la plateforme, ils ouvrent la fenêtre du module, comme
 avant. Tests : `test/ia-page.test.ts`.
 
+**Tester en page (v0.6.0, Black Projects 0.52.0)** : la commande `tester` passe par
+`testConnection`, qui garde son résultat (`ConnectionTest` : quand, `ok` / `failed` /
+`noUrl` / `noModel`, combien de modèles, le modèle d'analyse, la raison) tant que le
+module est actif ; la page IA le montre en tête (`IaHomeDeps.lastTest`). La liste des
+**modèles du serveur** (`LISTED_KEY`) s'y ajoute : pour quoi chacun est choisi, à quoi il
+conviendrait encore (`modelsFor`, noms courts `ia.use.*`). « Tester la connexion » de la
+tuile et du tableau de bord teste puis ouvre la page ; celui de la page y reste. Le
+message de réussite renvoie à la page IA (plus à la fenêtre du module). La démonstration
+répond à la liste des modèles.
+
 ## Interface publique
 
 | Nom | Rôle |

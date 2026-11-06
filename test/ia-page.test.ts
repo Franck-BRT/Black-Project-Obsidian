@@ -44,7 +44,7 @@ async function start(values: Record<string, unknown>, withPages = true) {
     ...(withPages ? { showPage: (id: string) => void shown.push(id) } : {})
   }
   await (iaModule as BlackModule).activate(context)
-  return { views, shown, windows, notices, picks, settings: () => settings, answer: (value: string | null) => void (answer = value) }
+  return { platform, views, shown, windows, notices, picks, settings: () => settings, answer: (value: string | null) => void (answer = value) }
 }
 
 const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
@@ -81,8 +81,15 @@ describe('la page IA', () => {
     expect(cards.map((card) => `${card.id}:${card.tags![0]}`)).toEqual(['text:choisis', 'translate:par-defaut', 'embedding:choisis', 'rerank:inutilises', 'ocr:par-defaut', 'vision:par-defaut'])
     expect(cards[1]!.subtitle).toBe('non réglé : mistral-small-3.2 à la place')
     expect(cards[3]!.facts![0]!.value).toBe('1')
-    const uses = view.blocks.find((block) => block.kind === 'list')
-    expect(uses?.kind === 'list' && uses.title).toBe('Ce qui se sert de l’IA')
+    const lists = view.blocks.filter((block) => block.kind === 'list')
+    expect(lists.map((block) => block.kind === 'list' && block.title)).toEqual(['Modèles du serveur (4)', 'Ce qui se sert de l’IA'])
+    // Les modèles du serveur : pour quoi chacun est choisi, à quoi il convient.
+    const models = lists[0]!.kind === 'list' ? lists[0]!.items : []
+    expect(models.map((item) => item.title)).toEqual(LISTED)
+    expect(models.find((item) => item.title === 'bge-m3')).toMatchObject({ tone: 'success', detail: 'choisi pour : vecteurs' })
+    expect(models.find((item) => item.title === 'mistral-small-3.2')!.detail).toMatch(/^choisi pour : analyse ; conviendrait aussi pour : traduction/)
+    expect(models.find((item) => item.title === 'bge-reranker-v2-m3')).toMatchObject({ tone: 'neutral', detail: 'convient pour : reranking' })
+    const uses = lists[1]
     expect(uses?.kind === 'list' && uses.items.map((item) => item.title)).toContain('Interroger le dossier')
   })
 
@@ -114,5 +121,44 @@ describe('la page IA', () => {
     expect(views.pages()).toHaveLength(0)
     await views.navEntries().find((entry) => entry.id === 'ia')!.run()
     expect(windows).toEqual(['fenêtre'])
+  })
+})
+
+describe('tester la connexion, en page', () => {
+  const json = (body: unknown) => ({ status: 200, text: JSON.stringify(body) })
+  const SETTINGS = { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small-3.2' }
+  const page = async (views: ViewsRegistry) => views.pages().find((each) => each.id === 'ia.connexion')!.load()
+
+  it('la tuile « Tester la connexion » : le test, puis la page IA, qui dit ce qu’il a donné et liste les modèles', async () => {
+    const { platform, views, shown, windows } = await start(SETTINGS)
+    platform.httpAnswers.push(json({ data: LISTED.map((id) => ({ id })) }))
+    await views.allTiles().find((each) => each.id === 'ia.tester')!.run()
+    expect(shown).toEqual(['ia.connexion'])
+    expect(windows).toEqual([])
+    const view = await page(views)
+    expect(view.blocks[0]).toEqual({ kind: 'message', tone: 'success', text: expect.stringMatching(/^Dernier test \(\d{4}-\d{2}-\d{2} \d{2}:\d{2}\) : connexion réussie — 4 modèle\(s\) sur le serveur ; modèle d’analyse : mistral-small-3\.2\.$/) })
+    const models = view.blocks.find((block) => block.kind === 'list' && block.title === 'Modèles du serveur (4)')
+    expect(models?.kind === 'list' && models.items).toHaveLength(4)
+  })
+
+  it('le serveur ne répond pas : la page le dit, avec la raison', async () => {
+    const { platform, views, shown } = await start(SETTINGS)
+    platform.httpAnswers.push({ status: 401, text: 'unauthorized' })
+    const section = await views.homeSections()[0]!.load()
+    await section!.blocks.flatMap((block) => (block.kind === 'actions' ? block.actions : [])).find((action) => action.id === 'test')!.run()
+    expect(shown).toEqual(['ia.connexion'])
+    const first = (await page(views)).blocks[0]
+    expect(first).toMatchObject({ kind: 'message', tone: 'danger', text: expect.stringMatching(/^Dernier test \(.+\) : connexion impossible — /) })
+  })
+
+  it('sur la page, « Tester la connexion » : on y reste, le résultat en tête ; sans liste, elle invite à tester', async () => {
+    const { platform, views, shown } = await start(SETTINGS)
+    const before = await page(views)
+    const models = before.blocks.find((block) => block.kind === 'list' && block.title === 'Modèles du serveur (0)')
+    expect(models).toMatchObject({ items: [], empty: 'Testez la connexion : la liste des modèles du serveur s’affichera ici.' })
+    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small-3.2' }] }))
+    await before.actions!.find((action) => action.id === 'test')!.run()
+    expect(shown).toEqual([])
+    expect((await page(views)).blocks[0]).toMatchObject({ kind: 'message', tone: 'success' })
   })
 })

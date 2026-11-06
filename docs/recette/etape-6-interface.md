@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le module IA : tester la connexion, en page (v0.52.0)
+
+- [ ] Tableau de bord, section IA, **Tester la connexion** (ou la tuile) : puis la page
+      **IA** ; en tête « Dernier test (date heure) : connexion réussie — n modèle(s)… »
+- [ ] Adresse fausse ou clé refusée : « connexion impossible — raison », en rouge
+- [ ] La liste **Modèles du serveur (n)** : pour chacun, « choisi pour : … » et
+      « convient pour / conviendrait aussi pour : … »
+- [ ] Sur la page, **Tester la connexion** : on y reste, le résultat en tête
+- [ ] Depuis la palette, *Tester la connexion au serveur d'IA* : le message, qui renvoie
+      à la page IA
+
 ## Traduire des exigences, puis les relire en page (v0.51.0)
 
 - [ ] IA réglée ; page **Exigences** → **Traduire (IA)** : la langue (s'il y en a

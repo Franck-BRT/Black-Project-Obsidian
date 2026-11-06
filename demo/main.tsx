@@ -81,6 +81,8 @@ platform.notifier = { notify: (message) => toast(message) }
 // Un serveur d'IA simulé : il répond en citant le premier extrait transmis (aucune IA réelle).
 platform.http = {
   request: async (request) => {
+    // « Tester la connexion » : la liste des modèles du serveur.
+    if (request.url.endsWith('/models')) return { status: 200, text: JSON.stringify({ data: ['bge-m3', 'bge-reranker-v2-m3', 'mistral-small-3.2', 'qwen2.5-vl-7b-instruct', 'olmocr-7b'].map((id) => ({ id })) }) }
     if (!request.url.endsWith('/chat/completions')) return { status: 404, text: '' }
     const sent = JSON.parse(request.body ?? '{}') as { messages?: { content: string }[] }
     const asked = (sent.messages ?? []).map((message) => message.content).join('\n')

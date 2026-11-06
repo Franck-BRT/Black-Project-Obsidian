@@ -427,6 +427,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.51.0 : **traduire des exigences** : la série finit sur la page « Traductions à
   relire » (chaque traduction à côté de sa source, à valider), retrouvée depuis la
   bibliothèque
+- v0.52.0 : **module IA** : « Tester la connexion » mène à la page IA, qui montre le
+  dernier test (réussi ou pourquoi pas) et les modèles du serveur, chacun avec son usage
 
 ### Étape 7 — Livrables
 
