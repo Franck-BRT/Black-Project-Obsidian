@@ -127,6 +127,13 @@ attributs et ses liens.
 Une fenêtre montre ce que l'import ferait (nouvelle, mise à jour, inchangée, refusée) et
 où chaque exigence a été trouvée ; on coche, puis **Importer**. Rien n'est écrit avant.
 
+Lancé depuis l'onglet de Black Projects (**Importer** sur la page Exigences, ou la tuile),
+l'import finit sur la page **Importées de …** : les exigences venues du fichier, celles
+créées ou mises à jour marquées et comptées, ce qui n'a pas pu l'être dit, et pour
+chacune l'endroit du fichier ; un clic ouvre sa fiche, **Importer un autre fichier**
+recommence. La page se retrouve plus tard depuis la fiche d'une exigence importée (la
+ligne « Extraite de »).
+
 - Un identifiant au format de la bibliothèque (`FOU-ANT-0001`) est gardé ; un autre
   (`SYS-12`) devient un **alias**, et l'exigence reçoit un identifiant — la catégorie
   est demandée quand il en faut une.

@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Importer des exigences, en page (v0.45.0)
+
+- [ ] Page **Exigences** → **Importer** : où est le fichier, l'aperçu, la catégorie si
+      besoin ; puis la page **Importées de …** s'ouvre ; aucune note ouverte
+- [ ] Ses chiffres : venues de ce fichier, créées, mises à jour (et non importées s'il y
+      en a, avec un message) ; chaque carte « Créée par l'import » ou « Mise à jour… » et
+      l'endroit du fichier (« ligne 2 », « § 4.2 ») ; filtres Créées, Mises à jour
+- [ ] Réimporter le fichier modifié : les exigences mises à jour marquées
+- [ ] Un clic sur une carte : sa fiche ; la ligne « Extraite de » ramène à la page
+- [ ] La tuile **Importer des exigences** : pareil ; depuis la palette, le message seul
+
 ## Traduire les exigences, et valider la traduction (v0.44.0)
 
 - [ ] IA réglée, deux langues de rédaction ; page **Exigences** : **Traduire (IA)** d'une

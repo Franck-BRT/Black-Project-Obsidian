@@ -26,6 +26,34 @@ export const LIBRARY_PAGE = 'exigences.bibliotheque'
 export const REQUIREMENT_PAGE = 'exigences.fiche'
 export const requirementPageOf = (path: string): string => pageWith(REQUIREMENT_PAGE, encodeURIComponent(path))
 
+/** La page d'un import : `importPageOf(pièce)` — les exigences venues de ce fichier (leur origine). */
+export const IMPORT_PAGE = 'exigences.import'
+export const importPageOf = (piece: string): string => pageWith(IMPORT_PAGE, encodeURIComponent(piece))
+
+/** Le dernier import, tant que le module est actif : ce qu'il a créé, mis à jour, manqué. */
+export interface LastImport {
+  /** L'origine écrite sur les exigences : le nom du fichier, ou son lien dans le coffre. */
+  piece: string
+  name: string
+  date: string
+  /** Les chemins des notes créées, mises à jour ; les identifiants de celles qui n'ont pas pu l'être. */
+  created: string[]
+  updated: string[]
+  failed: string[]
+}
+
+/** Ce qui fait un import depuis l'interface (puis montre sa page), et le dernier fait. */
+export interface ImportHooks {
+  run(): Promise<void>
+  last(): LastImport | null
+}
+
+/** Le nom d'une origine : « [[Pièces/CCTP.docx|CCTP.docx]] » → « CCTP.docx ». */
+export function pieceName(piece: string): string {
+  const link = /^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]$/.exec(piece.trim())
+  return link ? (link[2] ?? link[1]!.slice(link[1]!.lastIndexOf('/') + 1)) : piece
+}
+
 /** Les chiffres de la bibliothèque : combien, la note moyenne, les faibles, les traductions à revoir. */
 function libraryStats(session: Session, library: readonly Requirement[]): Stat[] {
   const { t } = session
@@ -125,7 +153,7 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
  * qualité), et une carte par exigence, les plus faibles d'abord — avec une recherche
  * (identifiant, titre, formulation…) et des filtres.
  */
-export async function libraryPage(session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void): Promise<PageView> {
+export async function libraryPage(session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void, imports?: ImportHooks): Promise<PageView> {
   const { t } = session
   const settings = session.settings()
   const library = await session.store.all()
@@ -136,7 +164,7 @@ export async function libraryPage(session: Session, run: (id: string) => Promise
     subtitle: t('exigences.page.subtitle', { folder: settings.folder }),
     actions: [
       { id: 'new', label: t('exigences.command.create'), icon: 'plus', primary: true, run: () => run('nouvelle') },
-      { id: 'import', label: t('exigences.tile.import'), icon: 'upload', run: () => run('importer') },
+      { id: 'import', label: t('exigences.tile.import'), icon: 'upload', run: () => (imports ? imports.run() : run('importer')) },
       { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => run('qualite') },
       ...(session.ai?.() && settings.languages.length > 1 ? [{ id: 'translate', label: t('exigences.page.translate'), tooltip: t('exigences.command.translateMany'), icon: 'chat' as const, run: () => run('traduire-ia-serie') }] : [])
     ],
@@ -182,7 +210,7 @@ const stars = (count: number) => '★'.repeat(count) + '☆'.repeat(Math.max(0, 
  * axe par axe ; ses attributs ; ses liens ; son historique. Celle de la bibliothèque comme
  * celle d'une analyse : le dossier de sa note dit où elle est rangée.
  */
-export async function requirementPage(sessionFor: (folder: string) => Session, showPage: (id: string) => void, param: string | undefined): Promise<PageView> {
+export async function requirementPage(sessionFor: (folder: string) => Session, showPage: (id: string) => void, param: string | undefined, libraryFolder?: () => string): Promise<PageView> {
   const path = param ? decodeURIComponent(param) : ''
   const session = sessionFor(folderOf(path))
   const { t } = session
@@ -281,7 +309,17 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
     attribute('tags', requirement.tags.join(', ')),
     attribute('aliases', requirement.aliases.join(', ')),
     ...(requirement.origin
-      ? [{ id: 'origin', title: t('exigences.fiche.origin'), detail: [requirement.origin.piece.replace(/^\[\[|\]\]$/g, '').split('|')[0], requirement.origin.locator].filter(Boolean).join(' — ') }]
+      ? [
+          {
+            id: 'origin',
+            title: t('exigences.fiche.origin'),
+            detail: [requirement.origin.piece.replace(/^\[\[|\]\]$/g, '').split('|')[0], requirement.origin.locator].filter(Boolean).join(' — '),
+            // Une exigence importée dans la bibliothèque : toutes celles du même fichier, en page.
+            ...(libraryFolder && folderOf(path) === libraryFolder()
+              ? { open: { id: 'import', label: t('exigences.fiche.origin.open'), tooltip: t('exigences.fiche.origin.open'), run: () => showPage(importPageOf(requirement.origin!.piece)) } }
+              : {})
+          }
+        ]
       : []),
     { id: 'dates', title: t('exigences.fiche.dates'), detail: t('exigences.fiche.dates.detail', { created: requirement.createdAt.slice(0, 10) || '—', updated: requirement.updatedAt.slice(0, 10) || '—', rev: requirement.rev }) }
   ]
@@ -317,13 +355,92 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
   }
 }
 
+/**
+ * La page d'un **import** : les exigences venues d'un fichier — celles que le dernier import
+ * a créées ou mises à jour marquées, ce qui n'a pas pu l'être dit —, chacune avec l'endroit
+ * du fichier d'où elle vient ; un clic ouvre sa fiche. L'origine est écrite sur chaque
+ * exigence : la page se retrouve après coup, les chiffres du dernier import en moins.
+ */
+export async function importPage(session: Session, showPage: (id: string) => void, imports: ImportHooks | undefined, param: string | undefined): Promise<PageView> {
+  const { t } = session
+  const piece = param ? decodeURIComponent(param) : ''
+  const name = pieceName(piece)
+  const folder = session.settings().folder
+  const languages = session.settings().languages
+  const back: ViewAction = { id: 'back', label: t('exigences.fiche.back'), run: () => showPage(LIBRARY_PAGE) }
+  const recent = imports?.last()?.piece === piece && piece ? imports.last() : null
+  const created = new Set(recent?.created ?? [])
+  const updated = new Set(recent?.updated ?? [])
+  const library = piece ? await session.store.all() : []
+  const imported = library
+    .filter((requirement) => requirement.origin?.piece === piece)
+    // Celles du dernier import d'abord (créées, puis mises à jour), puis par identifiant.
+    .sort((a, b) => rank(a) - rank(b) || a.id.localeCompare(b.id, undefined, { numeric: true }))
+  function rank(requirement: Requirement): number {
+    return created.has(requirement.filePath ?? '') ? 0 : updated.has(requirement.filePath ?? '') ? 1 : 2
+  }
+  const cards = imported.map((requirement) => {
+    const card = requirementCard(session, requirement, showPage)
+    const path = requirement.filePath ?? ''
+    const mark: Badge[] = created.has(path)
+      ? [{ label: t('exigences.importPage.badge.created'), tone: 'success' }]
+      : updated.has(path)
+        ? [{ label: t('exigences.importPage.badge.updated'), tone: 'info' }]
+        : []
+    return {
+      ...card,
+      badges: [...mark, ...(requirement.origin?.locator ? [{ label: requirement.origin.locator, tone: 'neutral' as const }] : []), ...(card.badges ?? [])],
+      tags: [...(card.tags ?? []), ...(created.has(path) ? ['creees'] : []), ...(updated.has(path) ? ['mises-a-jour'] : [])]
+    }
+  })
+  const weak = imported.filter((requirement) => isWeak(assessRequirement(requirement, languages))).length
+  const stats: Stat[] = [
+    { label: t('exigences.importPage.count'), value: String(imported.length), icon: 'list' },
+    ...(recent
+      ? [
+          { label: t('exigences.importPage.created'), value: String(recent.created.length), icon: 'plus' as const, tone: 'success' as const },
+          { label: t('exigences.importPage.updated'), value: String(recent.updated.length), icon: 'refresh' as const, tone: 'info' as const },
+          ...(recent.failed.length ? [{ label: t('exigences.importPage.failed'), value: String(recent.failed.length), icon: 'alert' as const, tone: 'danger' as const }] : [])
+        ]
+      : []),
+    { label: t('exigences.home.weak'), value: String(weak), icon: 'star', tone: weak ? 'warning' : 'success' }
+  ]
+  return {
+    title: t('exigences.importPage.title', { name: name || '—' }),
+    back,
+    subtitle: recent ? t('exigences.importPage.subtitle.recent', { date: recent.date, folder }) : t('exigences.importPage.subtitle', { folder }),
+    actions: [
+      ...(imports ? [{ id: 'again', label: t('exigences.importPage.again'), icon: 'upload' as const, run: () => imports.run() }] : []),
+      { id: 'library', label: t('exigences.page.all'), icon: 'list', run: () => showPage(LIBRARY_PAGE) }
+    ],
+    search: { label: t('exigences.page.search'), placeholder: t('exigences.page.search.placeholder') },
+    filters: [
+      ...(recent ? [{ id: 'creees', label: t('exigences.importPage.filter.created') }, { id: 'mises-a-jour', label: t('exigences.importPage.filter.updated') }] : []),
+      { id: 'faibles', label: t('exigences.page.filter.weak') },
+      { id: 'a-revoir', label: t('exigences.page.filter.review') }
+    ],
+    blocks: [
+      ...(imported.length ? [{ kind: 'stats' as const, stats }] : []),
+      ...(recent?.failed.length ? [{ kind: 'message' as const, tone: 'warning' as const, text: t('exigences.importPage.failed.text', { ids: recent.failed.join(', ') }) }] : []),
+      ...(imported.length ? [{ kind: 'cards' as const, cards }] : [{ kind: 'message' as const, tone: 'info' as const, text: t('exigences.importPage.empty', { name: name || '—' }) }])
+    ]
+  }
+}
+
 /** La bibliothèque : sa page, quand la plateforme en a ; sinon la liste en fenêtre. */
 export async function openLibrary(showPage: ((id: string) => void) | undefined, browse: () => Promise<void>): Promise<void> {
   if (showPage) showPage(LIBRARY_PAGE)
   else await browse()
 }
 
-export function registerExigencesHome(views: ViewsRegistrar | undefined, session: Session, run: (id: string) => Promise<void>, showPage?: (id: string) => void, sessionFor?: (folder: string) => Session): void {
+export function registerExigencesHome(
+  views: ViewsRegistrar | undefined,
+  session: Session,
+  run: (id: string) => Promise<void>,
+  showPage?: (id: string) => void,
+  sessionFor?: (folder: string) => Session,
+  imports?: ImportHooks
+): void {
   if (!views) return
   const { t } = session
   const page = showPage ? { page: LIBRARY_PAGE } : {}
@@ -357,10 +474,13 @@ export function registerExigencesHome(views: ViewsRegistrar | undefined, session
       }
     }
   })
-  views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage) })
+  // Avec des pages, un import lancé de l'interface finit sur sa page ; sinon, le message seul.
+  const importHere = showPage ? imports : undefined
+  views.page({ id: LIBRARY_PAGE, title: t('exigences.home.title'), icon: 'list', load: () => libraryPage(session, run, showPage, importHere) })
   if (showPage && sessionFor) {
-    views.page({ id: REQUIREMENT_PAGE, title: t('exigences.fiche.title'), icon: 'list', parent: LIBRARY_PAGE, load: (param) => requirementPage(sessionFor, showPage, param) })
+    views.page({ id: REQUIREMENT_PAGE, title: t('exigences.fiche.title'), icon: 'list', parent: LIBRARY_PAGE, load: (param) => requirementPage(sessionFor, showPage, param, () => session.settings().folder) })
     // Une exigence de la bibliothèque, ouverte par un autre module : sa fiche.
+    views.page({ id: IMPORT_PAGE, title: t('exigences.importPage.nav'), icon: 'upload', parent: LIBRARY_PAGE, load: (param) => importPage(session, showPage, importHere, param) })
     views.notePage?.((path) => (path.startsWith(`${session.settings().folder}/`) && path.endsWith('.md') ? requirementPageOf(path) : null))
   }
   views.nav({ id: 'exigences', label: t('exigences.home.nav'), icon: 'list', order: 20, ...page, run: open })
@@ -384,5 +504,5 @@ export function registerExigencesHome(views: ViewsRegistrar | undefined, session
   })
   views.tile({ id: 'exigences.nouvelle', label: t('exigences.tile.new'), icon: 'plus', color: 'green', group, order: 21, description: t('exigences.tile.new.desc'), run: () => run('nouvelle') })
   views.tile({ id: 'exigences.qualite', label: t('exigences.tile.quality'), icon: 'star', color: 'green', group, order: 22, description: t('exigences.tile.quality.desc'), run: () => run('qualite') })
-  views.tile({ id: 'exigences.importer', label: t('exigences.tile.import'), icon: 'upload', color: 'green', group, order: 23, description: t('exigences.tile.import.desc'), run: () => run('importer') })
+  views.tile({ id: 'exigences.importer', label: t('exigences.tile.import'), icon: 'upload', color: 'green', group, order: 23, description: t('exigences.tile.import.desc'), run: () => (importHere ? importHere.run() : run('importer')) })
 }

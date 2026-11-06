@@ -43,7 +43,7 @@ import { localToday } from '../../core/dates'
 import { aiClient } from '../ia'
 import { reviewRequirement, translateRequirement, translateRequirements } from './ai/actions'
 import { emitRequirementCreated, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
-import { openLibrary, registerExigencesHome } from './home'
+import { importPageOf, openLibrary, registerExigencesHome, type LastImport } from './home'
 export { requirementPageOf } from './home'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -234,7 +234,7 @@ function sessionFor(context: ModuleContext): Session {
  * document Word ou PDF, une présentation, un ReqIF venu de DOORS : choisir le fichier,
  * voir ce que l'import ferait, cocher, importer.
  */
-async function importFromFile(context: ModuleContext, store: RequirementStore): Promise<ImportReport | null> {
+async function importFromFile(context: ModuleContext, store: RequirementStore): Promise<(ImportReport & { piece: string; name: string }) | null> {
   const { platform, i18n } = context
   const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
   const source = await platform.ui.pickOption(
@@ -266,7 +266,7 @@ async function importFromFile(context: ModuleContext, store: RequirementStore): 
     return null
   }
   const settings = readReqSettings(context.settings.get())
-  return previewImport({
+  const report = await previewImport({
     ui: platform.ui,
     notifier: platform.notifier,
     t,
@@ -276,13 +276,20 @@ async function importFromFile(context: ModuleContext, store: RequirementStore): 
     extension,
     piece
   })
+  return report ? { ...report, piece, name: file.name } : null
+}
+
+/** Ce qu'un import a fait, en bref, pour sa page. */
+function lastImportOf(report: ImportReport & { piece: string; name: string }): LastImport {
+  const paths = (list: readonly { filePath?: string }[]) => list.flatMap((requirement) => (requirement.filePath ? [requirement.filePath] : []))
+  return { piece: report.piece, name: report.name, date: localToday(), created: paths(report.outcome.created), updated: paths(report.outcome.updated), failed: [...report.outcome.failed] }
 }
 
 export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.12.0',
+  version: '0.13.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -302,6 +309,13 @@ export const exigencesModule: BlackModule = {
     registerExigencesWorkflows(() => session, session.t, localToday)
     // L'accueil : la bibliothèque en chiffres.
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
+    // Le dernier import, pour sa page ; lancé de l'interface, l'import finit sur elle.
+    let lastImport: LastImport | null = null
+    const runImport = async () => {
+      const report = await importFromFile(context, session.store)
+      if (report) lastImport = lastImportOf(report)
+      return report
+    }
     registerExigencesHome(
       context.views,
       session,
@@ -310,7 +324,14 @@ export const exigencesModule: BlackModule = {
       },
       showPage,
       // La fiche d'une exigence, où qu'elle soit rangée (la bibliothèque, une analyse).
-      (folder) => ({ ...sessionAt(folder, platform.ui, platform.notifier), created: session.created })
+      (folder) => ({ ...sessionAt(folder, platform.ui, platform.notifier), created: session.created }),
+      {
+        async run() {
+          const report = await runImport()
+          if (report) showPage?.(importPageOf(report.piece))
+        },
+        last: () => lastImport
+      }
     )
 
     commands.register({
@@ -403,8 +424,9 @@ export const exigencesModule: BlackModule = {
     commands.register({
       id: 'importer',
       nameKey: 'exigences.command.import',
+      // Depuis la palette : le message seul, comme avant (la page se retrouve depuis la fiche d'une exigence importée).
       run: async () => {
-        await importFromFile(context, session.store)
+        await runImport()
       }
     })
 

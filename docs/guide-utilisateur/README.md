@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.44.0)
+## Aujourd'hui (version 0.45.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -90,7 +90,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   de la pièce » ; un aperçu montre chaque exigence trouvée et où, puis elles sont rangées
   dans le dossier `Exigences` de l'analyse, chacune liée à sa pièce ; la pièce et
   l'analyse les listent. « Importer des exigences d'un fichier » fait de même pour la
-  bibliothèque (ReqIF de DOORS compris).
+  bibliothèque (ReqIF de DOORS compris) ; depuis la page Exigences ou la tuile, il finit
+  sur la page « Importées de … » (créées, mises à jour, d'où chacune vient).
 
 - **Vérifier les exigences du dossier** : « Vérifier les exigences du dossier (les quatre
   vérifications) », ou chacune seule — tout extraire, chercher les exigences oubliées

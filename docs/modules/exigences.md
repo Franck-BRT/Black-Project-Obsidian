@@ -199,6 +199,20 @@ d'autres pages (la qualité des exigences d'une analyse marque les relues).
   dont les chiffres diffèrent). Le filtre **Traductions à relire** (`traductions`) de la
   bibliothèque les retrouve.
 
+**Importer dans l'interface (v0.13.0, Black Projects 0.45.0)** : « Importer » en tête de
+la bibliothèque et la tuile *Importer des exigences* passent par `ImportHooks.run`
+(`registerExigencesHome`) : l'import fait (les mêmes fenêtres : où est le fichier,
+l'aperçu, la catégorie), la page **`exigences.import`** s'ouvre (`importPageOf(origine)`,
+fille de la bibliothèque). Elle liste les exigences de la bibliothèque dont l'origine est
+ce fichier (`origin.piece` : son nom, ou son lien dans le coffre — `pieceName` en tire le
+nom), chacune avec l'endroit du fichier d'où elle vient ; celles du dernier import
+(`LastImport`, gardé tant que le module est actif) sont marquées « Créée » ou « Mise à
+jour par l'import », comptées, avec ce qui n'a pas pu l'être, et deux filtres (créées,
+mises à jour) s'ajoutent à « faibles » et « à revoir ». L'origine étant écrite sur chaque
+exigence, la page se retrouve après coup : la ligne « Extraite de » de la fiche d'une
+exigence de la bibliothèque y mène. Depuis la palette, ou sans page chez la plateforme :
+le message seul, comme avant.
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

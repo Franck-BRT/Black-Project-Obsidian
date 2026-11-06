@@ -261,3 +261,94 @@ describe('traduire les exigences, en page', () => {
     expect(view.actions?.map((action) => action.id)).toEqual(['new', 'import', 'quality'])
   })
 })
+
+describe('importer des exigences, en page', () => {
+  const csv = 'Exigence;Vérification;Priorité\nLe système doit démarrer en 5 s.;Essai;Haute\nLe système doit tenir 10 ans.;Analyse;Moyenne\n'
+  const pick = (platform: MemoryPlatform, content = csv, name = 'Exigences client.csv') => {
+    platform.choices.push('computer')
+    platform.externalFiles.push([{ name, bytes: new TextEncoder().encode(content) }])
+    platform.forms.push({ category: 'cli' })
+  }
+  const importParam = (piece: string) => `exigences.import?${encodeURIComponent(piece)}`
+
+  it('« Importer » de la bibliothèque finit sur la page de l’import : ses chiffres, une carte par exigence créée, d’où elle vient', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    const library = await views.pages().find((each) => each.id === 'exigences.bibliotheque')!.load()
+    pick(platform)
+    await library.actions!.find((action) => action.id === 'import')!.run()
+    expect(shown.at(-1)).toBe(importParam('Exigences client.csv'))
+    expect(platform.notices.at(-1)).toBe('Exigences client.csv : 2 exigence(s) créée(s), 0 mise(s) à jour.')
+    expect(platform.opened).toEqual([])
+    const page = views.pages().find((each) => each.id === 'exigences.import')!
+    expect(page.parent).toBe('exigences.bibliotheque')
+    const view = await page.load(encodeURIComponent('Exigences client.csv'))
+    expect(view.title).toBe('Importées de Exigences client.csv')
+    expect(view.back?.label).toBe('Toute la bibliothèque')
+    expect(view.actions?.map((action) => action.id)).toEqual(['again', 'library'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['creees', 'mises-a-jour', 'faibles', 'a-revoir'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}:${stat.value}`)).toEqual(['Venues de ce fichier:2', 'Créées:2', 'Mises à jour:0', 'Faibles:0'])
+    const cards = cardsOf(view)
+    expect(cards.map((card) => card.title)).toEqual(['REQ-CLI-0001', 'REQ-CLI-0002'])
+    expect(cards[0]!.badges?.slice(0, 2).map((badge) => badge.label)).toEqual(['Créée par l’import', 'ligne 1'])
+    expect(cards[0]!.tags).toContain('creees')
+    // Un clic ouvre la fiche, comme dans la bibliothèque.
+    await cards[0]!.open!.run()
+    expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent('Exigences/REQ-CLI-0001.md')}`)
+  })
+
+  it('le même fichier, modifié : les exigences mises à jour marquées ; ce qui n’a pas pu l’être est dit', async () => {
+    const platform = memoryPlatform()
+    const { views } = await start(platform, true)
+    const tile = views.allTiles().find((each) => each.id === 'exigences.importer')!
+    pick(platform)
+    await tile.run()
+    pick(platform, 'Identifiant;Exigence\nREQ-CLI-0001;Le système doit démarrer en 3 s.\n')
+    await tile.run()
+    const view = await views.pages().find((each) => each.id === 'exigences.import')!.load(encodeURIComponent('Exigences client.csv'))
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.slice(1, 3).map((stat) => `${stat.label}:${stat.value}`)).toEqual(['Créées:0', 'Mises à jour:1'])
+    const cards = cardsOf(view)
+    expect(cards.map((card) => `${card.title}:${card.badges![0]!.label}`)).toEqual(['REQ-CLI-0001:Mise à jour par l’import', 'REQ-CLI-0002:ligne 2'])
+  })
+
+  it('depuis la palette : le message seul ; la fiche d’une exigence importée mène à la page de son fichier', async () => {
+    const platform = memoryPlatform()
+    const { views, shown, run } = await start(platform, true)
+    pick(platform)
+    await run('exigences-importer')
+    expect(shown).toEqual([])
+    expect(platform.notices.at(-1)).toBe('Exigences client.csv : 2 exigence(s) créée(s), 0 mise(s) à jour.')
+    const fiche = await views.pages().find((each) => each.id === 'exigences.fiche')!.load(encodeURIComponent('Exigences/REQ-CLI-0002.md'))
+    const origin = fiche.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.id === 'origin')!
+    expect(origin.open?.label).toBe('Toutes les exigences de ce fichier')
+    await origin.open!.run()
+    expect(shown.at(-1)).toBe(importParam('Exigences client.csv'))
+  })
+
+  it('un fichier du coffre : la page porte son nom ; un fichier dont rien ne vient le dit', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    await platform.fs.writeBinary('Reçus/Exigences client.csv', new TextEncoder().encode(csv).buffer as ArrayBuffer)
+    platform.choices.push('vault')
+    platform.nextPick = 'Reçus/Exigences client.csv'
+    platform.forms.push({ category: 'cli' })
+    await views.allTiles().find((each) => each.id === 'exigences.importer')!.run()
+    expect(shown.at(-1)).toBe(importParam('[[Reçus/Exigences client.csv|Exigences client.csv]]'))
+    const page = views.pages().find((each) => each.id === 'exigences.import')!
+    expect((await page.load(encodeURIComponent('[[Reçus/Exigences client.csv|Exigences client.csv]]'))).title).toBe('Importées de Exigences client.csv')
+    const empty = await page.load(encodeURIComponent('[[Ailleurs/Autre.xlsx]]'))
+    expect(empty.title).toBe('Importées de Autre.xlsx')
+    expect(empty.blocks).toEqual([{ kind: 'message', tone: 'info', text: 'Aucune exigence de la bibliothèque ne vient de Autre.xlsx.' }])
+  })
+
+  it('sans page chez la plateforme : la tuile importe, le message seul', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, false)
+    pick(platform)
+    await views.allTiles().find((each) => each.id === 'exigences.importer')!.run()
+    expect(shown).toEqual([])
+    expect(platform.notices.at(-1)).toBe('Exigences client.csv : 2 exigence(s) créée(s), 0 mise(s) à jour.')
+  })
+})
