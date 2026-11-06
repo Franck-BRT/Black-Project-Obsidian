@@ -12,7 +12,8 @@ la matrice de conformité — que vous soyez émetteur du dossier ou candidat.
 
 ## Par où commencer
 
-- {{link:Prise en main|Prise en main}} : réglages, modules, commandes.
+- L'onglet **Black Projects** (icône de la barre latérale) : l'accueil de l'outil.
+- {{link:Prise en main|Prise en main}} : l'accueil, l'apparence, les réglages, les modules, les commandes.
 
 ## Les modules
 

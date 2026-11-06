@@ -29,7 +29,7 @@ export default tseslint.config(
   { ignores: ['main.js', 'node_modules/**', 'coverage/**'] },
   ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
@@ -40,6 +40,24 @@ export default tseslint.config(
     files: ['src/core/**/*.ts', 'src/modules/**/*.ts'],
     rules: {
       'no-restricted-imports': ['error', PLATFORM_IMPORTS]
+    }
+  },
+  {
+    // L'interface tourne telle quelle dans Obsidian et dans l'application de bureau :
+    // ni plateforme, ni module (elle ne lit que leurs descriptions, par le cœur).
+    files: ['src/ui/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: PLATFORM_IMPORTS.paths,
+          patterns: [
+            ...PLATFORM_IMPORTS.patterns,
+            { group: ['**/modules/**', '**/modules'], message: "L'interface ne connaît pas les modules : elle dessine les descriptions qu'ils donnent au cœur." },
+            { group: ['react', 'react-dom', 'react/*'], message: 'L’interface est écrite pour Preact.' }
+          ]
+        }
+      ]
     }
   }
 )

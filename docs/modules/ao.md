@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.9.0 (Black Projects 0.9.0) |
+| Version | 0.10.0 (Black Projects 0.10.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -150,6 +150,10 @@ import, mise à jour, extraction d'une pièce ou vérifications qui ajoutent des
 exigences), six actions sans fenêtre (calendrier, qualité, cohérence, couverture,
 interroger le dossier et questionnaire avec l'IA ; chacune vise l'analyse nommée,
 `{analyse}` par défaut) et trois workflows prêts à l'emploi.
+
+## L'accueil (v0.10.0)
+
+`home.ts` décrit la section « Analyses d'appels d'offres » de l'[accueil](../architecture/interface.md) : les actions rapides, et une carte par analyse — date limite de remise (relevée dans les pièces de l'appel d'offres, la prochaine, sinon la dernière), pièces et non lues, exigences, qualité moyenne (portée `wording`), badges de ce qui reste à faire ; « Ouvrir », « Importer des pièces », « Calendrier », « Interroger » (si l'IA est réglée). Navigation « Analyses ».
 
 ## Dans le coffre
 

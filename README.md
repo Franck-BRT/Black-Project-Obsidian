@@ -13,8 +13,12 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.9.0 — étape 6 bis du [plan d'intégration](docs/plan-integration.md) : les
-workflows.** Quand ceci arrive, si cela tient, faire ceci : relever le calendrier dès que
+**Version 0.10.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+l'accueil et l'interface.** Un onglet d'accueil moderne (analyses avec leur date limite
+de remise, IA, exigences, workflows), des thèmes clair et sombre, des couleurs pour les
+daltonismes, une lecture facilitée pour les troubles dys ; l'interface est écrite une
+fois (`src/ui`, Preact) pour Obsidian et pour la future application de bureau
+([architecture](docs/architecture/interface.md)). Étape 6 bis, les workflows : Quand ceci arrive, si cela tient, faire ceci : relever le calendrier dès que
 les pièces sont déposées, analyser la qualité dès que les exigences sont extraites,
 interroger le dossier avec l'IA, écrire une note ; seul ou après accord, à heure fixe,
 avec un journal ; chaque module y apporte ses déclencheurs et ses actions. Étape 6, l'IA
@@ -66,6 +70,7 @@ pnpm install
 pnpm run check      # mentions, en-têtes, frontières de modules, types, lint, tests
 pnpm run build      # produit main.js
 pnpm run dev        # recompile à chaque modification
+pnpm run demo       # l'interface hors d'Obsidian : demo/dist/index.html
 ```
 
 Structure :
@@ -73,6 +78,7 @@ Structure :
 ```
 src/
 ├── core/       cœur, TypeScript pur, indépendant de la plateforme
+├── ui/         l'interface (Preact), la même dans Obsidian et l'application
 ├── modules/    un répertoire fermé par module
 │   ├── lecture-fichiers/   lecture des documents (voir son README.md)
 │   ├── typage-pieces/      reconnaissance du type des pièces (voir son README.md)

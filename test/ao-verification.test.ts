@@ -9,6 +9,7 @@
  * vérification seule, puis les quatre ensemble, dans le rapport de l'analyse.
  */
 
+import { localToday } from '../src/core/dates'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -166,8 +167,8 @@ describe('vérifier les exigences du dossier', () => {
     for (const title of ['## Résumé', '## Extraction', '## Exigences oubliées', '## Cohérence entre pièces', '## Couverture par la réponse', '## Notes']) {
       expect(report).toContain(title)
     }
-    expect(report).toContain('- **Extraction** : 2026-11-05 — 2 pièce(s) lue(s)')
-    expect(report).toContain('- **Couverture par la réponse** : 2026-11-05 — 3 exigence(s)')
+    expect(report).toContain(`- **Extraction** : ${localToday()} — 2 pièce(s) lue(s)`)
+    expect(report).toContain(`- **Couverture par la réponse** : ${localToday()} — 3 exigence(s)`)
     expect(report).not.toContain('pas encore lancée')
     expect(platform.notices.at(-1)).toBe('Vérification des exigences terminée : voir le rapport.')
   })

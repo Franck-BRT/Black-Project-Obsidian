@@ -6,6 +6,7 @@
  * sources — et le calendrier de l'appel d'offres, relevé sans elle.
  */
 
+import { localToday } from '../../core/dates'
 import { afterEach, describe, expect, it } from 'vitest'
 import { utf8 } from '../../core/formats/zip'
 import { createI18n } from '../../core/i18n'
@@ -153,7 +154,8 @@ describe('interroger le dossier : l’IA répond en citant ses sources', () => {
     expect(request.messages[1]!.content).toMatch(/### Source \[1\] — CCTP/)
     expect(request.messages[1]!.content).toContain('500 € par jour calendaire')
     const [path] = written(platform, `${analysis.folder}/Analyse/Questions/`)
-    expect(path).toBe(`${analysis.folder}/Analyse/Questions/2026-11-05 Quelles sont les pénalités de retard.md`)
+    // Datée du jour où la commande s'exécute.
+    expect(path).toBe(`${analysis.folder}/Analyse/Questions/${localToday()} Quelles sont les pénalités de retard.md`)
     expect(platform.opened.at(-1)).toBe(path)
     const note = read(platform, path!)
     expect(note).toContain('> [!question] Quelles sont les pénalités de retard ?')

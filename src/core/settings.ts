@@ -9,6 +9,8 @@
  * réglages utilisables, pas une exception au chargement.
  */
 
+import { DEFAULT_APPEARANCE, readAppearance, type Appearance } from './appearance'
+
 export type Language = 'fr' | 'en'
 
 export const LANGUAGES: readonly Language[] = ['fr', 'en']
@@ -23,6 +25,10 @@ export interface CoreSettings {
   modules: Record<string, Record<string, unknown>>
   /** Le dossier du coffre où la documentation est créée. */
   docsFolder: string
+  /** L'apparence de l'interface : mode, couleurs, lecture, taille, mouvement. */
+  appearance: Appearance
+  /** Ouvrir l'accueil de Black Projects au démarrage. */
+  openHomeAtStart: boolean
 }
 
 export const DEFAULT_DOCS_FOLDER = 'Black Projects/Documentation'
@@ -32,7 +38,9 @@ export const DEFAULT_SETTINGS: CoreSettings = Object.freeze({
   language: 'fr' as const,
   disabledModules: [],
   modules: {},
-  docsFolder: DEFAULT_DOCS_FOLDER
+  docsFolder: DEFAULT_DOCS_FOLDER,
+  appearance: DEFAULT_APPEARANCE,
+  openHomeAtStart: true
 })
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -63,7 +71,10 @@ export function readSettings(raw: unknown): CoreSettings {
       ? cleanFolder(source.docsFolder)
       : DEFAULT_DOCS_FOLDER
 
-  return { format: 1, language, disabledModules, modules, docsFolder }
+  const appearance = readAppearance(source.appearance)
+  const openHomeAtStart = typeof source.openHomeAtStart === 'boolean' ? source.openHomeAtStart : DEFAULT_SETTINGS.openHomeAtStart
+
+  return { format: 1, language, disabledModules, modules, docsFolder, appearance, openHomeAtStart }
 }
 
 /** Un dossier du coffre tel qu'on le saisit : sans « / » au début ni à la fin, ni doubles. */

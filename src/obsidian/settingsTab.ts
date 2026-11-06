@@ -6,6 +6,7 @@
  * bouton et état porte une infobulle qui dit à quoi il sert.
  */
 
+import { APPEARANCE_MODES, COLOR_VISIONS, MOTIONS, READING_MODES, TEXT_SIZES, type Appearance } from '../core/appearance'
 import { PluginSettingTab, Setting, setTooltip, type App } from 'obsidian'
 import type { ModuleState } from '../core/modules/registry'
 import { cleanFolder, DEFAULT_DOCS_FOLDER, LANGUAGES, moduleSettings, withModuleEnabled, type Language } from '../core/settings'
@@ -48,6 +49,35 @@ export class BlackProjectsSettingTab extends PluginSettingTab {
           plugin.platform.notifier.notify(t('settings.languageReload'))
         })
       })
+
+    // ── Accueil et apparence ─────────────────────────────────────────────────────
+    new Setting(containerEl).setName(t('settings.appearance')).setHeading().setDesc(t('settings.appearance.desc'))
+    new Setting(containerEl)
+      .setName(t('settings.home.atStart'))
+      .setDesc(t('settings.home.atStart.desc'))
+      .addToggle((toggle) =>
+        toggle.setValue(plugin.config.openHomeAtStart).onChange(async (value) => {
+          plugin.config = { ...plugin.config, openHomeAtStart: value }
+          await plugin.saveSettings()
+        })
+      )
+      .addButton((button) => button.setButtonText(t('command.home')).onClick(() => void plugin.openHome()))
+    const choice = <K extends keyof Appearance>(key: K, values: readonly Appearance[K][]) =>
+      new Setting(containerEl)
+        .setName(t(`ui.appearance.${key}`))
+        .setDesc(t(`ui.appearance.${key}.${plugin.config.appearance[key]}.desc`))
+        .addDropdown((dropdown) => {
+          for (const value of values) dropdown.addOption(value, t(`ui.appearance.${key}.${value}`))
+          dropdown.setValue(plugin.config.appearance[key]).onChange(async (value) => {
+            await plugin.saveAppearance({ ...plugin.config.appearance, [key]: value })
+            this.display()
+          })
+        })
+    choice('mode', APPEARANCE_MODES)
+    choice('vision', COLOR_VISIONS)
+    choice('reading', READING_MODES)
+    choice('size', TEXT_SIZES)
+    choice('motion', MOTIONS)
 
     // ── Documentation ────────────────────────────────────────────────────────────
     new Setting(containerEl).setName(t('settings.docs')).setHeading()

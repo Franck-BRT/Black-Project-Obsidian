@@ -11,6 +11,12 @@
 └───────────────┬──────────────────────────────────────────────┘
                 │ fournit les ports, active les modules
 ┌───────────────▼──────────────────────────────────────────────┐
+│ src/ui/         l'interface (Preact), la même dans Obsidian  │
+│                 et dans l'application de bureau              │
+│                 → voir interface.md                          │
+└───────────────┬──────────────────────────────────────────────┘
+                │ dessine les descriptions données par
+┌───────────────▼──────────────────────────────────────────────┐
 │ src/modules/    un répertoire fermé par module :             │
 │                 lecture-fichiers, typage-pieces, ao, …       │
 └───────────────┬──────────────────────────────────────────────┘

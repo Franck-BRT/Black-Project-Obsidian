@@ -4,6 +4,10 @@
 export const workflowsFr: Record<string, string> = {
   'workflows.name': 'Workflows',
   'workflows.description': 'Automatiser : quand ceci arrive, si cela tient, faire ceci. Des déclencheurs (à la main, à heure fixe, des pièces importées…), des conditions, des actions à la suite, et un journal.',
+  'workflows.home.title': 'Workflows',
+  'workflows.home.subtitle': '{active} actif(s) sur {count} ; les dernières exécutions.',
+  'workflows.home.all': 'Tous les workflows',
+  'workflows.home.journal': 'Journal',
   'workflows.command.list': 'Workflows : liste et modification',
   'workflows.command.new': 'Nouveau workflow',
   'workflows.command.run': 'Exécuter un workflow',
@@ -230,6 +234,10 @@ export const workflowsFr: Record<string, string> = {
 export const workflowsEn: Record<string, string> = {
   'workflows.name': 'Workflows',
   'workflows.description': 'Automate: when this happens, if that holds, do this. Triggers (by hand, on a schedule, documents imported…), conditions, actions in sequence, and a log.',
+  'workflows.home.title': 'Workflows',
+  'workflows.home.subtitle': '{active} active out of {count}; the latest runs.',
+  'workflows.home.all': 'All workflows',
+  'workflows.home.journal': 'Log',
   'workflows.command.list': 'Workflows: list and edit',
   'workflows.command.new': 'New workflow',
   'workflows.command.run': 'Run a workflow',

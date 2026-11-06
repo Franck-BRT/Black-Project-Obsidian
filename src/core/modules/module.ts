@@ -11,6 +11,7 @@
  * tourner dans Obsidian comme, plus tard, dans l'application de bureau.
  */
 
+import type { ViewsRegistrar } from '../views'
 import type { DocInput, DocPage } from '../docs'
 import type { Dictionary, I18n, Vars } from '../i18n'
 import type { Platform } from '../ports'
@@ -364,6 +365,8 @@ export interface ModuleContext {
   readonly settings: ModuleSettings
   readonly commands: {
     register(command: ModuleCommand): void
+    /** Lance une commande du module, comme depuis la palette (une erreur est montrée, pas levée). */
+    run?(id: string): Promise<void>
   }
   /** Ouvre la fenêtre du module (ses réglages et ses fonctions), quand la plateforme en a une. */
   openWindow?(): void
@@ -377,7 +380,8 @@ export interface ModuleContext {
    */
   readonly timers?: {
     every(milliseconds: number, run: () => void): void
-  }
+  }  /** Ce que le module montre dans l'interface : sections de l'accueil, entrées de navigation. */
+  readonly views?: ViewsRegistrar
 }
 
 /** Ce qu'un bloc de code devient : un tableau, et des messages au-dessus. */

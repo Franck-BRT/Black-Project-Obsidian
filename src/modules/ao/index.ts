@@ -90,6 +90,7 @@ import { answerQuestion, QUESTIONNAIRE, runQuestionnaire, writeQuestionNote, typ
 import { pieceSources } from './ask/sources'
 import { reviewAnalysisRequirements } from './review'
 import { emitCreated, emitExtracted, emitImported, registerAoWorkflows } from './workflows'
+import { registerAoHome } from './home'
 import { requirementsAt } from '../exigences'
 import { requirementsFolder } from './requirements'
 
@@ -409,7 +410,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.9.0',
+  version: '0.10.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -710,61 +711,79 @@ export const aoModule: BlackModule = {
     }
     const failed = (error: unknown) => platform.notifier.notify(t('ao.ask.failed', { reason: describeAiError(error, t) }), 12000)
 
+    /** Interroger le dossier d'une analyse : la question, la réponse citée, sa note. */
+    const askAnalysis = async (services: Services, analysis: Analysis) => {
+      const client = needAi()
+      if (!client) return
+      const sources = await pieceSources(services, analysis)
+      if (sources.length === 0) {
+        platform.notifier.notify(t('ao.ask.noPiece'), 8000)
+        return
+      }
+      const values = await platform.ui.askForm({
+        title: t('ao.ask.form.title', { name: analysis.name }),
+        intro: t('ao.ask.form.intro', { count: sources.length }),
+        fields: [
+          {
+            kind: 'textarea',
+            key: 'question',
+            label: t('ao.ask.form.question'),
+            placeholder: t('ao.ask.form.question.placeholder'),
+            tooltip: t('ao.ask.form.question.tip'),
+            required: true
+          },
+          {
+            kind: 'choice',
+            key: 'mode',
+            label: t('ao.ask.form.mode'),
+            tooltip: t('ao.ask.form.mode.tip'),
+            options: [
+              { value: 'search', label: t('ao.ask.mode.search') },
+              { value: 'each', label: t('ao.ask.mode.each') }
+            ],
+            value: 'search'
+          }
+        ],
+        submit: t('ao.ask.form.submit')
+      })
+      const question = values?.question?.trim()
+      if (!question) return
+      const mode: AskMode = values?.mode === 'each' ? 'each' : 'search'
+      platform.notifier.notify(t('ao.ask.running'), 4000)
+      try {
+        const answer = await answerQuestion(client, t, sources, question, mode, (message) => platform.notifier.notify(message, 3000))
+        const path = await writeQuestionNote(services, analysis, answer)
+        platform.notifier.notify(
+          answer.nothing ? t('ao.ask.nothing') : t('ao.ask.done', { cited: answer.sources.filter((each) => each.cited).length, sources: answer.sources.length }),
+          8000
+        )
+        await platform.ui.openNote(path)
+      } catch (error) {
+        failed(error)
+      }
+    }
+
+    // L'accueil : les actions rapides et une carte par analyse.
+    registerAoHome(context.views, {
+      services: () => servicesFor(context),
+      t,
+      ui: platform.ui,
+      notifier: platform.notifier,
+      run: async (id) => {
+        await context.commands.run?.(id)
+      },
+      importInto: (analysis) => importInto(context, servicesFor(context), analysis),
+      ask: (analysis) => askAnalysis(servicesFor(context), analysis),
+      today: localToday
+    })
+
     commands.register({
       id: 'interroger',
       nameKey: 'ao.command.ask',
       async run() {
         const services = servicesFor(context)
         const analysis = await chooseAnalysis(context, services)
-        if (!analysis) return
-        const client = needAi()
-        if (!client) return
-        const sources = await pieceSources(services, analysis)
-        if (sources.length === 0) {
-          platform.notifier.notify(t('ao.ask.noPiece'), 8000)
-          return
-        }
-        const values = await platform.ui.askForm({
-          title: t('ao.ask.form.title', { name: analysis.name }),
-          intro: t('ao.ask.form.intro', { count: sources.length }),
-          fields: [
-            {
-              kind: 'textarea',
-              key: 'question',
-              label: t('ao.ask.form.question'),
-              placeholder: t('ao.ask.form.question.placeholder'),
-              tooltip: t('ao.ask.form.question.tip'),
-              required: true
-            },
-            {
-              kind: 'choice',
-              key: 'mode',
-              label: t('ao.ask.form.mode'),
-              tooltip: t('ao.ask.form.mode.tip'),
-              options: [
-                { value: 'search', label: t('ao.ask.mode.search') },
-                { value: 'each', label: t('ao.ask.mode.each') }
-              ],
-              value: 'search'
-            }
-          ],
-          submit: t('ao.ask.form.submit')
-        })
-        const question = values?.question?.trim()
-        if (!question) return
-        const mode: AskMode = values?.mode === 'each' ? 'each' : 'search'
-        platform.notifier.notify(t('ao.ask.running'), 4000)
-        try {
-          const answer = await answerQuestion(client, t, sources, question, mode, (message) => platform.notifier.notify(message, 3000))
-          const path = await writeQuestionNote(services, analysis, answer)
-          platform.notifier.notify(
-            answer.nothing ? t('ao.ask.nothing') : t('ao.ask.done', { cited: answer.sources.filter((each) => each.cited).length, sources: answer.sources.length }),
-            8000
-          )
-          await platform.ui.openNote(path)
-        } catch (error) {
-          failed(error)
-        }
+        if (analysis) await askAnalysis(services, analysis)
       }
     })
 

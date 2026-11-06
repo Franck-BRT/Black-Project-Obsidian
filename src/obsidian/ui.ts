@@ -3,6 +3,7 @@
 
 /** Le port `Ui` du cœur, dessiné avec les fenêtres d'Obsidian. */
 
+import { HOME_VIEW } from './homeView'
 import {
   ButtonComponent,
   DropdownComponent,
@@ -529,7 +530,9 @@ export function obsidianUi(app: App, i18n: I18n): Ui {
       for (let attempt = 0; attempt < 20; attempt++) {
         const file = app.vault.getAbstractFileByPath(path)
         if (file instanceof TFile) {
-          await app.workspace.getLeaf(false).openFile(file)
+          // Depuis l'accueil : dans un nouvel onglet, l'accueil reste ouvert.
+          const fromHome = app.workspace.getMostRecentLeaf()?.view.getViewType() === HOME_VIEW
+          await app.workspace.getLeaf(fromHome ? 'tab' : false).openFile(file)
           return
         }
         await new Promise((resolve) => window.setTimeout(resolve, 100))

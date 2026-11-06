@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.1.0 (Black Projects 0.9.0) |
+| Version | 0.2.0 (Black Projects 0.10.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -56,6 +56,10 @@ de lui pour fonctionner.
 | Analyse d'appels d'offres | analyse créée ; pièces importées (fichiers, ZIP, dépôt puis mise à jour) ; exigences extraites (d'une pièce, de toutes, oubliées) | relever le calendrier ; analyser la qualité ; vérifier la cohérence ; vérifier la couverture ; interroger le dossier (IA) ; remplir le questionnaire (IA) | calendrier à l'import ; qualité et cohérence à l'extraction ; questionnaire à l'import du CCAP, RC ou CCTP (demande d'abord) |
 | Exigences | exigence créée | analyser la qualité de la bibliothèque ; relire une exigence (IA, sans reformulation appliquée) | qualité chaque lundi à 8 h |
 | IA | — | demander à l'IA (consigne, contexte, note facultative) | — |
+
+## L'accueil (v0.2.0)
+
+`home.ts` : la section « Workflows » (actifs sur le total, les cinq dernières exécutions lues dans le journal) et l'entrée de navigation.
 
 ## Le moteur (`engine.ts`)
 

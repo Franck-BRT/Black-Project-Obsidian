@@ -78,6 +78,16 @@ export function describeAiError(error: unknown, t: (key: string, vars?: Record<s
   return t('ia.error.other', { detail: error instanceof Error ? error.message : String(error) })
 }
 
+/** Le champ de la connexion qui porte le modèle de chaque usage. */
+const USE_FIELD: Record<ModelUse, keyof AiConnection> = {
+  text: 'model',
+  translate: 'translateModel',
+  embedding: 'embeddingModel',
+  rerank: 'rerankModel',
+  ocr: 'ocrModel',
+  vision: 'visionModel'
+}
+
 const field = (key: string, name: string, defaultValue = '', normalize = (input: string) => input.trim()): TextField => ({
   kind: 'text',
   key,
@@ -148,7 +158,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.3.0',
+  version: '0.4.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -166,6 +176,46 @@ export const iaModule: BlackModule = {
   docs: ({ folder }) => [{ path: 'Modules/IA.md', content: fillTemplate(page, folder) }],
   activate(context) {
     active = context
+    // L'accueil : la connexion et un modèle par usage, d'un coup d'œil.
+    if (context.views) {
+      const tr = (key: string, vars?: Record<string, string | number>) => context.i18n.t(key, vars)
+      const settingsWindow = context.openWindow
+      const configure = settingsWindow ? [{ id: 'settings', label: tr('ia.home.settings'), icon: 'settings' as const, run: () => settingsWindow() }] : []
+      const test = { id: 'test', label: tr('ia.setting.test.button'), icon: 'refresh' as const, run: () => context.commands.run?.('tester') ?? Promise.resolve() }
+      context.views.home({
+        id: 'ia.status',
+        order: 20,
+        area: 'side',
+        async load() {
+          const connection = connectionOf(context.settings.get(), context.platform.secrets?.get(SECRET_ID) ?? '')
+          const head = { title: tr('ia.home.title'), icon: 'spark' as const }
+          if (!connection.baseUrl) return { ...head, blocks: [{ kind: 'message', tone: 'warning', text: tr('ia.home.noUrl'), actions: configure }] }
+          if (!connection.model) return { ...head, blocks: [{ kind: 'message', tone: 'warning', text: tr('ia.home.noModel'), actions: [test, ...configure] }] }
+          const client = new AiClient(context.platform.http, connection)
+          return {
+            ...head,
+            subtitle: connection.baseUrl,
+            blocks: [
+              {
+                kind: 'list',
+                items: MODEL_USES.map((use) => {
+                  const own = (connection as unknown as Record<string, string>)[USE_FIELD[use]] ?? ''
+                  const model = client.modelFor(use)
+                  return {
+                    id: use,
+                    title: tr(`ia.setting.model.${use}`),
+                    detail: own.trim() ? own : model ? tr('ia.home.fallback', { model }) : tr('ia.home.unused'),
+                    tone: own.trim() ? ('success' as const) : model ? ('info' as const) : ('neutral' as const)
+                  }
+                })
+              },
+              { kind: 'actions', actions: [test, ...configure] }
+            ]
+          }
+        }
+      })
+      if (settingsWindow) context.views.nav({ id: 'ia', label: tr('ia.name'), icon: 'spark', order: 40, run: () => settingsWindow() })
+    }
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)))
     const { platform, i18n, settings } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)

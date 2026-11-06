@@ -9,6 +9,9 @@
  *   toucher à rien d'autre : pour la lecture de fichiers, par exemple, toute
  *   modification se fait dans `src/modules/lecture-fichiers/` et nulle part ailleurs.
  * - **Le cœur ne dépend d'aucun module.** Ce sont les modules qui s'appuient sur lui.
+ * - **L'interface (`src/ui`) ne dépend ni des modules ni d'un hôte** (Obsidian, bureau) :
+ *   elle dessine les descriptions que les modules donnent au cœur ; le cœur et les modules
+ *   ne dépendent pas d'elle.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -20,7 +23,7 @@ const posix = (path) => path.split(sep).join('/')
 
 function resolve(from, specifier) {
   const base = posix(normalize(join(dirname(from), specifier)))
-  for (const candidate of [`${base}.ts`, `${base}/index.ts`, base]) if (existsSync(candidate)) return candidate
+  for (const candidate of [`${base}.ts`, `${base}.tsx`, `${base}/index.ts`, `${base}/index.tsx`, base]) if (existsSync(candidate)) return candidate
   return null
 }
 
@@ -30,13 +33,21 @@ function moduleOf(path) {
 }
 
 const problems = []
-for (const file of repositoryFiles().filter((path) => /\.(ts|mts)$/.test(path))) {
+for (const file of repositoryFiles().filter((path) => /\.(ts|tsx|mts)$/.test(path))) {
   if (!existsSync(file)) continue
   const source = readFileSync(file, 'utf8')
   for (const match of source.matchAll(IMPORT)) {
     const target = resolve(file, match[2])
     if (!target) continue
     const owner = moduleOf(target)
+    if (file.startsWith('src/ui/') && (owner || target.startsWith('src/obsidian/'))) {
+      problems.push(`${file} : l'interface importe ${owner ? `le module « ${owner} »` : "l'hôte Obsidian"} (${match[2]})`)
+      continue
+    }
+    if ((file.startsWith('src/core/') || file.startsWith('src/modules/')) && target.startsWith('src/ui/')) {
+      problems.push(`${file} : le cœur et les modules ne dépendent pas de l'interface (${match[2]})`)
+      continue
+    }
     if (file.startsWith('src/core/') && owner) {
       problems.push(`${file} : le cœur importe le module « ${owner} » (${match[2]})`)
       continue

@@ -2,11 +2,32 @@
 
 {{link:Accueil|← Accueil}}
 
+## L'accueil
+
+L'onglet **Black Projects** s'ouvre au démarrage, ou par l'icône de la barre latérale, ou
+par la commande **Ouvrir l'accueil de Black Projects** : les actions rapides, une carte
+par analyse d'appel d'offres (sa date limite de remise en jours restants, ses pièces, ses
+exigences et leur note), l'état de l'IA, la bibliothèque d'exigences en chiffres, les
+dernières exécutions des workflows. Il se met à jour quand le coffre change.
+
+Le bouton **Apparence** règle, au choix et ensemble :
+
+- le **mode** : automatique (comme Obsidian), clair, sombre ;
+- les **couleurs** pour les daltonismes : rouge-vert (deutéranopie, protanopie),
+  bleu-jaune (tritanopie), monochrome (achromatopsie) — un état n'est jamais dit par la
+  seule couleur : il a aussi son icône et son mot ;
+- la **lecture facilitée** pour les troubles dys : police lisible (OpenDyslexic, Lexend ou
+  Atkinson Hyperlegible, si elles sont installées sur l'ordinateur), texte plus grand et
+  plus espacé, fond crème, sans italique ;
+- la **taille du texte**, et le **mouvement** (animations coupées).
+
 ## Les réglages
 
 **Paramètres → Black Projects by Black Room Technologies** :
 
 - **Langue** : français ou anglais, appliquée au prochain chargement du plugin.
+- **Accueil et apparence** : ouvrir l'accueil au démarrage, et les mêmes choix
+  d'apparence que le bouton de l'accueil.
 - **Documentation** : le dossier où cette documentation est créée, et le bouton qui la
   crée ou la met à jour.
 - **Modules** : chaque module avec sa version et son état. L'interrupteur l'active ou le
@@ -36,6 +57,7 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 
 | Commande | Rôle |
 | --- | --- |
+| Ouvrir l'accueil de Black Projects | l'onglet d'accueil |
 | À propos de Black Projects | version, modules actifs, licence |
 | Créer ou mettre à jour la documentation | écrit cette documentation dans le coffre |
 | Nouvelle analyse d'appel d'offres | crée une analyse et propose d'y mettre les pièces ; voir {{link:Modules/Analyse d'appels d'offres|Analyse d'appels d'offres}} |

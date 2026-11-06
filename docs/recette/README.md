@@ -13,3 +13,4 @@ Un cahier par étape du [plan d'intégration](../plan-integration.md). À dérou
 - [Étape 5 — Analyse qualité sans IA](etape-5.md)
 - [Étape 6 — IA locale](etape-6.md)
 - [Étape 6 bis — Workflows](etape-6-workflows.md)
+- [Étape 6 ter — Accueil et interface](etape-6-interface.md)

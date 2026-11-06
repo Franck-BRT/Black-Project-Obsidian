@@ -307,6 +307,24 @@ sur le dossier d'exemple avec un serveur simulé (`test/ao-ia.test.ts`).
 **Jalon :** le dossier se traite seul — calendrier relevé dès le dépôt des pièces,
 qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`).
 
+### Étape 6 ter — Accueil et interface ✅ *terminée (v0.10.0)*
+
+- **Architecture de l'interface** ([architecture/interface.md](architecture/interface.md)) :
+  `src/ui/` en Preact, la même dans Obsidian et dans l'application de bureau ; les modules
+  décrivent ce qu'ils montrent en données (`src/core/views.ts`), l'interface dessine ; les
+  frontières vérifiées par `check:modules` et ESLint
+- **Page d'accueil** : un onglet « Black Projects » (icône, commande, ouverture au
+  démarrage) ; actions rapides et une carte par analyse — date limite de remise en jours
+  restants, pièces, exigences, qualité, ce qui reste à faire ; l'IA et un modèle par
+  usage ; la bibliothèque d'exigences en chiffres ; les dernières exécutions des
+  workflows ; rafraîchie quand le coffre change
+- **Thèmes** : clair, sombre, automatique ; couleurs pour les daltonismes (rouge-vert,
+  bleu-jaune, monochrome) ; lecture facilitée pour les troubles dys ; taille du texte ;
+  mouvement réduit — contraste AA vérifié pour chaque palette
+- **Démonstration hors d'Obsidian** (`pnpm run demo`) : la même interface, les vrais
+  modules, un coffre en mémoire
+- Recette : [recette/etape-6-interface.md](recette/etape-6-interface.md)
+
 ### Étape 7 — Livrables
 
 - Repris : générateurs `xlsx` et `docx`, `reqXlsx`, `reqDocx`

@@ -13,8 +13,10 @@ export default defineConfig({
       }
     }
   ],
+  // L'interface (src/ui) est écrite en JSX pour Preact, comme au build.
+  esbuild: { jsx: 'automatic', jsxImportSource: 'preact' },
   test: {
-    include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}', 'test/**/*.test.ts'],
     environment: 'node'
   }
 })

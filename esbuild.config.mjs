@@ -31,6 +31,9 @@ const context = await esbuild.context({
   ],
   // Les pages de documentation (*.md) sont embarquées comme du texte.
   loader: { '.md': 'text' },
+  // L'interface (src/ui) est écrite en JSX pour Preact.
+  jsx: 'automatic',
+  jsxImportSource: 'preact',
   logLevel: 'info',
   sourcemap: production ? false : 'inline',
   minify: production,

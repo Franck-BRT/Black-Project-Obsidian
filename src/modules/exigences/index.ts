@@ -43,6 +43,7 @@ import { localToday } from '../../core/dates'
 import { aiClient } from '../ia'
 import { reviewRequirement, translateRequirement } from './ai/actions'
 import { emitRequirementCreated, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
+import { registerExigencesHome } from './home'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { RequirementStore, RequirementExists } from './store'
@@ -264,7 +265,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.6.0',
+  version: '0.7.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },
@@ -282,6 +283,10 @@ export const exigencesModule: BlackModule = {
     active = context
     // Ce que les exigences apportent aux workflows.
     registerExigencesWorkflows(() => session, session.t, localToday)
+    // L'accueil : la bibliothèque en chiffres.
+    registerExigencesHome(context.views, session, async (id) => {
+      await context.commands.run?.(id)
+    })
 
     commands.register({
       id: 'nouvelle',

@@ -26,6 +26,7 @@ import page from './doc/Workflows.md'
 import { WorkflowEngine } from './engine'
 import { browseWorkflows, createWorkflow, exportToFile, importFromFile, openJournal, pickAndRun, type Session } from './flows'
 import { workflowsEn, workflowsFr } from './i18n'
+import { registerWorkflowsHome } from './home'
 import type { Subject, Workflow } from './model'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -113,7 +114,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.1.0',
+  version: '0.2.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -140,6 +141,18 @@ export const workflowsModule: BlackModule = {
     commands.register({ id: 'journal', nameKey: 'workflows.command.journal', run: () => openJournal(current) })
     commands.register({ id: 'exporter', nameKey: 'workflows.command.export', run: async () => void (await exportToFile(current)) })
     commands.register({ id: 'importer', nameKey: 'workflows.command.import', run: async () => void (await importFromFile(current)) })
+
+    // L'accueil : les dernières exécutions.
+    registerWorkflowsHome(context.views, {
+      t,
+      fs: platform.fs,
+      folder,
+      load,
+      run: async (id) => {
+        await context.commands.run?.(id)
+      },
+      openJournal: () => openJournal(current)
+    })
 
     // Les workflows planifiés : à l'ouverture, puis toutes les minutes.
     context.timers?.every(TICK, () => void engine?.tick())

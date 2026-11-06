@@ -9,7 +9,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { repositoryFiles } from './files.mjs'
 
-const SOURCE = /\.(ts|mts|mjs|js|css)$/
+const SOURCE = /\.(ts|tsx|mts|mjs|js|css)$/
 const IGNORED = new Set(['main.js'])
 const NOTICE = /Copyright © \d{4}(?:-\d{4})? Black Room Technologies\. Tous droits réservés\./
 

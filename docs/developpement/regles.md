@@ -21,6 +21,7 @@
 
 | Contrôle | Vérifie |
 | --- | --- |
+| `check:modules` (interface) | `src/ui` n'importe ni Obsidian ni un module ; le cœur et les modules n'importent pas `src/ui` |
 | `check:mentions` | aucune référence à un projet tiers d'origine ni au nom d'un serveur d'IA propre à un client, dans aucun fichier |
 | `check:headers` | la mention de propriété en tête de chaque fichier source |
 | `check:modules` | hors d'un module, on n'importe que son `index.ts` ; le cœur n'importe aucun module |

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.3.0 (Black Projects 0.9.0) |
+| Version | 0.4.0 (Black Projects 0.10.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -53,6 +53,10 @@ fait choisir le modèle d'analyse s'il n'y en a pas, et dit en clair ce qui ne v
 `workflows.ts` déclare l'action « Demander à l'IA » au module [Workflows](workflows.md) :
 une consigne, un contexte (souvent `{step1.text}`), une note facultative ; la réponse
 passe aux étapes suivantes (`{stepN.text}`).
+
+## L'accueil (Black Projects 0.10.0)
+
+La section « IA » : l'adresse et chaque usage (réglé, ou le modèle qui le remplace, ou non utilisé) ; non réglée, un message et le bouton « Réglages ». Entrée de navigation « IA ».
 
 ## Interface publique
 

@@ -27,6 +27,7 @@ Black Projects est construit en modules : d'autres fonctions s'ajouteront au mê
 - Architecture
   - [Vue d'ensemble](architecture/vue-d-ensemble.md)
   - [Modules](architecture/modules.md)
+  - [Interface, thèmes et accessibilité](architecture/interface.md)
   - [Propriété et licences](architecture/propriete-et-licences.md)
   - [Application de bureau](architecture/application-desktop.md)
 - [Installation](installation/README.md)

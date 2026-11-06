@@ -26,6 +26,9 @@ l'embarquerait n'est donc pas possible.
   installeur signé, mises à jour.
 - L'adaptateur `desktop/` implémente les mêmes [ports](vue-d-ensemble.md#les-ports-srccoreportsts).
 - Même format de données : un dossier s'ouvre dans Obsidian comme dans l'application.
+- **L'interface est déjà commune** (v0.10.0) : `src/ui/` (Preact) est montée telle quelle
+  par Obsidian et par la démonstration autonome `demo/`, qui préfigure `desktop/` ; voir
+  [interface.md](interface.md).
 - À écrire : éditeur Markdown (CodeMirror), arborescence, onglets, recherche.
 
 ## En attendant : le coffre préconfiguré (étape 8)

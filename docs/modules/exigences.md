@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.6.0 (Black Projects 0.9.0) |
+| Version | 0.7.0 (Black Projects 0.10.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -139,6 +139,10 @@ créée » (signalé par « Nouvelle exigence », `Session.created`), les action
 qualité de la bibliothèque » (`writeLibraryQuality`, partagée avec la commande) et
 « relire une exigence avec l'IA » (relecture écrite, aucune reformulation appliquée), et
 le workflow prêt à l'emploi « qualité chaque lundi ».
+
+## L'accueil (Black Projects 0.10.0)
+
+`home.ts` : la section « Bibliothèque d'exigences » (nombre, note moyenne, faibles, traductions à revoir ; nouvelle exigence, parcourir, analyser la qualité) et l'entrée de navigation « Exigences ».
 
 ## Le format
 

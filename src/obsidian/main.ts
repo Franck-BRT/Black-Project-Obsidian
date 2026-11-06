@@ -6,7 +6,7 @@
  * vérifie les droits, active ce qui peut l'être et branche les commandes.
  */
 
-import { Plugin } from 'obsidian'
+import { debounce, Plugin, TFile } from 'obsidian'
 import { createI18n, type I18n } from '../core/i18n'
 import { describeEntitlements, EVALUATION, type Entitlements } from '../core/licence'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../core/modules/module'
@@ -20,6 +20,10 @@ import { BlackFileView } from './fileViewer'
 import { FILE_VIEW, obsidianPlatform, pluginSettingsStorage } from './platform'
 import { ModuleDetailsModal } from './moduleDetailsModal'
 import { BlackProjectsSettingTab } from './settingsTab'
+import { BlackHomeView, HOME_VIEW } from './homeView'
+import { ViewsRegistry } from '../core/views'
+import type { Appearance } from '../core/appearance'
+import type { AppHost } from '../ui'
 
 export default class BlackProjectsPlugin extends Plugin {
   config!: CoreSettings
@@ -32,6 +36,8 @@ export default class BlackProjectsPlugin extends Plugin {
   private readonly settingsListeners = new Map<string, Set<(values: Readonly<Record<string, unknown>>) => void>>()
   /** Les commandes déclarées par les modules, pour les lancer aussi depuis leur fenêtre. */
   private readonly moduleCommands = new Map<string, ModuleCommand>()
+  /** Ce que les modules montrent dans l'interface (accueil, navigation). */
+  readonly views = new ViewsRegistry()
 
   override async onload(): Promise<void> {
     this.storage = pluginSettingsStorage(this)
@@ -40,6 +46,8 @@ export default class BlackProjectsPlugin extends Plugin {
     this.platform = obsidianPlatform(this, this.manifest.version, this.i18n)
     // La visionneuse des fichiers qu'Obsidian n'ouvre pas, quand l'utilisateur choisit de les afficher.
     this.registerView(FILE_VIEW, (leaf) => new BlackFileView(leaf, this))
+    // L'accueil : l'interface de Black Projects (src/ui), montée dans un onglet.
+    this.registerView(HOME_VIEW, (leaf) => new BlackHomeView(leaf, this.appHost()))
 
     for (const module of MODULES) {
       this.registry.register(module)
@@ -68,7 +76,14 @@ export default class BlackProjectsPlugin extends Plugin {
       name: this.i18n.t('command.docs'),
       callback: () => void this.createDocumentation()
     })
+    this.addCommand({
+      id: 'accueil',
+      name: this.i18n.t('command.home'),
+      callback: () => void this.openHome()
+    })
+    this.addRibbonIcon('layout-dashboard', this.i18n.t('command.home'), () => void this.openHome())
     this.addSettingTab(new BlackProjectsSettingTab(this.app, this))
+    this.views.nav({ id: 'settings', label: this.i18n.t('home.nav.settings'), icon: 'settings', order: 90, run: () => this.openSettings() })
 
     await this.registry.activateAll({
       disabled: this.config.disabledModules,
@@ -79,6 +94,62 @@ export default class BlackProjectsPlugin extends Plugin {
         this.platform.notifier.notify(this.i18n.t('module.failed.notice', { name: this.i18n.t(module.nameKey) }))
       }
     })
+
+    // L'accueil suit le coffre : un fichier créé, modifié, renommé ou supprimé le fait se recharger.
+    const refresh = debounce(() => this.refreshHome(), 1500, true)
+    for (const name of ['create', 'modify', 'delete', 'rename'] as const) {
+      this.registerEvent(this.app.vault.on(name as 'create', (file) => file instanceof TFile && !file.path.startsWith('.') && refresh()))
+    }
+    this.app.workspace.onLayoutReady(() => {
+      if (this.config.openHomeAtStart && this.app.workspace.getLeavesOfType(HOME_VIEW).length === 0) void this.openHome()
+    })
+  }
+
+  /** Ouvre l'accueil (ou le montre s'il est déjà ouvert). */
+  async openHome(): Promise<void> {
+    const open = this.app.workspace.getLeavesOfType(HOME_VIEW)[0]
+    const leaf = open ?? this.app.workspace.getLeaf('tab')
+    if (!open) await leaf.setViewState({ type: HOME_VIEW, active: true })
+    await this.app.workspace.revealLeaf(leaf)
+  }
+
+  /** Recharge les sections de chaque accueil ouvert. */
+  refreshHome(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType(HOME_VIEW)) {
+      if (leaf.view instanceof BlackHomeView) leaf.view.refresh()
+    }
+  }
+
+  openSettings(): void {
+    const setting = (this.app as unknown as { setting?: { open(): void; openTabById(id: string): void } }).setting
+    setting?.open()
+    setting?.openTabById(this.manifest.id)
+  }
+
+  async saveAppearance(appearance: Appearance): Promise<void> {
+    this.config = { ...this.config, appearance }
+    await this.saveSettings()
+    this.refreshHome()
+  }
+
+  /** Ce que l'interface reçoit de l'hôte Obsidian. */
+  private appHost(): AppHost {
+    const t = (key: string, vars?: Record<string, string | number>) => this.i18n.t(key, vars)
+    return {
+      t,
+      locale: this.config.language === 'en' ? 'en-GB' : 'fr-FR',
+      version: this.manifest.version,
+      sections: () => this.views.homeSections(),
+      nav: () => this.views.navEntries(),
+      appearance: () => this.config.appearance,
+      saveAppearance: (appearance) => this.saveAppearance(appearance),
+      hostIsDark: () => document.body.classList.contains('theme-dark'),
+      onHostThemeChange: (listener) => {
+        const ref = this.app.workspace.on('css-change', listener)
+        return () => this.app.workspace.offref(ref)
+      },
+      now: () => new Date()
+    }
   }
 
   override async onunload(): Promise<void> {
@@ -172,8 +243,10 @@ export default class BlackProjectsPlugin extends Plugin {
         }
       },
       commands: {
-        register: (command) => this.addModuleCommand(module, command)
+        register: (command) => this.addModuleCommand(module, command),
+        run: (id) => this.runModuleCommand(module.id, id)
       },
+      views: this.views,
       openWindow: () => new ModuleDetailsModal(this.app, this, module).open(),
       timers: {
         every: (milliseconds, run) => {
@@ -210,6 +283,7 @@ export default class BlackProjectsPlugin extends Plugin {
       console.error(`[Black Projects] ${moduleId}-${commandId}`, error)
       this.platform.notifier.notify(error instanceof Error ? error.message : String(error))
     }
+    this.refreshHome()
   }
 
   private addModuleCommand(module: BlackModule, command: ModuleCommand): void {
@@ -220,6 +294,7 @@ export default class BlackProjectsPlugin extends Plugin {
       callback: () => {
         Promise.resolve()
           .then(() => command.run())
+          .then(() => this.refreshHome())
           .catch((error: unknown) => {
             console.error(`[Black Projects] ${module.id}-${command.id}`, error)
             this.platform.notifier.notify(error instanceof Error ? error.message : String(error))
