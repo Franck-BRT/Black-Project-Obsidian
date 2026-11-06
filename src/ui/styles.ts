@@ -96,6 +96,10 @@ const COMPONENTS_CSS = String.raw`
 .bp-section-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .bp-section > * + * { margin-top: 14px; }
 .bp-section-head + * { margin-top: 0; }
+/* Le contenu d'une section du tableau de bord : le même écart entre tous ses blocs. */
+.bp-section-body { display: flex; flex-direction: column; gap: 14px; }
+.bp-section-body > * { margin-top: 0; margin-bottom: 0; }
+.bp-section-body[hidden] { display: none; }
 
 /* Les actions rapides */
 .bp-actions { display: flex; flex-wrap: wrap; gap: 10px; }

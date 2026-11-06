@@ -72,6 +72,9 @@ Sur le coffre de test.
 
 ## Le tableau de bord rangé par l'utilisateur (v0.13.0)
 
+- [ ] (v0.13.2) Dans chaque section, le même écart entre les boutons d'en haut, les cartes
+      ou indicateurs et les boutons d'en bas (pas de bloc collé à un autre)
+
 - [ ] (v0.13.1) Faire défiler l'accueil en modification ou le tableau de bord : la barre de
       gauche (marque, menus, version) ne bouge pas ; passer d'une page à l'autre repart du
       haut ; onglet étroit : la navigation passe en haut et défile avec la page

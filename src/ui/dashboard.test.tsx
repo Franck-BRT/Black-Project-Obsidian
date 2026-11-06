@@ -10,6 +10,7 @@ import { ViewsRegistry, type DashboardLayout, type HomeSection } from '../core/v
 import { arrange, columnOf, defaultLayout, hideSection, moveSection, placeSection, showSection, switchColumn, toggleCollapsed } from './dashboard'
 import type { AppHost } from './host'
 import { App } from './shell'
+import { UI_CSS } from './styles'
 
 const section = (id: string, area: 'main' | 'side', order: number): HomeSection => ({
   id,
@@ -109,6 +110,13 @@ describe('la page du tableau de bord', () => {
     expect(html).not.toContain('bp-skeleton')
     // Une seule colonne remplie : toute la largeur.
     expect(html).toContain('class="bp-home is-single"')
+  })
+
+  it('le contenu d’une section : un même écart entre tous ses blocs, et caché quand elle est réduite', () => {
+    expect(render(null)).toContain('class="bp-section-body"')
+    expect(UI_CSS).toMatch(/\.bp-ui \.bp-section-body \{ display: flex; flex-direction: column; gap: 14px; \}/)
+    // `display: flex` l'emporterait sur l'attribut hidden : il faut le redire.
+    expect(UI_CSS).toContain('.bp-ui .bp-section-body[hidden] { display: none; }')
   })
 
   it('toutes masquées : dit comment les réafficher', () => {

@@ -65,7 +65,7 @@ function Section({ section, host, generation, collapsed, toggle }: { section: Ho
           </div>
         )}
       </div>
-      <div id={bodyId} hidden={collapsed}>
+      <div class="bp-section-body" id={bodyId} hidden={collapsed}>
         {!collapsed && state.status === 'loading' && <div class="bp-skeleton" aria-label={t('ui.loading')} />}
         {!collapsed && state.status === 'failed' && <BlockView block={{ kind: 'message', tone: 'danger', text: t('ui.section.failed', { reason: state.reason }) }} t={t} now={host.now()} locale={host.locale} />}
         {view?.blocks.map((block, index) => (
