@@ -108,6 +108,15 @@ exécution ouvre son sujet (« Ouvrir le sujet ») et les notes écrites par
 exigence de la bibliothèque sa fiche —, sinon la note dans le coffre. Les workflows ne
 connaissent pas ces pages : chaque module dit lesquelles de ses notes en ont une.
 
+**Créer et exécuter, en page (v0.8.0, Black Projects 0.53.0)** : « Nouveau workflow »
+de la liste, du tableau de bord et de la tuile passe par `HomeDeps.create`
+(`createWorkflow(session, { open: false })`, sans la fenêtre de la fiche), puis
+`workflows.fiche?<id>`. « Exécuter » (carte, fiche, « Exécuter de nouveau ») : `runNow`
+lit la dernière ligne du journal pour ce workflow (`lastRunLine`) avant et après
+`runByHand` ; une nouvelle ligne, et sa fiche s'ouvre (`runPageOf`). Rien d'exécuté
+(aucune action, sujet non choisi) : on reste où l'on est. Depuis la palette, ou sans
+page : la fenêtre et les messages, comme avant.
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

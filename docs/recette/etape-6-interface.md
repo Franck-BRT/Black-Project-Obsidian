@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le module Workflows : créer et exécuter, en page (v0.53.0)
+
+- [ ] Page **Workflows** → **Nouveau workflow** (de zéro ou d'après un modèle) : la
+      **fiche** du workflow créé, en page, pas la fenêtre
+- [ ] Même chose depuis le tableau de bord et la tuile *Nouveau workflow*
+- [ ] **Exécuter** sur une carte ou la fiche : (le sujet, s'il en faut un) puis la
+      **fiche de l'exécution** — issue, étapes, notes écrites ; **Exécuter de nouveau**
+      mène à la fiche de la nouvelle
+- [ ] Un workflow sans action : le message, on reste sur la fiche
+- [ ] Depuis la palette, *Nouveau workflow* : la fiche en fenêtre, comme avant
+
 ## Le module IA : tester la connexion, en page (v0.52.0)
 
 - [ ] Tableau de bord, section IA, **Tester la connexion** (ou la tuile) : puis la page

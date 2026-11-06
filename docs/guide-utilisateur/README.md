@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.52.0)
+## Aujourd'hui (version 0.53.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -128,7 +128,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 
 - **Workflows** : « Nouveau workflow » — de zéro ou d'après un modèle prêt à l'emploi
   (calendrier à l'import des pièces, qualité à l'extraction des exigences, questionnaire
-  avec l'IA, qualité de la bibliothèque chaque lundi) ; un déclencheur, des conditions,
+  avec l'IA, qualité de la bibliothèque chaque lundi ; depuis l'onglet, sa fiche s'ouvre en
+  page, et « Exécuter » mène à la fiche de l'exécution) ; un déclencheur, des conditions,
   des actions à la suite qui reprennent `{analyse}`, `{today}` ou le résultat d'une étape
   d'avant `{step1.link}` ; seul ou « demander d'abord » ; « Journal des workflows » ;
   export et import. Voir la page *Workflows* dans le coffre.

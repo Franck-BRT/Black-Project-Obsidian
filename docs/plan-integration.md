@@ -429,6 +429,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   bibliothèque
 - v0.52.0 : **module IA** : « Tester la connexion » mène à la page IA, qui montre le
   dernier test (réussi ou pourquoi pas) et les modèles du serveur, chacun avec son usage
+- v0.53.0 : **module Workflows** : « Nouveau workflow » ouvre sa fiche en page ;
+  « Exécuter » mène à la fiche de l'exécution qu'il vient de faire
 
 ### Étape 7 — Livrables
 

@@ -22,7 +22,7 @@ export const WORKFLOW_PAGE = 'workflows.fiche'
 export const JOURNAL_PAGE = 'workflows.journal'
 /** La fiche d'une exécution : `pageWith(RUN_PAGE, ligne du journal encodée)`. */
 export const RUN_PAGE = 'workflows.execution'
-const runPageOf = (line: string) => pageWith(RUN_PAGE, encodeURIComponent(line))
+export const runPageOf = (line: string): string => pageWith(RUN_PAGE, encodeURIComponent(line))
 
 /** Le filtre du journal qui répond à chaque issue. */
 const OUTCOME_TAG: Record<Tone, string> = { success: 'reussies', danger: 'echecs', neutral: 'refusees', warning: 'arretees', info: 'autres' }
@@ -140,7 +140,33 @@ function openJournalPage(deps: HomeDeps): () => Promise<void> | void {
   return deps.showPage && deps.page ? () => deps.showPage?.(JOURNAL_PAGE) : deps.openJournal
 }
 
-type HomeDeps = { t: Translate; fs: FileSystem; folder(): string; load(): Workflow[]; run(id: string): Promise<void>; openJournal(): Promise<void>; openNote(path: string): Promise<void>; showPage?(id: string): void; page?: WorkflowsPageDeps }
+type HomeDeps = {
+  t: Translate
+  fs: FileSystem
+  folder(): string
+  load(): Workflow[]
+  run(id: string): Promise<void>
+  openJournal(): Promise<void>
+  openNote(path: string): Promise<void>
+  showPage?(id: string): void
+  page?: WorkflowsPageDeps
+  /** Un nouveau workflow, sans la fenêtre de sa fiche ; rend son identifiant. */
+  create?(): Promise<string | null>
+}
+
+/** La dernière ligne du journal d'un workflow (son nom), pour retrouver l'exécution qu'on vient de lancer. */
+export async function lastRunLine(deps: { t: Translate; fs: FileSystem; folder(): string }, name: string): Promise<string | null> {
+  return journalItems(await readJournal(deps), 50).find((item) => item.title === name)?.line ?? null
+}
+
+/** « Nouveau workflow » depuis l'interface : avec des pages, sa fiche en page ensuite ; sinon la commande (la fenêtre). */
+function newWorkflow(deps: HomeDeps): () => Promise<void> {
+  return async () => {
+    if (!deps.showPage || !deps.page?.fiche || !deps.create) return deps.run('nouveau')
+    const id = await deps.create()
+    if (id) deps.showPage(pageWith(WORKFLOW_PAGE, id))
+  }
+}
 
 /** Ce que le journal récent dit d'un workflow : sa dernière issue, quand, et combien de lignes. */
 interface Logged {
@@ -209,7 +235,7 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
   return {
     subtitle: t('workflows.page.subtitle', { active, count: workflows.length }),
     actions: [
-      { id: 'new', label: t('workflows.command.new'), icon: 'plus', primary: true, run: () => deps.run('nouveau') },
+      { id: 'new', label: t('workflows.command.new'), icon: 'plus', primary: true, run: newWorkflow(deps) },
       { id: 'import', label: t('workflows.list.import'), icon: 'upload', run: () => deps.run('importer') },
       { id: 'export', label: t('workflows.list.export'), icon: 'copy', run: () => deps.run('exporter') },
       { id: 'journal', label: t('workflows.home.journal'), icon: 'book', run: openJournalPage(deps) }
@@ -460,7 +486,7 @@ export function registerWorkflowsHome(views: ViewsRegistrar | undefined, deps: H
           {
             kind: 'actions',
             actions: [
-              { id: 'new', label: t('workflows.command.new'), icon: 'plus', run: () => deps.run('nouveau') },
+              { id: 'new', label: t('workflows.command.new'), icon: 'plus', run: newWorkflow(deps) },
               // Avec une page, le lien d'en-tête y mène déjà.
               ...(withPage.page ? [] : [{ id: 'list', label: t('workflows.home.all'), icon: 'flow' as const, run: open }]),
               { id: 'journal', label: t('workflows.home.journal'), icon: 'book', run: openJournalPage(deps) }
@@ -499,6 +525,6 @@ export function registerWorkflowsHome(views: ViewsRegistrar | undefined, deps: H
       return failed ? { text: String(failed), tone: 'danger', label: t('workflows.tile.failed', { count: failed }) } : null
     }
   })
-  views.tile({ id: 'workflows.nouveau', label: t('workflows.command.new'), icon: 'plus', color: 'rose', group, order: 31, description: t('workflows.tile.new.desc'), run: () => deps.run('nouveau') })
+  views.tile({ id: 'workflows.nouveau', label: t('workflows.command.new'), icon: 'plus', color: 'rose', group, order: 31, description: t('workflows.tile.new.desc'), run: newWorkflow(deps) })
   views.tile({ id: 'workflows.journal', label: t('workflows.home.journal'), icon: 'book', color: 'rose', group, order: 32, description: t('workflows.tile.journal.desc'), ...(deps.showPage && deps.page ? { page: JOURNAL_PAGE } : {}), run: openJournalPage(deps) })
 }

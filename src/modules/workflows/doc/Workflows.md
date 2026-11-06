@@ -51,7 +51,10 @@ Palette de commandes :
   dernière exécution) ; ses **conditions**, chacune avec **Retirer**, et « Ajouter une
   condition » ; ses **actions**, dans l'ordre, chacune avec **Modifier**, **Monter**,
   **Descendre**, **Retirer**, et « Ajouter une action » ; ses dernières exécutions.
-  « ← Tous les workflows » ramène à la liste ;
+  « ← Tous les workflows » ramène à la liste. Dans l'onglet, **Nouveau workflow** (la
+  page, le tableau de bord, la tuile) ouvre la fiche du workflow créé, en page ; et
+  **Exécuter** (la carte, la fiche, « Exécuter de nouveau ») mène à la **fiche de
+  l'exécution** qu'il vient de faire : son issue, ses étapes, les notes écrites ;
 - **Exécuter un workflow** — à la main, sans attendre son déclencheur ; l'analyse est
   demandée quand il en faut une ;
 - **Journal des workflows** — en page : combien d'exécutions, réussies, en échec,

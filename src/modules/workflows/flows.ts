@@ -180,7 +180,7 @@ async function store(session: Session, workflow: Workflow): Promise<void> {
 }
 
 /** Un nouveau workflow, de zéro ou d'après un modèle ; rend son identifiant. */
-export async function createWorkflow(session: Session): Promise<string | null> {
+export async function createWorkflow(session: Session, options: { open?: boolean } = {}): Promise<string | null> {
   const { ui, t } = session
   const templates = allTemplates()
   const start = templates.length
@@ -205,7 +205,8 @@ export async function createWorkflow(session: Session): Promise<string | null> {
   }
   await store(session, workflow)
   session.notifier.notify(t('workflows.new.done', { name: workflow.name }), 6000)
-  await editWorkflow(session, workflow.id)
+  // La fiche en fenêtre ; depuis l'interface, c'est sa page qui s'ouvre (l'appelant).
+  if (options.open !== false) await editWorkflow(session, workflow.id)
   return workflow.id
 }
 

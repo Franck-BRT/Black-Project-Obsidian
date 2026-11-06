@@ -278,3 +278,68 @@ describe('la fiche d’une exécution, en page', () => {
     expect((await views.pages().find((each) => each.id === 'workflows.execution')!.load(encodeURIComponent('- disparue'))).title).toBe('Exécution introuvable')
   })
 })
+
+describe('exécuter et créer un workflow, en page', () => {
+  it('« Exécuter » sur la fiche : l’exécution faite, sa page — ce qu’elle a fait', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    const fiche = await views.pages().find((each) => each.id === 'workflows.fiche')!.load('wf-1')
+    await fiche.actions!.find((action) => action.id === 'run')!.run()
+    expect(platform.notices).toContain('Bonjour')
+    const last = shown.at(-1)!
+    expect(last).toMatch(/^workflows\.execution\?/)
+    const run = await views.pages().find((each) => each.id === 'workflows.execution')!.load(last.slice(last.indexOf('?') + 1))
+    expect(run.title).toMatch(/^Rappel du matin — \d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
+    expect(platform.opened).toEqual([])
+  })
+
+  it('« Exécuter » sur la carte de la liste et « Relancer » d’une exécution : la page de la nouvelle', async () => {
+    const platform = memoryPlatform()
+    const { views, shown } = await start(platform, true)
+    const card = cardsOf(await views.pages().find((each) => each.id === 'workflows.liste')!.load()).find((each) => each.title === 'Rappel du matin')!
+    await card.actions!.find((action) => action.id === 'run')!.run()
+    const first = shown.at(-1)!
+    expect(first).toMatch(/^workflows\.execution\?/)
+    const runPage = views.pages().find((each) => each.id === 'workflows.execution')!
+    const again = (await runPage.load(first.slice(first.indexOf('?') + 1))).actions!.find((action) => action.id === 'again')!
+    await again.run()
+    expect(shown.at(-1)).toMatch(/^workflows\.execution\?/)
+  })
+
+  it('un workflow sans action : rien n’est exécuté, on reste sur la fiche', async () => {
+    const platform = memoryPlatform()
+    const { views, shown, settings } = await start(platform, true)
+    ;(settings.workflows!.workflows as Workflow[])[0]!.actions = []
+    await (await views.pages().find((each) => each.id === 'workflows.fiche')!.load('wf-1')).actions!.find((action) => action.id === 'run')!.run()
+    expect(shown).toEqual([])
+  })
+
+  it('« Nouveau workflow » de la liste, du tableau de bord ou de la tuile : sa fiche en page, pas la fenêtre', async () => {
+    const platform = memoryPlatform()
+    const { views, shown, settings } = await start(platform, true)
+    const lists = platform.lists.length
+    const offered = () => platform.offered.length
+    platform.forms.push({ name: 'Mon workflow', trigger: 'manuel', mode: 'auto' })
+    await (await views.pages().find((each) => each.id === 'workflows.liste')!.load()).actions!.find((action) => action.id === 'new')!.run()
+    const created = (settings.workflows!.workflows as Workflow[]).find((each) => each.name === 'Mon workflow')!
+    expect(shown.at(-1)).toBe(`workflows.fiche?${created.id}`)
+    expect(platform.lists.length).toBe(lists)
+    const before = offered()
+    platform.forms.push({ name: 'Autre', trigger: 'manuel', mode: 'auto' })
+    await views.allTiles().find((each) => each.id === 'workflows.nouveau')!.run()
+    // Le formulaire seul : pas la fenêtre de la fiche (ses choix).
+    expect(platform.offered.length - before).toBe(0)
+    expect(shown.at(-1)).toMatch(/^workflows\.fiche\?/)
+  })
+
+  it('depuis la palette : la fiche en fenêtre, comme avant ; abandonné : rien', async () => {
+    const platform = memoryPlatform()
+    const { run, shown } = await start(platform, true)
+    platform.forms.push({ name: 'Mon workflow', trigger: 'manuel', mode: 'auto' })
+    const before = platform.offered.length
+    await run('nouveau')
+    expect(shown).toEqual([])
+    // La fiche en fenêtre : ses choix sont proposés.
+    expect(platform.offered.length - before).toBeGreaterThan(0)
+  })
+})

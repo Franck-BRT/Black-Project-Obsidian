@@ -50,7 +50,7 @@ import {
   type Session
 } from './flows'
 import { workflowsEn, workflowsFr } from './i18n'
-import { JOURNAL_PAGE, openWorkflows, registerWorkflowsHome, WORKFLOW_PAGE } from './home'
+import { JOURNAL_PAGE, lastRunLine, openWorkflows, registerWorkflowsHome, runPageOf, WORKFLOW_PAGE } from './home'
 import { pageWith } from '../../core/views'
 import { triggerSpec } from './registry'
 import type { Subject, Workflow } from './model'
@@ -140,7 +140,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.7.0',
+  version: '0.8.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -183,7 +183,7 @@ export const workflowsModule: BlackModule = {
       openJournal: () => openJournal(current),
       // Le sujet d'une exécution, les notes qu'elle a écrites : leur page quand un module en a une.
       openNote: (path) => (context.showNote ? context.showNote(path) : platform.ui.openNote(path)),
-      ...(showPage ? { showPage } : {}),
+      ...(showPage ? { showPage, create: () => createWorkflow(current, { open: false }) } : {}),
       page: {
         t,
         load,
@@ -192,9 +192,15 @@ export const workflowsModule: BlackModule = {
         stamp: (iso) => localStamp(new Date(iso)),
         // Avec des pages, un workflow s'ouvre en fiche ; sinon, la fiche en fenêtre.
         edit: async (id) => (showPage ? showPage(pageWith(WORKFLOW_PAGE, id)) : editWorkflow(current, id)),
+        // Lancé de l'interface : l'exécution faite, sa page (ce qu'elle a fait, écrit, ou pourquoi elle a échoué).
         runNow: async (id) => {
           const workflow = load().find((each) => each.id === id)
-          if (workflow) await runByHand(current, workflow)
+          if (!workflow) return
+          const journal = { t, fs: platform.fs, folder }
+          const before = await lastRunLine(journal, workflow.name)
+          await runByHand(current, workflow)
+          const after = await lastRunLine(journal, workflow.name)
+          if (showPage && after && after !== before) showPage(runPageOf(after))
         },
         setEnabled: (id, enabled) => setEnabled(current, id, enabled),
         fiche: {
