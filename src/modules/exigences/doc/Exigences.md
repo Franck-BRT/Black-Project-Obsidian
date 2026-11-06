@@ -239,8 +239,11 @@ Rien n'est écrit dans une formulation sans votre accord.
 
 Avec le module {{link:Modules/Workflows|Workflows}} : le déclencheur *Exigences : exigence
 créée*, les actions *Analyser la qualité de la bibliothèque* et *Relire l'exigence avec
-l'IA* (la relecture est écrite dans la note, la formulation ne change pas), et le modèle
-*Chaque lundi : qualité de la bibliothèque d'exigences*.
+l'IA* (la relecture est écrite dans la note, la formulation ne change pas) et *Traduire
+l'exigence avec l'IA (toutes les langues)*. Deux **workflows système** l'attendent,
+désactivés d'origine : *Qualité de la bibliothèque d'exigences, chaque lundi* et
+*Traduire les nouvelles exigences (IA)* — à activer sur la page Workflows (filtre
+« Système »).
 
 ## 10. Ce qui arrive
 

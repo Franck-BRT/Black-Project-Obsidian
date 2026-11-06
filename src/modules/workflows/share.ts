@@ -20,7 +20,8 @@ export function exportWorkflows(workflows: readonly Workflow[], at = new Date())
       format: EXPORT_FORMAT,
       version: 1,
       exported: at.toISOString(),
-      workflows: workflows.map(({ lastRun: _lastRun, runs: _runs, ...kept }) => kept)
+      // Un workflow système exporté devient, ailleurs, un workflow ordinaire.
+      workflows: workflows.map(({ lastRun: _lastRun, runs: _runs, system: _system, base: _base, ...kept }) => kept)
     },
     null,
     2

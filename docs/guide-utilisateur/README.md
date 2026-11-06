@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.58.0)
+## Aujourd'hui (version 0.59.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -128,9 +128,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   aux pièces ; rien trouvé, l'IA n'est pas appelée), le **Questionnaire du dossier**
   (six questions prêtes) et **Relire les exigences du dossier avec l'IA**.
 
-- **Workflows** : « Nouveau workflow » — de zéro ou d'après un modèle prêt à l'emploi
-  (calendrier à l'import des pièces, qualité à l'extraction des exigences, questionnaire
-  avec l'IA, qualité de la bibliothèque chaque lundi ; depuis l'onglet, sa fiche s'ouvre en
+- **Workflows** : les **workflows système** — ce que l'application fait d'elle-même (la
+  note de l'analyse, le calendrier à l'import, le contrôle des exigences extraites, les
+  rappels des remises et du rangement, et, désactivés d'origine, le questionnaire avec
+  l'IA, la couverture d'une réponse, la qualité de la bibliothèque chaque lundi, la
+  traduction des nouvelles exigences) : modifiables, désactivables, pas supprimables,
+  « Rétablir l'original » ; « Nouveau workflow » (depuis l'onglet, sa fiche s'ouvre en
   page, et « Exécuter » mène à la fiche de l'exécution) ; un déclencheur, des conditions,
   des actions à la suite qui reprennent `{analyse}`, `{today}` ou le résultat d'une étape
   d'avant `{step1.link}` ; seul ou « demander d'abord » ; « Journal des workflows » ;

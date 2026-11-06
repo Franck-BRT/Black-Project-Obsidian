@@ -9,9 +9,9 @@
  */
 
 import { aiClient } from '../ia'
-import { emitWorkflowEvent, registerAction, registerTemplate, registerTrigger, type WorkflowAction } from '../workflows'
+import { emitWorkflowEvent, registerAction, registerSystemWorkflow, registerTrigger, type WorkflowAction } from '../workflows'
 import { semanticDuplicates } from './ai/semantic'
-import { reviewRequirement } from './ai/actions'
+import { reviewRequirement, translateRequirement, translationTargets } from './ai/actions'
 import type { Session } from './flows'
 import type { Requirement } from './model/requirement'
 import { assessAll, qualityMarkdown, withQuality } from './quality/report'
@@ -112,13 +112,43 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
     }
   })
 
-  registerTemplate({
-    id: 'exigences.qualite-hebdo',
-    labelKey: 'exigences.wf.template.weekly',
-    descKey: 'exigences.wf.template.weekly.desc',
+  // Traduire une exigence dans les autres langues de rédaction ; chaque traduction marquée « à relire ».
+  registerAction({
+    id: 'exigences.traduire',
+    labelKey: 'exigences.wf.action.translate',
+    descKey: 'exigences.wf.action.translate.desc',
+    needsAi: true,
+    fields: [{ key: 'exigence', labelKey: 'exigences.wf.field.requirement', kind: 'text', required: true, defaultValue: '{chemin}', tooltipKey: 'exigences.wf.field.requirement.tip' }],
+    results: ['path', 'link'],
+    async run({ fields, ui, notifier }) {
+      const client = aiClient()
+      if (!client) throw new Error(t('ia.unavailable'))
+      const current = session()
+      let path = fields.exigence!
+      if (!path.toLowerCase().endsWith('.md')) {
+        const found = (await current.store.all()).find((each) => each.id.toUpperCase() === path.toUpperCase())
+        if (!found?.filePath) throw new Error(t('exigences.wf.notFound', { id: path }))
+        path = found.filePath
+      }
+      const requirement = await current.store.load(path)
+      if (!requirement) throw new Error(t('exigences.wf.notFound', { id: path }))
+      const done: string[] = []
+      for (const lang of translationTargets(current, requirement.sourceLang)) {
+        const outcome = await translateRequirement({ ...current, ui, notifier }, client, path, { lang, quiet: true, date: today() })
+        if (outcome === 'failed') throw new Error(t('exigences.wf.translateFailed', { lang: lang.toUpperCase() }))
+        if (outcome === 'translated') done.push(lang.toUpperCase())
+      }
+      return { lines: [done.length ? t('exigences.wf.translated', { path: link(path), langs: done.join(', ') }) : t('exigences.ai.translate.noTarget')], paths: [path], results: { path, link: link(path) } }
+    }
+  })
+
+  // ── Les workflows système des exigences ──
+  registerSystemWorkflow({
+    id: 'sys.exigences.qualite-hebdo',
+    moduleKey: 'exigences.name',
+    enabledByDefault: false,
     make: (tr) => ({
-      name: tr('exigences.wf.template.weekly'),
-      enabled: true,
+      name: tr('exigences.sys.qualite-hebdo'),
       mode: 'auto',
       trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
       conditions: [],
@@ -126,6 +156,18 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
         { kind: 'exigences.qualite', fields: {} },
         { kind: 'notifier', fields: { message: tr('exigences.wf.template.weekly.message') } }
       ] as WorkflowAction[]
+    })
+  })
+  registerSystemWorkflow({
+    id: 'sys.exigences.traduire-nouvelles',
+    moduleKey: 'exigences.name',
+    enabledByDefault: false,
+    make: (tr) => ({
+      name: tr('exigences.sys.traduire-nouvelles'),
+      mode: 'auto',
+      trigger: { kind: TRIGGER_CREATED },
+      conditions: [],
+      actions: [{ kind: 'exigences.traduire', fields: { exigence: '{chemin}' } }]
     })
   })
 }

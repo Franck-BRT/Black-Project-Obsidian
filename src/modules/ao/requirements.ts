@@ -159,6 +159,7 @@ export async function extractFromPiece(services: Services, window: Extract, note
     category: piece.type,
     piece: wikiLink(note, note.slice(note.lastIndexOf('/') + 1).replace(/\.md$/, ''))
   })
-  if (report) await refreshRequirements(services, piece.analysis)
+  // La liste de la note : par son workflow système, quand il y en a un (à l'évènement « exigences extraites »).
+  if (report && !services.noteByWorkflow?.('exigences')) await refreshRequirements(services, piece.analysis)
   return report
 }

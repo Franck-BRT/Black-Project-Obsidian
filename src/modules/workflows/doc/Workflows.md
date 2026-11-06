@@ -32,11 +32,8 @@ La fenêtre de chaque action rappelle les variables utilisables à sa place.
 
 Palette de commandes :
 
-- **Nouveau workflow** — de zéro, ou d'après un **workflow prêt à l'emploi** :
-  - *À l'import des pièces : relever le calendrier* ;
-  - *À l'extraction des exigences : qualité et cohérence* ;
-  - *À l'import du CCAP, du RC ou du CCTP : questionnaire (IA)* ;
-  - *Chaque lundi : qualité de la bibliothèque d'exigences* ;
+- **Nouveau workflow** — un nom, un mode, un déclencheur, puis ses conditions et ses
+  actions ; pour partir d'un workflow système, **Dupliquez-le** (voir plus bas) ;
 - **Workflows : liste et modification** — la **page Workflows**, dans l'onglet Black
   Projects (aussi par l'entrée **Workflows** du menu de gauche, sa tuile, ou le lien « Tous
   les workflows » du tableau de bord) : les chiffres (workflows, actifs, exécutions et
@@ -74,6 +71,40 @@ Palette de commandes :
   page Workflows, **Importer** finit sur la fiche du workflow importé (s'il n'y en a qu'un)
   ou sur la liste : les importés en tête, marqués « Importé — désactivé, à relire », un
   filtre « Importés », et un message tant qu'il en reste à activer.
+
+## Les workflows système
+
+Ce que l'application fait d'elle-même est écrit en **workflows système** : vous les
+voyez, vous les réglez, vous les coupez — badge **Système**, filtre « Système » sur la page
+Workflows et dans le journal.
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Note de l'analyse : le tableau des pièces, à l'import | pièces importées | réécrit le tableau des pièces de la note de l'analyse | actif |
+| Note de l'analyse : la liste des exigences, à l'extraction | exigences extraites | réécrit la liste des exigences (analyse, pièces) | actif |
+| Relever le calendrier à l'import des pièces | pièces de l'appel d'offres importées | écrit la note Calendrier | actif |
+| Contrôler les exigences extraites (qualité et cohérence) | exigences extraites | qualité, puis cohérence entre pièces | actif |
+| Rappel des dates limites de remise | chaque jour à 8 h (à l'ouverture si elle est plus tard) | prévient à J-7, J-3, J-1 et le jour même | actif |
+| Rappel du réglage du rangement, à l'ouverture | à l'ouverture d'Obsidian | tant qu'aucun type n'est rangé, explique où le régler | actif |
+| Questionnaire (IA) à l'import du CCAP, du RC ou du CCTP | ces pièces importées | lance le questionnaire (demande d'abord) | désactivé |
+| Vérifier la couverture d'une réponse importée | pièces de réponse importées | couverture de la réponse | désactivé |
+| Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
+| Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
+
+- **Modifiables** : nom, mode, déclencheur, conditions, actions, comme les autres.
+- **Désactivables** : désactivé, l'automatisme ne se fait plus (la note de l'analyse, par
+  exemple, n'est plus mise à jour à l'import).
+- **Pas supprimables** : pas de bouton **Supprimer** ; **Dupliquer** en fait un workflow
+  ordinaire, que l'on supprime à volonté.
+- **Rétablir l'original** : un workflow système modifié porte « Modifié » ; sa fiche
+  montre **la version d'origine** et le bouton qui la remet (après confirmation ; actif ou
+  non, il le reste).
+- **Mises à jour du plugin** : un workflow système que vous n'avez pas modifié suit la
+  nouvelle version ; modifié, il est gardé tel quel, et sa fiche dit qu'une version
+  d'origine plus récente existe.
+- Un workflow système réussi ne prévient pas à chaque fois (le journal le garde) ; un échec
+  est dit. Celui d'un module désactivé est masqué, et ne s'exécute pas.
+- Un nouveau déclencheur : **À l'ouverture d'Obsidian** (une fois par session).
 
 ## 4. Les garde-fous
 

@@ -441,6 +441,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   module et la déclare ; importer et exporter des types s'y font sans la quitter
 - v0.58.0 : **module Workflows** : importer des workflows finit sur leur fiche ou la liste,
   les importés (désactivés) marqués, à relire puis activer
+- v0.59.0 : **workflows système** : les automatismes de l'application (note de l'analyse,
+  calendrier, contrôle des exigences, rappels des remises et du rangement, questionnaire,
+  couverture, qualité hebdomadaire, traduction des nouvelles exigences) deviennent des
+  workflows modifiables, désactivables, non supprimables, avec « Rétablir l'original »
 
 ### Étape 7 — Livrables
 

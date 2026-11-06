@@ -27,6 +27,7 @@ import {
   type WorkflowEvent
 } from './model'
 import { actionSpec, triggerSpec, type Translate } from './registry'
+import { usable } from './system'
 
 export type Outcome = 'done' | 'failed' | 'declined' | 'stopped'
 
@@ -87,7 +88,8 @@ export class WorkflowEngine {
   emit(event: WorkflowEvent): Promise<void> {
     const run = this.queue.then(async () => {
       const today = dayOf(this.deps.now())
-      for (const workflow of this.deps.load().filter((each) => matches(each, event, today))) await this.execute(workflow, event, false)
+      // Un workflow système dont le module est désactivé ne s'exécute pas.
+      for (const workflow of this.deps.load().filter((each) => usable(each) && matches(each, event, today))) await this.execute(workflow, event, false)
     })
     this.queue = run.catch(() => undefined)
     return run
@@ -97,7 +99,7 @@ export class WorkflowEngine {
   tick(): Promise<void> {
     const run = this.queue.then(async () => {
       const now = this.deps.now()
-      for (const workflow of this.deps.load().filter((each) => scheduleDue(each, now))) {
+      for (const workflow of this.deps.load().filter((each) => usable(each) && scheduleDue(each, now))) {
         await this.execute(workflow, { trigger: SCHEDULE, subject: NO_SUBJECT }, false)
       }
     })
@@ -180,7 +182,8 @@ export class WorkflowEngine {
       }
     }
     await this.finish(workflow, entry('done', lines, [...new Set(paths)]), true)
-    if (workflow.mode === 'auto' || byHand) notifier.notify(t('workflows.done.notice', { name: workflow.name, count: workflow.actions.length }), 6000)
+    // Un workflow système réussi ne le dit pas à chaque fois : le journal le garde ; un échec, lui, est dit.
+    if ((workflow.mode === 'auto' && !workflow.system) || byHand) notifier.notify(t('workflows.done.notice', { name: workflow.name, count: workflow.actions.length }), 6000)
     return 'done'
   }
 

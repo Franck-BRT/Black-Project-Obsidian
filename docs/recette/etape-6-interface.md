@@ -70,6 +70,24 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les workflows système (v0.59.0)
+
+- [ ] Page **Workflows**, filtre **Système** : les dix workflows système, badge
+      « Système » ; actifs d'origine : note de l'analyse (pièces, exigences), calendrier,
+      contrôle des exigences, rappel des remises, rappel du rangement
+- [ ] Leur fiche : le message « Workflow système du module … » ; pas de **Supprimer**
+- [ ] Modifier un workflow système (son nom) : « Modifié », **La version d'origine**,
+      **Rétablir l'original** (confirmé) le remet
+- [ ] **Dupliquer** : la copie est un workflow ordinaire (supprimable)
+- [ ] Importer des pièces : le calendrier et le tableau de la note se font, le journal les
+      montre (filtre Système) ; aucun message « Workflow … exécuté »
+- [ ] Désactiver « Note de l'analyse : le tableau des pièces » : à l'import suivant, la note
+      n'est plus mise à jour (la fiche en page reste juste)
+- [ ] Rappel du rangement réglé, à l'ouverture d'Obsidian : le rappel vient du workflow
+      système (journal)
+- [ ] Activer « Traduire les nouvelles exigences (IA) » : une exigence créée est traduite,
+      « à relire »
+
 ## Le module Workflows : importer, en page (v0.58.0)
 
 - [ ] Page **Workflows** → **Importer** un fichier d'un seul workflow : sa **fiche**, qui

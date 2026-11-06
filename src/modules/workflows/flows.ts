@@ -361,6 +361,9 @@ export async function duplicateWorkflow(session: Session, id: string): Promise<s
   if (!workflow) return null
   const copy = { ...workflow, id: workflowId(session.now().getTime()), name: session.t('workflows.copyOf', { name: workflow.name }), created: session.now().toISOString(), runs: 0 }
   delete copy.lastRun
+  // La copie d'un workflow système est un workflow ordinaire : modifiable, supprimable.
+  delete copy.system
+  delete copy.base
   await store(session, copy)
   session.notifier.notify(session.t('workflows.duplicated', { name: copy.name }), 5000)
   return copy.id
@@ -371,6 +374,11 @@ export async function deleteWorkflow(session: Session, id: string): Promise<bool
   const { ui, t, notifier } = session
   const workflow = find(session, id)
   if (!workflow) return false
+  // Un workflow système ne se supprime pas : il se désactive, ou se rétablit.
+  if (workflow.system) {
+    notifier.notify(t('workflows.system.noDelete', { name: workflow.name }), 8000)
+    return false
+  }
   const sure = await ui.confirm({
     title: t('workflows.delete.title'),
     message: t('workflows.delete.message', { name: workflow.name }),

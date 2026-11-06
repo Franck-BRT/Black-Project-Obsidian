@@ -52,12 +52,26 @@ import {
 import { workflowsEn, workflowsFr } from './i18n'
 import { JOURNAL_PAGE, lastRunLine, openWorkflows, registerWorkflowsHome, runPageOf, WORKFLOW_PAGE, WORKFLOWS_PAGE } from './home'
 import { pageWith } from '../../core/views'
-import { triggerSpec } from './registry'
-import type { Subject, Workflow } from './model'
+import { allSystemWorkflows, systemWorkflowSpec, triggerSpec, whenSystemDeclared } from './registry'
+import { NO_SUBJECT, OPENING, type Subject, type Workflow } from './model'
+import { restoreSystem, seedSystem, systemOrigin, systemState, usable } from './system'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
-export { registerAction, registerTemplate, registerTrigger, type ActionField, type ActionOutcome, type ActionRun, type ActionSpec, type TemplateSpec, type TriggerSpec } from './registry'
-export { MANUAL, NO_SUBJECT, SCHEDULE, type Subject, type Workflow, type WorkflowAction, type WorkflowCondition } from './model'
+export {
+  forgetDeclarations,
+  registerAction,
+  registerSystemWorkflow,
+  registerTemplate,
+  registerTrigger,
+  type ActionField,
+  type ActionOutcome,
+  type ActionRun,
+  type ActionSpec,
+  type SystemWorkflowSpec,
+  type TemplateSpec,
+  type TriggerSpec
+} from './registry'
+export { MANUAL, NO_SUBJECT, OPENING, SCHEDULE, type Subject, type Workflow, type WorkflowAction, type WorkflowCondition } from './model'
 
 export const WORKFLOWS = 'workflows'
 export const WORKFLOWS_KEY = 'workflows'
@@ -87,6 +101,24 @@ export async function emitWorkflowEvent(trigger: string, subject: Subject): Prom
 /** Exécute les workflows planifiés dont l'heure est venue (la minuterie le fait ; les tests aussi). */
 export async function runDueWorkflows(): Promise<void> {
   await engine?.tick()
+}
+
+/** Exécute les workflows « À l'ouverture » (la première minuterie le fait ; les tests aussi). */
+export async function runOpeningWorkflows(): Promise<void> {
+  await engine?.emit({ trigger: OPENING, subject: NO_SUBJECT })
+}
+
+/** Le module Workflows est-il actif (ses workflows système font alors ce que d'autres feraient en dur) ? */
+export const systemWorkflowsActive = (): boolean => engine !== null
+
+/**
+ * Un automatisme est-il confié à son workflow système : le module Workflows actif, le
+ * workflow présent — activé ou non (désactivé, l'automatisme ne se fait plus : c'est le
+ * choix de l'utilisateur). Sinon, le module qui l'a déclaré le fait lui-même.
+ */
+export function systemWorkflowManages(id: string): boolean {
+  if (!engine || !session) return false
+  return session.load().some((workflow) => workflow.system === id)
 }
 
 const readWorkflows = (settings: Readonly<Record<string, unknown>>): Workflow[] => {
@@ -140,13 +172,13 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.9.0',
+  version: '0.10.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
   settingsFields: [folderField],
   docs: ({ folder }) => [{ path: 'Modules/Workflows.md', content: fillTemplate(page, folder) }],
-  activate(context: ModuleContext) {
+  async activate(context: ModuleContext) {
     const { platform, settings, i18n, commands } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
     registerBuiltins(() => platform.fs)
@@ -160,6 +192,20 @@ export const workflowsModule: BlackModule = {
     engine = new WorkflowEngine({ fs: platform.fs, ui: platform.ui, notifier: platform.notifier, t, now, load, save, folder })
     const current: Session = { ui: platform.ui, notifier: platform.notifier, fs: platform.fs, t, engine, load, save, folder, now }
     session = current
+
+    // Les workflows système : créés ou mis à jour à l'activation, puis à chaque module qui en déclare.
+    let seeding: Promise<void> = Promise.resolve()
+    const seed = () => {
+      seeding = seeding
+        .then(async () => {
+          const next = seedSystem(load(), allSystemWorkflows(), t, now())
+          if (next.changed) await save(next.workflows)
+        })
+        .catch((error: unknown) => console.error('[Black Projects] workflows système', error))
+      return seeding
+    }
+    whenSystemDeclared(() => void seed())
+    await seed()
 
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
     // Les workflows du dernier import (tant que le module est actif), pour la liste.
@@ -178,7 +224,8 @@ export const workflowsModule: BlackModule = {
       t,
       fs: platform.fs,
       folder,
-      load,
+      // Ceux d'un module désactivé (ses workflows système) ne se montrent pas.
+      load: () => load().filter(usable),
       run: async (id) => {
         await context.commands.run?.(id)
       },
@@ -203,7 +250,23 @@ export const workflowsModule: BlackModule = {
         : {}),
       page: {
         t,
-        load,
+        load: () => load().filter(usable),
+        system: (workflow) => {
+          const spec = workflow.system ? systemWorkflowSpec(workflow.system) : undefined
+          const state = systemState(workflow, t)
+          const origin = systemOrigin(workflow, t)
+          if (!spec || !state || !origin) return null
+          return {
+            moduleName: t(spec.moduleKey),
+            state,
+            origin: {
+              name: origin.name,
+              trigger: describeTrigger(origin.trigger, t),
+              conditions: origin.conditions.map((condition, index) => describeCondition(condition, origin.trigger.kind, t, index === 0)),
+              actions: origin.actions.map((action) => describeAction(action, t))
+            }
+          }
+        },
         describeTrigger: (workflow) => describeTrigger(workflow.trigger, t),
         describeActions: (workflow) => workflow.actions.map((action) => describeAction(action, t)),
         stamp: (iso) => localStamp(new Date(iso)),
@@ -231,15 +294,39 @@ export const workflowsModule: BlackModule = {
           moveAction: (id, index, delta) => moveAction(current, id, index, delta),
           removeAction: (id, index) => removeAction(current, id, index),
           duplicate: (id) => duplicateWorkflow(current, id),
+          // Un workflow système modifié : le remettre à l'origine, après confirmation.
+          restore: async (id) => {
+            const workflow = load().find((each) => each.id === id)
+            if (!workflow?.system) return false
+            const sure = await platform.ui.confirm({
+              title: t('workflows.system.restore.title'),
+              message: t('workflows.system.restore.message', { name: workflow.name }),
+              confirm: t('workflows.system.restore'),
+              cancel: t('workflows.cancel')
+            })
+            if (!sure) return false
+            await save(load().map((each) => (each.id === id ? restoreSystem(each, t) : each)))
+            platform.notifier.notify(t('workflows.system.restored', { name: restoreSystem(workflow, t).name }), 6000)
+            return true
+          },
           remove: (id) => deleteWorkflow(current, id)
         }
       }
     })
 
     // Les workflows planifiés : à l'ouverture, puis toutes les minutes.
-    context.timers?.every(TICK, () => void engine?.tick())
+    // À la première, ceux « À l'ouverture » (l'interface est prête), puis les planifiés.
+    let opened = false
+    context.timers?.every(TICK, async () => {
+      if (!opened) {
+        opened = true
+        await engine?.emit({ trigger: OPENING, subject: NO_SUBJECT })
+      }
+      await engine?.tick()
+    })
   },
   deactivate() {
+    whenSystemDeclared(null)
     engine = null
     session = null
   }

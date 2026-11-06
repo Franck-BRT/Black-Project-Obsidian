@@ -37,11 +37,22 @@ export interface WorkflowsPageDeps {
   edit(id: string): Promise<void>
   runNow(id: string): Promise<void>
   setEnabled(id: string, enabled: boolean): Promise<void>
+  /** Ce qu'un workflow système est (son module, s'il a été modifié, sa version d'origine) ; `null` pour un workflow ordinaire. */
+  system?(workflow: Workflow): SystemInfo | null
   /** La fiche d'un workflow, en page : ce qu'elle sait faire, une opération à la fois. */
   fiche?: WorkflowFicheDeps
 }
 
+/** Un workflow système, pour la page : son module, son état, sa version d'origine (décrite). */
+export interface SystemInfo {
+  moduleName: string
+  state: 'original' | 'modified' | 'modified-update'
+  origin: { name: string; trigger: string; conditions: string[]; actions: string[] }
+}
+
 export interface WorkflowFicheDeps {
+  /** Le remettre à sa version d'origine (après confirmation) ; rend vrai s'il l'a été. */
+  restore?(id: string): Promise<boolean>
   describeCondition(workflow: Workflow, index: number): string
   /** Le déclencheur a-t-il des champs à tester (sinon, pas de condition possible) ? */
   canCondition(workflow: Workflow): boolean
@@ -180,6 +191,7 @@ interface Logged {
 /** La carte d'un workflow, complétée par ce qu'en dit le journal (un compteur pas encore à jour). */
 function workflowCard(deps: WorkflowsPageDeps, workflow: Workflow, logged: Logged | undefined, imported = false): Card {
   const { t } = deps
+  const system = deps.system?.(workflow) ?? null
   const failed = logged?.tone === 'danger'
   const last = workflow.lastRun ? deps.stamp(workflow.lastRun) : (logged?.when ?? '—')
   const badges: Badge[] = [
@@ -187,7 +199,9 @@ function workflowCard(deps: WorkflowsPageDeps, workflow: Workflow, logged: Logge
     { label: t(`workflows.mode.${workflow.mode}`), tone: 'info' },
     ...(failed ? [{ label: t('workflows.page.failed'), tone: 'danger' as const }] : []),
     // Importé tout juste : désactivé, à relire avant de l'activer.
-    ...(imported ? [{ label: t(workflow.enabled ? 'workflows.page.imported' : 'workflows.page.imported.off'), tone: 'info' as const }] : [])
+    ...(imported ? [{ label: t(workflow.enabled ? 'workflows.page.imported' : 'workflows.page.imported.off'), tone: 'info' as const }] : []),
+    // Système : un automatisme de l'application ; modifié, il le dit.
+    ...(system ? [{ label: t('workflows.system.badge'), tone: 'info' as const }, ...(system.state !== 'original' ? [{ label: t('workflows.system.modified'), tone: 'warning' as const }] : [])] : [])
   ]
   const actions = deps.describeActions(workflow)
   return {
@@ -214,7 +228,8 @@ function workflowCard(deps: WorkflowsPageDeps, workflow: Workflow, logged: Logge
       ...(failed ? ['en-echec'] : []),
       ...(workflow.trigger.kind === 'planifie' ? ['planifies'] : workflow.trigger.kind === 'manuel' ? ['manuels'] : ['sur-evenement']),
       workflow.mode === 'auto' ? 'tout-seuls' : 'demandent',
-      ...(imported ? ['importes'] : [])
+      ...(imported ? ['importes'] : []),
+      ...(system ? ['systeme'] : [])
     ]
   }
 }
@@ -258,7 +273,8 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
       { id: 'manuels', label: t('workflows.page.filter.manual') },
       { id: 'tout-seuls', label: t('workflows.mode.auto') },
       { id: 'demandent', label: t('workflows.mode.ask') },
-      ...(imported.size ? [{ id: 'importes', label: t('workflows.page.filter.imported') }] : [])
+      ...(imported.size ? [{ id: 'importes', label: t('workflows.page.filter.imported') }] : []),
+      ...(workflows.some((each) => each.system) ? [{ id: 'systeme', label: t('workflows.system.filter') }] : [])
     ],
     blocks: [
       ...(waiting ? [{ kind: 'message' as const, tone: 'info' as const, text: t('workflows.page.imported.message', { count: waiting }) }] : []),
@@ -292,6 +308,7 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
   const back: ViewAction = { id: 'back', label: t('workflows.page.back'), run: () => deps.showPage?.(WORKFLOWS_PAGE) }
   const workflow = page.load().find((each) => each.id === id)
   if (!workflow) return { title: t('workflows.page.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('workflows.page.missing') }] }
+  const system = page.system?.(workflow) ?? null
   const history = journalItems(await readJournal(deps), 200).filter((item) => item.title === workflow.name)
   const last = workflow.lastRun ? page.stamp(workflow.lastRun) : (history[0]?.when ?? '—')
   const failed = history[0]?.tone === 'danger'
@@ -315,16 +332,32 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
           if (copy) deps.showPage?.(pageWith(WORKFLOW_PAGE, copy))
         }
       },
-      {
-        id: 'delete',
-        label: t('workflows.edit.delete'),
-        icon: 'trash',
-        run: async () => {
-          if (await fiche.remove(workflow.id)) deps.showPage?.(WORKFLOWS_PAGE)
-        }
-      }
+      // Un workflow système ne se supprime pas ; modifié, il se rétablit.
+      ...(system
+        ? system.state !== 'original' && fiche.restore
+          ? [{ id: 'restore', label: t('workflows.system.restore'), tooltip: t('workflows.system.restore.tip'), icon: 'refresh' as const, run: async () => void (await fiche.restore!(workflow.id)) }]
+          : []
+        : [
+            {
+              id: 'delete',
+              label: t('workflows.edit.delete'),
+              icon: 'trash' as const,
+              run: async () => {
+                if (await fiche.remove(workflow.id)) deps.showPage?.(WORKFLOWS_PAGE)
+              }
+            }
+          ])
     ],
     blocks: [
+      ...(system
+        ? [
+            {
+              kind: 'message' as const,
+              tone: system.state === 'modified-update' ? ('warning' as const) : ('info' as const),
+              text: [t('workflows.system.intro', { module: system.moduleName }), ...(system.state === 'modified' ? [t('workflows.system.state.modified')] : system.state === 'modified-update' ? [t('workflows.system.state.update')] : [])].join(' ')
+            }
+          ]
+        : []),
       // Importé, donc désactivé : à relire avant de l'activer.
       ...(!workflow.enabled && deps.imports?.last().includes(workflow.id) ? [{ kind: 'message' as const, tone: 'info' as const, text: t('workflows.page.imported.fiche') }] : []),
       {
@@ -365,6 +398,21 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
           ]
         }))
       },
+      // Modifié : la version d'origine, pour comparer avant de rétablir.
+      ...(system && system.state !== 'original'
+        ? [
+            {
+              kind: 'list' as const,
+              title: t('workflows.system.origin'),
+              items: [
+                { id: 'origin-name', title: t('workflows.general.name'), detail: system.origin.name },
+                { id: 'origin-trigger', title: t('workflows.column.trigger'), detail: system.origin.trigger },
+                ...system.origin.conditions.map((condition, index) => ({ id: `origin-condition-${index}`, title: t('workflows.system.origin.condition'), detail: condition })),
+                ...system.origin.actions.map((action, index) => ({ id: `origin-action-${index}`, title: `${index + 1}.`, detail: action }))
+              ]
+            }
+          ]
+        : []),
       { kind: 'list', title: t('workflows.page.fiche.history'), items: history.slice(0, 10).map((item) => ({ ...item, open: runOpen(deps, item.line) })), empty: t('workflows.page.fiche.never') }
     ]
   }
@@ -378,12 +426,14 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
 export async function journalPage(deps: HomeDeps): Promise<PageView> {
   const { t } = deps
   const items = journalItems(await readJournal(deps), 500)
+  // Les exécutions des workflows système (par leur nom), pour les filtrer.
+  const systemNames = new Set(deps.load().filter((each) => each.system).map((each) => each.name))
   const count = (tone: Tone) => items.filter((item) => item.tone === tone).length
   // Jour par jour : une liste par date, la plus récente en tête (le journal l'est déjà).
   const days = new Map<string, ListItem[]>()
   for (const item of items) {
     const day = (item.when ?? '').slice(0, 10)
-    days.set(day, [...(days.get(day) ?? []), { ...item, when: (item.when ?? '').slice(11), open: runOpen(deps, item.line), tags: [OUTCOME_TAG[item.tone ?? 'neutral']] }])
+    days.set(day, [...(days.get(day) ?? []), { ...item, when: (item.when ?? '').slice(11), open: runOpen(deps, item.line), tags: [OUTCOME_TAG[item.tone ?? 'neutral'], ...(systemNames.has(item.title) ? ['systeme'] : [])] }])
   }
   const dayTitle = (day: string) => {
     const date = new Date(`${day}T12:00:00`)
@@ -400,7 +450,8 @@ export async function journalPage(deps: HomeDeps): Promise<PageView> {
       { id: 'reussies', label: t('workflows.journal.filter.done') },
       { id: 'echecs', label: t('workflows.journal.filter.failed') },
       { id: 'refusees', label: t('workflows.journal.filter.declined') },
-      { id: 'arretees', label: t('workflows.journal.filter.stopped') }
+      { id: 'arretees', label: t('workflows.journal.filter.stopped') },
+      ...(systemNames.size ? [{ id: 'systeme', label: t('workflows.system.filter') }] : [])
     ],
     blocks: items.length
       ? [

@@ -179,6 +179,14 @@ rappel s'affiche à chaque ouverture d'Obsidian : cochez **Ne plus me le rappele
 l'ouverture** pour ne plus le voir ; l'interrupteur **Rappel à l'ouverture**, dans la
 fenêtre du module, le rétablit.
 
+Ces automatismes — le rappel, mais aussi le tableau des pièces et la liste des exigences
+de la note de l'analyse, le calendrier à l'import, le contrôle des exigences extraites, le
+rappel des dates limites de remise (J-7, J-3, J-1, le jour même) — sont des **workflows
+système** : sur la page {{link:Modules/Workflows|Workflows}}, filtre « Système », vous
+les modifiez ou les désactivez ; ils ne se suppriment pas, et « Rétablir l'original » les
+remet. D'autres y attendent, désactivés : le questionnaire avec l'IA à l'import du CCAP,
+du RC ou du CCTP, la couverture d'une réponse importée.
+
 À l'import, les pièces dont le type va « dans les deux » font l'objet d'**une question,
 en une fois** : la fenêtre « Où ranger ces pièces ? » propose pour chacune « Appel
 d'offres » ou « Réponse », avec un raccourci **Tout mettre dans** pour tout un ZIP.

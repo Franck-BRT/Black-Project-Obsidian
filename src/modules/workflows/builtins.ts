@@ -7,7 +7,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { MANUAL, SCHEDULE } from './model'
+import { MANUAL, OPENING, SCHEDULE } from './model'
 import { registerAction, registerTrigger } from './registry'
 
 const withMd = (path: string) => (path.toLowerCase().endsWith('.md') ? path : `${path}.md`)
@@ -23,6 +23,7 @@ const safePath = (path: string) =>
 export function registerBuiltins(fs: () => FileSystem): void {
   registerTrigger({ id: MANUAL, labelKey: 'workflows.trigger.manuel', descKey: 'workflows.trigger.manuel.desc', fields: [] })
   registerTrigger({ id: SCHEDULE, labelKey: 'workflows.trigger.planifie', descKey: 'workflows.trigger.planifie.desc', fields: [] })
+  registerTrigger({ id: OPENING, labelKey: 'workflows.trigger.ouverture', descKey: 'workflows.trigger.ouverture.desc', fields: [] })
 
   registerAction({
     id: 'notifier',

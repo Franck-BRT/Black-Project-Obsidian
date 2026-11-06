@@ -164,7 +164,7 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Interroger le dossier (IA) | une question aux pièces ; la réponse cite ses sources, liées aux pièces (`Analyse/Questions`) |
 | Questionnaire du dossier (IA) | attribution, pénalités, garanties, propriété intellectuelle, confidentialité, contrôle export (`Analyse/Questionnaire`) |
 | Relire les exigences du dossier avec l'IA | les plus faibles relues ; côté candidat, la formulation de l'acheteur reste |
-| Nouveau workflow | automatiser : de zéro ou d'après un modèle prêt à l'emploi ; depuis l'onglet, sa fiche en page ; voir {{link:Modules/Workflows|Workflows}} |
+| Nouveau workflow | automatiser : un déclencheur, des conditions, des actions ; depuis l'onglet, sa fiche en page ; les automatismes de l'application sont des workflows système (modifiables, pas supprimables) ; voir {{link:Modules/Workflows|Workflows}} |
 | Workflows : liste et modification | vos workflows ; une ligne ouvre sa fiche (conditions, actions, exécuter, désactiver…) |
 | Exécuter un workflow | à la main, sans attendre son déclencheur ; depuis l'onglet (« Exécuter »), la fiche de l'exécution ensuite |
 | Journal des workflows | chaque exécution, avec ce qu'elle a fait |

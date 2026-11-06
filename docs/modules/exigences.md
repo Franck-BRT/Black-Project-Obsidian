@@ -276,6 +276,12 @@ inconnu « introuvable dans ce dossier ». Les liens des autres exigences vers c
 (sauf `satisfied-by`) s'ajoutent, avec leur sens inverse (`exigences.fiche.backlink.*`).
 La démonstration a deux liens.
 
+**Les workflows système (v0.21.0, Black Projects 0.59.0)** : le modèle « qualité de la
+bibliothèque chaque lundi » est devenu le workflow système `sys.exigences.qualite-hebdo`
+(désactivé d'origine) ; `sys.exigences.traduire-nouvelles` (désactivé d'origine) traduit
+une exigence créée dans les autres langues de rédaction, par la nouvelle action
+`exigences.traduire` (`translateRequirement` en série, chaque traduction « à relire »).
+
 ## Le format
 
 Celui de la version complète de Black Projects, sous des noms Black Room Technologies

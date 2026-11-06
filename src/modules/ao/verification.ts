@@ -196,7 +196,7 @@ export async function extractAll(services: Services, window: Window, analysis: A
     outcome = report
       ? t('ao.verif.extraction.done', { created: report.outcome.created.length, updated: report.outcome.updated.length })
       : t('ao.verif.extraction.cancelled')
-    if (report) await refreshRequirements(services, analysis)
+    if (report && !services.noteByWorkflow?.('exigences')) await refreshRequirements(services, analysis)
   }
   const summary = t('ao.verif.extraction.summary', {
     pieces: results.length,
@@ -254,7 +254,7 @@ export async function findMissed(services: Services, window: Window, analysis: A
     })
     if (report) {
       added = report.outcome.created.length
-      await refreshRequirements(services, analysis)
+      if (!services.noteByWorkflow?.('exigences')) await refreshRequirements(services, analysis)
       missed = missedRequirements(documents, await store.all())
     }
   }

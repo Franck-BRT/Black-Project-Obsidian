@@ -214,6 +214,20 @@ l'interface). « Ouvrir la vérification » mène à sa page. Revue du module à
 occasion : chaque action lancée de l'interface finit maintenant sur une page ; seules les
 commandes de la palette ouvrent encore des notes, comme avant.
 
+## Les workflows système (v0.30.0, Black Projects 0.59.0)
+
+Les automatismes de l'AO sont des workflows système (`workflows.ts`, `registerSystemWorkflow`),
+avec de nouvelles actions : `ao.note-pieces` (`refreshTable`), `ao.note-exigences`
+(`refreshRequirements`), `ao.rappel-remises` (champ « jours », `7, 3, 1, 0` : les analyses
+dont la remise — `calendarOf` — tombe à autant de jours), `ao.rappel-rangement`
+(`explainPlacement(context, 'reminder')`). `Services.noteByWorkflow` : quand le module
+Workflows a le workflow système de la note (`systemWorkflowManages`), l'import, la mise à
+jour et l'extraction ne réécrivent plus la note eux-mêmes — le workflow le fait à
+l'évènement, ou pas s'il est désactivé. Le rappel du rangement à l'activation n'a plus lieu
+quand le module Workflows est actif (l'accueil, une fois, reste). Les trois modèles prêts à
+l'emploi (calendrier, contrôle, questionnaire) sont devenus des workflows système, avec la
+couverture d'une réponse importée et le rappel des remises.
+
 ## Une note produite, en page (v0.15.0, Black Projects 0.27.0)
 
 Sur la fiche d'une analyse, « Ce que l'analyse a produit » liste les notes du dossier

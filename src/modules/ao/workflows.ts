@@ -15,13 +15,14 @@
 
 import type { Notifier, Ui } from '../../core/ports'
 import { aiClient, describeAiError } from '../ia'
-import { emitWorkflowEvent, registerAction, registerTemplate, registerTrigger, type ActionField, type Subject, type WorkflowAction } from '../workflows'
-import { calendarPath, writeCalendar } from './calendar'
+import { emitWorkflowEvent, OPENING, registerAction, registerSystemWorkflow, registerTrigger, SCHEDULE, type ActionField, type Subject, type WorkflowAction } from '../workflows'
+import { calendarOf, calendarPath, writeCalendar } from './calendar'
 import { answerQuestion, QUESTIONNAIRE, runQuestionnaire, writeQuestionNote, type AskMode } from './ask/dossier'
 import { pieceSources } from './ask/sources'
 import { destinationLabel, wikiLink, type Analysis } from './notes'
 import { analyseQuality, qualityPath } from './quality'
-import { analysisPosition, listAnalyses, listPieces, type ImportReport, type Services, type Translate } from './service'
+import { refreshRequirements } from './requirements'
+import { analysisPosition, listAnalyses, listPieces, refreshTable, type ImportReport, type Services, type Translate } from './service'
 import { checkCoherence, checkCoverage, reportPath } from './verification'
 
 export const TRIGGER_CREATED = 'ao.analyse-creee'
@@ -84,8 +85,11 @@ const ANALYSIS_FIELD: ActionField = {
 const subjectFields = (...more: string[]) =>
   ['analyse', 'position', 'acheteur', 'reference', ...more].map((key) => ({ key, labelKey: `ao.wf.var.${key}` }))
 
-/** Les déclarations de l'AO au module Workflows ; `services()` donne l'accès au coffre du moment. */
-export function registerAoWorkflows(services: () => Services, t: Translate): void {
+/**
+ * Les déclarations de l'AO au module Workflows ; `services()` donne l'accès au coffre du
+ * moment, `remindPlacement()` montre le rappel du rangement (s'il y a lieu ; vrai s'il l'a fait).
+ */
+export function registerAoWorkflows(services: () => Services, t: Translate, remindPlacement: () => Promise<boolean> = async () => false): void {
   const find = async (name: string): Promise<Analysis> => {
     const all = await listAnalyses(services())
     const found = all.find((analysis) => fold(analysis.name) === fold(name) || analysis.note === name || analysis.folder === name)
@@ -232,50 +236,111 @@ export function registerAoWorkflows(services: () => Services, t: Translate): voi
     }
   })
 
-  // ── Prêts à l'emploi ──
-  registerTemplate({
-    id: 'ao.import-calendrier',
-    labelKey: 'ao.wf.template.calendar',
-    descKey: 'ao.wf.template.calendar.desc',
-    make: (tr) => ({
-      name: tr('ao.wf.template.calendar'),
-      enabled: true,
-      mode: 'auto',
-      trigger: { kind: TRIGGER_IMPORTED },
-      conditions: [{ field: 'places', op: 'contains', value: tr('ao.place.tender') }],
-      actions: [
-        { kind: 'ao.calendrier', fields: { analyse: '{analyse}' } },
-        { kind: 'notifier', fields: { message: tr('ao.wf.template.calendar.message') } }
-      ] as WorkflowAction[]
-    })
+  // ── Ce que l'application faisait d'elle-même : la note de l'analyse, les rappels ──
+  registerAction({
+    id: 'ao.note-pieces',
+    labelKey: 'ao.wf.action.notePieces',
+    descKey: 'ao.wf.action.notePieces.desc',
+    fields: [ANALYSIS_FIELD],
+    results: ['path'],
+    async run({ fields }) {
+      const analysis = await find(fields.analyse!)
+      const rows = await refreshTable(services(), analysis)
+      return { lines: [t('ao.wf.notePieces.done', { count: rows.length })], paths: [analysis.note], results: { path: analysis.note } }
+    }
   })
-  registerTemplate({
-    id: 'ao.extraction-qualite',
-    labelKey: 'ao.wf.template.quality',
-    descKey: 'ao.wf.template.quality.desc',
-    make: (tr) => ({
-      name: tr('ao.wf.template.quality'),
-      enabled: true,
-      mode: 'auto',
-      trigger: { kind: TRIGGER_EXTRACTED },
-      conditions: [],
-      actions: [
-        { kind: 'ao.qualite', fields: { analyse: '{analyse}' } },
-        { kind: 'ao.coherence', fields: { analyse: '{analyse}' } }
-      ]
-    })
+  registerAction({
+    id: 'ao.note-exigences',
+    labelKey: 'ao.wf.action.noteRequirements',
+    descKey: 'ao.wf.action.noteRequirements.desc',
+    fields: [ANALYSIS_FIELD],
+    results: ['path'],
+    async run({ fields }) {
+      const analysis = await find(fields.analyse!)
+      const requirements = await refreshRequirements(services(), analysis)
+      return { lines: [t('ao.wf.noteRequirements.done', { count: requirements.length })], paths: [analysis.note], results: { path: analysis.note } }
+    }
   })
-  registerTemplate({
-    id: 'ao.questionnaire-ia',
-    labelKey: 'ao.wf.template.questionnaire',
-    descKey: 'ao.wf.template.questionnaire.desc',
-    make: (tr) => ({
-      name: tr('ao.wf.template.questionnaire'),
-      enabled: true,
-      mode: 'ask',
-      trigger: { kind: TRIGGER_IMPORTED },
-      conditions: [{ field: 'types', op: 'is', value: 'CCAP, RC, CCTP' }],
-      actions: [{ kind: 'ao.questionnaire', fields: { analyse: '{analyse}' } }]
-    })
+  registerAction({
+    id: 'ao.rappel-remises',
+    labelKey: 'ao.wf.action.deadlines',
+    descKey: 'ao.wf.action.deadlines.desc',
+    fields: [{ key: 'jours', labelKey: 'ao.wf.field.days', kind: 'text', required: true, defaultValue: '7, 3, 1, 0', tooltipKey: 'ao.wf.field.days.tip' }],
+    results: ['text'],
+    async run({ fields, notifier }) {
+      const wanted = new Set(
+        (fields.jours ?? '')
+          .split(/[,;\s]+/)
+          .map((each) => Number.parseInt(each, 10))
+          .filter((each) => Number.isFinite(each) && each >= 0)
+      )
+      const today = services().today()
+      const soon: string[] = []
+      for (const analysis of await listAnalyses(services())) {
+        const calendar = calendarOf(await pieceSources(services(), analysis, 'appel-d-offres'), Number(today.slice(0, 4)))
+        const due = calendar.dates
+          .filter((date) => date.kind === 'remise' && date.date >= today)
+          .map((date) => date.date)
+          .sort()[0]
+        if (!due) continue
+        const days = Math.round((Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000)
+        if (!wanted.has(days)) continue
+        soon.push(t(days === 0 ? 'ao.wf.deadlines.today' : 'ao.wf.deadlines.in', { name: analysis.name, days, date: due }))
+      }
+      // Rien à dire : rien n'est montré, le journal le garde.
+      if (soon.length) notifier.notify(soon.join(' '), 15000)
+      const text = soon.length ? soon.join(' ') : t('ao.wf.deadlines.none')
+      return { lines: [text], results: { text } }
+    }
   })
+  registerAction({
+    id: 'ao.rappel-rangement',
+    labelKey: 'ao.wf.action.placementReminder',
+    descKey: 'ao.wf.action.placementReminder.desc',
+    fields: [],
+    results: [],
+    async run() {
+      return { lines: [t(await remindPlacement() ? 'ao.wf.placementReminder.shown' : 'ao.wf.placementReminder.none')] }
+    }
+  })
+
+  // ── Les workflows système : les automatismes de l'analyse d'appels d'offres ──
+  const system = (id: string, enabledByDefault: boolean, make: (tr: Translate) => { mode?: 'auto' | 'ask'; trigger: { kind: string; every?: 'day'; time?: string }; conditions?: { field: string; op: 'contains' | 'is'; value: string }[]; actions: WorkflowAction[] }) =>
+    registerSystemWorkflow({
+      id: `sys.ao.${id}`,
+      moduleKey: 'ao.name',
+      enabledByDefault,
+      make: (tr) => {
+        const made = make(tr)
+        return { name: tr(`ao.sys.${id}`), mode: made.mode ?? 'auto', trigger: made.trigger, conditions: made.conditions ?? [], actions: made.actions }
+      }
+    })
+  const analysisField = { analyse: '{analyse}' }
+  system('note-pieces', true, () => ({ trigger: { kind: TRIGGER_IMPORTED }, actions: [{ kind: 'ao.note-pieces', fields: analysisField }] }))
+  system('note-exigences', true, () => ({ trigger: { kind: TRIGGER_EXTRACTED }, actions: [{ kind: 'ao.note-exigences', fields: analysisField }] }))
+  system('calendrier-import', true, (tr) => ({
+    trigger: { kind: TRIGGER_IMPORTED },
+    conditions: [{ field: 'places', op: 'contains', value: tr('ao.place.tender') }],
+    actions: [{ kind: 'ao.calendrier', fields: analysisField }]
+  }))
+  system('controle-extraction', true, () => ({
+    trigger: { kind: TRIGGER_EXTRACTED },
+    actions: [
+      { kind: 'ao.qualite', fields: analysisField },
+      { kind: 'ao.coherence', fields: analysisField }
+    ]
+  }))
+  system('rappel-remises', true, () => ({ trigger: { kind: SCHEDULE, every: 'day', time: '08:00' }, actions: [{ kind: 'ao.rappel-remises', fields: { jours: '7, 3, 1, 0' } }] }))
+  system('rappel-rangement', true, () => ({ trigger: { kind: OPENING }, actions: [{ kind: 'ao.rappel-rangement', fields: {} }] }))
+  system('questionnaire-ia', false, () => ({
+    mode: 'ask',
+    trigger: { kind: TRIGGER_IMPORTED },
+    conditions: [{ field: 'types', op: 'is', value: 'CCAP, RC, CCTP' }],
+    actions: [{ kind: 'ao.questionnaire', fields: analysisField }]
+  }))
+  system('couverture-reponse', false, (tr) => ({
+    trigger: { kind: TRIGGER_IMPORTED },
+    conditions: [{ field: 'places', op: 'contains', value: tr('ao.place.response') }],
+    actions: [{ kind: 'ao.couverture', fields: analysisField }]
+  }))
 }

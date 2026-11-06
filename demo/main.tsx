@@ -190,9 +190,12 @@ async function start(): Promise<void> {
   // Des liens, pour la fiche : la disponibilité découle du maintien en température, et un ticket la satisfait.
   if (disponibilite.filePath) await library.save(disponibilite.filePath, (current) => ({ ...current, links: [{ kind: 'derives-from', to: 'REQ-SOL-0001' }, { kind: 'satisfied-by', to: 'TICKET-128' }] }))
   await library.create({ category: 'SEC', title: 'Journalisation', text: text('Les accès seront journalisés si possible.'), type: 'security', status: 'draft', criticality: 'medium' })
+  // Un workflow de l'utilisateur, à côté des workflows système créés à l'activation.
   settings.workflows = {
-    workflows: [{ id: 'wf-1', name: 'À l’import des pièces : relever le calendrier', enabled: true, mode: 'auto', trigger: { kind: 'ao.pieces-importees' }, conditions: [], actions: [{ kind: 'ao.calendrier', fields: { analyse: '{analyse}' } }], created: new Date().toISOString() }]
+    ...settings.workflows,
+    workflows: [...((settings.workflows?.workflows as unknown[] | undefined) ?? []), { id: 'wf-1', name: 'Prévenir à chaque analyse créée', enabled: true, mode: 'auto', trigger: { kind: 'ao.analyse-creee' }, conditions: [], actions: [{ kind: 'notifier', fields: { message: 'Nouvelle analyse : {analyse}' } }], created: new Date().toISOString() }]
   }
+
   const stamp = new Date().toISOString().slice(0, 10)
   // Une question déjà posée au dossier de la station, pour sa page.
   const noteOf = (name: string) => imported.imported.find((piece) => piece.note.endsWith(`/${name}.md`))?.note.replace(/\.md$/, '') ?? name

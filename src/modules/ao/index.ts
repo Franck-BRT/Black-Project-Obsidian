@@ -10,6 +10,7 @@
  * les exigences, leur qualité, l'IA et les livrables.
  */
 
+import { systemWorkflowManages, systemWorkflowsActive } from '../workflows'
 import { cleanFolder } from '../../core/settings'
 import { fillTemplate } from '../../core/docs'
 import type {
@@ -192,9 +193,11 @@ export const reminderField: BooleanField = {
  * expliquer ce qu'il faut faire, et proposer d'ouvrir la fenêtre du module. Le rappel
  * se coupe d'une case, ou dans la fenêtre du module.
  */
-export async function explainPlacement(context: ModuleContext): Promise<void> {
+export async function explainPlacement(context: ModuleContext, only?: 'reminder'): Promise<boolean> {
   const kind = placementMessage(context.settings.get())
-  if (!kind) return
+  if (!kind) return false
+  // Le rappel (pas l'accueil) : avec le module Workflows, c'est son workflow système qui le fait, à l'ouverture.
+  if (only ? kind !== only : kind === 'reminder' && systemWorkflowsActive()) return false
   const t = (key: string) => context.i18n.t(key)
   const answer = await context.platform.ui.inform({
     title: t(`ao.message.${kind}.title`),
@@ -211,6 +214,7 @@ export async function explainPlacement(context: ModuleContext): Promise<void> {
     ...(answer.option ? { [REMINDER_KEY]: false } : {})
   })
   if (answer.action === 'open') context.openWindow?.()
+  return true
 }
 
 const feature = (key: string, status: ModuleFeature['status'], step?: number): ModuleFeature => ({
@@ -278,7 +282,9 @@ function servicesFor(context: ModuleContext): Services {
     t: (key, vars) => context.i18n.t(key, vars),
     root: rootOf(context.settings.get()),
     today: localToday,
-    rangement: rangementOf(context.settings.get())
+    rangement: rangementOf(context.settings.get()),
+    // Avec le module Workflows, la note de l'analyse est tenue par ses workflows système (désactivés : plus tenue).
+    noteByWorkflow: (part) => systemWorkflowManages(part === 'pieces' ? 'sys.ao.note-pieces' : 'sys.ao.note-exigences')
   }
 }
 
@@ -430,7 +436,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.29.0',
+  version: '0.30.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -444,7 +450,7 @@ export const aoModule: BlackModule = {
     const { commands, platform, i18n } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
     // Ce que l'AO apporte aux workflows : déclencheurs, actions, workflows prêts à l'emploi.
-    registerAoWorkflows(() => servicesFor(context), t)
+    registerAoWorkflows(() => servicesFor(context), t, () => explainPlacement(context, 'reminder'))
 
     // Sur la fiche de chaque type, dans le module Typage des pièces : où l'analyse le range.
     const placeTag = (place: string) => (place === 'reponse' ? t('ao.place.response') : t('ao.place.tender'))

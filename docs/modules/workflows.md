@@ -126,6 +126,48 @@ relire » (« Importé » une fois activé), le tag `importes` et son filtre ; u
 tête de la liste compte ceux qui restent désactivés ; leur fiche le rappelle. Depuis la
 palette, le message seul, comme avant.
 
+## Les workflows système (v0.10.0, Black Projects 0.59.0)
+
+Les automatismes de l'application sont des **workflows système** (`system.ts`) :
+
+- un module les déclare par `registerSystemWorkflow({ id: 'sys.<module>.<nom>',
+  moduleKey, enabledByDefault, make(t) })` (`registry.ts`) ; le module Workflows les crée
+  à son activation (`seedSystem`), et ceux déclarés après (un module activé plus tard) par
+  `whenSystemDeclared` ;
+- chacun porte `system` (son identifiant) et `base` : l'empreinte (`fingerprint` : nom,
+  mode, déclencheur, conditions, actions) de la version d'origine dont il est parti. Pas
+  modifié (`fingerprint === base`), il suit une nouvelle version du plugin ; modifié, il est
+  gardé, et `systemState` dit `modified` ou `modified-update` (une origine plus récente) ;
+  `restoreSystem` le remet à l'origine (son état actif et ses compteurs gardés) ;
+- jamais supprimé (`deleteWorkflow` refuse ; pas de « Supprimer » sur la fiche) ;
+  dupliqué, il devient ordinaire (sans `system` ni `base`) ; exporté aussi ;
+- `usable` : celui d'un module désactivé (sa déclaration absente) est masqué des pages et
+  ne s'exécute pas, mais reste dans les réglages ;
+- un succès d'un workflow système ne prévient pas (le journal le garde) ;
+- nouveau déclencheur `ouverture` (`OPENING`) : émis à la première minuterie (l'interface
+  prête), une fois par session ; `runOpeningWorkflows` pour les tests ;
+- `systemWorkflowsActive()`, `systemWorkflowManages(id)` : un module sait si un
+  automatisme est confié à son workflow système (présent, activé ou non) — il ne le fait
+  plus lui-même ;
+- la page : badge « Système » (et « Modifié »), filtre `systeme` (liste et journal) ; la
+  fiche : un message (module, état), « La version d'origine » quand il est modifié,
+  « Rétablir l'original » (confirmé).
+
+Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workflows système.
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Note de l'analyse : le tableau des pièces, à l'import | pièces importées | réécrit le tableau des pièces de la note de l'analyse | actif |
+| Note de l'analyse : la liste des exigences, à l'extraction | exigences extraites | réécrit la liste des exigences (analyse, pièces) | actif |
+| Relever le calendrier à l'import des pièces | pièces de l'appel d'offres importées | écrit la note Calendrier | actif |
+| Contrôler les exigences extraites (qualité et cohérence) | exigences extraites | qualité, puis cohérence entre pièces | actif |
+| Rappel des dates limites de remise | chaque jour à 8 h (à l'ouverture si elle est plus tard) | prévient à J-7, J-3, J-1 et le jour même | actif |
+| Rappel du réglage du rangement, à l'ouverture | à l'ouverture d'Obsidian | tant qu'aucun type n'est rangé, explique où le régler | actif |
+| Questionnaire (IA) à l'import du CCAP, du RC ou du CCTP | ces pièces importées | lance le questionnaire (demande d'abord) | désactivé |
+| Vérifier la couverture d'une réponse importée | pièces de réponse importées | couverture de la réponse | désactivé |
+| Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
+| Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
+
 ## Le moteur (`engine.ts`)
 
 - **Évènement** : les workflows actifs du même déclencheur dont les conditions tiennent

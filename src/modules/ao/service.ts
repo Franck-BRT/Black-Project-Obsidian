@@ -62,6 +62,12 @@ export interface Services {
   renames?: Readonly<Record<string, string>>
   /** Où ranger chaque type (réglage `rangement` du module) ; par défaut, aucun : tout est demandé. */
   rangement?: Readonly<Record<string, Place>>
+  /**
+   * La note de l'analyse (le tableau des pièces, la liste des exigences) est-elle confiée à
+   * un workflow système ? Alors on ne la réécrit pas ici : il le fera à l'évènement (ou pas,
+   * s'il est désactivé).
+   */
+  noteByWorkflow?: (part: 'pieces' | 'exigences') => boolean
 }
 
 
@@ -326,7 +332,8 @@ export async function importFiles(
     await fs.writeBinary(original, piece.bytes.slice().buffer)
     report.imported.push(await writePieceNote(services, analysis, destination, original, piece.read, piece.type))
   }
-  await refreshTable(services, analysis)
+  // Le tableau de la note : par son workflow système, quand il y en a un (à l'évènement « pièces importées »).
+  if (!services.noteByWorkflow?.('pieces') || !report.imported.length) await refreshTable(services, analysis)
   return report
 }
 
@@ -446,7 +453,7 @@ export async function updateAnalysis(services: Services, analysis: Analysis): Pr
     const type = classifyPiece(name, read.text, custom)
     report.imported.push(await writePieceNote(services, analysis, destination, original, read, type))
   }
-  await refreshTable(services, analysis)
+  if (!services.noteByWorkflow?.('pieces') || !report.imported.length) await refreshTable(services, analysis)
   return report
 }
 

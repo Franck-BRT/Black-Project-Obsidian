@@ -25,6 +25,8 @@ export function fold(text: string): string {
 /** Les déclencheurs propres au module : à la main, et à heure fixe. */
 export const MANUAL = 'manuel'
 export const SCHEDULE = 'planifie'
+/** À l'ouverture d'Obsidian (une fois par session, quand l'interface est prête). */
+export const OPENING = 'ouverture'
 
 export type ScheduleEvery = 'day' | 'weekdays' | 'week' | 'month'
 export const SCHEDULE_EVERY: readonly ScheduleEvery[] = ['day', 'weekdays', 'week', 'month']
@@ -77,6 +79,13 @@ export interface Workflow {
   created: string
   lastRun?: string
   runs?: number
+  /**
+   * Un workflow **système** : déclaré par un module (`sys.ao.calendrier-import`) pour un
+   * automatisme de l'application. Modifiable et désactivable, jamais supprimé.
+   */
+  system?: string
+  /** L'empreinte de la version d'origine dont il est parti : modifié s'il n'y ressemble plus. */
+  base?: string
 }
 
 /** Ce qui est arrivé, tel qu'un workflow le reçoit. */
