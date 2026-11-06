@@ -16,10 +16,18 @@ import type { ModuleDescriptor } from './modules/module'
 import type { ModuleState, ModuleStatus } from './modules/registry'
 import type { Ui } from './ports'
 import { cleanFolder, DEFAULT_DOCS_FOLDER, LANGUAGES, withModuleEnabled, type CoreSettings, type Language } from './settings'
-import type { Card, PageView, Tone, ViewAction } from './views'
+import { pageWith, type Card, type PageView, type Tone, type ViewAction } from './views'
 
 /** La page des paramètres, dans l'onglet de Black Projects. */
 export const SETTINGS_PAGE = 'core.parametres'
+
+/**
+ * La page « Fonctions » d'un module (ses réglages, ce qu'il sait faire), dans l'onglet de
+ * Black Projects : `modulePageOf(id)`. L'interface la dessine elle-même (le contenu de la
+ * fenêtre du module) ; l'hôte lui donne de quoi (`AppHost.moduleWindow`).
+ */
+export const MODULE_PAGE = 'core.fonctions'
+export const modulePageOf = (id: string): string => pageWith(MODULE_PAGE, encodeURIComponent(id))
 
 type Translate = (key: string, vars?: Readonly<Record<string, string | number>>) => string
 

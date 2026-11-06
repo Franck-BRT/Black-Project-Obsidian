@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.33.0)
+## Aujourd'hui (version 0.34.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -35,7 +35,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   (glisser, ou boutons monter, descendre, changer de colonne) ; la flèche d'une section la
   réduit à son titre. **Paramètres** (en bas de la barre de gauche) ouvre la page des
   paramètres dans l'onglet : la langue, l'accueil au démarrage, la documentation,
-  l'apparence, et une carte par module (son état, sa fenêtre « Fonctions », Activer ou
+  l'apparence, et une carte par module (son état, ses « Fonctions » — ses réglages et ce
+  qu'il sait faire, en page dans l'onglet —, Activer ou
   Désactiver). **Modifier le menu** (en bas de la barre de gauche, au-dessus de Paramètres) pour déplacer, retirer ou
   ajouter des entrées — toute fonction des modules peut y figurer ; Accueil reste en
   haut et Paramètres en bas. Le bouton

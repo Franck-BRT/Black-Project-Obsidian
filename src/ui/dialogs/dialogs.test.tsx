@@ -8,8 +8,10 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_APPEARANCE } from '../../core/appearance'
 import { createI18n } from '../../core/i18n'
 import type { ModuleDescriptor } from '../../core/modules/module'
-import { ModuleWindow, type ModuleWindowHost } from './moduleWindow'
+import { ModuleFunctionsPage, ModuleWindow, type ModuleWindowHost } from './moduleWindow'
 import { ChoicePicker, ConfirmDialog, FormDialog, ListDialog, PickManyDialog } from './windows'
+import { MODULE_PAGE } from '../../core/settingsPage'
+import { App } from '../shell'
 
 const i18n = createI18n('fr')
 const t = i18n.t.bind(i18n)
@@ -163,5 +165,53 @@ describe('la fenêtre « Fonctions » d’un module', () => {
     expect(html).toContain('aria-label="tip.mapping.edit .tot"')
     expect(html).toMatch(/bp-feature-card bp-tone-success.*role="switch" aria-label="PDF"[^>]*checked/)
     expect(html).toContain('module.feature.in-progress · module.feature.step')
+  })
+  it('en page dans l’onglet : le même contenu, sans cadre de fenêtre ; ce que fait le module en tête', () => {
+    const html = renderToString(<ModuleFunctionsPage host={host} />)
+    expect(html).not.toContain('role="dialog"')
+    expect(html).toMatch(/^<div class="bp-page bp-module-page" data-page="module-essai"><p class="bp-page-sub">Un module d’essai\.<\/p><div class="bp-page-body">/)
+    expect(html).toContain('<label class="bp-block-title" for="bp-text-adresse">Adresse</label>')
+    expect(html).toMatch(/role="switch" aria-label="Rappel"[^>]*checked/)
+    expect(html).toContain('>Tester</button>')
+    expect(html).toMatch(/bp-feature-card bp-tone-success.*role="switch" aria-label="PDF"[^>]*checked/)
+  })
+
+  it('dans l’interface : « core.fonctions?essai » montre la page, titrée comme la fenêtre ; les paramètres sont « page en cours »', () => {
+    const app = (page: string) =>
+      renderToString(
+        <App
+          host={{
+            t: (key) => key,
+            locale: 'fr-FR',
+            version: '0.34.0',
+            sections: () => [],
+            pages: () => [],
+            tiles: () => [],
+            homeTiles: () => null,
+            saveHomeTiles: async () => undefined,
+            dashboard: () => null,
+            saveDashboard: async () => undefined,
+            nav: () => [],
+            navMenu: () => null,
+            saveNavMenu: async () => undefined,
+            openSettings: noop,
+            settingsPage: 'core.parametres',
+            moduleWindow: (id) => (id === 'essai' ? host : null),
+            appearance: () => DEFAULT_APPEARANCE,
+            saveAppearance: async () => undefined,
+            hostIsDark: () => false,
+            now: () => new Date('2026-11-06T09:30:00')
+          }}
+          generation={0}
+          page={page}
+        />
+      )
+    const html = app(`${MODULE_PAGE}?essai`)
+    expect(MODULE_PAGE).toBe('core.fonctions')
+    expect(html).toMatch(/<h1 class="bp-hello"><svg[^>]*>.*?<\/svg>Essai — Fonctions<\/h1>/)
+    expect(html).toContain('data-page="module-essai"')
+    expect(html).toMatch(/<button type="button" class="bp-nav-item" aria-current="page">.*?home\.nav\.settings<\/button>/)
+    // Un module inconnu (désactivé, retiré) : l'accueil.
+    expect(app(`${MODULE_PAGE}?inconnu`)).not.toContain('bp-module-page')
   })
 })

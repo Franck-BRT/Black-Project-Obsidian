@@ -8,6 +8,7 @@
  */
 
 import type { Appearance } from '../core/appearance'
+import type { ModuleWindowHost } from './dialogs/moduleWindow'
 import type { DashboardLayout, HomeSection, NavEntry, NavLayout, PageSpec, TileSpec } from '../core/views'
 
 export type Translate = (key: string, vars?: Record<string, string | number>) => string
@@ -38,6 +39,11 @@ export interface AppHost {
   openSettings?(): void
   /** La page des paramètres, quand ils s'ouvrent dans l'onglet : l'entrée est alors « page en cours » sur elle. */
   settingsPage?: string
+  /**
+   * De quoi montrer la page « Fonctions » d'un module (`MODULE_PAGE`) : ses réglages, ce
+   * qu'il sait faire — ce que reçoit sa fenêtre. `null` : pas de tel module.
+   */
+  moduleWindow?(id: string): ModuleWindowHost | null
   appearance(): Appearance
   saveAppearance(appearance: Appearance): Promise<void>
   /** Le thème de l'hôte est-il sombre (pour le mode « auto ») ? */

@@ -21,9 +21,9 @@ import { FILE_VIEW, obsidianPlatform, pluginSettingsStorage } from './platform'
 import { BlackProjectsSettingTab } from './settingsTab'
 import { BlackHomeView, HOME_VIEW } from './homeView'
 import { ViewsRegistry } from '../core/views'
-import { SETTINGS_PAGE, settingsPage } from '../core/settingsPage'
+import { modulePageOf, SETTINGS_PAGE, settingsPage } from '../core/settingsPage'
 import type { Appearance } from '../core/appearance'
-import { dialogWindows, openModuleWindow, type AppHost, type Page } from '../ui'
+import { dialogWindows, openModuleWindow, type AppHost, type ModuleWindowHost, type Page } from '../ui'
 import { obsidianDialogHost } from './ui'
 
 export default class BlackProjectsPlugin extends Plugin {
@@ -108,7 +108,7 @@ export default class BlackProjectsPlugin extends Plugin {
           saveAppearance: (appearance) => this.saveAppearance(appearance),
           modules: () => this.registry.list(),
           moduleSettings: (id) => moduleSettings(this.config, id),
-          openModule: (module) => this.openModuleWindow(module),
+          openModule: (module) => this.openModulePage(module),
           createDocumentation: () => this.createDocumentation(),
           licence: () => this.describeLicence(),
           ui: this.platform.ui,
@@ -172,9 +172,9 @@ export default class BlackProjectsPlugin extends Plugin {
     this.refreshHome()
   }
 
-  /** La fenêtre « Fonctions » d'un module (src/ui) : ses réglages et ce qu'il sait faire. */
-  openModuleWindow(module: ModuleDescriptor): Promise<void> {
-    return openModuleWindow({
+  /** Ce que reçoit la fenêtre (ou la page) « Fonctions » d'un module : ses réglages, ses commandes. */
+  private moduleWindowHost(module: ModuleDescriptor): ModuleWindowHost {
+    return {
       ...obsidianDialogHost(this.app, this.i18n, () => this.config.appearance),
       module,
       settings: () => moduleSettings(this.config, module.id),
@@ -182,7 +182,17 @@ export default class BlackProjectsPlugin extends Plugin {
       runCommand: (id) => this.runModuleCommand(module.id, id),
       ...(this.platform.secrets ? { secrets: this.platform.secrets } : {}),
       dialogs: dialogWindows(obsidianDialogHost(this.app, this.i18n, () => this.config.appearance))
-    })
+    }
+  }
+
+  /** La fenêtre « Fonctions » d'un module (src/ui) : depuis l'onglet de réglages d'Obsidian. */
+  openModuleWindow(module: ModuleDescriptor): Promise<void> {
+    return openModuleWindow(this.moduleWindowHost(module))
+  }
+
+  /** La page « Fonctions » d'un module, dans l'onglet de Black Projects. */
+  openModulePage(module: ModuleDescriptor): Promise<void> {
+    return this.openHome(modulePageOf(module.id))
   }
 
   /** Ce que l'interface reçoit de l'hôte Obsidian. */
@@ -213,6 +223,10 @@ export default class BlackProjectsPlugin extends Plugin {
       },
       openSettings: () => this.openSettings(),
       settingsPage: SETTINGS_PAGE,
+      moduleWindow: (id) => {
+        const module = this.registry.status(id)?.module
+        return module ? this.moduleWindowHost(module) : null
+      },
       appearance: () => this.config.appearance,
       saveAppearance: (appearance) => this.saveAppearance(appearance),
       hostIsDark: () => document.body.classList.contains('theme-dark'),
@@ -320,7 +334,8 @@ export default class BlackProjectsPlugin extends Plugin {
       },
       views: this.views,
       showPage: (id) => void this.openHome(id),
-      openWindow: () => void this.openModuleWindow(module),
+      // « Régler », « Formats de fichiers »… : la page « Fonctions » du module, dans l'onglet.
+      openWindow: () => void this.openModulePage(module),
       timers: {
         every: (milliseconds, run) => {
           const safe = () => {

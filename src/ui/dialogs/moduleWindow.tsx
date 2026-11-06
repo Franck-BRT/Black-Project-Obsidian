@@ -564,7 +564,12 @@ function fieldBlock(field: ModuleSettingField, host: ModuleWindowHost, refresh: 
   }
 }
 
-export function ModuleWindow({ host, onClose }: { host: ModuleWindowHost; onClose: () => void }) {
+/**
+ * Ce que montre la fenêtre « Fonctions » d'un module, sans son cadre : ses réglages, puis ce
+ * qu'il sait faire. La fenêtre le met dans un cadre ; l'onglet de Black Projects, dans une
+ * page (`ModuleFunctionsPage`).
+ */
+export function ModuleFunctions({ host }: { host: ModuleWindowHost }) {
   const [, setVersion] = useState(0)
   const [open, setOpenLists] = useState(() => new Set<string>())
   const refresh = () => setVersion((version) => version + 1)
@@ -575,13 +580,41 @@ export function ModuleWindow({ host, onClose }: { host: ModuleWindowHost; onClos
       else next.delete(key)
       return next
     })
-  const { t, module } = host
-  const details = module.details?.(host.settings())
+  const details = host.module.details?.(host.settings())
   return (
-    <Dialog title={details ? `${t(module.nameKey)} — ${t(details.titleKey)}` : t(module.nameKey)} subtitle={t(module.descriptionKey)} size="wide" onClose={onClose} t={t} className="bp-module-window">
-      {(module.settingsFields ?? []).map((field, index) => fieldBlock(field, host, refresh, open, setOpen, index))}
+    <>
+      {(host.module.settingsFields ?? []).map((field, index) => fieldBlock(field, host, refresh, open, setOpen, index))}
       {details && <DetailsBlock details={details} host={host} refresh={refresh} />}
+    </>
+  )
+}
+
+/** Le titre de la fenêtre (ou de la page) « Fonctions » d'un module : « Lecture de fichiers — Formats de fichiers ». */
+export function moduleFunctionsTitle(host: Pick<ModuleWindowHost, 't' | 'module' | 'settings'>): string {
+  const details = host.module.details?.(host.settings())
+  return details ? `${host.t(host.module.nameKey)} — ${host.t(details.titleKey)}` : host.t(host.module.nameKey)
+}
+
+export function ModuleWindow({ host, onClose }: { host: ModuleWindowHost; onClose: () => void }) {
+  return (
+    <Dialog title={moduleFunctionsTitle(host)} subtitle={host.t(host.module.descriptionKey)} size="wide" onClose={onClose} t={host.t} className="bp-module-window">
+      <ModuleFunctions host={host} />
     </Dialog>
+  )
+}
+
+/**
+ * La page « Fonctions » d'un module, dans l'onglet de Black Projects : ce qu'il fait, puis
+ * ses réglages et ce qu'il sait faire — le contenu de sa fenêtre, à la place d'une page.
+ */
+export function ModuleFunctionsPage({ host }: { host: ModuleWindowHost }) {
+  return (
+    <div class="bp-page bp-module-page" data-page={`module-${host.module.id}`}>
+      <p class="bp-page-sub">{host.t(host.module.descriptionKey)}</p>
+      <div class="bp-page-body">
+        <ModuleFunctions host={host} />
+      </div>
+    </div>
   )
 }
 

@@ -89,7 +89,8 @@ Le bouton **Apparence** règle, au choix et ensemble :
 **Paramètres**, en bas de la barre de gauche (ou la tuile Paramètres), ouvre la page des
 paramètres dans l'onglet de Black Projects : la langue, l'accueil au démarrage, la
 documentation (son dossier, la créer), la licence ; l'apparence, un choix par carte ; une
-carte par module — son état, ce dont il a besoin, sa fenêtre **Fonctions**, **Activer** ou
+carte par module — son état, ce dont il a besoin, ses **Fonctions** (un clic sur son nom :
+ses réglages et ce qu'il sait faire, en page dans l'onglet), **Activer** ou
 **Désactiver** (au prochain chargement du plugin) — avec une recherche et les filtres
 Modules actifs, Désactivés, En difficulté. **Réglages dans Obsidian** ouvre les mêmes
 réglages dans l'onglet d'Obsidian, **Paramètres → Black Projects by Black Room

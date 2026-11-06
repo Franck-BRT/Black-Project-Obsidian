@@ -13,7 +13,7 @@
 
 import { readAppearance, type Appearance } from '../src/core/appearance'
 import { DEFAULT_SETTINGS, readDashboard, readNavMenu, type CoreSettings } from '../src/core/settings'
-import { SETTINGS_PAGE, settingsPage } from '../src/core/settingsPage'
+import { modulePageOf, SETTINGS_PAGE, settingsPage } from '../src/core/settingsPage'
 import { createI18n } from '../src/core/i18n'
 import { EVALUATION } from '../src/core/licence'
 import type { ModuleContext } from '../src/core/modules/module'
@@ -23,7 +23,7 @@ import { ViewsRegistry } from '../src/core/views'
 import { MODULES } from '../src/modules'
 import { createAnalysis, importFiles } from '../src/modules/ao'
 import { requirementsAt } from '../src/modules/exigences'
-import { dialogWindows, mountApp, openModuleWindow, type DialogHost } from '../src/ui'
+import { dialogWindows, mountApp, type DialogHost, type ModuleWindowHost } from '../src/ui'
 
 const params = new URLSearchParams(location.search)
 const language = params.get('lang') === 'en' ? 'en' : 'fr'
@@ -103,6 +103,8 @@ const commands = new Map<string, () => void | Promise<void>>()
 
 /** Les réglages du cœur, le temps de la visite : la démonstration n'a pas de coffre où les garder. */
 let core: CoreSettings = { ...DEFAULT_SETTINGS }
+/** La page « Fonctions » d'un module : ce que reçoit sa fenêtre. */
+let moduleWindowOf: (id: string) => ModuleWindowHost | null = () => null
 
 async function start(): Promise<void> {
   const registry = new ModuleRegistry()
@@ -129,18 +131,8 @@ async function start(): Promise<void> {
       },
       views,
       showPage: (id) => mounted?.show(id),
-      openWindow: () =>
-        void openModuleWindow({
-          ...dialogHost,
-          module,
-          settings: () => settings[module.id] ?? {},
-          save: async (values) => void (settings[module.id] = values),
-          runCommand: async (id) => {
-            await commands.get(`${module.id}-${id}`)?.()
-          },
-          secrets: platform.secrets!,
-          dialogs: windows
-        })
+      // « Régler », « Formats de fichiers »… : la page « Fonctions » du module, dans l'onglet.
+      openWindow: () => mounted?.show(modulePageOf(module.id))
     })
   })
 
@@ -220,18 +212,21 @@ async function start(): Promise<void> {
   )
 
   // Les paramètres, en page comme dans Obsidian ; gardés le temps de la visite.
-  const windowOf = (module: Parameters<typeof openModuleWindow>[0]['module']) =>
-    openModuleWindow({
-      ...dialogHost,
-      module,
-      settings: () => settings[module.id] ?? {},
-      save: async (values) => void (settings[module.id] = values),
-      runCommand: async (id) => {
-        await commands.get(`${module.id}-${id}`)?.()
-      },
-      secrets: platform.secrets!,
-      dialogs: windows
-    })
+  const windowOf = (module: ModuleWindowHost['module']): ModuleWindowHost => ({
+    ...dialogHost,
+    module,
+    settings: () => settings[module.id] ?? {},
+    save: async (values) => void (settings[module.id] = values),
+    runCommand: async (id) => {
+      await commands.get(`${module.id}-${id}`)?.()
+    },
+    secrets: platform.secrets!,
+    dialogs: windows
+  })
+  moduleWindowOf = (id) => {
+    const module = registry.status(id)?.module
+    return module ? windowOf(module) : null
+  }
   views.page({
     id: SETTINGS_PAGE,
     title: t('home.nav.settings'),
@@ -249,7 +244,7 @@ async function start(): Promise<void> {
         },
         modules: () => registry.list(),
         moduleSettings: (id) => settings[id] ?? {},
-        openModule: (module) => windowOf(module),
+        openModule: async (module) => mounted?.show(modulePageOf(module.id)),
         createDocumentation: async () => toast(t('demo.docs')),
         licence: () => t('settings.licence.evaluation'),
         ui: platform.ui,
@@ -292,6 +287,7 @@ async function start(): Promise<void> {
     saveNavMenu: async (layout) => void safeStorage(layout ? 'set' : 'remove', layout ? JSON.stringify(layout) : undefined, 'bp-demo-menu'),
     openSettings: () => mounted?.show(SETTINGS_PAGE),
     settingsPage: SETTINGS_PAGE,
+    moduleWindow: (id) => moduleWindowOf(id),
     appearance: () => appearance,
     saveAppearance: async (next) => {
       appearance = next

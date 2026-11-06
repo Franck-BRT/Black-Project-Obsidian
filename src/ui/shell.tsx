@@ -14,6 +14,8 @@ import { AppearancePanel } from './appearance'
 import { AfterAction } from './components'
 import { HomePage } from './home'
 import { ModulePage } from './page'
+import { ModuleFunctionsPage, moduleFunctionsTitle } from './dialogs/moduleWindow'
+import { MODULE_PAGE } from '../core/settingsPage'
 import type { AppHost } from './host'
 import { Icon } from './icons'
 import { greetingKey } from './logic'
@@ -72,12 +74,15 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
   const cut = page.indexOf('?')
   const pageId = cut < 0 ? page : page.slice(0, cut)
   const param = cut < 0 ? undefined : page.slice(cut + 1)
-  const modulePage = pageId === 'home' || pageId === 'dashboard' ? undefined : host.pages().find((each) => each.id === pageId)
-  const shown = modulePage ? pageId : page === 'dashboard' ? 'dashboard' : 'home'
-  // L'entrée du menu marquée : celle de la page, ou de celle dont elle dépend (la liste d'une fiche).
-  const current = modulePage?.parent ?? shown
+  // La page « Fonctions » d'un module : le contenu de sa fenêtre, dessiné ici.
+  const functions = pageId === MODULE_PAGE && host.moduleWindow ? host.moduleWindow(decodeURIComponent(param ?? '')) : null
+  const modulePage = functions || pageId === 'home' || pageId === 'dashboard' ? undefined : host.pages().find((each) => each.id === pageId)
+  const shown = functions ? MODULE_PAGE : modulePage ? pageId : page === 'dashboard' ? 'dashboard' : 'home'
+  // L'entrée du menu marquée : celle de la page, ou de celle dont elle dépend (la liste d'une fiche) ;
+  // pour les fonctions d'un module, les paramètres.
+  const current = functions ? (host.settingsPage ?? 'home') : (modulePage?.parent ?? shown)
   // Le titre de la page montrée : ce que « Retour » dira pour y revenir.
-  const title = modulePage ? (pageTitle ?? modulePage.title) : shown === 'dashboard' ? t('ui.dashboard.title') : t('ui.nav.home')
+  const title = functions ? moduleFunctionsTitle(functions) : modulePage ? (pageTitle ?? modulePage.title) : shown === 'dashboard' ? t('ui.dashboard.title') : t('ui.nav.home')
   useEffect(() => {
     shownVisit.current = { page, title }
   })
@@ -146,7 +151,12 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
             <header class="bp-header">
               <div>
                 <h1 class="bp-hello">
-                  {modulePage ? (
+                  {functions ? (
+                    <>
+                      <Icon name="settings" />
+                      {title}
+                    </>
+                  ) : modulePage ? (
                     <>
                       <Icon name={modulePage.icon} />
                       {pageTitle ?? modulePage.title}
@@ -177,7 +187,9 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
                 {t('ui.back', { title: previous.title })}
               </button>
             )}
-            {modulePage ? (
+            {functions ? (
+              <ModuleFunctionsPage key={page} host={functions} />
+            ) : modulePage ? (
               <ModulePage spec={modulePage} param={param} host={host} generation={generation + local} onTitle={setPageTitle} hasHistory={!!previous} />
             ) : shown === 'home' ? (
               <Springboard host={host} generation={generation + local} tiles={tiles} />

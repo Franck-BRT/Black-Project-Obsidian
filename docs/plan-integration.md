@@ -383,6 +383,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.33.0 : les **paramètres en page** dans l'onglet (`src/core/settingsPage.ts`) : la
   langue, l'accueil au démarrage, la documentation, la licence, l'apparence, une carte par
   module (état, « Fonctions », Activer / Désactiver) ; l'onglet d'Obsidian reste
+- v0.34.0 : les **fonctions d'un module en page** dans l'onglet (le contenu de sa fenêtre :
+  ses réglages, ce qu'il sait faire) ; les liens des modules et la page Paramètres y
+  mènent
 
 ### Étape 7 — Livrables
 

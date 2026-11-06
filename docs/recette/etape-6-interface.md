@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les fonctions d'un module, en page (v0.34.0)
+
+- [ ] Paramètres → un clic sur le nom d'un module (ou son bouton « Formats de fichiers »,
+      « Types de pièces », « Fonctions ») : sa page dans l'onglet, titrée « Module —
+      Fonctions », ce qu'il fait en tête ; pas de fenêtre ; Paramètres est « page en
+      cours », « Retour » ramène aux paramètres
+- [ ] Ses réglages fonctionnent comme dans la fenêtre : un interrupteur (`.json` dans
+      Lecture de fichiers), un texte (l'adresse de l'IA), un menu, une paire ; un réglage
+      changé est enregistré (le retrouver après un aller-retour)
+- [ ] Page IA → **Régler la connexion** : la page du module IA ; tuile **Formats de
+      fichiers** : la page de Lecture de fichiers
+- [ ] Paramètres d'Obsidian → Black Projects → le bouton d'un module : la fenêtre, comme
+      avant (la page serait cachée derrière les réglages d'Obsidian)
+
 ## Les paramètres, en page (v0.33.0)
 
 - [ ] **Paramètres** (en bas de la barre de gauche) : la page s'ouvre dans l'onglet de

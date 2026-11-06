@@ -77,7 +77,7 @@ exécutions), l'IA (la connexion et un modèle par usage).
 | `logic.ts` | ce qui se calcule sans dessiner (jours restants, urgence) : testé seul |
 | `dialogs/frame.tsx` | le cadre de toute fenêtre (`openDialog`) : fond, titre, fermer, Échap, focus gardé dans la fenêtre et rendu à la fermeture, thème appliqué |
 | `dialogs/windows.tsx` | les fenêtres du port `Ui` : choix (et fichier du coffre), formulaire, confirmation, cases à cocher, message, liste filtrable, texte à copier |
-| `dialogs/moduleWindow.tsx` | la fenêtre « Fonctions » d'un module : ses réglages et ses fiches |
+| `dialogs/moduleWindow.tsx` | la fenêtre « Fonctions » d'un module : ses réglages et ses fiches ; le même contenu en page de l'onglet (`ModuleFunctionsPage`) |
 
 **Preact** (licence MIT, environ 4 Ko) : des composants avec état, en JSX, compilés par
 esbuild ; il n'est utilisé que dans `src/ui/`. Les modules ne le voient jamais : changer de
@@ -284,6 +284,16 @@ interrupteurs par colonnes (le rangement des types), oui / non, secret (rangé d
 trousseau) — puis ses fiches (résumé, familles, faits colorés avec icône et mot,
 étiquettes, interrupteur d'affichage). Elle se redessine sur place : le défilement ne
 bouge pas quand on bascule un interrupteur.
+
+Depuis la 0.34.0, ce contenu (`ModuleFunctions`) est aussi une **page** de l'onglet :
+`MODULE_PAGE` (`core.fonctions?<id du module>`, `modulePageOf`, `src/core/settingsPage.ts`)
+— le shell la dessine lui-même (`ModuleFunctionsPage`, sans cadre de fenêtre, ce que fait
+le module en tête, le titre « Module — Fonctions »), avec ce que l'hôte lui donne
+(`AppHost.moduleWindow(id)`, ce que reçoit la fenêtre ; `null` : un module inconnu, et
+c'est l'accueil) ; l'entrée Paramètres est « page en cours ». Les cartes des modules de
+la page Paramètres et les liens des modules (`ModuleContext.openWindow` : « Régler la
+connexion », « Formats de fichiers », « Régler maintenant ») y mènent. L'onglet de
+réglages d'Obsidian garde la fenêtre : une page de l'onglet serait cachée derrière lui.
 
 Accessibilité des fenêtres : `role="dialog"` et `aria-modal`, titre qui nomme la fenêtre ;
 le focus va au premier champ, reste dans la fenêtre (Tab, Maj+Tab) et revient où il était
