@@ -302,6 +302,8 @@ export interface TogglesField {
   readonly defaultColumns?: readonly string[]
   /** Le bouton d'ajout, le titre et le texte de sa fenêtre, le libellé du choix de l'élément. */
   readonly addKey: string
+  /** Le bouton qui valide la petite fenêtre d'ajout ; à défaut, le même que celui qui l'ouvre. */
+  readonly addSubmitKey?: string
   readonly addTitleKey: string
   readonly addIntroKey?: string
   readonly itemFieldKey: string

@@ -162,6 +162,7 @@ export const rangementField: TogglesField = {
   },
   defaultColumns: ['appel-d-offres'],
   addKey: 'ao.setting.places.add',
+  addSubmitKey: 'ao.setting.places.addSubmit',
   addTitleKey: 'ao.setting.places.addTitle',
   addIntroKey: 'ao.setting.places.addIntro',
   itemFieldKey: 'ao.setting.places.type',
@@ -423,7 +424,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.21.0',
+  version: '0.22.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],

@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les raccourcis du tableau de bord en page (v0.37.0)
+
+- [ ] Tableau de bord → section Analyses → **Calendrier** : « Dans quelle analyse ? » (s'il
+      y en a plusieurs), puis la page du calendrier dans l'onglet ; aucune note ouverte
+- [ ] **Interroger** : l'analyse, la question, puis la réponse sur sa page ;
+      **Questionnaire** : la page du questionnaire
+- [ ] Le bouton **Calendrier** d'une carte d'analyse : la page de son calendrier, sans rien
+      demander
+- [ ] Accueil : tuiles **Calendrier**, **Vérifier**, **Qualité**, **Questionnaire** : la page
+      de l'analyse choisie
+- [ ] Paramètres → Analyse d'appels d'offres : « Où vont les types de pièces » → **Ajouter un
+      routage…** ; la petite fenêtre se valide par **Ajouter un routage**
+
 ## Le journal des workflows : sujet et notes en page (v0.36.0)
 
 - [ ] Workflows → **Journal** → une exécution (« À l'import des pièces : relever le
@@ -438,7 +451,7 @@ Sur le coffre de test.
 - [ ] Une confirmation de suppression (un workflow) : bouton rouge, focus sur « Annuler »
 - [ ] Paramètres → **Formats de fichiers** : les fiches (Lu, Écrit, Affiché avec icône et
       mot) ; allumer l'interrupteur `.json` ne fait pas remonter la fenêtre
-- [ ] Paramètres → **Fonctions** de l'AO : « Ajouter un type » ouvre une petite fenêtre
+- [ ] Paramètres → **Fonctions** de l'AO : « Ajouter un routage » ouvre une petite fenêtre
       par-dessus ; la liste des types rangés reste dépliée ; interrupteurs « AO » et
       « Réponse AO », corbeille
 - [ ] Paramètres → **Types de pièces** : ajouter, modifier (crayon), supprimer (avec

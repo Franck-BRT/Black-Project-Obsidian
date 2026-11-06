@@ -52,7 +52,7 @@ l'appel d'offres.
 Réglage `rangement` du module (code du type → `appel-d-offres`, `reponse` ou
 `les-deux`), dans la fenêtre du module, sous **Dossier des analyses** :
 
-- **Ajouter un type…** ouvre une petite fenêtre : le type (parmi ceux qui ne sont pas
+- **Ajouter un routage…** ouvre une petite fenêtre : le type (parmi ceux qui ne sont pas
   encore dans la liste), un interrupteur **AO** (avec l'appel d'offres) et un
   **Réponse AO** (avec la réponse) ;
 - la liste dépliable **Types rangés (n)** commence par l'explication des deux colonnes,
@@ -337,6 +337,19 @@ exigences.md`, `Questionnaire.md` → leur page ; `Analyse/Questions/…` → la
 question ; une autre note du dossier Analyse → la page générique ; sinon rien (la note
 s'ouvre). Un workflow qui a écrit le calendrier d'une analyse y mène ainsi, sans connaître
 le module.
+
+## Les raccourcis du tableau de bord en page (v0.22.0, Black Projects 0.37.0)
+
+Quand la plateforme a des pages, les raccourcis ouvrent la page de l'analyse plutôt que la
+commande (qui écrivait la note puis l'ouvrait) — `shortcut(deps, commande)` : sur le tableau
+de bord, **Calendrier**, **Interroger**, **Questionnaire** ; sur l'accueil, les tuiles
+Calendrier, Interroger, Questionnaire, Vérifier, Qualité. L'analyse : la seule s'il n'y en
+a qu'une, sinon « Dans quelle analyse ? » (`chooseAnalysisFor`) ; aucune : le message.
+Puis la page du calendrier, de la vérification, de la qualité, du questionnaire, ou
+« Interroger » (la réponse sur sa page). Le bouton **Calendrier** d'une carte d'analyse
+ouvre la page de son calendrier, sans rien demander. Sans pages : les commandes, comme
+avant. Le bouton du rangement des types s'appelle **Ajouter un routage…**, et sa fenêtre
+se valide par **Ajouter un routage** (`TogglesField.addSubmitKey`).
 
 ## Dans le coffre
 

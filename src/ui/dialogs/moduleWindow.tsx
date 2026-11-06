@@ -223,7 +223,7 @@ function TogglesBlock({ field, host, refresh, open, setOpen }: { field: TogglesF
         { kind: 'choice', key: 'item', label: t(field.itemFieldKey), options: candidates.map((item) => ({ value: item, label: field.itemLabel(item, settings, t) })) },
         ...field.columns.map((column) => ({ kind: 'toggle' as const, key: `c:${column.id}`, label: t(column.labelKey), value: initially.has(column.id), ...(column.tooltipKey ? { tooltip: t(column.tooltipKey) } : {}) }))
       ],
-      submit: t(field.addKey),
+      submit: t(field.addSubmitKey ?? field.addKey),
       validate: (entered) => (field.columns.some((column) => entered[`c:${column.id}`] === 'true') ? null : t(field.minimumKey))
     })
     if (!values?.item) return

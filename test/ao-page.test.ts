@@ -845,3 +845,60 @@ describe('une note d’analyse ouverte par un autre module (un workflow) : sa pa
     expect(await page(`${station.folder}/Pièces/Appel d'offres/Inconnue.md`)).toBeNull()
   })
 })
+
+describe('les raccourcis du tableau de bord et de l’accueil ouvrent les pages', () => {
+  async function dashboard(withPages = true) {
+    const platform = memoryPlatform()
+    const asked: string[] = []
+    let answer: string | null = null
+    platform.ui.pickOption = async (options, placeholder) => {
+      asked.push(placeholder ?? '')
+      return answer ?? options[0]?.value ?? null
+    }
+    const run = await start(platform, withPages)
+    const section = await run.views.homeSections().find((each) => each.id === 'ao.analyses')!.load()
+    const quick = section!.blocks.find((block) => block.kind === 'actions')
+    const cards = section!.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+    return { ...run, platform, asked, choose: (note: string) => void (answer = note), quick: quick?.kind === 'actions' ? quick.actions : [], cards }
+  }
+  const calendarOf = (analysis: { folder: string }) => `ao.calendrier?${encodeURIComponent(`${analysis.folder}/Analyse/Calendrier.md`)}`
+
+  it('« Calendrier » : « Dans quelle analyse ? » (il y en a deux), puis la page du calendrier ; rien d’écrit ni de note ouverte', async () => {
+    const { quick, asked, shown, station, choose, platform } = await dashboard()
+    choose(station.note)
+    await quick.find((action) => action.id === 'calendar')!.run()
+    expect(asked).toEqual(['Dans quelle analyse ?'])
+    expect(shown.at(-1)).toBe(calendarOf(station))
+    expect(platform.files.has(`${station.folder}/Analyse/Calendrier.md`)).toBe(false)
+    expect(platform.opened).toEqual([])
+  })
+
+  it('le bouton Calendrier d’une carte : la page de son calendrier, sans rien demander', async () => {
+    const { cards, asked, shown, station } = await dashboard()
+    const card = cards.find((each) => each.title === 'Station sol')!
+    await card.actions!.find((action) => action.id === 'calendar')!.run()
+    expect(asked).toEqual([])
+    expect(shown.at(-1)).toBe(calendarOf(station))
+  })
+
+  it('les tuiles Calendrier, Vérifier, Qualité, Questionnaire : la page de l’analyse choisie', async () => {
+    const { views, shown, station, choose } = await dashboard()
+    choose(station.note)
+    const enc = (name: string) => encodeURIComponent(`${station.folder}/Analyse/${name}.md`)
+    for (const [tile, page] of [
+      ['ao.calendrier', `ao.calendrier?${enc('Calendrier')}`],
+      ['ao.verifier', `ao.verification?${enc('Vérification des exigences')}`],
+      ['ao.qualite', `ao.qualite?${enc('Qualité des exigences')}`],
+      ['ao.questionnaire', `ao.questionnaire?${enc('Questionnaire')}`]
+    ] as const) {
+      await views.allTiles().find((each) => each.id === tile)!.run()
+      expect(shown.at(-1)).toBe(page)
+    }
+  })
+
+  it('sans pages chez la plateforme : la carte écrit le calendrier et ouvre sa note, comme avant', async () => {
+    const { cards, station, platform } = await dashboard(false)
+    await cards.find((each) => each.title === 'Station sol')!.actions!.find((action) => action.id === 'calendar')!.run()
+    expect(platform.opened).toEqual([`${station.folder}/Analyse/Calendrier.md`])
+  })
+})

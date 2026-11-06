@@ -155,7 +155,7 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
       cochée ; le rallumer : le rappel revient à l'ouverture suivante
 - [ ] Un type rangé : plus aucun message à l'ouverture
 - [ ] (v0.4.2) Fenêtre du module **Analyse d'appels d'offres** : rubrique « Où vont les
-      types de pièces », bouton **Ajouter un type…** et liste dépliable **Types rangés
+      types de pièces », bouton **Ajouter un routage…** et liste dépliable **Types rangés
       (0)** au départ (v0.4.4) ; dépliée : l'explication des colonnes **AO** et
       **Réponse AO** en haut (v0.4.3), puis « Aucun type rangé » ; ajouter RC avec « AO »
       et BPU avec les deux : **Types rangés (2)**
@@ -165,10 +165,10 @@ Sur un coffre de test. Le coffre de test fourni contient `A importer/DCE Station
 - [ ] Éteindre « AO » sur BPU : il ne reste que « Réponse AO » ; la liste reste
       dépliée ; éteindre aussi « Réponse AO » : refusé avec un message, l'interrupteur se
       rallume
-- [ ] Corbeille sur BPU : il quitte la liste (1) ; **Ajouter un type…** : la petite
+- [ ] Corbeille sur BPU : il quitte la liste (1) ; **Ajouter un routage…** : la petite
       fenêtre propose BPU (pas RC, déjà rangé), « AO » allumé ; tout éteindre puis
       valider : refusé ; valider avec « Réponse AO » : BPU revient dans la liste
-- [ ] Un type ajouté dans **Types de pièces** (PAQ) : proposé dans **Ajouter un type…** ;
+- [ ] Un type ajouté dans **Types de pièces** (PAQ) : proposé dans **Ajouter un routage…** ;
       renommé dans le typage, il garde son rangement
 - [ ] **Types de pièces** : chaque fiche affiche « Analyse d'appels d'offres — va dans »
       (RC : Appel d'offres ; BPU : ce que vous avez réglé ; un type pas rangé : « pas

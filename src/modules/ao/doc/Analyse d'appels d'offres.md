@@ -53,6 +53,10 @@ analyse ? » :
   exigences par elle, maintenant — les absentes d'abord, puis à vérifier, traitées,
   citées, chacune avec l'endroit de la réponse et l'extrait ; un clic ouvre la fiche de
   l'exigence ; **Importer des pièces de sa réponse**, **Écrire le rapport de couverture** ;
+- sur le **tableau de bord** et l'accueil, les raccourcis **Calendrier**, **Interroger**,
+  **Questionnaire** (et les tuiles Vérifier, Qualité) ouvrent la page de l'analyse —
+  choisie dans « Dans quelle analyse ? » s'il y en a plusieurs ; le bouton Calendrier d'une
+  carte d'analyse, celle de son calendrier ;
 - son **calendrier** : **Calendrier** ouvre sa page, relevée à l'ouverture dans les
   pièces de l'appel d'offres — la date limite de remise et ses jours restants (rouge à une
   semaine, orange à trois), la validité des offres, « À retenir », les dates dans l'ordre
@@ -143,7 +147,7 @@ annexes… : vierges dans le dossier, remplis dans l'offre).
 Cela se règle dans la fenêtre de ce module (Paramètres → Black Projects → *Analyse
 d'appels d'offres*), rubrique **Où vont les types de pièces** :
 
-- **Ajouter un type…** : une petite fenêtre pour choisir le type et allumer
+- **Ajouter un routage…** : une petite fenêtre pour choisir le type et allumer
   « AO » (avec l'appel d'offres), « Réponse AO » (avec la réponse), ou les deux ;
 - **Types rangés** : la liste se déplie ; l'explication des colonnes est en haut, puis
   chaque type tient sur une ligne, avec ses deux interrupteurs et une corbeille pour le

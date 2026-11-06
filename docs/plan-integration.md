@@ -393,6 +393,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.36.0 : depuis le journal des workflows, la fiche d'une exécution ouvre son **sujet** et
   ses **notes écrites en page** (la fiche de l'analyse, le calendrier, une exigence) :
   `views.notePage` et `ModuleContext.showNote`
+- v0.37.0 : les **raccourcis du tableau de bord** (Calendrier, Interroger, Questionnaire,
+  et les tuiles Vérifier, Qualité) ouvrent les pages ; « Ajouter un routage… » pour le
+  rangement des types de pièces
 
 ### Étape 7 — Livrables
 

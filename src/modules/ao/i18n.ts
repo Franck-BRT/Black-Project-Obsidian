@@ -506,7 +506,8 @@ export const aoFr: Record<string, string> = {
     'AO : les pièces du type sont rangées avec l’appel d’offres. Réponse AO : avec la réponse (celle d’un candidat, pour l’émetteur). Les deux allumés : la question est posée à l’import. Un type absent de la liste, et AUTRE, sont toujours demandés.',
   'ao.setting.places.col.tender': 'AO',
   'ao.setting.places.col.response': 'Réponse AO',
-  'ao.setting.places.add': 'Ajouter un type…',
+  'ao.setting.places.add': 'Ajouter un routage…',
+  'ao.setting.places.addSubmit': 'Ajouter un routage',
   'ao.setting.places.add.tip': 'Choisir un type de pièce et où il va, dans une petite fenêtre.',
   'ao.setting.places.addTitle': 'Où va ce type de pièce ?',
   'ao.setting.places.addIntro':
@@ -527,10 +528,10 @@ export const aoFr: Record<string, string> = {
   'ao.setting.reminder.tip': 'Allumé : le rappel s’affiche à l’ouverture tant que la liste « Types rangés » est vide.',
   'ao.message.welcome.title': 'Analyse d’appels d’offres : où ranger les pièces ?',
   'ao.message.welcome':
-    'L’analyse range chaque pièce importée avec l’appel d’offres (AO) ou avec la réponse (Réponse AO). Aucun type de pièce n’est encore rangé : c’est à vous de choisir. D’ici là, l’analyse vous demandera, à chaque import, où mettre chaque pièce.\n\nPour le régler : fenêtre du module (Paramètres → Black Projects → bouton « Fonctions » de la ligne « Analyse d’appels d’offres »), rubrique « Où vont les types de pièces ». « Ajouter un type… », choisissez le type, puis allumez AO, Réponse AO, ou les deux — les deux : la question reste posée à l’import.',
+    'L’analyse range chaque pièce importée avec l’appel d’offres (AO) ou avec la réponse (Réponse AO). Aucun type de pièce n’est encore rangé : c’est à vous de choisir. D’ici là, l’analyse vous demandera, à chaque import, où mettre chaque pièce.\n\nPour le régler : fenêtre du module (Paramètres → Black Projects → bouton « Fonctions » de la ligne « Analyse d’appels d’offres »), rubrique « Où vont les types de pièces ». « Ajouter un routage… », choisissez le type, puis allumez AO, Réponse AO, ou les deux — les deux : la question reste posée à l’import.',
   'ao.message.reminder.title': 'Rappel : aucun type de pièce rangé',
   'ao.message.reminder':
-    'La liste « Types rangés » du module Analyse d’appels d’offres est vide : à chaque import, l’analyse vous demande où mettre chaque pièce.\n\nPour ranger un type une fois pour toutes : fenêtre du module, rubrique « Où vont les types de pièces », « Ajouter un type… », puis AO, Réponse AO, ou les deux.',
+    'La liste « Types rangés » du module Analyse d’appels d’offres est vide : à chaque import, l’analyse vous demande où mettre chaque pièce.\n\nPour ranger un type une fois pour toutes : fenêtre du module, rubrique « Où vont les types de pièces », « Ajouter un routage… », puis AO, Réponse AO, ou les deux.',
   'ao.message.open': 'Régler maintenant',
   'ao.message.later': 'Plus tard',
   'ao.message.stop': 'Ne plus me le rappeler à l’ouverture',
@@ -1176,7 +1177,8 @@ export const aoEn: Record<string, string> = {
     'Tender: documents of the type are filed with the tender. Response: with the response (a bidder’s, for the issuer). Both on: you are asked at import. A type missing from the list, and AUTRE, are always asked.',
   'ao.setting.places.col.tender': 'Tender',
   'ao.setting.places.col.response': 'Response',
-  'ao.setting.places.add': 'Add a type…',
+  'ao.setting.places.add': 'Add a routing…',
+  'ao.setting.places.addSubmit': 'Add a routing',
   'ao.setting.places.add.tip': 'Pick a document type and where it goes, in a small window.',
   'ao.setting.places.addTitle': 'Where does this document type go?',
   'ao.setting.places.addIntro':
@@ -1196,10 +1198,10 @@ export const aoEn: Record<string, string> = {
   'ao.setting.reminder.tip': 'On: the reminder shows at startup while the “Filed types” list is empty.',
   'ao.message.welcome.title': 'Tender analysis: where to file documents?',
   'ao.message.welcome':
-    'The analysis files each imported document with the tender (AO) or with the response (Réponse AO). No document type is filed yet: it is up to you to choose. Until then, the analysis asks you at each import where to put each document.\n\nTo set it: the module window (Settings → Black Projects → “Features” button on the “Tender analysis” row), “Where document types go” section. “Add a type…”, pick the type, then turn on AO, Réponse AO, or both — both: you are still asked at import.',
+    'The analysis files each imported document with the tender (AO) or with the response (Réponse AO). No document type is filed yet: it is up to you to choose. Until then, the analysis asks you at each import where to put each document.\n\nTo set it: the module window (Settings → Black Projects → “Features” button on the “Tender analysis” row), “Where document types go” section. “Add a routing…”, pick the type, then turn on AO, Réponse AO, or both — both: you are still asked at import.',
   'ao.message.reminder.title': 'Reminder: no document type filed',
   'ao.message.reminder':
-    'The “Filed types” list of the Tender analysis module is empty: at each import, the analysis asks you where to put each document.\n\nTo file a type once and for all: the module window, “Where document types go” section, “Add a type…”, then AO, Réponse AO, or both.',
+    'The “Filed types” list of the Tender analysis module is empty: at each import, the analysis asks you where to put each document.\n\nTo file a type once and for all: the module window, “Where document types go” section, “Add a routing…”, then AO, Réponse AO, or both.',
   'ao.message.open': 'Set it now',
   'ao.message.later': 'Later',
   'ao.message.stop': 'Don’t remind me at startup',

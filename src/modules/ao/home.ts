@@ -131,7 +131,9 @@ async function analysisCard(deps: HomeDeps, analysis: Analysis, ai: boolean): Pr
       id: 'calendar',
       label: t('ao.home.calendar'),
       icon: 'calendar',
+      // Avec des pages : celle du calendrier, relevé à l'ouverture ; sinon la note, écrite puis ouverte.
       run: async () => {
+        if (deps.showPage) return deps.showPage(calendarPageOf(calendarPath(analysis)))
         const found = await writeCalendar(deps.services(), analysis)
         deps.notifier.notify(t('ao.calendar.done', { dates: found.dates.length, delays: found.delays.length, pieces: found.read }), 6000)
         await deps.ui.openNote(calendarPath(analysis))
@@ -180,17 +182,54 @@ async function allCards(deps: HomeDeps, ai: boolean): Promise<Counted[]> {
   })
 }
 
+/** Sur quelle analyse ? La seule s'il n'y en a qu'une, sinon celle que l'utilisateur choisit ; aucune : le message. */
+async function chooseAnalysisFor(deps: HomeDeps): Promise<Analysis | null> {
+  const analyses = await listAnalyses(deps.services())
+  if (!analyses.length) {
+    deps.notifier.notify(deps.t('ao.none', { folder: deps.services().root }), 8000)
+    return null
+  }
+  if (analyses.length === 1) return analyses[0]!
+  const chosen = await deps.ui.pickOption(
+    analyses.map((analysis) => ({ value: analysis.note, label: analysis.name, description: analysis.folder })),
+    deps.t('ao.pick.analysis')
+  )
+  return analyses.find((analysis) => analysis.note === chosen) ?? null
+}
+
+/**
+ * Les raccourcis (tableau de bord, tuiles) qui ont une page : celle de l'analyse choisie —
+ * le calendrier, la vérification, la qualité, le questionnaire —, ou « Interroger » qui
+ * ouvre la réponse sur sa page. Sans pages chez la plateforme : la commande, comme avant.
+ */
+function shortcut(deps: HomeDeps, command: string): () => Promise<void> {
+  const pageOf: Record<string, (analysis: Analysis) => string> = {
+    calendrier: (analysis) => calendarPageOf(calendarPath(analysis)),
+    'verifier-exigences': (analysis) => verificationPageOf(reportPath(analysis)),
+    'qualite-exigences': (analysis) => qualityPageOf(qualityPath(analysis)),
+    questionnaire: (analysis) => questionnairePageOf(questionnairePath(analysis))
+  }
+  return async () => {
+    const page = pageOf[command]
+    if (!deps.showPage || (!page && command !== 'interroger')) return deps.run(command)
+    const analysis = await chooseAnalysisFor(deps)
+    if (!analysis) return
+    if (page) deps.showPage(page(analysis))
+    else await deps.ask(analysis)
+  }
+}
+
 /** Les actions rapides de l'analyse d'appels d'offres. */
 function quickActions(deps: HomeDeps, ai: boolean): ViewAction[] {
   const { t } = deps
   return [
     { id: 'new', label: t('ao.command.create'), icon: 'plus', primary: true, run: () => deps.run('nouvelle-analyse') },
     { id: 'import', label: t('ao.home.import'), icon: 'upload', run: () => deps.run('importer') },
-    { id: 'calendar', label: t('ao.command.calendar'), icon: 'calendar', run: () => deps.run('calendrier') },
+    { id: 'calendar', label: t('ao.command.calendar'), icon: 'calendar', run: shortcut(deps, 'calendrier') },
     ...(ai
       ? [
-          { id: 'ask', label: t('ao.command.ask'), icon: 'chat' as const, run: () => deps.run('interroger') },
-          { id: 'questionnaire', label: t('ao.command.questionnaire'), icon: 'list' as const, run: () => deps.run('questionnaire') }
+          { id: 'ask', label: t('ao.command.ask'), icon: 'chat' as const, run: shortcut(deps, 'interroger') },
+          { id: 'questionnaire', label: t('ao.command.questionnaire'), icon: 'list' as const, run: shortcut(deps, 'questionnaire') }
         ]
       : [])
   ]
@@ -1354,7 +1393,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   const group = t('ao.name')
   const ai = () => aiClient() !== null
   const tile = (id: string, label: string, icon: Parameters<ViewsRegistrar['tile']>[0]['icon'], color: Parameters<ViewsRegistrar['tile']>[0]['color'], order: number, byDefault: boolean, command: string, description: string) =>
-    views.tile({ id, label, icon, color, group, order, byDefault, description, run: () => deps.run(command) })
+    views.tile({ id, label, icon, color, group, order, byDefault, description, run: shortcut(deps, command) })
   tile('ao.nouvelle', t('ao.tile.new'), 'plus', 'indigo', 10, true, 'nouvelle-analyse', t('ao.tile.new.desc'))
   views.tile({
     id: 'ao.analyses',
@@ -1371,7 +1410,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   })
   tile('ao.importer', t('ao.home.import'), 'upload', 'teal', 12, true, 'importer', t('ao.tile.import.desc'))
   tile('ao.calendrier', t('ao.home.calendar'), 'calendar', 'orange', 13, true, 'calendrier', t('ao.tile.calendar.desc'))
-  views.tile({ id: 'ao.interroger', label: t('ao.tile.ask'), icon: 'chat', color: 'violet', group, order: 14, byDefault: true, description: t('ao.tile.ask.desc'), run: () => deps.run('interroger'), badge: async () => (ai() ? null : { text: '!', tone: 'warning', label: t('ia.unavailable') }) })
+  views.tile({ id: 'ao.interroger', label: t('ao.tile.ask'), icon: 'chat', color: 'violet', group, order: 14, byDefault: true, description: t('ao.tile.ask.desc'), run: shortcut(deps, 'interroger'), badge: async () => (ai() ? null : { text: '!', tone: 'warning', label: t('ia.unavailable') }) })
   tile('ao.questionnaire', t('ao.tile.questionnaire'), 'list', 'violet', 15, false, 'questionnaire', t('ao.tile.questionnaire.desc'))
   tile('ao.verifier', t('ao.tile.verify'), 'check', 'green', 16, false, 'verifier-exigences', t('ao.tile.verify.desc'))
   tile('ao.qualite', t('ao.tile.quality'), 'star', 'green', 17, false, 'qualite-exigences', t('ao.tile.quality.desc'))
