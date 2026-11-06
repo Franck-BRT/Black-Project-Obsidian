@@ -902,3 +902,59 @@ describe('les raccourcis du tableau de bord et de l’accueil ouvrent les pages'
     expect(platform.opened).toEqual([`${station.folder}/Analyse/Calendrier.md`])
   })
 })
+
+describe('importer des pièces depuis l’interface : la fiche de l’analyse ensuite', () => {
+  async function importing() {
+    const platform = memoryPlatform()
+    let answer: string | null = null
+    platform.ui.pickOption = async (options) => answer ?? options[0]?.value ?? null
+    const run = await start(platform, true)
+    const cctp = { name: 'CCTP.md', bytes: new TextEncoder().encode('# CCTP\n\nLe titulaire doit fournir une antenne.\n') }
+    return { ...run, platform, cctp, choose: (value: string) => void (answer = value) }
+  }
+  const ficheOf = (analysis: { note: string }) => `ao.fiche?${encodeURIComponent(analysis.note)}`
+
+  it('le bouton de la fiche : les fichiers, puis la fiche de l’analyse, plus sa note', async () => {
+    const { views, station, platform, shown, cctp } = await importing()
+    platform.externalFiles.push([cctp])
+    // Aucun type routé : « Où ranger ces pièces ? » — avec l'appel d'offres.
+    platform.forms.push({ p0: 'appel-d-offres' })
+    const fiche = await views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(station.note))
+    await fiche.actions!.find((action) => action.id === 'import')!.run()
+    expect([...platform.files.keys()].some((path) => path.endsWith('/CCTP.md') && path.includes('Pièces'))).toBe(true)
+    expect(shown.at(-1)).toBe(ficheOf(station))
+    expect(platform.opened).toEqual([])
+  })
+
+  it('le raccourci du tableau de bord et la tuile : l’analyse choisie, ses fichiers, puis sa fiche', async () => {
+    const { views, station, platform, shown, cctp, choose } = await importing()
+    choose(station.note)
+    platform.externalFiles.push([cctp])
+    platform.forms.push({ p0: 'appel-d-offres' })
+    const section = await views.homeSections().find((each) => each.id === 'ao.analyses')!.load()
+    const quick = section!.blocks.find((block) => block.kind === 'actions')
+    await (quick?.kind === 'actions' ? quick.actions : []).find((action) => action.id === 'import')!.run()
+    expect(shown.at(-1)).toBe(ficheOf(station))
+    platform.externalFiles.push([{ ...cctp, name: 'CCAP.md' }])
+    platform.forms.push({ p0: 'appel-d-offres' })
+    await views.allTiles().find((each) => each.id === 'ao.importer')!.run()
+    expect(shown.filter((id) => id === ficheOf(station))).toHaveLength(2)
+    expect(platform.opened).toEqual([])
+  })
+
+  it('« Nouvelle analyse » : sa fiche aussitôt créée, puis l’import qui suit y revient ; la palette ouvre toujours la note', async () => {
+    const { views, platform, shown, cctp, choose, run } = await importing()
+    platform.forms.push({ name: 'Antennes Sud', position: 'candidat', buyer: '', reference: '' }, { p0: 'appel-d-offres' })
+    choose('import')
+    platform.externalFiles.push([cctp])
+    await views.allTiles().find((each) => each.id === 'ao.nouvelle')!.run()
+    const created = `Appels d'offres/Antennes Sud/Antennes Sud.md`
+    expect(shown.slice(-2)).toEqual([`ao.fiche?${encodeURIComponent(created)}`, `ao.fiche?${encodeURIComponent(created)}`])
+    expect(platform.opened).toEqual([])
+    // La palette de commandes : la note de l'analyse, comme avant.
+    platform.forms.push({ name: 'Antennes Nord', position: 'candidat', buyer: '', reference: '' })
+    choose('later')
+    await run('ao-nouvelle-analyse')
+    expect(platform.opened).toEqual([`Appels d'offres/Antennes Nord/Antennes Nord.md`])
+  })
+})

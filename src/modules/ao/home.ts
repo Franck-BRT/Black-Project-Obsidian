@@ -211,6 +211,13 @@ function shortcut(deps: HomeDeps, command: string): () => Promise<void> {
   }
   return async () => {
     const page = pageOf[command]
+    // Créer une analyse : sa fiche ensuite, et l'import qui suit y revient.
+    if (deps.showPage && deps.runFor && command === 'nouvelle-analyse') return deps.runFor(command, { stay: true })
+    if (deps.showPage && command === 'importer') {
+      const analysis = await chooseAnalysisFor(deps)
+      if (analysis) await deps.importInto(analysis)
+      return
+    }
     if (!deps.showPage || (!page && command !== 'interroger')) return deps.run(command)
     const analysis = await chooseAnalysisFor(deps)
     if (!analysis) return
@@ -223,8 +230,8 @@ function shortcut(deps: HomeDeps, command: string): () => Promise<void> {
 function quickActions(deps: HomeDeps, ai: boolean): ViewAction[] {
   const { t } = deps
   return [
-    { id: 'new', label: t('ao.command.create'), icon: 'plus', primary: true, run: () => deps.run('nouvelle-analyse') },
-    { id: 'import', label: t('ao.home.import'), icon: 'upload', run: () => deps.run('importer') },
+    { id: 'new', label: t('ao.command.create'), icon: 'plus', primary: true, run: shortcut(deps, 'nouvelle-analyse') },
+    { id: 'import', label: t('ao.home.import'), icon: 'upload', run: shortcut(deps, 'importer') },
     { id: 'calendar', label: t('ao.command.calendar'), icon: 'calendar', run: shortcut(deps, 'calendrier') },
     ...(ai
       ? [

@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Importer des pièces depuis l'interface (v0.38.0)
+
+- [ ] Fiche d'une analyse → **Importer des pièces** : les fichiers, « Où ranger ces pièces ? »
+      s'il le faut, puis la fiche se redessine avec les nouvelles pièces ; aucune note ouverte
+- [ ] Tableau de bord → **Importer des pièces** (et la tuile) : « Dans quelle analyse ? » s'il
+      y en a plusieurs, puis la fiche de l'analyse
+- [ ] Tuile **Nouvelle analyse** : la fiche de l'analyse créée s'ouvre aussitôt ; « Importer
+      des fichiers de l'ordinateur » : l'import revient sur cette fiche
+- [ ] La palette de commandes (Importer des pièces, Nouvelle analyse) ouvre toujours la note
+
 ## Les raccourcis du tableau de bord en page (v0.37.0)
 
 - [ ] Tableau de bord → section Analyses → **Calendrier** : « Dans quelle analyse ? » (s'il

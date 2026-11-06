@@ -53,6 +53,9 @@ analyse ? » :
   exigences par elle, maintenant — les absentes d'abord, puis à vérifier, traitées,
   citées, chacune avec l'endroit de la réponse et l'extrait ; un clic ouvre la fiche de
   l'exigence ; **Importer des pièces de sa réponse**, **Écrire le rapport de couverture** ;
+- **Importer des pièces** (depuis sa fiche, une carte, le tableau de bord ou la tuile) se
+  termine sur la **fiche de l'analyse**, avec ses pièces, plutôt que sur sa note ; une
+  **Nouvelle analyse** ouvre aussitôt sa fiche, et l'import qui suit y revient ;
 - sur le **tableau de bord** et l'accueil, les raccourcis **Calendrier**, **Interroger**,
   **Questionnaire** (et les tuiles Vérifier, Qualité) ouvrent la page de l'analyse —
   choisie dans « Dans quelle analyse ? » s'il y en a plusieurs ; le bouton Calendrier d'une

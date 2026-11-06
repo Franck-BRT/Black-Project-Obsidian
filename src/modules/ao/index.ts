@@ -90,7 +90,7 @@ import { answerQuestion, QUESTIONNAIRE, runQuestionnaire, writeQuestionNote, typ
 import { pieceSources } from './ask/sources'
 import { reviewAnalysisRequirements } from './review'
 import { emitCreated, emitExtracted, emitImported, registerAoWorkflows } from './workflows'
-import { openAnalyses, questionPageOf, registerAoHome, type HomeDeps } from './home'
+import { analysisPageOf, openAnalyses, questionPageOf, registerAoHome, type HomeDeps } from './home'
 import { requirementsAt } from '../exigences'
 import { requirementsFolder } from './requirements'
 
@@ -403,7 +403,12 @@ function placementResolver(context: ModuleContext): PlacementResolver {
   }
 }
 
-async function importInto(context: ModuleContext, services: Services, analysis: Analysis): Promise<void> {
+/**
+ * Importer des pièces dans une analyse : les fichiers de l'ordinateur, la fenêtre « Où ranger
+ * ces pièces ? » s'il le faut, puis le compte rendu. `show` : où aller ensuite — la fiche de
+ * l'analyse, depuis l'interface ; sinon sa note s'ouvre.
+ */
+async function importInto(context: ModuleContext, services: Services, analysis: Analysis, show?: (analysis: Analysis) => void): Promise<void> {
   const { ui, notifier } = context.platform
   // Tous les fichiers : un dossier contient aussi des plans ou des images, gardés même
   // s'ils ne se lisent pas encore.
@@ -416,7 +421,8 @@ async function importInto(context: ModuleContext, services: Services, analysis: 
     return
   }
   notifier.notify(describeImport(context, report), 10000)
-  await ui.openNote(analysis.note)
+  if (show) show(analysis)
+  else await ui.openNote(analysis.note)
   await emitImported(services, analysis, report)
 }
 
@@ -424,7 +430,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.22.0',
+  version: '0.23.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -555,7 +561,10 @@ export const aoModule: BlackModule = {
           }
           throw error
         }
-        await platform.ui.openNote(analysis.note)
+        // Depuis l'interface : la fiche de l'analyse, dans l'onglet ; l'import qui suit y revient.
+        const show = targeted.stay && context.showPage ? (created: Analysis) => context.showPage?.(analysisPageOf(created)) : undefined
+        if (show) show(analysis)
+        else await platform.ui.openNote(analysis.note)
         await emitCreated(services, analysis)
         const next = await platform.ui.pickOption(
           [
@@ -569,7 +578,7 @@ export const aoModule: BlackModule = {
           ],
           t('ao.next.placeholder')
         )
-        if (next === 'import') await importInto(context, services, analysis)
+        if (next === 'import') await importInto(context, services, analysis, show)
         else if (next === 'drop')
           platform.notifier.notify(t('ao.next.drop.notice', { folder: placeOriginals(analysis, { place: 'appel-d-offres' }) }), 12000)
       }
@@ -581,7 +590,7 @@ export const aoModule: BlackModule = {
       async run() {
         const services = servicesFor(context)
         const analysis = await chooseAnalysis(context, services)
-        if (analysis) await importInto(context, services, analysis)
+        if (analysis) await importInto(context, services, analysis, targeted.stay && context.showPage ? (chosen) => context.showPage?.(analysisPageOf(chosen)) : undefined)
       }
     })
 
@@ -792,7 +801,8 @@ export const aoModule: BlackModule = {
       run: async (id) => {
         await context.commands.run?.(id)
       },
-      importInto: (analysis) => importInto(context, servicesFor(context), analysis),
+      // Depuis l'interface, l'import se termine sur la fiche de l'analyse, quand la plateforme a des pages.
+      importInto: (analysis) => importInto(context, servicesFor(context), analysis, context.showPage ? (imported) => context.showPage?.(analysisPageOf(imported)) : undefined),
       // Depuis l'interface, la réponse s'ouvre sur sa page, quand la plateforme en a.
       ask: (analysis, preset) => askAnalysis(servicesFor(context), analysis, preset, context.showPage ? (path) => context.showPage?.(questionPageOf(path)) : undefined),
       today: localToday,

@@ -396,6 +396,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.37.0 : les **raccourcis du tableau de bord** (Calendrier, Interroger, Questionnaire,
   et les tuiles Vérifier, Qualité) ouvrent les pages ; « Ajouter un routage… » pour le
   rangement des types de pièces
+- v0.38.0 : **importer des pièces** depuis l'interface se termine sur la fiche de l'analyse
+  (plus sa note) ; « Nouvelle analyse » ouvre la fiche de l'analyse créée
 
 ### Étape 7 — Livrables
 

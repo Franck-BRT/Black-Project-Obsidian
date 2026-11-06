@@ -351,6 +351,16 @@ ouvre la page de son calendrier, sans rien demander. Sans pages : les commandes,
 avant. Le bouton du rangement des types s'appelle **Ajouter un routage…**, et sa fenêtre
 se valide par **Ajouter un routage** (`TogglesField.addSubmitKey`).
 
+## Importer des pièces depuis l'interface (v0.23.0, Black Projects 0.38.0)
+
+Lancé depuis l'interface — le bouton de la fiche d'une analyse ou d'un candidat, d'une carte
+du tableau de bord, le raccourci et la tuile **Importer des pièces** (`shortcut`, l'analyse
+choisie s'il y en a plusieurs) —, un import se termine sur la **fiche de l'analyse**, dans
+l'onglet, au lieu d'ouvrir sa note (`importInto(…, show)`). Le choix des fichiers et « Où
+ranger ces pièces ? » restent des fenêtres. **Nouvelle analyse** (tuile, raccourci, page des
+analyses : `runFor('nouvelle-analyse', { stay: true })`) ouvre la fiche de l'analyse créée,
+et l'import qui suit y revient. La palette de commandes ouvre toujours la note.
+
 ## Dans le coffre
 
 ```
