@@ -56,6 +56,8 @@ analyse ? » :
 - **Importer des pièces** (depuis sa fiche, une carte, le tableau de bord ou la tuile) se
   termine sur la **fiche de l'analyse**, avec ses pièces, plutôt que sur sa note ; une
   **Nouvelle analyse** ouvre aussitôt sa fiche, et l'import qui suit y revient ;
+  **Mettre à jour**, sur la fiche, lit et range les fichiers déposés à la main dans les
+  originaux, puis la fiche se redessine avec eux — sans ouvrir la note ;
 - sur le **tableau de bord** et l'accueil, les raccourcis **Calendrier**, **Interroger**,
   **Questionnaire** (et les tuiles Vérifier, Qualité) ouvrent la page de l'analyse —
   choisie dans « Dans quelle analyse ? » s'il y en a plusieurs ; le bouton Calendrier d'une

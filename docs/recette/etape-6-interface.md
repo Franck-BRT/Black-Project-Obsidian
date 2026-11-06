@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Mettre à jour l'analyse depuis sa fiche (v0.39.0)
+
+- [ ] Déposer un fichier dans `Pièces/Appel d'offres/Originaux` d'une analyse (explorateur
+      d'Obsidian), puis, sur sa fiche, **Mettre à jour** : « 1 pièce(s) importée(s)… », la
+      fiche se redessine avec la nouvelle pièce ; aucune note ouverte
+- [ ] Rien de nouveau : « Aucune nouvelle pièce : le tableau des pièces est à jour. », la fiche
+      reste
+- [ ] La palette de commandes (« Mettre à jour l'analyse ») ouvre toujours la note
+
 ## Importer des pièces depuis l'interface (v0.38.0)
 
 - [ ] Fiche d'une analyse → **Importer des pièces** : les fichiers, « Où ranger ces pièces ? »

@@ -366,7 +366,8 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
   const actions: ViewAction[] = deps.runFor
     ? [
         { id: 'import', label: t('ao.home.import'), icon: 'upload', primary: pieces.length === 0, run: () => deps.importInto(analysis) },
-        { id: 'update', label: t('ao.fiche.update'), icon: 'refresh', run: run('mettre-a-jour') },
+        // Les fichiers déposés dans les originaux : lus et rangés, la fiche se redessine (sa note ne s'ouvre pas).
+        { id: 'update', label: t('ao.fiche.update'), icon: 'refresh', run: () => deps.runFor?.('mettre-a-jour', { analysis, stay: true }) ?? Promise.resolve() },
         // Le calendrier a sa page : relevé à l'ouverture, la note s'écrit de là.
         { id: 'calendar', label: t('ao.home.calendar'), icon: 'calendar', run: deps.showPage ? () => deps.showPage?.(calendarPageOf(calendarPath(analysis))) : run('calendrier') },
         // La vérification a sa page : calculée à l'ouverture, le rapport s'écrit de là.

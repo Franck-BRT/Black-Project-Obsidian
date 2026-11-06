@@ -430,7 +430,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.23.0',
+  version: '0.24.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -606,7 +606,9 @@ export const aoModule: BlackModule = {
           report.imported.length > 0 ? describeImport(context, report) : t('ao.update.nothing'),
           8000
         )
-        await platform.ui.openNote(analysis.note)
+        // Depuis la fiche : on y reste, elle se redessine ; depuis la palette, la note.
+        if (targeted.stay && context.showPage) context.showPage(analysisPageOf(analysis))
+        else await platform.ui.openNote(analysis.note)
         await emitImported(services, analysis, report)
       }
     })

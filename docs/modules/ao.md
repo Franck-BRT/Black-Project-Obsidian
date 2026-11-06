@@ -361,6 +361,11 @@ ranger ces pièces ? » restent des fenêtres. **Nouvelle analyse** (tuile, racc
 analyses : `runFor('nouvelle-analyse', { stay: true })`) ouvre la fiche de l'analyse créée,
 et l'import qui suit y revient. La palette de commandes ouvre toujours la note.
 
+**Mettre à jour l'analyse** depuis sa fiche (v0.24.0, Black Projects 0.39.0) :
+`runFor('mettre-a-jour', { analysis, stay: true })` — les fichiers déposés à la main dans
+les originaux sont lus et rangés, le compte rendu s'affiche, et la fiche se redessine avec
+les nouvelles pièces ; sa note ne s'ouvre pas. Depuis la palette, la note, comme avant.
+
 ## Dans le coffre
 
 ```

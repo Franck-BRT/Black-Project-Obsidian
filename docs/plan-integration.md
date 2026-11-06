@@ -398,6 +398,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   rangement des types de pièces
 - v0.38.0 : **importer des pièces** depuis l'interface se termine sur la fiche de l'analyse
   (plus sa note) ; « Nouvelle analyse » ouvre la fiche de l'analyse créée
+- v0.39.0 : **mettre à jour l'analyse** depuis sa fiche : les fichiers déposés sont lus et
+  rangés, la fiche se redessine (plus sa note)
 
 ### Étape 7 — Livrables
 

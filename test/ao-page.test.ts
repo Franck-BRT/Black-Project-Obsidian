@@ -958,3 +958,25 @@ describe('importer des pièces depuis l’interface : la fiche de l’analyse en
     expect(platform.opened).toEqual([`Appels d'offres/Antennes Nord/Antennes Nord.md`])
   })
 })
+
+describe('mettre à jour l’analyse depuis sa fiche', () => {
+  it('les fichiers déposés dans les originaux sont lus et rangés ; la fiche se redessine, sa note ne s’ouvre pas ; la palette l’ouvre', async () => {
+    const platform = memoryPlatform()
+    const run = await start(platform, true)
+    const { station, views, shown } = run
+    const fiche = views.pages().find((each) => each.id === 'ao.fiche')!
+    const piecesOf = async () => (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards.map((card) => card.title) : []))
+    expect(await piecesOf()).toEqual(['RC.md'])
+    // Déposé à la main dans les originaux de l'appel d'offres.
+    await platform.fs.writeText(`${station.folder}/Pièces/Appel d'offres/Originaux/CCAP.md`, '# CCAP\n\nPénalités : 500 € par jour de retard.\n')
+    await (await fiche.load(encodeURIComponent(station.note))).actions!.find((action) => action.id === 'update')!.run()
+    expect(await piecesOf()).toEqual(['RC.md', 'CCAP.md'])
+    expect(shown.at(-1)).toBe(`ao.fiche?${encodeURIComponent(station.note)}`)
+    expect(platform.opened).toEqual([])
+    expect(platform.notices.at(-1)).toMatch(/1 pièce\(s\) importée\(s\)/)
+    // La palette de commandes : la note, comme avant.
+    platform.active = station.note
+    await run.run('ao-mettre-a-jour')
+    expect(platform.opened).toEqual([station.note])
+  })
+})

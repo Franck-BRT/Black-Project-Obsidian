@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.38.0)
+## Aujourd'hui (version 0.39.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -43,8 +43,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   des workflows**, le sujet d'une exécution et les notes qu'elle a écrites s'ouvrent en page
   (la fiche de l'analyse, le calendrier, une exigence). Sur le **tableau de bord**, les
   raccourcis Calendrier, Interroger et Questionnaire ouvrent eux aussi ces pages ; importer
-  des pièces (ou créer une analyse) depuis l'interface se termine sur la fiche de
-  l'analyse.
+  des pièces (ou créer une analyse, ou la mettre à jour) depuis l'interface se termine sur
+  la fiche de l'analyse.
   **Modifier le menu** (en bas de la barre de gauche, au-dessus de Paramètres) pour déplacer, retirer ou
   ajouter des entrées — toute fonction des modules peut y figurer ; Accueil reste en
   haut et Paramètres en bas. Le bouton
