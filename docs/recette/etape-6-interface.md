@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'une analyse, en page (v0.20.0)
+
+- [ ] Sur la page Analyses (ou le tableau de bord), un clic sur le nom d'une analyse : sa
+      fiche s'ouvre en page, titrée de son nom, l'entrée Analyses marquée ; « ← Toutes
+      les analyses » ramène à la liste
+- [ ] Les chiffres : la date limite de remise en jours restants (et en toutes lettres),
+      les pièces, les exigences, la qualité
+- [ ] **Calendrier**, **Vérifier**, **Qualité du dossier**, **Mettre à jour** (et avec l'IA
+      Interroger, Questionnaire, Relire) : aucune fenêtre « Dans quelle analyse ? », ils
+      agissent sur celle-ci ; ce qu'ils écrivent apparaît dans « Ce que l'analyse a produit »
+- [ ] Les pièces par destination : **Changer le type** (la carte change), **Déplacer**,
+      **Extraire les exigences** (pièce lue) ; le nom ouvre la note de la pièce
+- [ ] Le calendrier (date, phrase, pièce), les exigences les plus faibles d'abord (le nom
+      ouvre la note), filtre « Pièces à lire »
+- [ ] Survoler le titre d'une carte, en thème sombre : pas de fond clair, le texte reste lisible
+
 ## La fiche d'un workflow, en page (v0.19.0)
 
 - [ ] Sur la page Workflows, un clic sur le nom d'un workflow (ou **Modifier**) : sa fiche

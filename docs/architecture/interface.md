@@ -165,13 +165,16 @@ que la recherche lit aussi. Il la déclare par
   — ne compte pas avec lui). Un bloc vidé dit, à sa place, que rien ne correspond.
 
 Une page peut prendre un **paramètre** : `showPage('workflows.fiche?wf-1')` (`pageWith`)
-appelle `load('wf-1')` — la fiche d'un workflow. Elle peut donner son propre titre
+appelle `load('wf-1')` — la fiche d'un workflow ; la fiche d'une analyse prend le chemin
+de sa note, encodé (`ao.fiche?Appels%20d'offres%2F…`). Elle peut donner son propre titre
 (`PageView.title` : le nom du workflow), un lien de retour (`back` : « ← Tous les
 workflows »), et dépendre d'une autre page (`PageSpec.parent`) : l'entrée du menu de la
 liste reste marquée. Des cartes peuvent former un groupe titré avec ses boutons
 (`title`, `actions` : « Actions (2) » et « Ajouter une action »).
 
-Une liste peut porter un intitulé (`title` : « Dernières exécutions »). Après chaque bouton
+Une liste peut porter un intitulé (`title` : « Dernières exécutions »). Les boutons sans
+fond propre (titre d'une carte, d'un élément de liste, « − » d'une tuile) ont aussi leur
+style au survol : sans lui, Obsidian leur pose un fond clair. Après chaque bouton
 d'action, l'interface redessine pages, tableau de bord et pastilles (`AfterAction`) : une
 action peut changer ce qui est montré sans toucher au coffre (activer un workflow).
 

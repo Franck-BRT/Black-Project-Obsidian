@@ -296,8 +296,18 @@ function describeImport(context: ModuleContext, report: ImportReport): string {
   return parts.join(' ')
 }
 
-/** L'analyse visée : celle de la note ouverte, sinon celle que l'utilisateur choisit. */
+/**
+ * Ce que vise une commande lancée depuis la fiche d'une analyse : cette analyse, ou cette
+ * pièce — sans demander laquelle. Posé le temps de la commande (`runFor`), puis retiré.
+ */
+let targeted: { analysis?: Analysis; note?: string } = {}
+
+/** La note visée : celle désignée par la fiche, sinon la note ouverte. */
+const targetNote = (context: ModuleContext): string | null => targeted.note ?? context.platform.ui.activeNote()
+
+/** L'analyse visée : celle désignée par la fiche, celle de la note ouverte, sinon celle que l'utilisateur choisit. */
 async function chooseAnalysis(context: ModuleContext, services: Services): Promise<Analysis | null> {
+  if (targeted.analysis) return targeted.analysis
   const { ui, notifier } = context.platform
   const t = services.t
   const current = await analysisOf(services, ui.activeNote())
@@ -410,7 +420,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.11.0',
+  version: '0.12.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -593,7 +603,7 @@ export const aoModule: BlackModule = {
       nameKey: 'ao.command.type',
       async run() {
         const services = servicesFor(context)
-        const note = platform.ui.activeNote()
+        const note = targetNote(context)
         const piece = note ? await pieceAt(services, note) : null
         if (!note || !piece) {
           platform.notifier.notify(t('ao.type.notPiece'), 6000)
@@ -625,7 +635,7 @@ export const aoModule: BlackModule = {
       nameKey: 'ao.command.extract',
       async run() {
         const services = servicesFor(context)
-        const note = platform.ui.activeNote()
+        const note = targetNote(context)
         let target = note && (await pieceAt(services, note)) ? note : null
         // Depuis la note de l'analyse : choisir la pièce.
         if (!target) {
@@ -775,7 +785,16 @@ export const aoModule: BlackModule = {
       importInto: (analysis) => importInto(context, servicesFor(context), analysis),
       ask: (analysis) => askAnalysis(servicesFor(context), analysis),
       today: localToday,
-      ...(context.showPage ? { showPage: (id: string) => context.showPage?.(id) } : {})
+      ...(context.showPage ? { showPage: (id: string) => context.showPage?.(id) } : {}),
+      // Une commande sur une analyse ou une pièce précise : sans demander laquelle.
+      runFor: async (id, target) => {
+        targeted = target
+        try {
+          await context.commands.run?.(id)
+        } finally {
+          targeted = {}
+        }
+      }
     }
     registerAoHome(context.views, homeDeps)
     commands.register({ id: 'analyses', nameKey: 'ao.command.analyses', run: () => openAnalyses(homeDeps) })
@@ -882,7 +901,7 @@ export const aoModule: BlackModule = {
       nameKey: 'ao.command.move',
       async run() {
         const services = servicesFor(context)
-        const note = platform.ui.activeNote()
+        const note = targetNote(context)
         const piece = note ? await pieceAt(services, note) : null
         if (!note || !piece) {
           platform.notifier.notify(t('ao.type.notPiece'), 6000)

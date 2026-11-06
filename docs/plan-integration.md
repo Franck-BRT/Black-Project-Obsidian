@@ -350,6 +350,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   modèle », ce qui se sert de l'IA) ; les réglages restent dans la fenêtre du module
 - v0.19.0 : la **fiche d'un workflow en page** (conditions et actions en cartes, chaque
   bouton une opération) au lieu d'une suite de fenêtres ; pages à paramètre
+- v0.20.0 : la **fiche d'une analyse en page** (pièces, calendrier, exigences, ce qu'elle a
+  produit ; chaque bouton agit sur elle, sans « Dans quelle analyse ? »)
 
 ### Étape 7 — Livrables
 

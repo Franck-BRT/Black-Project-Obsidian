@@ -38,7 +38,7 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
       platform,
       i18n,
       settings: { get: () => settings[module.id] ?? {}, save: async (values) => void (settings[module.id] = values), onChange: () => () => {} },
-      commands: { register: (command) => void commands.set(`${module.id}-${command.id}`, command) },
+      commands: { register: (command) => void commands.set(`${module.id}-${command.id}`, command), run: async (id) => commands.get(`${module.id}-${id}`)?.run() },
       views,
       ...(withPages ? { showPage: (id: string) => void shown.push(id) } : {})
     }
@@ -49,7 +49,7 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
   const station = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: 'Agence spatiale', reference: 'AO-118' })
   await importFiles(services, station, [{ name: 'RC.md', bytes: enc(`# Règlement de la consultation\n\nLa date limite de remise des offres est fixée au ${inDays(12)}.\n`) }])
   await createAnalysis(services, 'Maintenance antennes', { position: 'emetteur', buyer: 'Centre spatial', reference: 'MA-07' })
-  return { views, shown, run: (id: string) => commands.get(id)!.run() }
+  return { views, shown, station, run: (id: string) => commands.get(id)!.run() }
 }
 
 const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
@@ -106,5 +106,60 @@ describe('la page Analyses', () => {
     expect(nav.page).toBeUndefined()
     await nav.run()
     expect(asked.sort()).toEqual(['Maintenance antennes', 'Station sol'])
+  })
+})
+
+describe('la fiche d’une analyse, en page', () => {
+  it('un clic sur une analyse ouvre sa fiche ; elle dépend de la liste', async () => {
+    const { views, shown, station } = await start(memoryPlatform(), true)
+    const card = cardsOf(await views.pages().find((each) => each.id === 'ao.analyses')!.load()).find((each) => each.title === 'Station sol')!
+    await card.open!.run()
+    expect(shown).toEqual([`ao.fiche?${encodeURIComponent(station.note)}`])
+    expect(views.pages().find((each) => each.id === 'ao.fiche')!.parent).toBe('ao.analyses')
+  })
+
+  it('tout d’un coup d’œil : chiffres, pièces par destination, calendrier, exigences, notes produites', async () => {
+    const { views, station } = await start(memoryPlatform(), true)
+    const view = await views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(station.note))
+    expect(view.title).toBe('Station sol')
+    expect(view.back?.label).toBe('Toutes les analyses')
+    expect(view.subtitle).toBe('Candidat · Agence spatiale · AO-118')
+    expect(view.actions?.map((action) => action.id)).toEqual(['import', 'update', 'calendar', 'verify', 'quality', 'note'])
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => stat.value)).toEqual(['J-12', '1', '0', '—'])
+    const pieces = view.blocks.find((block) => block.kind === 'cards')
+    expect(pieces?.kind === 'cards' && pieces.title).toBe('Appel d’offres (1)')
+    const rc = pieces?.kind === 'cards' ? pieces.cards[0]! : null
+    expect(rc!.title).toBe('RC.md')
+    expect(rc!.actions?.map((action) => action.id)).toEqual(['type', 'move', 'extract'])
+    expect(rc!.tags).toEqual(['lues', 'appel-d-offres'])
+    const lists = view.blocks.filter((block) => block.kind === 'list')
+    expect(lists.map((block) => block.kind === 'list' && block.title)).toEqual(['Calendrier (1 date(s))', 'Exigences (0), les plus faibles d’abord', 'Ce que l’analyse a produit'])
+    expect(lists[0]!.kind === 'list' && lists[0]!.items[0]!.title).toBe('Date limite de remise des offres')
+  })
+
+  it('chaque bouton agit sur cette analyse, sans demander laquelle', async () => {
+    const platform = memoryPlatform()
+    const asked: string[] = []
+    platform.ui.pickOption = async (options, placeholder) => {
+      asked.push(placeholder ?? '')
+      return options[0]?.value ?? null
+    }
+    const { views, station } = await start(platform, true)
+    const page = views.pages().find((each) => each.id === 'ao.fiche')!
+    const view = await page.load(encodeURIComponent(station.note))
+    await view.actions!.find((action) => action.id === 'calendar')!.run()
+    expect(platform.files.has(`${station.folder}/Analyse/Calendrier.md`)).toBe(true)
+    expect(asked).not.toContain('Dans quelle analyse ?')
+    // Le calendrier écrit : il apparaît dans ce que l'analyse a produit.
+    const again = await page.load(encodeURIComponent(station.note))
+    const produced = again.blocks.filter((block) => block.kind === 'list')[2]
+    expect(produced?.kind === 'list' && produced.items.map((item) => item.title)).toEqual(['Calendrier'])
+  })
+
+  it('une analyse disparue : la page le dit', async () => {
+    const { views } = await start(memoryPlatform(), true)
+    const view = await views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent('Appels d’offres/Disparue/Disparue.md'))
+    expect(view.title).toBe('Analyse introuvable')
   })
 })

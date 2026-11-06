@@ -24,10 +24,29 @@ d'offres** ouvrent la **page des analyses**, dans l'onglet Black Projects :
 - en chiffres : le nombre d'analyses, les remises dans les 30 jours, les pièces à lire,
   les exigences faibles ;
 - les actions rapides (nouvelle analyse, importer des pièces, calendrier, interroger…) ;
-- une **carte par analyse**, la date limite de remise la plus proche en tête ; son titre
-  ouvre la note de l'analyse ;
+- une **carte par analyse**, la date limite de remise la plus proche en tête ; un clic sur
+  son nom ouvre sa **fiche** ;
 - une **recherche** (nom, acheteur, référence…) et des **filtres** : remise à venir, remise
   sous 30 jours, pièces à lire, exigences faibles, candidat, émetteur.
+
+## La fiche d'une analyse
+
+Un clic sur une analyse (page Analyses ou tableau de bord) ouvre sa **fiche**, en page,
+où tout se voit et où chaque bouton agit sur **cette** analyse — plus de « Dans quelle
+analyse ? » :
+
+- en tête : **Importer des pièces**, **Mettre à jour**, **Calendrier**, **Vérifier**,
+  **Qualité du dossier**, et avec l'IA **Interroger**, **Questionnaire**, **Relire (IA)** ;
+  **Ouvrir la note de l'analyse** ;
+- ses chiffres : la date limite de remise (jours restants), les pièces (lues ou non), les
+  exigences, leur qualité ;
+- ses **pièces**, par destination (appel d'offres, réponse ou chaque candidat) : type,
+  état de lecture, caractères lus ; le nom ouvre la note de la pièce ; **Changer le type**,
+  **Déplacer**, **Extraire les exigences** ;
+- son **calendrier** (les dates relevées et leur pièce), ses **exigences** (les plus faibles
+  d'abord), et **ce qu'elle a produit** (calendrier, vérification, questionnaire, questions…) ;
+- une recherche et des filtres (pièces à lire, appel d'offres, réponse) ; « ← Toutes les
+  analyses » ramène à la liste.
 
 ## 1. Créer une analyse
 

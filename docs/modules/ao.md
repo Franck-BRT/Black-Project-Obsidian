@@ -167,6 +167,21 @@ d'appels d'offres ») et le lien « Toutes les analyses » de la section du tabl
 l'ouvrent par `context.showPage`. Sans page chez la plateforme (`showPage` absent), on
 retrouve la fenêtre pour choisir une analyse. Tests : `test/ao-page.test.ts`.
 
+## La fiche d'une analyse (v0.12.0, Black Projects 0.20.0)
+
+`home.ts` déclare la page `ao.fiche?<note encodée>` (`analysisPageOf`, `parent` : la liste) :
+le titre (le nom), « ← Toutes les analyses », en tête les actions (importer, mettre à jour,
+calendrier, vérifier, qualité ; avec l'IA interroger, questionnaire, relire ; la note), les
+chiffres (remise en jours restants, pièces, exigences, qualité), les pièces en groupes de
+cartes par destination (type, état, caractères ; Changer le type, Déplacer, Extraire les
+exigences), le calendrier, les exigences les plus faibles d'abord (15 au plus) et les notes
+du dossier `Analyse/`. Recherche et filtres (`a-lire`, `appel-d-offres`, `reponse`). Les
+boutons lancent les commandes habituelles **sur cette analyse ou cette pièce**
+(`HomeDeps.runFor` : `index.ts` pose la cible le temps de la commande — `chooseAnalysis`
+et les commandes de pièce la prennent avant la note ouverte). La carte d'une analyse
+(liste, tableau de bord) ouvre la fiche quand la plateforme a des pages, sa note sinon.
+Tests : `test/ao-page.test.ts`.
+
 ## Dans le coffre
 
 ```
