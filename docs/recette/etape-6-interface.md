@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Extraire les exigences depuis l'interface (v0.40.0)
+
+- [ ] Fiche d'une pièce lue (CCTP.docx) → **Extraire les exigences** : l'aperçu « Exigences
+      trouvées dans… » ; une fois accepté, la fiche montre le nombre d'exigences extraites
+      et leur liste ; la note de la pièce ne s'ouvre pas
+- [ ] Sur la fiche de l'analyse, le bouton **Extraire les exigences** d'une carte de pièce :
+      de même, la liste des exigences de l'analyse se met à jour
+- [ ] La palette de commandes (« Extraire les exigences de la pièce ») ouvre toujours la
+      note de la pièce
+
 ## Mettre à jour l'analyse depuis sa fiche (v0.39.0)
 
 - [ ] Déposer un fichier dans `Pièces/Appel d'offres/Originaux` d'une analyse (explorateur

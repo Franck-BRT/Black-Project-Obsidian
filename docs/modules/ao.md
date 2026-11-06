@@ -366,6 +366,12 @@ et l'import qui suit y revient. La palette de commandes ouvre toujours la note.
 les originaux sont lus et rangés, le compte rendu s'affiche, et la fiche se redessine avec
 les nouvelles pièces ; sa note ne s'ouvre pas. Depuis la palette, la note, comme avant.
 
+**Extraire les exigences** depuis l'interface (v0.25.0, Black Projects 0.40.0) : la fiche
+d'une pièce et sa carte sur la fiche de l'analyse lancent `extraire-exigences` avec
+`stay` — l'aperçu s'ouvre, les exigences acceptées sont rangées, puis la page d'où l'on
+vient se redessine (le nombre d'exigences de la pièce, la liste de l'analyse) ; la note de
+la pièce ne s'ouvre plus. Depuis la palette, la note, comme avant.
+
 ## Dans le coffre
 
 ```

@@ -57,7 +57,9 @@ analyse ? » :
   termine sur la **fiche de l'analyse**, avec ses pièces, plutôt que sur sa note ; une
   **Nouvelle analyse** ouvre aussitôt sa fiche, et l'import qui suit y revient ;
   **Mettre à jour**, sur la fiche, lit et range les fichiers déposés à la main dans les
-  originaux, puis la fiche se redessine avec eux — sans ouvrir la note ;
+  originaux, puis la fiche se redessine avec eux — sans ouvrir la note ; **Extraire les
+  exigences** (fiche d'une pièce, ou sa carte) : l'aperçu, puis la page se redessine avec
+  les exigences rangées, sans ouvrir la note de la pièce ;
 - sur le **tableau de bord** et l'accueil, les raccourcis **Calendrier**, **Interroger**,
   **Questionnaire** (et les tuiles Vérifier, Qualité) ouvrent la page de l'analyse —
   choisie dans « Dans quelle analyse ? » s'il y en a plusieurs ; le bouton Calendrier d'une

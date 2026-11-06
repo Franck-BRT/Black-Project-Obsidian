@@ -980,3 +980,36 @@ describe('mettre à jour l’analyse depuis sa fiche', () => {
     expect(platform.opened).toEqual([station.note])
   })
 })
+
+describe('extraire les exigences depuis l’interface : on reste sur la page', () => {
+  it('la fiche de la pièce, puis sa carte sur la fiche de l’analyse : l’aperçu, les exigences rangées, la page se redessine ; la palette ouvre la note', async () => {
+    const platform = memoryPlatform()
+    const run = await start(platform, true)
+    await run.importInto('# CCTP\n\n| Identifiant | Exigence |\n|---|---|\n| EX-1 | Le titulaire doit fournir une antenne de 3,7 m. |\n| EX-2 | Le titulaire doit assurer la maintenance. |\n')
+    const fiche = run.views.pages().find((each) => each.id === 'ao.fiche')!
+    const cards = (await fiche.load(encodeURIComponent(run.station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+    const cctp = cards.find((card) => card.title === 'CCTP.md')!
+    const piece = run.views.pages().find((each) => each.id === 'ao.piece')!
+    const requirementsOf = async () => {
+      const stats = (await piece.load(encodeURIComponent(cctp.id))).blocks.find((block) => block.kind === 'stats')
+      return stats?.kind === 'stats' ? stats.stats.find((stat) => stat.label === 'Exigences')?.value : undefined
+    }
+    expect(await requirementsOf()).toBe('0')
+    await (await piece.load(encodeURIComponent(cctp.id))).actions!.find((action) => action.id === 'extract')!.run()
+    expect(await requirementsOf()).toBe('2')
+    expect(platform.opened).toEqual([])
+    // Depuis la carte de la pièce, sur la fiche de l'analyse : de même, la fiche montre les exigences.
+    await cctp.actions!.find((action) => action.id === 'extract')!.run()
+    expect(platform.opened).toEqual([])
+    const lists = (await fiche.load(encodeURIComponent(run.station.note))).blocks.filter((block) => block.kind === 'list')
+    expect(lists.some((block) => block.kind === 'list' && block.title === 'Exigences (2), les plus faibles d’abord')).toBe(true)
+    // La palette de commandes, sur la note d'une autre pièce : la note, comme avant.
+    await platform.fs.writeText(`${run.station.folder}/Pièces/Appel d'offres/Originaux/Annexe.md`, '# Annexe\n\n| Identifiant | Exigence |\n|---|---|\n| EX-9 | Le titulaire doit fournir un plan. |\n')
+    platform.active = run.station.note
+    await run.run('ao-mettre-a-jour')
+    const annexe = `${run.station.folder}/Pièces/Appel d'offres/Annexe.md`
+    platform.active = annexe
+    await run.run('ao-extraire-exigences')
+    expect(platform.opened.at(-1)).toBe(annexe)
+  })
+})

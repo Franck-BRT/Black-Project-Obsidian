@@ -430,7 +430,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.24.0',
+  version: '0.25.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -672,7 +672,8 @@ export const aoModule: BlackModule = {
           if (!target) return
         }
         const report = await extractFromPiece(services, { ui: platform.ui, notifier: platform.notifier }, target)
-        if (report) await platform.ui.openNote(target)
+        // Depuis l'interface : on reste sur la page (la fiche de la pièce ou de l'analyse), qui se redessine.
+        if (report && !targeted.stay) await platform.ui.openNote(target)
         const owner = report ? await analysisOf(services, target) : null
         if (report && owner) {
           const count = report.outcome.created.length + report.outcome.updated.length

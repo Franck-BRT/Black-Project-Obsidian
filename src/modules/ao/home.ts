@@ -309,7 +309,8 @@ const daysUntil = (date: string, today: string) => Math.round((Date.parse(`${dat
 /** La carte d'une pièce de la fiche. */
 function pieceCard(deps: HomeDeps, piece: PieceRow): Card {
   const { t } = deps
-  const run = (id: string) => () => deps.runFor?.(id, { note: piece.note }) ?? Promise.resolve()
+  // Depuis l'interface (`stay`) : extraire ne quitte pas la page pour la note de la pièce.
+  const run = (id: string) => () => deps.runFor?.(id, { note: piece.note, stay: true }) ?? Promise.resolve()
   return {
     id: piece.note,
     title: baseName(piece.original || piece.note),
@@ -633,7 +634,7 @@ export async function piecePage(deps: HomeDeps, param: string | undefined): Prom
 
   // Une commande sur cette pièce ; si elle a bougé (déplacée), on revient à son analyse.
   const run = (id: string) => async () => {
-    await deps.runFor?.(id, { note })
+    await deps.runFor?.(id, { note, stay: true })
     if (!(await services.fs.exists(note))) deps.showPage?.(analysisPageOf(analysis))
   }
   const original = row.original && (await services.fs.exists(row.original)) ? row.original : ''

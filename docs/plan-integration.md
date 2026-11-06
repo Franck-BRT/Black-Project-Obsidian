@@ -400,6 +400,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   (plus sa note) ; « Nouvelle analyse » ouvre la fiche de l'analyse créée
 - v0.39.0 : **mettre à jour l'analyse** depuis sa fiche : les fichiers déposés sont lus et
   rangés, la fiche se redessine (plus sa note)
+- v0.40.0 : **extraire les exigences** depuis la fiche d'une pièce (ou sa carte) : l'aperçu,
+  puis la page se redessine (plus la note de la pièce)
 
 ### Étape 7 — Livrables
 
