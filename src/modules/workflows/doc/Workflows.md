@@ -96,6 +96,7 @@ Workflows et dans le journal.
 | Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |
 | Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 | Signaler les formats non lus, au dépôt de fichiers | des fichiers déposés dans l'application | dit ceux dont le format n'est pas lu, et où déclarer une extension équivalente | actif |
+| Signaler les pièces sans type reconnu, à l'import | des pièces importées, quand certaines sont classées « Autre » | les nomme, et dit comment les typer | actif |
 
 - **Modifiables** : nom, mode, déclencheur, conditions, actions, comme les autres.
 - **Désactivables** : désactivé, l'automatisme ne se fait plus (la note de l'analyse, par

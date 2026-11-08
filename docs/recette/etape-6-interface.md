@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le typage des pièces : signaler les pièces sans type reconnu (v0.64.0)
+
+- [ ] Page **Workflows**, filtre Système : « Signaler les pièces sans type reconnu, à
+      l'import » (Typage des pièces), actif ; sa condition « Pièces sans type reconnu
+      n'est pas vide »
+- [ ] Importer dans une analyse une pièce que rien ne reconnaît (`SPEC_sol_v2.pdf`) : un
+      message « <analyse> — 1 pièce(s) sans type reconnu : SPEC_sol_v2. Pour celles-ci :
+      « Changer le type de la pièce »… » ; le **Journal des workflows** le garde
+- [ ] Un import où toutes les pièces sont typées : pas de message, rien au journal pour
+      ce workflow
+- [ ] Ajouter le mot-clé `spec` → CCTP (Types de pièces), réimporter : plus de message
+- [ ] Désactiver le workflow : plus de message ; **Rétablir l'original** le remet
+
 ## La lecture de fichiers : signaler les formats non lus (v0.63.0)
 
 - [ ] Page **Workflows**, filtre Système : « Signaler les formats non lus, au dépôt de

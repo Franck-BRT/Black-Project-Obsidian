@@ -461,6 +461,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.63.0 : **module Lecture de fichiers** : un workflow système, *Signaler les formats
   non lus, au dépôt de fichiers* (actif) — prévient d'une extension non lue et dit où
   déclarer une extension équivalente ; des extensions à taire se règlent dans l'action
+- v0.64.0 : **module Typage des pièces** : un workflow système, *Signaler les pièces sans
+  type reconnu, à l'import* (actif) — nomme les pièces classées « Autre » et dit comment
+  les typer ; le déclencheur *Pièces importées* donne `nontypees`
 
 ### Étape 7 — Livrables
 

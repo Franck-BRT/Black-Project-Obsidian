@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.63.0)
+## Aujourd'hui (version 0.64.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -70,7 +70,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   reconnaître sont dans Paramètres → Black Projects → **Types de pièces** (module
   *Typage des pièces*), où vous pouvez ajouter, modifier et supprimer vos propres types
   et mots-clés, désactiver n'importe quel type, et exporter ou importer des types pour
-  les échanger avec d'autres coffres. Chaque pièce est rangée avec l'appel d'offres ou
+  les échanger avec d'autres coffres ; un **workflow système**, *Signaler les pièces sans
+  type reconnu, à l'import* (activé), nomme celles classées « Autre » et dit comment les
+  typer. Chaque pièce est rangée avec l'appel d'offres ou
   avec la réponse (une par candidat pour l'émetteur), d'après le réglage « Où vont les
   types de pièces » du module *Analyse d'appels d'offres* (un bouton pour ajouter un
   type, une liste dépliable, un type par ligne avec ses interrupteurs « AO » et « Réponse AO ») ; quand le type va dans les
@@ -146,7 +148,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   traduction des nouvelles exigences ; pour l'IA, la vérification de la connexion à
   chaque ouverture ; pour la bibliothèque de documents, le rangement des pièces et des
   fichiers importés, les nouvelles versions probables, et, désactivés, les fichiers
-  introuvables chaque lundi ; pour la lecture de fichiers, les formats non lus au dépôt) : modifiables, désactivables, pas supprimables,
+  introuvables chaque lundi ; pour la lecture de fichiers, les formats non lus au dépôt ; pour le typage, les pièces
+  sans type reconnu à l'import) : modifiables, désactivables, pas supprimables,
   « Rétablir l'original » ; « Nouveau workflow » (depuis l'onglet, sa fiche s'ouvre en
   page, et « Exécuter » mène à la fiche de l'exécution) ; un déclencheur, des conditions,
   des actions à la suite qui reprennent `{analyse}`, `{today}` ou le résultat d'une étape

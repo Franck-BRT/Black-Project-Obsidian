@@ -182,6 +182,10 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 dépôt de fichiers* (déclencheur : fichiers déposés dans l'application ; actif) — voir
 [lecture-fichiers.md](lecture-fichiers.md).
 
+**Le typage des pièces (Black Projects 0.64.0)** : *Signaler les pièces sans type
+reconnu, à l'import* (déclencheur : pièces importées, `nontypees` non vide ; actif) — voir
+[typage-pieces.md](typage-pieces.md).
+
 Le moteur : un évènement émis pendant qu'un workflow s'exécute (par une de ses actions) est
 mis à la suite **sans être attendu** — l'attendre de l'intérieur bloquait la file
 (`WorkflowEngine.busy`, `workflowRunning()`). Voir [bibliotheque.md](bibliotheque.md).

@@ -18,6 +18,7 @@ import { aiClient, describeAiError } from '../ia'
 import { emitWorkflowEvent, OPENING, registerAction, registerSystemWorkflow, registerTrigger, SCHEDULE, type ActionField, type Subject, type WorkflowAction } from '../workflows'
 import { calendarOf, calendarPath, writeCalendar } from './calendar'
 import { answerQuestion, QUESTIONNAIRE, runQuestionnaire, writeQuestionNote, type AskMode } from './ask/dossier'
+import { OTHER } from '../typage-pieces'
 import { pieceSources } from './ask/sources'
 import { destinationLabel, wikiLink, type Analysis } from './notes'
 import { analyseQuality, qualityPath } from './quality'
@@ -58,7 +59,9 @@ export async function emitImported(services: Services, analysis: Analysis, repor
       lists: {
         types: [...new Set(report.imported.map((piece) => piece.type))],
         places: [...new Set(report.imported.map((piece) => destinationLabel(piece.destination, t)))],
-        pieces: report.imported.map((piece) => noteName(piece.note))
+        pieces: report.imported.map((piece) => noteName(piece.note)),
+        // Celles qu'aucun mot-clé n'a reconnues.
+        nontypees: report.imported.filter((piece) => piece.type === OTHER).map((piece) => noteName(piece.note))
       }
     })
   )
@@ -118,7 +121,7 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
     id: TRIGGER_IMPORTED,
     labelKey: 'ao.wf.trigger.imported',
     descKey: 'ao.wf.trigger.imported.desc',
-    fields: subjectFields('nombre', 'lues', 'types', 'places', 'pieces'),
+    fields: subjectFields('nombre', 'lues', 'types', 'places', 'pieces', 'nontypees'),
     pickSubject
   })
   registerTrigger({ id: TRIGGER_EXTRACTED, labelKey: 'ao.wf.trigger.extracted', descKey: 'ao.wf.trigger.extracted.desc', fields: subjectFields('piece', 'nombre'), pickSubject })

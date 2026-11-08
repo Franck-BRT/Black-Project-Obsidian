@@ -130,7 +130,15 @@ export const typageFr: Record<string, string> = {
   'typage-pieces.keywords.error.invalid': '« {keyword} » n’est pas un mot-clé utilisable : il faut des lettres ou des chiffres, 60 caractères au plus.',
   'typage-pieces.keywords.error.type': '{type} n’est pas un type de pièce.',
   'typage-pieces.keywords.error.exists': '« {keyword} » désigne déjà {type} : retirez-le d’abord pour le changer.',
-  'typage-pieces.keywords.error.builtIn': '« {keyword} » est déjà un mot-clé du module pour {type}.'
+  'typage-pieces.keywords.error.builtIn': '« {keyword} » est déjà un mot-clé du module pour {type}.',
+  'typage-pieces.wf.action.untyped': 'Signaler les pièces sans type reconnu',
+  'typage-pieces.wf.action.untyped.desc': 'Nomme les pièces qu’aucun mot-clé n’a reconnues (classées « Autre »), avec comment les typer.',
+  'typage-pieces.wf.field.pieces': 'Les pièces',
+  'typage-pieces.wf.untyped.found': '{count} pièce(s) sans type reconnu : {names}.',
+  'typage-pieces.wf.untyped.found.in': '{where} — {count} pièce(s) sans type reconnu : {names}.',
+  'typage-pieces.wf.untyped.how': 'Pour celles-ci : « Changer le type de la pièce ». Pour les suivantes : un mot-clé dans Types de pièces.',
+  'typage-pieces.wf.untyped.none': 'Toutes les pièces ont un type reconnu.',
+  'typage-pieces.sys.sans-type': 'Signaler les pièces sans type reconnu, à l’import'
 }
 
 export const typageEn: Record<string, string> = {
@@ -260,5 +268,13 @@ export const typageEn: Record<string, string> = {
   'typage-pieces.keywords.error.invalid': '“{keyword}” cannot be used as a keyword: it needs letters or digits, 60 characters at most.',
   'typage-pieces.keywords.error.type': '{type} is not a document type.',
   'typage-pieces.keywords.error.exists': '“{keyword}” already points to {type}: remove it first to change it.',
-  'typage-pieces.keywords.error.builtIn': '“{keyword}” is already one of the module’s keywords for {type}.'
+  'typage-pieces.keywords.error.builtIn': '“{keyword}” is already one of the module’s keywords for {type}.',
+  'typage-pieces.wf.action.untyped': 'Report documents with no recognised type',
+  'typage-pieces.wf.action.untyped.desc': 'Names the documents no keyword recognised (classified “Other”), with how to type them.',
+  'typage-pieces.wf.field.pieces': 'The documents',
+  'typage-pieces.wf.untyped.found': '{count} document(s) with no recognised type: {names}.',
+  'typage-pieces.wf.untyped.found.in': '{where} — {count} document(s) with no recognised type: {names}.',
+  'typage-pieces.wf.untyped.how': 'For these: “Change the document type”. For the next ones: a keyword in Document types.',
+  'typage-pieces.wf.untyped.none': 'All documents have a recognised type.',
+  'typage-pieces.sys.sans-type': 'Report documents with no recognised type, on import'
 }

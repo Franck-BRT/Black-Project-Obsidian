@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.10.0 (Black Projects 0.10.0) |
+| Version | 0.32.0 (Black Projects 0.64.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -490,3 +490,7 @@ l'en-tête des notes.
 - `step6.test.ts`, `deadlines.test.ts`, `ask/*.test.ts` : calendrier, questions citées,
   questionnaire, relecture (étape 6).
 - `test/ao-ia.test.ts` : **jalon n° 4** sur le dossier d'exemple, serveur simulé.
+
+**Pièces sans type reconnu (Black Projects 0.64.0)** : le déclencheur *Pièces importées*
+donne aussi `nontypees` (« Pièces sans type reconnu » : celles classées « Autre »), que lit
+le workflow système du [typage des pièces](typage-pieces.md).

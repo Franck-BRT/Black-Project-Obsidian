@@ -56,6 +56,17 @@ plus reconnu (le type suivant qui correspond prend la place) ni proposé. Les pi
 l'ont déjà le gardent, marqué « (désactivé) » dans le tableau de leur analyse.
 « Autre pièce » ne se désactive pas.
 
+## Être prévenu d'une pièce sans type
+
+Le workflow système **Signaler les pièces sans type reconnu, à l'import** (activé
+d'origine) nomme, à chaque import dans une analyse, les pièces qu'aucun mot-clé n'a
+reconnues (classées « Autre pièce ») : « Station sol — 1 pièce(s) sans type reconnu :
+SPEC_sol_v2. » Pour celles-ci, « Changer le type de la pièce » ; pour les suivantes,
+ajoutez un mot-clé (ci-dessus). Quand toutes sont typées, il ne s'exécute pas.
+
+Dans la page **Workflows** (filtre *Système*), vous pouvez le désactiver ou le modifier ;
+« Rétablir l'original » le remet. Voir {{link:Modules/Workflows|Workflows}}.
+
 ## Échanger des types
 
 En tête de la fenêtre, **Exporter** et **Importer** (aussi en commandes : « Exporter des

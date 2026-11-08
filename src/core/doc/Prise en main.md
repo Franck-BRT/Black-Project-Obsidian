@@ -110,7 +110,7 @@ Technologies** :
   Certains modules ont un bouton qui ouvre leur fenêtre : **Formats de fichiers** pour la
   lecture de fichiers (qui prévient aussi, par un workflow système, d'un fichier déposé
   dans un format non lu), **Types de pièces** pour le typage des pièces (types, mots-clés,
-  échange), **Fonctions** pour l'analyse d'appels d'offres (avec le dossier des
+  échange ; un workflow système nomme les pièces sans type reconnu), **Fonctions** pour l'analyse d'appels d'offres (avec le dossier des
   analyses) et pour l'**IA** (adresse du serveur, clé, « Tester la
   connexion ») ; les **Workflows** ont aussi leur fenêtre (dossier du journal).
 - **Licence** : vos droits d'usage.

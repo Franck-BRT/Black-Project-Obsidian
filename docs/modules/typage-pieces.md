@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `typage-pieces` |
-| Version | 0.4.3 |
+| Version | 0.7.0 (Black Projects 0.64.0) |
 | Emplacement | `src/modules/typage-pieces/` |
 | Interface publique | `src/modules/typage-pieces/index.ts` |
 | Guide de maintenance | [`src/modules/typage-pieces/README.md`](../../src/modules/typage-pieces/README.md) |
@@ -129,7 +129,31 @@ elle retype aussitôt les pièces de toutes ses analyses.
 Jusqu'à la v0.3.5, ces réglages étaient rangés sous `modules.ao` ; `migrate.ts` les
 déplace au premier chargement (crochet `migrateSettings` du contrat de module).
 
+## Le workflow système : signaler les pièces sans type reconnu (v0.7.0, Black Projects 0.64.0)
+
+Le module n'avait aucun automatisme à convertir : reconnaître le type fait partie de
+l'import (`classifyPiece`, appelé par l'analyse d'appels d'offres), et le reste protège la
+cohérence des réglages (renommages suivis, migration). Il en gagne un, écrit en
+[workflow système](workflows.md) (`workflows.ts`) :
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Signaler les pièces sans type reconnu, à l'import (`sys.typage-pieces.sans-type`) | *Pièces importées* (analyse d'appels d'offres), condition `nontypees` non vide | `typage-pieces.sans-type` : nomme les pièces classées « Autre », avec comment les typer | actif |
+
+- L'analyse d'appels d'offres donne au déclencheur la liste `nontypees` (les pièces
+  classées `AUTRE`, nouvelle variable « Pièces sans type reconnu »).
+- L'action : champ `pieces` (`{nontypees}` d'origine ; les noms pris tels quels dans la
+  liste du sujet). Le message : « Station sol — 1 pièce(s) sans type reconnu :
+  SPEC_sol_v2. Pour celles-ci : « Changer le type de la pièce ». Pour les suivantes : un
+  mot-clé dans Types de pièces. »
+- Toutes typées : la condition ne tient pas, il ne s'exécute pas.
+- Le déclencheur est désigné par son identifiant (`ao.pieces-importees`) : sans l'analyse
+  d'appels d'offres, il ne se déclenche pas.
+
 ## Tests
+
+`test/typage-workflows.test.ts` : le workflow système (créé actif, une pièce « Autre »
+signalée, toutes typées, mot-clé ajouté, désactivé).
 
 `types.test.ts` (reconnaissance), `custom.test.ts`, `customTypes.test.ts`,
 `editTypes.test.ts`, `disabledTypes.test.ts`, `exchange.test.ts` (import, export,

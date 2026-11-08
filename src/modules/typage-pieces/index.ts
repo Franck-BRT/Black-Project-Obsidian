@@ -20,6 +20,7 @@ import { modulePageOf } from '../../core/settingsPage'
 import type { ActionsField, BlackModule, MappingField, ModuleContext, TextField } from '../../core/modules/module'
 import { cleanFolder } from '../../core/settings'
 import { typingDetails } from './catalogue'
+import { registerTypingWorkflows } from './workflows'
 import {
   afterTypeChange,
   describeTypeRemoval,
@@ -369,7 +370,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.6.0',
+  version: '0.7.0',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),
@@ -403,6 +404,8 @@ export const typagePiecesModule: BlackModule = {
       })
     }
     unsubscribe = context.settings.onChange((values) => configureTyping(values))
+    // Le workflow système : signaler les pièces sans type reconnu, à l'import.
+    registerTypingWorkflows((key, vars) => context.i18n.t(key, vars))
     context.commands.register({ id: 'exporter-types', nameKey: 'typage-pieces.command.export', run: () => exportCommand(context) })
     context.commands.register({ id: 'importer-types', nameKey: 'typage-pieces.command.import', run: () => importCommand(context) })
   },

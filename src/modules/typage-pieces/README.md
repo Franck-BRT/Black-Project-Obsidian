@@ -11,6 +11,7 @@ modules n'en connaissent que `index.ts` (`pnpm check:modules`).
 | `types.ts` | Les types du module, leurs mots-clés, la reconnaissance (`classifyPiece`) |
 | `custom.ts` | Ce que l'utilisateur ajoute : types, mots-clés, désactivations, renommages — saisie, contrôle, relecture des réglages |
 | `state.ts` | L'état en vigueur, lu par la reconnaissance et suivi par l'analyse d'appels d'offres |
+| `workflows.ts` | Le **workflow système** « Signaler les pièces sans type reconnu, à l'import » et son action |
 | `catalogue.ts` | La fenêtre « Types de pièces » : une fiche par type |
 | `exchange.ts` | Import et export d'un fichier de types (JSON) |
 | `migrate.ts` | Déplace les réglages rangés dans l'analyse d'appels d'offres jusqu'à la v0.3.5 |

@@ -77,7 +77,8 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
       'sys.exigences.qualite-hebdo:false',
       'sys.exigences.traduire-nouvelles:false',
       'sys.ia.verifier-connexion:true',
-      'sys.lecture-fichiers.formats-non-lus:true'
+      'sys.lecture-fichiers.formats-non-lus:true',
+      'sys.typage-pieces.sans-type:true'
     ])
 
     // Le RC et le CCTP déposés à la main, puis « Mettre à jour l'analyse ».
