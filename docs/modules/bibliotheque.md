@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.5.0 (Black Projects 0.74.0) |
+| Version | 0.6.0 (Black Projects 0.77.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -165,7 +165,40 @@ page, le temps de la session).
   d'appels d'offres — Station sol »), **Famille**, **Catégorie** (« Sans catégorie » en
   dernier), **Mois d'ajout** (le plus récent d'abord), ou **Aucun**.
 - **Prompts** et **Personas** : Cartes, Liste. Regrouper par **Catégorie** (d'origine),
-  **Favoris** (« Favoris », « Les autres »), ou **Aucun**.
+  **Favoris** (« Favoris », « Les autres »), **Répertoire** (v0.6.0), ou **Aucun**.
+
+## Plusieurs bibliothèques, des répertoires (v0.6.0, Black Projects 0.77.0)
+
+`shelves.ts` : une **bibliothèque** (`Shelf` : `id`, `name`, `folder`, `main`) par sorte
+(`document`, `prompt`, `persona`). La **principale** est celle des réglages d'origine
+(`dossier`, `dossierPrompts`, `dossierPersonas`) ; les autres sont dans
+`bibliotheques.<sorte>` (`{ id, name, folder }`, l'`id` tiré du nom). La **par défaut**
+(`bibliothequesParDefaut.<sorte>`, sinon la principale) reçoit ce qui arrive sans lieu
+précis : `LibraryStore.target` (les dépôts des autres modules, le dossier « À verser »,
+« Verser » sans lieu), `EntryStore.target` (un prompt créé par la commande, les
+exemples). Deux bibliothèques ne s'emboîtent pas (`withShelf` refuse un dossier égal,
+dans ou autour d'un autre, de quelque sorte qu'il soit). Retirer une bibliothèque
+(`withoutShelf`) l'ôte de la liste : son dossier et ses notes restent.
+
+Les **répertoires** sont de vrais dossiers sous celui d'une bibliothèque (ni `_…`, ni
+`.…`, ni « À verser », ni le dossier d'une autre bibliothèque). `all()` parcourt toutes les
+bibliothèques de la sorte et annote chaque fiche de `shelf` et `directory` (calculés,
+pas écrits). `subdirectories(dossier)`, `move(fiche, dossier)` (les documents qui la
+donnaient pour précédente, ou précédente probable, suivent ; le fichier ne bouge pas),
+`pour(…, { folder })`, `EntryStore.create(draft, dossier)`, `EntryStore.move`. Les retirés
+vont dans le `_retirés` de leur bibliothèque.
+
+`places.ts` : un **lieu** (`placeParam` : `<bibliothèque>:<répertoire>`) en paramètre des
+pages `bibliotheque.documents`, `bibliotheque.prompts`, `bibliotheque.personas` (sans
+paramètre : la racine de la bibliothèque par défaut). `placeView` : le **fil d'Ariane**
+(bloc `breadcrumb` de l'interface), une carte par répertoire (combien dessous), et les
+actions *Nouveau répertoire*, *Nouvelle bibliothèque*, *Définir par défaut* (plusieurs
+bibliothèques, pas celle par défaut), *Retirer la bibliothèque* (pas la principale). On
+verse, on crée, là où l'on est. Les éléments montrés : ceux du lieu même ; « Regrouper
+par › **Répertoire** » : tout ce qui est dessous, une section par répertoire. Les fiches
+ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
+disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
+section par sorte, une carte par bibliothèque (combien, « Par défaut »).
 
 ## Retirer
 
@@ -192,9 +225,16 @@ fichier resté à sa place n'est pas touché ; les liens de version vers elle so
 ## Réglages
 
 `dossier` (par défaut `Bibliothèque`), `dossierPrompts` (par défaut
-`Bibliothèque/Prompts`), `dossierPersonas` (par défaut `Bibliothèque/Personas`).
+`Bibliothèque/Prompts`), `dossierPersonas` (par défaut `Bibliothèque/Personas`) : les
+bibliothèques principales. `bibliotheques` (les autres, par sorte) et
+`bibliothequesParDefaut` sont écrits par les pages.
 
 ## Tests
+
+`test/bibliotheque-shelves.test.ts` : créer une bibliothèque (par défaut : les dépôts y
+entrent ; dossier emboîté refusé), répertoires et sous-répertoires (fil d'Ariane, cartes,
+verser ici, remonter), regrouper par répertoire, déplacer (les versions suivent),
+prompts et personas, l'accueil, définir par défaut, retirer.
 
 `test/bibliotheque-prompts-personas.test.ts` : l'accueil de la bibliothèque, les pages
 vides, les exemples (une seule fois), favoris et filtres, la fiche (Modifier renomme,

@@ -70,6 +70,31 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Plusieurs bibliothèques, des répertoires (v0.77.0)
+
+- [ ] Menu **Bibliothèque** › **Documents** : le fil d'Ariane « Bibliothèque › Documents »
+      au-dessus des documents ; les boutons **Nouveau répertoire**, **Nouvelle
+      bibliothèque**
+- [ ] **Nouveau répertoire** « Normes » : on y entre (« … › Normes ») ; un sous-répertoire
+      « ECSS » de même ; le dossier existe dans le coffre (`Bibliothèque/Normes/ECSS`)
+- [ ] Dans « ECSS », **Verser des documents** : la fiche y est rangée ; à la racine, la
+      carte « Normes » dit « 1 document(s) » ; un clic sur « Documents » dans le fil
+      d'Ariane, ou **Remonter**, y ramène
+- [ ] **Regrouper par › Répertoire** : tout ce qui est dessous, une section par
+      répertoire (« Ici », « Normes », « Normes › ECSS »)
+- [ ] La fiche d'un document : *Rangé* (Identification) ; **Déplacer…** propose chaque
+      bibliothèque et chaque répertoire ; le fichier ne bouge pas ; une version reliée
+      suit
+- [ ] **Nouvelle bibliothèque** « Normes » (dossier vide : `Bibliothèques/Documents/Normes`),
+      **Bibliothèque par défaut** coché : les pièces importées dans une analyse y entrent,
+      à sa racine ; un dossier dans (ou autour d') une autre bibliothèque est refusé
+- [ ] Même chose pour les **prompts** et les **personas** ; « Interroger le dossier » et
+      « Demander à l'IA » trouvent toujours un prompt, où qu'il soit rangé
+- [ ] L'accueil **Bibliothèque** : une section par sorte, une carte par bibliothèque
+      (combien, « Par défaut ») ; **Définir par défaut** ; **Retirer la bibliothèque** :
+      confirmé, son dossier reste dans le coffre
+- [ ] Une fenêtre étroite : le fil d'Ariane passe à la ligne, rien ne déborde
+
 ## Le logigramme d'un workflow (v0.76.0)
 
 - [ ] La fiche d'un workflow : la section **Logigramme**, ouverte, en tête — Quand

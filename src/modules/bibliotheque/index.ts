@@ -29,6 +29,8 @@ import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, type DocOrigin, type LibraryDoc } from './model'
 import { LibraryStore, type PourItem, type PourOptions, type PourReport } from './store'
+import { allPlaces, type ShelfPlacesDeps } from './places'
+import { defaultShelfOf, folderName, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, registerLibraryWorkflows, SYS_FILES, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, type Deposit } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -219,6 +221,7 @@ export function bibliothequeFeatures(): ModuleDetails {
         titleKey: 'bibliotheque.feature.section.store',
         features: [feature('everything', 'available'), feature('dedup', 'available'), feature('versions', 'available'), feature('classify', 'available'), feature('origins', 'available')]
       },
+      { titleKey: 'bibliotheque.feature.section.places', features: [feature('shelves', 'available'), feature('directories', 'available'), feature('move', 'available')] },
       { titleKey: 'bibliotheque.feature.section.ai', features: [feature('prompts', 'available'), feature('personas', 'available'), feature('starters', 'available')] },
       { titleKey: 'bibliotheque.feature.section.next', features: [feature('text', 'planned', 7), feature('delivery', 'planned', 7)] }
     ]
@@ -234,7 +237,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.5.0',
+  version: '0.6.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -245,19 +248,25 @@ export const bibliothequeModule: BlackModule = {
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
     const promptsFolder = () => folderOf(settings.get(), PROMPTS_FOLDER_KEY, DEFAULT_PROMPTS_FOLDER)
     const personasFolder = () => folderOf(settings.get(), PERSONAS_FOLDER_KEY, DEFAULT_PERSONAS_FOLDER)
+    // Les bibliothèques de chaque sorte : la principale (le dossier des réglages), puis celles ajoutées.
+    const mainFolder: Record<ShelfKind, () => string> = { document: () => folderOf(settings.get()), prompt: promptsFolder, persona: personasFolder }
+    const shelves = (kind: ShelfKind): Shelf[] => shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`))
+    const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
     const store = new LibraryStore({
       fs: platform.fs,
       yaml: platform.yaml,
-      folder: () => folderOf(settings.get()),
+      folder: mainFolder.document,
       today: localToday,
       notesHeading: () => t('bibliotheque.notes'),
-      // Les prompts et les personas, rangés sous la bibliothèque : pas des documents.
-      skip: () => [promptsFolder(), personasFolder()]
+      // Les prompts et les personas, rangés sous la bibliothèque (ou ailleurs) : pas des documents.
+      skip: () => [...shelves('prompt'), ...shelves('persona')].map((shelf) => shelf.folder),
+      shelves: () => shelves('document'),
+      target: () => defaultShelf('document').folder
     })
-    const entries: Record<EntryKind, EntryStore> = {
-      prompt: new EntryStore('prompt', { fs: platform.fs, yaml: platform.yaml, folder: promptsFolder }),
-      persona: new EntryStore('persona', { fs: platform.fs, yaml: platform.yaml, folder: personasFolder })
-    }
+    const entryStore = (kind: EntryKind) =>
+      new EntryStore(kind, { fs: platform.fs, yaml: platform.yaml, folder: mainFolder[kind], shelves: () => shelves(kind), target: () => defaultShelf(kind).folder })
+    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona') }
+    const subdirectories = (kind: ShelfKind) => (folder: string) => (kind === 'document' ? store.subdirectories(folder) : entries[kind].subdirectories(folder))
     active = { store, t, entries }
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
     const showNote = (path: string) => (context.showNote ? context.showNote(path) : platform.ui.openNote(path))
@@ -281,8 +290,101 @@ export const bibliothequeModule: BlackModule = {
       }
     })
 
-    /** Verser des documents soi-même : de l'ordinateur (copiés) ou du coffre (laissés à leur place). */
-    const pour = async (): Promise<PourReport | null> => {
+    // ── Les bibliothèques et leurs répertoires ──
+    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas' }
+    const SHELF_ROOT: Record<ShelfKind, string> = { document: 'Bibliothèques/Documents', prompt: 'Bibliothèques/Prompts', persona: 'Bibliothèques/Personas' }
+    const allShelfFolders = () => (['document', 'prompt', 'persona'] as const).flatMap((kind) => shelves(kind).map((shelf) => shelf.folder))
+    /** Une nouvelle bibliothèque : son nom, son dossier (proposé d'après le nom), par défaut ou non. */
+    const newShelf = async (kind: ShelfKind): Promise<Shelf | null> => {
+      const values = await platform.ui.askForm({
+        title: t(`bibliotheque.shelf.new.${kind}`),
+        intro: t('bibliotheque.shelf.new.intro'),
+        fields: [
+          { kind: 'text', key: 'name', label: t('bibliotheque.shelf.field.name'), required: true, value: '', placeholder: t(`bibliotheque.shelf.field.name.${kind}.placeholder`) },
+          { kind: 'text', key: 'folder', label: t('bibliotheque.shelf.field.folder'), value: '', placeholder: `${SHELF_ROOT[kind]}/…`, description: t('bibliotheque.shelf.field.folder.desc', { root: SHELF_ROOT[kind] }) },
+          { kind: 'toggle', key: 'default', label: t('bibliotheque.shelf.field.default'), value: false, tooltip: t(`bibliotheque.shelf.field.default.${kind}.tip`) }
+        ],
+        submit: t('bibliotheque.shelf.create')
+      })
+      const name = values?.name?.trim()
+      if (!values || !name) return null
+      const folder = (values.folder ?? '').trim() || `${SHELF_ROOT[kind]}/${folderName(name) || 'Bibliothèque'}`
+      const made = withShelf(settings.get(), kind, { name, folder }, allShelfFolders())
+      if ('problem' in made) {
+        platform.notifier.notify(t(`bibliotheque.shelf.problem.${made.problem}`, { folder }), 8000)
+        return null
+      }
+      await settings.save(values.default === 'true' ? withDefaultShelf(made.settings, kind, made.shelf.id) : made.settings)
+      await platform.fs.ensureFolder(made.shelf.folder)
+      platform.notifier.notify(t('bibliotheque.shelf.created', { name: made.shelf.name, folder: made.shelf.folder }), 6000)
+      return made.shelf
+    }
+    const newDirectory = async (_kind: ShelfKind, folder: string): Promise<string | null> => {
+      const values = await platform.ui.askForm({
+        title: t('bibliotheque.place.newDirectory'),
+        intro: t('bibliotheque.place.newDirectory.intro', { folder }),
+        fields: [{ kind: 'text', key: 'name', label: t('bibliotheque.place.field.name'), required: true, value: '', placeholder: t('bibliotheque.place.field.name.placeholder') }],
+        submit: t('bibliotheque.place.create')
+      })
+      const name = folderName(values?.name ?? '')
+      if (!name) return null
+      const path = `${folder}/${name}`
+      if (await platform.fs.exists(path)) {
+        platform.notifier.notify(t('bibliotheque.place.exists', { name }), 6000)
+        return path
+      }
+      await platform.fs.ensureFolder(path)
+      platform.notifier.notify(t('bibliotheque.place.created', { name }), 5000)
+      return path
+    }
+    const setDefault = async (kind: ShelfKind, id: string): Promise<void> => {
+      await settings.save(withDefaultShelf(settings.get(), kind, id))
+      const shelf = shelves(kind).find((each) => each.id === id)
+      if (shelf) platform.notifier.notify(t(`bibliotheque.shelf.defaultDone.${kind}`, { name: shelf.name }), 6000)
+    }
+    const removeShelf = async (kind: ShelfKind, id: string): Promise<boolean> => {
+      const shelf = shelves(kind).find((each) => each.id === id)
+      if (!shelf || shelf.main) return false
+      const sure = await platform.ui.confirm({
+        title: t('bibliotheque.shelf.remove.title', { name: shelf.name }),
+        message: t('bibliotheque.shelf.remove.message', { name: shelf.name, folder: shelf.folder }),
+        confirm: t('bibliotheque.shelf.remove'),
+        cancel: t('bibliotheque.cancel')
+      })
+      if (!sure) return false
+      await settings.save(withoutShelf(settings.get(), kind, id))
+      platform.notifier.notify(t('bibliotheque.shelf.removed', { name: shelf.name, folder: shelf.folder }), 8000)
+      return true
+    }
+    const placesOf = (kind: ShelfKind): ShelfPlacesDeps => ({
+      t,
+      kind,
+      page: KIND_PAGE[kind],
+      hub: 'bibliotheque.accueil',
+      shelves: () => shelves(kind),
+      defaultShelf: () => defaultShelf(kind),
+      subdirectories: subdirectories(kind),
+      ...(showPage ? { showPage } : {}),
+      newDirectory,
+      newShelf,
+      setDefault,
+      removeShelf
+    })
+    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona') }
+    /** Choisir où ranger : chaque bibliothèque de la sorte, chacun de ses répertoires (sauf là où c'est déjà). */
+    const pickPlace = async (kind: ShelfKind, current: string, title: string): Promise<string | null> => {
+      const options = (await allPlaces(shelves(kind), subdirectories(kind)))
+        .filter((place) => place.folder !== current)
+        .map((place) => ({ value: place.folder, label: [place.shelf.name, ...place.directory.split('/').filter(Boolean)].join(' › '), description: place.folder }))
+      if (!options.length) {
+        platform.notifier.notify(t('bibliotheque.move.none'), 6000)
+        return null
+      }
+      return platform.ui.pickOption(options, title)
+    }
+
+    /** Verser des documents soi-même : de l'ordinateur (copiés) ou du coffre (laissés à leur place) ; dans un dossier, sinon la bibliothèque par défaut. */
+    const pour = async (folder?: string): Promise<PourReport | null> => {
       const source = await platform.ui.pickOption(
         [
           { value: 'computer', label: t('bibliotheque.pour.computer'), description: t('bibliotheque.pour.computer.desc') },
@@ -297,7 +399,7 @@ export const bibliothequeModule: BlackModule = {
         if (path) items = [{ name: baseName(path), path }]
       }
       if (!items.length) return null
-      const report = await pourIntoLibrary(items, { module: BIBLIOTHEQUE, label: t('bibliotheque.origin.hand') })
+      const report = await pourIntoLibrary(items, { module: BIBLIOTHEQUE, label: t('bibliotheque.origin.hand') }, folder ? { folder } : {})
       if (report)
         platform.notifier.notify(
           [
@@ -375,8 +477,18 @@ export const bibliothequeModule: BlackModule = {
       showNote,
       exists: (path) => platform.fs.exists(path),
       // Versés depuis l'interface : un seul nouveau document, sa fiche ; sinon la page se redessine.
-      pour: async () => {
-        const report = await pour()
+      places: places.document,
+      move: async (record) => {
+        const doc = await store.load(record)
+        if (!doc) return null
+        const folder = await pickPlace('document', record.slice(0, record.lastIndexOf('/')), t('bibliotheque.move.pick', { name: doc.title }))
+        if (!folder) return null
+        const moved = await store.move(record, folder)
+        if (moved) platform.notifier.notify(t('bibliotheque.move.done', { name: doc.title, folder }), 5000)
+        return moved
+      },
+      pour: async (folder) => {
+        const report = await pour(folder)
         if (report?.added.length === 1 && report.already.length === 0) showPage?.(docPageOf(report.added[0]!.record))
       },
       classify,
@@ -424,10 +536,10 @@ export const bibliothequeModule: BlackModule = {
       if (!values || !name || !text) return null
       return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true' }
     }
-    const createEntry = async (kind: EntryKind): Promise<string | null> => {
+    const createEntry = async (kind: EntryKind, folder?: string): Promise<string | null> => {
       const draft = await entryForm(kind)
       if (!draft) return null
-      const path = await entries[kind].create(draft)
+      const path = await entries[kind].create(draft, folder)
       platform.notifier.notify(t(`bibliotheque.${kind}.created`, { name: draft.name }), 5000)
       return path
     }
@@ -439,9 +551,20 @@ export const bibliothequeModule: BlackModule = {
         const docs = await store.all()
         return { count: docs.length, likely: docs.filter((doc) => doc.likelyPrevious).length }
       },
+      places,
+      placedDocuments: () => store.all(),
       ...(showPage ? { showPage } : {}),
       showNote,
       create: createEntry,
+      move: async (kind, path) => {
+        const entry = await entries[kind].load(path)
+        if (!entry) return null
+        const folder = await pickPlace(kind, path.slice(0, path.lastIndexOf('/')), t('bibliotheque.move.pick', { name: entry.name }))
+        if (!folder) return null
+        const moved = await entries[kind].move(path, folder)
+        if (moved) platform.notifier.notify(t('bibliotheque.move.done', { name: entry.name, folder }), 5000)
+        return moved
+      },
       edit: async (kind, path) => {
         const current = await entries[kind].load(path)
         if (!current) return null
@@ -457,7 +580,7 @@ export const bibliothequeModule: BlackModule = {
         if (!current) return false
         const sure = await platform.ui.confirm({
           title: t(`bibliotheque.${kind}.setAside.title`),
-          message: t('bibliotheque.entry.setAside.message', { name: current.name, folder: `${entries[kind].root}/_retirés` }),
+          message: t('bibliotheque.entry.setAside.message', { name: current.name, folder: `${(shelves(kind).find((shelf) => path.startsWith(`${shelf.folder}/`)) ?? shelves(kind)[0]!).folder}/_retirés` }),
           confirm: t('bibliotheque.entry.setAside'),
           cancel: t('bibliotheque.cancel'),
           danger: true

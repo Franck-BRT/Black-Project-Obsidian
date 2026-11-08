@@ -145,6 +145,9 @@ export interface LibraryDoc {
   likelyPrevious?: string
   /** Le fichier a été copié dans la bibliothèque (venu de l'ordinateur) ; sinon il est resté où il était. */
   copied: boolean
+  /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
+  shelf?: string
+  directory?: string
 }
 
 export const RECORD_TYPE = 'bibliotheque-document'

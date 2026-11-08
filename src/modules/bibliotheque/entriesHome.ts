@@ -8,9 +8,10 @@
  * et sa fiche (le texte, Modifier, Favori, Ouvrir sa note, Retirer).
  */
 
-import { pageWith, type Card, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Card, type HomeBlock, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
+import { directoryGroupOf, isHere, isUnder, placeLabel, placePageOf, placeView, resolvePlace, shelfCards, type ShelfPlacesDeps } from './places'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -29,8 +30,14 @@ export interface EntriesHomeDeps {
   documents(): Promise<{ count: number; likely: number }>
   showPage?(id: string): void
   showNote(path: string): Promise<void>
-  /** Créer une entrée (sa fenêtre) ; rend son chemin, ou null. */
-  create(kind: EntryKind): Promise<string | null>
+  /** Les bibliothèques de chaque sorte, leurs répertoires, et ce qu'on en fait (documents compris, pour l'accueil). */
+  places: Readonly<Record<EntryKind | 'document', ShelfPlacesDeps>>
+  /** Les documents rangés (leur lieu), pour l'accueil. */
+  placedDocuments(): Promise<readonly { shelf?: string; directory?: string }[]>
+  /** Créer une entrée (sa fenêtre), dans un dossier (sinon la bibliothèque par défaut) ; rend son chemin, ou null. */
+  create(kind: EntryKind, folder?: string): Promise<string | null>
+  /** La déplacer (le choix du lieu) ; rend son nouveau chemin, ou null. */
+  move(kind: EntryKind, path: string): Promise<string | null>
   /** La modifier (sa fenêtre) ; rend son chemin (renommée, peut-être), ou null. */
   edit(kind: EntryKind, path: string): Promise<string | null>
   toggleFavorite(kind: EntryKind, path: string): Promise<void>
@@ -77,28 +84,37 @@ function entryCard(deps: EntriesHomeDeps, entry: LibraryEntry): Card {
 }
 
 /** Les regroupements des prompts et des personas : par catégorie (d'origine), favoris, ou aucun. */
-export const ENTRY_GROUPINGS = ['categorie', 'favoris', 'aucun'] as const
+export const ENTRY_GROUPINGS = ['categorie', 'favoris', 'repertoire', 'aucun'] as const
 
-/** La page d'une bibliothèque de prompts ou de personas. */
-export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind): Promise<PageView> {
+/** La page d'un lieu d'une bibliothèque de prompts ou de personas (d'origine : la racine de celle par défaut). */
+export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?: string): Promise<PageView> {
   const { t } = deps
-  const entries = await deps.stores[kind].all()
-  const categories = entryCategories(entries)
+  const places = deps.places[kind]
+  const place = resolvePlace(places, param)
+  const everything = await deps.stores[kind].all()
   const by = groupingOf(ENTRIES_PAGE[kind], 'categorie')
+  const under = everything.filter((entry) => isUnder(entry, place))
+  const entries = by === 'repertoire' ? under : under.filter((entry) => isHere(entry, place))
+  const categories = entryCategories(entries)
+  const top = await placeView(places, place, everything)
   const create: ViewAction = {
     id: 'new',
     label: t(`bibliotheque.${kind}.new`),
     icon: 'plus',
     primary: true,
     run: async () => {
-      const path = await deps.create(kind)
+      const path = await deps.create(kind, top.folder)
       if (path) deps.showPage?.(entryPageOf(kind, path))
     }
   }
   const starters: ViewAction = { id: 'starters', label: t('bibliotheque.entry.starters'), tooltip: t(`bibliotheque.${kind}.starters.tip`), icon: 'copy', run: () => deps.addStarters(kind) }
   return {
-    subtitle: t(`bibliotheque.${kind}.subtitle`, { folder: deps.stores[kind].root }),
-    actions: [create, starters],
+    title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : places.shelves().length > 1 ? place.shelf.name : t(`bibliotheque.${kind}.title`),
+    ...(param
+      ? { back: { id: 'back', label: t('bibliotheque.back.up'), run: () => deps.showPage?.(place.directory ? placePageOf(ENTRIES_PAGE[kind], { shelf: place.shelf.id, directory: place.directory.split('/').slice(0, -1).join('/') }) : HUB_PAGE) } }
+      : {}),
+    subtitle: t(`bibliotheque.${kind}.subtitle`, { folder: top.folder }) + top.note,
+    actions: [create, starters, ...top.actions],
     layouts: ['cards', 'list'],
     grouping: groupingSelector(ENTRIES_PAGE[kind], by, ENTRY_GROUPINGS, t, 'bibliotheque.group.entry'),
     search: { label: t('bibliotheque.entry.search'), placeholder: t(`bibliotheque.${kind}.search.placeholder`) },
@@ -107,14 +123,16 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind): Promi
       ...categories.map((category) => ({ id: slug(category), label: category })),
       ...(entries.some((entry) => !entry.category) ? [{ id: 'sans-categorie', label: t('bibliotheque.entry.noCategory') }] : [])
     ],
-    blocks: entries.length
+    blocks: [
+      ...top.blocks,
+      ...(under.length
       ? [
           {
-            kind: 'stats',
+            kind: 'stats' as const,
             stats: [
-              { label: t(`bibliotheque.${kind}.count`), value: String(entries.length), icon: ICON[kind] },
-              { label: t('bibliotheque.entry.favorites'), value: String(entries.filter((entry) => entry.favorite).length), icon: 'star' },
-              { label: t('bibliotheque.entry.categories'), value: String(categories.length), icon: 'list' }
+              { label: t(`bibliotheque.${kind}.count`), value: String(under.length), icon: ICON[kind] },
+              { label: t('bibliotheque.entry.favorites'), value: String(under.filter((entry) => entry.favorite).length), icon: 'star' as const },
+              { label: t('bibliotheque.entry.categories'), value: String(entryCategories(under).length), icon: 'list' as const }
             ]
           },
           ...grouped(
@@ -124,12 +142,15 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind): Promi
               ? (entry) => (entry.category ? { key: entry.category.toLowerCase(), title: entry.category } : { key: '', title: t('bibliotheque.entry.noCategory'), order: 1 })
               : by === 'favoris'
                 ? (entry) => (entry.favorite ? { key: 'favoris', title: t('bibliotheque.entry.favorites') } : { key: 'autres', title: t('bibliotheque.group.others'), order: 1 })
-                : null,
+                : by === 'repertoire'
+                  ? directoryGroupOf(t, place.directory)
+                  : null,
             `${ENTRIES_PAGE[kind]}.${by}`,
             (count) => t(`bibliotheque.${kind}.group.count`, { count })
           )
         ]
-      : [{ kind: 'message', tone: 'info', text: t(`bibliotheque.${kind}.empty`), actions: [create, { ...starters, primary: false }] }]
+      : [{ kind: 'message' as const, tone: 'info' as const, text: t(top.blocks.length > 1 ? 'bibliotheque.place.empty' : `bibliotheque.${kind}.empty`), actions: [create, { ...starters, primary: false }] }])
+    ]
   }
 }
 
@@ -137,8 +158,10 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind): Promi
 export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: string | undefined): Promise<PageView> {
   const { t } = deps
   const path = param ? decodeURIComponent(param) : ''
-  const back: ViewAction = { id: 'back', label: t(`bibliotheque.${kind}.back`), run: () => deps.showPage?.(ENTRIES_PAGE[kind]) }
-  const entry = path ? await deps.stores[kind].load(path) : null
+  // Relue parmi toutes : elle sait où elle est rangée (retour : là).
+  const entry = path ? ((await deps.stores[kind].all()).find((each) => each.path === path) ?? (await deps.stores[kind].load(path))) : null
+  const home = entry?.shelf ? placePageOf(ENTRIES_PAGE[kind], { shelf: entry.shelf, directory: entry.directory ?? '' }) : ENTRIES_PAGE[kind]
+  const back: ViewAction = { id: 'back', label: t(`bibliotheque.${kind}.back`), run: () => deps.showPage?.(home) }
   if (!entry) return { title: t(`bibliotheque.${kind}.missing.title`), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.entry.missing') }] }
   return {
     title: entry.name,
@@ -156,6 +179,16 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
         }
       },
       { id: 'favorite', label: t(entry.favorite ? 'bibliotheque.entry.unfavorite' : 'bibliotheque.entry.makeFavorite'), icon: 'star', run: () => deps.toggleFavorite(kind, entry.path) },
+      {
+        id: 'move',
+        label: t('bibliotheque.move'),
+        tooltip: t(`bibliotheque.move.${kind}.tip`),
+        icon: 'folder',
+        run: async () => {
+          const moved = await deps.move(kind, entry.path)
+          if (moved && moved !== entry.path) deps.showPage?.(entryPageOf(kind, moved))
+        }
+      },
       { id: 'note', label: t('bibliotheque.entry.note'), icon: 'book', run: () => deps.showNote(entry.path) },
       {
         id: 'aside',
@@ -163,14 +196,14 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
         tooltip: t('bibliotheque.entry.setAside.tip'),
         icon: 'trash',
         run: async () => {
-          if (await deps.setAside(kind, entry.path)) deps.showPage?.(ENTRIES_PAGE[kind])
+          if (await deps.setAside(kind, entry.path)) deps.showPage?.(home)
         }
       }
     ],
     blocks: [
       ...(entry.description ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
       { kind: 'text', title: t(`bibliotheque.${kind}.text`), paragraphs: entry.text ? entry.text.split(/\n{2,}/) : [], empty: t('bibliotheque.entry.noText') },
-      { kind: 'text', title: t('bibliotheque.entry.where'), paragraphs: [t(`bibliotheque.${kind}.where`)] }
+      { kind: 'text', title: t('bibliotheque.entry.where'), paragraphs: [t('bibliotheque.entry.placed', { place: placeLabel(deps.places[kind], entry) }), t(`bibliotheque.${kind}.where`)] }
     ]
   }
 }
@@ -182,6 +215,42 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const prompts = await deps.stores.prompt.all()
   const personas = await deps.stores.persona.all()
   const go = (page: string): ViewAction => ({ id: 'open', label: t('bibliotheque.hub.open'), run: () => deps.showPage?.(page) })
+  // Plusieurs bibliothèques d'une sorte : une section par sorte, une carte par bibliothèque.
+  const several = (['document', 'prompt', 'persona'] as const).some((kind) => deps.places[kind].shelves().length > 1)
+  if (several) {
+    const placed = await deps.placedDocuments()
+    const section = (kind: 'document' | EntryKind, icon: 'book' | 'chat' | 'spark', items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
+      kind: 'section',
+      id: `bibliotheque.hub.${kind}`,
+      title: t(`bibliotheque.hub.${kind}s`),
+      subtitle: t('bibliotheque.hub.shelves', { count: deps.places[kind].shelves().length }),
+      icon,
+      blocks: [
+        {
+          kind: 'cards',
+          cards: shelfCards(deps.places[kind], items, icon),
+          actions: [{ id: 'new-shelf', label: t('bibliotheque.shelf.new'), tooltip: t(`bibliotheque.shelf.new.${kind}.tip`), icon: 'plus', run: () => void deps.places[kind].newShelf(kind) }]
+        }
+      ]
+    })
+    return {
+      subtitle: t('bibliotheque.hub.subtitle'),
+      blocks: [
+        {
+          kind: 'stats',
+          stats: [
+            { label: t('bibliotheque.hub.documents'), value: String(documents.count), icon: 'book' },
+            { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
+            { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' }
+          ]
+        },
+        ...(documents.likely ? [{ kind: 'message' as const, tone: 'warning' as const, text: t('bibliotheque.home.likely', { count: documents.likely }) }] : []),
+        section('document', 'book', placed),
+        section('prompt', 'chat', prompts),
+        section('persona', 'spark', personas)
+      ]
+    }
+  }
   const card = (id: string, icon: 'book' | 'chat' | 'spark', count: number, page: string, extra = ''): Card => ({
     id,
     title: t(`bibliotheque.hub.${id}`),
@@ -220,7 +289,7 @@ export function registerEntriesHome(views: ViewsRegistrar | undefined, deps: Ent
   const show = deps.showPage
   views.page({ id: HUB_PAGE, title: t('bibliotheque.hub.title'), icon: 'book', load: () => hubPage(deps) })
   for (const kind of ['prompt', 'persona'] as const) {
-    views.page({ id: ENTRIES_PAGE[kind], title: t(`bibliotheque.${kind}.title`), icon: ICON[kind], parent: HUB_PAGE, load: () => entriesPage(deps, kind) })
+    views.page({ id: ENTRIES_PAGE[kind], title: t(`bibliotheque.${kind}.title`), icon: ICON[kind], parent: HUB_PAGE, load: (param) => entriesPage(deps, kind, param) })
     views.page({ id: ENTRY_PAGE[kind], title: t(`bibliotheque.${kind}.one`), icon: ICON[kind], parent: ENTRIES_PAGE[kind], load: (param) => entryPage(deps, kind, param) })
     views.tile({
       id: ENTRIES_PAGE[kind],

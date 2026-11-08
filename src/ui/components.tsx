@@ -391,6 +391,40 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
   switch (block.kind) {
     case 'flowchart':
       return <Flowchart block={block} />
+    case 'breadcrumb':
+      return (
+        <nav class="bp-crumbs" aria-label={block.label}>
+          <ol>
+            {block.items.map((item, index) => {
+              const last = index === block.items.length - 1
+              const inner = (
+                <>
+                  {item.icon && <Icon name={item.icon} />}
+                  {item.label}
+                </>
+              )
+              return (
+                <li key={item.id}>
+                  {item.run && !last ? (
+                    <button type="button" class="bp-crumb" onClick={() => void item.run!()}>
+                      {inner}
+                    </button>
+                  ) : (
+                    <span class="bp-crumb is-here" aria-current={last ? 'location' : undefined}>
+                      {inner}
+                    </span>
+                  )}
+                  {!last && (
+                    <span class="bp-crumb-sep" aria-hidden="true">
+                      ›
+                    </span>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        </nav>
+      )
     case 'section':
       return <FoldSection block={block} t={t} now={now} locale={locale} {...(narrowed ? { narrowed } : {})} />
     case 'actions':

@@ -17,6 +17,7 @@
 
 import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, toYaml, type YamlReader } from '../../core/yaml'
+import { MAIN_SHELF, type Shelf } from './shelves'
 
 export type EntryKind = 'prompt' | 'persona'
 export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona']
@@ -32,9 +33,12 @@ export interface LibraryEntry {
   category: string
   description: string
   favorite: boolean
+  /** Où est sa note (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
+  shelf?: string
+  directory?: string
 }
 
-export type EntryDraft = Omit<LibraryEntry, 'kind' | 'path'>
+export type EntryDraft = Omit<LibraryEntry, 'kind' | 'path' | 'shelf' | 'directory'>
 
 const SET_ASIDE = '_retirés'
 
@@ -122,6 +126,10 @@ export interface EntryStoreDeps {
   fs: FileSystem
   yaml: YamlReader
   folder(): string
+  /** Les bibliothèques de cette sorte (la principale d'abord) ; sinon, la seule : le dossier. */
+  shelves?(): readonly Shelf[]
+  /** Le dossier où créer sans lieu précis : la racine de la bibliothèque par défaut. */
+  target?(): string
 }
 
 /** Une bibliothèque de prompts, ou de personas : son dossier, ses notes. */
@@ -135,22 +143,62 @@ export class EntryStore {
     return this.deps.folder()
   }
 
-  /** Ses entrées, partout sous son dossier (sauf les retirées), triées. */
+  /** Les bibliothèques de cette sorte : celles données, sinon la seule (son dossier). */
+  shelves(): readonly Shelf[] {
+    return this.deps.shelves?.() ?? [{ id: MAIN_SHELF, name: '', folder: this.root, main: true }]
+  }
+
+  /** Le dossier où créer sans lieu précis. */
+  get target(): string {
+    return this.deps.target?.() ?? this.root
+  }
+
+  /** Un sous-dossier à parcourir (ni les retirées, ni un dossier caché, ni une autre bibliothèque) ? */
+  private walkable(sub: string): boolean {
+    const name = sub.slice(sub.lastIndexOf('/') + 1)
+    if (name.startsWith('_') || name.startsWith('.')) return false
+    return !this.shelves().some((shelf) => shelf.folder === sub)
+  }
+
+  /** Les répertoires d'un dossier d'une bibliothèque (leurs chemins), par nom. */
+  async subdirectories(folder: string): Promise<string[]> {
+    const { fs } = this.deps
+    if (!(await fs.exists(folder))) return []
+    const name = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
+    return (await fs.list(folder)).folders.filter((sub) => this.walkable(sub)).sort((a, b) => name(a).localeCompare(name(b), 'fr'))
+  }
+
+  /** Ses entrées, dans toutes ses bibliothèques, partout sous leur dossier (sauf les retirées), triées ; chacune sait où elle est. */
   async all(): Promise<LibraryEntry[]> {
     const { fs, yaml } = this.deps
     const out: LibraryEntry[] = []
-    const walk = async (folder: string): Promise<void> => {
+    const walk = async (shelf: Shelf, folder: string, directory: string): Promise<void> => {
       if (!(await fs.exists(folder))) return
       const listing = await fs.list(folder)
       for (const path of listing.files.filter((each) => each.endsWith('.md'))) {
         const { data, body } = readYamlFrontmatter(yaml, await fs.readText(path))
         const entry = readEntry(this.kind, path, data, body)
-        if (entry) out.push(entry)
+        if (entry) out.push({ ...entry, shelf: shelf.id, directory })
       }
-      for (const sub of listing.folders) if (!sub.endsWith(`/${SET_ASIDE}`)) await walk(sub)
+      for (const sub of listing.folders) {
+        if (!this.walkable(sub)) continue
+        const name = sub.slice(sub.lastIndexOf('/') + 1)
+        await walk(shelf, sub, directory ? `${directory}/${name}` : name)
+      }
     }
-    await walk(this.root)
+    for (const shelf of this.shelves()) await walk(shelf, shelf.folder, '')
     return sortEntries(out)
+  }
+
+  /** Déplacer une entrée dans un autre dossier (une bibliothèque, un répertoire) ; rend son nouveau chemin. */
+  async move(path: string, folder: string): Promise<string | null> {
+    const entry = await this.load(path)
+    if (!entry) return null
+    if (path.slice(0, path.lastIndexOf('/')) === folder) return path
+    await this.deps.fs.ensureFolder(folder)
+    const target = await this.free(folder, path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, ''))
+    await this.deps.fs.rename(path, target)
+    return target
   }
 
   async load(path: string): Promise<LibraryEntry | null> {
@@ -169,10 +217,10 @@ export class EntryStore {
     }
   }
 
-  /** Une nouvelle entrée ; rend le chemin de sa note. */
-  async create(draft: EntryDraft): Promise<string> {
-    await this.deps.fs.ensureFolder(this.root)
-    const path = await this.free(this.root, draft.name)
+  /** Une nouvelle entrée, dans un dossier donné (sinon la bibliothèque par défaut) ; rend le chemin de sa note. */
+  async create(draft: EntryDraft, folder: string = this.target): Promise<string> {
+    await this.deps.fs.ensureFolder(folder)
+    const path = await this.free(folder, draft.name)
     await this.deps.fs.writeText(path, entryContent(this.kind, draft))
     return path
   }
@@ -201,7 +249,8 @@ export class EntryStore {
   async setAside(path: string): Promise<boolean> {
     const { fs } = this.deps
     if (!(await fs.exists(path))) return false
-    const aside = `${this.root}/${SET_ASIDE}`
+    const shelf = this.shelves().find((each) => path.startsWith(`${each.folder}/`)) ?? this.shelves()[0]!
+    const aside = `${shelf.folder}/${SET_ASIDE}`
     await fs.ensureFolder(aside)
     const name = path.slice(path.lastIndexOf('/') + 1)
     let target = `${aside}/${name}`

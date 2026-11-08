@@ -502,6 +502,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.76.0 : **interface et module Workflows** : un bloc **logigramme** ; la fiche d'un
   workflow le montre — déclencheur, conditions, accord, étapes, fin —, chaque forme
   cliquable
+- v0.77.0 : **module Bibliothèque** : **plusieurs bibliothèques** de documents, de
+  prompts, de personas (chacune son dossier ; l'une par défaut, où entre ce qui arrive
+  sans lieu) ; des **répertoires** et sous-répertoires, parcourus avec un **fil
+  d'Ariane** (nouveau bloc de l'interface) ; « Déplacer… » ; regrouper par répertoire
 
 ### Étape 7 — Livrables
 

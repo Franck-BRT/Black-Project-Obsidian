@@ -116,7 +116,26 @@ personas prêts pour les appels d'offres, à modifier. Sur la fiche : **Modifier
 **Mettre en favori** (les favoris viennent en tête des listes), **Retirer** (mis de côté,
 rien n'est effacé).
 
-## 7. Réglages
+## 7. Plusieurs bibliothèques, des répertoires
+
+Chaque sorte — documents, prompts, personas — peut avoir **plusieurs bibliothèques** :
+**Nouvelle bibliothèque** (sur sa page, ou sur l'accueil de la bibliothèque) lui donne un
+nom et un dossier (vide : `Bibliothèques/Documents/<nom>`, `Bibliothèques/Prompts/<nom>`…).
+L'une est **par défaut** : ce qui arrive sans lieu précis — les pièces d'une analyse, un
+import, le dossier « À verser », un exemple — y entre, à sa racine ; **Définir par
+défaut** la change. **Retirer la bibliothèque** l'ôte de la liste : son dossier et ses
+notes restent dans le coffre.
+
+Dans une bibliothèque, **Nouveau répertoire** crée un répertoire (un dossier), et dans
+celui-ci des sous-répertoires. Le **fil d'Ariane** en haut de la page (« Bibliothèque ›
+Documents › Normes › ECSS ») dit où vous êtes ; un clic y remonte. Chaque répertoire a sa
+carte (combien il contient). On **verse** et on **crée** là où l'on est ; **Déplacer…**,
+sur une fiche, range ailleurs (le fichier d'un document ne bouge pas ; ses versions
+restent reliées). **Regrouper par › Répertoire** montre tout ce qui est dessous, un
+répertoire par section. Un prompt ou un persona se retrouve par son nom où qu'il soit
+rangé.
+
+## 8. Réglages
 
 **Dossier de la bibliothèque** (par défaut `Bibliothèque`), **dossier des prompts** (par
 défaut `Bibliothèque/Prompts`) et **dossier des personas** (par défaut

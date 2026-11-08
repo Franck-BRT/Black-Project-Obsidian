@@ -183,6 +183,9 @@ que la recherche lit aussi. Il la déclare par
   pointillée), reliées par des flèches ; une forme qui a `open` est un bouton ; `tone`
   (`data-tone`) colore son bord. HTML et CSS (pas de SVG) : le texte se coupe, les thèmes
   s'appliquent, et c'est une liste ordonnée pour les lecteurs d'écran (`label` la résume) ;
+- un **fil d'Ariane** (Black Projects 0.77.0) : `{ kind: 'breadcrumb', label, items }` —
+  où l'on est (« Bibliothèque › Documents › Normes »), chaque étape un bouton (`run`), la
+  dernière sans lien (`aria-current="location"`) ; un `nav` qui passe à la ligne ;
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;

@@ -140,6 +140,12 @@ export type HomeBlock =
    */
   | { kind: 'flowchart'; title?: string; label: string; nodes: FlowNode[] }
   /**
+   * Un **fil d'Ariane** : où l'on est (« Bibliothèque › Normes › ECSS »), chaque étape un
+   * lien vers elle, la dernière (là où l'on est) sans lien. `label` le nomme pour les
+   * lecteurs d'écran.
+   */
+  | { kind: 'breadcrumb'; label: string; items: { id: string; label: string; icon?: IconName; run?: () => void | Promise<void> }[] }
+  /**
    * Une **section repliable** : un intitulé (un clic la replie ou la déplie) et ses blocs —
    * d'autres sections comprises (des sous-sections). Repliée d'origine si `collapsed` ;
    * l'interface se souvient ensuite de ce que l'utilisateur en a fait, le temps de la

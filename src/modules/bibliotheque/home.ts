@@ -8,11 +8,12 @@
  * **fiche** d'un document : son identité, son fichier, d'où il vient, ses versions.
  */
 
-import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Badge, type Card, type HomeBlock, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc } from './model'
 import { HUB_PAGE } from './entriesHome'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
 import type { LibraryStore } from './store'
+import { directoryGroupOf, isHere, isUnder, placeLabel, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
 export const DOC_PAGE = 'bibliotheque.document'
@@ -30,8 +31,12 @@ export interface LibraryHomeDeps {
   openFile(path: string): Promise<void>
   showNote(path: string): Promise<void>
   exists(path: string): Promise<boolean>
-  /** Verser des documents (le choix des fichiers, puis le versement). */
-  pour(): Promise<void>
+  /** Verser des documents (le choix des fichiers, puis le versement) : dans un dossier, sinon la bibliothèque par défaut. */
+  pour(folder?: string): Promise<void>
+  /** Les bibliothèques de documents, leurs répertoires, et ce qu'on en fait. */
+  places: ShelfPlacesDeps
+  /** Déplacer un document (le choix du lieu) ; rend le nouveau chemin de sa fiche, ou null. */
+  move(record: string): Promise<string | null>
   /** Classer un document : sa fiche en fenêtre (titre, catégorie, référence…). */
   classify(record: string): Promise<void>
   /** Le dire nouvelle version d'un autre document (choisi). */
@@ -100,7 +105,7 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
 }
 
 /** Les regroupements des documents : par origine (d'origine), famille, catégorie, mois d'ajout, ou aucun. */
-export const DOC_GROUPINGS = ['origine', 'famille', 'categorie', 'mois', 'aucun'] as const
+export const DOC_GROUPINGS = ['origine', 'famille', 'categorie', 'mois', 'repertoire', 'aucun'] as const
 
 /** Le groupe d'un document, selon le regroupement choisi ; `null` : sans regroupement. */
 function docGroupOf(deps: LibraryHomeDeps, by: string): ((doc: LibraryDoc) => Group) | null {
@@ -132,21 +137,37 @@ function docGroupOf(deps: LibraryHomeDeps, by: string): ((doc: LibraryDoc) => Gr
   }
 }
 
-/** La page de la bibliothèque. */
-export async function libraryPage(deps: LibraryHomeDeps): Promise<PageView> {
+/** La page d'un lieu de la bibliothèque : une bibliothèque, ou l'un de ses répertoires (d'origine : la racine de celle par défaut). */
+export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promise<PageView> {
   const { t } = deps
-  const docs = (await deps.store.all()).sort((a, b) => b.added.localeCompare(a.added) || a.title.localeCompare(b.title, 'fr'))
+  const place = resolvePlace(deps.places, param)
+  const docGrouping = groupingOf(LIBRARY_PAGE, 'origine')
+  const everything = (await deps.store.all()).sort((a, b) => b.added.localeCompare(a.added) || a.title.localeCompare(b.title, 'fr'))
+  const under = everything.filter((doc) => isUnder(doc, place))
+  // Regroupés par répertoire : tout ce qui est sous ce lieu ; sinon, ce qui est là même.
+  const docs = docGrouping === 'repertoire' ? under : under.filter((doc) => isHere(doc, place))
+  const top = await placeView(deps.places, place, everything)
+  const pourHere = () => deps.pour(top.folder)
   const missing = new Set((await Promise.all(docs.map(async (doc) => ((await deps.exists(doc.file)) ? '' : doc.record)))).filter(Boolean))
   const today = deps.today()
-  const recent = docs.filter((doc) => doc.added && daysBetween(doc.added, today) <= 7).length
-  const likely = docs.filter((doc) => doc.likelyPrevious).length
-  const total = docs.reduce((sum, doc) => sum + doc.size, 0)
+  const recent = under.filter((doc) => doc.added && daysBetween(doc.added, today) <= 7).length
+  const likely = under.filter((doc) => doc.likelyPrevious).length
+  const total = under.reduce((sum, doc) => sum + doc.size, 0)
   const modules = [...new Set(docs.flatMap((doc) => doc.origins.map((origin) => origin.module)))]
   const families = FAMILIES.filter((family) => docs.some((doc) => doc.family === family))
-  const docGrouping = groupingOf(LIBRARY_PAGE, 'origine')
+  const stats: Stat[] = [
+    { label: t('bibliotheque.stat.count'), value: String(under.length), icon: 'book' },
+    { label: t('bibliotheque.stat.size'), value: readableSize(total, deps.locale), icon: 'file' },
+    { label: t('bibliotheque.stat.recent'), value: String(recent), icon: 'clock', hint: t('bibliotheque.stat.recent.hint') },
+    { label: t('bibliotheque.stat.likely'), value: String(likely), icon: 'flow', ...(likely ? { tone: 'warning' as const, hint: t('bibliotheque.stat.likely.hint') } : {}) }
+  ]
+  const empty: HomeBlock = { kind: 'message', tone: 'info', text: t(top.blocks.length > 1 ? 'bibliotheque.place.empty' : 'bibliotheque.empty'), actions: [{ id: 'pour', label: t('bibliotheque.pour'), icon: 'upload', run: pourHere }] }
+  const groupOf = docGrouping === 'repertoire' ? directoryGroupOf(t, place.directory) : docGroupOf(deps, docGrouping)
   return {
-    subtitle: t('bibliotheque.page.subtitle', { folder: deps.store.root }),
-    actions: [{ id: 'pour', label: t('bibliotheque.pour'), tooltip: t('bibliotheque.pour.tip'), icon: 'upload', primary: true, run: () => deps.pour() }],
+    title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : deps.places.shelves().length > 1 ? place.shelf.name : t('bibliotheque.page.title'),
+    ...(param ? { back: { id: 'back', label: t('bibliotheque.back.up'), run: () => deps.showPage?.(place.directory ? placePageOf(LIBRARY_PAGE, { shelf: place.shelf.id, directory: place.directory.split('/').slice(0, -1).join('/') }) : HUB_PAGE) } } : {}),
+    subtitle: t('bibliotheque.page.subtitle', { folder: top.folder }) + top.note,
+    actions: [{ id: 'pour', label: t('bibliotheque.pour'), tooltip: t('bibliotheque.pour.here.tip', { folder: top.folder }), icon: 'upload', primary: true, run: pourHere }, ...top.actions],
     layouts: ['cards', 'list', 'table'],
     grouping: groupingSelector(LIBRARY_PAGE, docGrouping, DOC_GROUPINGS, t, 'bibliotheque.group.doc'),
     search: { label: t('bibliotheque.search'), placeholder: t('bibliotheque.search.placeholder') },
@@ -157,20 +178,10 @@ export async function libraryPage(deps: LibraryHomeDeps): Promise<PageView> {
       ...(likely ? [{ id: 'a-relier', label: t('bibliotheque.filter.likely') }] : []),
       ...(missing.size ? [{ id: 'introuvables', label: t('bibliotheque.badge.missing') }] : [])
     ],
-    blocks: docs.length
-      ? [
-          {
-            kind: 'stats',
-            stats: [
-              { label: t('bibliotheque.stat.count'), value: String(docs.length), icon: 'book' },
-              { label: t('bibliotheque.stat.size'), value: readableSize(total, deps.locale), icon: 'file' },
-              { label: t('bibliotheque.stat.recent'), value: String(recent), icon: 'clock', hint: t('bibliotheque.stat.recent.hint') },
-              { label: t('bibliotheque.stat.likely'), value: String(likely), icon: 'flow', ...(likely ? { tone: 'warning' as const, hint: t('bibliotheque.stat.likely.hint') } : {}) }
-            ]
-          },
-          ...grouped(docs, (doc) => docCard(deps, doc, docs, missing.has(doc.record)), docGroupOf(deps, docGrouping), `bibliotheque.documents.${docGrouping}`, (count) => t('bibliotheque.group.count', { count }))
-        ]
-      : [{ kind: 'message', tone: 'info', text: t('bibliotheque.empty'), actions: [{ id: 'pour', label: t('bibliotheque.pour'), icon: 'upload', run: () => deps.pour() }] }]
+    blocks: [
+      ...top.blocks,
+      ...(under.length ? [{ kind: 'stats' as const, stats }, ...(docs.length ? grouped(docs, (doc) => docCard(deps, doc, everything, missing.has(doc.record)), groupOf, `bibliotheque.documents.${docGrouping}`, (count) => t('bibliotheque.group.count', { count })) : [])] : [empty])
+    ]
   }
 }
 
@@ -178,9 +189,11 @@ export async function libraryPage(deps: LibraryHomeDeps): Promise<PageView> {
 export async function docPage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
   const { t } = deps
   const record = param ? decodeURIComponent(param) : ''
-  const back: ViewAction = { id: 'back', label: t('bibliotheque.back'), run: () => deps.showPage?.(LIBRARY_PAGE) }
   const all = await deps.store.all()
   const doc = all.find((each) => each.record === record)
+  // Retour : là où il est rangé.
+  const home = doc?.shelf ? placePageOf(LIBRARY_PAGE, { shelf: doc.shelf, directory: doc.directory ?? '' }) : LIBRARY_PAGE
+  const back: ViewAction = { id: 'back', label: t('bibliotheque.back'), run: () => deps.showPage?.(home) }
   if (!doc) return { title: t('bibliotheque.doc.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.doc.missing') }] }
   const present = await deps.exists(doc.file)
   const byRecord = new Map(all.map((each) => [each.record, each]))
@@ -221,6 +234,16 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       ...(present ? [{ id: 'file', label: t('bibliotheque.doc.file'), icon: 'file' as const, primary: true, run: () => deps.openFile(doc.file) }] : []),
       { id: 'classify', label: t('bibliotheque.classify'), icon: 'edit', run: () => deps.classify(doc.record) },
       { id: 'version', label: t('bibliotheque.newVersionOf'), tooltip: t('bibliotheque.newVersionOf.tip'), icon: 'flow', run: () => deps.newVersionOf(doc.record) },
+      {
+        id: 'move',
+        label: t('bibliotheque.move'),
+        tooltip: t('bibliotheque.move.doc.tip'),
+        icon: 'folder',
+        run: async () => {
+          const moved = await deps.move(doc.record)
+          if (moved && moved !== doc.record) deps.showPage?.(docPageOf(moved))
+        }
+      },
       { id: 'note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) },
       {
         id: 'aside',
@@ -228,7 +251,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         tooltip: t('bibliotheque.setAside.tip'),
         icon: 'trash',
         run: async () => {
-          if (await deps.setAside(doc.record)) deps.showPage?.(LIBRARY_PAGE)
+          if (await deps.setAside(doc.record)) deps.showPage?.(home)
         }
       }
     ],
@@ -254,7 +277,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       {
         kind: 'list',
         title: t('bibliotheque.section.identity'),
-        items: [field('title', doc.title), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
+        items: [field('title', doc.title), field('place', placeLabel(deps.places, doc)), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
       },
       {
         kind: 'list',
@@ -310,7 +333,7 @@ export function registerLibraryHome(views: ViewsRegistrar | undefined, deps: Lib
   views.home({ id: 'bibliotheque.home', title: t('bibliotheque.home.title'), icon: 'book', order: 35, area: 'side', load: () => librarySection(deps) })
   if (!deps.showPage) return
   const show = deps.showPage
-  views.page({ id: LIBRARY_PAGE, title: t('bibliotheque.page.title'), icon: 'book', parent: HUB_PAGE, load: () => libraryPage(deps) })
+  views.page({ id: LIBRARY_PAGE, title: t('bibliotheque.page.title'), icon: 'book', parent: HUB_PAGE, load: (param) => libraryPage(deps, param) })
   views.page({ id: DOC_PAGE, title: t('bibliotheque.doc.title'), icon: 'file', parent: LIBRARY_PAGE, load: (param) => docPage(deps, param) })
   // Le menu mène à la bibliothèque : ses documents, ses prompts, ses personas.
   views.nav({ id: 'bibliotheque', label: t('bibliotheque.nav'), icon: 'book', order: 25, page: HUB_PAGE, run: () => show(HUB_PAGE) })

@@ -16,6 +16,7 @@
 import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
+import { MAIN_SHELF, type Shelf } from './shelves'
 import {
   baseName,
   familyOf,
@@ -43,6 +44,10 @@ export interface StoreDeps {
   notesHeading(): string
   /** Des dossiers à ne pas parcourir comme des fiches de documents (ceux des prompts, des personas). */
   skip?(): readonly string[]
+  /** Les bibliothèques de documents (la principale d'abord) ; sinon, la seule : le dossier. */
+  shelves?(): readonly Shelf[]
+  /** Le dossier où verser, sans lieu précis : la racine de la bibliothèque par défaut. */
+  target?(): string
 }
 
 /** Un fichier à verser : venu de l'ordinateur (ses octets) ou déjà dans le coffre (son chemin). */
@@ -60,6 +65,8 @@ export interface PourItem {
 export interface PourOptions {
   /** La catégorie à donner (un type de pièce) ; sinon devinée au nom. */
   category?: string
+  /** Le dossier où ranger les fiches (une bibliothèque, un répertoire) ; sinon la bibliothèque par défaut. */
+  folder?: string
   /**
    * Repérer, à l'entrée, les nouvelles versions probables (oui, par défaut). Non quand c'est
    * son workflow système qui s'en charge, après le versement (`markLikelyVersions`).
@@ -118,25 +125,66 @@ export class LibraryStore {
     }
   }
 
-  /** Les fiches de la bibliothèque, partout sous son dossier (sauf ses fichiers et ses retirés). */
+  /** Les bibliothèques de documents : celles données, sinon la seule (son dossier). */
+  shelves(): readonly Shelf[] {
+    return this.deps.shelves?.() ?? [{ id: MAIN_SHELF, name: '', folder: this.root, main: true }]
+  }
+
+  /** Le dossier où verser sans lieu précis. */
+  get target(): string {
+    return this.deps.target?.() ?? this.root
+  }
+
+  /** Un sous-dossier à parcourir (ni fichiers, ni retirés, ni dépôt, ni une autre bibliothèque, ni prompts ou personas) ? */
+  private walkable(sub: string): boolean {
+    const name = baseName(sub)
+    if (name.startsWith('_') || name.startsWith('.') || name === INBOX_FOLDER) return false
+    if ((this.deps.skip?.() ?? []).includes(sub)) return false
+    return !this.shelves().some((shelf) => shelf.folder === sub)
+  }
+
+  /** Les répertoires d'un dossier d'une bibliothèque (leurs chemins), par nom. */
+  async subdirectories(folder: string): Promise<string[]> {
+    const { fs } = this.deps
+    if (!(await fs.exists(folder))) return []
+    return (await fs.list(folder)).folders.filter((sub) => this.walkable(sub)).sort((a, b) => baseName(a).localeCompare(baseName(b), 'fr'))
+  }
+
+  /** Les fiches de toutes les bibliothèques, partout sous leur dossier (sauf leurs fichiers et leurs retirés) ; chacune sait où elle est. */
   async all(): Promise<LibraryDoc[]> {
     const { fs, yaml } = this.deps
     const out: LibraryDoc[] = []
-    const walk = async (folder: string): Promise<void> => {
+    const walk = async (shelf: Shelf, folder: string, directory: string): Promise<void> => {
       if (!(await fs.exists(folder))) return
       const listing = await fs.list(folder)
       for (const path of listing.files.filter((each) => each.endsWith('.md'))) {
         const doc = readRecord(path, readYamlFrontmatter(yaml, await fs.readText(path)).data)
-        if (doc) out.push(doc)
+        if (doc) out.push({ ...doc, shelf: shelf.id, directory })
       }
-      const skipped = this.deps.skip?.() ?? []
-      for (const sub of listing.folders) {
-        const name = baseName(sub)
-        if (name !== FILES_FOLDER && name !== SET_ASIDE_FOLDER && name !== INBOX_FOLDER && !skipped.includes(sub)) await walk(sub)
-      }
+      for (const sub of listing.folders) if (this.walkable(sub)) await walk(shelf, sub, directory ? `${directory}/${baseName(sub)}` : baseName(sub))
     }
-    await walk(this.root)
+    for (const shelf of this.shelves()) await walk(shelf, shelf.folder, '')
     return out
+  }
+
+  /**
+   * Déplacer la fiche d'un document dans un autre dossier (une bibliothèque, un répertoire) :
+   * son fichier ne bouge pas ; les documents qui la donnaient pour version précédente suivent.
+   * Rend son nouveau chemin.
+   */
+  async move(record: string, folder: string): Promise<string | null> {
+    const { fs } = this.deps
+    const doc = await this.load(record)
+    if (!doc) return null
+    if (record.slice(0, record.lastIndexOf('/')) === folder) return record
+    await fs.ensureFolder(folder)
+    const target = await this.free(`${folder}/${baseName(record)}`)
+    await fs.rename(record, target)
+    for (const other of await this.all()) {
+      if (other.previous !== record && other.likelyPrevious !== record) continue
+      await this.save({ ...other, ...(other.previous === record ? { previous: target } : {}), ...(other.likelyPrevious === record ? { likelyPrevious: target } : {}) })
+    }
+    return target
   }
 
   async load(record: string): Promise<LibraryDoc | null> {
@@ -183,12 +231,12 @@ export class LibraryStore {
       // Venu de l'ordinateur : copié dans la bibliothèque ; déjà dans le coffre : laissé où il est.
       let file = item.path
       if (!file) {
-        file = await this.free(`${this.root}/${FILES_FOLDER}/${safeName(baseName(item.name))}`)
+        file = await this.free(`${this.target}/${FILES_FOLDER}/${safeName(baseName(item.name))}`)
         await fs.writeBinary(file, bytes.slice().buffer)
       }
       const title = titleFromName(item.name)
       const family = familyOf(item.name)
-      const record = await this.free(`${this.root}/${safeName(title)}.md`)
+      const record = await this.free(`${options.folder ?? this.target}/${safeName(title)}.md`)
       // Une version précédente probable (le nom du fichier versé fait foi : un fichier copié a pu être renommé).
       const previous = options.detectVersions === false ? undefined : likelyPreviousOf({ record, file: item.name, family, hash }, known, batch)
       const doc: LibraryDoc = {
@@ -284,8 +332,8 @@ export class LibraryStore {
         continue
       }
       known.add(hash)
-      await fs.ensureFolder(`${this.root}/${FILES_FOLDER}`)
-      const target = await this.free(`${this.root}/${FILES_FOLDER}/${safeName(name)}`)
+      await fs.ensureFolder(`${this.target}/${FILES_FOLDER}`)
+      const target = await this.free(`${this.target}/${FILES_FOLDER}/${safeName(name)}`)
       await fs.rename(path, target)
       fresh.push({ name, path: target, owned: true })
     }
@@ -339,7 +387,9 @@ export class LibraryStore {
     const { fs } = this.deps
     const doc = await this.load(record)
     if (!doc) return false
-    const aside = `${this.root}/${SET_ASIDE_FOLDER}`
+    // Mis de côté dans les retirés de sa bibliothèque.
+    const shelf = this.shelves().find((each) => record.startsWith(`${each.folder}/`)) ?? this.shelves()[0]!
+    const aside = `${shelf.folder}/${SET_ASIDE_FOLDER}`
     if (doc.copied && (await fs.exists(doc.file))) await fs.rename(doc.file, await this.free(`${aside}/${baseName(doc.file)}`))
     await fs.rename(record, await this.free(`${aside}/${baseName(record)}`))
     for (const other of await this.all()) {
