@@ -143,7 +143,7 @@ async function depositThroughWorkflows(items: readonly PourItem[], origin: DocOr
   const awaited = !workflowRunning()
   const deposit: Deposit = { items, origin, options, awaited, report: null }
   const id = holdDeposit(deposit)
-  await emitWorkflowEvent(TRIGGER_DEPOSITED, depositSubject(id, items, origin))
+  await emitWorkflowEvent(TRIGGER_DEPOSITED, depositSubject(id, items, origin, (name) => readingOf(name, active?.t ?? ((key: string) => key))))
   if (!awaited) return null
   dropDeposit(id)
   if (deposit.report) await announce(deposit.report, origin)
@@ -172,16 +172,61 @@ async function announce(report: PourReport, origin: DocOrigin): Promise<void> {
   for (const doc of report.added) await emitPoured(doc)
 }
 
+/**
+ * Comment l'application lit un fichier, d'après son extension : son **texte** (lu), une
+ * **image** (montrée, pas lue), une **archive** (ouverte, ses fichiers lus un à un), ou
+ * **non lu**. C'est la lecture de fichiers qui le sait (`setReadability`, à son
+ * activation) ; sans elle, rien n'est lu.
+ */
+export type Readability = 'texte' | 'image' | 'archive' | 'non-lu'
+let readability: ((extension: string) => Readability) | null = null
+
+/** Pour la lecture de fichiers : dire comment un fichier est lu (`null` : plus rien). */
+export function setReadability(judge: ((extension: string) => Readability) | null): void {
+  readability = judge
+}
+
+/** L'extension d'un nom de fichier, en minuscules, sans le point ; vide s'il n'en a pas. */
+export function extensionOfName(name: string): string {
+  const base = baseName(name)
+  const at = base.lastIndexOf('.')
+  return at > 0 ? base.slice(at + 1).toLowerCase() : ''
+}
+
+export interface FileReading {
+  extension: string
+  /** Son texte est-il lu ? */
+  read: boolean
+  /** « oui » / « non », et comment il est lu, en mots : pour les workflows. */
+  lisible: string
+  lecture: string
+}
+
+/** Ce que les workflows savent de la lecture d'un fichier : son extension, lisible ou non, et comment. */
+export function readingOf(name: string, t: (key: string) => string): FileReading {
+  const extension = extensionOfName(name)
+  const how = readability ? readability(extension) : null
+  return {
+    extension,
+    read: how === 'texte',
+    lisible: t(how === 'texte' ? 'bibliotheque.read.yes' : 'bibliotheque.read.no'),
+    lecture: t(how ? `bibliotheque.read.${how}` : 'bibliotheque.read.off')
+  }
+}
+
+const readingVars = ({ extension, lisible, lecture }: FileReading) => ({ extension, lisible, lecture })
+
 /** Le module est-il actif (les autres modules le disent à l'utilisateur, au besoin) ? */
 export const libraryActive = (): boolean => active !== null
 
 async function emitPoured(doc: LibraryDoc): Promise<void> {
+  const t = active?.t ?? ((key: string) => key)
   await emitWorkflowEvent(TRIGGER_POURED, {
     ...NO_SUBJECT,
     key: doc.record,
     label: doc.title,
     path: doc.record,
-    vars: { titre: doc.title, famille: doc.family, categorie: doc.category, fichier: doc.file, origine: doc.origins[0]?.module ?? '' }
+    vars: { titre: doc.title, famille: doc.family, categorie: doc.category, fichier: doc.file, origine: doc.origins[0]?.module ?? '', ...readingVars(readingOf(doc.file, t)) }
   })
 }
 
@@ -237,7 +282,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.7.0',
+  version: '0.8.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -275,7 +320,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,

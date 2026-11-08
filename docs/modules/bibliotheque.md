@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.7.0 (Black Projects 0.79.0) |
+| Version | 0.8.0 (Black Projects 0.80.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -44,7 +44,8 @@ bordereaux) n'est pas repris.
 `pourIntoLibrary(items, origine, options)` (interface publique) : sans le module actif,
 `null` ; ne lève pas. Chaque versement qui fait entrer des documents émet
 `bibliotheque.versement` (une fois, pour tous), puis chaque document ajouté
-`bibliotheque.document-verse` (titre, famille, catégorie, fichier, origine).
+`bibliotheque.document-verse` (titre, famille, catégorie, fichier, origine ; depuis la
+v0.8.0, `extension`, `lisible`, `lecture` — voir plus bas).
 
 Une copie faite sous un nom déjà pris (« CCTP (2).pdf ») garde la clé de version de son
 nom (le « (2) » ôté) : elle reste reconnue comme nouvelle version (v0.2.0).
@@ -75,7 +76,8 @@ Les automatismes de la bibliothèque sont des [workflows système](workflows.md)
 `pourIntoLibrary` d'un autre module que la bibliothèque ne verse pas lui-même : il garde
 les fichiers sous un identifiant (`holdDeposit` ; leurs octets ne voyagent pas dans les
 variables ; vingt dépôts en attente au plus) et émet `bibliotheque.fichiers-deposes`
-(variables `origine` — le module —, `libelle`, `fichiers`, `nombre`, `depot`). L'action
+(variables `origine` — le module —, `libelle`, `fichiers`, `nombre`, `extensions`,
+`nonlisibles`, `depot`). L'action
 `bibliotheque.verser` (champ `depot`, `{depot}` d'origine) prend le dépôt, une fois, et le
 verse. Le déposant attend la fin du workflow, puis annonce les documents versés ; déposé
 pendant qu'un workflow s'exécute (`workflowRunning`), le dépôt passe après lui, sans être
@@ -199,6 +201,26 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## L'extension d'un fichier, et s'il est lisible (v0.8.0, Black Projects 0.80.0)
+
+Quel que soit le moyen par lequel un fichier entre (versé à la main, glissé-déposé, le
+dossier « À verser », les pièces d'une analyse, un import d'exigences, un échange), les
+workflows le savent :
+
+| Déclencheur | Variable | Valeur |
+| --- | --- | --- |
+| *Bibliothèque : document versé* | `extension` | l'extension, en minuscules, sans le point (`pdf`) ; vide sans extension |
+| | `lisible` | `oui` si l'application en lit le texte, sinon `non` |
+| | `lecture` | comment : « texte lu », « image : montrée, son texte n'est pas lu », « archive : ouverte, ses fichiers lus un à un », « format non lu », ou « non lu : la lecture de fichiers est désactivée » |
+| *Fichiers déposés dans l'application* | `extensions` | les extensions, une fois chacune (`xlsx, dwg`) ; aussi une liste, pour les conditions |
+| | `nonlisibles` | les fichiers dont le texte n'est pas lu ; aussi une liste |
+
+C'est la [lecture de fichiers](lecture-fichiers.md) qui sait lire : à son activation, elle
+donne à la bibliothèque `setReadability(extension → 'texte' | 'image' | 'archive' |
+'non-lu')` (les extensions équivalentes comprises) ; désactivée, rien n'est lu
+(`readingOf`). Un document déjà dans la bibliothèque (même empreinte) n'entre pas : pas de
+« document versé ».
 
 ## Glisser-déposer (v0.7.0, Black Projects 0.79.0)
 

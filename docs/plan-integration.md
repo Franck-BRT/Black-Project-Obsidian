@@ -511,6 +511,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.79.0 : **interface et module Bibliothèque** : le **glisser-déposer** de fichiers
   (`PageView.drop`, `Card.drop`) ; dans la bibliothèque, sur la page (là où l'on est) ou
   sur la carte d'un répertoire
+- v0.80.0 : **modules Bibliothèque et Lecture de fichiers** : les workflows savent
+  l'**extension** d'un fichier ajouté, par quelque moyen que ce soit, et s'il est
+  **lisible** par l'application (`{extension}`, `{lisible}`, `{lecture}` ; `{extensions}`,
+  `{nonlisibles}` au dépôt)
 
 ### Étape 7 — Livrables
 

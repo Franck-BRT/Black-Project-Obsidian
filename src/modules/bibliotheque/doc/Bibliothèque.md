@@ -88,10 +88,14 @@ Les déclencheurs, pour vos propres workflows :
 
 - **Fichiers déposés dans l'application** : un module reçoit des fichiers, avant qu'ils
   n'entrent dans la bibliothèque (module d'origine — `ao`, `exigences`, `typage-pieces`,
-  `workflows` —, ce qu'il en dit, les fichiers, combien) ;
+  `workflows` —, ce qu'il en dit, les fichiers, combien, leurs **extensions** et les
+  fichiers **non lisibles** par l'application) ;
 - **Bibliothèque : documents versés** : une fois par versement (combien, les titres) ;
 - **Bibliothèque : document versé** : un par document (titre, famille, catégorie,
-  fichier, module d'origine).
+  fichier, module d'origine, son **extension** — `pdf` —, **lisible** — `oui` ou `non` — et
+  comment l'application le lit — « texte lu », « image : montrée, son texte n'est pas lu »,
+  « format non lu »…). Par exemple : Si *Lisible par l'application* est `non`, Prévenir
+  « {fichier} (.{extension}) n'est pas lu : {lecture} ».
 
 Voir {{link:Modules/Workflows|Workflows}}.
 

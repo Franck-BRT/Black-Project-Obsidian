@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.79.0)
+## Aujourd'hui (version 0.80.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -148,7 +148,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   ou crée là où l'on est ; **Déplacer…**, sur une fiche, range ailleurs ; **Regrouper par
   › Répertoire** montre tout ce qui est dessous. Des fichiers de l'ordinateur
   **glissés-déposés** sur la page y sont versés, là où vous êtes ; sur la carte d'un
-  répertoire, dans ce répertoire.
+  répertoire, dans ce répertoire. Dans vos **workflows**, un fichier ajouté (par n'importe
+  quel moyen) donne son **extension** et s'il est **lisible** par l'application
+  (déclencheur *Bibliothèque : document versé* : `{extension}`, `{lisible}`, `{lecture}`).
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une
   fois, avec sa fiche — les pièces importées dans une analyse (laissées à leur place), le
   fichier d'un import d'exigences, les échanges de types et de workflows, et ce que vous

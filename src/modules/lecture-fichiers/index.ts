@@ -29,7 +29,9 @@ import { readShown } from './capabilities'
 import { formatsCatalogue } from './catalogue'
 import { lectureDocs } from './doc'
 import { lectureEn, lectureFr } from './i18n'
-import { fileText as rawFileText, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
+import { setReadability } from '../bibliotheque'
+import { isArchive } from './archive'
+import { fileText as rawFileText, isImage, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
 import { registerLectureWorkflows } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -115,7 +117,7 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.7.0',
+  version: '0.8.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings), display),
@@ -143,6 +145,13 @@ export const lectureFichiersModule: BlackModule = {
     configureAliases(readAliases(settings.get()))
     // Le workflow système : signaler les formats non lus, au dépôt de fichiers.
     registerLectureWorkflows((key, vars) => i18n.t(key, vars), isReadable, () => platform.fs)
+    // La bibliothèque dit aux workflows si un fichier versé est lu, et comment.
+    setReadability((extension) => {
+      const resolved = resolveExtension(extension)
+      if (isArchive(resolved)) return 'archive'
+      if (isImage(resolved)) return 'image'
+      return isReadable(extension) ? 'texte' : 'non-lu'
+    })
     // Les types que l'utilisateur a choisi d'afficher : la plateforme les montre.
     display?.show(readShown(settings.get()))
     unsubscribe = settings.onChange((values) => {
@@ -151,6 +160,7 @@ export const lectureFichiersModule: BlackModule = {
     })
   },
   deactivate() {
+    setReadability(null)
     unsubscribe?.()
     unsubscribe = null
     configureAliases({})

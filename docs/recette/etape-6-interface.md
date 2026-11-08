@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Workflows : l'extension d'un fichier ajouté, et s'il est lisible (v0.80.0)
+
+- [ ] Workflows › Nouveau : déclencheur *Bibliothèque : document versé* ; les variables
+      proposées comprennent *Extension du fichier*, *Lisible par l'application (oui / non)*,
+      *Comment l'application le lit*
+- [ ] Condition *Lisible par l'application* est `non`, action Prévenir
+      « {fichier} (.{extension}) : {lecture} » ; verser un `.dwg` : le message dit
+      « format non lu » ; une image : « image : montrée, son texte n'est pas lu » ; un
+      `.pdf` : rien
+- [ ] Par glisser-déposer, par « À verser », par les pièces d'une analyse : de même
+- [ ] Une extension déclarée équivalente (`.tot` lu comme du XML) : `lisible` vaut `oui`
+- [ ] *Fichiers déposés dans l'application* : `{extensions}` (une fois chacune) et
+      `{nonlisibles}`
+- [ ] Lecture de fichiers désactivée : `non`, « non lu : la lecture de fichiers est
+      désactivée »
+
 ## Glisser-déposer des fichiers dans la bibliothèque (v0.79.0)
 
 - [ ] Bibliothèque › Documents : sous les boutons, « Ou glissez-déposez des fichiers… »

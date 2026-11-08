@@ -61,14 +61,18 @@ export function holdDeposit(deposit: Deposit): string {
 export const dropDeposit = (id: string): void => void deposits.delete(id)
 
 /** Le sujet d'un dépôt : ce que voit le workflow. */
-export function depositSubject(id: string, items: readonly PourItem[], origin: DocOrigin): Subject {
+export function depositSubject(id: string, items: readonly PourItem[], origin: DocOrigin, reading?: (name: string) => { extension: string; read: boolean }): Subject {
   const names = items.map((item) => item.name)
+  // Les extensions (une fois chacune) et les fichiers que l'application ne lit pas.
+  const read = reading ? names.map((name) => ({ name, ...reading(name) })) : []
+  const extensions = [...new Set(read.map((each) => each.extension).filter(Boolean))]
+  const unread = read.filter((each) => !each.read).map((each) => each.name)
   return {
     key: id,
     label: origin.label,
     path: origin.link ?? '',
-    vars: { depot: id, origine: origin.module, libelle: origin.label, fichiers: names.join(', '), nombre: String(names.length) },
-    lists: { fichiers: names }
+    vars: { depot: id, origine: origin.module, libelle: origin.label, fichiers: names.join(', '), nombre: String(names.length), extensions: extensions.join(', '), nonlisibles: unread.join(', ') },
+    lists: { fichiers: names, extensions, nonlisibles: unread }
   }
 }
 
@@ -104,7 +108,7 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
     id: TRIGGER_DEPOSITED,
     labelKey: 'bibliotheque.wf.trigger.deposited',
     descKey: 'bibliotheque.wf.trigger.deposited.desc',
-    fields: vars(['origine', 'libelle', 'fichiers', 'nombre', 'depot'])
+    fields: vars(['origine', 'libelle', 'fichiers', 'nombre', 'extensions', 'nonlisibles', 'depot'])
   })
   registerTrigger({
     id: TRIGGER_BATCH,

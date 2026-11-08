@@ -27,10 +27,10 @@ const enc = (text: string) => new TextEncoder().encode(text)
 const JOURNAL = 'Black Projects/Workflows/Journal des workflows.md'
 const HOW = 'Si c’est du texte, déclarez une extension équivalente : Formats de fichiers → Extensions équivalentes.'
 
-async function start(platform: MemoryPlatform, options: { lecture?: Record<string, unknown>; modules?: readonly BlackModule[] } = {}) {
+async function start(platform: MemoryPlatform, options: { lecture?: Record<string, unknown>; modules?: readonly BlackModule[]; workflows?: Workflow[] } = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, 'lecture-fichiers': options.lecture ?? {} }
+  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, 'lecture-fichiers': options.lecture ?? {}, ...(options.workflows ? { workflows: { workflows: options.workflows } } : {}) }
   for (const module of options.modules ?? MODULES) {
     const context: ModuleContext = {
       moduleId: module.id,
@@ -115,5 +115,59 @@ describe('signaler les formats non lus (workflow système)', () => {
     const analysis = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: 'Agence', reference: '' })
     await importFiles(services, analysis, [{ name: 'Releve.tot', bytes: enc('<releve/>') }], toTender)
     expect(platform.notices.filter((notice) => notice.includes('non lu'))).toEqual([])
+  })
+})
+
+describe('les workflows savent l’extension d’un fichier ajouté, et s’il est lisible', () => {
+  const workflow = (id: string, trigger: string, field: string, message: string): Workflow => ({
+    id,
+    name: id,
+    enabled: true,
+    mode: 'auto',
+    trigger: { kind: trigger },
+    conditions: field ? [{ field, op: 'is', value: 'non' }] : [],
+    actions: [{ kind: 'notifier', fields: { message } }],
+    created: '2026-11-01T00:00:00'
+  })
+
+  it('« document versé » : {extension}, {lisible}, {lecture} — une condition sur « lisible »', async () => {
+    const platform = memoryPlatform()
+    await start(platform, { workflows: [workflow('wf-illisible', 'bibliotheque.document-verse', 'lisible', 'Ajouté : {fichier} — .{extension}, lisible : {lisible} ({lecture})')] })
+    await pourIntoLibrary(
+      [
+        { name: 'CCTP.pdf', bytes: enc('cctp') },
+        { name: 'Maquette.dwg', bytes: enc('dwg') },
+        { name: 'Plan.png', bytes: enc('png') },
+        { name: 'DCE.zip', bytes: enc('zip') }
+      ],
+      { module: 'bibliotheque', label: '' }
+    )
+    const said = platform.notices.filter((notice) => notice.startsWith('Ajouté'))
+    expect(said).toEqual([
+      'Ajouté : Bibliothèque/_fichiers/Maquette.dwg — .dwg, lisible : non (format non lu)',
+      'Ajouté : Bibliothèque/_fichiers/Plan.png — .png, lisible : non (image : montrée, son texte n’est pas lu)',
+      'Ajouté : Bibliothèque/_fichiers/DCE.zip — .zip, lisible : non (archive : ouverte, ses fichiers lus un à un)'
+    ])
+  })
+
+  it('une extension déclarée équivalente (.tot lu comme du XML) : lisible', async () => {
+    const platform = memoryPlatform()
+    await start(platform, { lecture: { aliases: { tot: 'xml' } }, workflows: [workflow('wf-tous', 'bibliotheque.document-verse', '', '{extension} : {lisible}')] })
+    await pourIntoLibrary([{ name: 'Releve.tot', bytes: enc('<a/>') }], { module: 'bibliotheque', label: '' })
+    expect(platform.notices).toContain('tot : oui')
+  })
+
+  it('« fichiers déposés » (par n’importe quel module) : {extensions} et {nonlisibles}', async () => {
+    const platform = memoryPlatform()
+    await start(platform, { workflows: [workflow('wf-depot', 'bibliotheque.fichiers-deposes', '', 'Déposés : {extensions} — non lisibles : {nonlisibles}')] })
+    await pourIntoLibrary([{ name: 'Exigences.xlsx', bytes: enc('x') }, { name: 'Maquette.DWG', bytes: enc('d') }, { name: 'Annexe.xlsx', bytes: enc('y') }], { module: 'exigences', label: 'Import' })
+    expect(platform.notices).toContain('Déposés : xlsx, dwg — non lisibles : Maquette.DWG')
+  })
+
+  it('sans la lecture de fichiers : rien n’est lu, et c’est dit', async () => {
+    const platform = memoryPlatform()
+    await start(platform, { modules: MODULES.filter((module) => module !== lectureFichiersModule), workflows: [workflow('wf-off', 'bibliotheque.document-verse', '', '{extension} : {lisible} ({lecture})')] })
+    await pourIntoLibrary([{ name: 'CCTP.pdf', bytes: enc('cctp') }], { module: 'bibliotheque', label: '' })
+    expect(platform.notices).toContain('pdf : non (non lu : la lecture de fichiers est désactivée)')
   })
 })
