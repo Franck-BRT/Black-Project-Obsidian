@@ -70,6 +70,30 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La bibliothèque de documents : ses workflows système (v0.62.0)
+
+- [ ] Page **Workflows**, filtre Système : quatre workflows de la Bibliothèque de
+      documents — « Ranger les pièces importées dans la bibliothèque », « Ranger les
+      fichiers importés dans la bibliothèque », « Repérer les nouvelles versions
+      probables » actifs ; « Signaler les fichiers introuvables, chaque lundi » désactivé
+- [ ] Importer des pièces dans une analyse : elles sont dans la bibliothèque, rien n'est
+      dit ; le **Journal des workflows** garde « Ranger les pièces importées… » (et
+      « Repérer les nouvelles versions probables »)
+- [ ] Désactiver « Ranger les pièces importées » : de nouvelles pièces n'entrent plus dans
+      la bibliothèque ; un import d'exigences, si ; le réactiver
+- [ ] Désactiver « Ranger les fichiers importés » : un import d'exigences (ou de types, de
+      workflows) n'y entre plus ; **Verser des documents**, toujours
+- [ ] Verser « CCTP ind A.pdf » puis « CCTP ind B.pdf » : la seconde « Nouvelle version
+      probable » ; « Repérer les nouvelles versions probables » désactivé, plus de
+      suggestion
+- [ ] Verser deux fois « CCTP.pdf » (contenus différents) : la copie « CCTP (2).pdf » est
+      une nouvelle version probable
+- [ ] Activer « Signaler les fichiers introuvables », déplacer hors du coffre un fichier
+      de `Bibliothèque/_fichiers`, **Exécuter** : « 1 document(s) de la bibliothèque
+      n'ont plus leur fichier : … » ; le journal mène à sa fiche
+- [ ] Modifier un de ces workflows : badge « Modifié » ; **Rétablir l'original** ; pas de
+      « Supprimer »
+
 ## La bibliothèque de documents (v0.61.0)
 
 - [ ] Importer un DCE (ZIP) dans une analyse : menu **Bibliothèque**, une carte par pièce,

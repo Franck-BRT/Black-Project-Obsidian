@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.1.0 (Black Projects 0.61.0) |
+| Version | 0.2.0 (Black Projects 0.62.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -42,8 +42,12 @@ bordereaux) n'est pas repris.
    nouvelle version » / « Ce n'en est pas une »).
 
 `pourIntoLibrary(items, origine, options)` (interface publique) : sans le module actif,
-`null` ; ne lève pas. Chaque document ajouté émet le déclencheur de workflow
+`null` ; ne lève pas. Chaque versement qui fait entrer des documents émet
+`bibliotheque.versement` (une fois, pour tous), puis chaque document ajouté
 `bibliotheque.document-verse` (titre, famille, catégorie, fichier, origine).
+
+Une copie faite sous un nom déjà pris (« CCTP (2).pdf ») garde la clé de version de son
+nom (le « (2) » ôté) : elle reste reconnue comme nouvelle version (v0.2.0).
 
 **Qui verse** :
 
@@ -54,6 +58,36 @@ bordereaux) n'est pas repris.
 | Typage des pièces | import de types réussi | idem, catégorie « Échange » | « Import de types de pièces » |
 | Workflows | import de workflows réussi | idem, catégorie « Échange » | « Import de workflows » |
 | Bibliothèque | « Verser des documents » | ordinateur (plusieurs, copiés) ou coffre (en place) | « Versé à la main » |
+
+## Les workflows système (v0.2.0, Black Projects 0.62.0)
+
+Les automatismes de la bibliothèque sont des [workflows système](workflows.md)
+(`workflows.ts`) — modifiables, désactivables, pas supprimables :
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Ranger les pièces importées dans la bibliothèque (`sys.bibliotheque.ranger-pieces`) | fichiers déposés dans l'application, `origine` est `ao` | `bibliotheque.verser` : verse le dépôt | actif |
+| Ranger les fichiers importés dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`) | fichiers déposés, `origine` n'est pas `ao` (exigences, typage-pieces, workflows) | `bibliotheque.verser` | actif |
+| Repérer les nouvelles versions probables (`sys.bibliotheque.nouvelles-versions`) | documents versés (une fois par versement) | `bibliotheque.versions` : `markLikelyVersions` sur les fiches du versement | actif |
+| Signaler les fichiers introuvables, chaque lundi (`sys.bibliotheque.fichiers-introuvables`) | chaque lundi à 8 h | `bibliotheque.introuvables` : `missingFiles`, prévient s'il en manque, le journal garde les fiches | désactivé |
+
+**Le dépôt** : le module Workflows actif (`systemWorkflowManages` d'un des deux « Ranger »),
+`pourIntoLibrary` d'un autre module que la bibliothèque ne verse pas lui-même : il garde
+les fichiers sous un identifiant (`holdDeposit` ; leurs octets ne voyagent pas dans les
+variables ; vingt dépôts en attente au plus) et émet `bibliotheque.fichiers-deposes`
+(variables `origine` — le module —, `libelle`, `fichiers`, `nombre`, `depot`). L'action
+`bibliotheque.verser` (champ `depot`, `{depot}` d'origine) prend le dépôt, une fois, et le
+verse. Le déposant attend la fin du workflow, puis annonce les documents versés ; déposé
+pendant qu'un workflow s'exécute (`workflowRunning`), le dépôt passe après lui, sans être
+attendu, et c'est l'action qui les annonce. Workflow désactivé : les fichiers ne sont pas
+rangés (`null`). « Verser des documents », depuis la bibliothèque, y entre toujours.
+
+**Les versions** : `systemWorkflowManages(SYS_VERSIONS)`, `pour` ne repère plus les
+versions à l'entrée (`detectVersions: false`) ; le workflow le fait au versement annoncé,
+et les fiches du rapport sont relues (« Verser des documents » dit toujours qu'une nouvelle
+version est probable). Désactivé : plus de suggestion.
+
+Sans le module Workflows, la bibliothèque range et repère elle-même, comme en 0.1.0.
 
 ## Retirer
 
@@ -86,3 +120,7 @@ fichier resté à sa place n'est pas touché ; les liens de version vers elle so
 `test/bibliotheque.test.ts` : verser (copié, en place, doublons, module inactif), versions
 (probable, relier, remplacé, même versement), page et fiche (menu, chiffres, filtres,
 verser, classer, origines, retirer), ce que versent l'analyse et l'import d'exigences.
+`test/bibliotheque-workflows.test.ts` : les quatre workflows système (créés, actifs ou
+non), les pièces et les imports rangés par leur workflow, chacun désactivé, les versions
+repérées une fois par versement, la copie « (2) », les fichiers introuvables, sans le
+module Workflows, un dépôt fait pendant qu'un workflow s'exécute.

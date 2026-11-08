@@ -50,8 +50,30 @@ s'il avait été copié ; rien n'est effacé, et une pièce d'analyse n'est pas 
 
 ## 5. Automatiser
 
-Le déclencheur de workflow **Bibliothèque : document versé** (titre, famille, catégorie,
-fichier, module d'origine) — voir {{link:Modules/Workflows|Workflows}}.
+Ce que la bibliothèque fait d'elle-même est écrit en **workflows système** : page
+**Workflows**, filtre *Système*. Vous pouvez les modifier, les désactiver, et revenir à
+l'original (« Rétablir l'original ») ; pas les supprimer.
+
+| Workflow système | Quand | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Ranger les pièces importées dans la bibliothèque | des pièces sont importées dans une analyse | les range dans la bibliothèque | activé |
+| Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types de pièces ou de workflows | range le fichier importé | activé |
+| Repérer les nouvelles versions probables | des documents entrent dans la bibliothèque | marque la version précédente probable, à confirmer sur la fiche | activé |
+| Signaler les fichiers introuvables, chaque lundi | le lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
+
+Désactiver un « Ranger… », c'est ne plus ranger ces fichiers-là ; ce que vous versez
+vous-même (« Verser des documents ») y entre toujours.
+
+Les déclencheurs, pour vos propres workflows :
+
+- **Fichiers déposés dans l'application** : un module reçoit des fichiers, avant qu'ils
+  n'entrent dans la bibliothèque (module d'origine — `ao`, `exigences`, `typage-pieces`,
+  `workflows` —, ce qu'il en dit, les fichiers, combien) ;
+- **Bibliothèque : documents versés** : une fois par versement (combien, les titres) ;
+- **Bibliothèque : document versé** : un par document (titre, famille, catégorie,
+  fichier, module d'origine).
+
+Voir {{link:Modules/Workflows|Workflows}}.
 
 ## 6. Réglages
 

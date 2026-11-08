@@ -81,6 +81,8 @@ export class WorkflowEngine {
   /** Les heures des dernières exécutions de chaque workflow, pour arrêter une boucle. */
   private readonly recent = new Map<string, number[]>()
   private queue: Promise<unknown> = Promise.resolve()
+  /** Un workflow s'exécute : ce qui est émis pendant ce temps (une action qui verse, qui crée…) est mis à la suite. */
+  private running = 0
 
   constructor(private readonly deps: EngineDeps) {}
 
@@ -92,7 +94,14 @@ export class WorkflowEngine {
       for (const workflow of this.deps.load().filter((each) => usable(each) && matches(each, event, today))) await this.execute(workflow, event, false)
     })
     this.queue = run.catch(() => undefined)
-    return run
+    // Émis pendant qu'un workflow s'exécute (par une de ses actions, peut-être) : il passe après
+    // lui, sans être attendu — l'attendre de l'intérieur bloquerait la file.
+    return this.running ? Promise.resolve() : run
+  }
+
+  /** Un workflow est-il en train de s'exécuter ? */
+  get busy(): boolean {
+    return this.running > 0
   }
 
   /** Les workflows planifiés dont l'heure est venue. */
@@ -115,6 +124,15 @@ export class WorkflowEngine {
   }
 
   private async execute(workflow: Workflow, event: WorkflowEvent, byHand: boolean): Promise<Outcome> {
+    this.running++
+    try {
+      return await this.perform(workflow, event, byHand)
+    } finally {
+      this.running--
+    }
+  }
+
+  private async perform(workflow: Workflow, event: WorkflowEvent, byHand: boolean): Promise<Outcome> {
     const { t, ui, notifier } = this.deps
     const now = this.deps.now()
     const subject = event.subject

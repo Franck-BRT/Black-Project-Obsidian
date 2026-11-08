@@ -19,12 +19,13 @@ import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import { cleanFolder } from '../../core/settings'
-import { emitWorkflowEvent, NO_SUBJECT, registerTrigger } from '../workflows'
+import { emitWorkflowEvent, NO_SUBJECT, registerTrigger, systemWorkflowManages, workflowRunning } from '../workflows'
 import page from './doc/Bibliothèque.md'
 import { docPageOf, registerLibraryHome } from './home'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, type DocOrigin, type LibraryDoc } from './model'
 import { LibraryStore, type PourItem, type PourOptions, type PourReport } from './store'
+import { batchSubject, depositSubject, dropDeposit, holdDeposit, registerLibraryWorkflows, SYS_FILES, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, type Deposit } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export type { DocOrigin, LibraryDoc } from './model'
@@ -35,6 +36,7 @@ export const FOLDER_KEY = 'dossier'
 export const DEFAULT_FOLDER = 'Bibliothèque'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
+export { SYS_FILES, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED } from './workflows'
 
 let active: { store: LibraryStore; t: (key: string, vars?: Record<string, string | number>) => string } | null = null
 
@@ -43,17 +45,56 @@ let active: { store: LibraryStore; t: (key: string, vars?: Record<string, string
  * ce qu'il en dit, un lien). Les fichiers du coffre y restent où ils sont ; ceux venus de
  * l'ordinateur y sont copiés. Un même fichier n'y entre qu'une fois. Sans le module actif,
  * ne fait rien (`null`). Ne lève pas : un fichier illisible est compté dans `failed`.
+ *
+ * Le module Workflows actif, un dépôt d'un autre module passe par ses workflows système
+ * (« Ranger les pièces importées », « Ranger les fichiers importés ») : désactivés, les
+ * fichiers ne sont pas rangés — `null`. Ce qu'on verse soi-même depuis la bibliothèque y
+ * entre toujours.
  */
 export async function pourIntoLibrary(items: readonly PourItem[], origin: DocOrigin, options: PourOptions = {}): Promise<PourReport | null> {
   if (!active || !items.length) return null
   try {
-    const report = await active.store.pour(items, origin, options)
-    for (const doc of report.added) await emitPoured(doc)
-    return report
+    if (origin.module !== BIBLIOTHEQUE && (systemWorkflowManages(SYS_PIECES) || systemWorkflowManages(SYS_FILES))) return await depositThroughWorkflows(items, origin, options)
+    return await pourNow(items, origin, options, true)
   } catch (error) {
     console.error('[Black Projects] bibliothèque', error)
     return null
   }
+}
+
+/** Le dépôt confié aux workflows : ses fichiers attendent l'action « Ranger dans la bibliothèque ». */
+async function depositThroughWorkflows(items: readonly PourItem[], origin: DocOrigin, options: PourOptions): Promise<PourReport | null> {
+  // Déposé pendant qu'un workflow s'exécute : le dépôt passe après lui, sans être attendu.
+  const awaited = !workflowRunning()
+  const deposit: Deposit = { items, origin, options, awaited, report: null }
+  const id = holdDeposit(deposit)
+  await emitWorkflowEvent(TRIGGER_DEPOSITED, depositSubject(id, items, origin))
+  if (!awaited) return null
+  dropDeposit(id)
+  if (deposit.report) await announce(deposit.report, origin)
+  return deposit.report
+}
+
+/**
+ * Verser maintenant. Les nouvelles versions probables : repérées à l'entrée, sauf quand leur
+ * workflow système s'en charge (au versement annoncé). `announce` : dire les documents
+ * entrés aux workflows — une fois pour le versement, puis un par document.
+ */
+async function pourNow(items: readonly PourItem[], origin: DocOrigin, options: PourOptions, toAnnounce: boolean): Promise<PourReport> {
+  if (!active) return { added: [], already: [], failed: [] }
+  const { store } = active
+  const report = await store.pour(items, origin, { ...options, detectVersions: !systemWorkflowManages(SYS_VERSIONS) })
+  if (toAnnounce) await announce(report, origin)
+  return report
+}
+
+async function announce(report: PourReport, origin: DocOrigin): Promise<void> {
+  if (!active || !report.added.length) return
+  const { store, t } = active
+  await emitWorkflowEvent(TRIGGER_BATCH, batchSubject(report.added, origin, t))
+  // Son workflow a pu y repérer des versions : les fiches relues.
+  report.added = await Promise.all(report.added.map(async (doc) => (await store.load(doc.record)) ?? doc))
+  for (const doc of report.added) await emitPoured(doc)
 }
 
 /** Le module est-il actif (les autres modules le disent à l'utilisateur, au besoin) ? */
@@ -109,7 +150,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.1.0',
+  version: '0.2.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -129,6 +170,7 @@ export const bibliothequeModule: BlackModule = {
       descKey: 'bibliotheque.wf.trigger.poured.desc',
       fields: ['titre', 'famille', 'categorie', 'fichier', 'origine'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
+    registerLibraryWorkflows({ t, store, pourNow })
 
     /** Verser des documents soi-même : de l'ordinateur (copiés) ou du coffre (laissés à leur place). */
     const pour = async (): Promise<PourReport | null> => {

@@ -7,6 +7,9 @@ Tout fichier déposé dans l'application est rangé ici, une fois, avec sa fiche
 - `store.ts` — `LibraryStore` : parcourir la bibliothèque, **verser** (empreinte, doublons,
   copie ou en place, version probable), relier les versions, retirer (mis de côté).
 - `hash.ts` — l'empreinte SHA-256.
+- `workflows.ts` — ses workflows système (ranger les pièces, ranger les fichiers importés,
+  repérer les nouvelles versions, signaler les fichiers introuvables), leurs déclencheurs
+  et leurs actions ; les dépôts en attente de leur workflow.
 - `home.ts` — le tableau de bord, la page Bibliothèque, la fiche d'un document.
 - `index.ts` — le module et son interface publique : `pourIntoLibrary(items, origine)`,
   que les autres modules appellent ; sans ce module actif, l'appel ne fait rien.

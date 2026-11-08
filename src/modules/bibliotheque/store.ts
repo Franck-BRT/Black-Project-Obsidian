@@ -54,6 +54,11 @@ export interface PourItem {
 export interface PourOptions {
   /** La catégorie à donner (un type de pièce) ; sinon devinée au nom. */
   category?: string
+  /**
+   * Repérer, à l'entrée, les nouvelles versions probables (oui, par défaut). Non quand c'est
+   * son workflow système qui s'en charge, après le versement (`markLikelyVersions`).
+   */
+  detectVersions?: boolean
 }
 
 export interface PourReport {
@@ -72,6 +77,21 @@ const safeName = (name: string): string =>
     .trim() || 'Document'
 
 const sameOrigin = (a: DocOrigin, b: DocOrigin): boolean => a.module === b.module && a.label === b.label && (a.link ?? '') === (b.link ?? '')
+
+/** La clé de version d'un fichier, sans le « (2) » qu'ajoute une copie faite sous un nom déjà pris. */
+const nameKey = (path: string): string => versionKey(baseName(path).replace(/ \(\d+\)(?=\.[^.]+$|$)/, ''))
+
+/**
+ * La version précédente probable d'un document : même famille, même nom une fois les marques
+ * de version ôtées, d'autres octets — la plus récente. Ceux d'un même versement (`batch`) n'en
+ * sont pas : deux fichiers du même nom y sont deux formats d'un document, pas deux versions.
+ */
+function likelyPreviousOf(doc: Pick<LibraryDoc, 'record' | 'file' | 'family' | 'hash'>, known: readonly LibraryDoc[], batch: ReadonlySet<string>): LibraryDoc | undefined {
+  const key = nameKey(doc.file)
+  return known
+    .filter((other) => other.record !== doc.record && !batch.has(other.record) && other.family === doc.family && other.hash !== doc.hash && nameKey(other.file) === key)
+    .sort((a, b) => b.added.localeCompare(a.added))[0]
+}
 
 export class LibraryStore {
   constructor(private readonly deps: StoreDeps) {}
@@ -161,13 +181,11 @@ export class LibraryStore {
       }
       const title = titleFromName(item.name)
       const family = familyOf(item.name)
-      // Une version précédente probable : même famille, même nom une fois les marques de version ôtées.
-      const key = versionKey(item.name)
-      const previous = known
-        .filter((doc) => !batch.has(doc.record) && doc.family === family && doc.hash !== hash && versionKey(doc.file) === key)
-        .sort((a, b) => b.added.localeCompare(a.added))[0]
+      const record = await this.free(`${this.root}/${safeName(title)}.md`)
+      // Une version précédente probable (le nom du fichier versé fait foi : un fichier copié a pu être renommé).
+      const previous = options.detectVersions === false ? undefined : likelyPreviousOf({ record, file: item.name, family, hash }, known, batch)
       const doc: LibraryDoc = {
-        record: await this.free(`${this.root}/${safeName(title)}.md`),
+        record,
         title,
         file,
         family,
@@ -190,6 +208,34 @@ export class LibraryStore {
       report.added.push(doc)
     }
     return report
+  }
+
+  /**
+   * Repérer les nouvelles versions probables parmi des documents tout juste versés (leurs
+   * fiches) : ceux qui n'ont encore ni version précédente ni suggestion. Rend ceux qui en ont
+   * reçu une.
+   */
+  async markLikelyVersions(records: readonly string[]): Promise<LibraryDoc[]> {
+    const known = await this.all()
+    const batch = new Set(records)
+    const marked: LibraryDoc[] = []
+    for (const record of records) {
+      const doc = known.find((each) => each.record === record)
+      if (!doc || doc.previous || doc.likelyPrevious) continue
+      const previous = likelyPreviousOf(doc, known, batch)
+      if (!previous) continue
+      doc.likelyPrevious = previous.record
+      await this.save(doc)
+      marked.push(doc)
+    }
+    return marked
+  }
+
+  /** Les documents dont le fichier n'est plus dans le coffre (déplacé, renommé, effacé). */
+  async missingFiles(): Promise<LibraryDoc[]> {
+    const missing: LibraryDoc[] = []
+    for (const doc of await this.all()) if (!doc.file || !(await this.deps.fs.exists(doc.file))) missing.push(doc)
+    return missing.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
   }
 
   /** Relier un document à sa version précédente (ou défaire le lien : `previous` vide). */

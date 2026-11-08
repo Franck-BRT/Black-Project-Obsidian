@@ -91,6 +91,10 @@ Workflows et dans le journal.
 | Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Vérifier la connexion à l'IA, à l'ouverture | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas ou si un modèle choisi n'y est plus | actif |
+| Ranger les pièces importées dans la bibliothèque | des pièces importées dans une analyse | les range dans la bibliothèque de documents | actif |
+| Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types ou de workflows | range le fichier importé | actif |
+| Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |
+| Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 
 - **Modifiables** : nom, mode, déclencheur, conditions, actions, comme les autres.
 - **Désactivables** : désactivé, l'automatisme ne se fait plus (la note de l'analyse, par

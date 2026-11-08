@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.2.0 (Black Projects 0.10.0) |
+| Version | 0.12.0 (Black Projects 0.62.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -168,6 +168,19 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Vérifier la connexion à l'IA, à l'ouverture (v0.60.0) | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas ou si un modèle choisi n'y est plus | actif |
+
+**La bibliothèque de documents, en workflows système (v0.12.0, Black Projects 0.62.0)** :
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Ranger les pièces importées dans la bibliothèque | fichiers déposés dans l'application (par l'analyse) | verse les pièces | actif |
+| Ranger les fichiers importés dans la bibliothèque | fichiers déposés (import d'exigences, de types, de workflows) | verse le fichier | actif |
+| Repérer les nouvelles versions probables | documents versés (une fois par versement) | marque la version précédente probable | actif |
+| Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
+
+Le moteur : un évènement émis pendant qu'un workflow s'exécute (par une de ses actions) est
+mis à la suite **sans être attendu** — l'attendre de l'intérieur bloquait la file
+(`WorkflowEngine.busy`, `workflowRunning()`). Voir [bibliotheque.md](bibliotheque.md).
 
 **La bibliothèque de documents (v0.11.0, Black Projects 0.61.0)** : le fichier d'un import
 de workflows réussi est versé dans la [bibliothèque](bibliotheque.md) (catégorie

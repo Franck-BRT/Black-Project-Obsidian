@@ -452,6 +452,12 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   analyse, import d'exigences, échanges de types et de workflows, versement à la main) y est
   rangé une fois, avec sa fiche (origines, catégorie, versions reconnues au nom) ; page,
   fiche, classer, relier les versions, retirer
+- v0.62.0 : **module Bibliothèque de documents** : ses automatismes en workflows système —
+  *Ranger les pièces importées*, *Ranger les fichiers importés*, *Repérer les nouvelles
+  versions probables* (actifs), *Signaler les fichiers introuvables, chaque lundi*
+  (désactivé) ; nouveaux déclencheurs *Fichiers déposés dans l'application* et
+  *Bibliothèque : documents versés* ; un évènement émis par une action n'attend plus la fin
+  du workflow en cours
 
 ### Étape 7 — Livrables
 

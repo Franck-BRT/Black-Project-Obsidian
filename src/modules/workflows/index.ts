@@ -71,7 +71,7 @@ export {
   type TemplateSpec,
   type TriggerSpec
 } from './registry'
-export { MANUAL, NO_SUBJECT, OPENING, SCHEDULE, type Subject, type Workflow, type WorkflowAction, type WorkflowCondition } from './model'
+export { MANUAL, NO_SUBJECT, OPENING, SCHEDULE, type Subject, type Workflow, type WorkflowAction, type WorkflowCondition, type WorkflowTrigger } from './model'
 
 export const WORKFLOWS = 'workflows'
 export const WORKFLOWS_KEY = 'workflows'
@@ -110,6 +110,9 @@ export async function runOpeningWorkflows(): Promise<void> {
 
 /** Le module Workflows est-il actif (ses workflows système font alors ce que d'autres feraient en dur) ? */
 export const systemWorkflowsActive = (): boolean => engine !== null
+
+/** Un workflow s'exécute-t-il en ce moment ? (Ce qui est émis pendant ce temps passe après lui, sans être attendu.) */
+export const workflowRunning = (): boolean => engine?.busy ?? false
 
 /**
  * Un automatisme est-il confié à son workflow système : le module Workflows actif, le
@@ -172,7 +175,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.11.0',
+  version: '0.12.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
