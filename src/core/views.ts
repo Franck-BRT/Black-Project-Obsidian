@@ -140,12 +140,6 @@ export type HomeBlock =
    */
   | { kind: 'flowchart'; title?: string; label: string; nodes: FlowNode[] }
   /**
-   * Un **fil d'Ariane** : où l'on est (« Bibliothèque › Normes › ECSS »), chaque étape un
-   * lien vers elle, la dernière (là où l'on est) sans lien. `label` le nomme pour les
-   * lecteurs d'écran.
-   */
-  | { kind: 'breadcrumb'; label: string; items: { id: string; label: string; icon?: IconName; run?: () => void | Promise<void> }[] }
-  /**
    * Une **section repliable** : un intitulé (un clic la replie ou la déplie) et ses blocs —
    * d'autres sections comprises (des sous-sections). Repliée d'origine si `collapsed` ;
    * l'interface se souvient ensuite de ce que l'utilisateur en a fait, le temps de la
@@ -244,9 +238,21 @@ export function pageWith(id: string, param: string): string {
   return `${id}?${param}`
 }
 
+/**
+ * Un **fil d'Ariane** : où l'on est (« Bibliothèque › Normes › ECSS »), chaque étape un
+ * lien vers elle, la dernière (là où l'on est) sans lien. `label` le nomme pour les
+ * lecteurs d'écran.
+ */
+export interface Breadcrumb {
+  label: string
+  items: { id: string; label: string; icon?: IconName; run?: () => void | Promise<void> }[]
+}
+
 export interface PageView {
   /** Le titre de la page, s'il dépend de ce qu'elle montre (le nom d'un workflow). */
   title?: string
+  /** Où l'on est : tout en haut de la page, avant le retour et le reste. */
+  breadcrumb?: Breadcrumb
   /** Un lien de retour, au-dessus (« ← Tous les workflows »). */
   back?: ViewAction
   subtitle?: string

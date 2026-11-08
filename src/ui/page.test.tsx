@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_APPEARANCE } from '../core/appearance'
 import { createI18n } from '../core/i18n'
 import { ViewsRegistry, type Card, type HomeBlock } from '../core/views'
-import { BlockView, LayoutContext } from './components'
+import { BlockView, BreadcrumbNav, LayoutContext } from './components'
 import type { AppHost } from './host'
 import { filterBlocks, fold } from './page'
 import { App } from './shell'
@@ -220,5 +220,26 @@ describe('le logigramme', () => {
     expect(html).toContain('Non : rien ne se passe')
     expect(html.match(/class="bp-flow-link"/g)).toHaveLength(3)
     expect(html).toMatch(/class="bp-flow-yes">Oui</)
+  })
+})
+
+describe('le fil d’Ariane d’une page', () => {
+  it('chaque étape un bouton, la dernière (là où l’on est) sans lien, marquée « location »', () => {
+    const html = renderToString(
+      <BreadcrumbNav
+        crumbs={{
+          label: 'Où vous êtes',
+          items: [
+            { id: 'hub', label: 'Bibliothèque', icon: 'book', run: () => undefined },
+            { id: 'shelf', label: 'Documents', run: () => undefined },
+            { id: 'dir', label: 'Normes', run: () => undefined }
+          ]
+        }}
+      />
+    )
+    expect(html).toMatch(/^<nav class="bp-crumbs" aria-label="Où vous êtes"><ol>/)
+    expect(html.match(/<button type="button" class="bp-crumb">/g)).toHaveLength(2)
+    expect(html).toContain('<span class="bp-crumb is-here" aria-current="location">Normes</span>')
+    expect(html.match(/<span class="bp-crumb-sep" aria-hidden="true">›<\/span>/g)).toHaveLength(2)
   })
 })

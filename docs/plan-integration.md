@@ -506,6 +506,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   prompts, de personas (chacune son dossier ; l'une par défaut, où entre ce qui arrive
   sans lieu) ; des **répertoires** et sous-répertoires, parcourus avec un **fil
   d'Ariane** (nouveau bloc de l'interface) ; « Déplacer… » ; regrouper par répertoire
+- v0.78.0 : **interface** : le fil d'Ariane devient un champ de la page
+  (`PageView.breadcrumb`), dessiné tout en haut, au-dessus du titre de la page
 
 ### Étape 7 — Livrables
 

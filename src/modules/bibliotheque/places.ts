@@ -8,7 +8,7 @@
  * liste. Commun aux documents, aux prompts et aux personas.
  */
 
-import { pageWith, type Card, type HomeBlock, type ViewAction } from '../../core/views'
+import { pageWith, type Breadcrumb, type Card, type HomeBlock, type ViewAction } from '../../core/views'
 import type { Group } from '../../core/grouping'
 import { folderOfPlace, placeParam, readPlace, type Place, type Shelf, type ShelfKind } from './shelves'
 
@@ -72,15 +72,14 @@ export async function placeView(
   deps: ShelfPlacesDeps,
   place: { shelf: Shelf; directory: string },
   items: readonly Placed[]
-): Promise<{ blocks: HomeBlock[]; actions: ViewAction[]; folder: string; note: string }> {
+): Promise<{ breadcrumb: Breadcrumb; blocks: HomeBlock[]; actions: ViewAction[]; folder: string; note: string }> {
   const { t, kind } = deps
   const show = deps.showPage
   const go = (directory: string, shelf = place.shelf) => () => show?.(placePageOf(deps.page, { shelf: shelf.id, directory }))
   const folder = folderOfPlace(place.shelf, place.directory)
   const parts = place.directory.split('/').filter(Boolean)
   const several = deps.shelves().length > 1
-  const crumbs: HomeBlock = {
-    kind: 'breadcrumb',
+  const crumbs: Breadcrumb = {
     label: t('bibliotheque.place.crumbs'),
     items: [
       { id: 'hub', label: t('bibliotheque.hub.title'), icon: 'book', run: () => show?.(deps.hub) },
@@ -142,7 +141,8 @@ export async function placeView(
         ])
   ]
   return {
-    blocks: [crumbs, ...(cards.length ? [{ kind: 'cards' as const, title: t('bibliotheque.place.directories', { count: cards.length }), cards }] : [])],
+    breadcrumb: crumbs,
+    blocks: [...(cards.length ? [{ kind: 'cards' as const, title: t('bibliotheque.place.directories', { count: cards.length }), cards }] : [])],
     actions,
     folder,
     // « La bibliothèque par défaut », quand il y en a plusieurs.

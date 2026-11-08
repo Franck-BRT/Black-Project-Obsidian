@@ -11,7 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { resolvedMode, type Appearance } from '../core/appearance'
 import { AppearancePanel } from './appearance'
-import { AfterAction } from './components'
+import { AfterAction, BreadcrumbNav } from './components'
 import { HomePage } from './home'
 import { ModulePage } from './page'
 import { ModuleFunctionsPage, moduleFunctionsTitle } from './dialogs/moduleWindow'
@@ -22,7 +22,7 @@ import { greetingKey } from './logic'
 import { SideMenu } from './sidemenu'
 import { Springboard } from './springboard'
 import { back as backFrom, leave, type Visit } from './history'
-import type { TileSpec } from '../core/views'
+import type { Breadcrumb, TileSpec } from '../core/views'
 
 /** L'accueil, le tableau de bord, ou la page d'un module (son identifiant : « ao.analyses »). */
 export type Page = string
@@ -36,6 +36,8 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
   const [menuEditing, setMenuEditing] = useState(false)
   // Le titre d'une page qui dépend de ce qu'elle montre (le nom d'un workflow).
   const [pageTitle, setPageTitle] = useState<string | undefined>(undefined)
+  // Le fil d'Ariane de la page montrée : tout en haut, au-dessus du « Retour ».
+  const [crumbs, setCrumbs] = useState<Breadcrumb | undefined>(undefined)
   const [page, setPageState] = useState<Page>(wanted)
   useEffect(() => setPageState(wanted), [wanted, request])
   // L'historique : chaque page quittée, avec son titre ; « Retour » ramène à la dernière.
@@ -148,6 +150,7 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
             </div>
           </aside>
           <main class="bp-main" ref={main} tabIndex={-1}>
+            {modulePage && !functions && crumbs && <BreadcrumbNav crumbs={crumbs} />}
             <header class="bp-header">
               <div>
                 <h1 class="bp-hello">
@@ -190,7 +193,7 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
             {functions ? (
               <ModuleFunctionsPage key={page} host={functions} />
             ) : modulePage ? (
-              <ModulePage spec={modulePage} param={param} host={host} generation={generation + local} onTitle={setPageTitle} hasHistory={!!previous} />
+              <ModulePage spec={modulePage} param={param} host={host} generation={generation + local} onTitle={setPageTitle} onCrumbs={setCrumbs} hasHistory={!!previous} />
             ) : shown === 'home' ? (
               <Springboard host={host} generation={generation + local} tiles={tiles} />
             ) : (

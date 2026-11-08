@@ -109,6 +109,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
   }
   const starters: ViewAction = { id: 'starters', label: t('bibliotheque.entry.starters'), tooltip: t(`bibliotheque.${kind}.starters.tip`), icon: 'copy', run: () => deps.addStarters(kind) }
   return {
+    breadcrumb: top.breadcrumb,
     title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : places.shelves().length > 1 ? place.shelf.name : t(`bibliotheque.${kind}.title`),
     ...(param
       ? { back: { id: 'back', label: t('bibliotheque.back.up'), run: () => deps.showPage?.(place.directory ? placePageOf(ENTRIES_PAGE[kind], { shelf: place.shelf.id, directory: place.directory.split('/').slice(0, -1).join('/') }) : HUB_PAGE) } }
@@ -149,7 +150,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
             (count) => t(`bibliotheque.${kind}.group.count`, { count })
           )
         ]
-      : [{ kind: 'message' as const, tone: 'info' as const, text: t(top.blocks.length > 1 ? 'bibliotheque.place.empty' : `bibliotheque.${kind}.empty`), actions: [create, { ...starters, primary: false }] }])
+      : [{ kind: 'message' as const, tone: 'info' as const, text: t(top.blocks.length ? 'bibliotheque.place.empty' : `bibliotheque.${kind}.empty`), actions: [create, { ...starters, primary: false }] }])
     ]
   }
 }

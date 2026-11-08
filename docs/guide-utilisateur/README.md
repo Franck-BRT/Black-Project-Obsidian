@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.77.0)
+## Aujourd'hui (version 0.78.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -142,8 +142,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   bibliothèque** en ajoute une autre de la même sorte (des normes, des modèles, un
   client…), dans son propre dossier ; l'une est **par défaut** : ce qui arrive sans lieu
   précis (les pièces d'une analyse, un import, « À verser ») y entre, à sa racine.
-  **Nouveau répertoire** crée un répertoire (et des sous-répertoires) : un fil d'Ariane
-  (« Bibliothèque › Documents › Normes › ECSS ») dit où vous êtes et y ramène ; on verse
+  **Nouveau répertoire** crée un répertoire (et des sous-répertoires) : un fil d'Ariane,
+  tout en haut de la page (« Bibliothèque › Documents › Normes › ECSS »), dit où vous êtes
+  et y ramène ; on verse
   ou crée là où l'on est ; **Déplacer…**, sur une fiche, range ailleurs ; **Regrouper par
   › Répertoire** montre tout ce qui est dessous.
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une

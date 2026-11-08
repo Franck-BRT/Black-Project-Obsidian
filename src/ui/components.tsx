@@ -9,7 +9,7 @@
 
 import { createContext } from 'preact'
 import { useContext, useState } from 'preact/hooks'
-import type { Badge as BadgeView, Card as CardView, Deadline, FlowNode, HomeBlock, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
+import type { Badge as BadgeView, Breadcrumb, Card as CardView, Deadline, FlowNode, HomeBlock, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
 import type { Translate } from './host'
 import { Icon } from './icons'
 import { daysUntil, deadlineTone, starGlyphs, TONE_ICON } from './logic'
@@ -307,6 +307,43 @@ function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) 
   )
 }
 
+/** Un fil d'Ariane : chaque étape un bouton, la dernière (là où l'on est) sans lien. */
+export function BreadcrumbNav({ crumbs }: { crumbs: Breadcrumb }) {
+  return (
+    <nav class="bp-crumbs" aria-label={crumbs.label}>
+      <ol>
+        {crumbs.items.map((item, index) => {
+          const last = index === crumbs.items.length - 1
+          const inner = (
+            <>
+              {item.icon && <Icon name={item.icon} />}
+              {item.label}
+            </>
+          )
+          return (
+            <li key={item.id}>
+              {item.run && !last ? (
+                <button type="button" class="bp-crumb" onClick={() => void item.run!()}>
+                  {inner}
+                </button>
+              ) : (
+                <span class="bp-crumb is-here" aria-current={last ? 'location' : undefined}>
+                  {inner}
+                </span>
+              )}
+              {!last && (
+                <span class="bp-crumb-sep" aria-hidden="true">
+                  ›
+                </span>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
+  )
+}
+
 /** Un logigramme : ses formes de haut en bas, reliées par des flèches ; une question a sa branche « non ». */
 function Flowchart({ block }: { block: Extract<HomeBlock, { kind: 'flowchart' }> }) {
   const shape = (node: FlowNode) => {
@@ -391,40 +428,6 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
   switch (block.kind) {
     case 'flowchart':
       return <Flowchart block={block} />
-    case 'breadcrumb':
-      return (
-        <nav class="bp-crumbs" aria-label={block.label}>
-          <ol>
-            {block.items.map((item, index) => {
-              const last = index === block.items.length - 1
-              const inner = (
-                <>
-                  {item.icon && <Icon name={item.icon} />}
-                  {item.label}
-                </>
-              )
-              return (
-                <li key={item.id}>
-                  {item.run && !last ? (
-                    <button type="button" class="bp-crumb" onClick={() => void item.run!()}>
-                      {inner}
-                    </button>
-                  ) : (
-                    <span class="bp-crumb is-here" aria-current={last ? 'location' : undefined}>
-                      {inner}
-                    </span>
-                  )}
-                  {!last && (
-                    <span class="bp-crumb-sep" aria-hidden="true">
-                      ›
-                    </span>
-                  )}
-                </li>
-              )
-            })}
-          </ol>
-        </nav>
-      )
     case 'section':
       return <FoldSection block={block} t={t} now={now} locale={locale} {...(narrowed ? { narrowed } : {})} />
     case 'actions':

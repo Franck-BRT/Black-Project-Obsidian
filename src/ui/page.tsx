@@ -8,8 +8,8 @@
  */
 
 import { useContext, useEffect, useState } from 'preact/hooks'
-import type { Card, HomeBlock, ListItem, PageLayout, PageSpec, PageView, ViewAction } from '../core/views'
-import { ActionButton, AfterAction, BlockView, LayoutContext } from './components'
+import type { Breadcrumb, Card, HomeBlock, ListItem, PageLayout, PageSpec, PageView, ViewAction } from '../core/views'
+import { ActionButton, AfterAction, BlockView, BreadcrumbNav, LayoutContext } from './components'
 import type { AppHost } from './host'
 import { Icon } from './icons'
 
@@ -101,8 +101,27 @@ function storeLayout(page: string, layout: PageLayout): void {
  * `hasHistory` : l'interface a un vrai « Retour » (la page précédente) ; le lien de la page
  * (« ← Toutes les analyses ») ne sert alors plus — il ne reste que quand on arrive tout
  * droit sur la page (une commande, l'ouverture de l'onglet).
+ *
+ * `onCrumbs` : l'interface dessine elle-même le fil d'Ariane de la page, tout en haut (au-
+ * dessus du titre) ; sans elle, la page le dessine en tête.
  */
-export function ModulePage({ spec, param, host, generation, onTitle, hasHistory }: { spec: PageSpec; param?: string; host: AppHost; generation: number; onTitle?: (title: string | undefined) => void; hasHistory?: boolean }) {
+export function ModulePage({
+  spec,
+  param,
+  host,
+  generation,
+  onTitle,
+  onCrumbs,
+  hasHistory
+}: {
+  spec: PageSpec
+  param?: string
+  host: AppHost
+  generation: number
+  onTitle?: (title: string | undefined) => void
+  onCrumbs?: (crumbs: Breadcrumb | undefined) => void
+  hasHistory?: boolean
+}) {
   const { t } = host
   const [state, setState] = useState<State>({ status: 'loading' })
   const [query, setQuery] = useState('')
@@ -118,6 +137,7 @@ export function ModulePage({ spec, param, host, generation, onTitle, hasHistory 
         if (!alive) return
         setState({ status: 'ready', view })
         onTitle?.(view.title)
+        onCrumbs?.(view.breadcrumb)
       })
       .catch((error: unknown) => alive && setState({ status: 'failed', reason: error instanceof Error ? error.message : String(error) }))
     return () => {
@@ -130,6 +150,7 @@ export function ModulePage({ spec, param, host, generation, onTitle, hasHistory 
     setFilter(null)
     setState({ status: 'loading' })
     onTitle?.(undefined)
+    onCrumbs?.(undefined)
   }, [spec.id, param])
 
   if (state.status === 'loading') return <div class="bp-skeleton" aria-busy="true" aria-label={t('ui.loading')} />
@@ -146,6 +167,7 @@ export function ModulePage({ spec, param, host, generation, onTitle, hasHistory 
   }
   return (
     <div class="bp-page" data-page={spec.id}>
+      {view.breadcrumb && !onCrumbs && <BreadcrumbNav crumbs={view.breadcrumb} />}
       {view.back && !hasHistory && (
         <button type="button" class="bp-back" onClick={() => void view.back!.run()}>
           <Icon name="back" />

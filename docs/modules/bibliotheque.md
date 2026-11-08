@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.6.0 (Black Projects 0.77.0) |
+| Version | 0.6.1 (Black Projects 0.78.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -191,7 +191,7 @@ vont dans le `_retirés` de leur bibliothèque.
 `places.ts` : un **lieu** (`placeParam` : `<bibliothèque>:<répertoire>`) en paramètre des
 pages `bibliotheque.documents`, `bibliotheque.prompts`, `bibliotheque.personas` (sans
 paramètre : la racine de la bibliothèque par défaut). `placeView` : le **fil d'Ariane**
-(bloc `breadcrumb` de l'interface), une carte par répertoire (combien dessous), et les
+(`PageView.breadcrumb`, tout en haut de la page depuis la v0.6.1), une carte par répertoire (combien dessous), et les
 actions *Nouveau répertoire*, *Nouvelle bibliothèque*, *Définir par défaut* (plusieurs
 bibliothèques, pas celle par défaut), *Retirer la bibliothèque* (pas la principale). On
 verse, on crée, là où l'on est. Les éléments montrés : ceux du lieu même ; « Regrouper

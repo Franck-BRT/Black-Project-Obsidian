@@ -21,7 +21,7 @@ const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block)
 /** Les cartes des documents ou des entrées (pas celles des répertoires). */
 const itemsOf = (view: PageView): Card[] => cardsIn(view.blocks).filter((card) => !card.id.startsWith('dir:'))
 const directoriesOf = (view: PageView): string[] => cardsIn(view.blocks).filter((card) => card.id.startsWith('dir:')).map((card) => card.title)
-const crumbsOf = (view: PageView): string[] => view.blocks.flatMap((block) => (block.kind === 'breadcrumb' ? block.items.map((item) => item.label) : []))
+const crumbsOf = (view: PageView): string[] => view.breadcrumb?.items.map((item) => item.label) ?? []
 const action = (view: PageView, id: string) => view.actions!.find((each) => each.id === id)!
 const bytes = (text: string) => new TextEncoder().encode(text)
 
@@ -121,8 +121,7 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     expect(itemsOf(ecss).map((card) => card.title)).toEqual(['ECSS-Q-ST-80C'])
     await ecss.back!.run()
     expect(shown.at(-1)).toBe(`bibliotheque.documents?${encodeURIComponent('principale:Normes')}`)
-    const crumbs = ecss.blocks.find((block) => block.kind === 'breadcrumb')
-    if (crumbs?.kind !== 'breadcrumb') throw new Error('pas de fil d’Ariane')
+    const crumbs = ecss.breadcrumb!
     await crumbs.items[1]!.run!()
     expect(shown.at(-1)).toBe(`bibliotheque.documents?${encodeURIComponent('principale:')}`)
     expect(crumbs.items.at(-1)!.label).toBe('ECSS')

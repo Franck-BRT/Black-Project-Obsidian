@@ -161,9 +161,10 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     { label: t('bibliotheque.stat.recent'), value: String(recent), icon: 'clock', hint: t('bibliotheque.stat.recent.hint') },
     { label: t('bibliotheque.stat.likely'), value: String(likely), icon: 'flow', ...(likely ? { tone: 'warning' as const, hint: t('bibliotheque.stat.likely.hint') } : {}) }
   ]
-  const empty: HomeBlock = { kind: 'message', tone: 'info', text: t(top.blocks.length > 1 ? 'bibliotheque.place.empty' : 'bibliotheque.empty'), actions: [{ id: 'pour', label: t('bibliotheque.pour'), icon: 'upload', run: pourHere }] }
+  const empty: HomeBlock = { kind: 'message', tone: 'info', text: t(top.blocks.length ? 'bibliotheque.place.empty' : 'bibliotheque.empty'), actions: [{ id: 'pour', label: t('bibliotheque.pour'), icon: 'upload', run: pourHere }] }
   const groupOf = docGrouping === 'repertoire' ? directoryGroupOf(t, place.directory) : docGroupOf(deps, docGrouping)
   return {
+    breadcrumb: top.breadcrumb,
     title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : deps.places.shelves().length > 1 ? place.shelf.name : t('bibliotheque.page.title'),
     ...(param ? { back: { id: 'back', label: t('bibliotheque.back.up'), run: () => deps.showPage?.(place.directory ? placePageOf(LIBRARY_PAGE, { shelf: place.shelf.id, directory: place.directory.split('/').slice(0, -1).join('/') }) : HUB_PAGE) } } : {}),
     subtitle: t('bibliotheque.page.subtitle', { folder: top.folder }) + top.note,

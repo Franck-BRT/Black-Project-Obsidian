@@ -70,10 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le fil d'Ariane tout en haut (v0.78.0)
+
+- [ ] Bibliothèque › Documents, un répertoire, une autre bibliothèque, les prompts, les
+      personas : le fil d'Ariane est la première ligne de la page, au-dessus du titre, du
+      retour, du sous-titre et des boutons ; un clic sur une étape y mène ; une autre page
+      (Analyses, Workflows) n'en a pas
+- [ ] Une fenêtre étroite : il passe à la ligne, rien ne déborde
+
 ## Plusieurs bibliothèques, des répertoires (v0.77.0)
 
 - [ ] Menu **Bibliothèque** › **Documents** : le fil d'Ariane « Bibliothèque › Documents »
-      au-dessus des documents ; les boutons **Nouveau répertoire**, **Nouvelle
+      en haut de la page ; les boutons **Nouveau répertoire**, **Nouvelle
       bibliothèque**
 - [ ] **Nouveau répertoire** « Normes » : on y entre (« … › Normes ») ; un sous-répertoire
       « ECSS » de même ; le dossier existe dans le coffre (`Bibliothèque/Normes/ECSS`)

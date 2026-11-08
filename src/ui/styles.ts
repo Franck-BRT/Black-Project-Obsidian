@@ -145,6 +145,7 @@ const COMPONENTS_CSS = String.raw`
 .bp-main > .bp-back { margin: -14px 0 12px -8px; }
 .bp-main > .bp-back + .bp-page > .bp-page-sub { margin-top: 0; }
 .bp-group { display: flex; flex-direction: column; gap: 12px; }
+.bp-main > .bp-crumbs { margin: -12px 0 10px -8px; }
 .bp-crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
 .bp-crumbs li { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
 .bp-crumb { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: var(--bp-radius-small); font: inherit; font-size: 0.95em; color: var(--bp-text-muted); background: transparent; border: 0; cursor: pointer; overflow-wrap: anywhere; }

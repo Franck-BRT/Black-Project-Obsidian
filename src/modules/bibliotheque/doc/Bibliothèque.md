@@ -127,7 +127,7 @@ défaut** la change. **Retirer la bibliothèque** l'ôte de la liste : son dossi
 notes restent dans le coffre.
 
 Dans une bibliothèque, **Nouveau répertoire** crée un répertoire (un dossier), et dans
-celui-ci des sous-répertoires. Le **fil d'Ariane** en haut de la page (« Bibliothèque ›
+celui-ci des sous-répertoires. Le **fil d'Ariane**, tout en haut de la page, (« Bibliothèque ›
 Documents › Normes › ECSS ») dit où vous êtes ; un clic y remonte. Chaque répertoire a sa
 carte (combien il contient). On **verse** et on **crée** là où l'on est ; **Déplacer…**,
 sur une fiche, range ailleurs (le fichier d'un document ne bouge pas ; ses versions
