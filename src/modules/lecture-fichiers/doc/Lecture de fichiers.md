@@ -27,6 +27,20 @@ archive ZIP est ouverte, et chacun de ses fichiers lu à son tour.
 | « ne contient aucun texte à lire » | un scan, ou un document vide |
 | « n'a pas pu être lu » | fichier abîmé, ou protégé par un mot de passe d'ouverture |
 
+### Être prévenu d'un format non lu
+
+Le workflow système **Signaler les formats non lus, au dépôt de fichiers** (activé
+d'origine) regarde chaque dépôt de fichiers — les pièces importées dans une analyse, le
+fichier d'un import — et prévient quand un format n'est pas lu, par exemple : « Station
+sol — 1 fichier(s) dans un format non lu (.tot) : Releve.tot. » Si c'est du texte,
+déclarez une extension équivalente (ci-dessous). Les images et les archives ne sont pas
+signalées.
+
+Dans la page **Workflows** (filtre *Système*), vous pouvez le désactiver, ou modifier son
+action pour taire des extensions que vous savez non lues (« dwg, exe »). Il suit le dépôt
+de la bibliothèque de documents : sans elle, il ne se déclenche pas. Voir
+{{link:Modules/Workflows|Workflows}}.
+
 ## Les formats
 
 Paramètres → Black Projects → **Formats de fichiers** (le bouton de la ligne « Lecture de

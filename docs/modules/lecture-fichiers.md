@@ -8,6 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
+| Version | 0.6.0 (Black Projects 0.63.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -155,6 +156,28 @@ Quand il n'y a pas de texte à rendre, il dit pourquoi (`FileReadError`) :
 | Markdown | `markdownRead` | En-tête YAML, titres, listes, tableaux ; le code est ignoré. |
 | Texte (`txt`, `csv`, `json`, `xml`, `log`…) | — | UTF-8, sinon page de code Windows. |
 
+## Le workflow système : signaler les formats non lus (v0.6.0, Black Projects 0.63.0)
+
+Le module n'avait aucun automatisme à convertir (il lit quand un autre module le lui
+demande). Il en gagne un, écrit en [workflow système](workflows.md) (`workflows.ts`) :
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Signaler les formats non lus, au dépôt de fichiers (`sys.lecture-fichiers.formats-non-lus`) | *Fichiers déposés dans l'application* (de la [bibliothèque](bibliotheque.md)) | `lecture-fichiers.formats-non-lus` : prévient des fichiers dont le format n'est pas lu, et dit où déclarer une extension équivalente | actif |
+
+- `unreadFiles(noms, isReadable, à taire)` (interface publique) : ni lecteur ni
+  équivalence (`isReadable`, qui tient compte des extensions équivalentes), ni image
+  (montrée, pas lue), ni archive (ouverte) ; un fichier sans extension est signalé.
+- L'action : champ `fichiers` (`{fichiers}` d'origine — les noms du dépôt, pris tels
+  quels dans la liste du sujet), champ `ignorer` (des extensions à taire : « dwg, exe »).
+  Rien de non lu : rien n'est dit, le journal garde « Tous les formats déposés sont lus. ».
+- Le message : « Station sol — 1 fichier(s) dans un format non lu (.tot) : Releve.tot. Si
+  c'est du texte, déclarez une extension équivalente : Formats de fichiers → Extensions
+  équivalentes. »
+- Le déclencheur est celui de la bibliothèque de documents : sans elle (ou sans le module
+  Workflows), ce workflow ne se déclenche pas. Ce que l'on verse soi-même dans la
+  bibliothèque ne passe pas par lui.
+
 ## Ce qui n'est pas lu (aujourd'hui)
 
 - **Les scans et les images** : il faudra un modèle qui voit. Prévu avec le serveur d'IA
@@ -188,6 +211,10 @@ fabriquent leurs fichiers avec ; ils serviront aux livrables de l'étape 7 (matr
 conformité, rapport).
 
 ## Tests
+
+- `test/lecture-workflows.test.ts` : le workflow système (créé actif, une pièce `.tot`
+  signalée, tout lu, extension équivalente, extension à taire, désactivé, sans la
+  bibliothèque) et `unreadFiles`.
 
 - Tests unitaires de chaque lecteur, repris avec lui.
 - `lecture.test.ts` : `readVaultFile` et la commande, sur une plateforme en mémoire.

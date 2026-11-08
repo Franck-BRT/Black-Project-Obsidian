@@ -178,6 +178,10 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Repérer les nouvelles versions probables | documents versés (une fois par versement) | marque la version précédente probable | actif |
 | Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 
+**La lecture de fichiers (Black Projects 0.63.0)** : *Signaler les formats non lus, au
+dépôt de fichiers* (déclencheur : fichiers déposés dans l'application ; actif) — voir
+[lecture-fichiers.md](lecture-fichiers.md).
+
 Le moteur : un évènement émis pendant qu'un workflow s'exécute (par une de ses actions) est
 mis à la suite **sans être attendu** — l'attendre de l'intérieur bloquait la file
 (`WorkflowEngine.busy`, `workflowRunning()`). Voir [bibliotheque.md](bibliotheque.md).

@@ -174,7 +174,19 @@ export const lectureFr: Record<string, string> = {
   'lecture-fichiers.problem.unsupported': '« {name} » : le format {format} n’est pas lu.',
   'lecture-fichiers.problem.empty': '« {name} » ne contient aucun texte à lire : un scan, ou un document vide.',
   'lecture-fichiers.problem.unreadable':
-    '« {name} » n’a pas pu être lu : fichier abîmé, ou protégé par un mot de passe.'
+    '« {name} » n’a pas pu être lu : fichier abîmé, ou protégé par un mot de passe.',
+  'lecture-fichiers.wf.action.unread': 'Signaler les formats non lus',
+  'lecture-fichiers.wf.action.unread.desc': 'Parmi les fichiers déposés, ceux dont l’extension n’est lue par aucun lecteur (ni déclarée équivalente) : dits, avec où déclarer une extension équivalente. Les images et les archives ne sont pas signalées.',
+  'lecture-fichiers.wf.field.files': 'Les fichiers',
+  'lecture-fichiers.wf.field.ignore': 'Extensions à ne pas signaler',
+  'lecture-fichiers.wf.field.ignore.placeholder': 'dwg, exe',
+  'lecture-fichiers.wf.field.ignore.tip': 'Des extensions que vous savez non lues et qui ne gênent pas, séparées par des virgules.',
+  'lecture-fichiers.wf.unread.found': '{count} fichier(s) dans un format non lu ({extensions}) : {names}.',
+  'lecture-fichiers.wf.unread.found.in': '{where} — {count} fichier(s) dans un format non lu ({extensions}) : {names}.',
+  'lecture-fichiers.wf.unread.how': 'Si c’est du texte, déclarez une extension équivalente : Formats de fichiers → Extensions équivalentes.',
+  'lecture-fichiers.wf.unread.none': 'Tous les formats déposés sont lus.',
+  'lecture-fichiers.wf.noExtension': 'sans extension',
+  'lecture-fichiers.sys.formats-non-lus': 'Signaler les formats non lus, au dépôt de fichiers'
 }
 
 export const lectureEn: Record<string, string> = {
@@ -347,5 +359,17 @@ export const lectureEn: Record<string, string> = {
 
   'lecture-fichiers.problem.unsupported': '“{name}”: the {format} format is not read.',
   'lecture-fichiers.problem.empty': '“{name}” holds no text to read: a scan, or an empty document.',
-  'lecture-fichiers.problem.unreadable': '“{name}” could not be read: damaged, or protected by a password.'
+  'lecture-fichiers.problem.unreadable': '“{name}” could not be read: damaged, or protected by a password.',
+  'lecture-fichiers.wf.action.unread': 'Report unread formats',
+  'lecture-fichiers.wf.action.unread.desc': 'Among the files put in, those whose extension no reader reads (nor declared equivalent): reported, with where to declare an equivalent extension. Images and archives are not reported.',
+  'lecture-fichiers.wf.field.files': 'The files',
+  'lecture-fichiers.wf.field.ignore': 'Extensions not to report',
+  'lecture-fichiers.wf.field.ignore.placeholder': 'dwg, exe',
+  'lecture-fichiers.wf.field.ignore.tip': 'Extensions you know are not read and do not matter, separated by commas.',
+  'lecture-fichiers.wf.unread.found': '{count} file(s) in an unread format ({extensions}): {names}.',
+  'lecture-fichiers.wf.unread.found.in': '{where} — {count} file(s) in an unread format ({extensions}): {names}.',
+  'lecture-fichiers.wf.unread.how': 'If it is text, declare an equivalent extension: File formats → Equivalent extensions.',
+  'lecture-fichiers.wf.unread.none': 'All the formats put in are read.',
+  'lecture-fichiers.wf.noExtension': 'no extension',
+  'lecture-fichiers.sys.formats-non-lus': 'Report unread formats, when files are put in'
 }

@@ -16,6 +16,7 @@ Documentation fonctionnelle : [`docs/modules/lecture-fichiers.md`](../../../docs
 | `lecture.ts` | `readVaultFile` : lit un fichier du coffre, rend le texte ou la raison de l'échec |
 | `archive.ts` | `readArchive` : ouvre un ZIP (dossier de consultation), sans les fichiers parasites |
 | `aliases.ts` | **Extensions équivalentes** (`.tot` lu comme `.xml`) : validation, lecture des réglages, application à toute lecture |
+| `workflows.ts` | Le **workflow système** « Signaler les formats non lus, au dépôt de fichiers », son action, `unreadFiles` |
 | `catalogue.ts` | **Catalogue des formats**, ouvert depuis les réglages dans sa propre fenêtre : intégré, en développement (avec l'étape), prévu |
 | `i18n.ts` | Textes français et anglais, clés `lecture-fichiers.*`, infobulles comprises |
 | `doc/Lecture de fichiers.md` | **Page de documentation écrite dans le coffre** de l'utilisateur |

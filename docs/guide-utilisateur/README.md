@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.62.0)
+## Aujourd'hui (version 0.63.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -146,7 +146,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   traduction des nouvelles exigences ; pour l'IA, la vérification de la connexion à
   chaque ouverture ; pour la bibliothèque de documents, le rangement des pièces et des
   fichiers importés, les nouvelles versions probables, et, désactivés, les fichiers
-  introuvables chaque lundi) : modifiables, désactivables, pas supprimables,
+  introuvables chaque lundi ; pour la lecture de fichiers, les formats non lus au dépôt) : modifiables, désactivables, pas supprimables,
   « Rétablir l'original » ; « Nouveau workflow » (depuis l'onglet, sa fiche s'ouvre en
   page, et « Exécuter » mène à la fiche de l'exécution) ; un déclencheur, des conditions,
   des actions à la suite qui reprennent `{analyse}`, `{today}` ou le résultat d'une étape
@@ -173,5 +173,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   affiche dans l'explorateur, ouverts en lecture seule par Black Projects.
 - **Extensions équivalentes** (en tête de la fenêtre Formats de fichiers) : lire par exemple les
   fichiers `.tot` comme du XML ; voir [Lecture de fichiers](../modules/lecture-fichiers.md).
+  Un **workflow système**, *Signaler les formats non lus, au dépôt de fichiers* (activé),
+  prévient quand une pièce ou un fichier importé est d'un format non lu, et dit où
+  déclarer l'équivalence ; désactivable, et des extensions à taire se règlent dans son
+  action.
 - **Réglages → Licence** : les droits d'usage.
 - Commande **À propos de Black Projects** : version, modules actifs, licence.

@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La lecture de fichiers : signaler les formats non lus (v0.63.0)
+
+- [ ] Page **Workflows**, filtre Système : « Signaler les formats non lus, au dépôt de
+      fichiers » (Lecture de fichiers), actif
+- [ ] Importer dans une analyse une pièce `.tot` (avec un `.md` et une image) : un
+      message « <analyse> — 1 fichier(s) dans un format non lu (.tot) : … Si c'est du
+      texte, déclarez une extension équivalente… » ; l'image n'est pas signalée ; le
+      **Journal des workflows** le garde
+- [ ] Déclarer `.tot` lu comme `.xml` (Formats de fichiers → Extensions équivalentes),
+      réimporter : plus de message
+- [ ] Modifier l'action du workflow : « Extensions à ne pas signaler » = `dwg` ; une
+      pièce `.dwg` : plus de message
+- [ ] Désactiver le workflow : plus de message ; **Rétablir l'original** le remet
+
 ## La bibliothèque de documents : ses workflows système (v0.62.0)
 
 - [ ] Page **Workflows**, filtre Système : quatre workflows de la Bibliothèque de

@@ -458,6 +458,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   (désactivé) ; nouveaux déclencheurs *Fichiers déposés dans l'application* et
   *Bibliothèque : documents versés* ; un évènement émis par une action n'attend plus la fin
   du workflow en cours
+- v0.63.0 : **module Lecture de fichiers** : un workflow système, *Signaler les formats
+  non lus, au dépôt de fichiers* (actif) — prévient d'une extension non lue et dit où
+  déclarer une extension équivalente ; des extensions à taire se règlent dans l'action
 
 ### Étape 7 — Livrables
 
