@@ -150,7 +150,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.2.0',
+  version: '0.3.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -170,7 +170,18 @@ export const bibliothequeModule: BlackModule = {
       descKey: 'bibliotheque.wf.trigger.poured.desc',
       fields: ['titre', 'famille', 'categorie', 'fichier', 'origine'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
-    registerLibraryWorkflows({ t, store, pourNow })
+    registerLibraryWorkflows({
+      t,
+      store,
+      pourNow,
+      // Le dossier de dépôt : versé, puis annoncé (le versement, chaque document) comme un autre.
+      pourInbox: async () => {
+        const origin = { module: BIBLIOTHEQUE, label: t('bibliotheque.origin.inbox') }
+        const report = await store.pourInbox(origin, { detectVersions: !systemWorkflowManages(SYS_VERSIONS) })
+        await announce(report, origin)
+        return report
+      }
+    })
 
     /** Verser des documents soi-même : de l'ordinateur (copiés) ou du coffre (laissés à leur place). */
     const pour = async (): Promise<PourReport | null> => {

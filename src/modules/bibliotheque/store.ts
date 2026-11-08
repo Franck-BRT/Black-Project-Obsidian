@@ -31,6 +31,8 @@ import {
 /** Le sous-dossier des fichiers copiés, et celui des documents retirés : jamais parcourus comme des fiches. */
 export const FILES_FOLDER = '_fichiers'
 export const SET_ASIDE_FOLDER = '_retirés'
+/** Le dossier de dépôt : ce qu'on y pose (explorateur, synchronisation) entre dans la bibliothèque. */
+export const INBOX_FOLDER = 'À verser'
 
 export interface StoreDeps {
   fs: FileSystem
@@ -49,6 +51,8 @@ export interface PourItem {
   path?: string
   /** Sa catégorie (le type d'une pièce), quand celui qui verse la connaît. */
   category?: string
+  /** Déjà déplacé dans les fichiers de la bibliothèque (le dossier de dépôt) : il lui appartient. */
+  owned?: boolean
 }
 
 export interface PourOptions {
@@ -125,7 +129,7 @@ export class LibraryStore {
       }
       for (const sub of listing.folders) {
         const name = baseName(sub)
-        if (name !== FILES_FOLDER && name !== SET_ASIDE_FOLDER) await walk(sub)
+        if (name !== FILES_FOLDER && name !== SET_ASIDE_FOLDER && name !== INBOX_FOLDER) await walk(sub)
       }
     }
     await walk(this.root)
@@ -200,7 +204,7 @@ export class LibraryStore {
         tags: [],
         origins: [origin],
         ...(previous ? { likelyPrevious: previous.record } : {}),
-        copied: !item.path
+        copied: !item.path || item.owned === true
       }
       await this.save(doc)
       known.push(doc)
@@ -236,6 +240,69 @@ export class LibraryStore {
     const missing: LibraryDoc[] = []
     for (const doc of await this.all()) if (!doc.file || !(await this.deps.fs.exists(doc.file))) missing.push(doc)
     return missing.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+  }
+
+  get inbox(): string {
+    return `${this.root}/${INBOX_FOLDER}`
+  }
+
+  /**
+   * Verser ce qui est posé dans le dossier de dépôt (sous-dossiers compris) : un nouveau
+   * fichier passe dans `_fichiers` et entre dans la bibliothèque ; un fichier déjà là (mêmes
+   * octets) y ajoute son origine et part dans `_retirés` — rien n'est effacé. Le dossier est
+   * créé s'il n'existe pas.
+   */
+  async pourInbox(origin: DocOrigin, options: PourOptions = {}): Promise<PourReport> {
+    const { fs } = this.deps
+    const report: PourReport = { added: [], already: [], failed: [] }
+    if (!(await fs.exists(this.inbox))) await fs.ensureFolder(this.inbox)
+    const files: string[] = []
+    const walk = async (folder: string): Promise<void> => {
+      const listing = await fs.list(folder)
+      files.push(...listing.files)
+      for (const sub of listing.folders) await walk(sub)
+    }
+    await walk(this.inbox)
+    if (!files.length) return report
+    const known = new Set((await this.all()).map((doc) => doc.hash))
+    const fresh: PourItem[] = []
+    const twice: { item: PourItem; from: string }[] = []
+    for (const path of files.sort()) {
+      const name = baseName(path)
+      let hash: string
+      try {
+        hash = await fingerprintOf(new Uint8Array(await fs.readBinary(path)))
+      } catch {
+        report.failed.push(name)
+        continue
+      }
+      if (known.has(hash)) {
+        twice.push({ item: { name, path }, from: path })
+        continue
+      }
+      known.add(hash)
+      await fs.ensureFolder(`${this.root}/${FILES_FOLDER}`)
+      const target = await this.free(`${this.root}/${FILES_FOLDER}/${safeName(name)}`)
+      await fs.rename(path, target)
+      fresh.push({ name, path: target, owned: true })
+    }
+    if (fresh.length) {
+      const poured = await this.pour(fresh, origin, options)
+      report.added.push(...poured.added)
+      report.failed.push(...poured.failed)
+    }
+    if (twice.length) {
+      // Déjà dans la bibliothèque : son origine s'ajoute ; le fichier posé est mis de côté.
+      const poured = await this.pour(
+        twice.map((each) => each.item),
+        origin,
+        options
+      )
+      report.already.push(...poured.already)
+      await fs.ensureFolder(`${this.root}/${SET_ASIDE_FOLDER}`)
+      for (const each of twice) await fs.rename(each.from, await this.free(`${this.root}/${SET_ASIDE_FOLDER}/${baseName(each.from)}`))
+    }
+    return report
   }
 
   /** Relier un document à sa version précédente (ou défaire le lien : `previous` vide). */

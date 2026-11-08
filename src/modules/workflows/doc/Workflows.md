@@ -106,6 +106,10 @@ Workflows et dans le journal.
 | Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types ou de workflows | range le fichier importé | actif |
 | Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |
 | Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
+| Verser le dossier « À verser », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
+| Verser le dossier « À verser », chaque jour | chaque jour à 8 h | idem | actif |
+| Versions à confirmer, chaque lundi | lundi à 8 h | les nouvelles versions probables pas encore confirmées | désactivé |
+| Documents à classer, chaque lundi | lundi à 8 h | les documents sans catégorie | désactivé |
 | Signaler les formats non lus, au dépôt de fichiers | des fichiers déposés dans l'application | dit ceux dont le format n'est pas lu, et où déclarer une extension équivalente | actif |
 | Signaler les pièces sans type reconnu, à l'import | des pièces importées, quand certaines sont classées « Autre » | les nomme, et dit comment les typer | actif |
 

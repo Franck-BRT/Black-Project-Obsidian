@@ -21,7 +21,7 @@ import { exigencesModule } from '../src/modules/exigences'
 import { iaModule } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { typagePiecesModule } from '../src/modules/typage-pieces'
-import { emitWorkflowEvent, NO_SUBJECT, registerAction, registerTrigger, runDueWorkflows, workflowsModule, type Workflow } from '../src/modules/workflows'
+import { emitWorkflowEvent, NO_SUBJECT, registerAction, registerTrigger, runDueWorkflows, runOpeningWorkflows, workflowsModule, type Workflow } from '../src/modules/workflows'
 
 const MODULES = [lectureFichiersModule, typagePiecesModule, bibliothequeModule, exigencesModule, iaModule, workflowsModule, aoModule]
 const enc = (text: string) => new TextEncoder().encode(text)
@@ -177,5 +177,61 @@ describe('les workflows système de la bibliothèque', () => {
     await vi.waitFor(() => expect(records()).toEqual(['Bibliothèque/Annexe.md']))
     expect(journal()).toMatch(/\*\*Déposer\*\* — 1\. test : déposé/)
     await vi.waitFor(() => expect(journal()).toContain('**Ranger les fichiers importés dans la bibliothèque**'))
+  })
+})
+
+describe('le dossier de dépôt et les rappels du lundi (workflows système)', () => {
+  it('créés : le dépôt à l’ouverture et chaque jour actifs ; versions à confirmer et documents à classer désactivés', async () => {
+    const { system } = await start(memoryPlatform())
+    expect(system('depot-ouverture')).toMatchObject({ enabled: true, name: 'Verser le dossier « À verser », à l’ouverture', trigger: { kind: 'ouverture' }, actions: [{ kind: 'bibliotheque.depot' }] })
+    expect(system('depot-quotidien')).toMatchObject({ enabled: true, trigger: { kind: 'planifie', every: 'day', time: '08:00' }, actions: [{ kind: 'bibliotheque.depot' }] })
+    expect(system('versions-a-confirmer')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
+    expect(system('a-classer')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
+  })
+
+  it('à l’ouverture : le dossier créé s’il manque, rien n’est dit', async () => {
+    const platform = memoryPlatform()
+    const { journal } = await start(platform)
+    await runOpeningWorkflows()
+    expect(await platform.fs.exists('Bibliothèque/À verser')).toBe(true)
+    expect(platform.notices.filter((notice) => notice.startsWith('Bibliothèque :'))).toEqual([])
+    expect(journal()).toContain('Rien dans Bibliothèque/À verser.')
+  })
+
+  it('ce qui y est posé entre dans la bibliothèque (rangé dans _fichiers) ; un fichier déjà là part dans _retirés', async () => {
+    const platform = memoryPlatform()
+    const { records } = await start(platform)
+    await pourIntoLibrary([{ name: 'Plan.pdf', bytes: enc('plan') }], { module: 'bibliotheque', label: 'Versé à la main' })
+    await platform.fs.writeBinary('Bibliothèque/À verser/Devis 2026.xlsx', enc('devis').buffer)
+    await platform.fs.writeBinary('Bibliothèque/À verser/Sous-traitant/Rapport.pdf', enc('rapport').buffer)
+    await platform.fs.writeBinary('Bibliothèque/À verser/Plan copie.pdf', enc('plan').buffer)
+    await runOpeningWorkflows()
+    expect(platform.notices).toContain('Bibliothèque : 2 document(s) versé(s) depuis Bibliothèque/À verser. 1 y étai(en)t déjà : mis de côté dans _retirés.')
+    expect(records().sort()).toEqual(['Bibliothèque/Devis 2026.md', 'Bibliothèque/Plan.md', 'Bibliothèque/Rapport.md'])
+    expect(platform.files.has('Bibliothèque/_fichiers/Devis 2026.xlsx')).toBe(true)
+    expect(platform.files.has('Bibliothèque/_fichiers/Rapport.pdf')).toBe(true)
+    expect(platform.files.has('Bibliothèque/_retirés/Plan copie.pdf')).toBe(true)
+    expect([...platform.files.keys()].some((path) => path.startsWith('Bibliothèque/À verser/') && !path.endsWith('/'))).toBe(false)
+    expect(read(platform, 'Bibliothèque/Devis 2026.md')).toMatch(/copie: true/)
+    expect(read(platform, 'Bibliothèque/Plan.md')).toContain('Déposé dans « À verser »')
+  })
+
+  it('les versions à confirmer, une fois activé : comptées et nommées', async () => {
+    const platform = memoryPlatform()
+    const { system } = await start(platform)
+    await pourIntoLibrary([{ name: 'CCTP ind A.pdf', bytes: enc('A') }], { module: 'bibliotheque', label: 'Versé à la main' })
+    await pourIntoLibrary([{ name: 'CCTP ind B.pdf', bytes: enc('B') }], { module: 'bibliotheque', label: 'Versé à la main' })
+    Object.assign(system('versions-a-confirmer'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
+    await runDueWorkflows()
+    expect(platform.notices).toContain('Bibliothèque : 1 nouvelle(s) version(s) probable(s) à confirmer — CCTP ind B. Sur leur fiche : « Relier comme nouvelle version » ou « Ce n’en est pas une ».')
+  })
+
+  it('les documents à classer, une fois activé : comptés et nommés', async () => {
+    const platform = memoryPlatform()
+    const { system } = await start(platform)
+    await pourIntoLibrary([{ name: 'Divers.pdf', bytes: enc('x') }, { name: 'CCTP.pdf', bytes: enc('y') }], { module: 'bibliotheque', label: 'Versé à la main' })
+    Object.assign(system('a-classer'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
+    await runDueWorkflows()
+    expect(platform.notices).toContain('Bibliothèque : 1 document(s) sans catégorie — Divers. Sur leur fiche : « Classer… ».')
   })
 })

@@ -17,7 +17,7 @@
  * ranger ces fichiers-là.
  */
 
-import { registerAction, registerSystemWorkflow, registerTrigger, SCHEDULE, type Subject, type WorkflowAction, type WorkflowCondition, type WorkflowTrigger } from '../workflows'
+import { OPENING, registerAction, registerSystemWorkflow, registerTrigger, SCHEDULE, type Subject, type WorkflowAction, type WorkflowCondition, type WorkflowTrigger } from '../workflows'
 import type { DocOrigin, LibraryDoc } from './model'
 import type { LibraryStore, PourItem, PourOptions, PourReport } from './store'
 
@@ -89,7 +89,12 @@ export interface LibraryWorkflowDeps {
   store: LibraryStore
   /** Verser maintenant (sans repasser par les workflows), et annoncer les documents versés si `announce`. */
   pourNow(items: readonly PourItem[], origin: DocOrigin, options: PourOptions, announce: boolean): Promise<PourReport>
+  /** Verser le dossier de dépôt. */
+  pourInbox(): Promise<PourReport>
 }
+
+/** Des titres, les dix premiers, puis « … ». */
+const someTitles = (docs: readonly LibraryDoc[]): string => [...docs.slice(0, 10).map((doc) => doc.title), ...(docs.length > 10 ? ['…'] : [])].join(', ')
 
 export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   const { t, store } = deps
@@ -162,6 +167,64 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
     }
   })
 
+  registerAction({
+    id: 'bibliotheque.depot',
+    labelKey: 'bibliotheque.wf.action.inbox',
+    descKey: 'bibliotheque.wf.action.inbox.desc',
+    fields: [],
+    results: ['text'],
+    async run({ notifier }) {
+      const report = await deps.pourInbox()
+      if (!report.added.length && !report.already.length && !report.failed.length) {
+        const text = t('bibliotheque.wf.inbox.none', { folder: store.inbox })
+        return { lines: [text], results: { text } }
+      }
+      const text = [
+        t('bibliotheque.wf.inbox.done', { added: report.added.length, folder: store.inbox }),
+        ...(report.already.length ? [t('bibliotheque.wf.inbox.already', { already: report.already.length })] : []),
+        ...(report.failed.length ? [t('bibliotheque.wf.pour.failed', { names: report.failed.join(', ') })] : [])
+      ].join(' ')
+      notifier.notify(text, 10000)
+      return { lines: [text], paths: report.added.map((doc) => doc.record), results: { text } }
+    }
+  })
+
+  registerAction({
+    id: 'bibliotheque.versions-a-confirmer',
+    labelKey: 'bibliotheque.wf.action.pending',
+    descKey: 'bibliotheque.wf.action.pending.desc',
+    fields: [],
+    results: ['text'],
+    async run({ notifier }) {
+      const pending = (await store.all()).filter((doc) => doc.likelyPrevious).sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+      if (!pending.length) {
+        const text = t('bibliotheque.wf.pending.none')
+        return { lines: [text], results: { text } }
+      }
+      const text = t('bibliotheque.wf.pending.found', { count: pending.length, titles: someTitles(pending) })
+      notifier.notify(text, 15000)
+      return { lines: [text], paths: pending.map((doc) => doc.record), results: { text } }
+    }
+  })
+
+  registerAction({
+    id: 'bibliotheque.a-classer',
+    labelKey: 'bibliotheque.wf.action.unclassified',
+    descKey: 'bibliotheque.wf.action.unclassified.desc',
+    fields: [],
+    results: ['text'],
+    async run({ notifier }) {
+      const unclassified = (await store.all()).filter((doc) => !doc.category.trim()).sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+      if (!unclassified.length) {
+        const text = t('bibliotheque.wf.unclassified.none')
+        return { lines: [text], results: { text } }
+      }
+      const text = t('bibliotheque.wf.unclassified.found', { count: unclassified.length, titles: someTitles(unclassified) })
+      notifier.notify(text, 15000)
+      return { lines: [text], paths: unclassified.map((doc) => doc.record), results: { text } }
+    }
+  })
+
   // ── Les workflows système de la bibliothèque ──
   const system = (id: string, enabledByDefault: boolean, trigger: WorkflowTrigger, actions: WorkflowAction[], conditions: WorkflowCondition[] = []) =>
     registerSystemWorkflow({
@@ -175,4 +238,9 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   system('ranger-fichiers', true, { kind: TRIGGER_DEPOSITED }, pour, [{ field: 'origine', op: 'is-not', value: PIECES_MODULE }])
   system('nouvelles-versions', true, { kind: TRIGGER_BATCH }, [{ kind: 'bibliotheque.versions', fields: {} }])
   system('fichiers-introuvables', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.introuvables', fields: {} }])
+  const inbox: WorkflowAction[] = [{ kind: 'bibliotheque.depot', fields: {} }]
+  system('depot-ouverture', true, { kind: OPENING }, inbox)
+  system('depot-quotidien', true, { kind: SCHEDULE, every: 'day', time: '08:00' }, inbox)
+  system('versions-a-confirmer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.versions-a-confirmer', fields: {} }])
+  system('a-classer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.a-classer', fields: {} }])
 }

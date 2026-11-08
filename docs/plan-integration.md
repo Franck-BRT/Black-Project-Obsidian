@@ -476,6 +476,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.68.0 : **module IA** : deux nouveaux workflows système — *Signaler les nouveaux
   modèles du serveur, à l'ouverture* (actif) et *Signaler un serveur d'IA lent, à
   l'ouverture* (désactivé)
+- v0.69.0 : **module Bibliothèque de documents** : le dossier de dépôt `À verser` versé
+  par deux workflows système (à l'ouverture, chaque jour ; actifs) ; *Versions à
+  confirmer* et *Documents à classer*, chaque lundi (désactivés)
 
 ### Étape 7 — Livrables
 

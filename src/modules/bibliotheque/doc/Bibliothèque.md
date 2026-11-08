@@ -61,6 +61,20 @@ l'original (« Rétablir l'original ») ; pas les supprimer.
 | Repérer les nouvelles versions probables | des documents entrent dans la bibliothèque | marque la version précédente probable, à confirmer sur la fiche | activé |
 | Signaler les fichiers introuvables, chaque lundi | le lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 
+**Le dossier de dépôt** : posez des fichiers dans le dossier `À verser` de la bibliothèque (par défaut `Bibliothèque/À verser`)
+— par l'explorateur de fichiers, une synchronisation —, ils entrent dans la bibliothèque à
+l'ouverture d'Obsidian et chaque jour à 8 h, rangés dans `_fichiers` ; un fichier déjà
+dans la bibliothèque est mis de côté dans `_retirés`. Deux rappels, désactivés d'origine,
+chaque lundi : les **versions à confirmer** et les **documents à classer** (sans
+catégorie).
+
+| Workflow système | Quand | D'origine |
+| --- | --- | --- |
+| Verser le dossier « À verser », à l'ouverture | à l'ouverture d'Obsidian | activé |
+| Verser le dossier « À verser », chaque jour | chaque jour à 8 h | activé |
+| Versions à confirmer, chaque lundi | le lundi à 8 h | désactivé |
+| Documents à classer, chaque lundi | le lundi à 8 h | désactivé |
+
 Désactiver un « Ranger… », c'est ne plus ranger ces fichiers-là ; ce que vous versez
 vous-même (« Verser des documents ») y entre toujours.
 

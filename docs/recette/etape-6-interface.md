@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La bibliothèque : le dossier de dépôt et deux rappels (v0.69.0)
+
+- [ ] Page **Workflows**, filtre Système, module Bibliothèque : « Verser le dossier « À
+      verser », à l'ouverture » et « …, chaque jour » actifs ; « Versions à confirmer,
+      chaque lundi » et « Documents à classer, chaque lundi » désactivés
+- [ ] À l'ouverture, le dossier `Bibliothèque/À verser` existe (créé s'il manquait)
+- [ ] Y poser deux fichiers (dont un déjà dans la bibliothèque), rouvrir le coffre :
+      « Bibliothèque : 1 document(s) versé(s) depuis Bibliothèque/À verser. 1 y étai(en)t
+      déjà : mis de côté dans _retirés. » ; le nouveau est dans `_fichiers`, l'autre dans `_retirés` ; le dossier est vide
+- [ ] Activer « Versions à confirmer », **Exécuter** : le nombre et les titres des
+      nouvelles versions probables ; de même « Documents à classer » (sans catégorie)
+
 ## L'IA : deux nouveaux workflows système (v0.68.0)
 
 - [ ] Page **Workflows**, filtre Système, module IA : « Signaler les nouveaux modèles du

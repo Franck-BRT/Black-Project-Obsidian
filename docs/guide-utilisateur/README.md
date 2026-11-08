@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.68.0)
+## Aujourd'hui (version 0.69.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -137,7 +137,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   **Bibliothèque** : une carte par document (famille, catégorie, d'où il vient), une
   recherche et des filtres ; la fiche d'un document : Classer…, ses origines (un clic y
   mène), ses versions — une nouvelle version est reconnue à son nom (« ind B », « v2 ») et
-  se relie d'un clic ; « Retirer » met de côté, sans rien effacer. Ce rangement est fait par
+  se relie d'un clic ; « Retirer » met de côté, sans rien effacer. Ce que vous posez dans
+  le dossier `Bibliothèque/À verser` (explorateur, synchronisation) y entre seul, à
+  l'ouverture et chaque jour. Ce rangement est fait par
   des **workflows système** que vous pouvez modifier ou couper : ranger les pièces
   importées, ranger les fichiers importés, repérer les nouvelles versions probables, et,
   désactivé d'origine, signaler chaque lundi les fichiers introuvables.

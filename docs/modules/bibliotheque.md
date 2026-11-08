@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.2.0 (Black Projects 0.62.0) |
+| Version | 0.3.0 (Black Projects 0.69.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -88,6 +88,23 @@ et les fiches du rapport sont relues (« Verser des documents » dit toujours qu
 version est probable). Désactivé : plus de suggestion.
 
 Sans le module Workflows, la bibliothèque range et repère elle-même, comme en 0.1.0.
+
+**Le dossier de dépôt et deux rappels (v0.3.0, Black Projects 0.69.0)** :
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Verser le dossier « À verser », à l'ouverture (`sys.bibliotheque.depot-ouverture`) | à l'ouverture | `bibliotheque.depot` : `LibraryStore.pourInbox` | actif |
+| Verser le dossier « À verser », chaque jour (`sys.bibliotheque.depot-quotidien`) | chaque jour à 8 h | `bibliotheque.depot` | actif |
+| Versions à confirmer, chaque lundi (`sys.bibliotheque.versions-a-confirmer`) | lundi à 8 h | `bibliotheque.versions-a-confirmer` : les documents à `precedentProbable`, comptés et nommés | désactivé |
+| Documents à classer, chaque lundi (`sys.bibliotheque.a-classer`) | lundi à 8 h | `bibliotheque.a-classer` : les documents sans catégorie, comptés et nommés | désactivé |
+
+`pourInbox` : le dossier `<dossier>/À verser` (`INBOX_FOLDER`, jamais parcouru comme des
+fiches) est créé s'il manque ; ses fichiers, sous-dossiers compris : un fichier nouveau
+(empreinte inconnue) est déplacé dans `_fichiers` (nom libre) puis versé en une fois
+(`PourItem.owned` : la fiche dit `copie: true`, le repérage des versions exclut le même
+versement) ; un fichier déjà là (mêmes octets) ajoute son origine (« Déposé dans « À
+verser » ») et part dans `_retirés` — rien n'est effacé. Puis le versement est annoncé
+(déclencheurs « documents versés » et « document versé »). Dossier vide : rien n'est dit.
 
 ## Retirer
 
