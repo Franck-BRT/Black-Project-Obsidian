@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La page Exigences : sections, vues, regroupements (v0.75.0)
+
+- [ ] **Exigences** : « Regrouper par » Catégorie (d'origine) / Statut / Type / Criticité /
+      Qualité / Aucun ; une section repliable par groupe (« SOL (2 exigence(s)) »)
+- [ ] **Qualité** : *Faibles (moins de 3 étoiles)*, *Moyennes*, *Bonnes* ; dans chaque
+      section, les plus faibles d'abord
+- [ ] **Tableau** : colonnes Nom, État, Qualité (étoiles et %), Méthode de vérification ;
+      **Liste** : une ligne par exigence
+- [ ] Les filtres (Faibles, À revoir…) et la recherche marchent dans chaque regroupement
+
 ## La bibliothèque : sections, vues, regroupements (v0.74.0)
 
 - [ ] **Bibliothèque → Documents** : « Regrouper par » Origine (d'origine) / Famille /

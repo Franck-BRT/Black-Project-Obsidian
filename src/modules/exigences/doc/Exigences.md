@@ -91,6 +91,11 @@ note (renommée s'il le faut) s'ouvre, comme avant.
 Hors de l'onglet Black Projects (une plateforme sans pages), la commande ouvre la liste en
 fenêtre, avec ses filtres par catégorie, type, statut et criticité.
 
+**Affichage et regroupement** : la bibliothèque s'affiche en **cartes**, en **liste** ou
+en **tableau** (qualité, méthode de vérification), regroupée par **catégorie**,
+**statut**, **type**, **criticité** ou **qualité** (faibles, moyennes, bonnes) — chaque
+groupe est une section qu'un clic replie ; dans chacune, les plus faibles d'abord.
+
 ## 4. Citer des exigences dans un document
 
 Dans n'importe quelle note, un bloc `brt-req` **cite** des exigences au lieu de les

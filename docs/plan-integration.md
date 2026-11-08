@@ -496,6 +496,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.74.0 : **module Bibliothèque** : ses pages en sections repliables — documents
   regroupés par origine, famille, catégorie, mois d'ajout ; prompts et personas par
   catégorie ou favoris — ; le tableau des documents (taille, ajout, version)
+- v0.75.0 : **module Exigences** : la bibliothèque d'exigences en sections repliables —
+  par catégorie, statut, type, criticité, qualité — ; le tableau (qualité, méthode de
+  vérification)
 
 ### Étape 7 — Livrables
 

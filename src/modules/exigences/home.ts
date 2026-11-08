@@ -10,6 +10,7 @@
  */
 
 import { localToday } from '../../core/dates'
+import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
 import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { noteBlocks } from '../../core/markdown'
 import { acceptTranslation, lastReview, reviewRequirement, reviewSection, translateRequirement, translationNote } from './ai/actions'
@@ -21,7 +22,7 @@ import { assessRequirement, isWeak } from './quality/score'
 import { libraryQualityPage, QUALITY_PAGE } from './qualityPage'
 import { TRANSLATIONS_PAGE, translationsPage, translationsPageOf, type TranslationsHooks } from './translationsPage'
 import { libraryQualityPath } from './workflows'
-import { vocabularyLabel } from './vocabulary'
+import { REQ_CRITICALITIES, REQ_STATUSES, REQ_TYPES, vocabularyLabel } from './vocabulary'
 
 /** La page de la bibliothèque. */
 export const LIBRARY_PAGE = 'exigences.bibliotheque'
@@ -158,6 +159,11 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
     badges,
     text: textOf(requirement, requirement.sourceLang)?.body ?? '',
     rating: { stars: quality.stars, label: t('exigences.page.rating') },
+    // Ses chiffres : en faits (les colonnes de la vue tableau).
+    facts: [
+      { label: t('exigences.page.fact.quality'), value: `${'★'.repeat(quality.stars)}${'☆'.repeat(5 - quality.stars)}\u00a0${Math.round(quality.score * 100)}\u00a0%`, ...(isWeak(quality) ? { tone: 'warning' as const } : {}) },
+      { label: t('exigences.field.verification'), value: requirement.verification ? vocabularyLabel('verification', requirement.verification, t) : '—' }
+    ],
     // Avec des pages, un clic sur l'exigence ouvre sa fiche ; sinon, sa note.
     ...(path
       ? {
@@ -168,6 +174,37 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
       : {}),
     actions,
     tags
+  }
+}
+
+/** Les regroupements des exigences : catégorie (d'origine), statut, type, criticité, qualité, ou aucun. */
+export const REQUIREMENT_GROUPINGS = ['categorie', 'statut', 'type', 'criticite', 'qualite', 'aucun'] as const
+
+/** Le groupe d'une exigence, selon le regroupement choisi ; `null` : sans regroupement. */
+function requirementGroupOf(session: Session, by: string): ((requirement: Requirement) => Group) | null {
+  const { t } = session
+  const languages = session.settings().languages
+  const none = (key: string): Group => ({ key: '', title: t(`exigences.page.group.none.${key}`), order: 99 })
+  // Dans l'ordre du vocabulaire (brouillon, proposée, approuvée… ; haute, moyenne, basse).
+  const byVocabulary = (field: 'status' | 'type' | 'criticality', values: readonly string[], value: string): Group =>
+    value ? { key: value, title: vocabularyLabel(field, value, t), order: values.includes(value) ? values.indexOf(value) : values.length } : none(field)
+  switch (by) {
+    case 'categorie':
+      return (requirement) => (requirement.category ? { key: requirement.category, title: requirement.category } : none('category'))
+    case 'statut':
+      return (requirement) => byVocabulary('status', REQ_STATUSES, requirement.status)
+    case 'type':
+      return (requirement) => byVocabulary('type', REQ_TYPES, requirement.type)
+    case 'criticite':
+      return (requirement) => byVocabulary('criticality', REQ_CRITICALITIES, requirement.criticality)
+    case 'qualite':
+      return (requirement) => {
+        const stars = assessRequirement(requirement, languages).stars
+        // Les plus faibles d'abord : ce qu'il y a à reprendre.
+        return stars < 3 ? { key: 'faibles', title: t('exigences.page.group.weak'), order: 0 } : stars < 4 ? { key: 'moyennes', title: t('exigences.page.group.medium'), order: 1 } : { key: 'bonnes', title: t('exigences.page.group.good'), order: 2 }
+      }
+    default:
+      return null
   }
 }
 
@@ -192,6 +229,7 @@ export async function libraryPage(
   // Les relectures par l'IA, écrites dans les notes : pour marquer les exigences relues.
   const reviews = new Map(await Promise.all(library.map(async (requirement): Promise<[string, ReturnType<typeof lastReview>]> => [requirement.id, requirement.filePath ? lastReview(await session.store.readNote(requirement.filePath).catch(() => '')) : null])))
   const sorted = [...library].sort((a, b) => assessRequirement(a, languages).score - assessRequirement(b, languages).score || a.id.localeCompare(b.id, undefined, { numeric: true }))
+  const by = groupingOf(LIBRARY_PAGE, 'categorie')
   return {
     subtitle: t('exigences.page.subtitle', { folder: settings.folder }),
     actions: [
@@ -209,6 +247,7 @@ export async function libraryPage(
       })()
     ],
     layouts: ['cards', 'list', 'table'],
+    grouping: groupingSelector(LIBRARY_PAGE, by, REQUIREMENT_GROUPINGS, t, 'exigences.page.group'),
     search: { label: t('exigences.page.search'), placeholder: t('exigences.page.search.placeholder') },
     filters: [
       { id: 'faibles', label: t('exigences.page.filter.weak') },
@@ -222,7 +261,7 @@ export async function libraryPage(
     blocks: library.length
       ? [
           { kind: 'stats', stats: libraryStats(session, library) },
-          { kind: 'cards', cards: sorted.map((requirement) => requirementCard(session, requirement, showPage, reviews.get(requirement.id))) }
+          ...grouped(sorted, (requirement) => requirementCard(session, requirement, showPage, reviews.get(requirement.id)), requirementGroupOf(session, by), `exigences.liste.${by}`, (count) => t('exigences.page.group.count', { count }))
         ]
       : [{ kind: 'message', tone: 'info', text: t('exigences.list.empty') }]
   }

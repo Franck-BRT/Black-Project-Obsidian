@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.24.0 (Black Projects 0.70.0) |
+| Version | 0.25.0 (Black Projects 0.75.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -303,6 +303,14 @@ Le déclencheur `exigences.importees` est émis après un import réussi (`impor
 `ReviewOptions.persona` ; non donné, une relecture à la main fait choisir un persona de la
 [bibliothèque](bibliotheque.md) (`choosePersona`, rien n'est demandé s'il n'y en a pas) ;
 l'action « Relire l'exigence » a un champ *Persona de la bibliothèque*.
+
+**Vues et regroupements (v0.25.0, Black Projects 0.75.0)** : la page *Bibliothèque
+d'exigences* a ses vues (cartes, liste, tableau) et « Regrouper par » (`grouping`, avec
+`src/core/grouping.ts`, désormais partagé avec la bibliothèque) : **Catégorie** (d'origine),
+**Statut**, **Type**, **Criticité** (dans l'ordre du vocabulaire), **Qualité** (*Faibles*
+— moins de 3 étoiles —, *Moyennes*, *Bonnes*), ou **Aucun** ; dans chaque section, les plus
+faibles d'abord. La carte d'une exigence a ses faits : *Qualité* (étoiles et pourcentage)
+et *Méthode de vérification* — les colonnes du tableau.
 
 ## Tests des workflows système
 

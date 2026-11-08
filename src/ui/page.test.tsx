@@ -181,8 +181,8 @@ describe('les vues d’une page : cartes, liste, tableau', () => {
 
   it('liste : une ligne par carte, ses faits et ses boutons (icônes)', () => {
     const html = render('list')
-    expect(html).toContain('class="bp-rows"')
-    expect(html.match(/class="bp-row"/g)).toHaveLength(2)
+    expect(html).toContain('class="bp-cardrows"')
+    expect(html.match(/class="bp-cardrow"/g)).toHaveLength(2)
     expect(html).toMatch(/<dt>Exécutions<\/dt><dd>4<\/dd>/)
     expect(html).toContain('aria-label="Exécuter"')
   })

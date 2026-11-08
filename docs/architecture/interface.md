@@ -175,6 +175,8 @@ que la recherche lit aussi. Il la déclare par
   s'il manque). `LayoutContext` la donne aux blocs de cartes, sections comprises ;
 - un **regroupement** facultatif : `grouping` — `{ label, current, options }`, des boutons à
   bascule (« Regrouper par ») que la page interprète (elle se redessine ensuite) ;
+  `src/core/grouping.ts` (`grouped`, `groupingOf`, `groupingSelector`) range des cartes en
+  sections, une par groupe, et retient le choix de chaque page le temps de la session ;
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;

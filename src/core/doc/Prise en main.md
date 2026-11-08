@@ -148,7 +148,7 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Bibliothèque de documents | la page de la bibliothèque (regroupée par origine, famille, catégorie ou mois ; en cartes, liste ou tableau) : tout fichier déposé dans l'application, rangé par des workflows système (modifiables, désactivables) — ce que vous posez dans `Bibliothèque/À verser` y entre seul ; voir {{link:Modules/Bibliothèque|Bibliothèque}} |
 | Verser des documents dans la bibliothèque | de l'ordinateur (copiés) ou du coffre (laissés à leur place), chacun avec sa fiche |
 | Nouvelle exigence | crée une exigence avec son identifiant (REQ-SYS-0001) ; depuis l'onglet, sa fiche ensuite ; voir {{link:Modules/Exigences|Exigences}} |
-| Exigences : liste, filtres et fiches | parcourt la bibliothèque, ouvre une fiche ou une note |
+| Exigences : liste, filtres et fiches | parcourt la bibliothèque (en cartes, liste ou tableau, regroupée par catégorie, statut, type, criticité ou qualité), ouvre une fiche ou une note |
 | Modifier l'exigence (note ouverte) | la fiche de l'exigence ouverte : formulation, attributs, alias ; dans l'onglet, « Modifier la fiche » reste sur sa fiche |
 | Importer des exigences d'un fichier (Excel, CSV, Word, PDF, ReqIF…) | aperçu, puis import dans la bibliothèque, chaque exigence avec son origine ; depuis l'onglet, la page de l'import ensuite ; un workflow système nomme les exigences importées faibles |
 | Extraire les exigences de la pièce | sur la note d'une pièce (le CCTP) : aperçu, puis import dans les exigences de l'analyse, tracées jusqu'à la pièce |

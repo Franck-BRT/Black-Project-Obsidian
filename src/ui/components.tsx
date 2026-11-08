@@ -195,16 +195,16 @@ export const LayoutContext = createContext<PageLayout>('cards')
 
 /** Une carte en une ligne : son icône, son titre (et sous-titre), ses badges, ses faits, ses boutons. */
 function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: Date; locale: string }) {
-  const titleId = `bp-row-${card.id}`
+  const titleId = `bp-cardrow-${card.id}`
   return (
-    <li class="bp-row" aria-labelledby={titleId}>
+    <li class="bp-cardrow" aria-labelledby={titleId}>
       {card.icon && (
-        <span class="bp-card-icon bp-row-icon">
+        <span class="bp-card-icon bp-cardrow-icon">
           <Icon name={card.icon} />
         </span>
       )}
-      <div class="bp-row-main">
-        <div class="bp-row-title" id={titleId}>
+      <div class="bp-cardrow-main">
+        <div class="bp-cardrow-title" id={titleId}>
           {card.open ? (
             <button type="button" class="bp-card-open" onClick={() => void card.open!.run()} title={card.open.tooltip}>
               {card.title}
@@ -213,10 +213,10 @@ function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: 
             card.title
           )}
         </div>
-        {(card.subtitle || card.text) && <div class="bp-row-sub">{[card.subtitle, card.text].filter(Boolean).join(' — ')}</div>}
+        {(card.subtitle || card.text) && <div class="bp-cardrow-sub">{[card.subtitle, card.text].filter(Boolean).join(' — ')}</div>}
       </div>
       {!!card.badges?.length && (
-        <div class="bp-badges bp-row-badges">
+        <div class="bp-badges bp-cardrow-badges">
           {card.badges.map((badge) => (
             <Badge key={badge.label} badge={badge} />
           ))}
@@ -224,7 +224,7 @@ function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: 
       )}
       {card.deadline && <DeadlineView deadline={card.deadline} t={t} now={now} locale={locale} />}
       {!!card.facts?.length && (
-        <dl class="bp-row-facts">
+        <dl class="bp-cardrow-facts">
           {card.facts.map((fact) => (
             <div key={fact.label} class={fact.tone ? `bp-tone-${fact.tone}` : undefined}>
               <dt>{fact.label}</dt>
@@ -234,7 +234,7 @@ function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: 
         </dl>
       )}
       {!!card.actions?.length && (
-        <div class="bp-row-actions">
+        <div class="bp-cardrow-actions">
           {card.actions.map((action) => (
             <ActionButton key={action.id} action={action} compact />
           ))}
@@ -248,8 +248,8 @@ function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: 
 function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) {
   const columns = [...new Set(cards.flatMap((card) => (card.facts ?? []).map((fact) => fact.label)))]
   return (
-    <div class="bp-table-wrap">
-      <table class="bp-table">
+    <div class="bp-cardtable-wrap">
+      <table class="bp-cardtable">
         <thead>
           <tr>
             <th scope="col">{t('ui.page.table.name')}</th>
@@ -275,7 +275,7 @@ function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) 
                 ) : (
                   card.title
                 )}
-                {card.subtitle && <div class="bp-row-sub">{card.subtitle}</div>}
+                {card.subtitle && <div class="bp-cardrow-sub">{card.subtitle}</div>}
               </th>
               <td>
                 <div class="bp-badges">
@@ -293,7 +293,7 @@ function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) 
                 )
               })}
               <td>
-                <div class="bp-table-actions">
+                <div class="bp-cardtable-actions">
                   {(card.actions ?? []).map((action) => (
                     <ActionButton key={action.id} action={action} compact />
                   ))}
@@ -359,7 +359,7 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
       ) : layout === 'table' ? (
         <CardsTable cards={block.cards} t={t} />
       ) : layout === 'list' ? (
-        <ul class="bp-rows">
+        <ul class="bp-cardrows">
           {block.cards.map((card) => (
             <CardRow key={card.id} card={card} t={t} now={now} locale={locale} />
           ))}

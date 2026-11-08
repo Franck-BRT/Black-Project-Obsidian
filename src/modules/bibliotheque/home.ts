@@ -11,7 +11,7 @@
 import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc } from './model'
 import { HUB_PAGE } from './entriesHome'
-import { grouped, groupingOf, groupingSelector, type Group } from './grouping'
+import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
 import type { LibraryStore } from './store'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'

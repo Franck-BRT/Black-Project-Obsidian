@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
+import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
 import { exigencesModule, lastReview, requirementsAt, withReview } from '../src/modules/exigences'
 import { iaModule } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
@@ -45,7 +45,9 @@ async function start(platform: MemoryPlatform, withPages: boolean, withAi = fals
   return { views, shown, run: (id: string) => commands.get(id)!.run() }
 }
 
-const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+// Les cartes, sections repliables comprises (la page des exigences les regroupe).
+const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
+const cardsOf = (view: PageView): Card[] => cardsIn(view.blocks)
 
 afterEach(async () => {
   for (const module of [...MODULES].reverse()) await module.deactivate?.()
@@ -752,5 +754,31 @@ describe('les liens d’une exigence, navigables en page', () => {
     expect(block.items[0]!.title).toBe(`En découle ${log.id} — Journalisation`)
     await block.items[0]!.open!.run()
     expect(shown.at(-1)).toBe(`exigences.fiche?${encodeURIComponent(log.filePath!)}`)
+  })
+})
+
+describe('la page Exigences : vues et regroupements', () => {
+  it('regrouper par catégorie (d’origine), statut, type, criticité, qualité, ou aucun ; la qualité et la vérification en faits', async () => {
+    const { views } = await start(memoryPlatform(), true)
+    const page = views.pages().find((each) => each.id === 'exigences.bibliotheque')!
+    const sections = (view: PageView) => view.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title} (${block.subtitle})`] : []))
+    let view = await page.load()
+    expect(view.layouts).toEqual(['cards', 'list', 'table'])
+    expect(view.grouping).toMatchObject({ label: 'Regrouper par', current: 'categorie' })
+    expect(view.grouping!.options.map((option) => option.label)).toEqual(['Catégorie', 'Statut', 'Type', 'Criticité', 'Qualité', 'Aucun'])
+    expect(sections(view)).toEqual(['SEC (1 exigence(s))', 'SOL (1 exigence(s))'])
+    expect(cardsOf(view)[0]!.facts?.map((fact) => fact.label)).toEqual(['Qualité', 'Méthode de vérification'])
+    const regroup = async (id: string) => {
+      await view.grouping!.options.find((option) => option.id === id)!.run()
+      view = await page.load()
+    }
+    await regroup('qualite')
+    expect(sections(view)[0]).toMatch(/^Faibles \(moins de 3 étoiles\) \(1 exigence\(s\)\)$/)
+    await regroup('statut')
+    expect(sections(view)).toHaveLength(2)
+    await regroup('aucun')
+    expect(sections(view)).toEqual([])
+    expect(cardsOf(view)).toHaveLength(2)
+    await regroup('categorie')
   })
 })

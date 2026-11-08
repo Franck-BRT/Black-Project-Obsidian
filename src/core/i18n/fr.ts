@@ -39,6 +39,7 @@ export const fr: Record<string, string> = {
   'ui.back.label': 'Revenir à la page précédente : {title} (Alt + ←)',
   'ui.page.filters': 'Filtres',
   'ui.page.all': 'Tout',
+  'ui.page.group': 'Regrouper par',
   'ui.page.layout': 'Affichage',
   'ui.page.layout.cards': 'Cartes',
   'ui.page.layout.list': 'Liste',

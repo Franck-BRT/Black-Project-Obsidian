@@ -2,13 +2,13 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Les pages de la bibliothèque en **sections repliables** : regrouper des cartes (par
- * origine, famille, catégorie, mois ; par catégorie ou favoris) — une section par groupe,
- * l'intitulé dit combien. Au-delà de quatre groupes et de douze cartes, elles sont repliées d'origine ; le
- * regroupement choisi vaut le temps de la session, page par page.
+ * Regrouper les cartes d'une page en **sections repliables** (la bibliothèque, les
+ * exigences…) : une section par groupe, l'intitulé dit combien. Au-delà de quatre groupes
+ * et de douze cartes, elles sont repliées d'origine ; le regroupement choisi vaut le temps
+ * de la session, page par page.
  */
 
-import type { Card, HomeBlock, ViewAction } from '../../core/views'
+import type { Card, HomeBlock, ViewAction } from './views'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -25,10 +25,10 @@ const chosen = new Map<string, string>()
 export const groupingOf = (page: string, fallback: string): string => chosen.get(page) ?? fallback
 export const setGrouping = (page: string, id: string): void => void chosen.set(page, id)
 
-/** Le sélecteur « Regrouper par » d'une page. */
+/** Le sélecteur « Regrouper par » d'une page : ses choix (`prefix.id` pour leur libellé). */
 export function groupingSelector(page: string, current: string, ids: readonly string[], t: Translate, prefix: string): { label: string; current: string; options: ViewAction[] } {
   return {
-    label: t('bibliotheque.group'),
+    label: t('ui.page.group'),
     current,
     options: ids.map((id) => ({ id, label: t(`${prefix}.${id}`), run: () => setGrouping(page, id) }))
   }

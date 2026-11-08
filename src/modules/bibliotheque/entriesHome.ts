@@ -10,7 +10,7 @@
 
 import { pageWith, type Card, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
-import { grouped, groupingOf, groupingSelector } from './grouping'
+import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
