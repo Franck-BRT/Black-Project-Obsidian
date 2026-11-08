@@ -136,9 +136,11 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const { views, page, shown } = await start(platform)
     await pourIntoLibrary([{ name: 'Devis 2026.xlsx', bytes: enc('x') }, { name: 'Photo chantier.jpg', bytes: enc('y') }], { module: 'bibliotheque', label: 'Versé à la main' })
     const nav = views.navEntries().find((entry) => entry.id === 'bibliotheque')!
-    expect(nav.page).toBe('bibliotheque.documents')
+    // Le menu mène à l'accueil de la bibliothèque (documents, prompts, personas) ; la page des documents en dépend.
+    expect(nav.page).toBe('bibliotheque.accueil')
     await nav.run()
-    expect(shown).toEqual(['bibliotheque.documents'])
+    expect(shown).toEqual(['bibliotheque.accueil'])
+    expect(views.pages().find((each) => each.id === 'bibliotheque.documents')!.parent).toBe('bibliotheque.accueil')
     const view = await page('bibliotheque.documents').load()
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}:${stat.value}`)).toEqual(['Documents:2', 'Taille:2 o', 'Ajoutés cette semaine:2', 'Versions à relier:0'])

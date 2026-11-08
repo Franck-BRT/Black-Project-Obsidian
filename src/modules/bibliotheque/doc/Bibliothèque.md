@@ -89,6 +89,29 @@ Les déclencheurs, pour vos propres workflows :
 
 Voir {{link:Modules/Workflows|Workflows}}.
 
-## 6. Réglages
+## 6. Les prompts et les personas
 
-**Dossier de la bibliothèque** (par défaut `Bibliothèque`). Voir {{link:Accueil|l'accueil}}.
+La bibliothèque en tient trois : vos **documents**, vos **prompts** et vos **personas** —
+séparées, chacune sa page, depuis le menu **Bibliothèque**.
+
+- Un **prompt** : une question ou une consigne pour l'IA, écrite une fois (« Quelles
+  pénalités le dossier prévoit-il ? »). « Interroger le dossier » d'une analyse vous le
+  propose avant d'écrire la question ; vous pouvez la reprendre avant de l'envoyer.
+- Un **persona** : le rôle dans lequel l'IA répond — un juriste des marchés publics, un
+  contrôleur technique, un responsable qualité. Vous le choisissez pour interroger le
+  dossier et pour relire une exigence (ou toutes celles du dossier) ; la note de la
+  réponse dit en tant que qui l'IA a répondu.
+- Dans les **workflows** : l'action « Demander à l'IA » prend un prompt et un persona par
+  leur nom ; « Interroger le dossier » et « Relire l'exigence » aussi.
+
+Chaque entrée est une note (dans `Bibliothèque/Prompts` et `Bibliothèque/Personas`) :
+**Nouveau prompt**, **Nouveau persona**, ou **Ajouter les exemples** — des prompts et des
+personas prêts pour les appels d'offres, à modifier. Sur la fiche : **Modifier**,
+**Mettre en favori** (les favoris viennent en tête des listes), **Retirer** (mis de côté,
+rien n'est effacé).
+
+## 7. Réglages
+
+**Dossier de la bibliothèque** (par défaut `Bibliothèque`), **dossier des prompts** (par
+défaut `Bibliothèque/Prompts`) et **dossier des personas** (par défaut
+`Bibliothèque/Personas`). Voir {{link:Accueil|l'accueil}}.

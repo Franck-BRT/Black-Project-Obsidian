@@ -81,11 +81,26 @@ function askForJson(messages: ChatMessage[], schema: unknown): ChatMessage[] {
   return [{ role: 'system', content: instruction }, ...messages]
 }
 
+/** Le rôle (un persona) dit avant toute autre consigne : en tête du message système. */
+function withRole(messages: ChatMessage[], role: string): ChatMessage[] {
+  if (!role.trim()) return messages
+  const first = messages[0]
+  if (first?.role === 'system') return [{ role: 'system', content: `${role}\n\n${first.content}` }, ...messages.slice(1)]
+  return [{ role: 'system', content: role }, ...messages]
+}
+
 export class AiClient {
   constructor(
     private readonly http: Http,
-    readonly connection: AiConnection
+    readonly connection: AiConnection,
+    /** Le persona dans lequel le modèle répond (ses consignes) ; vide : aucun. */
+    readonly persona = ''
   ) {}
+
+  /** Le même client, qui répond dans le rôle d'un persona (ses consignes, avant les autres). */
+  withPersona(instructions: string): AiClient {
+    return new AiClient(this.http, this.connection, instructions.trim())
+  }
 
   get configured(): boolean {
     return this.connection.baseUrl.trim() !== '' && this.connection.model.trim() !== ''
@@ -133,7 +148,8 @@ export class AiClient {
 
   /** La réponse du modèle, en texte. */
   async chat(request: Omit<ChatRequest, 'model'> & { model?: string }): Promise<string> {
-    return readChatContent(await this.send('chat/completions', 'POST', buildChatBody(this.withDefaults(request))))
+    const asked = this.persona ? { ...request, messages: withRole(request.messages, this.persona) } : request
+    return readChatContent(await this.send('chat/completions', 'POST', buildChatBody(this.withDefaults(asked))))
   }
 
   /**

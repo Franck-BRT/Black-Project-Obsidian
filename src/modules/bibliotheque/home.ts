@@ -10,6 +10,7 @@
 
 import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc } from './model'
+import { HUB_PAGE } from './entriesHome'
 import type { LibraryStore } from './store'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -266,9 +267,10 @@ export function registerLibraryHome(views: ViewsRegistrar | undefined, deps: Lib
   views.home({ id: 'bibliotheque.home', title: t('bibliotheque.home.title'), icon: 'book', order: 35, area: 'side', load: () => librarySection(deps) })
   if (!deps.showPage) return
   const show = deps.showPage
-  views.page({ id: LIBRARY_PAGE, title: t('bibliotheque.page.title'), icon: 'book', load: () => libraryPage(deps) })
+  views.page({ id: LIBRARY_PAGE, title: t('bibliotheque.page.title'), icon: 'book', parent: HUB_PAGE, load: () => libraryPage(deps) })
   views.page({ id: DOC_PAGE, title: t('bibliotheque.doc.title'), icon: 'file', parent: LIBRARY_PAGE, load: (param) => docPage(deps, param) })
-  views.nav({ id: 'bibliotheque', label: t('bibliotheque.nav'), icon: 'book', order: 25, page: LIBRARY_PAGE, run: () => show(LIBRARY_PAGE) })
+  // Le menu mène à la bibliothèque : ses documents, ses prompts, ses personas.
+  views.nav({ id: 'bibliotheque', label: t('bibliotheque.nav'), icon: 'book', order: 25, page: HUB_PAGE, run: () => show(HUB_PAGE) })
   views.tile({
     id: 'bibliotheque.documents',
     label: t('bibliotheque.nav'),

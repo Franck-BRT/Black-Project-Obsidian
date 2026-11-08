@@ -11,6 +11,7 @@
  *   chiffres et unités comparés à la source.
  */
 
+import { choosePersona, personaInstructions, type LibraryEntry } from '../../bibliotheque'
 import { describeAiError, type AiClient } from '../../ia'
 import type { Session } from '../flows'
 import { acceptText, setText, textOf, type Requirement } from '../model/requirement'
@@ -114,6 +115,11 @@ export interface ReviewOptions {
   offerRewrite?: boolean
   /** Ne rien dire tant que tout va bien : une relecture en série a son propre résumé. */
   quiet?: boolean
+  /**
+   * Le persona dans lequel l'IA relit (la bibliothèque de personas) ; `null` : sans. Non
+   * donné, une relecture à la main le fait choisir (s'il y en a), une relecture muette non.
+   */
+  persona?: LibraryEntry | null
 }
 
 /** Relire une exigence. */
@@ -136,12 +142,20 @@ export async function reviewRequirement(
     notifier.notify(t('exigences.ai.noWording'), 6000)
     return 'none'
   }
+  // Qui relit : le persona donné, sinon (à la main) celui qu'on choisit, s'il y en a.
+  let persona = options.persona
+  if (persona === undefined && !options.quiet) {
+    const chosen = await choosePersona(ui)
+    if (chosen === undefined) return 'none'
+    persona = chosen
+  }
+  const reviewer = persona ? client.withPersona(personaInstructions(persona)) : client
   const quality = assessRequirement(requirement, session.settings().languages, options.scope ?? 'record')
   const plan = improvementPlan(quality, TARGET, 3)
-  if (!options.quiet) notifier.notify(t('exigences.ai.review.running', { id: requirement.id }), 4000)
+  if (!options.quiet) notifier.notify(t(persona ? 'exigences.ai.review.running.as' : 'exigences.ai.review.running', { id: requirement.id, ...(persona ? { name: persona.name } : {}) }), 4000)
   let review: DeepReview
   try {
-    review = await deepReview(client, body, {
+    review = await deepReview(reviewer, body, {
       lang,
       title: requirement.title,
       weak: plan.improvements.map((improvement) => ({ axis: improvement.axis, misses: improvement.misses, gain: improvement.gain })),

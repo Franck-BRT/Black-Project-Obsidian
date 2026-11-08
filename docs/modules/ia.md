@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.8.0 (Black Projects 0.68.0) |
+| Version | 0.9.0 (Black Projects 0.70.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -98,6 +98,12 @@ Tests : `test/ia-workflows.test.ts`.
 | --- | --- | --- | --- |
 | Signaler les nouveaux modèles du serveur, à l'ouverture (`sys.ia.nouveaux-modeles`) | à l'ouverture (après la vérification, qui met la liste à jour) | `ia.nouveaux-modeles` (`newModels`) : la liste du serveur (`LISTED_KEY`) comparée aux modèles déjà vus (`KNOWN_KEY`, `modelesConnus`) ; les nouveaux nommés avec les usages qui leur conviendraient (`usesOf`) ; la première fois, la liste est seulement retenue | actif |
 | Signaler un serveur d'IA lent, à l'ouverture (`sys.ia.temps-reponse`) | à l'ouverture | `ia.temps-reponse` (champ « seuil », 5 s) : une demande minuscule au modèle d'analyse (`max_tokens` 1), chronométrée ; au-delà du seuil, un message | désactivé |
+
+**Les personas (v0.9.0, Black Projects 0.70.0)** : `AiClient.withPersona(consignes)` rend
+le même client, qui met les consignes d'un persona de la [bibliothèque](bibliotheque.md) en
+tête du message système de chaque demande (`chat`, et donc `chatJson`). L'action
+« Demander à l'IA » (`ia.demander`) prend aussi un *Prompt de la bibliothèque* (sa
+question, quand la consigne est vide) et un *Persona de la bibliothèque*, par leur nom.
 
 ## Interface publique
 

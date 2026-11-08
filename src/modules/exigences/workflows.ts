@@ -9,6 +9,7 @@
  */
 
 import { aiClient } from '../ia'
+import { namedEntry } from '../bibliotheque'
 import { emitWorkflowEvent, registerAction, registerSystemWorkflow, registerTrigger, type WorkflowAction } from '../workflows'
 import { semanticDuplicates } from './ai/semantic'
 import { reviewRequirement, translateRequirement, translationTargets } from './ai/actions'
@@ -185,12 +186,16 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
     labelKey: 'exigences.command.review',
     descKey: 'exigences.wf.action.review.desc',
     needsAi: true,
-    fields: [{ key: 'exigence', labelKey: 'exigences.wf.field.requirement', kind: 'text', required: true, defaultValue: '{chemin}', tooltipKey: 'exigences.wf.field.requirement.tip' }],
+    fields: [
+      { key: 'exigence', labelKey: 'exigences.wf.field.requirement', kind: 'text', required: true, defaultValue: '{chemin}', tooltipKey: 'exigences.wf.field.requirement.tip' },
+      { key: 'persona', labelKey: 'bibliotheque.wf.field.persona', kind: 'text', tooltipKey: 'bibliotheque.wf.field.persona.tip' }
+    ],
     results: ['path', 'link'],
     async run({ fields, ui, notifier }) {
       const client = aiClient()
       if (!client) throw new Error(t('ia.unavailable'))
       const current = session()
+      const persona = await namedEntry('persona', fields.persona)
       // Un chemin de note, ou un identifiant de la bibliothèque.
       let path = fields.exigence!
       if (!path.toLowerCase().endsWith('.md')) {
@@ -199,7 +204,7 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
         path = found.filePath
       }
       // Sans fenêtre : la relecture est écrite, aucune reformulation n'est appliquée.
-      const outcome = await reviewRequirement({ ...current, ui, notifier }, client, path, today(), { offerRewrite: false, quiet: true })
+      const outcome = await reviewRequirement({ ...current, ui, notifier }, client, path, today(), { offerRewrite: false, quiet: true, persona })
       if (outcome === 'failed') throw new Error(t('exigences.wf.reviewFailed'))
       if (outcome === 'none') throw new Error(t('exigences.ai.noWording'))
       return { lines: [t('exigences.wf.reviewed', { path: link(path) })], paths: [path], results: { path, link: link(path) } }

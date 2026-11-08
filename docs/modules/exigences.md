@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.23.0 (Black Projects 0.65.0) |
+| Version | 0.24.0 (Black Projects 0.70.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -298,6 +298,11 @@ vient de l'ordinateur, en place s'il est dans le coffre ; origine « Import d'ex
 Le déclencheur `exigences.importees` est émis après un import réussi (`importFromFile`,
 `emitRequirementsImported`) qui a créé ou mis à jour des exigences : variables `fichier`,
 `nombre`, `creees`, `modifiees` ; listes `ids` et `chemins`.
+
+**Relire avec un persona (v0.24.0, Black Projects 0.70.0)** : `reviewRequirement` prend
+`ReviewOptions.persona` ; non donné, une relecture à la main fait choisir un persona de la
+[bibliothèque](bibliotheque.md) (`choosePersona`, rien n'est demandé s'il n'y en a pas) ;
+l'action « Relire l'exigence » a un champ *Persona de la bibliothèque*.
 
 ## Tests des workflows système
 

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.33.0 (Black Projects 0.66.0) |
+| Version | 0.34.0 (Black Projects 0.70.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -509,3 +509,10 @@ l'en-tête des notes.
 **Pièces sans type reconnu (Black Projects 0.64.0)** : le déclencheur *Pièces importées*
 donne aussi `nontypees` (« Pièces sans type reconnu » : celles classées « Autre »), que lit
 le workflow système du [typage des pièces](typage-pieces.md).
+
+**Prompts et personas (v0.34.0, Black Projects 0.70.0)** : « Interroger le dossier »
+propose d'abord un prompt de la [bibliothèque](bibliotheque.md) (« Écrire ma question »
+en tête), dont la question remplit le formulaire ; le formulaire a un choix de persona
+(la réponse est demandée avec `withPersona`, la note porte `persona:` et le dit). « Relire
+les exigences du dossier » fait choisir un persona une fois pour la série. L'action
+« Interroger le dossier » prend un prompt et un persona par leur nom.

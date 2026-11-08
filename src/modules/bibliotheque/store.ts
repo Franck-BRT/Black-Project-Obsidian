@@ -41,6 +41,8 @@ export interface StoreDeps {
   today(): string
   /** L'intitulé de la section des notes de l'utilisateur, dans sa langue. */
   notesHeading(): string
+  /** Des dossiers à ne pas parcourir comme des fiches de documents (ceux des prompts, des personas). */
+  skip?(): readonly string[]
 }
 
 /** Un fichier à verser : venu de l'ordinateur (ses octets) ou déjà dans le coffre (son chemin). */
@@ -127,9 +129,10 @@ export class LibraryStore {
         const doc = readRecord(path, readYamlFrontmatter(yaml, await fs.readText(path)).data)
         if (doc) out.push(doc)
       }
+      const skipped = this.deps.skip?.() ?? []
       for (const sub of listing.folders) {
         const name = baseName(sub)
-        if (name !== FILES_FOLDER && name !== SET_ASIDE_FOLDER && name !== INBOX_FOLDER) await walk(sub)
+        if (name !== FILES_FOLDER && name !== SET_ASIDE_FOLDER && name !== INBOX_FOLDER && !skipped.includes(sub)) await walk(sub)
       }
     }
     await walk(this.root)

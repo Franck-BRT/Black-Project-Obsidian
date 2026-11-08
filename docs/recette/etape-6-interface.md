@@ -70,6 +70,26 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La bibliothèque : prompts et personas (v0.70.0)
+
+- [ ] Menu **Bibliothèque** : une page d'accueil — Documents, Prompts, Personas (chiffres,
+      une carte chacune) ; chaque carte ouvre sa bibliothèque
+- [ ] **Prompts** vide : un message, **Nouveau prompt**, **Ajouter les exemples** → 7
+      prompts (Pénalités, Critères d'attribution…) dans `Bibliothèque/Prompts` ; une
+      seconde fois : « Les exemples sont déjà tous là. » ; de même pour les **Personas** (6)
+- [ ] **Mettre en favori** : la carte passe en tête, filtre « Favoris » ; filtres par
+      catégorie ; recherche
+- [ ] La fiche : le texte, **Modifier** (changer le nom : la note est renommée),
+      **Ouvrir sa note**, **Retirer** (confirmé, dans `_retirés`)
+- [ ] IA réglée : **Interroger le dossier** d'une analyse → la liste des prompts (« Écrire
+      ma question » en tête) ; un prompt choisi remplit la question ; choisir un persona :
+      la réponse est faite dans son rôle, la note dit « en tant que « … » »
+- [ ] **Relire l'exigence avec l'IA** : le choix d'un persona (« Sans persona » en tête)
+      avant la relecture ; **Relire les exigences du dossier** : une fois pour la série
+- [ ] Un workflow « Demander à l'IA » avec *Prompt de la bibliothèque* = `Pénalités` et
+      *Persona de la bibliothèque* = `Juriste marchés publics` ; un nom inconnu : le
+      workflow échoue et le dit
+
 ## La bibliothèque : le dossier de dépôt et deux rappels (v0.69.0)
 
 - [ ] Page **Workflows**, filtre Système, module Bibliothèque : « Verser le dossier « À

@@ -8,6 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
+import { namedEntry, personaInstructions } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -20,7 +21,9 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     descKey: 'ia.wf.action.ask.desc',
     needsAi: true,
     fields: [
-      { key: 'consigne', labelKey: 'ia.wf.field.prompt', kind: 'textarea', required: true, placeholderKey: 'ia.wf.field.prompt.placeholder' },
+      { key: 'consigne', labelKey: 'ia.wf.field.prompt', kind: 'textarea', placeholderKey: 'ia.wf.field.prompt.placeholder', tooltipKey: 'ia.wf.field.prompt.tip' },
+      { key: 'prompt', labelKey: 'bibliotheque.wf.field.prompt', kind: 'text', tooltipKey: 'bibliotheque.wf.field.prompt.tip' },
+      { key: 'persona', labelKey: 'bibliotheque.wf.field.persona', kind: 'text', tooltipKey: 'bibliotheque.wf.field.persona.tip' },
       { key: 'contexte', labelKey: 'ia.wf.field.context', kind: 'textarea', tooltipKey: 'ia.wf.field.context.tip' },
       { key: 'note', labelKey: 'ia.wf.field.note', kind: 'text', tooltipKey: 'ia.wf.field.note.tip' }
     ],
@@ -28,13 +31,19 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     async run({ fields }) {
       const ai = client()
       if (!ai) throw new Error(t('ia.unavailable'))
+      // La consigne : écrite, sinon celle d'un prompt de la bibliothèque ; un persona, si on en nomme un.
+      const prompt = await namedEntry('prompt', fields.prompt)
+      const instruction = fields.consigne?.trim() || prompt?.text || ''
+      if (!instruction) throw new Error(t('ia.wf.noPrompt'))
+      const persona = await namedEntry('persona', fields.persona)
+      const asked = persona ? ai.withPersona(personaInstructions(persona)) : ai
       let text: string
       try {
         text = (
-          await ai.chat({
+          await asked.chat({
             messages: [
               { role: 'system', content: t('ia.wf.system') },
-              { role: 'user', content: [fields.consigne, fields.contexte].filter((part) => part?.trim()).join('\n\n') }
+              { role: 'user', content: [instruction, fields.contexte].filter((part) => part?.trim()).join('\n\n') }
             ],
             temperature: 0.2
           })

@@ -18,10 +18,14 @@
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
+import type { Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
 import { emitWorkflowEvent, NO_SUBJECT, registerTrigger, systemWorkflowManages, workflowRunning } from '../workflows'
 import page from './doc/Bibliothèque.md'
-import { docPageOf, registerLibraryHome } from './home'
+import { EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
+import { entryPageOf, registerEntriesHome } from './entriesHome'
+import { docPageOf, LIBRARY_PAGE, registerLibraryHome } from './home'
+import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, type DocOrigin, type LibraryDoc } from './model'
 import { LibraryStore, type PourItem, type PourOptions, type PourReport } from './store'
@@ -30,15 +34,84 @@ import { batchSubject, depositSubject, dropDeposit, holdDeposit, registerLibrary
 // ── Interface publique ────────────────────────────────────────────────────────────
 export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport } from './store'
+export type { EntryKind, LibraryEntry } from './entries'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
 export const DEFAULT_FOLDER = 'Bibliothèque'
+export const PROMPTS_FOLDER_KEY = 'dossierPrompts'
+export const PERSONAS_FOLDER_KEY = 'dossierPersonas'
+export const DEFAULT_PROMPTS_FOLDER = 'Bibliothèque/Prompts'
+export const DEFAULT_PERSONAS_FOLDER = 'Bibliothèque/Personas'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
 export { SYS_FILES, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED } from './workflows'
 
-let active: { store: LibraryStore; t: (key: string, vars?: Record<string, string | number>) => string } | null = null
+let active: {
+  store: LibraryStore
+  t: (key: string, vars?: Record<string, string | number>) => string
+  entries: Readonly<Record<EntryKind, EntryStore>>
+} | null = null
+
+/** Les prompts, ou les personas, de la bibliothèque (favoris d'abord) ; aucun sans le module actif. */
+export async function libraryEntries(kind: EntryKind): Promise<LibraryEntry[]> {
+  if (!active) return []
+  try {
+    return await active.entries[kind].all()
+  } catch (error) {
+    console.error('[Black Projects] bibliothèque', error)
+    return []
+  }
+}
+
+/** Un prompt ou un persona, par son nom ou le chemin de sa note ; `null` s'il n'y est pas. */
+export async function findLibraryEntry(kind: EntryKind, nameOrPath: string): Promise<LibraryEntry | null> {
+  return findIn(await libraryEntries(kind), nameOrPath)
+}
+
+/** Écrire les exemples qui manquent (prompts ou personas, pour les appels d'offres) ; rend leurs noms. */
+export async function addStarterEntries(kind: EntryKind, language: string): Promise<string[]> {
+  if (!active) return []
+  return active.entries[kind].addStarters(startersFor(kind, language))
+}
+
+/**
+ * Pour une action de workflow : le prompt ou le persona nommé dans un champ. Vide : `null` ;
+ * nommé mais absent (ou sans texte) : une erreur qui le dit — le workflow échoue et l'écrit.
+ */
+export async function namedEntry(kind: EntryKind, name: string | undefined): Promise<LibraryEntry | null> {
+  const wanted = (name ?? '').trim()
+  if (!wanted) return null
+  const found = await findLibraryEntry(kind, wanted)
+  if (found?.text) return found
+  throw new Error(active ? active.t(`bibliotheque.${kind}.notFound`, { name: wanted }) : `${kind} « ${wanted} » introuvable.`)
+}
+
+/** Ce qu'on dit à l'IA d'un persona, avant toute autre consigne : qui elle est, comment répondre. */
+export function personaInstructions(persona: Pick<LibraryEntry, 'name' | 'text'>): string {
+  const intro = active ? active.t('bibliotheque.persona.intro', { name: persona.name }) : `Tu réponds en tant que « ${persona.name} ».`
+  return `${intro}\n\n${persona.text.trim()}`
+}
+
+/**
+ * Choisir un persona pour une demande à l'IA : la liste (« Sans persona » d'abord) quand
+ * la bibliothèque en a ; sinon rien n'est demandé. `null` : sans persona ; `undefined` :
+ * abandonné.
+ */
+export async function choosePersona(ui: Ui): Promise<LibraryEntry | null | undefined> {
+  const personas = (await libraryEntries('persona')).filter((persona) => persona.text)
+  if (!personas.length || !active) return null
+  const { t } = active
+  const chosen = await ui.pickOption(
+    [
+      { value: '', label: t('bibliotheque.persona.none'), description: t('bibliotheque.persona.none.desc') },
+      ...personas.map((persona) => ({ value: persona.path, label: persona.name, description: [persona.favorite ? '★' : '', persona.category, persona.description].filter(Boolean).join(' · ') }))
+    ],
+    t('bibliotheque.persona.pick')
+  )
+  if (chosen === null) return undefined
+  return personas.find((persona) => persona.path === chosen) ?? null
+}
 
 /**
  * Verser des fichiers dans la bibliothèque, avec leur origine (le module qui les a reçus,
@@ -120,6 +193,16 @@ const folderField: TextField = {
   normalize: cleanFolder
 }
 
+const entriesFolderField = (kind: EntryKind): TextField => ({
+  kind: 'text',
+  key: kind === 'prompt' ? PROMPTS_FOLDER_KEY : PERSONAS_FOLDER_KEY,
+  nameKey: `bibliotheque.setting.${kind}.folder`,
+  descKey: `bibliotheque.setting.${kind}.folder.desc`,
+  tooltipKey: `bibliotheque.setting.${kind}.folder.tip`,
+  defaultValue: kind === 'prompt' ? DEFAULT_PROMPTS_FOLDER : DEFAULT_PERSONAS_FOLDER,
+  normalize: cleanFolder
+})
+
 const feature = (key: string, status: ModuleFeature['status'], step?: number): ModuleFeature => ({
   labelKey: `bibliotheque.feature.${key}`,
   noteKey: `bibliotheque.feature.${key}.note`,
@@ -136,31 +219,46 @@ export function bibliothequeFeatures(): ModuleDetails {
         titleKey: 'bibliotheque.feature.section.store',
         features: [feature('everything', 'available'), feature('dedup', 'available'), feature('versions', 'available'), feature('classify', 'available'), feature('origins', 'available')]
       },
+      { titleKey: 'bibliotheque.feature.section.ai', features: [feature('prompts', 'available'), feature('personas', 'available'), feature('starters', 'available')] },
       { titleKey: 'bibliotheque.feature.section.next', features: [feature('text', 'planned', 7), feature('delivery', 'planned', 7)] }
     ]
   }
 }
 
-const folderOf = (settings: Readonly<Record<string, unknown>>): string => {
-  const stored = settings[FOLDER_KEY]
-  return typeof stored === 'string' && stored.trim() ? cleanFolder(stored) : DEFAULT_FOLDER
+const folderOf = (settings: Readonly<Record<string, unknown>>, key = FOLDER_KEY, fallback = DEFAULT_FOLDER): string => {
+  const stored = settings[key]
+  return typeof stored === 'string' && stored.trim() ? cleanFolder(stored) : fallback
 }
 
 export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.3.0',
+  version: '0.4.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField],
+  settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
-    const store = new LibraryStore({ fs: platform.fs, yaml: platform.yaml, folder: () => folderOf(settings.get()), today: localToday, notesHeading: () => t('bibliotheque.notes') })
-    active = { store, t }
+    const promptsFolder = () => folderOf(settings.get(), PROMPTS_FOLDER_KEY, DEFAULT_PROMPTS_FOLDER)
+    const personasFolder = () => folderOf(settings.get(), PERSONAS_FOLDER_KEY, DEFAULT_PERSONAS_FOLDER)
+    const store = new LibraryStore({
+      fs: platform.fs,
+      yaml: platform.yaml,
+      folder: () => folderOf(settings.get()),
+      today: localToday,
+      notesHeading: () => t('bibliotheque.notes'),
+      // Les prompts et les personas, rangés sous la bibliothèque : pas des documents.
+      skip: () => [promptsFolder(), personasFolder()]
+    })
+    const entries: Record<EntryKind, EntryStore> = {
+      prompt: new EntryStore('prompt', { fs: platform.fs, yaml: platform.yaml, folder: promptsFolder }),
+      persona: new EntryStore('persona', { fs: platform.fs, yaml: platform.yaml, folder: personasFolder })
+    }
+    active = { store, t, entries }
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
     const showNote = (path: string) => (context.showNote ? context.showNote(path) : platform.ui.openNote(path))
 
@@ -304,6 +402,97 @@ export const bibliothequeModule: BlackModule = {
         return true
       }
     })
+
+    // ── Les prompts et les personas ──
+    /** La fenêtre d'une entrée : nom, catégorie, description, favori, texte. */
+    const entryForm = async (kind: EntryKind, current?: LibraryEntry): Promise<EntryDraft | null> => {
+      const categories = [...new Set((await entries[kind].all()).map((each) => each.category).filter(Boolean))]
+      const values = await platform.ui.askForm({
+        title: current ? t('bibliotheque.entry.edit.title', { name: current.name }) : t(`bibliotheque.${kind}.new`),
+        intro: t(`bibliotheque.${kind}.form.intro`),
+        fields: [
+          { kind: 'text', key: 'name', label: t('bibliotheque.entry.field.name'), required: true, value: current?.name ?? '' },
+          { kind: 'text', key: 'category', label: t('bibliotheque.entry.field.category'), value: current?.category ?? '', ...(categories.length ? { description: t('bibliotheque.entry.field.category.known', { list: categories.join(', ') }) } : {}) },
+          { kind: 'text', key: 'description', label: t('bibliotheque.entry.field.description'), value: current?.description ?? '', placeholder: t(`bibliotheque.${kind}.field.description.placeholder`) },
+          { kind: 'textarea', key: 'text', label: t(`bibliotheque.${kind}.text`), required: true, value: current?.text ?? '', placeholder: t(`bibliotheque.${kind}.field.text.placeholder`), tooltip: t(`bibliotheque.${kind}.field.text.tip`) },
+          { kind: 'toggle', key: 'favorite', label: t('bibliotheque.entry.favorite'), value: current?.favorite ?? false, tooltip: t(`bibliotheque.${kind}.field.favorite.tip`) }
+        ],
+        submit: current ? t('bibliotheque.entry.save') : t('bibliotheque.entry.create')
+      })
+      const name = values?.name?.trim()
+      const text = values?.text?.trim()
+      if (!values || !name || !text) return null
+      return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true' }
+    }
+    const createEntry = async (kind: EntryKind): Promise<string | null> => {
+      const draft = await entryForm(kind)
+      if (!draft) return null
+      const path = await entries[kind].create(draft)
+      platform.notifier.notify(t(`bibliotheque.${kind}.created`, { name: draft.name }), 5000)
+      return path
+    }
+    registerEntriesHome(context.views, {
+      t,
+      stores: entries,
+      documentsPage: LIBRARY_PAGE,
+      documents: async () => {
+        const docs = await store.all()
+        return { count: docs.length, likely: docs.filter((doc) => doc.likelyPrevious).length }
+      },
+      ...(showPage ? { showPage } : {}),
+      showNote,
+      create: createEntry,
+      edit: async (kind, path) => {
+        const current = await entries[kind].load(path)
+        if (!current) return null
+        const draft = await entryForm(kind, current)
+        if (!draft) return null
+        const moved = await entries[kind].update(path, draft)
+        platform.notifier.notify(t('bibliotheque.entry.saved', { name: draft.name }), 5000)
+        return moved
+      },
+      toggleFavorite: async (kind, path) => void (await entries[kind].toggleFavorite(path)),
+      setAside: async (kind, path) => {
+        const current = await entries[kind].load(path)
+        if (!current) return false
+        const sure = await platform.ui.confirm({
+          title: t(`bibliotheque.${kind}.setAside.title`),
+          message: t('bibliotheque.entry.setAside.message', { name: current.name, folder: `${entries[kind].root}/_retirés` }),
+          confirm: t('bibliotheque.entry.setAside'),
+          cancel: t('bibliotheque.cancel'),
+          danger: true
+        })
+        if (!sure) return false
+        await entries[kind].setAside(path)
+        platform.notifier.notify(t('bibliotheque.entry.setAside.done', { name: current.name }), 6000)
+        return true
+      },
+      addStarters: async (kind) => {
+        const added = await entries[kind].addStarters(startersFor(kind, i18n.language))
+        platform.notifier.notify(added.length ? t(`bibliotheque.${kind}.starters.done`, { count: added.length, names: added.join(', ') }) : t('bibliotheque.entry.starters.none'), 8000)
+      }
+    })
+    for (const kind of ['prompt', 'persona'] as const) {
+      context.commands.register({
+        id: `${kind}s`,
+        nameKey: `bibliotheque.command.${kind}s`,
+        run: async () => {
+          if (showPage) showPage(`bibliotheque.${kind}s`)
+          else await platform.ui.openNote(entries[kind].root)
+        }
+      })
+      context.commands.register({
+        id: `nouveau-${kind}`,
+        nameKey: `bibliotheque.command.new.${kind}`,
+        run: async () => {
+          const path = await createEntry(kind)
+          if (path) {
+            if (showPage) showPage(entryPageOf(kind, path))
+            else await platform.ui.openNote(path)
+          }
+        }
+      })
+    }
 
     context.commands.register({
       id: 'documents',

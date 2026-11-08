@@ -16,6 +16,7 @@
 import type { Notifier, Ui } from '../../core/ports'
 import { aiClient, describeAiError } from '../ia'
 import { emitWorkflowEvent, OPENING, registerAction, registerSystemWorkflow, registerTrigger, SCHEDULE, type ActionField, type Subject, type WorkflowAction } from '../workflows'
+import { namedEntry, personaInstructions } from '../bibliotheque'
 import { canExtract } from '../exigences'
 import { extensionOf } from '../lecture-fichiers'
 import { calendarOf, calendarPath, writeCalendar, type Calendar, type DeadlineKind } from './calendar'
@@ -229,7 +230,9 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
     needsAi: true,
     fields: [
       ANALYSIS_FIELD,
-      { key: 'question', labelKey: 'ao.ask.form.question', kind: 'textarea', required: true, placeholderKey: 'ao.ask.form.question.placeholder' },
+      { key: 'question', labelKey: 'ao.ask.form.question', kind: 'textarea', placeholderKey: 'ao.ask.form.question.placeholder', tooltipKey: 'ao.wf.field.question.tip' },
+      { key: 'prompt', labelKey: 'bibliotheque.wf.field.prompt', kind: 'text', tooltipKey: 'bibliotheque.wf.field.prompt.tip' },
+      { key: 'persona', labelKey: 'bibliotheque.wf.field.persona', kind: 'text', tooltipKey: 'bibliotheque.wf.field.persona.tip' },
       {
         key: 'mode',
         labelKey: 'ao.ask.form.mode',
@@ -247,8 +250,14 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
       const analysis = await find(fields.analyse!)
       const sources = await pieceSources(services(), analysis)
       if (!sources.length) throw new Error(t('ao.ask.noPiece'))
+      // La question : écrite, sinon celle d'un prompt de la bibliothèque ; un persona, si on en nomme un.
+      const prompt = await namedEntry('prompt', fields.prompt)
+      const question = fields.question?.trim() || prompt?.text || ''
+      if (!question) throw new Error(t('ao.wf.noQuestion'))
+      const persona = await namedEntry('persona', fields.persona)
       try {
-        const answer = await answerQuestion(client, t, sources, fields.question!, (fields.mode === 'each' ? 'each' : 'search') as AskMode)
+        const answer = await answerQuestion(persona ? client.withPersona(personaInstructions(persona)) : client, t, sources, question, (fields.mode === 'each' ? 'each' : 'search') as AskMode)
+        if (persona) answer.persona = persona.name
         const path = await writeQuestionNote(services(), analysis, answer)
         return { lines: [answer.nothing ? t('ao.ask.nothing') : t('ao.ask.done', { cited: answer.sources.filter((each) => each.cited).length, sources: answer.sources.length })], paths: [path], results: { path, link: link(path), text: answer.text } }
       } catch (error) {

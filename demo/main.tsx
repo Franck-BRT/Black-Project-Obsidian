@@ -24,6 +24,7 @@ import { memoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry } from '../src/core/views'
 import { MODULES } from '../src/modules'
 import { createAnalysis, importFiles } from '../src/modules/ao'
+import { addStarterEntries } from '../src/modules/bibliotheque'
 import { requirementsAt } from '../src/modules/exigences'
 import { dialogWindows, mountApp, type DialogHost, type ModuleWindowHost } from '../src/ui'
 
@@ -190,6 +191,9 @@ async function start(): Promise<void> {
   // Des liens, pour la fiche : la disponibilité découle du maintien en température, et un ticket la satisfait.
   if (disponibilite.filePath) await library.save(disponibilite.filePath, (current) => ({ ...current, links: [{ kind: 'derives-from', to: 'REQ-SOL-0001' }, { kind: 'satisfied-by', to: 'TICKET-128' }] }))
   await library.create({ category: 'SEC', title: 'Journalisation', text: text('Les accès seront journalisés si possible.'), type: 'security', status: 'draft', criticality: 'medium' })
+  // Les bibliothèques de prompts et de personas : leurs exemples, pour la visite.
+  await addStarterEntries('prompt', 'fr')
+  await addStarterEntries('persona', 'fr')
   // Un workflow de l'utilisateur, à côté des workflows système créés à l'activation.
   settings.workflows = {
     ...settings.workflows,

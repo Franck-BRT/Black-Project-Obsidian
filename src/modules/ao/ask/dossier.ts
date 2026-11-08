@@ -62,6 +62,8 @@ export interface Answer {
   unknown: number[]
   /** L'IA n'a pas été appelée : rien dans les pièces ne parle de la question. */
   nothing: boolean
+  /** Le persona dans lequel l'IA a répondu (son nom), s'il y en avait un. */
+  persona?: string
 }
 
 export interface Progress {
@@ -257,12 +259,13 @@ export async function writeQuestionNote(services: Services, analysis: Analysis, 
       analyse: wikiLink(analysis.note),
       date: services.today(),
       mode: answer.mode === 'each' ? 'lecture' : 'recherche',
-      sources: answer.sources.length
+      sources: answer.sources.length,
+      ...(answer.persona ? { persona: answer.persona } : {})
     }),
     `# ${t('ao.ask.note.title', { name: analysis.name })}`,
     '',
     `> [!question] ${answer.question.replace(/\n/g, '\n> ')}`,
-    `> *${t(answer.mode === 'each' ? 'ao.ask.mode.each' : 'ao.ask.mode.search')} — ${t('ao.ask.check')}*`,
+    `> *${[t(answer.mode === 'each' ? 'ao.ask.mode.each' : 'ao.ask.mode.search'), ...(answer.persona ? [t('ao.ask.persona', { name: answer.persona })] : []), t('ao.ask.check')].join(' — ')}*`,
     '',
     `## ${t('ao.ask.answer')}`,
     '',

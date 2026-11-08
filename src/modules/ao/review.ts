@@ -10,6 +10,7 @@
  * candidat, elle reste dans la note : de quoi rédiger une question à l'acheteur.
  */
 
+import { choosePersona } from '../bibliotheque'
 import type { AiClient } from '../ia'
 import { assessRequirement, requirementLanguages, reviewRequirement, sessionAt, stars } from '../exigences'
 import type { Notifier, Ui } from '../../core/ports'
@@ -62,13 +63,17 @@ export async function reviewAnalysisRequirements(
     submit: t('ao.review.pick.submit')
   })
   if (!chosen || chosen.length === 0) return null
+  // Qui relit (la bibliothèque de personas, s'il y en a) : une fois pour toute la série.
+  const persona = await choosePersona(window.ui)
+  if (persona === undefined) return null
   const run: ReviewRun = { reviewed: 0, rewritten: 0, failed: false }
   for (const [index, path] of chosen.entries()) {
     window.notifier.notify(t('ao.review.progress', { index: index + 1, total: chosen.length }), 3000)
     const outcome = await reviewRequirement(session, client, path, services.today(), {
       scope: 'wording',
       offerRewrite: position === 'emetteur',
-      quiet: true
+      quiet: true,
+      persona
     })
     if (outcome === 'failed') {
       run.failed = true

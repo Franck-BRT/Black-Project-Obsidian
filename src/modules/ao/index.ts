@@ -23,6 +23,7 @@ import type {
   TogglesField
 } from '../../core/modules/module'
 import type { FormField } from '../../core/ports'
+import { libraryEntries, personaInstructions } from '../bibliotheque'
 import { canExtract, EXIGENCES } from '../exigences'
 import { extensionOf, LECTURE_FICHIERS } from '../lecture-fichiers'
 import {
@@ -436,7 +437,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.33.0',
+  version: '0.34.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -789,6 +790,23 @@ export const aoModule: BlackModule = {
         platform.notifier.notify(t('ao.ask.noPiece'), 8000)
         return
       }
+      // Un prompt de la bibliothèque, s'il y en a : sa question, à reprendre ou à compléter.
+      let question0 = preset?.question
+      if (!preset) {
+        const prompts = (await libraryEntries('prompt')).filter((each) => each.text)
+        if (prompts.length) {
+          const chosen = await platform.ui.pickOption(
+            [
+              { value: '', label: t('ao.ask.own'), description: t('ao.ask.own.desc') },
+              ...prompts.map((each) => ({ value: each.path, label: each.name, description: [each.favorite ? '★' : '', each.category, each.description].filter(Boolean).join(' · ') }))
+            ],
+            t('ao.ask.pickPrompt')
+          )
+          if (chosen === null) return
+          question0 = prompts.find((each) => each.path === chosen)?.text
+        }
+      }
+      const personas = (await libraryEntries('persona')).filter((each) => each.text)
       const values = await platform.ui.askForm({
         title: t('ao.ask.form.title', { name: analysis.name }),
         intro: t('ao.ask.form.intro', { count: sources.length }),
@@ -800,8 +818,21 @@ export const aoModule: BlackModule = {
             placeholder: t('ao.ask.form.question.placeholder'),
             tooltip: t('ao.ask.form.question.tip'),
             required: true,
-            ...(preset ? { value: preset.question } : {})
+            ...(question0 ? { value: question0 } : {})
           },
+          // Le persona dans lequel l'IA répond (la bibliothèque de personas), s'il y en a.
+          ...(personas.length
+            ? [
+                {
+                  kind: 'choice' as const,
+                  key: 'persona',
+                  label: t('ao.ask.form.persona'),
+                  tooltip: t('ao.ask.form.persona.tip'),
+                  options: [{ value: '', label: t('bibliotheque.persona.none') }, ...personas.map((each) => ({ value: each.path, label: each.name, ...(each.description ? { description: each.description } : {}) }))],
+                  value: ''
+                }
+              ]
+            : []),
           {
             kind: 'choice',
             key: 'mode',
@@ -819,9 +850,11 @@ export const aoModule: BlackModule = {
       const question = values?.question?.trim()
       if (!question) return
       const mode: AskMode = values?.mode === 'each' ? 'each' : 'search'
+      const persona = personas.find((each) => each.path === values?.persona)
       platform.notifier.notify(t('ao.ask.running'), 4000)
       try {
-        const answer = await answerQuestion(client, t, sources, question, mode, (message) => platform.notifier.notify(message, 3000))
+        const answer = await answerQuestion(persona ? client.withPersona(personaInstructions(persona)) : client, t, sources, question, mode, (message) => platform.notifier.notify(message, 3000))
+        if (persona) answer.persona = persona.name
         const path = await writeQuestionNote(services, analysis, answer)
         platform.notifier.notify(
           answer.nothing ? t('ao.ask.nothing') : t('ao.ask.done', { cited: answer.sources.filter((each) => each.cited).length, sources: answer.sources.length }),

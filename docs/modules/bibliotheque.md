@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.3.0 (Black Projects 0.69.0) |
+| Version | 0.4.0 (Black Projects 0.70.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -106,6 +106,51 @@ versement) ; un fichier déjà là (mêmes octets) ajoute son origine (« Dépos
 verser » ») et part dans `_retirés` — rien n'est effacé. Puis le versement est annoncé
 (déclencheurs « documents versés » et « document versé »). Dossier vide : rien n'est dit.
 
+## Les bibliothèques de prompts et de personas (v0.4.0, Black Projects 0.70.0)
+
+Le module tient **trois bibliothèques séparées** : les documents, les **prompts** et les
+**personas**. Chacune a son dossier (réglages `dossierPrompts`, par défaut
+`Bibliothèque/Prompts` ; `dossierPersonas`, par défaut `Bibliothèque/Personas` — jamais
+parcourus comme des documents, `StoreDeps.skip`) et ses pages.
+
+- **Le modèle** (`entries.ts`) : une note par entrée, `bp-type: bibliotheque-prompt` ou
+  `bibliotheque-persona`, `nom`, `categorie`, `description`, `favori` ; le corps : la
+  question (prompt) ou qui l'IA est et comment elle répond (persona), sans les
+  commentaires `%% … %%`. `EntryStore` : `all` (favoris d'abord, puis catégorie, puis
+  nom), `create`, `update` (renommée si le nom change), `toggleFavorite`, `setAside`
+  (`_retirés` du dossier, rien n'est effacé), `addStarters` (ceux dont le nom n'est pas
+  pris). `findIn` : par nom (sans accents ni casse) ou chemin.
+- **Les exemples** (`starters.ts`), écrits seulement à la demande (« Ajouter les
+  exemples ») : 7 prompts (pénalités, critères d'attribution, risques du marché,
+  propriété intellectuelle, délais et jalons, garanties et assurances, questions à poser
+  à l'acheteur) et 6 personas (juriste marchés publics, contrôleur technique, responsable
+  qualité, ingénieur d'affaires, ingénieur exigences, traducteur technique), en français
+  ou en anglais.
+- **L'interface** (`entriesHome.ts`) : le menu « Bibliothèque » mène à la page
+  `bibliotheque.accueil` (chiffres, une carte par bibliothèque) ; `bibliotheque.prompts` et
+  `bibliotheque.personas` (Nouveau, Ajouter les exemples, recherche, filtres Favoris et
+  par catégorie, une carte par entrée avec « Mettre en favori ») ; les fiches
+  `bibliotheque.prompt?…` et `bibliotheque.persona?…` (le texte, où il sert ; Modifier,
+  Favori, Ouvrir sa note, Retirer). Tuiles, commandes *Bibliothèque de prompts*,
+  *Bibliothèque de personas*, *Nouveau prompt*, *Nouveau persona*.
+- **L'interface publique** : `libraryEntries(kind)`, `findLibraryEntry(kind, nom)`,
+  `namedEntry(kind, nom)` (pour un champ d'action de workflow : absent → une erreur qui le
+  dit), `choosePersona(ui)` (« Sans persona » d'abord ; rien n'est demandé sans persona ;
+  `undefined` : abandonné), `personaInstructions(persona)` (« Tu réponds en tant que
+  « … ». » puis son texte), `addStarterEntries(kind, langue)`.
+
+**Ce qu'ils apportent à l'IA** (le persona : `AiClient.withPersona`, ses consignes en
+tête du message système de chaque demande) :
+
+| Où | Prompt | Persona |
+| --- | --- | --- |
+| Interroger le dossier (analyse) | choisi avant la question, qu'il remplit (à reprendre) | un choix du formulaire ; la note de la réponse le dit (`persona:`) |
+| Relire l'exigence avec l'IA | — | choisi avant la relecture (`ReviewOptions.persona`) |
+| Relire les exigences du dossier | — | choisi une fois pour la série |
+| Action « Demander à l'IA » | champ *Prompt de la bibliothèque* (la consigne peut rester vide) | champ *Persona de la bibliothèque* |
+| Action « Interroger le dossier » | champ *Prompt de la bibliothèque* (la question peut rester vide) | champ *Persona de la bibliothèque* |
+| Action « Relire l'exigence » | — | champ *Persona de la bibliothèque* |
+
 ## Retirer
 
 `setAside` : la fiche (et le fichier, s'il avait été copié) déplacée dans
@@ -130,9 +175,16 @@ fichier resté à sa place n'est pas touché ; les liens de version vers elle so
 
 ## Réglages
 
-`dossier` (par défaut `Bibliothèque`).
+`dossier` (par défaut `Bibliothèque`), `dossierPrompts` (par défaut
+`Bibliothèque/Prompts`), `dossierPersonas` (par défaut `Bibliothèque/Personas`).
 
 ## Tests
+
+`test/bibliotheque-prompts-personas.test.ts` : l'accueil de la bibliothèque, les pages
+vides, les exemples (une seule fois), favoris et filtres, la fiche (Modifier renomme,
+Retirer), Nouveau persona par la commande ; interroger le dossier avec un prompt et un
+persona, « Demander à l'IA » par leurs noms (et un nom inconnu), relire les exigences du
+dossier avec ou sans persona.
 
 `test/bibliotheque.test.ts` : verser (copié, en place, doublons, module inactif), versions
 (probable, relier, remplacé, même versement), page et fiche (menu, chiffres, filtres,

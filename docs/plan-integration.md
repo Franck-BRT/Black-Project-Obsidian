@@ -479,6 +479,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.69.0 : **module Bibliothèque de documents** : le dossier de dépôt `À verser` versé
   par deux workflows système (à l'ouverture, chaque jour ; actifs) ; *Versions à
   confirmer* et *Documents à classer*, chaque lundi (désactivés)
+- v0.70.0 : **module Bibliothèque** : trois bibliothèques séparées — documents,
+  **prompts**, **personas** (une note par entrée, catégories, favoris, exemples pour les
+  appels d'offres à la demande) ; prompts et personas pour interroger le dossier, relire
+  les exigences et dans les actions de workflow (« Demander à l'IA »…)
 
 ### Étape 7 — Livrables
 
