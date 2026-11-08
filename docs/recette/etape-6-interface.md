@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le logigramme d'un workflow (v0.76.0)
+
+- [ ] La fiche d'un workflow : la section **Logigramme**, ouverte, en tête — Quand
+      (déclencheur), Si (conditions, « Non : rien ne se passe » à droite), Étape 1, 2…,
+      Fin ; « Oui » sur la flèche après une question
+- [ ] Un workflow « Demander d'abord » : la question « Vous acceptez de l'exécuter ? »
+      (« Non : refusé, noté au journal ») ; désactivé : le début le dit, estompé
+- [ ] Un clic sur le début ouvre « Nom, mode et déclencheur » ; sur une étape, sa
+      modification ; au clavier aussi
+- [ ] Thème sombre et couleurs pour daltonismes : les formes restent lisibles ; une
+      fenêtre étroite : la branche « non » passe sous la question
+- [ ] La section se replie d'un clic
+
 ## La page Exigences : sections, vues, regroupements (v0.75.0)
 
 - [ ] **Exigences** : « Regrouper par » Catégorie (d'origine) / Statut / Type / Criticité /

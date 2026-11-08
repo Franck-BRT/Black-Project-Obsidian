@@ -177,6 +177,12 @@ que la recherche lit aussi. Il la déclare par
   bascule (« Regrouper par ») que la page interprète (elle se redessine ensuite) ;
   `src/core/grouping.ts` (`grouped`, `groupingOf`, `groupingSelector`) range des cartes en
   sections, une par groupe, et retient le choix de chaque page le temps de la session ;
+- un **logigramme** (Black Projects 0.76.0) : `{ kind: 'flowchart', label, nodes }` — des
+  formes de haut en bas (`FlowNode` : `start` en pilule, `decision` en hexagone avec sa
+  branche « non » à droite et « oui » sur la flèche, `step` en rectangle, `end` en pilule
+  pointillée), reliées par des flèches ; une forme qui a `open` est un bouton ; `tone`
+  (`data-tone`) colore son bord. HTML et CSS (pas de SVG) : le texte se coupe, les thèmes
+  s'appliquent, et c'est une liste ordonnée pour les lecteurs d'écran (`label` la résume) ;
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;

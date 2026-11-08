@@ -9,9 +9,9 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { pageWith, type Badge, type Card, type HomeBlock, type HomeSectionView, type ListItem, type PageView, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Badge, type Card, type FlowNode, type HomeBlock, type HomeSectionView, type ListItem, type PageView, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { journalPath } from './engine'
-import type { Workflow } from './model'
+import { MANUAL, OPENING, SCHEDULE, type Workflow } from './model'
 import type { Translate } from './registry'
 
 /** La page des workflows. */
@@ -450,6 +450,8 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
         : []),
       // Importé, donc désactivé : à relire avant de l'activer.
       ...(!workflow.enabled && deps.imports?.last().includes(workflow.id) ? [{ kind: 'message' as const, tone: 'info' as const, text: t('workflows.page.imported.fiche') }] : []),
+      // Le logigramme : le workflow d'un coup d'œil, chaque forme ouvre ce qui la modifie.
+      { kind: 'section', id: 'workflows.fiche.logigramme', title: t('workflows.flow.title'), subtitle: t('workflows.flow.subtitle'), icon: 'flow', blocks: [workflowFlowchart(deps, workflow)] },
       {
         kind: 'stats',
         stats: [
@@ -505,6 +507,52 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
         : []),
       { kind: 'list', title: t('workflows.page.fiche.history'), items: history.slice(0, 10).map((item) => ({ ...item, open: runOpen(deps, item.line) })), empty: t('workflows.page.fiche.never') }
     ]
+  }
+}
+
+/**
+ * Le **logigramme** d'un workflow : ce qui le déclenche, ses conditions (non : rien ne se
+ * passe), l'accord demandé s'il le demande, ses étapes, la fin — chaque forme ouvre ce qui
+ * la modifie.
+ */
+export function workflowFlowchart(deps: { t: Translate; page: WorkflowsPageDeps & { fiche: WorkflowFicheDeps } }, workflow: Workflow): HomeBlock {
+  const { t, page } = deps
+  const { fiche } = page
+  const kind = workflow.trigger.kind
+  const startIcon = kind === SCHEDULE ? 'clock' : kind === MANUAL ? 'play' : kind === OPENING ? 'home' : 'flow'
+  // Chaque condition dit déjà comment elle se lie à la précédente (« et », « ou »).
+  const conditions = workflow.conditions.map((_, index) => fiche.describeCondition(workflow, index)).join(' ')
+  const steps = page.describeActions(workflow)
+  const nodes: FlowNode[] = [
+    {
+      id: 'debut',
+      kind: 'start',
+      caption: t('workflows.flow.when'),
+      label: page.describeTrigger(workflow),
+      icon: startIcon,
+      ...(workflow.enabled ? {} : { detail: t('workflows.flow.disabled'), tone: 'neutral' as const }),
+      open: { id: 'general', label: t('workflows.edit.general'), run: () => fiche.editGeneral(workflow.id) }
+    },
+    ...(workflow.conditions.length
+      ? [{ id: 'conditions', kind: 'decision' as const, caption: t('workflows.flow.if'), label: conditions, yes: t('workflows.flow.yes'), no: t('workflows.flow.no.conditions') }]
+      : []),
+    ...(workflow.mode === 'ask' ? [{ id: 'accord', kind: 'decision' as const, caption: t('workflows.flow.ask.caption'), label: t('workflows.flow.ask'), yes: t('workflows.flow.yes'), no: t('workflows.flow.no.ask') }] : []),
+    ...(steps.length
+      ? steps.map((label, index) => ({
+          id: `etape-${index}`,
+          kind: 'step' as const,
+          caption: t('workflows.flow.step', { step: index + 1 }),
+          label,
+          icon: 'play' as const,
+          open: { id: 'edit', label: t('workflows.actions.edit'), run: () => fiche.editAction(workflow.id, index) }
+        }))
+      : [{ id: 'etape-aucune', kind: 'step' as const, label: t('workflows.edit.actions.none'), tone: 'warning' as const, open: { id: 'add', label: t('workflows.actions.add'), run: () => fiche.addAction(workflow.id) } }]),
+    { id: 'fin', kind: 'end', caption: t('workflows.flow.end.caption'), label: t('workflows.flow.end') }
+  ]
+  return {
+    kind: 'flowchart',
+    label: t('workflows.flow.label', { name: workflow.name, steps: steps.length }),
+    nodes
   }
 }
 

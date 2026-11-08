@@ -143,6 +143,14 @@ vues.
   est dit. Celui d'un module désactivé est masqué, et ne s'exécute pas.
 - Un nouveau déclencheur : **À l'ouverture d'Obsidian** (une fois par session).
 
+## Le logigramme
+
+Sur la fiche d'un workflow, la section **Logigramme** le montre d'un coup d'œil, de haut
+en bas : **Quand** (son déclencheur), **Si** (ses conditions — sinon, rien ne se passe),
+**Demander d'abord** (s'il demande votre accord), ses **étapes** dans l'ordre, puis la
+**fin** (le journal garde l'exécution). Un clic sur une forme la modifie : le début
+(nom, mode, déclencheur), une étape (son action).
+
 ## 4. Les garde-fous
 
 - Une étape qui échoue arrête le workflow ; le message et le journal disent laquelle et

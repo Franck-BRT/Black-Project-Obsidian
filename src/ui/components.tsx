@@ -9,7 +9,7 @@
 
 import { createContext } from 'preact'
 import { useContext, useState } from 'preact/hooks'
-import type { Badge as BadgeView, Card as CardView, Deadline, HomeBlock, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
+import type { Badge as BadgeView, Card as CardView, Deadline, FlowNode, HomeBlock, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
 import type { Translate } from './host'
 import { Icon } from './icons'
 import { daysUntil, deadlineTone, starGlyphs, TONE_ICON } from './logic'
@@ -307,6 +307,52 @@ function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) 
   )
 }
 
+/** Un logigramme : ses formes de haut en bas, reliées par des flèches ; une question a sa branche « non ». */
+function Flowchart({ block }: { block: Extract<HomeBlock, { kind: 'flowchart' }> }) {
+  const shape = (node: FlowNode) => {
+    const inner = (
+      <>
+        {node.caption && <span class="bp-flow-caption">{node.caption}</span>}
+        <span class="bp-flow-label">
+          {node.icon && <Icon name={node.icon} />}
+          {node.label}
+        </span>
+        {node.detail && <span class="bp-flow-detail">{node.detail}</span>}
+      </>
+    )
+    return node.open ? (
+      <button type="button" class="bp-flow-shape" onClick={() => void node.open!.run()} title={node.open.tooltip ?? node.open.label}>
+        {inner}
+      </button>
+    ) : (
+      <div class="bp-flow-shape">{inner}</div>
+    )
+  }
+  return (
+    <figure class="bp-flow" aria-label={block.label}>
+      {block.title && <figcaption class="bp-block-title">{block.title}</figcaption>}
+      <ol class="bp-flow-list">
+        {block.nodes.map((node, index) => (
+          <li key={node.id} class={`bp-flow-node is-${node.kind}`} data-tone={node.tone}>
+            {shape(node)}
+            {node.kind === 'decision' && node.no && (
+              <span class="bp-flow-no">
+                <span class="bp-flow-no-line" aria-hidden="true" />
+                <span class="bp-flow-no-end">{node.no}</span>
+              </span>
+            )}
+            {index < block.nodes.length - 1 && (
+              <span class="bp-flow-link" aria-hidden="true">
+                {node.kind === 'decision' && node.yes && <span class="bp-flow-yes">{node.yes}</span>}
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </figure>
+  )
+}
+
 /** Ce que l'utilisateur a fait des sections repliables (repliée ou non), le temps de la session. */
 const folded = new Map<string, boolean>()
 
@@ -343,6 +389,8 @@ function FoldSection({ block, t, now, locale, narrowed }: { block: Extract<HomeB
 export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBlock; t: Translate; now: Date; locale: string; narrowed?: boolean }) {
   const layout = useContext(LayoutContext)
   switch (block.kind) {
+    case 'flowchart':
+      return <Flowchart block={block} />
     case 'section':
       return <FoldSection block={block} t={t} now={now} locale={locale} {...(narrowed ? { narrowed } : {})} />
     case 'actions':

@@ -152,6 +152,36 @@ describe('la fiche d’un workflow, en page', () => {
     return { ...run, page, platform, refuse: () => void (confirmed = false), stored: () => run.settings.workflows!.workflows as Workflow[] }
   }
 
+  it('le logigramme : déclencheur, condition (non : rien ne se passe), étapes, fin ; chaque forme ouvre ce qui la modifie', async () => {
+    const { page, stored, platform } = await fiche()
+    const view = await page.load('wf-1')
+    const section = view.blocks.find((block) => block.kind === 'section' && block.id === 'workflows.fiche.logigramme')
+    expect(section).toMatchObject({ kind: 'section', title: 'Logigramme' })
+    const chart = section?.kind === 'section' ? section.blocks[0] : undefined
+    expect(chart?.kind).toBe('flowchart')
+    const nodes = chart?.kind === 'flowchart' ? chart.nodes : []
+    expect(nodes.map((node) => `${node.kind}:${node.caption ?? ''}`)).toEqual(['start:Quand', 'decision:Si', 'step:Étape 1', 'step:Étape 2', 'end:Fin'])
+    expect(nodes[1]).toMatchObject({ yes: 'Oui', no: 'Non : rien ne se passe' })
+    expect(nodes[1]!.label).toMatch(/CCTP/)
+    // Deux conditions : leur liaison dite une fois (« ou »), pas deux.
+    stored()[0] = { ...stored()[0]!, conditions: [{ field: 'type', op: 'is', value: 'CCTP' }, { field: 'type', op: 'is', value: 'RC', join: 'or' }] }
+    const both = (await page.load('wf-1')).blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).find((block) => block.kind === 'flowchart')
+    expect(both?.kind === 'flowchart' && both.nodes[1]!.label).toMatch(/« CCTP » ou [^o]/)
+    expect(nodes.at(-1)!.label).toBe('Le journal garde l’exécution')
+    // « Demander d'abord » : une question de plus ; désactivé, le début le dit.
+    stored()[0] = { ...stored()[0]!, mode: 'ask', enabled: false }
+    const again = await page.load('wf-1')
+    const chart2 = again.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).find((block) => block.kind === 'flowchart')
+    const nodes2 = chart2?.kind === 'flowchart' ? chart2.nodes : []
+    expect(nodes2.map((node) => node.kind)).toEqual(['start', 'decision', 'decision', 'step', 'step', 'end'])
+    expect(nodes2[0]).toMatchObject({ tone: 'neutral', detail: 'Désactivé : ne se déclenche pas' })
+    expect(nodes2[2]).toMatchObject({ caption: 'Demander d’abord', no: 'Non : refusé, noté au journal' })
+    // Un clic sur une étape : sa fenêtre de modification.
+    const before = platform.asked.length
+    await nodes2[3]!.open!.run()
+    expect(platform.asked.length).toBeGreaterThanOrEqual(before)
+  })
+
   it('un clic sur un workflow ouvre sa fiche ; elle dépend de la liste (menu marqué)', async () => {
     const { views, shown, page } = await fiche()
     const card = cardsOf(await views.pages()[0]!.load())[0]!

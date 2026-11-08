@@ -133,6 +133,13 @@ export type HomeBlock =
   /** Du texte à lire, en paragraphes (une note produite) ; la recherche ne garde que ceux qui répondent. */
   | { kind: 'text'; paragraphs: string[]; empty?: string; /** Un intitulé au-dessus du texte. */ title?: string; /** Du texte tel quel, espaces et retours gardés (un bloc de code, une arborescence). */ preformatted?: boolean }
   /**
+   * Un **logigramme** : ce qui se passe, de haut en bas — un début (ce qui déclenche), des
+   * questions (oui : on continue ; non : on s'arrête, `no` le dit), des étapes, une fin.
+   * Chaque forme peut ouvrir quelque chose (`open` : modifier l'étape…). `label` le résume
+   * pour les lecteurs d'écran ; les formes sont aussi une liste ordonnée.
+   */
+  | { kind: 'flowchart'; title?: string; label: string; nodes: FlowNode[] }
+  /**
    * Une **section repliable** : un intitulé (un clic la replie ou la déplie) et ses blocs —
    * d'autres sections comprises (des sous-sections). Repliée d'origine si `collapsed` ;
    * l'interface se souvient ensuite de ce que l'utilisateur en a fait, le temps de la
@@ -152,6 +159,23 @@ export type HomeBlock =
       /** Posé par l'interface quand elle trie : combien de résultats elle garde. */
       found?: number
     }
+
+/** Une forme d'un logigramme. */
+export interface FlowNode {
+  id: string
+  /** `start` : ce qui déclenche ; `decision` : une question ; `step` : une étape ; `end` : la fin. */
+  kind: 'start' | 'decision' | 'step' | 'end'
+  label: string
+  /** Un mot au-dessus du libellé (« Quand », « Si », « Étape 2 »). */
+  caption?: string
+  detail?: string
+  icon?: IconName
+  tone?: Tone
+  /** Une question : ce qui la fait continuer (« Oui »), ce qui arrive sinon (« Non : rien ne se passe »). */
+  yes?: string
+  no?: string
+  open?: ViewAction
+}
 
 /** Une section de l'accueil, telle qu'elle est à cet instant. */
 export interface HomeSectionView {

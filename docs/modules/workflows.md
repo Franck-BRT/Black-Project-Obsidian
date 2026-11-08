@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.15.0 (Black Projects 0.73.0) |
+| Version | 0.16.0 (Black Projects 0.76.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -77,6 +77,14 @@ par » : **Module** (d'origine, ci-dessus), **Déclencheur** (une section par d�
 d'évènement, puis *Planifiés*, puis *À la main* ; repliées au-delà de quatre), **État**
 (*En échec*, *Actifs*, *Désactivés*), **Aucun** (toutes les cartes). Le regroupement vaut
 le temps de la session (`setWorkflowsGrouping`).
+
+**Le logigramme (v0.16.0, Black Projects 0.76.0)** : sur la fiche d'un workflow, une
+section repliable *Logigramme* (ouverte) — `workflowFlowchart` : **Quand** (le déclencheur ;
+désactivé, il le dit), **Si** (les conditions, avec leurs liaisons ; *Non : rien ne se
+passe*), **Demander d'abord** (s'il le demande ; *Non : refusé, noté au journal*), une
+forme par **étape**, **Fin** (*Le journal garde l'exécution*). Un clic sur le début ouvre
+« Nom, mode et déclencheur » ; sur une étape, sa modification ; sans étape, « Ajouter une
+action ».
 
 `home.ts` déclare la **page** `workflows.liste` (`views.page`, voir
 [l'interface](../architecture/interface.md#les-pages-des-modules-v0150)) : les chiffres

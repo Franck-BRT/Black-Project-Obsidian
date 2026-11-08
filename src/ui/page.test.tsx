@@ -193,3 +193,32 @@ describe('les vues d’une page : cartes, liste, tableau', () => {
     expect(html).toMatch(/Prévenir.*<td>0<\/td><td>—<\/td>/)
   })
 })
+
+describe('le logigramme', () => {
+  const t = createI18n('fr').t.bind(createI18n('fr'))
+  it('ses formes, de haut en bas, reliées ; une question a sa branche « non » ; une forme ouvrable est un bouton', () => {
+    const html = renderToString(
+      <BlockView
+        block={{
+          kind: 'flowchart',
+          label: 'Logigramme du workflow « Essai »',
+          nodes: [
+            { id: 'a', kind: 'start', caption: 'Quand', label: 'Pièces importées', open: { id: 'g', label: 'Modifier', run: () => {} } },
+            { id: 'b', kind: 'decision', caption: 'Si', label: 'type est CCTP', yes: 'Oui', no: 'Non : rien ne se passe' },
+            { id: 'c', kind: 'step', caption: 'Étape 1', label: 'Relever le calendrier' },
+            { id: 'd', kind: 'end', label: 'Le journal garde l’exécution' }
+          ]
+        }}
+        t={t}
+        now={new Date()}
+        locale="fr-FR"
+      />
+    )
+    expect(html).toMatch(/<figure class="bp-flow" aria-label="Logigramme du workflow « Essai »">/)
+    expect(html.match(/<li class="bp-flow-node/g)).toHaveLength(4)
+    expect(html).toMatch(/<button type="button" class="bp-flow-shape"[^>]*>.*Pièces importées/)
+    expect(html).toContain('Non : rien ne se passe')
+    expect(html.match(/class="bp-flow-link"/g)).toHaveLength(3)
+    expect(html).toMatch(/class="bp-flow-yes">Oui</)
+  })
+})

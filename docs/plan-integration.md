@@ -499,6 +499,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.75.0 : **module Exigences** : la bibliothèque d'exigences en sections repliables —
   par catégorie, statut, type, criticité, qualité — ; le tableau (qualité, méthode de
   vérification)
+- v0.76.0 : **interface et module Workflows** : un bloc **logigramme** ; la fiche d'un
+  workflow le montre — déclencheur, conditions, accord, étapes, fin —, chaque forme
+  cliquable
 
 ### Étape 7 — Livrables
 

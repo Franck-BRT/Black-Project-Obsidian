@@ -145,6 +145,31 @@ const COMPONENTS_CSS = String.raw`
 .bp-main > .bp-back { margin: -14px 0 12px -8px; }
 .bp-main > .bp-back + .bp-page > .bp-page-sub { margin-top: 0; }
 .bp-group { display: flex; flex-direction: column; gap: 12px; }
+.bp-flow { margin: 0; padding: 18px 12px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius); background: var(--bp-surface); overflow-x: auto; }
+.bp-flow-list { list-style: none; margin: 0 auto; padding: 0; display: flex; flex-direction: column; align-items: center; max-width: 760px; }
+.bp-flow-node { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; }
+.bp-flow-shape { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; width: min(380px, 100%); padding: 10px 18px; border: 2px solid var(--bp-border); border-radius: var(--bp-radius-small); background: var(--bp-bg); color: var(--bp-text); text-align: center; }
+button.bp-flow-shape { cursor: pointer; }
+button.bp-flow-shape:hover { border-color: var(--bp-accent); }
+button.bp-flow-shape:focus-visible { outline: 3px solid var(--bp-focus); outline-offset: 2px; }
+.bp-flow-node.is-start .bp-flow-shape, .bp-flow-node.is-end .bp-flow-shape { border-radius: 999px; border-color: var(--bp-accent); background: var(--bp-accent-soft); }
+.bp-flow-node.is-end .bp-flow-shape { width: min(300px, 100%); border-style: dashed; }
+.bp-flow-node.is-decision .bp-flow-shape { padding: 14px 40px; border: 0; background: var(--bp-border); clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%); position: relative; }
+.bp-flow-node.is-decision .bp-flow-shape::before { content: ""; position: absolute; inset: 2px; background: var(--bp-surface-2); clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%); z-index: 0; }
+.bp-flow-node.is-decision .bp-flow-shape > * { position: relative; z-index: 1; }
+.bp-flow-node[data-tone="warning"] .bp-flow-shape { border-color: var(--bp-warning, var(--bp-border)); }
+.bp-flow-node[data-tone="danger"] .bp-flow-shape { border-color: var(--bp-danger, var(--bp-border)); }
+.bp-flow-node[data-tone="neutral"] .bp-flow-shape { opacity: 0.75; }
+.bp-flow-caption { font-size: 0.8em; font-weight: 700; color: var(--bp-text-muted); }
+.bp-flow-label { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; }
+.bp-flow-detail { font-size: 0.85em; color: var(--bp-text-muted); }
+.bp-flow-link { position: relative; display: block; width: 2px; height: 34px; background: var(--bp-text-muted); }
+.bp-flow-link::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 6px solid transparent; border-top: 8px solid var(--bp-text-muted); border-bottom: 0; }
+.bp-flow-yes { position: absolute; left: 10px; top: 6px; font-size: 0.78em; font-weight: 700; color: var(--bp-success, var(--bp-text-muted)); white-space: nowrap; }
+.bp-flow-no { position: absolute; left: calc(50% + min(190px, 50%)); top: 0; height: calc(100% - 34px); display: flex; align-items: center; }
+.bp-flow-no-line { width: 26px; border-top: 2px dashed var(--bp-text-muted); }
+.bp-flow-no-end { padding: 4px 10px; border: 1px dashed var(--bp-text-muted); border-radius: 999px; font-size: 0.82em; color: var(--bp-text-muted); white-space: nowrap; background: var(--bp-bg); }
+@media (max-width: 760px) { .bp-flow-no { position: static; height: auto; margin-top: 6px; } .bp-flow-no-line { display: none; } }
 .bp-fold { display: flex; flex-direction: column; gap: 12px; }
 .bp-fold-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius); background: var(--bp-surface); color: var(--bp-text); font: inherit; text-align: left; cursor: pointer; }
 .bp-fold-head:hover:not(:disabled) { background: var(--bp-surface-2); }
