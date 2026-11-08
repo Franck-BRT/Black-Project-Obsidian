@@ -31,7 +31,7 @@ import { baseName, CATEGORIES, type DocOrigin, type LibraryDoc } from './model'
 import { LibraryStore, type PourItem, type PourOptions, type PourReport } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
 import { defaultShelfOf, folderName, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
-import { batchSubject, depositSubject, dropDeposit, holdDeposit, registerLibraryWorkflows, SYS_FILES, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, type Deposit } from './workflows'
+import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export type { DocOrigin, LibraryDoc } from './model'
@@ -47,12 +47,16 @@ export const DEFAULT_PROMPTS_FOLDER = 'Bibliothèque/Prompts'
 export const DEFAULT_PERSONAS_FOLDER = 'Bibliothèque/Personas'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
-export { SYS_FILES, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED } from './workflows'
+export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
 
 let active: {
   store: LibraryStore
   t: (key: string, vars?: Record<string, string | number>) => string
   entries: Readonly<Record<EntryKind, EntryStore>>
+  ui: Ui
+  /** Un lieu de la bibliothèque, en mots (« Normes › ECSS »), d'après son dossier. */
+  placeOfFolder(folder: string): string
+  offerGhost(record: string, folder: string, ask: boolean, ui: Ui): Promise<string | null>
 } | null = null
 
 /** Les prompts, ou les personas, de la bibliothèque (favoris d'abord) ; aucun sans le module actif. */
@@ -156,14 +160,36 @@ async function depositThroughWorkflows(items: readonly PourItem[], origin: DocOr
  * entrés aux workflows — une fois pour le versement, puis un par document.
  */
 async function pourNow(items: readonly PourItem[], origin: DocOrigin, options: PourOptions, toAnnounce: boolean): Promise<PourReport> {
-  if (!active) return { added: [], already: [], failed: [] }
+  if (!active) return { added: [], already: [], failed: [], folder: '' }
   const { store } = active
   const report = await store.pour(items, origin, { ...options, detectVersions: !systemWorkflowManages(SYS_VERSIONS) })
-  if (toAnnounce) await announce(report, origin)
+  if (toAnnounce) await announce(report, origin, options.ghosts)
   return report
 }
 
-async function announce(report: PourReport, origin: DocOrigin): Promise<void> {
+/**
+ * Déposés soi-même dans un lieu, les documents qui y étaient déjà, ailleurs : un fantôme
+ * proposé pour chacun — par son workflow système quand les workflows s'en chargent (couper
+ * le workflow, c'est ne plus rien proposer), sinon ici même, par une fenêtre.
+ */
+async function announceKnown(report: PourReport, origin: DocOrigin): Promise<void> {
+  if (!active) return
+  const { store, t } = active
+  const seen = new Set<string>()
+  for (const doc of report.already) {
+    if (seen.has(doc.record) || doc.record.slice(0, doc.record.lastIndexOf('/')) === report.folder) continue
+    seen.add(doc.record)
+    // Déjà un fantôme ici : rien à proposer.
+    if ((await store.ghostsOf(doc)).some(({ ghost }) => ghost.path.slice(0, ghost.path.lastIndexOf('/')) === report.folder)) continue
+    if (systemWorkflowManages(SYS_GHOST)) {
+      const where = { range: active.placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/'))), ici: active.placeOfFolder(report.folder) }
+      await emitWorkflowEvent(TRIGGER_KNOWN, knownSubject(doc, report.folder, where, origin, readingVars(readingOf(doc.file, t))))
+    } else await active.offerGhost(doc.record, report.folder, true, active.ui)
+  }
+}
+
+async function announce(report: PourReport, origin: DocOrigin, ghosts = false): Promise<void> {
+  if (ghosts) await announceKnown(report, origin)
   if (!active || !report.added.length) return
   const { store, t } = active
   await emitWorkflowEvent(TRIGGER_BATCH, batchSubject(report.added, origin, t))
@@ -282,7 +308,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.8.0',
+  version: '0.9.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -303,6 +329,7 @@ export const bibliothequeModule: BlackModule = {
       folder: mainFolder.document,
       today: localToday,
       notesHeading: () => t('bibliotheque.notes'),
+      ghostLine: (link, where) => t('bibliotheque.ghost.line', { link, where }),
       // Les prompts et les personas, rangés sous la bibliothèque (ou ailleurs) : pas des documents.
       skip: () => [...shelves('prompt'), ...shelves('persona')].map((shelf) => shelf.folder),
       shelves: () => shelves('document'),
@@ -312,7 +339,35 @@ export const bibliothequeModule: BlackModule = {
       new EntryStore(kind, { fs: platform.fs, yaml: platform.yaml, folder: mainFolder[kind], shelves: () => shelves(kind), target: () => defaultShelf(kind).folder })
     const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona') }
     const subdirectories = (kind: ShelfKind) => (folder: string) => (kind === 'document' ? store.subdirectories(folder) : entries[kind].subdirectories(folder))
-    active = { store, t, entries }
+    /** Un dossier d'une bibliothèque de documents, en mots : « Normes › ECSS » (son nom d'abord quand il y en a plusieurs). */
+    const placeOfFolder = (folder: string): string => {
+      const all = shelves('document')
+      const shelf = [...all].sort((a, b) => b.folder.length - a.folder.length).find((each) => folder === each.folder || folder.startsWith(`${each.folder}/`))
+      if (!shelf) return folder
+      const parts = folder.slice(shelf.folder.length).split('/').filter(Boolean)
+      // Une seule bibliothèque : son nom n'apprend rien, sauf à sa racine.
+      return (all.length > 1 || !parts.length ? [shelf.name, ...parts] : parts).join(' › ')
+    }
+    /** Proposer — ou placer d'office — un fantôme d'un document ici. */
+    const offerGhost = async (record: string, folder: string, ask: boolean, ui: Ui): Promise<string | null> => {
+      const doc = await store.load(record)
+      if (!doc || !folder) return null
+      const range = placeOfFolder(record.slice(0, record.lastIndexOf('/')))
+      const ici = placeOfFolder(folder)
+      if (ask) {
+        const sure = await ui.confirm({
+          title: t('bibliotheque.ghost.ask.title'),
+          message: t('bibliotheque.ghost.ask.message', { title: doc.title, where: range, ici }),
+          confirm: t('bibliotheque.ghost.place'),
+          cancel: t('bibliotheque.ghost.nothing')
+        })
+        if (!sure) return null
+      }
+      const ghost = await store.addGhost(doc, folder, range)
+      if (ghost) platform.notifier.notify(t('bibliotheque.ghost.done', { title: doc.title, ici }), 6000)
+      return ghost
+    }
+    active = { store, t, entries, ui: platform.ui, placeOfFolder, offerGhost }
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
     const showNote = (path: string) => (context.showNote ? context.showNote(path) : platform.ui.openNote(path))
 
@@ -332,7 +387,8 @@ export const bibliothequeModule: BlackModule = {
         const report = await store.pourInbox(origin, { detectVersions: !systemWorkflowManages(SYS_VERSIONS) })
         await announce(report, origin)
         return report
-      }
+      },
+      offerGhost
     })
 
     // ── Les bibliothèques et leurs répertoires ──
@@ -448,7 +504,8 @@ export const bibliothequeModule: BlackModule = {
     /** Verser ce qui est choisi, ou glissé-déposé : le dire ensuite (entrés, déjà là, illisibles). */
     const pourItems = async (items: readonly PourItem[], folder?: string): Promise<PourReport | null> => {
       if (!items.length) return null
-      const report = await pourIntoLibrary(items, { module: BIBLIOTHEQUE, label: t('bibliotheque.origin.hand') }, folder ? { folder } : {})
+      // Déposé soi-même dans un lieu : un document déjà là, ailleurs, peut y laisser un fantôme.
+      const report = await pourIntoLibrary(items, { module: BIBLIOTHEQUE, label: t('bibliotheque.origin.hand') }, folder ? { folder, ghosts: true } : {})
       if (report)
         platform.notifier.notify(
           [
@@ -526,6 +583,9 @@ export const bibliothequeModule: BlackModule = {
       showNote,
       exists: (path) => platform.fs.exists(path),
       // Versés depuis l'interface : un seul nouveau document, sa fiche ; sinon la page se redessine.
+      removeGhost: async (path) => {
+        if (await store.removeGhost(path)) platform.notifier.notify(t('bibliotheque.ghost.removed'), 5000)
+      },
       places: { ...places.document, dropInto: (folder, where) => ({ label: t('bibliotheque.drop.label', { where }), run: async (files) => void (await pourItems(files, folder)) }) },
       move: async (record) => {
         const doc = await store.load(record)

@@ -9,7 +9,10 @@
  * - **Ranger les fichiers importés** (activé) : le fichier d'un import d'exigences, un
  *   échange de types de pièces ou de workflows ;
  * - **Repérer les nouvelles versions probables** (activé) : une fois par versement ;
- * - **Signaler les fichiers introuvables** (désactivé) : chaque lundi à 8 h.
+ * - **Signaler les fichiers introuvables** (désactivé) : chaque lundi à 8 h ;
+ * - **Proposer un fantôme d'un document déjà là** (activé) : déposé soi-même dans un lieu
+ *   de la bibliothèque, un document qui y est déjà ailleurs — une fenêtre propose de ne
+ *   rien faire, ou de laisser ici un fantôme.
  *
  * Un dépôt passe par le déclencheur « Fichiers déposés dans l'application » : ses fichiers
  * (leurs octets ne voyagent pas dans les variables) attendent ici, sous un identifiant, que
@@ -17,6 +20,7 @@
  * ranger ces fichiers-là.
  */
 
+import type { Ui } from '../../core/ports'
 import { OPENING, registerAction, registerSystemWorkflow, registerTrigger, SCHEDULE, type Subject, type WorkflowAction, type WorkflowCondition, type WorkflowTrigger } from '../workflows'
 import type { DocOrigin, LibraryDoc } from './model'
 import type { LibraryStore, PourItem, PourOptions, PourReport } from './store'
@@ -27,11 +31,14 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 export const TRIGGER_DEPOSITED = 'bibliotheque.fichiers-deposes'
 /** Un versement a fait entrer de nouveaux documents (une fois pour tous) : le déclencheur. */
 export const TRIGGER_BATCH = 'bibliotheque.versement'
+/** Un document déposé (soi-même, dans un lieu) qui est déjà dans la bibliothèque, ailleurs : le déclencheur. */
+export const TRIGGER_KNOWN = 'bibliotheque.document-deja-la'
 
 export const SYS_PIECES = 'sys.bibliotheque.ranger-pieces'
 export const SYS_FILES = 'sys.bibliotheque.ranger-fichiers'
 export const SYS_VERSIONS = 'sys.bibliotheque.nouvelles-versions'
 export const SYS_MISSING = 'sys.bibliotheque.fichiers-introuvables'
+export const SYS_GHOST = 'sys.bibliotheque.fantome'
 
 /** Le module dont les dépôts sont des pièces d'analyse. */
 const PIECES_MODULE = 'ao'
@@ -95,6 +102,22 @@ export interface LibraryWorkflowDeps {
   pourNow(items: readonly PourItem[], origin: DocOrigin, options: PourOptions, announce: boolean): Promise<PourReport>
   /** Verser le dossier de dépôt. */
   pourInbox(): Promise<PourReport>
+  /**
+   * Proposer (une fenêtre : ne rien faire, ou placer ici un fantôme) — ou placer d'office —
+   * un fantôme d'un document dans un dossier. Rend la note du fantôme, ou `null`.
+   */
+  offerGhost(record: string, folder: string, ask: boolean, ui: Ui): Promise<string | null>
+}
+
+/** Le sujet d'un document déjà là : lui, où il est rangé, et le lieu où on l'a déposé. */
+export function knownSubject(doc: LibraryDoc, folder: string, where: { range: string; ici: string }, origin: DocOrigin, reading: Record<string, string>): Subject {
+  return {
+    key: `${doc.record}>${folder}`,
+    label: doc.title,
+    path: doc.record,
+    vars: { titre: doc.title, fichier: doc.file, fiche: doc.record, range: where.range, ici: where.ici, dossier: folder, origine: origin.module, ...reading },
+    lists: {}
+  }
 }
 
 /** Des titres, les dix premiers, puis « … ». */
@@ -229,6 +252,38 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
     }
   })
 
+  registerTrigger({
+    id: TRIGGER_KNOWN,
+    labelKey: 'bibliotheque.wf.trigger.known',
+    descKey: 'bibliotheque.wf.trigger.known.desc',
+    fields: vars(['titre', 'fichier', 'range', 'ici', 'origine', 'extension', 'lisible', 'lecture', 'fiche', 'dossier'])
+  })
+  registerAction({
+    id: 'bibliotheque.fantome',
+    labelKey: 'bibliotheque.wf.action.ghost',
+    descKey: 'bibliotheque.wf.action.ghost.desc',
+    fields: [
+      {
+        key: 'quoi',
+        labelKey: 'bibliotheque.wf.field.ghost.how',
+        kind: 'choice',
+        defaultValue: 'demander',
+        options: [
+          { value: 'demander', labelKey: 'bibliotheque.wf.ghost.ask' },
+          { value: 'toujours', labelKey: 'bibliotheque.wf.ghost.always' }
+        ]
+      },
+      { key: 'fiche', labelKey: 'bibliotheque.wf.field.ghost.record', kind: 'text', defaultValue: '{fiche}', required: true },
+      { key: 'dossier', labelKey: 'bibliotheque.wf.field.ghost.folder', kind: 'text', defaultValue: '{dossier}', required: true }
+    ],
+    results: ['path'],
+    async run({ fields, ui }) {
+      const ghost = await deps.offerGhost(fields.fiche ?? '', fields.dossier ?? '', fields.quoi !== 'toujours', ui)
+      const text = ghost ? t('bibliotheque.wf.ghost.done', { path: ghost }) : t('bibliotheque.wf.ghost.nothing')
+      return { lines: [text], ...(ghost ? { paths: [ghost], results: { path: ghost } } : {}) }
+    }
+  })
+
   // ── Les workflows système de la bibliothèque ──
   const system = (id: string, enabledByDefault: boolean, trigger: WorkflowTrigger, actions: WorkflowAction[], conditions: WorkflowCondition[] = []) =>
     registerSystemWorkflow({
@@ -246,5 +301,6 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   system('depot-ouverture', true, { kind: OPENING }, inbox)
   system('depot-quotidien', true, { kind: SCHEDULE, every: 'day', time: '08:00' }, inbox)
   system('versions-a-confirmer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.versions-a-confirmer', fields: {} }])
+  system('fantome', true, { kind: TRIGGER_KNOWN }, [{ kind: 'bibliotheque.fantome', fields: { quoi: 'demander', fiche: '{fiche}', dossier: '{dossier}' } }])
   system('a-classer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.a-classer', fields: {} }])
 }

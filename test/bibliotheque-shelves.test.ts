@@ -24,6 +24,7 @@ const directoriesOf = (view: PageView): string[] => cardsIn(view.blocks).filter(
 const crumbsOf = (view: PageView): string[] => view.breadcrumb?.items.map((item) => item.label) ?? []
 const action = (view: PageView, id: string) => view.actions!.find((each) => each.id === id)!
 const bytes = (text: string) => new TextEncoder().encode(text)
+const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
 
 async function start(platform: MemoryPlatform) {
   const i18n = createI18n('fr')
@@ -140,8 +141,8 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     expect(card.drop?.label).toBe('Déposer pour verser dans « Normes »')
     await card.drop!.run([{ name: 'ECSS.pdf', bytes: bytes('ecss') }, { name: 'Plan.pdf', bytes: bytes('plan') }])
     expect(await platform.fs.exists('Bibliothèque/Normes/ECSS.md')).toBe(true)
-    // Déjà là (même empreinte) : pas une seconde fois.
-    expect(await platform.fs.exists('Bibliothèque/Normes/Plan.md')).toBe(false)
+    // Déjà là (même empreinte) : pas une seconde fois — un fantôme, si on l'accepte (ici, oui).
+    expect(read(platform, 'Bibliothèque/Normes/Plan.md')).toMatch(/^---\nbp-type: bibliotheque-fantome\n/)
     const inside = await page('bibliotheque.documents').load(encodeURIComponent('principale:Normes'))
     expect(inside.drop?.label).toBe('Déposer pour verser dans « Normes »')
     // Les prompts et les personas n'en prennent pas.

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.8.0 (Black Projects 0.80.0) |
+| Version | 0.9.0 (Black Projects 0.81.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -99,6 +99,7 @@ Sans le module Workflows, la bibliothèque range et repère elle-même, comme en
 | Verser le dossier « À verser », chaque jour (`sys.bibliotheque.depot-quotidien`) | chaque jour à 8 h | `bibliotheque.depot` | actif |
 | Versions à confirmer, chaque lundi (`sys.bibliotheque.versions-a-confirmer`) | lundi à 8 h | `bibliotheque.versions-a-confirmer` : les documents à `precedentProbable`, comptés et nommés | désactivé |
 | Documents à classer, chaque lundi (`sys.bibliotheque.a-classer`) | lundi à 8 h | `bibliotheque.a-classer` : les documents sans catégorie, comptés et nommés | désactivé |
+| Proposer un fantôme d'un document déjà dans la bibliothèque (`sys.bibliotheque.fantome`, v0.9.0) | *Bibliothèque : document déjà là* | `bibliotheque.fantome` (*Demander*) : une fenêtre — « Ne rien faire » ou « Placer un fantôme ici » | actif |
 
 `pourInbox` : le dossier `<dossier>/À verser` (`INBOX_FOLDER`, jamais parcouru comme des
 fiches) est créé s'il manque ; ses fichiers, sous-dossiers compris : un fichier nouveau
@@ -202,6 +203,34 @@ ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là 
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
 
+## Les fantômes (v0.9.0, Black Projects 0.81.0)
+
+Repris de la version complète de Black Projects. Un document n'est gardé qu'une fois.
+Déposé **soi-même dans un lieu** (« Verser des documents » sur la page d'un lieu, ou
+glissé-déposé — `PourOptions.ghosts`), un document déjà là, **rangé ailleurs**, n'est pas
+copié : un fantôme est proposé. Les dépôts des autres modules (pièces d'une analyse,
+imports) et le dossier « À verser » ne proposent rien.
+
+- **Le fantôme** (`ghosts.ts`) : une note `bp-type: bibliotheque-fantome` — `de`
+  (`[[fiche]]`), `titre`, `empreinte` — et une ligne : « Fantôme : le document [[…]] est
+  rangé dans « Normes » de la bibliothèque. » Il retrouve son document par le lien, sinon
+  par l'empreinte (`ghostTarget`).
+- **Le déclencheur** `bibliotheque.document-deja-la` (*Bibliothèque : document déjà là*),
+  un par document : `titre`, `fichier`, `range` (où il est rangé), `ici` (où on l'a
+  déposé), `origine`, `extension`, `lisible`, `lecture`, `fiche`, `dossier`. Rien quand on
+  le dépose là où il est rangé, ni quand un fantôme y est déjà.
+- **L'action** `bibliotheque.fantome` : *Comment* — **Demander** (une fenêtre : « Ne rien
+  faire » / « Placer un fantôme ici ») ou **Placer un fantôme sans demander** — ; `fiche`,
+  `dossier`. Le workflow système l'appelle en *Demander* ; désactivé, rien n'est proposé.
+  Sans le module Workflows, la bibliothèque propose elle-même (la même fenêtre).
+- **Il suit son document** (`LibraryStore`) : déplacé (`move`), son lien suit ; arrivé là où
+  est un fantôme, ce fantôme part ; retiré (`setAside`), ses fantômes partent aussi.
+  `removeGhost` : la note mise dans `_retirés` (rien n'est effacé ; le document reste).
+- **À l'écran** : dans un lieu, « Aussi ici, rangés ailleurs » — une carte par fantôme
+  (*Fantôme*, « rangé dans « Normes » ») : l'ouvrir ouvre le document ; *Aller à
+  l'original*, *Retirer le fantôme* ; filtre *Fantômes*. La fiche du document : « Montré
+  aussi ailleurs ».
+
 ## L'extension d'un fichier, et s'il est lisible (v0.8.0, Black Projects 0.80.0)
 
 Quel que soit le moyen par lequel un fichier entre (versé à la main, glissé-déposé, le
@@ -261,6 +290,12 @@ bibliothèques principales. `bibliotheques` (les autres, par sorte) et
 `bibliothequesParDefaut` sont écrits par les pages.
 
 ## Tests
+
+`test/bibliotheque-fantomes.test.ts` : le workflow système, la fenêtre (ne rien faire, placer
+un fantôme ici ; déjà un fantôme ou déjà rangé là : plus de question), la carte du
+fantôme (ouvrir, aller à l'original, retirer), le fantôme suit son document (déplacé,
+ramené, retiré), le workflow sans demander ou désactivé, sans le module Workflows, les
+dépôts des autres modules.
 
 `test/bibliotheque-shelves.test.ts` : créer une bibliothèque (par défaut : les dépôts y
 entrent ; dossier emboîté refusé), répertoires et sous-répertoires (fil d'Ariane, cartes,

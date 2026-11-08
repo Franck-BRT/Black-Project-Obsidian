@@ -80,6 +80,7 @@ catégorie).
 | Verser le dossier « À verser », chaque jour | chaque jour à 8 h | activé |
 | Versions à confirmer, chaque lundi | le lundi à 8 h | désactivé |
 | Documents à classer, chaque lundi | le lundi à 8 h | désactivé |
+| Proposer un fantôme d'un document déjà dans la bibliothèque | vous déposez un document déjà là, rangé ailleurs | activé |
 
 Désactiver un « Ranger… », c'est ne plus ranger ces fichiers-là ; ce que vous versez
 vous-même (« Verser des documents ») y entre toujours.
@@ -120,7 +121,25 @@ personas prêts pour les appels d'offres, à modifier. Sur la fiche : **Modifier
 **Mettre en favori** (les favoris viennent en tête des listes), **Retirer** (mis de côté,
 rien n'est effacé).
 
-## 7. Plusieurs bibliothèques, des répertoires
+## 7. Les fantômes
+
+Un document n'est gardé qu'une fois. Si vous déposez dans un répertoire (en le versant ou
+en le glissant-déposant) un document qui est déjà dans la bibliothèque, rangé ailleurs, il
+n'est pas copié une seconde fois : une fenêtre vous propose **Ne rien faire**, ou **Placer
+un fantôme ici**. Un fantôme est une petite note qui montre le document dans ce répertoire
+aussi, et l'ouvre d'ici — sans le dupliquer.
+
+Dans la page du répertoire, les fantômes sont sous « Aussi ici, rangés ailleurs » : un clic
+ouvre le document ; **Aller à l'original** mène là où il est rangé ; **Retirer le fantôme**
+l'enlève (le document reste). Le fantôme suit son document s'il est déplacé, et part s'il
+est retiré. La fiche du document dit où il est montré aussi.
+
+C'est le workflow système « Proposer un fantôme d'un document déjà dans la
+bibliothèque » : vous pouvez le régler pour placer le fantôme sans demander (*Comment* :
+*Placer un fantôme sans demander*), ou le désactiver. Déclencheur : *Bibliothèque :
+document déjà là* (où il est rangé, où vous l'avez déposé…).
+
+## 8. Plusieurs bibliothèques, des répertoires
 
 Chaque sorte — documents, prompts, personas — peut avoir **plusieurs bibliothèques** :
 **Nouvelle bibliothèque** (sur sa page, ou sur l'accueil de la bibliothèque) lui donne un
@@ -144,7 +163,7 @@ répertoire, dans ce répertoire. Comme « Verser des documents » : copiés dan
 bibliothèque, une seule fois chacun. Un prompt ou un persona se retrouve par son nom où qu'il soit
 rangé.
 
-## 8. Réglages
+## 9. Réglages
 
 **Dossier de la bibliothèque** (par défaut `Bibliothèque`), **dossier des prompts** (par
 défaut `Bibliothèque/Prompts`) et **dossier des personas** (par défaut

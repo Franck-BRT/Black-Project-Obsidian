@@ -16,6 +16,7 @@
 import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
+import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
   baseName,
@@ -48,6 +49,14 @@ export interface StoreDeps {
   shelves?(): readonly Shelf[]
   /** Le dossier où verser, sans lieu précis : la racine de la bibliothèque par défaut. */
   target?(): string
+  /** La ligne de la note d'un fantôme, dans la langue : où est le document (`link`), dans quel lieu (`where`). */
+  ghostLine?(link: string, where: string): string
+}
+
+/** Un fantôme, et le document qu'il montre (aucun quand il n'est plus là). */
+export interface GhostEntry {
+  ghost: LibraryGhost
+  doc: LibraryDoc | undefined
 }
 
 /** Un fichier à verser : venu de l'ordinateur (ses octets) ou déjà dans le coffre (son chemin). */
@@ -68,6 +77,11 @@ export interface PourOptions {
   /** Le dossier où ranger les fiches (une bibliothèque, un répertoire) ; sinon la bibliothèque par défaut. */
   folder?: string
   /**
+   * Déposé soi-même dans un lieu : un document déjà là, ailleurs, peut y laisser un fantôme
+   * (proposé après le versement). Pas pour les dépôts des autres modules.
+   */
+  ghosts?: boolean
+  /**
    * Repérer, à l'entrée, les nouvelles versions probables (oui, par défaut). Non quand c'est
    * son workflow système qui s'en charge, après le versement (`markLikelyVersions`).
    */
@@ -79,6 +93,8 @@ export interface PourReport {
   added: LibraryDoc[]
   /** Ceux qui y étaient déjà (même fichier) : leur origine ajoutée. */
   already: LibraryDoc[]
+  /** Le dossier où ce versement range ses fiches (une bibliothèque, un répertoire). */
+  folder: string
   /** Les noms qui n'ont pas pu être versés (fichier illisible). */
   failed: string[]
 }
@@ -152,19 +168,64 @@ export class LibraryStore {
 
   /** Les fiches de toutes les bibliothèques, partout sous leur dossier (sauf leurs fichiers et leurs retirés) ; chacune sait où elle est. */
   async all(): Promise<LibraryDoc[]> {
+    return (await this.scan()).docs
+  }
+
+  /** Les fiches et les fantômes de toutes les bibliothèques, en un parcours. */
+  private async scan(): Promise<{ docs: LibraryDoc[]; ghosts: LibraryGhost[] }> {
     const { fs, yaml } = this.deps
-    const out: LibraryDoc[] = []
+    const docs: LibraryDoc[] = []
+    const ghosts: LibraryGhost[] = []
     const walk = async (shelf: Shelf, folder: string, directory: string): Promise<void> => {
       if (!(await fs.exists(folder))) return
       const listing = await fs.list(folder)
       for (const path of listing.files.filter((each) => each.endsWith('.md'))) {
-        const doc = readRecord(path, readYamlFrontmatter(yaml, await fs.readText(path)).data)
-        if (doc) out.push({ ...doc, shelf: shelf.id, directory })
+        const data = readYamlFrontmatter(yaml, await fs.readText(path)).data
+        const doc = readRecord(path, data)
+        if (doc) docs.push({ ...doc, shelf: shelf.id, directory })
+        const ghost = doc ? null : readGhost(path, data)
+        if (ghost) ghosts.push({ ...ghost, shelf: shelf.id, directory })
       }
       for (const sub of listing.folders) if (this.walkable(sub)) await walk(shelf, sub, directory ? `${directory}/${baseName(sub)}` : baseName(sub))
     }
     for (const shelf of this.shelves()) await walk(shelf, shelf.folder, '')
-    return out
+    return { docs, ghosts }
+  }
+
+  /** Les fantômes de toutes les bibliothèques, chacun avec le document qu'il montre. */
+  async ghosts(): Promise<GhostEntry[]> {
+    const { docs, ghosts } = await this.scan()
+    return ghosts.map((ghost) => ({ ghost, doc: ghostTarget(ghost, docs) }))
+  }
+
+  /** Les fantômes d'un document (par sa fiche, ou son empreinte). */
+  async ghostsOf(doc: Pick<LibraryDoc, 'record' | 'hash'>): Promise<GhostEntry[]> {
+    return (await this.ghosts()).filter((entry) => entry.doc?.record === doc.record || (!entry.doc && !!doc.hash && entry.ghost.hash === doc.hash))
+  }
+
+  /**
+   * Laisser un fantôme d'un document dans un dossier (une bibliothèque, un répertoire) : pas
+   * là où il est rangé, ni là où il en a déjà un. Rend la note du fantôme, ou `null`.
+   */
+  async addGhost(doc: LibraryDoc, folder: string, where = ''): Promise<string | null> {
+    const { fs } = this.deps
+    if (doc.record.slice(0, doc.record.lastIndexOf('/')) === folder) return null
+    if ((await this.ghostsOf(doc)).some(({ ghost }) => ghost.path.slice(0, ghost.path.lastIndexOf('/')) === folder)) return null
+    await fs.ensureFolder(folder)
+    const path = await this.free(`${folder}/${baseName(doc.record)}`)
+    await fs.writeText(path, ghostContent(doc, (link) => this.deps.ghostLine?.(link, where) ?? `${link} — ${where}`))
+    return path
+  }
+
+  /** Retirer un fantôme : sa note mise de côté dans les retirés de sa bibliothèque (rien n'est effacé ; le document reste). */
+  async removeGhost(path: string): Promise<boolean> {
+    const { fs } = this.deps
+    if (!(await fs.exists(path))) return false
+    const shelf = this.shelves().find((each) => path.startsWith(`${each.folder}/`)) ?? this.shelves()[0]!
+    const aside = `${shelf.folder}/${SET_ASIDE_FOLDER}`
+    await fs.ensureFolder(aside)
+    await fs.rename(path, await this.free(`${aside}/${baseName(path)}`))
+    return true
   }
 
   /**
@@ -177,9 +238,14 @@ export class LibraryStore {
     const doc = await this.load(record)
     if (!doc) return null
     if (record.slice(0, record.lastIndexOf('/')) === folder) return record
+    // Ses fantômes : celui du dossier où il arrive n'a plus rien à dire (retiré d'abord : sa place se libère) ; les autres le suivent.
+    const ghosts = await this.ghostsOf(doc)
+    const inPlace = (path: string) => path.slice(0, path.lastIndexOf('/')) === folder
+    for (const { ghost } of ghosts) if (inPlace(ghost.path)) await this.removeGhost(ghost.path)
     await fs.ensureFolder(folder)
     const target = await this.free(`${folder}/${baseName(record)}`)
     await fs.rename(record, target)
+    for (const { ghost } of ghosts) if (!inPlace(ghost.path)) await fs.writeText(ghost.path, (await fs.readText(ghost.path)).split(`[[${record}`).join(`[[${target}`))
     for (const other of await this.all()) {
       if (other.previous !== record && other.likelyPrevious !== record) continue
       await this.save({ ...other, ...(other.previous === record ? { previous: target } : {}), ...(other.likelyPrevious === record ? { likelyPrevious: target } : {}) })
@@ -203,7 +269,7 @@ export class LibraryStore {
   /** Verser des fichiers dans la bibliothèque, avec leur origine. */
   async pour(items: readonly PourItem[], origin: DocOrigin, options: PourOptions = {}): Promise<PourReport> {
     const { fs } = this.deps
-    const report: PourReport = { added: [], already: [], failed: [] }
+    const report: PourReport = { added: [], already: [], failed: [], folder: options.folder ?? this.target }
     const known = await this.all()
     // Ceux de ce même versement : deux fichiers du même nom y sont deux formats d'un document, pas deux versions.
     const batch = new Set<string>()
@@ -305,7 +371,7 @@ export class LibraryStore {
    */
   async pourInbox(origin: DocOrigin, options: PourOptions = {}): Promise<PourReport> {
     const { fs } = this.deps
-    const report: PourReport = { added: [], already: [], failed: [] }
+    const report: PourReport = { added: [], already: [], failed: [], folder: options.folder ?? this.target }
     if (!(await fs.exists(this.inbox))) await fs.ensureFolder(this.inbox)
     const files: string[] = []
     const walk = async (folder: string): Promise<void> => {
@@ -390,6 +456,8 @@ export class LibraryStore {
     // Mis de côté dans les retirés de sa bibliothèque.
     const shelf = this.shelves().find((each) => record.startsWith(`${each.folder}/`)) ?? this.shelves()[0]!
     const aside = `${shelf.folder}/${SET_ASIDE_FOLDER}`
+    // Ses fantômes n'ont plus rien à montrer.
+    for (const { ghost } of await this.ghostsOf(doc)) await this.removeGhost(ghost.path)
     if (doc.copied && (await fs.exists(doc.file))) await fs.rename(doc.file, await this.free(`${aside}/${baseName(doc.file)}`))
     await fs.rename(record, await this.free(`${aside}/${baseName(record)}`))
     for (const other of await this.all()) {

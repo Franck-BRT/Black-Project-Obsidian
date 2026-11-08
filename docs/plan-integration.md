@@ -515,6 +515,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   l'**extension** d'un fichier ajouté, par quelque moyen que ce soit, et s'il est
   **lisible** par l'application (`{extension}`, `{lisible}`, `{lecture}` ; `{extensions}`,
   `{nonlisibles}` au dépôt)
+- v0.81.0 : **module Bibliothèque** : les **fantômes** (repris de la version complète) —
+  déposé soi-même dans un lieu, un document déjà rangé ailleurs : une fenêtre, « Ne rien
+  faire » ou « Placer un fantôme ici » (workflow système *Proposer un fantôme…*,
+  déclencheur *Bibliothèque : document déjà là*)
 
 ### Étape 7 — Livrables
 

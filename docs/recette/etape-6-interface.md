@@ -70,6 +70,24 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les fantômes de la bibliothèque (v0.81.0)
+
+- [ ] Bibliothèque › Documents : un répertoire « Normes », y glisser-déposer un PDF
+- [ ] Remonter à « Documents », y glisser-déposer le même PDF : une fenêtre « Déjà dans la
+      bibliothèque » (« rangé dans « Normes » »), boutons **Ne rien faire** et **Placer un
+      fantôme ici** ; « Ne rien faire » : rien n'est ajouté
+- [ ] Recommencer, **Placer un fantôme ici** : « Aussi ici, rangés ailleurs (1 fantôme(s)) »,
+      la carte *Fantôme* « rangé dans « Normes » » ; un clic ouvre le document ; **Aller à
+      l'original** mène à « Normes » ; le PDF n'est pas copié une seconde fois
+- [ ] La note du fantôme, ouverte dans Obsidian : « Fantôme : le document [[…]] est rangé
+      dans « Normes » de la bibliothèque » ; le lien ouvre la fiche
+- [ ] Le redéposer au même endroit, ou dans « Normes » : plus de fenêtre
+- [ ] Déplacer le document (« Déplacer… ») : le fantôme le suit ; le retirer : le fantôme
+      part aussi ; **Retirer le fantôme** : le document reste
+- [ ] Workflows › *Proposer un fantôme…* : *Comment* = *Placer un fantôme sans demander* :
+      plus de fenêtre ; désactivé : rien n'est proposé
+- [ ] Les pièces d'une analyse déjà dans la bibliothèque : pas de fenêtre
+
 ## Workflows : l'extension d'un fichier ajouté, et s'il est lisible (v0.80.0)
 
 - [ ] Workflows › Nouveau : déclencheur *Bibliothèque : document versé* ; les variables
