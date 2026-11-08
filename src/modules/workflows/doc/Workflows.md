@@ -88,6 +88,9 @@ Workflows et dans le journal.
 | Rappel du réglage du rangement, à l'ouverture | à l'ouverture d'Obsidian | tant qu'aucun type n'est rangé, explique où le régler | actif |
 | Questionnaire (IA) à l'import du CCAP, du RC ou du CCTP | ces pièces importées | lance le questionnaire (demande d'abord) | désactivé |
 | Vérifier la couverture d'une réponse importée | pièces de réponse importées | couverture de la réponse | désactivé |
+| Rappel des questions et de la visite | chaque jour à 8 h | prévient à J-3, J-1 et le jour même | actif |
+| Rappel de la fin de validité des offres | chaque jour à 8 h | la remise passée, prévient à J-7 et J-1 | désactivé |
+| Extraire les exigences du CCTP à l'import | un CCTP importé | l'aperçu d'extraction, puis les exigences | désactivé |
 | Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |

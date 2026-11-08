@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.65.0)
+## Aujourd'hui (version 0.66.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -143,7 +143,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   désactivé d'origine, signaler chaque lundi les fichiers introuvables.
 - **Workflows** : les **workflows système** — ce que l'application fait d'elle-même (la
   note de l'analyse, le calendrier à l'import, le contrôle des exigences extraites, les
-  rappels des remises et du rangement, et, désactivés d'origine, le questionnaire avec
+  rappels des remises, des questions et de la visite, et du rangement, et, désactivés
+  d'origine, le rappel de la fin de validité des offres, l'extraction des exigences du
+  CCTP à l'import, le questionnaire avec
   l'IA, la couverture d'une réponse, la qualité de la bibliothèque chaque lundi, la
   traduction des nouvelles exigences, les traductions à revoir chaque lundi, la relecture
   IA des nouvelles exigences, et, actif, le contrôle de la qualité des exigences

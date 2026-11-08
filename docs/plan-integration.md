@@ -467,6 +467,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.65.0 : **module Exigences** : trois nouveaux workflows système — *Contrôler la qualité
   des exigences importées* (actif), *Traductions à revoir, chaque lundi* et *Relire les
   nouvelles exigences (IA)* (désactivés) ; nouveau déclencheur *Exigences importées*
+- v0.66.0 : **module Analyse d'appels d'offres** : trois nouveaux workflows système —
+  *Rappel des questions et de la visite* (actif), *Rappel de la fin de validité des
+  offres* et *Extraire les exigences du CCTP à l'import* (désactivés)
 
 ### Étape 7 — Livrables
 

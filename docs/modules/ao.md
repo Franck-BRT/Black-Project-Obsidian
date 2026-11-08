@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.32.0 (Black Projects 0.64.0) |
+| Version | 0.33.0 (Black Projects 0.66.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -232,6 +232,17 @@ couverture d'une réponse importée et le rappel des remises.
 `updateAnalysis` versent chaque pièce dans la [bibliothèque](bibliotheque.md)
 (`pourIntoLibrary`, en place : les originaux de l'analyse ; catégorie : le type de pièce ;
 origine : l'analyse et sa note). Sans le module Bibliothèque, rien.
+
+**Trois nouveaux workflows système (v0.33.0, Black Projects 0.66.0)**. Ce qui reste en dur,
+volontairement : le message d'accueil à la première activation (avant que les workflows
+n'existent) et le retypage des pièces quand un type est renommé (la cohérence des
+données).
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Rappel des questions et de la visite (`sys.ao.rappel-echeances`) | chaque jour à 8 h | `ao.rappel-echeances` (champ « jours », `3, 1, 0`) : la date limite des questions et la visite de site (`calendarOf`, natures `questions`, `visite`) qui tombent à autant de jours | actif |
+| Rappel de la fin de validité des offres (`sys.ao.validite-offres`) | chaque jour à 8 h | `ao.validite-offres` (champ « jours », `7, 1`) : une fois la remise passée, la fin de validité (`validityEnd` : sa date, sinon son délai — jours, semaines, mois — compté depuis la remise) | désactivé |
+| Extraire les exigences du CCTP à l'import (`sys.ao.extraire-cctp`) | pièces importées, `types` contient CCTP | `ao.extraire` (champs `analyse`, `type`) : pour les pièces de l'import de ce type, l'aperçu d'extraction (`extractFromPiece`), puis `emitExtracted` — les workflows des exigences extraites passent après | désactivé |
 
 ## Une note produite, en page (v0.15.0, Black Projects 0.27.0)
 
@@ -490,6 +501,10 @@ l'en-tête des notes.
 - `step6.test.ts`, `deadlines.test.ts`, `ask/*.test.ts` : calendrier, questions citées,
   questionnaire, relecture (étape 6).
 - `test/ao-ia.test.ts` : **jalon n° 4** sur le dossier d'exemple, serveur simulé.
+
+- `test/ao-workflows-echeances.test.ts` : les trois nouveaux workflows système (créés,
+  questions à J-3 et visite à J-1, rien dans les jours dits, fin de validité comptée
+  depuis la remise, rien avant la remise, extraction du CCTP à l'import, désactivé).
 
 **Pièces sans type reconnu (Black Projects 0.64.0)** : le déclencheur *Pièces importées*
 donne aussi `nontypees` (« Pièces sans type reconnu » : celles classées « Autre »), que lit

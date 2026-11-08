@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## L'analyse d'appels d'offres : trois nouveaux workflows système (v0.66.0)
+
+- [ ] Page **Workflows**, filtre Système, module Analyse d'appels d'offres : « Rappel des
+      questions et de la visite » actif ; « Rappel de la fin de validité des offres » et
+      « Extraire les exigences du CCTP à l'import » désactivés
+- [ ] Un RC dont la date limite des questions tombe dans 3 jours et la visite demain :
+      **Exécuter** le rappel → « Station sol : Questions des candidats dans 3 jour(s), le … »
+      et « Visite dans 1 jour(s) » ; rien dans les jours dits : le journal dit « Aucune »
+- [ ] Une remise passée et « validité de 120 jours » : activer le rappel de validité,
+      régler ses jours pour tomber aujourd'hui, **Exécuter** → « les offres ne sont plus
+      valables dans … jour(s) »
+- [ ] Activer « Extraire les exigences du CCTP à l'import », importer un CCTP : l'aperçu
+      d'extraction s'ouvre ; importer → les exigences, puis le contrôle des exigences
+      extraites au journal
+- [ ] Le message d'accueil, à la première activation, est toujours là (non converti)
+
 ## Les exigences : trois nouveaux workflows système (v0.65.0)
 
 - [ ] Page **Workflows**, filtre Système, module Exigences : « Contrôler la qualité des

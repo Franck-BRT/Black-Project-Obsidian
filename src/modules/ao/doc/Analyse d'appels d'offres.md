@@ -342,10 +342,19 @@ Rien ne quitte votre réseau : les questions vont au serveur que vous avez régl
 
 ## 11. Automatiser avec les workflows
 
-Avec le module {{link:Modules/Workflows|Workflows}}, l'analyse se traite seule : « Nouveau
-workflow » propose *À l'import des pièces : relever le calendrier*, *À l'extraction des
-exigences : qualité et cohérence* et *À l'import du CCAP, du RC ou du CCTP : questionnaire
-(IA)*. Vous pouvez aussi écrire les vôtres : déclencheurs *analyse créée*, *pièces
+Avec le module {{link:Modules/Workflows|Workflows}}, l'analyse se traite seule : ses
+automatismes sont des **workflows système** (page Workflows, filtre « Système ») que vous
+pouvez modifier, désactiver, et rétablir — la note de l'analyse, le calendrier à l'import,
+le contrôle des exigences extraites, le rappel des remises et celui du rangement ; et, en
+plus :
+
+| Workflow système | Quand | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Rappel des questions et de la visite | chaque jour à 8 h | prévient à J-3, J-1 et le jour même de la date limite des questions et de la visite de site | activé |
+| Rappel de la fin de validité des offres | chaque jour à 8 h | une fois la remise passée, prévient à J-7 et J-1 de la fin de validité des offres | désactivé |
+| Extraire les exigences du CCTP à l'import | un CCTP importé | ouvre l'aperçu d'extraction de ses exigences : vous cochez, puis importez | désactivé |
+
+Les jours de chaque rappel se règlent dans son action. Vous pouvez aussi écrire les vôtres : déclencheurs *analyse créée*, *pièces
 importées*, *exigences extraites* ; actions calendrier, qualité, cohérence, couverture,
 interroger le dossier, questionnaire.
 
