@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.6.0 (Black Projects 0.63.0) |
+| Version | 0.7.0 (Black Projects 0.71.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -177,6 +177,18 @@ demande). Il en gagne un, écrit en [workflow système](workflows.md) (`workflow
 - Le déclencheur est celui de la bibliothèque de documents : sans elle (ou sans le module
   Workflows), ce workflow ne se déclenche pas. Ce que l'on verse soi-même dans la
   bibliothèque ne passe pas par lui.
+
+## Trois nouveaux workflows système (v0.7.0, Black Projects 0.71.0)
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Signaler les pièces illisibles, à l'import (`sys.lecture-fichiers.illisibles`) | *Pièces importées*, `illisibles` non vide | `lecture-fichiers.illisibles` : nomme les pièces illisibles (fichier abîmé, protégé par un mot de passe d'ouverture), et que faire | actif |
+| Signaler les pièces sans texte (scans), à l'import (`sys.lecture-fichiers.sans-texte`) | *Pièces importées*, `sanstexte` non vide | `lecture-fichiers.sans-texte` : nomme les pièces sans texte lisible, que l'extraction et l'IA ne voient pas | désactivé |
+| Bilan des formats du coffre, chaque lundi (`sys.lecture-fichiers.bilan-formats`) | lundi à 8 h | `lecture-fichiers.bilan-formats` (`formatsOf`) : les fichiers du coffre, sans ses dossiers cachés, par format — notes, lus, images, archives, non lus — et les extensions non lues (champ « ignorer ») | désactivé |
+
+L'analyse d'appels d'offres donne au déclencheur *Pièces importées* deux nouvelles listes :
+`illisibles` et `sanstexte` (le nom du fichier de chaque pièce dans cet état).
+Tests : `test/lecture-workflows-ao.test.ts`.
 
 ## Ce qui n'est pas lu (aujourd'hui)
 

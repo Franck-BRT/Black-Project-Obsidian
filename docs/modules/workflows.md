@@ -211,7 +211,9 @@ Les tests des autres fonctions du module écartent ces trois-là
 
 **La lecture de fichiers (Black Projects 0.63.0)** : *Signaler les formats non lus, au
 dépôt de fichiers* (déclencheur : fichiers déposés dans l'application ; actif) — voir
-[lecture-fichiers.md](lecture-fichiers.md).
+[lecture-fichiers.md](lecture-fichiers.md). Depuis Black Projects 0.71.0 : *Signaler les
+pièces illisibles, à l'import* (actif), *Signaler les pièces sans texte (scans)* et *Bilan
+des formats du coffre, chaque lundi* (désactivés).
 
 **Le typage des pièces (Black Projects 0.64.0)** : *Signaler les pièces sans type
 reconnu, à l'import* (déclencheur : pièces importées, `nontypees` non vide ; actif) — voir

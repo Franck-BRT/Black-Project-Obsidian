@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La lecture de fichiers : pièces illisibles, sans texte, bilan des formats (v0.71.0)
+
+- [ ] Page **Workflows**, filtre Système, module Lecture de fichiers : « Signaler les
+      pièces illisibles, à l'import » actif ; « Signaler les pièces sans texte (scans) » et
+      « Bilan des formats du coffre, chaque lundi » désactivés
+- [ ] Importer un Word abîmé (un fichier texte renommé en `.docx`) : « <analyse> — 1
+      pièce(s) illisible(s) : … Le fichier est peut-être abîmé… »
+- [ ] Activer « sans texte », importer un PDF scanné : « … sans texte lisible : … »
+- [ ] Activer le bilan, **Exécuter** : « Coffre : n fichier(s) — … non lu(s). Non lus :
+      .dwg (…) » ; les fichiers de `.obsidian` ne sont pas comptés
+
 ## La bibliothèque : prompts et personas (v0.70.0)
 
 - [ ] Menu **Bibliothèque** : une page d'accueil — Documents, Prompts, Personas (chiffres,

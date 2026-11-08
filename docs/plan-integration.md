@@ -483,6 +483,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   **prompts**, **personas** (une note par entrée, catégories, favoris, exemples pour les
   appels d'offres à la demande) ; prompts et personas pour interroger le dossier, relire
   les exigences et dans les actions de workflow (« Demander à l'IA »…)
+- v0.71.0 : **module Lecture de fichiers** : trois nouveaux workflows système —
+  *Signaler les pièces illisibles, à l'import* (actif), *Signaler les pièces sans texte
+  (scans)* et *Bilan des formats du coffre, chaque lundi* (désactivés)
 
 ### Étape 7 — Livrables
 

@@ -108,8 +108,8 @@ Technologies** :
 - **Modules** : chaque module avec sa version et son état. L'interrupteur l'active ou le
   désactive au prochain chargement du plugin ; vos données ne sont jamais supprimées.
   Certains modules ont un bouton qui ouvre leur fenêtre : **Formats de fichiers** pour la
-  lecture de fichiers (qui prévient aussi, par un workflow système, d'un fichier déposé
-  dans un format non lu), **Types de pièces** pour le typage des pièces (types, mots-clés,
+  lecture de fichiers (qui prévient aussi, par des workflows système, d'un fichier déposé
+  dans un format non lu, ou d'une pièce illisible), **Types de pièces** pour le typage des pièces (types, mots-clés,
   échange ; un workflow système nomme les pièces sans type reconnu), **Fonctions** pour l'analyse d'appels d'offres (avec le dossier des
   analyses) et pour l'**IA** (adresse du serveur, clé, « Tester la
   connexion ») ; les **Workflows** ont aussi leur fenêtre (dossier du journal).

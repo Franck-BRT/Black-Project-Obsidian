@@ -41,6 +41,16 @@ action pour taire des extensions que vous savez non lues (« dwg, exe »). Il su
 de la bibliothèque de documents : sans elle, il ne se déclenche pas. Voir
 {{link:Modules/Workflows|Workflows}}.
 
+### Être prévenu d'une pièce illisible ou sans texte
+
+À l'import des pièces d'une analyse, le workflow système **Signaler les pièces
+illisibles** (activé d'origine) nomme celles qui n'ont pas pu être lues — fichier abîmé,
+ou protégé par un mot de passe d'ouverture — et dit que faire. **Signaler les pièces sans
+texte (scans)** (désactivé d'origine) nomme celles sans texte lisible, que l'extraction des
+exigences et l'IA ne voient pas. **Bilan des formats du coffre, chaque lundi** (désactivé)
+compte les fichiers du coffre par format et nomme les extensions non lues. Voir la page
+{{link:Modules/Workflows|Workflows}}, filtre *Système*.
+
 ## Les formats
 
 Paramètres → Black Projects → **Formats de fichiers** (le bouton de la ligne « Lecture de

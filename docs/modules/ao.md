@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.34.0 (Black Projects 0.70.0) |
+| Version | 0.35.0 (Black Projects 0.71.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -516,3 +516,8 @@ en tête), dont la question remplit le formulaire ; le formulaire a un choix de 
 (la réponse est demandée avec `withPersona`, la note porte `persona:` et le dit). « Relire
 les exigences du dossier » fait choisir un persona une fois pour la série. L'action
 « Interroger le dossier » prend un prompt et un persona par leur nom.
+
+**Pièces illisibles, sans texte (v0.35.0, Black Projects 0.71.0)** : le déclencheur
+*Pièces importées* donne aussi `illisibles` et `sanstexte` (le fichier de chaque pièce
+dans cet état), que lisent les workflows système de la [lecture de
+fichiers](lecture-fichiers.md).

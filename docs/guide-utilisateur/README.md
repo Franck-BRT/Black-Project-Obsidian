@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.70.0)
+## Aujourd'hui (version 0.71.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -191,7 +191,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   fichiers `.tot` comme du XML ; voir [Lecture de fichiers](../modules/lecture-fichiers.md).
   Un **workflow système**, *Signaler les formats non lus, au dépôt de fichiers* (activé),
   prévient quand une pièce ou un fichier importé est d'un format non lu, et dit où
-  déclarer l'équivalence ; désactivable, et des extensions à taire se règlent dans son
+  déclarer l'équivalence ; un autre nomme les pièces illisibles (abîmées, protégées), et,
+  désactivés d'origine, les pièces sans texte (scans) et le bilan des formats du lundi ; désactivable, et des extensions à taire se règlent dans son
   action.
 - **Réglages → Licence** : les droits d'usage.
 - Commande **À propos de Black Projects** : version, modules actifs, licence.

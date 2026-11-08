@@ -115,7 +115,7 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.6.0',
+  version: '0.7.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings), display),
@@ -142,7 +142,7 @@ export const lectureFichiersModule: BlackModule = {
     }
     configureAliases(readAliases(settings.get()))
     // Le workflow système : signaler les formats non lus, au dépôt de fichiers.
-    registerLectureWorkflows((key, vars) => i18n.t(key, vars), isReadable)
+    registerLectureWorkflows((key, vars) => i18n.t(key, vars), isReadable, () => platform.fs)
     // Les types que l'utilisateur a choisi d'afficher : la plateforme les montre.
     display?.show(readShown(settings.get()))
     unsubscribe = settings.onChange((values) => {

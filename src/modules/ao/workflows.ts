@@ -72,6 +72,7 @@ export function validityEnd(calendar: Calendar): string | null {
 }
 
 const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim()
+const fileName = (path: string) => path.slice(path.lastIndexOf('/') + 1)
 const noteName = (path: string) => path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, '')
 const link = (path: string) => wikiLink(path, noteName(path))
 
@@ -102,7 +103,10 @@ export async function emitImported(services: Services, analysis: Analysis, repor
         places: [...new Set(report.imported.map((piece) => destinationLabel(piece.destination, t)))],
         pieces: report.imported.map((piece) => noteName(piece.note)),
         // Celles qu'aucun mot-clé n'a reconnues.
-        nontypees: report.imported.filter((piece) => piece.type === OTHER).map((piece) => noteName(piece.note))
+        nontypees: report.imported.filter((piece) => piece.type === OTHER).map((piece) => noteName(piece.note)),
+        // Celles qui n'ont pas pu être lues (fichier abîmé, protégé), et celles sans texte (des scans) : leur fichier.
+        illisibles: report.imported.filter((piece) => piece.state === 'illisible').map((piece) => fileName(piece.original)),
+        sanstexte: report.imported.filter((piece) => piece.state === 'sans-texte').map((piece) => fileName(piece.original))
       }
     })
   )
@@ -162,7 +166,7 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
     id: TRIGGER_IMPORTED,
     labelKey: 'ao.wf.trigger.imported',
     descKey: 'ao.wf.trigger.imported.desc',
-    fields: subjectFields('nombre', 'lues', 'types', 'places', 'pieces', 'nontypees'),
+    fields: subjectFields('nombre', 'lues', 'types', 'places', 'pieces', 'nontypees', 'illisibles', 'sanstexte'),
     pickSubject
   })
   registerTrigger({ id: TRIGGER_EXTRACTED, labelKey: 'ao.wf.trigger.extracted', descKey: 'ao.wf.trigger.extracted.desc', fields: subjectFields('piece', 'nombre'), pickSubject })
