@@ -91,6 +91,9 @@ Workflows et dans le journal.
 | Rappel des questions et de la visite | chaque jour à 8 h | prévient à J-3, J-1 et le jour même | actif |
 | Rappel de la fin de validité des offres | chaque jour à 8 h | la remise passée, prévient à J-7 et J-1 | désactivé |
 | Extraire les exigences du CCTP à l'import | un CCTP importé | l'aperçu d'extraction, puis les exigences | désactivé |
+| Signaler les workflows cassés, à l'ouverture | à l'ouverture d'Obsidian | dit les workflows actifs dont le déclencheur ou une action vient d'un module désactivé | actif |
+| Bilan des workflows, chaque lundi | lundi à 8 h | les exécutions des 7 derniers jours, les échecs et lesquels | désactivé |
+| Archiver le journal des workflows, chaque mois | le 1er du mois à 8 h | les exécutions de plus de 30 jours rangées dans une note d'archive du mois | désactivé |
 | Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |

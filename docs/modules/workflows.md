@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.12.0 (Black Projects 0.62.0) |
+| Version | 0.13.0 (Black Projects 0.67.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -168,6 +168,9 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Rappel des questions et de la visite | chaque jour à 8 h | prévient à J-3, J-1 et le jour même | actif |
 | Rappel de la fin de validité des offres | chaque jour à 8 h | la remise passée, prévient à J-7 et J-1 | désactivé |
 | Extraire les exigences du CCTP à l'import | un CCTP importé | l'aperçu d'extraction, puis les exigences | désactivé |
+| Signaler les workflows cassés, à l'ouverture | à l'ouverture d'Obsidian | dit les workflows actifs au déclencheur ou à l'action d'un module désactivé | actif |
+| Bilan des workflows, chaque lundi | lundi à 8 h | exécutions et échecs des 7 derniers jours | désactivé |
+| Archiver le journal des workflows, chaque mois | le 1er du mois à 8 h | les exécutions de plus de 30 jours dans une note d'archive | désactivé |
 | Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |
@@ -183,6 +186,22 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Ranger les fichiers importés dans la bibliothèque | fichiers déposés (import d'exigences, de types, de workflows) | verse le fichier | actif |
 | Repérer les nouvelles versions probables | documents versés (une fois par versement) | marque la version précédente probable | actif |
 | Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
+
+**L'entretien des workflows (v0.13.0, Black Projects 0.67.0)** : le module n'avait pas
+d'automatisme à convertir — ce qu'il fait seul est le moteur (le journal tenu à 300
+exécutions, le garde-fou d'une boucle, le message d'un échec, la création des workflows
+système), qu'un workflow ne peut pas piloter. Il gagne trois workflows système
+(`upkeep.ts`) :
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Signaler les workflows cassés, à l'ouverture (`sys.workflows.casses`) | à l'ouverture d'Obsidian | `workflows.verifier` : les workflows actifs (et utilisables) dont le déclencheur ou une action n'est déclaré par aucun module actif (`brokenParts`) ; aucun : rien n'est dit | actif |
+| Bilan des workflows, chaque lundi (`sys.workflows.bilan-hebdo`) | lundi à 8 h | `workflows.bilan` (champ « jours », `7`) : d'après le journal (`journalRuns`), combien d'exécutions, d'échecs, et lesquels | désactivé |
+| Archiver le journal des workflows, chaque mois (`sys.workflows.archiver-journal`) | le 1er du mois à 8 h | `workflows.archiver` (champ « jours », `30`) : les lignes plus anciennes quittent le journal pour `Journal des workflows — archive AAAA-MM.md` (`bp-type: workflows-journal-archive`), la plus récente en tête | désactivé |
+
+Les tests des autres fonctions du module écartent ces trois-là
+(`forgetDeclarations('sys.workflows')`) ; ils sont testés dans
+`test/workflows-upkeep.test.ts`.
 
 **La lecture de fichiers (Black Projects 0.63.0)** : *Signaler les formats non lus, au
 dépôt de fichiers* (déclencheur : fichiers déposés dans l'application ; actif) — voir

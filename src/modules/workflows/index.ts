@@ -22,6 +22,7 @@ import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import { cleanFolder } from '../../core/settings'
 import { registerBuiltins } from './builtins'
+import { registerUpkeep } from './upkeep'
 import page from './doc/Workflows.md'
 import { WorkflowEngine } from './engine'
 import {
@@ -175,7 +176,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.12.0',
+  version: '0.13.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -207,6 +208,8 @@ export const workflowsModule: BlackModule = {
         .catch((error: unknown) => console.error('[Black Projects] workflows système', error))
       return seeding
     }
+    // L'entretien des workflows : ses propres workflows système (cassés, bilan, archive du journal).
+    registerUpkeep({ fs: platform.fs, t, folder, load, now })
     whenSystemDeclared(() => void seed())
     await seed()
 

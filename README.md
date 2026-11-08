@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.66.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+**Version 0.67.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
 l'accueil et l'interface.** L'accueil est une grille de tuiles que chacun compose (avec
 leurs pastilles : prochaine remise, exigences faibles…) ; les informations sont dans un
 tableau de bord et une barre de gauche que chacun range aussi (Accueil toujours en haut,
@@ -21,8 +21,9 @@ Paramètres toujours en bas). La **bibliothèque de documents** range tout fichi
 une fois, avec sa fiche ; ses automatismes — ranger les pièces et les fichiers importés,
 repérer les nouvelles versions, signaler les fichiers introuvables — sont des workflows
 système, modifiables ; la lecture de fichiers prévient, de même, d'un format non lu, le typage d'une pièce
-sans type reconnu, les exigences de celles qu'un import fait entrer faibles, et l'analyse
-d'appels d'offres rappelle la date limite des questions et la visite. Toutes les fenêtres sont redessinées avec les composants de
+sans type reconnu, les exigences de celles qu'un import fait entrer faibles, l'analyse
+d'appels d'offres rappelle la date limite des questions et la visite, et les workflows
+signalent ceux d'entre eux qui sont cassés. Toutes les fenêtres sont redessinées avec les composants de
 l'interface : les mêmes thèmes, la même accessibilité, et les mêmes fenêtres pour la
 future application de bureau. Un onglet d'accueil moderne (analyses avec leur date limite
 de remise, IA, exigences, workflows), des thèmes clair et sombre, des couleurs pour les

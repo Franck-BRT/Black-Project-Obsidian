@@ -24,6 +24,9 @@ async function activate(platform: MemoryPlatform, initial: Record<string, unknow
     commands: { register: (command) => void commands.push(command) }
   }
   await workflowsModule.activate(context)
+  // Les workflows d'entretien du module (testés dans workflows-upkeep.test.ts) : écartés, ces tests ne voient que les leurs.
+  forgetDeclarations('sys.workflows')
+  stored = { ...stored, [WORKFLOWS_KEY]: ((stored[WORKFLOWS_KEY] ?? []) as Workflow[]).filter((each) => !each.system?.startsWith('sys.workflows.')) }
   return {
     run: (id: string) => commands.find((command) => command.id === id)!.run(),
     workflows: () => (stored[WORKFLOWS_KEY] ?? []) as Workflow[],

@@ -13,7 +13,7 @@ import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
-import { workflowsModule, type Workflow } from '../src/modules/workflows'
+import { forgetDeclarations, workflowsModule, type Workflow } from '../src/modules/workflows'
 
 const workflow = (id: string, name: string, extra: Partial<Workflow> = {}): Workflow => ({
   id,
@@ -59,6 +59,9 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
     ...(withPages ? { showPage: (id: string) => void shown.push(id), showNote: async (path: string) => void noted.push(path) } : {})
   }
   await (workflowsModule as BlackModule).activate(context)
+  // Les workflows d'entretien du module (testés dans workflows-upkeep.test.ts) : écartés, ces tests ne voient que les leurs.
+  forgetDeclarations('sys.workflows')
+  settings.workflows = { ...settings.workflows, workflows: ((settings.workflows?.workflows ?? []) as Workflow[]).filter((each) => !each.system?.startsWith('sys.workflows.')) }
   return { views, shown, noted, settings, run: (id: string) => commands.get(id)!.run() }
 }
 

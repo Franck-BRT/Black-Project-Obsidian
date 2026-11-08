@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les workflows : leur entretien en workflows système (v0.67.0)
+
+- [ ] Page **Workflows**, filtre Système, module Workflows : « Signaler les workflows
+      cassés, à l'ouverture » actif ; « Bilan des workflows, chaque lundi » et « Archiver
+      le journal des workflows, chaque mois » désactivés
+- [ ] Un workflow à vous déclenché par « AO : pièces importées » ; désactiver le module
+      Analyse d'appels d'offres, rouvrir Obsidian : « 1 workflow(s) cassé(s) : « … »
+      (déclencheur inconnu : ao.pieces-importees) » ; réactiver le module : plus rien
+- [ ] **Exécuter** le bilan : « Workflows, les 7 derniers jours : n exécution(s), … »
+- [ ] **Exécuter** l'archive (régler ses jours à 0 pour l'essai) : le journal se vide de
+      ses anciennes lignes, la note « Journal des workflows — archive AAAA-MM » les garde
+
 ## L'analyse d'appels d'offres : trois nouveaux workflows système (v0.66.0)
 
 - [ ] Page **Workflows**, filtre Système, module Analyse d'appels d'offres : « Rappel des

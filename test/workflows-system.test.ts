@@ -54,6 +54,9 @@ async function start(platform: MemoryPlatform, stored: Workflow[] = []) {
     showPage: (id: string) => void shown.push(id)
   }
   await (workflowsModule as BlackModule).activate(context)
+  // Les workflows d'entretien du module (testés dans workflows-upkeep.test.ts) : écartés, ces tests ne voient que les leurs.
+  forgetDeclarations('sys.workflows')
+  settings.workflows = (settings.workflows as Workflow[]).filter((each) => !each.system?.startsWith('sys.workflows.'))
   const page = (id: string) => views.pages().find((each) => each.id === id)!
   return { settings, views, shown, run: (id: string) => commands.get(id)!.run(), page, workflows: () => settings.workflows as Workflow[] }
 }
