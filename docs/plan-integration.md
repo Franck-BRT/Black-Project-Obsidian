@@ -490,6 +490,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   sous-sections, souvenir de l'état, recherche et filtres qui ouvrent les sections
   utiles) ; la page **Workflows** en sections : *Workflows système* par module, puis *Mes
   workflows*
+- v0.73.0 : **interface** : des **vues** pour les pages de cartes — cartes, liste, tableau
+  (retenue par page) — sur les pages Workflows, Analyses, Exigences, Bibliothèque ; la
+  page Workflows se **regroupe** par module, déclencheur, état, ou pas du tout
 
 ### Étape 7 — Livrables
 

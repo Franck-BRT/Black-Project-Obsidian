@@ -227,7 +227,19 @@ export interface PageView {
   search?: { label: string; placeholder?: string }
   /** Des filtres à bascule (en plus de « Tout ») : une carte répond à ceux de ses `tags`. */
   filters?: { id: string; label: string }[]
+  /**
+   * Les vues proposées pour ses cartes — **cartes** (la grille), **liste** (une ligne par
+   * carte), **tableau** (une colonne par fait) ; la première est celle d'origine.
+   * L'interface retient, pour chaque page, celle que l'utilisateur a choisie.
+   */
+  layouts?: readonly PageLayout[]
+  /** Regrouper les cartes (en sections) : les choix, celui en cours. */
+  grouping?: { label: string; current: string; options: ViewAction[] }
 }
+
+/** Comment une page montre ses cartes. */
+export type PageLayout = 'cards' | 'list' | 'table'
+export const PAGE_LAYOUTS: readonly PageLayout[] = ['cards', 'list', 'table']
 
 /** Les couleurs de tuile : décoratives (le libellé dit tout), définies par chaque thème. */
 export type TileColor = 'indigo' | 'blue' | 'teal' | 'green' | 'orange' | 'rose' | 'violet' | 'slate'

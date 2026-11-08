@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.14.0 (Black Projects 0.72.0) |
+| Version | 0.15.0 (Black Projects 0.73.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -70,6 +70,13 @@ système** (ouverte), une sous-section par module (le nom du module qui le décl
 dernier import en tête). L'intitulé de chacune dit combien, combien d'actifs, combien en
 échec (« 11 workflow(s), 7 actif(s) · 1 en échec »). Une recherche ou un filtre ouvre les
 sections qui ont un résultat et masque les autres.
+
+**Vues et regroupements (v0.15.0, Black Projects 0.73.0)** : trois vues (`layouts` :
+cartes, liste, tableau — colonnes *Exécutions*, *Dernière exécution*) et « Regrouper
+par » : **Module** (d'origine, ci-dessus), **Déclencheur** (une section par déclencheur
+d'évènement, puis *Planifiés*, puis *À la main* ; repliées au-delà de quatre), **État**
+(*En échec*, *Actifs*, *Désactivés*), **Aucun** (toutes les cartes). Le regroupement vaut
+le temps de la session (`setWorkflowsGrouping`).
 
 `home.ts` déclare la **page** `workflows.liste` (`views.page`, voir
 [l'interface](../architecture/interface.md#les-pages-des-modules-v0150)) : les chiffres

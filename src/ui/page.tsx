@@ -7,9 +7,9 @@
  * avec une recherche et des filtres qui trient ses cartes et ses listes sans recharger.
  */
 
-import { useEffect, useState } from 'preact/hooks'
-import type { Card, HomeBlock, ListItem, PageSpec, PageView } from '../core/views'
-import { ActionButton, BlockView } from './components'
+import { useContext, useEffect, useState } from 'preact/hooks'
+import type { Card, HomeBlock, ListItem, PageLayout, PageSpec, PageView, ViewAction } from '../core/views'
+import { ActionButton, AfterAction, BlockView, LayoutContext } from './components'
 import type { AppHost } from './host'
 import { Icon } from './icons'
 
@@ -77,6 +77,26 @@ export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter
   return { blocks: out, hits, total }
 }
 
+const LAYOUT_ICON = { cards: 'grid', list: 'list', table: 'columns' } as const
+
+/** La vue retenue pour une page (la dernière choisie sur cet appareil), si la page la propose. */
+function storedLayout(page: string): PageLayout | null {
+  try {
+    const value = globalThis.localStorage?.getItem(`bp.page.layout.${page}`)
+    return value === 'cards' || value === 'list' || value === 'table' ? value : null
+  } catch {
+    return null
+  }
+}
+
+function storeLayout(page: string, layout: PageLayout): void {
+  try {
+    globalThis.localStorage?.setItem(`bp.page.layout.${page}`, layout)
+  } catch {
+    // Pas de stockage (une fenêtre privée) : la vue vaut pour la visite.
+  }
+}
+
 /**
  * `hasHistory` : l'interface a un vrai « Retour » (la page précédente) ; le lien de la page
  * (« ← Toutes les analyses ») ne sert alors plus — il ne reste que quand on arrive tout
@@ -87,6 +107,8 @@ export function ModulePage({ spec, param, host, generation, onTitle, hasHistory 
   const [state, setState] = useState<State>({ status: 'loading' })
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<string | null>(null)
+  const [chosen, setChosen] = useState<PageLayout | null>(() => storedLayout(spec.id))
+  useEffect(() => setChosen(storedLayout(spec.id)), [spec.id])
   useEffect(() => {
     let alive = true
     setState((previous) => (previous.status === 'ready' ? previous : { status: 'loading' }))
@@ -116,6 +138,12 @@ export function ModulePage({ spec, param, host, generation, onTitle, hasHistory 
   const narrowed = query.trim() !== '' || filter !== null
   const { blocks, hits, total } = filterBlocks(view.blocks, query, filter, t('ui.page.none'))
   const searchId = `bp-page-search-${spec.id}`
+  const layouts = view.layouts ?? []
+  const layout: PageLayout = chosen && layouts.includes(chosen) ? chosen : (layouts[0] ?? 'cards')
+  const choose = (next: PageLayout) => {
+    storeLayout(spec.id, next)
+    setChosen(next)
+  }
   return (
     <div class="bp-page" data-page={spec.id}>
       {view.back && !hasHistory && (
@@ -155,16 +183,60 @@ export function ModulePage({ spec, param, host, generation, onTitle, hasHistory 
           )}
         </div>
       )}
+      {(layouts.length > 1 || view.grouping) && (
+        <div class="bp-page-views">
+          {layouts.length > 1 && (
+            <div class="bp-segmented" role="group" aria-label={t('ui.page.layout')}>
+              <span class="bp-segmented-label">{t('ui.page.layout')}</span>
+              {layouts.map((each) => (
+                <button key={each} type="button" class="bp-segment" aria-pressed={layout === each} onClick={() => choose(each)}>
+                  <Icon name={LAYOUT_ICON[each]} />
+                  {t(`ui.page.layout.${each}`)}
+                </button>
+              ))}
+            </div>
+          )}
+          {view.grouping && (
+            <div class="bp-segmented" role="group" aria-label={view.grouping.label}>
+              <span class="bp-segmented-label">{view.grouping.label}</span>
+              {view.grouping.options.map((option) => (
+                <GroupingButton key={option.id} option={option} pressed={option.id === view.grouping!.current} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {narrowed && (
         <p class="bp-page-count" role="status">
           {t('ui.page.count', { hits, total })}
         </p>
       )}
-      <div class="bp-page-body">
-        {blocks.map((block, index) => (
-          <BlockView key={block.kind === 'section' ? block.id : index} block={block} t={t} now={host.now()} locale={host.locale} narrowed={narrowed} />
-        ))}
-      </div>
+      <LayoutContext.Provider value={layout}>
+        <div class={`bp-page-body bp-layout-${layout}`}>
+          {blocks.map((block, index) => (
+            <BlockView key={block.kind === 'section' ? block.id : index} block={block} t={t} now={host.now()} locale={host.locale} narrowed={narrowed} />
+          ))}
+        </div>
+      </LayoutContext.Provider>
     </div>
+  )
+}
+
+/** Un choix de regroupement : un bouton à bascule, qui demande à la page de se redessiner. */
+function GroupingButton({ option, pressed }: { option: ViewAction; pressed: boolean }) {
+  const after = useContext(AfterAction)
+  return (
+    <button
+      type="button"
+      class="bp-segment"
+      aria-pressed={pressed}
+      onClick={async () => {
+        await option.run()
+        after()
+      }}
+    >
+      {option.icon && <Icon name={option.icon} />}
+      {option.label}
+    </button>
   )
 }

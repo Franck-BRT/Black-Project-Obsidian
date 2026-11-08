@@ -176,7 +176,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.14.0',
+  version: '0.15.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),

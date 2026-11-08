@@ -94,6 +94,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind): Promi
   return {
     subtitle: t(`bibliotheque.${kind}.subtitle`, { folder: deps.stores[kind].root }),
     actions: [create, starters],
+    layouts: ['cards', 'list'],
     search: { label: t('bibliotheque.entry.search'), placeholder: t(`bibliotheque.${kind}.search.placeholder`) },
     filters: [
       ...(entries.some((entry) => entry.favorite) ? [{ id: 'favoris', label: t('bibliotheque.entry.favorites') }] : []),

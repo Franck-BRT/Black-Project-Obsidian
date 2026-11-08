@@ -167,6 +167,14 @@ que la recherche lit aussi. Il la déclare par
   d'origine ; ce que l'utilisateur en fait est retenu le temps de la session (par `id`,
   même après « Rafraîchir »). La recherche et les filtres trient dedans (`filterBlocks`
   pose `found`) : les sections sans résultat disparaissent, les autres s'ouvrent ;
+- des **vues** facultatives pour les cartes (Black Projects 0.73.0) : `layouts` — `cards`
+  (la grille, d'origine), `list` (une ligne par carte : icône, titre et sous-titre, badges,
+  faits, boutons en icônes), `table` (nom, état — les badges —, une colonne par fait, les
+  boutons ; le titre seul est le lien). Un sélecteur « Affichage » ; la vue choisie est
+  retenue par page sur l'appareil (`localStorage`, `bp.page.layout.<page>`, sans erreur
+  s'il manque). `LayoutContext` la donne aux blocs de cartes, sections comprises ;
+- un **regroupement** facultatif : `grouping` — `{ label, current, options }`, des boutons à
+  bascule (« Regrouper par ») que la page interprète (elle se redessine ensuite) ;
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;

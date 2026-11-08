@@ -106,6 +106,7 @@ export async function libraryPage(deps: LibraryHomeDeps): Promise<PageView> {
   return {
     subtitle: t('bibliotheque.page.subtitle', { folder: deps.store.root }),
     actions: [{ id: 'pour', label: t('bibliotheque.pour'), tooltip: t('bibliotheque.pour.tip'), icon: 'upload', primary: true, run: () => deps.pour() }],
+    layouts: ['cards', 'list', 'table'],
     search: { label: t('bibliotheque.search'), placeholder: t('bibliotheque.search.placeholder') },
     filters: [
       ...families.map((family) => ({ id: `famille-${family}`, label: t(`bibliotheque.family.${family}`) })),

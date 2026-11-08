@@ -282,6 +282,7 @@ export async function analysesPage(deps: HomeDeps): Promise<PageView> {
   return {
     subtitle: t('ao.page.subtitle', { folder: deps.services().root }),
     actions: quickActions(deps, ai),
+    layouts: ['cards', 'list', 'table'],
     search: { label: t('ao.page.search'), placeholder: t('ao.page.search.placeholder') },
     filters: [
       { id: 'a-venir', label: t('ao.page.filter.upcoming') },

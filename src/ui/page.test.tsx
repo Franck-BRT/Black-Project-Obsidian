@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_APPEARANCE } from '../core/appearance'
 import { createI18n } from '../core/i18n'
 import { ViewsRegistry, type Card, type HomeBlock } from '../core/views'
-import { BlockView } from './components'
+import { BlockView, LayoutContext } from './components'
 import type { AppHost } from './host'
 import { filterBlocks, fold } from './page'
 import { App } from './shell'
@@ -156,5 +156,40 @@ describe('les sections repliables d’une page', () => {
     expect(html).toContain('Rappel des remises')
     expect(html).not.toContain('Vérifier la connexion')
     expect(html).not.toContain('Mes workflows')
+  })
+})
+
+describe('les vues d’une page : cartes, liste, tableau', () => {
+  const t = createI18n('fr').t.bind(createI18n('fr'))
+  const cards: HomeBlock = {
+    kind: 'cards',
+    cards: [
+      { id: 'a', title: 'Rappel des remises', subtitle: 'Chaque jour à 08:00', badges: [{ label: 'Actif', tone: 'success' }], facts: [{ label: 'Exécutions', value: '4' }, { label: 'Dernière exécution', value: '2026-11-08' }], actions: [{ id: 'run', label: 'Exécuter', icon: 'play', run: () => {} }] },
+      { id: 'b', title: 'Prévenir', subtitle: 'Analyse créée', facts: [{ label: 'Exécutions', value: '0' }] }
+    ]
+  }
+  const render = (layout: 'cards' | 'list' | 'table') =>
+    renderToString(
+      <LayoutContext.Provider value={layout}>
+        <BlockView block={cards} t={t} now={new Date()} locale="fr-FR" />
+      </LayoutContext.Provider>
+    )
+
+  it('cartes : la grille, d’origine', () => {
+    expect(render('cards')).toContain('class="bp-cards"')
+  })
+
+  it('liste : une ligne par carte, ses faits et ses boutons (icônes)', () => {
+    const html = render('list')
+    expect(html).toContain('class="bp-rows"')
+    expect(html.match(/class="bp-row"/g)).toHaveLength(2)
+    expect(html).toMatch(/<dt>Exécutions<\/dt><dd>4<\/dd>/)
+    expect(html).toContain('aria-label="Exécuter"')
+  })
+
+  it('tableau : le nom, l’état, une colonne par fait (un tiret s’il manque), les boutons', () => {
+    const html = render('table')
+    expect(html).toMatch(/<th scope="col">Nom<\/th><th scope="col">État<\/th><th scope="col">Exécutions<\/th><th scope="col">Dernière exécution<\/th>/)
+    expect(html).toMatch(/Prévenir.*<td>0<\/td><td>—<\/td>/)
   })
 })

@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les vues : cartes, liste, tableau ; regrouper (v0.73.0)
+
+- [ ] Page **Workflows** : « Affichage » Cartes / Liste / Tableau ; « Regrouper par »
+      Module / Déclencheur / État / Aucun
+- [ ] **Liste** : une ligne par workflow (titre, déclencheur, badges, exécutions, boutons
+      en icônes, avec leur infobulle) ; un clic sur le titre ouvre la fiche
+- [ ] **Tableau** : colonnes Nom, État, Exécutions, Dernière exécution, et les boutons ; le
+      titre ouvre la fiche
+- [ ] **État** : sections En échec (s'il y en a), Actifs, Désactivés ; **Déclencheur** : une
+      section par déclencheur, Planifiés, À la main ; **Aucun** : toutes les cartes
+- [ ] La vue choisie est retenue : changer de page puis revenir (et rouvrir Obsidian) ;
+      chaque page garde la sienne
+- [ ] Pages **Analyses**, **Exigences**, **Bibliothèque** (documents) : Cartes / Liste /
+      Tableau ; **Prompts** et **Personas** : Cartes / Liste
+- [ ] La recherche et les filtres marchent dans chaque vue
+
 ## La page Workflows en sections repliables (v0.72.0)
 
 - [ ] Page **Workflows** : une section **Workflows système** (ouverte), puis une

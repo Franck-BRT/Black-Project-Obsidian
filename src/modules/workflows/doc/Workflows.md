@@ -84,6 +84,12 @@ l'ouvre ; l'intitulé dit combien, combien d'actifs, combien en échec) ; vos pr
 workflows suivent, dans **Mes workflows**. Une recherche ou un filtre ouvre les sections
 qui ont un résultat.
 
+**Affichage** : en **cartes**, en **liste** (une ligne par workflow) ou en **tableau**
+(une colonne par chiffre : exécutions, dernière exécution) — la vue choisie est retenue.
+**Regrouper par** : module (d'origine), déclencheur, état (en échec, actifs, désactivés),
+ou aucun regroupement. Les pages Analyses, Exigences et Bibliothèque ont aussi leurs
+vues.
+
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
 | Note de l'analyse : le tableau des pièces, à l'import | pièces importées | réécrit le tableau des pièces de la note de l'analyse | actif |

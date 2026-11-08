@@ -9,7 +9,7 @@
 
 import { createContext } from 'preact'
 import { useContext, useState } from 'preact/hooks'
-import type { Badge as BadgeView, Card as CardView, Deadline, HomeBlock, ListItem, Stat as StatView, Tone, ViewAction } from '../core/views'
+import type { Badge as BadgeView, Card as CardView, Deadline, HomeBlock, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
 import type { Translate } from './host'
 import { Icon } from './icons'
 import { daysUntil, deadlineTone, starGlyphs, TONE_ICON } from './logic'
@@ -190,6 +190,123 @@ function ListItemView({ item }: { item: ListItem }) {
   )
 }
 
+/** La vue des cartes de la page en cours : la grille (d'origine), une liste, un tableau. */
+export const LayoutContext = createContext<PageLayout>('cards')
+
+/** Une carte en une ligne : son icône, son titre (et sous-titre), ses badges, ses faits, ses boutons. */
+function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: Date; locale: string }) {
+  const titleId = `bp-row-${card.id}`
+  return (
+    <li class="bp-row" aria-labelledby={titleId}>
+      {card.icon && (
+        <span class="bp-card-icon bp-row-icon">
+          <Icon name={card.icon} />
+        </span>
+      )}
+      <div class="bp-row-main">
+        <div class="bp-row-title" id={titleId}>
+          {card.open ? (
+            <button type="button" class="bp-card-open" onClick={() => void card.open!.run()} title={card.open.tooltip}>
+              {card.title}
+            </button>
+          ) : (
+            card.title
+          )}
+        </div>
+        {(card.subtitle || card.text) && <div class="bp-row-sub">{[card.subtitle, card.text].filter(Boolean).join(' — ')}</div>}
+      </div>
+      {!!card.badges?.length && (
+        <div class="bp-badges bp-row-badges">
+          {card.badges.map((badge) => (
+            <Badge key={badge.label} badge={badge} />
+          ))}
+        </div>
+      )}
+      {card.deadline && <DeadlineView deadline={card.deadline} t={t} now={now} locale={locale} />}
+      {!!card.facts?.length && (
+        <dl class="bp-row-facts">
+          {card.facts.map((fact) => (
+            <div key={fact.label} class={fact.tone ? `bp-tone-${fact.tone}` : undefined}>
+              <dt>{fact.label}</dt>
+              <dd>{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {!!card.actions?.length && (
+        <div class="bp-row-actions">
+          {card.actions.map((action) => (
+            <ActionButton key={action.id} action={action} compact />
+          ))}
+        </div>
+      )}
+    </li>
+  )
+}
+
+/** Des cartes en tableau : le nom, l'état (les badges), une colonne par fait, les boutons. */
+function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) {
+  const columns = [...new Set(cards.flatMap((card) => (card.facts ?? []).map((fact) => fact.label)))]
+  return (
+    <div class="bp-table-wrap">
+      <table class="bp-table">
+        <thead>
+          <tr>
+            <th scope="col">{t('ui.page.table.name')}</th>
+            <th scope="col">{t('ui.page.table.state')}</th>
+            {columns.map((column) => (
+              <th scope="col" key={column}>
+                {column}
+              </th>
+            ))}
+            <th scope="col">
+              <span class="bp-sr">{t('ui.page.table.actions')}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {cards.map((card) => (
+            <tr key={card.id}>
+              <th scope="row">
+                {card.open ? (
+                  <button type="button" class="bp-card-open" onClick={() => void card.open!.run()} title={card.open.tooltip}>
+                    {card.title}
+                  </button>
+                ) : (
+                  card.title
+                )}
+                {card.subtitle && <div class="bp-row-sub">{card.subtitle}</div>}
+              </th>
+              <td>
+                <div class="bp-badges">
+                  {(card.badges ?? []).map((badge) => (
+                    <Badge key={badge.label} badge={badge} />
+                  ))}
+                </div>
+              </td>
+              {columns.map((column) => {
+                const fact = card.facts?.find((each) => each.label === column)
+                return (
+                  <td key={column} class={fact?.tone ? `bp-tone-${fact.tone}` : undefined}>
+                    {fact?.value ?? '—'}
+                  </td>
+                )
+              })}
+              <td>
+                <div class="bp-table-actions">
+                  {(card.actions ?? []).map((action) => (
+                    <ActionButton key={action.id} action={action} compact />
+                  ))}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 /** Ce que l'utilisateur a fait des sections repliables (repliée ou non), le temps de la session. */
 const folded = new Map<string, boolean>()
 
@@ -224,6 +341,7 @@ function FoldSection({ block, t, now, locale, narrowed }: { block: Extract<HomeB
 
 /** Un bloc de section, selon sa sorte. */
 export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBlock; t: Translate; now: Date; locale: string; narrowed?: boolean }) {
+  const layout = useContext(LayoutContext)
   switch (block.kind) {
     case 'section':
       return <FoldSection block={block} t={t} now={now} locale={locale} {...(narrowed ? { narrowed } : {})} />
@@ -236,7 +354,17 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
         </div>
       )
     case 'cards': {
-      const cards = block.cards.length ? (
+      const cards = !block.cards.length ? (
+        <p class="bp-empty">{block.empty ?? t('ui.empty')}</p>
+      ) : layout === 'table' ? (
+        <CardsTable cards={block.cards} t={t} />
+      ) : layout === 'list' ? (
+        <ul class="bp-rows">
+          {block.cards.map((card) => (
+            <CardRow key={card.id} card={card} t={t} now={now} locale={locale} />
+          ))}
+        </ul>
+      ) : block.cards.length ? (
         <div class="bp-cards">
           {block.cards.map((card) => (
             <CardView key={card.id} card={card} t={t} now={now} locale={locale} />

@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.72.0)
+## Aujourd'hui (version 0.73.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -164,7 +164,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   sans type reconnu à l'import ; pour les workflows eux-mêmes, les workflows cassés à
   l'ouverture, et, désactivés, le bilan du lundi et l'archive mensuelle du journal) : modifiables, désactivables, pas supprimables,
   « Rétablir l'original » ; sur la page Workflows, ils sont rangés en **sections
-  repliables** — *Workflows système*, une sous-section par module, puis *Mes workflows* ; « Nouveau workflow » (depuis l'onglet, sa fiche s'ouvre en
+  repliables** — *Workflows système*, une sous-section par module, puis *Mes workflows* —,
+  en cartes, en liste ou en tableau, regroupés par module, déclencheur ou état ; « Nouveau workflow » (depuis l'onglet, sa fiche s'ouvre en
   page, et « Exécuter » mène à la fiche de l'exécution) ; un déclencheur, des conditions,
   des actions à la suite qui reprennent `{analyse}`, `{today}` ou le résultat d'une étape
   d'avant `{step1.link}` ; seul ou « demander d'abord » ; « Journal des workflows » ;

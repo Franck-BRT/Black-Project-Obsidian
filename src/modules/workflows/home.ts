@@ -264,6 +264,13 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
       { id: 'journal', label: t('workflows.home.journal'), icon: 'book', run: openJournalPage(deps) }
     ],
     search: { label: t('workflows.page.search'), placeholder: t('workflows.page.search.placeholder') },
+    // Trois vues pour les cartes, et quatre façons de les regrouper.
+    layouts: ['cards', 'list', 'table'],
+    grouping: {
+      label: t('workflows.page.group'),
+      current: grouping,
+      options: GROUPINGS.map((id) => ({ id, label: t(`workflows.page.group.${id}`), icon: GROUPING_ICON[id], run: () => void (grouping = id) }))
+    },
     filters: [
       { id: 'actifs', label: t('workflows.page.filter.on') },
       { id: 'desactives', label: t('workflows.page.filter.off') },
@@ -287,24 +294,60 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
           { label: t('workflows.page.stat.failed'), value: String(failures), icon: 'alert', tone: failures ? 'danger' : 'success', hint: t('workflows.page.stat.runs.hint') }
         ]
       },
-      ...workflowSections(deps, workflows, imported, logged),
+      ...workflowSections(deps, workflows, imported, logged, grouping),
       { kind: 'list', title: t('workflows.page.journal'), items: recent.slice(0, 10).map((item) => ({ ...item, open: runOpen(deps, item.line) })), empty: t('workflows.journal.none') }
     ]
   }
 }
+
+/** Comment la page range les workflows : par module (d'origine), par déclencheur, par état, ou pas du tout. */
+export type Grouping = 'module' | 'declencheur' | 'etat' | 'aucun'
+export const GROUPINGS: readonly Grouping[] = ['module', 'declencheur', 'etat', 'aucun']
+const GROUPING_ICON = { module: 'grid', declencheur: 'flow', etat: 'check', aucun: 'list' } as const
+/** Le regroupement choisi, le temps de la session. */
+let grouping: Grouping = 'module'
+export const setWorkflowsGrouping = (next: Grouping): void => void (grouping = next)
 
 /**
  * Les workflows en sections repliables : d'abord **les workflows système**, une
  * sous-section par module (repliées d'origine : leur intitulé dit combien, combien
  * d'actifs, combien en échec) ; puis **mes workflows** (ceux du dernier import en tête).
  */
-function workflowSections(deps: HomeDeps & { page: WorkflowsPageDeps }, workflows: readonly Workflow[], imported: ReadonlySet<string>, logged: ReadonlyMap<string, Logged>): HomeBlock[] {
+function workflowSections(deps: HomeDeps & { page: WorkflowsPageDeps }, workflows: readonly Workflow[], imported: ReadonlySet<string>, logged: ReadonlyMap<string, Logged>, by: Grouping = 'module'): HomeBlock[] {
   const { t } = deps
   if (!workflows.length) return [{ kind: 'message', tone: 'info', text: t('workflows.list.empty') }]
   const cardOf = (workflow: Workflow) => workflowCard(deps.page, workflow, logged.get(workflow.name), imported.has(workflow.id))
   const summary = (cards: readonly Card[]) => {
     const failed = cards.filter((card) => card.tags?.includes('en-echec')).length
     return [t('workflows.page.section.count', { count: cards.length, active: cards.filter((card) => card.tags?.includes('actifs')).length }), ...(failed ? [t('workflows.page.section.failed', { count: failed })] : [])].join(' · ')
+  }
+  const ordered = [...workflows].sort((a, b) => Number(imported.has(b.id)) - Number(imported.has(a.id)) || a.name.localeCompare(b.name, 'fr'))
+  // Sans regroupement : toutes les cartes, celles du dernier import en tête.
+  if (by === 'aucun') return [{ kind: 'cards', cards: ordered.map(cardOf) }]
+  // Par déclencheur (les planifiés ensemble), ou par état : une section par groupe, ouvertes.
+  if (by === 'declencheur' || by === 'etat') {
+    const groups = new Map<string, { title: string; order: number; cards: Card[] }>()
+    for (const workflow of ordered) {
+      const card = cardOf(workflow)
+      const [key, title, order] =
+        by === 'declencheur'
+          ? workflow.trigger.kind === 'planifie'
+            ? ['planifie', t('workflows.page.group.scheduled'), 1]
+            : workflow.trigger.kind === 'manuel'
+              ? ['manuel', t('workflows.page.group.manual'), 2]
+              : [workflow.trigger.kind, deps.page.describeTrigger({ ...workflow, conditions: [] }), 0]
+          : card.tags?.includes('en-echec')
+            ? ['en-echec', t('workflows.page.group.failed'), 0]
+            : workflow.enabled
+              ? ['actifs', t('workflows.page.group.on'), 1]
+              : ['desactives', t('workflows.page.group.off'), 2]
+      const group = groups.get(key) ?? { title, order, cards: [] }
+      group.cards.push(card)
+      groups.set(key, group)
+    }
+    return [...groups]
+      .sort((a, b) => a[1].order - b[1].order || a[1].title.localeCompare(b[1].title, 'fr'))
+      .map(([key, group]) => ({ kind: 'section' as const, id: `workflows.${by}.${key}`, title: group.title, subtitle: summary(group.cards), collapsed: by === 'declencheur' && groups.size > 4, blocks: [{ kind: 'cards' as const, cards: group.cards }] }))
   }
   const system = workflows.filter((workflow) => workflow.system)
   const mine = workflows.filter((workflow) => !workflow.system)

@@ -208,6 +208,7 @@ export async function libraryPage(
         return lang ? [{ id: 'translations', label: t('exigences.trp.open', { count }), icon: 'check' as const, run: () => showPage(translationsPageOf(lang)) }] : []
       })()
     ],
+    layouts: ['cards', 'list', 'table'],
     search: { label: t('exigences.page.search'), placeholder: t('exigences.page.search.placeholder') },
     filters: [
       { id: 'faibles', label: t('exigences.page.filter.weak') },
