@@ -7,10 +7,11 @@
  * icône et un mot avec chaque couleur, des libellés pour les lecteurs d'écran.
  */
 
-import { createContext } from 'preact'
+import { createContext, type ComponentChildren } from 'preact'
 import { useContext, useState } from 'preact/hooks'
 import type { Badge as BadgeView, Breadcrumb, Card as CardView, Deadline, FlowNode, HomeBlock, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
 import type { Translate } from './host'
+import { useFileDrop, type DropState } from './drop'
 import { Icon } from './icons'
 import { daysUntil, deadlineTone, starGlyphs, TONE_ICON } from './logic'
 
@@ -86,10 +87,14 @@ export function DeadlineView({ deadline, t, now, locale }: { deadline: Deadline;
   )
 }
 
+/** La classe d'une carte qui reçoit des fichiers : survolée, occupée. */
+const dropClass = (drop: DropState): string => `${drop.over ? ' is-drop-over' : ''}${drop.busy ? ' is-busy' : ''}`
+
 export function CardView({ card, t, now, locale }: { card: CardView; t: Translate; now: Date; locale: string }) {
   const titleId = `bp-card-${card.id}`
+  const drop = useFileDrop(card.drop)
   return (
-    <article class="bp-card" aria-labelledby={titleId}>
+    <article class={`bp-card${dropClass(drop)}`} aria-labelledby={titleId} title={drop.over ? card.drop?.label : undefined} {...drop.props}>
       <div class="bp-card-head">
         {card.icon && (
           <span class="bp-card-icon">
@@ -196,8 +201,9 @@ export const LayoutContext = createContext<PageLayout>('cards')
 /** Une carte en une ligne : son icône, son titre (et sous-titre), ses badges, ses faits, ses boutons. */
 function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: Date; locale: string }) {
   const titleId = `bp-cardrow-${card.id}`
+  const drop = useFileDrop(card.drop)
   return (
-    <li class="bp-cardrow" aria-labelledby={titleId}>
+    <li class={`bp-cardrow${dropClass(drop)}`} aria-labelledby={titleId} {...drop.props}>
       {card.icon && (
         <span class="bp-card-icon bp-cardrow-icon">
           <Icon name={card.icon} />
@@ -244,6 +250,16 @@ function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: 
   )
 }
 
+/** Une ligne du tableau, qui reçoit des fichiers quand sa carte en accepte. */
+function DropRow({ card, children }: { card: CardView; children: ComponentChildren }) {
+  const drop = useFileDrop(card.drop)
+  return (
+    <tr class={dropClass(drop).trim() || undefined} {...drop.props}>
+      {children}
+    </tr>
+  )
+}
+
 /** Des cartes en tableau : le nom, l'état (les badges), une colonne par fait, les boutons. */
 function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) {
   const columns = [...new Set(cards.flatMap((card) => (card.facts ?? []).map((fact) => fact.label)))]
@@ -266,7 +282,7 @@ function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) 
         </thead>
         <tbody>
           {cards.map((card) => (
-            <tr key={card.id}>
+            <DropRow key={card.id} card={card}>
               <th scope="row">
                 {card.open ? (
                   <button type="button" class="bp-card-open" onClick={() => void card.open!.run()} title={card.open.tooltip}>
@@ -299,7 +315,7 @@ function CardsTable({ cards, t }: { cards: readonly CardView[]; t: Translate }) 
                   ))}
                 </div>
               </td>
-            </tr>
+            </DropRow>
           ))}
         </tbody>
       </table>

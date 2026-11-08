@@ -237,7 +237,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.6.1',
+  version: '0.7.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -398,6 +398,10 @@ export const bibliothequeModule: BlackModule = {
         const path = await platform.ui.pickFile({ placeholder: t('bibliotheque.pour.vault.pick') })
         if (path) items = [{ name: baseName(path), path }]
       }
+      return pourItems(items, folder)
+    }
+    /** Verser ce qui est choisi, ou glissé-déposé : le dire ensuite (entrés, déjà là, illisibles). */
+    const pourItems = async (items: readonly PourItem[], folder?: string): Promise<PourReport | null> => {
       if (!items.length) return null
       const report = await pourIntoLibrary(items, { module: BIBLIOTHEQUE, label: t('bibliotheque.origin.hand') }, folder ? { folder } : {})
       if (report)
@@ -477,7 +481,7 @@ export const bibliothequeModule: BlackModule = {
       showNote,
       exists: (path) => platform.fs.exists(path),
       // Versés depuis l'interface : un seul nouveau document, sa fiche ; sinon la page se redessine.
-      places: places.document,
+      places: { ...places.document, dropInto: (folder, where) => ({ label: t('bibliotheque.drop.label', { where }), run: async (files) => void (await pourItems(files, folder)) }) },
       move: async (record) => {
         const doc = await store.load(record)
         if (!doc) return null

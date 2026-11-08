@@ -127,6 +127,27 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     expect(crumbs.items.at(-1)!.label).toBe('ECSS')
   })
 
+  it('glisser-déposer : sur la page, versés là où l’on est ; sur la carte d’un répertoire, dans ce répertoire', async () => {
+    const platform = memoryPlatform()
+    const { page } = await start(platform)
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    const root = await page('bibliotheque.documents').load()
+    expect(root.drop).toMatchObject({ label: 'Déposer pour verser dans « Documents »', hint: expect.stringMatching(/^Ou glissez-déposez des fichiers/) })
+    await root.drop!.run([{ name: 'Plan.pdf', bytes: bytes('plan') }])
+    expect(await platform.fs.exists('Bibliothèque/Plan.md')).toBe(true)
+    expect(platform.notices.at(-1)).toMatch(/^1 document\(s\) versé\(s\) dans la bibliothèque, 0/)
+    const card = cardsIn(root.blocks).find((each) => each.title === 'Normes')!
+    expect(card.drop?.label).toBe('Déposer pour verser dans « Normes »')
+    await card.drop!.run([{ name: 'ECSS.pdf', bytes: bytes('ecss') }, { name: 'Plan.pdf', bytes: bytes('plan') }])
+    expect(await platform.fs.exists('Bibliothèque/Normes/ECSS.md')).toBe(true)
+    // Déjà là (même empreinte) : pas une seconde fois.
+    expect(await platform.fs.exists('Bibliothèque/Normes/Plan.md')).toBe(false)
+    const inside = await page('bibliotheque.documents').load(encodeURIComponent('principale:Normes'))
+    expect(inside.drop?.label).toBe('Déposer pour verser dans « Normes »')
+    // Les prompts et les personas n'en prennent pas.
+    expect((await page('bibliotheque.prompts').load()).drop).toBeUndefined()
+  })
+
   it('regrouper par répertoire : tout ce qui est dessous, une section par répertoire', async () => {
     const platform = memoryPlatform()
     const { page } = await start(platform)

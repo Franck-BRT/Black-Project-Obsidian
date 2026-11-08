@@ -188,6 +188,14 @@ que la recherche lit aussi. Il la déclare par
   Documents › Normes »), dessiné **tout en haut de la page**, au-dessus du titre (la coquille
   le reçoit par `onCrumbs`), avant le retour, le sous-titre et les boutons ; chaque étape un bouton (`run`), la dernière sans lien
   (`aria-current="location"`) ; un `nav` qui passe à la ligne ;
+- un **glisser-déposer** de fichiers facultatif (Black Projects 0.79.0) : `drop` — un
+  `FileDrop` (`label`, `run(fichiers)`) et une `hint`, dite sous les boutons ; une carte
+  peut avoir le sien (`Card.drop`, en cartes, liste ou tableau). `src/ui/drop.tsx`
+  (`useFileDrop`) : pendant le survol, la page s'entoure de pointillés et un bandeau dit
+  le libellé de la cible la plus proche (une carte survolée le remplace : `DropLabel`) ;
+  au dépôt, les fichiers sont lus (un dossier est laissé de côté), remis à `run`, puis la
+  page se redessine. Le dépôt est pris avant le navigateur ou Obsidian (`preventDefault`).
+  Toujours en plus d'un bouton qui fait la même chose ;
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;

@@ -8,7 +8,7 @@
  * liste. Commun aux documents, aux prompts et aux personas.
  */
 
-import { pageWith, type Breadcrumb, type Card, type HomeBlock, type ViewAction } from '../../core/views'
+import { pageWith, type Breadcrumb, type Card, type FileDrop, type HomeBlock, type ViewAction } from '../../core/views'
 import type { Group } from '../../core/grouping'
 import { folderOfPlace, placeParam, readPlace, type Place, type Shelf, type ShelfKind } from './shelves'
 
@@ -34,6 +34,8 @@ export interface ShelfPlacesDeps {
   newShelf(kind: ShelfKind): Promise<Shelf | null>
   setDefault(kind: ShelfKind, id: string): Promise<void>
   removeShelf(kind: ShelfKind, id: string): Promise<boolean>
+  /** Des fichiers glissés-déposés sur un lieu (`where` : son nom) : y verser (les documents seulement). */
+  dropInto?(folder: string, where: string): FileDrop
 }
 
 /** Le lieu d'une page : celui du paramètre, sinon la racine de la bibliothèque par défaut. */
@@ -97,7 +99,8 @@ export async function placeView(
       subtitle: t(`bibliotheque.place.${kind}.count`, { count: inside }),
       icon: 'folder',
       open: { id: 'open', label: t('bibliotheque.place.open'), run: go(directory) },
-      actions: [{ id: 'see', label: t('bibliotheque.place.open'), icon: 'chevron', run: go(directory) }]
+      actions: [{ id: 'see', label: t('bibliotheque.place.open'), icon: 'chevron', run: go(directory) }],
+      ...(deps.dropInto ? { drop: deps.dropInto(path, name(path)) } : {})
     }
   })
   const newDirectory: ViewAction = {

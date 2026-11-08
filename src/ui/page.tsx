@@ -10,6 +10,7 @@
 import { useContext, useEffect, useState } from 'preact/hooks'
 import type { Breadcrumb, Card, HomeBlock, ListItem, PageLayout, PageSpec, PageView, ViewAction } from '../core/views'
 import { ActionButton, AfterAction, BlockView, BreadcrumbNav, LayoutContext } from './components'
+import { DropLabel, useFileDrop } from './drop'
 import type { AppHost } from './host'
 import { Icon } from './icons'
 
@@ -165,8 +166,43 @@ export function ModulePage({
     storeLayout(spec.id, next)
     setChosen(next)
   }
+  return <PageBody {...{ view, spec, t, host, query, setQuery, filter, setFilter, layouts, layout, choose, searchId, narrowed, blocks, hits, total, onCrumbs, hasHistory }} />
+}
+
+interface PageBodyProps {
+  view: PageView
+  spec: PageSpec
+  t: AppHost['t']
+  host: AppHost
+  query: string
+  setQuery: (query: string) => void
+  filter: string | null
+  setFilter: (filter: string | null) => void
+  layouts: readonly PageLayout[]
+  layout: PageLayout
+  choose: (layout: PageLayout) => void
+  searchId: string
+  narrowed: boolean
+  blocks: HomeBlock[]
+  hits: number
+  total: number
+  onCrumbs?: ((crumbs: Breadcrumb | undefined) => void) | undefined
+  hasHistory?: boolean | undefined
+}
+
+/** Le corps d'une page prête ; une cible de glisser-déposer quand la page prend des fichiers. */
+function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, layouts, layout, choose, searchId, narrowed, blocks, hits, total, onCrumbs, hasHistory }: PageBodyProps) {
+  const drop = useFileDrop(view.drop)
+  // Une carte survolée (un répertoire) dit son propre « Déposer pour verser dans… ».
+  const [inner, setInner] = useState<string | null>(null)
   return (
-    <div class="bp-page" data-page={spec.id}>
+    <div class={`bp-page${drop.over ? ' is-drop-over' : ''}`} data-page={spec.id} aria-busy={drop.busy || undefined} {...drop.props}>
+      {drop.over && view.drop && (
+        <div class="bp-drop-banner" role="status">
+          <Icon name="upload" />
+          {inner ?? view.drop.label}
+        </div>
+      )}
       {view.breadcrumb && !onCrumbs && <BreadcrumbNav crumbs={view.breadcrumb} />}
       {view.back && !hasHistory && (
         <button type="button" class="bp-back" onClick={() => void view.back!.run()}>
@@ -181,6 +217,12 @@ export function ModulePage({
             <ActionButton key={action.id} action={action} />
           ))}
         </div>
+      )}
+      {view.drop?.hint && (
+        <p class="bp-drop-hint">
+          <Icon name="upload" />
+          {view.drop.hint}
+        </p>
       )}
       {(view.search || !!view.filters?.length) && (
         <div class="bp-page-tools" role="search">
@@ -233,6 +275,7 @@ export function ModulePage({
           {t('ui.page.count', { hits, total })}
         </p>
       )}
+      <DropLabel.Provider value={setInner}>
       <LayoutContext.Provider value={layout}>
         <div class={`bp-page-body bp-layout-${layout}`}>
           {blocks.map((block, index) => (
@@ -240,6 +283,7 @@ export function ModulePage({
           ))}
         </div>
       </LayoutContext.Provider>
+      </DropLabel.Provider>
     </div>
   )
 }

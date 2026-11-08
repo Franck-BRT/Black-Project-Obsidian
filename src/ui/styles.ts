@@ -145,6 +145,12 @@ const COMPONENTS_CSS = String.raw`
 .bp-main > .bp-back { margin: -14px 0 12px -8px; }
 .bp-main > .bp-back + .bp-page > .bp-page-sub { margin-top: 0; }
 .bp-group { display: flex; flex-direction: column; gap: 12px; }
+.bp-page.is-drop-over { outline: 2px dashed var(--bp-accent); outline-offset: 8px; border-radius: var(--bp-radius); }
+.bp-drop-banner { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 50; display: inline-flex; align-items: center; gap: 8px; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: var(--bp-radius); background: var(--bp-accent); color: var(--bp-accent-text); font-weight: 600; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); pointer-events: none; }
+.bp-drop-hint { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--bp-text-muted); font-size: 0.92em; }
+.bp-drop-hint svg { width: 16px; height: 16px; flex: none; }
+.bp-card.is-drop-over, .bp-cardrow.is-drop-over, .bp-cardtable tr.is-drop-over { outline: 2px solid var(--bp-accent); outline-offset: 2px; background: var(--bp-accent-soft); }
+.bp-card.is-busy, .bp-cardrow.is-busy, .bp-cardtable tr.is-busy { opacity: 0.6; }
 .bp-main > .bp-crumbs { margin: -12px 0 10px -8px; }
 .bp-crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
 .bp-crumbs li { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }

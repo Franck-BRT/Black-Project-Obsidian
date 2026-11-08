@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.6.1 (Black Projects 0.78.0) |
+| Version | 0.7.0 (Black Projects 0.79.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -199,6 +199,15 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Glisser-déposer (v0.7.0, Black Projects 0.79.0)
+
+Des fichiers de l'ordinateur glissés-déposés sur la page des documents sont versés là où
+l'on est (la bibliothèque, le répertoire) ; sur la carte d'un répertoire, dans ce
+répertoire. `ShelfPlacesDeps.dropInto(dossier, nom)` rend le `FileDrop` (son libellé :
+« Déposer pour verser dans « Normes » ») ; `pourItems` verse comme « Verser des
+documents » (copiés, une seule fois par empreinte) et dit ce qui est entré. Les prompts et
+les personas n'en prennent pas. Le bouton « Verser des documents » reste (clavier).
 
 ## Retirer
 

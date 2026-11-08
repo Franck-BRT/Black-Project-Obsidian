@@ -508,6 +508,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   d'Ariane** (nouveau bloc de l'interface) ; « Déplacer… » ; regrouper par répertoire
 - v0.78.0 : **interface** : le fil d'Ariane devient un champ de la page
   (`PageView.breadcrumb`), dessiné tout en haut, au-dessus du titre de la page
+- v0.79.0 : **interface et module Bibliothèque** : le **glisser-déposer** de fichiers
+  (`PageView.drop`, `Card.drop`) ; dans la bibliothèque, sur la page (là où l'on est) ou
+  sur la carte d'un répertoire
 
 ### Étape 7 — Livrables
 

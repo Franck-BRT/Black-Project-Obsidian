@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Glisser-déposer des fichiers dans la bibliothèque (v0.79.0)
+
+- [ ] Bibliothèque › Documents : sous les boutons, « Ou glissez-déposez des fichiers… »
+- [ ] Glisser des fichiers de l'explorateur de l'ordinateur sur la page : elle s'entoure
+      de pointillés, un bandeau dit « Déposer pour verser dans « Documents » » ; les
+      lâcher : ils sont versés (le message le dit), leurs cartes apparaissent
+- [ ] Les glisser sur la carte d'un répertoire : elle se surligne, le bandeau dit son nom ;
+      les lâcher : ils entrent dans ce répertoire (sa carte compte un de plus)
+- [ ] Dans un répertoire, les déposer sur la page : ils y entrent
+- [ ] Un fichier déjà dans la bibliothèque : « y étai(en)t déjà », pas de doublon ; un
+      dossier glissé : laissé de côté
+- [ ] Obsidian n'ouvre pas, ni ne copie, les fichiers lâchés sur la page ; ailleurs dans
+      Obsidian, le glisser-déposer reste le sien
+- [ ] En cartes, en liste et en tableau
+
 ## Le fil d'Ariane tout en haut (v0.78.0)
 
 - [ ] Bibliothèque › Documents, un répertoire, une autre bibliothèque, les prompts, les

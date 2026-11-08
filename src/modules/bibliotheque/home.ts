@@ -168,6 +168,10 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : deps.places.shelves().length > 1 ? place.shelf.name : t('bibliotheque.page.title'),
     ...(param ? { back: { id: 'back', label: t('bibliotheque.back.up'), run: () => deps.showPage?.(place.directory ? placePageOf(LIBRARY_PAGE, { shelf: place.shelf.id, directory: place.directory.split('/').slice(0, -1).join('/') }) : HUB_PAGE) } } : {}),
     subtitle: t('bibliotheque.page.subtitle', { folder: top.folder }) + top.note,
+    // Des fichiers glissés-déposés sur la page : versés là où l'on est.
+    ...(deps.places.dropInto
+      ? { drop: { ...deps.places.dropInto(top.folder, place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : place.shelf.name), hint: t('bibliotheque.drop.hint') } }
+      : {}),
     actions: [{ id: 'pour', label: t('bibliotheque.pour'), tooltip: t('bibliotheque.pour.here.tip', { folder: top.folder }), icon: 'upload', primary: true, run: pourHere }, ...top.actions],
     layouts: ['cards', 'list', 'table'],
     grouping: groupingSelector(LIBRARY_PAGE, docGrouping, DOC_GROUPINGS, t, 'bibliotheque.group.doc'),

@@ -132,7 +132,12 @@ Documents › Normes › ECSS ») dit où vous êtes ; un clic y remonte. Chaque
 carte (combien il contient). On **verse** et on **crée** là où l'on est ; **Déplacer…**,
 sur une fiche, range ailleurs (le fichier d'un document ne bouge pas ; ses versions
 restent reliées). **Regrouper par › Répertoire** montre tout ce qui est dessous, un
-répertoire par section. Un prompt ou un persona se retrouve par son nom où qu'il soit
+répertoire par section.
+
+**Glisser-déposer** : des fichiers glissés depuis l'explorateur de l'ordinateur et lâchés
+sur la page des documents y sont versés, là où vous êtes ; lâchés sur la carte d'un
+répertoire, dans ce répertoire. Comme « Verser des documents » : copiés dans la
+bibliothèque, une seule fois chacun. Un prompt ou un persona se retrouve par son nom où qu'il soit
 rangé.
 
 ## 8. Réglages

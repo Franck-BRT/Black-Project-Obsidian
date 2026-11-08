@@ -7,6 +7,7 @@ import { DEFAULT_APPEARANCE } from '../core/appearance'
 import { createI18n } from '../core/i18n'
 import { ViewsRegistry, type Card, type HomeBlock } from '../core/views'
 import { BlockView, BreadcrumbNav, LayoutContext } from './components'
+import { readDropped } from './drop'
 import type { AppHost } from './host'
 import { filterBlocks, fold } from './page'
 import { App } from './shell'
@@ -241,5 +242,13 @@ describe('le fil d’Ariane d’une page', () => {
     expect(html.match(/<button type="button" class="bp-crumb">/g)).toHaveLength(2)
     expect(html).toContain('<span class="bp-crumb is-here" aria-current="location">Normes</span>')
     expect(html.match(/<span class="bp-crumb-sep" aria-hidden="true">›<\/span>/g)).toHaveLength(2)
+  })
+})
+
+describe('le glisser-déposer de fichiers', () => {
+  it('les fichiers déposés lus (nom, octets) ; ce qu’on ne peut pas lire (un dossier) laissé de côté', async () => {
+    const folder = { name: 'Dossier', arrayBuffer: () => Promise.reject(new Error('un dossier')) } as unknown as File
+    const read = await readDropped([new File(['bonjour'], 'Note.txt'), folder])
+    expect(read.map((each) => [each.name, new TextDecoder().decode(each.bytes)])).toEqual([['Note.txt', 'bonjour']])
   })
 })

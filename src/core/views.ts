@@ -11,6 +11,8 @@
  * sections du **tableau de bord** et les entrées de la **navigation**.
  */
 
+import type { ExternalFile } from './ports'
+
 /** Ce qu'un élément dit de son état. L'interface lui donne une couleur, une icône et un mot. */
 export type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 
@@ -101,6 +103,8 @@ export interface Card {
   actions?: ViewAction[]
   /** Les filtres d'une page auxquels la carte répond (`PageView.filters`). */
   tags?: string[]
+  /** Des fichiers glissés-déposés sur la carte (un répertoire : y verser). */
+  drop?: FileDrop
 }
 
 /** Un indicateur : un chiffre et ce qu'il compte. */
@@ -239,6 +243,16 @@ export function pageWith(id: string, param: string): string {
 }
 
 /**
+ * Des **fichiers glissés-déposés** depuis l'ordinateur : ce qu'en fait la page (ou la
+ * carte) qui les reçoit. `label` le dit pendant le survol (« Déposer pour verser dans
+ * Normes »). Toujours en plus d'un bouton qui fait la même chose.
+ */
+export interface FileDrop {
+  label: string
+  run(files: readonly ExternalFile[]): void | Promise<void>
+}
+
+/**
  * Un **fil d'Ariane** : où l'on est (« Bibliothèque › Normes › ECSS »), chaque étape un
  * lien vers elle, la dernière (là où l'on est) sans lien. `label` le nomme pour les
  * lecteurs d'écran.
@@ -253,6 +267,8 @@ export interface PageView {
   title?: string
   /** Où l'on est : tout en haut de la page, avant le retour et le reste. */
   breadcrumb?: Breadcrumb
+  /** Des fichiers glissés-déposés sur la page ; `hint` le dit sous ses boutons. */
+  drop?: FileDrop & { hint?: string }
   /** Un lien de retour, au-dessus (« ← Tous les workflows »). */
   back?: ViewAction
   subtitle?: string
