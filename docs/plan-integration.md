@@ -473,6 +473,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.67.0 : **module Workflows** : son entretien en workflows système — *Signaler les
   workflows cassés, à l'ouverture* (actif), *Bilan des workflows, chaque lundi* et
   *Archiver le journal des workflows, chaque mois* (désactivés)
+- v0.68.0 : **module IA** : deux nouveaux workflows système — *Signaler les nouveaux
+  modèles du serveur, à l'ouverture* (actif) et *Signaler un serveur d'IA lent, à
+  l'ouverture* (désactivé)
 
 ### Étape 7 — Livrables
 

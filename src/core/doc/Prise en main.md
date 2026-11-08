@@ -160,7 +160,7 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Analyser la qualité des exigences du dossier | la note `Analyse/Qualité des exigences` : notes, défauts, doublons, non vérifiables |
 | Analyser la qualité de la bibliothèque d'exigences | la même analyse pour la bibliothèque, rattachements compris ; depuis l'onglet, en page (le rapport s'écrit depuis la page) |
 | Calendrier de l'appel d'offres | la note `Analyse/Calendrier` : remise, validité des offres, délais, chacun avec sa phrase (sans IA) ; des workflows système rappellent la remise, les questions et la visite (et, si vous l'activez, la fin de validité des offres) |
-| Tester la connexion au serveur d'IA | liste les modèles du serveur et fait choisir le modèle de texte ; depuis l'onglet, la page IA ensuite (le résultat, les modèles) ; voir {{link:Modules/IA|IA}} |
+| Tester la connexion au serveur d'IA | liste les modèles du serveur et fait choisir le modèle de texte ; depuis l'onglet, la page IA ensuite (le résultat, les modèles) ; à l'ouverture, des workflows système vérifient la connexion et signalent les nouveaux modèles ; voir {{link:Modules/IA|IA}} |
 | Relire l'exigence avec l'IA | avis, défauts, reformulations à choisir ou non ; la relecture dans la note |
 | Traduire l'exigence avec l'IA | dans une autre langue de rédaction, marquée à relire ; à valider sur sa fiche |
 | Traduire des exigences avec l'IA | plusieurs d'un coup, vers une langue ; les absentes ou en retard cochées |

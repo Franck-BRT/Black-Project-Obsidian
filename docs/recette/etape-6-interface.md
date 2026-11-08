@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## L'IA : deux nouveaux workflows système (v0.68.0)
+
+- [ ] Page **Workflows**, filtre Système, module IA : « Signaler les nouveaux modèles du
+      serveur, à l'ouverture » actif ; « Signaler un serveur d'IA lent, à l'ouverture »
+      désactivé (avec « Vérifier la connexion » d'avant)
+- [ ] Première ouverture avec l'IA réglée : rien n'est dit ; le journal : « Modèles du
+      serveur retenus (n) »
+- [ ] Ajouter un modèle sur le serveur, rouvrir : « IA : 1 nouveau(x) modèle(s) sur le
+      serveur — … (usage). À choisir pour un usage sur la page IA. »
+- [ ] Activer le serveur lent, régler son seuil à 0,1 s, **Exécuter** : « IA lente : … s
+      pour répondre (seuil : 0.1 s) »
+
 ## Les workflows : leur entretien en workflows système (v0.67.0)
 
 - [ ] Page **Workflows**, filtre Système, module Workflows : « Signaler les workflows

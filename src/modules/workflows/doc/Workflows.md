@@ -100,6 +100,8 @@ Workflows et dans le journal.
 | Traductions à revoir, chaque lundi | lundi à 8 h | compte les traductions absentes, en retard ou à relire | désactivé |
 | Relire les nouvelles exigences (IA) | exigence créée | relecture par l'IA, écrite dans la note | désactivé |
 | Vérifier la connexion à l'IA, à l'ouverture | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas ou si un modèle choisi n'y est plus | actif |
+| Signaler les nouveaux modèles du serveur, à l'ouverture | à l'ouverture d'Obsidian | nomme les modèles apparus sur le serveur, avec leur usage | actif |
+| Signaler un serveur d'IA lent, à l'ouverture | à l'ouverture d'Obsidian | prévient si l'IA met plus de 5 s à répondre | désactivé |
 | Ranger les pièces importées dans la bibliothèque | des pièces importées dans une analyse | les range dans la bibliothèque de documents | actif |
 | Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types ou de workflows | range le fichier importé | actif |
 | Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |

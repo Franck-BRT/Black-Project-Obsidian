@@ -67,6 +67,13 @@ si un modèle que vous avez choisi n'y est plus. Sans adresse réglée, il ne fa
 le désactivez ou le modifiez sur la page {{link:Modules/Workflows|Workflows}} (filtre
 « Système »).
 
+Deux autres workflows système le suivent :
+
+| Workflow système | Ce qu'il fait | D'origine |
+| --- | --- | --- |
+| Signaler les nouveaux modèles du serveur, à l'ouverture | nomme les modèles apparus sur le serveur depuis la dernière fois, avec l'usage qui leur conviendrait (à choisir sur la page IA) ; rien de nouveau : rien n'est dit | activé |
+| Signaler un serveur d'IA lent, à l'ouverture | chronomètre une demande minuscule au modèle d'analyse et prévient au-delà du seuil (5 s, réglable dans son action) | désactivé |
+
 ## 2. Ce que l'IA fait
 
 | Où | Commande | Ce qu'elle fait |

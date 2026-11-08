@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.4.0 (Black Projects 0.10.0) |
+| Version | 0.8.0 (Black Projects 0.68.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -91,6 +91,13 @@ modèles (`LISTED_KEY`) mise à jour et le dernier test (`lastTest`) gardé pour
 sans rien dire ; un serveur qui ne répond pas lève (le workflow échoue et le dit, ❌ au
 journal) ; un modèle réglé pour un usage (`USE_FIELD`) absent du serveur est dit.
 Tests : `test/ia-workflows.test.ts`.
+
+**Deux nouveaux workflows système (v0.8.0, Black Projects 0.68.0)** :
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Signaler les nouveaux modèles du serveur, à l'ouverture (`sys.ia.nouveaux-modeles`) | à l'ouverture (après la vérification, qui met la liste à jour) | `ia.nouveaux-modeles` (`newModels`) : la liste du serveur (`LISTED_KEY`) comparée aux modèles déjà vus (`KNOWN_KEY`, `modelesConnus`) ; les nouveaux nommés avec les usages qui leur conviendraient (`usesOf`) ; la première fois, la liste est seulement retenue | actif |
+| Signaler un serveur d'IA lent, à l'ouverture (`sys.ia.temps-reponse`) | à l'ouverture | `ia.temps-reponse` (champ « seuil », 5 s) : une demande minuscule au modèle d'analyse (`max_tokens` 1), chronométrée ; au-delà du seuil, un message | désactivé |
 
 ## Interface publique
 

@@ -55,6 +55,14 @@ export function modelsFor(use: ModelUse, listed: readonly string[]): string[] {
   return fitting.length ? fitting : all
 }
 
+/** Les usages auxquels un modèle convient, d'après son nom (aucun : on ne sait pas). */
+export function usesOf(name: string): ModelUse[] {
+  return MODEL_USES.filter((use) => tests[use](name))
+}
+
+/** Les modèles du serveur déjà vus (pour signaler les nouveaux). */
+export const KNOWN_KEY = 'modelesConnus'
+
 /** La liste retenue dans les réglages. */
 export function listedModels(settings: Readonly<Record<string, unknown>>): string[] {
   const stored = settings[LISTED_KEY]

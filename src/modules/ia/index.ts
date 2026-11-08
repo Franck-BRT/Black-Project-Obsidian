@@ -22,7 +22,7 @@ import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
 import { registerIaHome, USE_FIELD, type ConnectionTest } from './home'
 import { registerIaWorkflows } from './workflows'
-import { listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, type ModelUse } from './models'
+import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, usesOf, type ModelUse } from './models'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
@@ -200,6 +200,50 @@ async function testConnection(context: ModuleContext): Promise<ConnectionTest> {
  * répond pas lève (le workflow échoue, le dit, le journal le garde) ; un modèle choisi qui
  * n'est plus sur le serveur est dit. Sans adresse réglée, rien à vérifier.
  */
+/**
+ * Les nouveaux modèles du serveur : ceux de la liste (mise à jour par la vérification) qui
+ * n'y étaient pas la dernière fois. La première fois, la liste est seulement retenue.
+ */
+async function newModels(context: ModuleContext): Promise<string> {
+  const { platform, i18n, settings } = context
+  const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
+  const listed = listedModels(settings.get())
+  if (!listed.length) return t('ia.wf.newModels.unknown')
+  const stored = settings.get()[KNOWN_KEY]
+  const known = Array.isArray(stored) ? stored.filter((each): each is string => typeof each === 'string') : null
+  await settings.save({ ...settings.get(), [KNOWN_KEY]: listed })
+  if (!known) return t('ia.wf.newModels.first', { count: listed.length })
+  const fresh = listed.filter((model) => !known.includes(model))
+  if (!fresh.length) return t('ia.wf.newModels.none')
+  const described = fresh.map((model) => {
+    const uses = usesOf(model).map((use) => t(`ia.use.${use}`))
+    return uses.length ? `${model} (${uses.join(', ')})` : model
+  })
+  const text = t('ia.wf.newModels.found', { count: fresh.length, models: described.join(', ') })
+  platform.notifier.notify(text, 15000)
+  return text
+}
+
+/** Le temps de réponse du modèle d'analyse, sur une demande minuscule ; dit au-delà du seuil. */
+async function responseTime(context: ModuleContext, threshold: number): Promise<string> {
+  const { platform, i18n } = context
+  const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
+  const client = aiClient()
+  if (!client) return t('ia.wf.check.noUrl')
+  const started = Date.now()
+  try {
+    await client.chat({ messages: [{ role: 'user', content: 'OK' }], maxTokens: 1 })
+  } catch (error) {
+    throw new Error(t('ia.wf.check.unreachable', { reason: describeAiError(error, t) }))
+  }
+  const seconds = Math.round((Date.now() - started) / 100) / 10
+  const shown = seconds.toLocaleString(i18n.language === 'en' ? 'en-GB' : 'fr-FR')
+  if (seconds <= threshold) return t('ia.wf.speed.ok', { seconds: shown })
+  const text = t('ia.wf.speed.slow', { seconds: shown, threshold })
+  platform.notifier.notify(text, 15000)
+  return text
+}
+
 async function checkConnection(context: ModuleContext): Promise<string> {
   const { platform, i18n, settings } = context
   const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
@@ -232,7 +276,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.7.0',
+  version: '0.8.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -283,6 +327,42 @@ export const iaModule: BlackModule = {
       moduleKey: 'ia.name',
       enabledByDefault: true,
       make: (tr) => ({ name: tr('ia.sys.verifier-connexion'), mode: 'auto', trigger: { kind: OPENING }, conditions: [], actions: [{ kind: 'ia.verifier', fields: {} }] })
+    })
+    // Les nouveaux modèles du serveur, après la vérification (actif) ; le temps de réponse (désactivé).
+    registerAction({
+      id: 'ia.nouveaux-modeles',
+      labelKey: 'ia.wf.action.newModels',
+      descKey: 'ia.wf.action.newModels.desc',
+      fields: [],
+      results: ['text'],
+      async run() {
+        const text = await newModels(context)
+        return { lines: [text], results: { text } }
+      }
+    })
+    registerAction({
+      id: 'ia.temps-reponse',
+      labelKey: 'ia.wf.action.speed',
+      descKey: 'ia.wf.action.speed.desc',
+      fields: [{ key: 'seuil', labelKey: 'ia.wf.field.threshold', kind: 'text', required: true, defaultValue: '5', tooltipKey: 'ia.wf.field.threshold.tip' }],
+      results: ['text'],
+      async run({ fields }) {
+        const threshold = Number.parseFloat((fields.seuil ?? '5').replace(',', '.'))
+        const text = await responseTime(context, Number.isFinite(threshold) && threshold > 0 ? threshold : 5)
+        return { lines: [text], results: { text } }
+      }
+    })
+    registerSystemWorkflow({
+      id: 'sys.ia.nouveaux-modeles',
+      moduleKey: 'ia.name',
+      enabledByDefault: true,
+      make: (tr) => ({ name: tr('ia.sys.nouveaux-modeles'), mode: 'auto', trigger: { kind: OPENING }, conditions: [], actions: [{ kind: 'ia.nouveaux-modeles', fields: {} }] })
+    })
+    registerSystemWorkflow({
+      id: 'sys.ia.temps-reponse',
+      moduleKey: 'ia.name',
+      enabledByDefault: false,
+      make: (tr) => ({ name: tr('ia.sys.temps-reponse'), mode: 'auto', trigger: { kind: OPENING }, conditions: [], actions: [{ kind: 'ia.temps-reponse', fields: { seuil: '5' } }] })
     })
 
     context.commands.register({
