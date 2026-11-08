@@ -43,7 +43,7 @@ import { previewImport, type ImportReport } from './import/preview'
 import { localToday } from '../../core/dates'
 import { aiClient } from '../ia'
 import { reviewRequirement, translateRequirement, translateRequirements } from './ai/actions'
-import { emitRequirementCreated, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
+import { emitRequirementCreated, emitRequirementsImported, registerExigencesWorkflows, writeLibraryQuality } from './workflows'
 import { importPageOf, openLibrary, registerExigencesHome, type LastImport } from './home'
 import { translationsPageOf, type LastTranslations } from './translationsPage'
 export { requirementPageOf } from './home'
@@ -286,6 +286,8 @@ async function importFromFile(context: ModuleContext, store: RequirementStore): 
     module: EXIGENCES,
     label: t('exigences.import.origin', { name: file.name })
   })
+  // Puis les workflows de l'import (le contrôle de la qualité des exigences importées…).
+  await emitRequirementsImported(report.outcome, file.name, t('exigences.import.origin', { name: file.name }))
   return { ...report, piece, name: file.name }
 }
 
@@ -299,7 +301,7 @@ export const exigencesModule: BlackModule = {
   id: EXIGENCES,
   nameKey: 'exigences.name',
   descriptionKey: 'exigences.description',
-  version: '0.22.0',
+  version: '0.23.0',
   // Les fichiers d'où l'on extrait des exigences sont lus par le module Lecture de fichiers.
   requires: [LECTURE_FICHIERS],
   texts: { fr: exigencesFr, en: exigencesEn },

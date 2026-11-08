@@ -241,10 +241,19 @@ Rien n'est écrit dans une formulation sans votre accord.
 Avec le module {{link:Modules/Workflows|Workflows}} : le déclencheur *Exigences : exigence
 créée*, les actions *Analyser la qualité de la bibliothèque* et *Relire l'exigence avec
 l'IA* (la relecture est écrite dans la note, la formulation ne change pas) et *Traduire
-l'exigence avec l'IA (toutes les langues)*. Deux **workflows système** l'attendent,
-désactivés d'origine : *Qualité de la bibliothèque d'exigences, chaque lundi* et
-*Traduire les nouvelles exigences (IA)* — à activer sur la page Workflows (filtre
-« Système »).
+l'exigence avec l'IA (toutes les langues)*. Le déclencheur *Exigences : exigences importées*
+arrive après un import depuis un fichier.
+
+Des **workflows système** l'attendent (page Workflows, filtre « Système ») ; vous pouvez
+les modifier, les désactiver, et revenir à l'original :
+
+| Workflow système | Quand | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Contrôler la qualité des exigences importées | après un import d'exigences | nomme les exigences faibles (moins de 3 étoiles) ; aucune : rien n'est dit | activé |
+| Qualité de la bibliothèque d'exigences, chaque lundi | le lundi à 8 h | écrit la note « Qualité des exigences » | désactivé |
+| Traductions à revoir, chaque lundi | le lundi à 8 h | compte les traductions absentes, en retard sur la source ou à relire | désactivé |
+| Traduire les nouvelles exigences (IA) | une exigence créée | la traduit dans les autres langues, « à relire » | désactivé |
+| Relire les nouvelles exigences (IA) | une exigence créée | la fait relire par l'IA ; la relecture est écrite dans sa note | désactivé |
 
 ## 10. Ce qui arrive
 

@@ -149,7 +149,7 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Nouvelle exigence | crée une exigence avec son identifiant (REQ-SYS-0001) ; depuis l'onglet, sa fiche ensuite ; voir {{link:Modules/Exigences|Exigences}} |
 | Exigences : liste, filtres et fiches | parcourt la bibliothèque, ouvre une fiche ou une note |
 | Modifier l'exigence (note ouverte) | la fiche de l'exigence ouverte : formulation, attributs, alias ; dans l'onglet, « Modifier la fiche » reste sur sa fiche |
-| Importer des exigences d'un fichier (Excel, CSV, Word, PDF, ReqIF…) | aperçu, puis import dans la bibliothèque, chaque exigence avec son origine ; depuis l'onglet, la page de l'import ensuite |
+| Importer des exigences d'un fichier (Excel, CSV, Word, PDF, ReqIF…) | aperçu, puis import dans la bibliothèque, chaque exigence avec son origine ; depuis l'onglet, la page de l'import ensuite ; un workflow système nomme les exigences importées faibles |
 | Extraire les exigences de la pièce | sur la note d'une pièce (le CCTP) : aperçu, puis import dans les exigences de l'analyse, tracées jusqu'à la pièce |
 | Mettre à jour les exigences de l'analyse | réécrit la liste des exigences de chaque pièce et le tableau de l'analyse |
 | Vérifier les exigences du dossier (les quatre vérifications) | les quatre vérifications ci-dessous, puis le rapport `Analyse/Vérification des exigences` |

@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les exigences : trois nouveaux workflows système (v0.65.0)
+
+- [ ] Page **Workflows**, filtre Système, module Exigences : « Contrôler la qualité des
+      exigences importées » actif ; « Traductions à revoir, chaque lundi » et « Relire les
+      nouvelles exigences (IA) » désactivés (avec les deux d'avant)
+- [ ] Importer un CSV avec une exigence vague (« Le système sera disponible le cas
+      échéant. ») : un message « Import d'exigences (…) — 1 exigence(s) faible(s) sur … :
+      REQ-…-… (★★) (moyenne … %). » ; le **Journal des workflows** le garde et mène à sa fiche
+- [ ] Un import sans exigence faible : pas de message ; le journal dit « aucune faible »
+- [ ] Activer « Traductions à revoir, chaque lundi », **Exécuter** : « Traductions à revoir
+      sur n exigence(s) : … absente(s), … en retard, … à relire. »
+- [ ] IA réglée : activer « Relire les nouvelles exigences (IA) », **Nouvelle exigence** :
+      la relecture est écrite dans sa note
+- [ ] Désactiver le contrôle des importées : plus de message ; **Rétablir l'original**
+
 ## Le typage des pièces : signaler les pièces sans type reconnu (v0.64.0)
 
 - [ ] Page **Workflows**, filtre Système : « Signaler les pièces sans type reconnu, à

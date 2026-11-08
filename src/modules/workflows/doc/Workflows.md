@@ -90,6 +90,9 @@ Workflows et dans le journal.
 | Vérifier la couverture d'une réponse importée | pièces de réponse importées | couverture de la réponse | désactivé |
 | Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
+| Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |
+| Traductions à revoir, chaque lundi | lundi à 8 h | compte les traductions absentes, en retard ou à relire | désactivé |
+| Relire les nouvelles exigences (IA) | exigence créée | relecture par l'IA, écrite dans la note | désactivé |
 | Vérifier la connexion à l'IA, à l'ouverture | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas ou si un modèle choisi n'y est plus | actif |
 | Ranger les pièces importées dans la bibliothèque | des pièces importées dans une analyse | les range dans la bibliothèque de documents | actif |
 | Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types ou de workflows | range le fichier importé | actif |

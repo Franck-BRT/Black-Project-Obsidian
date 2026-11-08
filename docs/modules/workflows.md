@@ -167,6 +167,9 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Vérifier la couverture d'une réponse importée | pièces de réponse importées | couverture de la réponse | désactivé |
 | Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
+| Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |
+| Traductions à revoir, chaque lundi | lundi à 8 h | compte les traductions absentes, en retard ou à relire | désactivé |
+| Relire les nouvelles exigences (IA) | exigence créée | relecture par l'IA, écrite dans la note | désactivé |
 | Vérifier la connexion à l'IA, à l'ouverture (v0.60.0) | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas ou si un modèle choisi n'y est plus | actif |
 
 **La bibliothèque de documents, en workflows système (v0.12.0, Black Projects 0.62.0)** :

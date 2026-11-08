@@ -464,6 +464,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.64.0 : **module Typage des pièces** : un workflow système, *Signaler les pièces sans
   type reconnu, à l'import* (actif) — nomme les pièces classées « Autre » et dit comment
   les typer ; le déclencheur *Pièces importées* donne `nontypees`
+- v0.65.0 : **module Exigences** : trois nouveaux workflows système — *Contrôler la qualité
+  des exigences importées* (actif), *Traductions à revoir, chaque lundi* et *Relire les
+  nouvelles exigences (IA)* (désactivés) ; nouveau déclencheur *Exigences importées*
 
 ### Étape 7 — Livrables
 

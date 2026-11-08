@@ -17,6 +17,8 @@ import type { Requirement } from './model/requirement'
 import { assessAll, qualityMarkdown, withQuality } from './quality/report'
 
 export const TRIGGER_CREATED = 'exigences.creee'
+/** Des exigences importées d'un fichier (créées ou mises à jour) : le déclencheur. */
+export const TRIGGER_IMPORTED = 'exigences.importees'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -38,6 +40,41 @@ export async function emitRequirementCreated(requirement: Requirement): Promise<
     },
     lists: { motsCles: requirement.tags }
   })
+}
+
+/** Un import d'exigences fait : les workflows qui y répondent s'exécutent. */
+export async function emitRequirementsImported(outcome: { created: readonly Requirement[]; updated: readonly Requirement[] }, name: string, label: string): Promise<void> {
+  const all = [...outcome.created, ...outcome.updated]
+  if (!all.length) return
+  await emitWorkflowEvent(TRIGGER_IMPORTED, {
+    key: name,
+    label,
+    path: '',
+    vars: { fichier: name, nombre: String(all.length), creees: String(outcome.created.length), modifiees: String(outcome.updated.length) },
+    lists: { ids: all.map((requirement) => requirement.id), chemins: all.flatMap((requirement) => (requirement.filePath ? [requirement.filePath] : [])) }
+  })
+}
+
+/** Les traductions à revoir dans la bibliothèque : absentes, en retard sur la source, ou à relire. */
+export function laggingTranslations(library: readonly Requirement[], languages: readonly string[]): { missing: number; stale: number; unreviewed: number; requirements: Requirement[] } {
+  let missing = 0
+  let stale = 0
+  let unreviewed = 0
+  const requirements: Requirement[] = []
+  for (const requirement of library) {
+    let lagging = false
+    for (const lang of languages) {
+      if (lang === requirement.sourceLang) continue
+      const text = requirement.text[lang]
+      if (!text) missing++
+      else if (text.fromRev < requirement.rev) stale++
+      else if (!text.reviewed) unreviewed++
+      else continue
+      lagging = true
+    }
+    if (lagging) requirements.push(requirement)
+  }
+  return { missing, stale, unreviewed, requirements }
 }
 
 /** La note du rapport de qualité de la bibliothèque. */
@@ -72,6 +109,63 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
     labelKey: 'exigences.wf.trigger.created',
     descKey: 'exigences.wf.trigger.created.desc',
     fields: ['id', 'titre', 'categorie', 'type', 'statut', 'criticite', 'motsCles'].map((key) => ({ key, labelKey: `exigences.wf.var.${key}` }))
+  })
+
+  registerTrigger({
+    id: TRIGGER_IMPORTED,
+    labelKey: 'exigences.wf.trigger.imported',
+    descKey: 'exigences.wf.trigger.imported.desc',
+    fields: ['fichier', 'nombre', 'creees', 'modifiees', 'ids'].map((key) => ({ key, labelKey: `exigences.wf.var.${key}` }))
+  })
+
+  // Contrôler la qualité des exigences d'un import : les faibles (moins de 3 étoiles), nommées.
+  registerAction({
+    id: 'exigences.controle-import',
+    labelKey: 'exigences.wf.action.checkImport',
+    descKey: 'exigences.wf.action.checkImport.desc',
+    fields: [],
+    results: ['text'],
+    async run({ subject, notifier }) {
+      const current = session()
+      const paths = new Set(subject.lists.chemins ?? [])
+      const ids = new Set((subject.lists.ids ?? []).map((id) => id.toUpperCase()))
+      const imported = (await current.store.all()).filter((requirement) => (requirement.filePath && paths.has(requirement.filePath)) || ids.has(requirement.id.toUpperCase()))
+      if (!imported.length) {
+        const text = t('exigences.wf.checkImport.nothing')
+        return { lines: [text], results: { text } }
+      }
+      const runs = assessAll(imported, current.settings().languages, 'record')
+      const mean = Math.round((runs.reduce((sum, run) => sum + run.report.score, 0) / runs.length) * 100)
+      const weak = runs.filter((run) => run.report.stars < 3).sort((a, b) => a.report.stars - b.report.stars || a.requirement.id.localeCompare(b.requirement.id, undefined, { numeric: true }))
+      if (!weak.length) {
+        const text = t('exigences.wf.checkImport.fine', { count: runs.length, mean })
+        return { lines: [text], results: { text } }
+      }
+      const names = weak.map((run) => `${run.requirement.id} (${'★'.repeat(run.report.stars) || '☆'})`).join(', ')
+      const text = t(subject.label ? 'exigences.wf.checkImport.weak.in' : 'exigences.wf.checkImport.weak', { weak: weak.length, count: runs.length, names, mean, where: subject.label })
+      notifier.notify(`${text} ${t('exigences.wf.checkImport.how')}`, 15000)
+      return { lines: [text], paths: weak.flatMap((run) => (run.requirement.filePath ? [run.requirement.filePath] : [])), results: { text } }
+    }
+  })
+
+  // Les traductions à revoir dans la bibliothèque, comptées ; dites s'il y en a.
+  registerAction({
+    id: 'exigences.traductions-retard',
+    labelKey: 'exigences.wf.action.lagging',
+    descKey: 'exigences.wf.action.lagging.desc',
+    fields: [],
+    results: ['text'],
+    async run({ notifier }) {
+      const current = session()
+      const lagging = laggingTranslations(await current.store.all(), current.settings().languages)
+      if (!lagging.requirements.length) {
+        const text = t('exigences.wf.lagging.none')
+        return { lines: [text], results: { text } }
+      }
+      const text = t('exigences.wf.lagging.found', { count: lagging.requirements.length, missing: lagging.missing, stale: lagging.stale, unreviewed: lagging.unreviewed })
+      notifier.notify(`${text} ${t('exigences.wf.lagging.how')}`, 15000)
+      return { lines: [text], results: { text } }
+    }
   })
 
   registerAction({
@@ -169,5 +263,29 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
       conditions: [],
       actions: [{ kind: 'exigences.traduire', fields: { exigence: '{chemin}' } }]
     })
+  })
+  registerSystemWorkflow({
+    id: 'sys.exigences.controle-import',
+    moduleKey: 'exigences.name',
+    enabledByDefault: true,
+    make: (tr) => ({ name: tr('exigences.sys.controle-import'), mode: 'auto', trigger: { kind: TRIGGER_IMPORTED }, conditions: [], actions: [{ kind: 'exigences.controle-import', fields: {} }] })
+  })
+  registerSystemWorkflow({
+    id: 'sys.exigences.traductions-hebdo',
+    moduleKey: 'exigences.name',
+    enabledByDefault: false,
+    make: (tr) => ({
+      name: tr('exigences.sys.traductions-hebdo'),
+      mode: 'auto',
+      trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
+      conditions: [],
+      actions: [{ kind: 'exigences.traductions-retard', fields: {} }]
+    })
+  })
+  registerSystemWorkflow({
+    id: 'sys.exigences.relire-nouvelles',
+    moduleKey: 'exigences.name',
+    enabledByDefault: false,
+    make: (tr) => ({ name: tr('exigences.sys.relire-nouvelles'), mode: 'auto', trigger: { kind: TRIGGER_CREATED }, conditions: [], actions: [{ kind: 'exigences.relire', fields: { exigence: '{chemin}' } }] })
   })
 }

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.7.0 (Black Projects 0.10.0) |
+| Version | 0.23.0 (Black Projects 0.65.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -286,6 +286,24 @@ une exigence créée dans les autres langues de rédaction, par la nouvelle acti
 réussi est versé dans la [bibliothèque](bibliotheque.md) (`pourIntoLibrary` : copié s'il
 vient de l'ordinateur, en place s'il est dans le coffre ; origine « Import d'exigences
 (nom) »).
+
+**Trois nouveaux workflows système (v0.23.0, Black Projects 0.65.0)** :
+
+| Workflow système | Déclencheur | Ce qu'il fait | D'origine |
+| --- | --- | --- | --- |
+| Contrôler la qualité des exigences importées (`sys.exigences.controle-import`) | *Exigences : exigences importées* (nouveau) | `exigences.controle-import` : la qualité (sans IA, `assessAll`) des exigences de l'import ; les faibles (moins de 3 étoiles) nommées avec leurs étoiles et la moyenne ; aucune : rien n'est dit | actif |
+| Traductions à revoir, chaque lundi (`sys.exigences.traductions-hebdo`) | lundi à 8 h | `exigences.traductions-retard` : `laggingTranslations` — absentes, en retard sur la source (`fromRev < rev`), automatiques à relire — comptées et dites | désactivé |
+| Relire les nouvelles exigences (IA) (`sys.exigences.relire-nouvelles`) | *Exigences : exigence créée* | `exigences.relire` (`{chemin}`) : la relecture écrite dans la note, rien d'appliqué | désactivé |
+
+Le déclencheur `exigences.importees` est émis après un import réussi (`importFromFile`,
+`emitRequirementsImported`) qui a créé ou mis à jour des exigences : variables `fichier`,
+`nombre`, `creees`, `modifiees` ; listes `ids` et `chemins`.
+
+## Tests des workflows système
+
+`test/exigences-workflows-systeme.test.ts` : les trois nouveaux (créés, actifs ou non), une
+exigence faible nommée à l'import, aucune faible, désactivé, les traductions à revoir
+comptées une fois activé, la planification sans effet tant qu'il est désactivé.
 
 ## Le format
 

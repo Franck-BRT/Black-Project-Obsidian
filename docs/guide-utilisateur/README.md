@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.64.0)
+## Aujourd'hui (version 0.65.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -145,7 +145,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   note de l'analyse, le calendrier à l'import, le contrôle des exigences extraites, les
   rappels des remises et du rangement, et, désactivés d'origine, le questionnaire avec
   l'IA, la couverture d'une réponse, la qualité de la bibliothèque chaque lundi, la
-  traduction des nouvelles exigences ; pour l'IA, la vérification de la connexion à
+  traduction des nouvelles exigences, les traductions à revoir chaque lundi, la relecture
+  IA des nouvelles exigences, et, actif, le contrôle de la qualité des exigences
+  importées ; pour l'IA, la vérification de la connexion à
   chaque ouverture ; pour la bibliothèque de documents, le rangement des pièces et des
   fichiers importés, les nouvelles versions probables, et, désactivés, les fichiers
   introuvables chaque lundi ; pour la lecture de fichiers, les formats non lus au dépôt ; pour le typage, les pièces
