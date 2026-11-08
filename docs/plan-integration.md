@@ -486,6 +486,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.71.0 : **module Lecture de fichiers** : trois nouveaux workflows système —
   *Signaler les pièces illisibles, à l'import* (actif), *Signaler les pièces sans texte
   (scans)* et *Bilan des formats du coffre, chaque lundi* (désactivés)
+- v0.72.0 : **interface** : des **sections repliables** dans les pages (bloc `section`,
+  sous-sections, souvenir de l'état, recherche et filtres qui ouvrent les sections
+  utiles) ; la page **Workflows** en sections : *Workflows système* par module, puis *Mes
+  workflows*
 
 ### Étape 7 — Livrables
 

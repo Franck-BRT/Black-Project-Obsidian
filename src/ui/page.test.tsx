@@ -118,3 +118,43 @@ describe('une page de module dans l’onglet', () => {
     expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Accueil<\/button>/)
   })
 })
+
+describe('les sections repliables d’une page', () => {
+  const t = createI18n('fr').t.bind(createI18n('fr'))
+  const SECTIONS: HomeBlock[] = [
+    {
+      kind: 'section',
+      id: 'systeme',
+      title: 'Système',
+      blocks: [
+        { kind: 'section', id: 'systeme.ao', title: 'Analyse', collapsed: true, blocks: [{ kind: 'cards', cards: [card('a', 'Rappel des remises', 'chaque jour', ['actifs'])] }] },
+        { kind: 'section', id: 'systeme.ia', title: 'IA', collapsed: true, blocks: [{ kind: 'cards', cards: [card('b', 'Vérifier la connexion', 'à l’ouverture', ['actifs'])] }] }
+      ]
+    },
+    { kind: 'section', id: 'miens', title: 'Mes workflows', blocks: [{ kind: 'cards', cards: [card('c', 'Prévenir', 'à chaque analyse', ['desactives'])] }] }
+  ]
+
+  it('la recherche et les filtres trient dans les sections, et chacune dit combien elle garde', () => {
+    const found = filterBlocks(SECTIONS, 'remises', null)
+    expect(found).toMatchObject({ hits: 1, total: 3 })
+    expect(found.blocks[0]).toMatchObject({ found: 1, blocks: [{ found: 1 }, { found: 0 }] })
+    expect(found.blocks[1]).toMatchObject({ found: 0 })
+    expect(filterBlocks(SECTIONS, '', 'actifs').hits).toBe(2)
+  })
+
+  it('repliée d’origine : l’intitulé seul ; ouverte : ses blocs ; une sous-section est imbriquée', () => {
+    const html = renderToString(<BlockView block={SECTIONS[0]!} t={t} now={new Date()} locale="fr-FR" />)
+    expect(html).toMatch(/<button type="button" class="bp-fold-head" aria-expanded="true"[^>]*>.*Système/)
+    expect(html).toMatch(/aria-expanded="false"[^>]*>.*Analyse/)
+    expect(html).not.toContain('Rappel des remises')
+    expect(html.match(/class="bp-fold /g) ?? html.match(/class="bp-fold"/g)).toBeTruthy()
+  })
+
+  it('une recherche : les sections sans résultat disparaissent, les autres s’ouvrent', () => {
+    const { blocks } = filterBlocks(SECTIONS, 'remises', null)
+    const html = blocks.map((block) => renderToString(<BlockView block={block} t={t} now={new Date()} locale="fr-FR" narrowed />)).join('')
+    expect(html).toContain('Rappel des remises')
+    expect(html).not.toContain('Vérifier la connexion')
+    expect(html).not.toContain('Mes workflows')
+  })
+})

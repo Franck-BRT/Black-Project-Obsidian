@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La page Workflows en sections repliables (v0.72.0)
+
+- [ ] Page **Workflows** : une section **Workflows système** (ouverte), puis une
+      sous-section par module (Analyse d'appels d'offres, Bibliothèque de documents,
+      Exigences, IA, Lecture de fichiers, Typage des pièces, Workflows), repliées ; puis
+      **Mes workflows** (ouverte). Chaque intitulé dit combien, combien d'actifs (et en
+      échec)
+- [ ] Un clic sur une sous-section l'ouvre (ses cartes), un second la replie ; au clavier
+      (Tab, Entrée) aussi ; **Rafraîchir** : elle reste comme on l'a laissée
+- [ ] Rechercher « remise » : seules « Workflows système » et « Analyse d'appels
+      d'offres » restent, ouvertes, avec « Rappel des dates limites de remise » ; vider la
+      recherche : les sections reviennent comme avant
+- [ ] Filtre **En échec** : seules les sections qui en ont
+
 ## La lecture de fichiers : pièces illisibles, sans texte, bilan des formats (v0.71.0)
 
 - [ ] Page **Workflows**, filtre Système, module Lecture de fichiers : « Signaler les

@@ -132,6 +132,26 @@ export type HomeBlock =
   | { kind: 'message'; tone: Tone; text: string; actions?: ViewAction[] }
   /** Du texte à lire, en paragraphes (une note produite) ; la recherche ne garde que ceux qui répondent. */
   | { kind: 'text'; paragraphs: string[]; empty?: string; /** Un intitulé au-dessus du texte. */ title?: string; /** Du texte tel quel, espaces et retours gardés (un bloc de code, une arborescence). */ preformatted?: boolean }
+  /**
+   * Une **section repliable** : un intitulé (un clic la replie ou la déplie) et ses blocs —
+   * d'autres sections comprises (des sous-sections). Repliée d'origine si `collapsed` ;
+   * l'interface se souvient ensuite de ce que l'utilisateur en a fait, le temps de la
+   * session. Une recherche ou un filtre ouvre celles qui ont des résultats et masque les
+   * autres.
+   */
+  | {
+      kind: 'section'
+      /** Stable : le souvenir de son état (repliée ou non) y est attaché. */
+      id: string
+      title: string
+      /** Ce qu'elle contient, en quelques mots (« 12 workflows, 9 actifs »). */
+      subtitle?: string
+      icon?: IconName
+      collapsed?: boolean
+      blocks: HomeBlock[]
+      /** Posé par l'interface quand elle trie : combien de résultats elle garde. */
+      found?: number
+    }
 
 /** Une section de l'accueil, telle qu'elle est à cet instant. */
 export interface HomeSectionView {

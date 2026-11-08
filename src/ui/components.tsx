@@ -190,9 +190,43 @@ function ListItemView({ item }: { item: ListItem }) {
   )
 }
 
+/** Ce que l'utilisateur a fait des sections repliables (repliée ou non), le temps de la session. */
+const folded = new Map<string, boolean>()
+
+/** Une section repliable : son intitulé (le bouton), puis ses blocs. */
+function FoldSection({ block, t, now, locale, narrowed }: { block: Extract<HomeBlock, { kind: 'section' }>; t: Translate; now: Date; locale: string; narrowed?: boolean }) {
+  const [collapsed, setCollapsed] = useState(() => folded.get(block.id) ?? block.collapsed ?? false)
+  // Une recherche, un filtre : celles sans résultat disparaissent, les autres s'ouvrent.
+  if (narrowed && !block.found) return null
+  const open = narrowed || !collapsed
+  const bodyId = `bp-fold-${block.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+  const toggle = () => {
+    const next = !collapsed
+    folded.set(block.id, next)
+    setCollapsed(next)
+  }
+  return (
+    <section class={`bp-fold${open ? '' : ' is-collapsed'}`} data-section={block.id}>
+      <button type="button" class="bp-fold-head" aria-expanded={open} aria-controls={bodyId} disabled={narrowed} onClick={toggle} title={t(open ? 'ui.dashboard.collapse' : 'ui.dashboard.expand', { title: block.title })}>
+        <span class="bp-fold-chevron">
+          <Icon name="chevron" />
+        </span>
+        {block.icon && <Icon name={block.icon} />}
+        <span class="bp-fold-title">{block.title}</span>
+        {block.subtitle && <span class="bp-fold-sub">{block.subtitle}</span>}
+      </button>
+      <div class="bp-fold-body" id={bodyId} hidden={!open}>
+        {open && block.blocks.map((inner, index) => <BlockView key={inner.kind === 'section' ? inner.id : index} block={inner} t={t} now={now} locale={locale} {...(narrowed ? { narrowed } : {})} />)}
+      </div>
+    </section>
+  )
+}
+
 /** Un bloc de section, selon sa sorte. */
-export function BlockView({ block, t, now, locale }: { block: HomeBlock; t: Translate; now: Date; locale: string }) {
+export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBlock; t: Translate; now: Date; locale: string; narrowed?: boolean }) {
   switch (block.kind) {
+    case 'section':
+      return <FoldSection block={block} t={t} now={now} locale={locale} {...(narrowed ? { narrowed } : {})} />
     case 'actions':
       return (
         <div class="bp-actions">

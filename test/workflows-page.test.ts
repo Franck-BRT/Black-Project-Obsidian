@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
+import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
 import { forgetDeclarations, workflowsModule, type Workflow } from '../src/modules/workflows'
 
 const workflow = (id: string, name: string, extra: Partial<Workflow> = {}): Workflow => ({
@@ -65,7 +65,9 @@ async function start(platform: MemoryPlatform, withPages: boolean) {
   return { views, shown, noted, settings, run: (id: string) => commands.get(id)!.run() }
 }
 
-const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+// Les cartes, sections repliables comprises (la page des workflows les range par sections).
+const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
+const cardsOf = (view: PageView): Card[] => cardsIn(view.blocks)
 
 afterEach(async () => {
   await workflowsModule.deactivate?.()
@@ -152,7 +154,7 @@ describe('la fiche d’un workflow, en page', () => {
 
   it('un clic sur un workflow ouvre sa fiche ; elle dépend de la liste (menu marqué)', async () => {
     const { views, shown, page } = await fiche()
-    const card = (await views.pages()[0]!.load()).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))[0]!
+    const card = cardsOf(await views.pages()[0]!.load())[0]!
     await card.open!.run()
     await card.actions!.find((action) => action.id === 'edit')!.run()
     expect(shown).toEqual(['workflows.fiche?wf-1', 'workflows.fiche?wf-1'])
@@ -398,5 +400,17 @@ describe('importer des workflows, en page', () => {
     await run('importer')
     expect(shown).toEqual([])
     expect(platform.notices.at(-1)).toMatch(/^2 workflow/)
+  })
+})
+
+describe('la page Workflows, en sections repliables', () => {
+  it('d’abord les workflows système, une sous-section par module (repliée), puis mes workflows', async () => {
+    const platform = memoryPlatform()
+    const { views } = await start(platform, true)
+    const view = await views.pages()[0]!.load()
+    const sections = view.blocks.filter((block) => block.kind === 'section')
+    expect(sections.map((block) => block.kind === 'section' && block.id)).toEqual(['workflows.miens'])
+    const mine = sections[0]!
+    expect(mine).toMatchObject({ kind: 'section', title: 'Mes workflows', subtitle: '2 workflow(s), 1 actif(s) · 1 en échec' })
   })
 })

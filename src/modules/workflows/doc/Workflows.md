@@ -78,6 +78,12 @@ Ce que l'application fait d'elle-même est écrit en **workflows système** : vo
 voyez, vous les réglez, vous les coupez — badge **Système**, filtre « Système » sur la page
 Workflows et dans le journal.
 
+Sur la page **Workflows**, ils sont rangés dans la section repliable **Workflows
+système**, une sous-section par module (repliée d'origine : un clic sur son intitulé
+l'ouvre ; l'intitulé dit combien, combien d'actifs, combien en échec) ; vos propres
+workflows suivent, dans **Mes workflows**. Une recherche ou un filtre ouvre les sections
+qui ont un résultat.
+
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
 | Note de l'analyse : le tableau des pièces, à l'import | pièces importées | réécrit le tableau des pièces de la note de l'analyse | actif |

@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
+import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
 import {
   emitWorkflowEvent,
   forgetDeclarations,
@@ -61,7 +61,9 @@ async function start(platform: MemoryPlatform, stored: Workflow[] = []) {
   return { settings, views, shown, run: (id: string) => commands.get(id)!.run(), page, workflows: () => settings.workflows as Workflow[] }
 }
 
-const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+// Les cartes, sections repliables comprises (la page des workflows les range par sections).
+const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
+const cardsOf = (view: PageView): Card[] => cardsIn(view.blocks)
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 beforeEach(() => forgetDeclarations('sys.test'))
@@ -166,5 +168,21 @@ describe('les workflows système', () => {
     await start(platform)
     await runOpeningWorkflows()
     expect(platform.notices).toEqual(['Ouvert'])
+  })
+})
+
+describe('la page Workflows, en sections', () => {
+  it('« Workflows système » en premier, une sous-section par module repliée d’origine ; « Mes workflows » ensuite', async () => {
+    declare()
+    const run = await start(memoryPlatform())
+    const list = await run.page('workflows.liste').load()
+    const sections = list.blocks.filter((block) => block.kind === 'section')
+    expect(sections.map((block) => block.kind === 'section' && block.title)).toEqual(['Workflows système', 'Mes workflows'])
+    const system = sections[0]!
+    expect(system).toMatchObject({ id: 'workflows.systeme', subtitle: '1 workflow(s), 1 actif(s)' })
+    expect(system.kind === 'section' && system.blocks).toEqual([
+      expect.objectContaining({ kind: 'section', id: 'workflows.systeme.Module d’essai', title: 'Module d’essai', collapsed: true, blocks: [expect.objectContaining({ kind: 'cards' })] })
+    ])
+    expect(sections[1]).toMatchObject({ id: 'workflows.miens', subtitle: 'aucun pour l’instant', blocks: [{ kind: 'message' }] })
   })
 })

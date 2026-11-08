@@ -56,6 +56,13 @@ export function filterBlocks(blocks: readonly HomeBlock[], query: string, filter
       }
       return { ...block, items, ...(none && block.items.length && !items.length ? { empty: none } : {}) }
     }
+    if (block.kind === 'section') {
+      // Une section : ses blocs triés de même ; elle dit combien elle en garde.
+      const inner = filterBlocks(block.blocks, query, filter, none)
+      hits += inner.hits
+      total += inner.total
+      return { ...block, blocks: inner.blocks, found: inner.hits }
+    }
     if (block.kind === 'text') {
       // Du texte : les paragraphes qui contiennent les mots ; un filtre ne le trie pas.
       const paragraphs = block.paragraphs.filter((paragraph) => matches(paragraph))
@@ -155,7 +162,7 @@ export function ModulePage({ spec, param, host, generation, onTitle, hasHistory 
       )}
       <div class="bp-page-body">
         {blocks.map((block, index) => (
-          <BlockView key={index} block={block} t={t} now={host.now()} locale={host.locale} />
+          <BlockView key={block.kind === 'section' ? block.id : index} block={block} t={t} now={host.now()} locale={host.locale} narrowed={narrowed} />
         ))}
       </div>
     </div>

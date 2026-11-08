@@ -161,6 +161,12 @@ que la recherche lit aussi. Il la déclare par
   une note lue dans l'interface — `preformatted` : tel quel, un bloc de code ; la recherche
   n'en garde que les paragraphes qui contiennent les mots ; une liste peut porter son
   `intro`, du texte dans le même cadre) ;
+- des **sections repliables** (Black Projects 0.72.0) : `{ kind: 'section', id, title,
+  subtitle?, icon?, collapsed?, blocks }` — un intitulé-bouton (`aria-expanded`) et ses
+  blocs, d'autres sections comprises (des sous-sections, en retrait). `collapsed` : repliée
+  d'origine ; ce que l'utilisateur en fait est retenu le temps de la session (par `id`,
+  même après « Rafraîchir »). La recherche et les filtres trient dedans (`filterBlocks`
+  pose `found`) : les sections sans résultat disparaissent, les autres s'ouvrent ;
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;

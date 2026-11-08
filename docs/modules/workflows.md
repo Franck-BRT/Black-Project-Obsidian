@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.13.0 (Black Projects 0.67.0) |
+| Version | 0.14.0 (Black Projects 0.72.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -62,6 +62,14 @@ de lui pour fonctionner.
 `home.ts` : la section « Workflows » (actifs sur le total, les cinq dernières exécutions lues dans le journal) et l'entrée de navigation.
 
 ## La page « Workflows » (v0.3.0, Black Projects 0.17.0)
+
+**En sections repliables (v0.14.0, Black Projects 0.72.0)** : `workflowSections` range les
+cartes en [sections repliables](../architecture/interface.md) — d'abord **Workflows
+système** (ouverte), une sous-section par module (le nom du module qui le déclare,
+`SystemInfo.moduleName` ; repliées d'origine), puis **Mes workflows** (ouverte ; ceux du
+dernier import en tête). L'intitulé de chacune dit combien, combien d'actifs, combien en
+échec (« 11 workflow(s), 7 actif(s) · 1 en échec »). Une recherche ou un filtre ouvre les
+sections qui ont un résultat et masque les autres.
 
 `home.ts` déclare la **page** `workflows.liste` (`views.page`, voir
 [l'interface](../architecture/interface.md#les-pages-des-modules-v0150)) : les chiffres

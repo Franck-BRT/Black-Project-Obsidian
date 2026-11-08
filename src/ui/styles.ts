@@ -113,6 +113,19 @@ const COMPONENTS_CSS = String.raw`
 .bp-main > .bp-back { margin: -14px 0 12px -8px; }
 .bp-main > .bp-back + .bp-page > .bp-page-sub { margin-top: 0; }
 .bp-group { display: flex; flex-direction: column; gap: 12px; }
+.bp-fold { display: flex; flex-direction: column; gap: 12px; }
+.bp-fold-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius); background: var(--bp-surface); color: var(--bp-text); font: inherit; text-align: left; cursor: pointer; }
+.bp-fold-head:hover:not(:disabled) { background: var(--bp-surface-2); }
+.bp-fold-head:disabled { cursor: default; }
+.bp-fold-chevron { display: grid; place-items: center; color: var(--bp-text-muted); }
+.bp-fold-chevron svg.bp-icon { transform: rotate(90deg); transition: transform var(--bp-speed); }
+.bp-fold.is-collapsed .bp-fold-chevron svg.bp-icon { transform: rotate(0deg); }
+.bp-fold-title { font-size: 1.08em; font-weight: 700; }
+.bp-fold-sub { margin-left: auto; color: var(--bp-text-muted); font-size: 0.92em; }
+.bp-fold-body { display: flex; flex-direction: column; gap: 14px; }
+.bp-fold .bp-fold { margin-left: 14px; }
+.bp-fold .bp-fold .bp-fold-head { padding: 8px 12px; }
+.bp-fold .bp-fold .bp-fold-title { font-size: 1em; }
 .bp-group-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .bp-group-title { margin: 0; font-size: 1.12em; font-weight: 700; }
 

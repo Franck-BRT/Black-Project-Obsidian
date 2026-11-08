@@ -287,12 +287,59 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
           { label: t('workflows.page.stat.failed'), value: String(failures), icon: 'alert', tone: failures ? 'danger' : 'success', hint: t('workflows.page.stat.runs.hint') }
         ]
       },
-      workflows.length
-        ? { kind: 'cards', cards: [...workflows].sort((a, b) => Number(imported.has(b.id)) - Number(imported.has(a.id))).map((workflow) => workflowCard(deps.page, workflow, logged.get(workflow.name), imported.has(workflow.id))) }
-        : { kind: 'message', tone: 'info', text: t('workflows.list.empty') },
+      ...workflowSections(deps, workflows, imported, logged),
       { kind: 'list', title: t('workflows.page.journal'), items: recent.slice(0, 10).map((item) => ({ ...item, open: runOpen(deps, item.line) })), empty: t('workflows.journal.none') }
     ]
   }
+}
+
+/**
+ * Les workflows en sections repliables : d'abord **les workflows système**, une
+ * sous-section par module (repliées d'origine : leur intitulé dit combien, combien
+ * d'actifs, combien en échec) ; puis **mes workflows** (ceux du dernier import en tête).
+ */
+function workflowSections(deps: HomeDeps & { page: WorkflowsPageDeps }, workflows: readonly Workflow[], imported: ReadonlySet<string>, logged: ReadonlyMap<string, Logged>): HomeBlock[] {
+  const { t } = deps
+  if (!workflows.length) return [{ kind: 'message', tone: 'info', text: t('workflows.list.empty') }]
+  const cardOf = (workflow: Workflow) => workflowCard(deps.page, workflow, logged.get(workflow.name), imported.has(workflow.id))
+  const summary = (cards: readonly Card[]) => {
+    const failed = cards.filter((card) => card.tags?.includes('en-echec')).length
+    return [t('workflows.page.section.count', { count: cards.length, active: cards.filter((card) => card.tags?.includes('actifs')).length }), ...(failed ? [t('workflows.page.section.failed', { count: failed })] : [])].join(' · ')
+  }
+  const system = workflows.filter((workflow) => workflow.system)
+  const mine = workflows.filter((workflow) => !workflow.system)
+  const blocks: HomeBlock[] = []
+  if (system.length) {
+    // Par module : le nom du module qui le déclare (sinon « Autres »).
+    const byModule = new Map<string, Workflow[]>()
+    for (const workflow of system) {
+      const name = deps.page.system?.(workflow)?.moduleName || t('workflows.page.section.other')
+      byModule.set(name, [...(byModule.get(name) ?? []), workflow])
+    }
+    const groups = [...byModule].sort((a, b) => a[0].localeCompare(b[0], 'fr'))
+    const allCards = system.map(cardOf)
+    blocks.push({
+      kind: 'section',
+      id: 'workflows.systeme',
+      title: t('workflows.page.section.system'),
+      subtitle: summary(allCards),
+      icon: 'lock',
+      blocks: groups.map(([name, list]) => {
+        const cards = list.map(cardOf)
+        return { kind: 'section', id: `workflows.systeme.${name}`, title: name, subtitle: summary(cards), collapsed: true, blocks: [{ kind: 'cards', cards }] }
+      })
+    })
+  }
+  const myCards = [...mine].sort((a, b) => Number(imported.has(b.id)) - Number(imported.has(a.id))).map(cardOf)
+  blocks.push({
+    kind: 'section',
+    id: 'workflows.miens',
+    title: t('workflows.page.section.mine'),
+    subtitle: myCards.length ? summary(myCards) : t('workflows.page.section.mine.none'),
+    icon: 'flow',
+    blocks: [myCards.length ? { kind: 'cards', cards: myCards } : { kind: 'message', tone: 'info', text: t('workflows.page.section.mine.empty') }]
+  })
+  return blocks
 }
 
 /**
