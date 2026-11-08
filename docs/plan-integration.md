@@ -493,6 +493,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.73.0 : **interface** : des **vues** pour les pages de cartes — cartes, liste, tableau
   (retenue par page) — sur les pages Workflows, Analyses, Exigences, Bibliothèque ; la
   page Workflows se **regroupe** par module, déclencheur, état, ou pas du tout
+- v0.74.0 : **module Bibliothèque** : ses pages en sections repliables — documents
+  regroupés par origine, famille, catégorie, mois d'ajout ; prompts et personas par
+  catégorie ou favoris — ; le tableau des documents (taille, ajout, version)
 
 ### Étape 7 — Livrables
 

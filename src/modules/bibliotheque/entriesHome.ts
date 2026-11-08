@@ -10,6 +10,7 @@
 
 import { pageWith, type Card, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
+import { grouped, groupingOf, groupingSelector } from './grouping'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -75,11 +76,15 @@ function entryCard(deps: EntriesHomeDeps, entry: LibraryEntry): Card {
   }
 }
 
+/** Les regroupements des prompts et des personas : par catégorie (d'origine), favoris, ou aucun. */
+export const ENTRY_GROUPINGS = ['categorie', 'favoris', 'aucun'] as const
+
 /** La page d'une bibliothèque de prompts ou de personas. */
 export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind): Promise<PageView> {
   const { t } = deps
   const entries = await deps.stores[kind].all()
   const categories = entryCategories(entries)
+  const by = groupingOf(ENTRIES_PAGE[kind], 'categorie')
   const create: ViewAction = {
     id: 'new',
     label: t(`bibliotheque.${kind}.new`),
@@ -95,6 +100,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind): Promi
     subtitle: t(`bibliotheque.${kind}.subtitle`, { folder: deps.stores[kind].root }),
     actions: [create, starters],
     layouts: ['cards', 'list'],
+    grouping: groupingSelector(ENTRIES_PAGE[kind], by, ENTRY_GROUPINGS, t, 'bibliotheque.group.entry'),
     search: { label: t('bibliotheque.entry.search'), placeholder: t(`bibliotheque.${kind}.search.placeholder`) },
     filters: [
       ...(entries.some((entry) => entry.favorite) ? [{ id: 'favoris', label: t('bibliotheque.entry.favorites') }] : []),
@@ -111,7 +117,17 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind): Promi
               { label: t('bibliotheque.entry.categories'), value: String(categories.length), icon: 'list' }
             ]
           },
-          { kind: 'cards', cards: entries.map((entry) => entryCard(deps, entry)) }
+          ...grouped(
+            entries,
+            (entry) => entryCard(deps, entry),
+            by === 'categorie'
+              ? (entry) => (entry.category ? { key: entry.category.toLowerCase(), title: entry.category } : { key: '', title: t('bibliotheque.entry.noCategory'), order: 1 })
+              : by === 'favoris'
+                ? (entry) => (entry.favorite ? { key: 'favoris', title: t('bibliotheque.entry.favorites') } : { key: 'autres', title: t('bibliotheque.group.others'), order: 1 })
+                : null,
+            `${ENTRIES_PAGE[kind]}.${by}`,
+            (count) => t(`bibliotheque.${kind}.group.count`, { count })
+          )
         ]
       : [{ kind: 'message', tone: 'info', text: t(`bibliotheque.${kind}.empty`), actions: [create, { ...starters, primary: false }] }]
   }

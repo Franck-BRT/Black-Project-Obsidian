@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La bibliothèque : sections, vues, regroupements (v0.74.0)
+
+- [ ] **Bibliothèque → Documents** : « Regrouper par » Origine (d'origine) / Famille /
+      Catégorie / Mois d'ajout / Aucun ; une section repliable par groupe, l'intitulé dit
+      combien de documents
+- [ ] Vue **Tableau** : colonnes Nom, État, Taille, Ajouté le, Version ; **Liste** : une
+      ligne par document
+- [ ] **Prompts** et **Personas** : Regrouper par Catégorie / Favoris / Aucun ; Cartes ou
+      Liste ; mettre un prompt en favori, regrouper par Favoris : « Favoris », « Les autres »
+- [ ] La recherche ouvre les sections qui ont un résultat
+
 ## Les vues : cartes, liste, tableau ; regrouper (v0.73.0)
 
 - [ ] Page **Workflows** : « Affichage » Cartes / Liste / Tableau ; « Regrouper par »

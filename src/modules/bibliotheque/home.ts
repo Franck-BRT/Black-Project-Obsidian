@@ -11,6 +11,7 @@
 import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc } from './model'
 import { HUB_PAGE } from './entriesHome'
+import { grouped, groupingOf, groupingSelector, type Group } from './grouping'
 import type { LibraryStore } from './store'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -76,10 +77,16 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
   return {
     id: doc.record,
     title: doc.title,
-    subtitle: t('bibliotheque.card.subtitle', { file: baseName(doc.file), size: readableSize(doc.size, deps.locale), date: doc.added || '—' }),
+    subtitle: baseName(doc.file),
     icon: ICON[doc.family],
     badges,
     text: originText(t, doc),
+    // Ses chiffres : en faits (les colonnes de la vue tableau).
+    facts: [
+      { label: t('bibliotheque.field.size'), value: readableSize(doc.size, deps.locale) },
+      { label: t('bibliotheque.field.added'), value: doc.added || '—' },
+      { label: t('bibliotheque.field.version'), value: version || '—' }
+    ],
     ...(show ? { open: { id: 'open', label: t('bibliotheque.doc.open'), tooltip: t('bibliotheque.doc.open'), run: () => show(docPageOf(doc.record)) } } : {}),
     actions: missing ? [] : [{ id: 'file', label: t('bibliotheque.doc.file'), icon: 'file', run: () => deps.openFile(doc.file) }],
     tags: [
@@ -89,6 +96,39 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
       ...(replaced ? [] : ['a-jour']),
       ...(missing ? ['introuvables'] : [])
     ]
+  }
+}
+
+/** Les regroupements des documents : par origine (d'origine), famille, catégorie, mois d'ajout, ou aucun. */
+export const DOC_GROUPINGS = ['origine', 'famille', 'categorie', 'mois', 'aucun'] as const
+
+/** Le groupe d'un document, selon le regroupement choisi ; `null` : sans regroupement. */
+function docGroupOf(deps: LibraryHomeDeps, by: string): ((doc: LibraryDoc) => Group) | null {
+  const { t } = deps
+  switch (by) {
+    case 'origine':
+      return (doc) => {
+        // Sa première origine : l'analyse, l'import d'où il est entré.
+        const origin = doc.origins[0]
+        if (!origin) return { key: 'aucune', title: t('bibliotheque.group.none.origin'), order: 1 }
+        const title = [t(`${origin.module}.name`), origin.label].filter(Boolean).join(' — ')
+        return { key: `${origin.module}.${origin.label}`, title }
+      }
+    case 'famille':
+      return (doc) => ({ key: doc.family, title: t(`bibliotheque.family.${doc.family}`), order: FAMILIES.indexOf(doc.family) })
+    case 'categorie':
+      return (doc) => (doc.category ? { key: doc.category.toLowerCase(), title: doc.category } : { key: '', title: t('bibliotheque.group.none.category'), order: 1 })
+    case 'mois':
+      return (doc) => {
+        const month = doc.added.slice(0, 7)
+        if (!month) return { key: '', title: t('bibliotheque.group.none.date'), order: 1 }
+        const date = new Date(`${month}-01T00:00:00Z`)
+        const title = date.toLocaleDateString(deps.locale, { month: 'long', year: 'numeric', timeZone: 'UTC' })
+        // Le plus récent d'abord.
+        return { key: month, title: title.charAt(0).toUpperCase() + title.slice(1), order: -Number(month.replace('-', '')) }
+      }
+    default:
+      return null
   }
 }
 
@@ -103,10 +143,12 @@ export async function libraryPage(deps: LibraryHomeDeps): Promise<PageView> {
   const total = docs.reduce((sum, doc) => sum + doc.size, 0)
   const modules = [...new Set(docs.flatMap((doc) => doc.origins.map((origin) => origin.module)))]
   const families = FAMILIES.filter((family) => docs.some((doc) => doc.family === family))
+  const docGrouping = groupingOf(LIBRARY_PAGE, 'origine')
   return {
     subtitle: t('bibliotheque.page.subtitle', { folder: deps.store.root }),
     actions: [{ id: 'pour', label: t('bibliotheque.pour'), tooltip: t('bibliotheque.pour.tip'), icon: 'upload', primary: true, run: () => deps.pour() }],
     layouts: ['cards', 'list', 'table'],
+    grouping: groupingSelector(LIBRARY_PAGE, docGrouping, DOC_GROUPINGS, t, 'bibliotheque.group.doc'),
     search: { label: t('bibliotheque.search'), placeholder: t('bibliotheque.search.placeholder') },
     filters: [
       ...families.map((family) => ({ id: `famille-${family}`, label: t(`bibliotheque.family.${family}`) })),
@@ -126,7 +168,7 @@ export async function libraryPage(deps: LibraryHomeDeps): Promise<PageView> {
               { label: t('bibliotheque.stat.likely'), value: String(likely), icon: 'flow', ...(likely ? { tone: 'warning' as const, hint: t('bibliotheque.stat.likely.hint') } : {}) }
             ]
           },
-          { kind: 'cards', cards: docs.map((doc) => docCard(deps, doc, docs, missing.has(doc.record))) }
+          ...grouped(docs, (doc) => docCard(deps, doc, docs, missing.has(doc.record)), docGroupOf(deps, docGrouping), `bibliotheque.documents.${docGrouping}`, (count) => t('bibliotheque.group.count', { count }))
         ]
       : [{ kind: 'message', tone: 'info', text: t('bibliotheque.empty'), actions: [{ id: 'pour', label: t('bibliotheque.pour'), icon: 'upload', run: () => deps.pour() }] }]
   }

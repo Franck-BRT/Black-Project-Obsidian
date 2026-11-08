@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.4.0 (Black Projects 0.70.0) |
+| Version | 0.5.0 (Black Projects 0.74.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -150,6 +150,22 @@ tête du message système de chaque demande) :
 | Action « Demander à l'IA » | champ *Prompt de la bibliothèque* (la consigne peut rester vide) | champ *Persona de la bibliothèque* |
 | Action « Interroger le dossier » | champ *Prompt de la bibliothèque* (la question peut rester vide) | champ *Persona de la bibliothèque* |
 | Action « Relire l'exigence » | — | champ *Persona de la bibliothèque* |
+
+## Vues et regroupements (v0.5.0, Black Projects 0.74.0)
+
+Les pages de la bibliothèque, comme celle des workflows : des vues
+([l'interface](../architecture/interface.md) : `layouts`) et « Regrouper par »
+(`grouping.ts` : `grouped` range les cartes en sections repliables, une par groupe,
+repliées d'origine au-delà de quatre groupes et douze cartes ; le choix vaut, page par
+page, le temps de la session).
+
+- **Documents** : Cartes, Liste, Tableau — la carte d'un document a désormais ses faits
+  (*Taille*, *Ajouté le*, *Version* : les colonnes du tableau) et son fichier en
+  sous-titre. Regrouper par **Origine** (d'origine : la première origine — « Analyse
+  d'appels d'offres — Station sol »), **Famille**, **Catégorie** (« Sans catégorie » en
+  dernier), **Mois d'ajout** (le plus récent d'abord), ou **Aucun**.
+- **Prompts** et **Personas** : Cartes, Liste. Regrouper par **Catégorie** (d'origine),
+  **Favoris** (« Favoris », « Les autres »), ou **Aucun**.
 
 ## Retirer
 

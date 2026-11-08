@@ -145,7 +145,7 @@ Palette de commandes (Ctrl/Cmd + P), en tapant « Black Projects » :
 | Exporter des types de pièces | écrit un ou plusieurs types dans un fichier, pour un autre coffre ; voir {{link:Modules/Typage des pièces|Typage des pièces}} |
 | Importer des types de pièces | reprend des types d'un tel fichier |
 | Bibliothèque de prompts, de personas | des questions pour l'IA écrites une fois, et les rôles dans lesquels elle répond (juriste, contrôleur…) ; « Ajouter les exemples » pour démarrer ; repris pour interroger le dossier, relire une exigence, dans les workflows ; voir {{link:Modules/Bibliothèque|Bibliothèque}} |
-| Bibliothèque de documents | la page de la bibliothèque : tout fichier déposé dans l'application, rangé par des workflows système (modifiables, désactivables) — ce que vous posez dans `Bibliothèque/À verser` y entre seul ; voir {{link:Modules/Bibliothèque|Bibliothèque}} |
+| Bibliothèque de documents | la page de la bibliothèque (regroupée par origine, famille, catégorie ou mois ; en cartes, liste ou tableau) : tout fichier déposé dans l'application, rangé par des workflows système (modifiables, désactivables) — ce que vous posez dans `Bibliothèque/À verser` y entre seul ; voir {{link:Modules/Bibliothèque|Bibliothèque}} |
 | Verser des documents dans la bibliothèque | de l'ordinateur (copiés) ou du coffre (laissés à leur place), chacun avec sa fiche |
 | Nouvelle exigence | crée une exigence avec son identifiant (REQ-SYS-0001) ; depuis l'onglet, sa fiche ensuite ; voir {{link:Modules/Exigences|Exigences}} |
 | Exigences : liste, filtres et fiches | parcourt la bibliothèque, ouvre une fiche ou une note |

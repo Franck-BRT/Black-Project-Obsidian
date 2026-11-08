@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.73.0)
+## Aujourd'hui (version 0.74.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -135,7 +135,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   **personas** (le rôle dans lequel l'IA répond : juriste marchés publics, contrôleur
   technique…), avec **Ajouter les exemples** pour démarrer. « Interroger le dossier »
   propose vos prompts et un persona ; « Relire l'exigence » aussi un persona ; l'action de
-  workflow « Demander à l'IA » les prend par leur nom.
+  workflow « Demander à l'IA » les prend par leur nom. Chaque bibliothèque se regroupe en
+  sections repliables (documents : par origine, famille, catégorie, mois d'ajout ; prompts
+  et personas : par catégorie ou favoris), en cartes, en liste ou en tableau.
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une
   fois, avec sa fiche — les pièces importées dans une analyse (laissées à leur place), le
   fichier d'un import d'exigences, les échanges de types et de workflows, et ce que vous

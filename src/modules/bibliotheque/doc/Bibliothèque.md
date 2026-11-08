@@ -48,6 +48,12 @@ par famille, par origine, dernières versions, versions à relier, fichiers intr
 **Retirer de la bibliothèque** met la fiche de côté (dossier `_retirés`), avec le fichier
 s'il avait été copié ; rien n'est effacé, et une pièce d'analyse n'est pas touchée.
 
+**Affichage et regroupement** : sur la page des documents, en **cartes**, en **liste**
+ou en **tableau** (taille, date d'ajout, version), regroupés par **origine** (l'analyse,
+l'import), **famille**, **catégorie** ou **mois d'ajout** — chaque groupe est une section
+qu'un clic replie. Les prompts et les personas se regroupent par catégorie ou par
+favoris, en cartes ou en liste.
+
 ## 5. Automatiser
 
 Ce que la bibliothèque fait d'elle-même est écrit en **workflows système** : page

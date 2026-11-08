@@ -17,7 +17,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
+import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
 import { aoModule, createAnalysis, importFiles } from '../src/modules/ao'
 import { bibliothequeModule, findLibraryEntry, libraryEntries, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { exigencesModule } from '../src/modules/exigences'
@@ -75,7 +75,9 @@ async function start(platform: MemoryPlatform, options: { ia?: Record<string, un
   return { settings, views, shown, run, page, addStarters, analysis }
 }
 
-const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+// Les cartes, sections repliables comprises (les pages de la bibliothèque les regroupent).
+const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
+const cardsOf = (view: PageView): Card[] => cardsIn(view.blocks)
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
 
 afterEach(async () => {
@@ -97,7 +99,7 @@ describe('les bibliothèques de prompts et de personas', () => {
     expect(views.allTiles().map((tile) => tile.id)).toEqual(expect.arrayContaining(['bibliotheque.prompts', 'bibliotheque.personas']))
     // Le dossier des prompts et des personas n'est pas parcouru comme des documents.
     await (await page('bibliotheque.prompts').load()).actions!.find((action) => action.id === 'starters')!.run()
-    expect((await page('bibliotheque.documents').load()).blocks.some((block) => block.kind === 'cards' && block.cards.length === 1)).toBe(true)
+    expect(cardsOf(await page('bibliotheque.documents').load())).toHaveLength(1)
   })
 
   it('vides : un message, « Nouveau » et « Ajouter les exemples » ; les exemples écrits une seule fois', async () => {

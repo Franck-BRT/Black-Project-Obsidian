@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
+import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
 import { aoModule, createAnalysis, importFiles } from '../src/modules/ao'
 import { bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { exigencesModule } from '../src/modules/exigences'
@@ -51,7 +51,9 @@ async function start(platform: MemoryPlatform, modules: readonly BlackModule[] =
   return { views, shown, noted, page, services, run: (id: string) => commands.get(id)!.run() }
 }
 
-const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+// Les cartes, sections repliables comprises (les pages de la bibliothèque les regroupent).
+const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
+const cardsOf = (view: PageView): Card[] => cardsIn(view.blocks)
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
 
 afterEach(async () => {
@@ -198,7 +200,9 @@ describe('ce que les modules versent', () => {
     expect(cards).toHaveLength(1)
     expect(cards[0]!.text).toBe("Analyse d'appels d'offres — Station sol")
     expect(cards[0]!.badges?.map((badge) => badge.label)).toContain('CCTP')
-    expect(cards[0]!.subtitle).toMatch(/^CCTP\.md · /)
+    // Le fichier en sous-titre ; la taille, la date d'ajout, la version en faits (les colonnes du tableau).
+    expect(cards[0]!.subtitle).toBe('CCTP.md')
+    expect(cards[0]!.facts?.map((fact) => fact.label)).toEqual(['Taille', 'Ajouté le', 'Version'])
     expect([...platform.files.keys()].some((path) => path.startsWith('Bibliothèque/_fichiers/'))).toBe(false)
   })
 
@@ -212,5 +216,48 @@ describe('ce que les modules versent', () => {
     const cards = cardsOf(await page('bibliotheque.documents').load())
     expect(cards.map((card) => `${card.title}:${card.text}`)).toEqual(['Exigences client:Exigences — Import d’exigences (Exigences client.csv)'])
     expect(platform.files.has('Bibliothèque/_fichiers/Exigences client.csv')).toBe(true)
+  })
+})
+
+describe('la page des documents : vues et regroupements', () => {
+  it('regrouper par origine (d’origine), famille, catégorie, mois d’ajout, ou aucun ; une section par groupe', async () => {
+    const platform = memoryPlatform()
+    const { page } = await start(platform)
+    await pourIntoLibrary([{ name: 'Devis 2026.xlsx', bytes: enc('x') }, { name: 'CCTP lot 2.pdf', bytes: enc('y') }], { module: 'bibliotheque', label: 'Versé à la main' })
+    await pourIntoLibrary([{ name: 'Plan.pdf', bytes: enc('z') }], { module: 'exigences', label: 'Import d’exigences (Plan.pdf)' })
+    const sections = (view: PageView) => view.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title} (${block.subtitle})`] : []))
+    let view = await page('bibliotheque.documents').load()
+    expect(view.layouts).toEqual(['cards', 'list', 'table'])
+    expect(view.grouping).toMatchObject({ label: 'Regrouper par', current: 'origine' })
+    expect(view.grouping!.options.map((option) => option.label)).toEqual(['Origine', 'Famille', 'Catégorie', 'Mois d’ajout', 'Aucun'])
+    expect(sections(view)).toEqual(['Bibliothèque de documents — Versé à la main (2 document(s))', 'Exigences — Import d’exigences (Plan.pdf) (1 document(s))'])
+    const regroup = async (id: string) => {
+      await view.grouping!.options.find((option) => option.id === id)!.run()
+      view = await page('bibliotheque.documents').load()
+    }
+    await regroup('famille')
+    expect(sections(view)).toEqual(['PDF (2 document(s))', 'Tableurs (1 document(s))'])
+    await regroup('categorie')
+    expect(sections(view)).toEqual(['CCTP (1 document(s))', 'Devis (1 document(s))', 'Plan (1 document(s))'])
+    await regroup('mois')
+    expect(sections(view)).toHaveLength(1)
+    await regroup('aucun')
+    expect(sections(view)).toEqual([])
+    expect(cardsOf(view)).toHaveLength(3)
+    await regroup('origine')
+  })
+
+  it('prompts et personas : regrouper par catégorie (d’origine), favoris, ou aucun', async () => {
+    const platform = memoryPlatform()
+    const { page } = await start(platform)
+    let view = await page('bibliotheque.prompts').load()
+    await view.actions!.find((action) => action.id === 'starters')!.run()
+    view = await page('bibliotheque.prompts').load()
+    expect(view.grouping!.options.map((option) => option.label)).toEqual(['Catégorie', 'Favoris', 'Aucun'])
+    expect(view.blocks.flatMap((block) => (block.kind === 'section' ? [block.title] : []))).toEqual(['Analyse', 'Consultation', 'Contrat', 'Planning'])
+    await view.grouping!.options.find((option) => option.id === 'favoris')!.run()
+    view = await page('bibliotheque.prompts').load()
+    expect(view.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title} (${block.subtitle})`] : []))).toEqual(['Les autres (7 prompt(s))'])
+    await view.grouping!.options.find((option) => option.id === 'categorie')!.run()
   })
 })
