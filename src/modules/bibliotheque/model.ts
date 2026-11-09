@@ -8,6 +8,7 @@
  * à sa version précédente.
  */
 
+import { isLanguage, type LanguageCode } from './language'
 import { toYaml } from '../../core/yaml'
 
 /** La famille d'un fichier, d'après son extension. */
@@ -145,6 +146,11 @@ export interface LibraryDoc {
   likelyPrevious?: string
   /** Le fichier a été copié dans la bibliothèque (venu de l'ordinateur) ; sinon il est resté où il était. */
   copied: boolean
+  /** Sa langue (fr, en…), détectée sûrement ou confirmée ; absente sinon. */
+  language?: LanguageCode
+  /** La détection n'a pas été assez sûre : la langue est à confirmer (avec la plus probable, s'il y en a une). */
+  languageToConfirm?: boolean
+  languageProbable?: LanguageCode
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -175,7 +181,10 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     origines: doc.origins.map((origin) => ({ module: origin.module, libelle: origin.label, ...(origin.link ? { lien: link(origin.link) } : {}) })),
     copie: doc.copied,
     ...(doc.previous ? { precedent: link(doc.previous) } : {}),
-    ...(doc.likelyPrevious ? { precedentProbable: link(doc.likelyPrevious) } : {})
+    ...(doc.likelyPrevious ? { precedentProbable: link(doc.likelyPrevious) } : {}),
+    ...(doc.language ? { langue: doc.language } : {}),
+    ...(doc.languageToConfirm ? { langueAConfirmer: true } : {}),
+    ...(doc.languageToConfirm && doc.languageProbable ? { langueProbable: doc.languageProbable } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -214,7 +223,10 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     origins,
     ...(previous ? { previous } : {}),
     ...(likelyPrevious ? { likelyPrevious } : {}),
-    copied: data.copie === true
+    copied: data.copie === true,
+    ...(isLanguage(data.langue) ? { language: data.langue } : {}),
+    ...(data.langueAConfirmer === true ? { languageToConfirm: true } : {}),
+    ...(data.langueAConfirmer === true && isLanguage(data.langueProbable) ? { languageProbable: data.langueProbable } : {})
   }
 }
 

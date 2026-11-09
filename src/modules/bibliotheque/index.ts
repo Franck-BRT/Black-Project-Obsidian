@@ -30,6 +30,7 @@ import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, type DocOrigin, type LibraryDoc } from './model'
 import { LibraryStore, type PourItem, type PourOptions, type PourReport } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
+import { isLanguage, LANGUAGES } from './language'
 import { defaultShelfOf, folderName, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
@@ -37,6 +38,7 @@ import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, r
 export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
+export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -212,6 +214,14 @@ export function setReadability(judge: ((extension: string) => Readability) | nul
   readability = judge
 }
 
+/** Le texte d'un fichier, pour deviner sa langue : la lecture de fichiers le donne (`null` : pas lu). */
+let textReader: ((name: string, bytes: Uint8Array) => Promise<string | null>) | null = null
+
+/** Pour la lecture de fichiers : lire le texte d'un fichier versé (`null` : plus rien). */
+export function setTextReader(reader: ((name: string, bytes: Uint8Array) => Promise<string | null>) | null): void {
+  textReader = reader
+}
+
 /** L'extension d'un nom de fichier, en minuscules, sans le point ; vide s'il n'en a pas. */
 export function extensionOfName(name: string): string {
   const base = baseName(name)
@@ -252,7 +262,11 @@ async function emitPoured(doc: LibraryDoc): Promise<void> {
     key: doc.record,
     label: doc.title,
     path: doc.record,
-    vars: { titre: doc.title, famille: doc.family, categorie: doc.category, fichier: doc.file, origine: doc.origins[0]?.module ?? '', ...readingVars(readingOf(doc.file, t)) }
+    vars: { titre: doc.title, famille: doc.family, categorie: doc.category, fichier: doc.file, origine: doc.origins[0]?.module ?? '',
+      ...readingVars(readingOf(doc.file, t)),
+      langue: doc.language ? t(`bibliotheque.lang.${doc.language}`) : '',
+      langueaconfirmer: t(doc.languageToConfirm ? 'bibliotheque.read.yes' : 'bibliotheque.read.no')
+    }
   })
 }
 
@@ -290,7 +304,7 @@ export function bibliothequeFeatures(): ModuleDetails {
     sections: [
       {
         titleKey: 'bibliotheque.feature.section.store',
-        features: [feature('everything', 'available'), feature('dedup', 'available'), feature('versions', 'available'), feature('classify', 'available'), feature('origins', 'available')]
+        features: [feature('everything', 'available'), feature('dedup', 'available'), feature('versions', 'available'), feature('classify', 'available'), feature('language', 'available'), feature('origins', 'available')]
       },
       { titleKey: 'bibliotheque.feature.section.places', features: [feature('shelves', 'available'), feature('directories', 'available'), feature('move', 'available')] },
       { titleKey: 'bibliotheque.feature.section.ai', features: [feature('prompts', 'available'), feature('personas', 'available'), feature('starters', 'available')] },
@@ -308,7 +322,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.9.0',
+  version: '0.10.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -330,6 +344,7 @@ export const bibliothequeModule: BlackModule = {
       today: localToday,
       notesHeading: () => t('bibliotheque.notes'),
       ghostLine: (link, where) => t('bibliotheque.ghost.line', { link, where }),
+      textOf: async (name, bytes) => (textReader ? textReader(name, bytes) : null),
       // Les prompts et les personas, rangés sous la bibliothèque (ou ailleurs) : pas des documents.
       skip: () => [...shelves('prompt'), ...shelves('persona')].map((shelf) => shelf.folder),
       shelves: () => shelves('document'),
@@ -375,7 +390,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,
@@ -531,6 +546,14 @@ export const bibliothequeModule: BlackModule = {
           { kind: 'text', key: 'edition', label: t('bibliotheque.field.edition'), value: doc.edition, placeholder: '2' },
           { kind: 'text', key: 'revision', label: t('bibliotheque.field.revision'), value: doc.revision, placeholder: 'B' },
           { kind: 'text', key: 'issuer', label: t('bibliotheque.field.issuer'), value: doc.issuer },
+          {
+            kind: 'choice',
+            key: 'language',
+            label: t('bibliotheque.field.language'),
+            value: doc.language ?? '',
+            ...(doc.languageToConfirm ? { description: t('bibliotheque.lang.form.toConfirm') } : {}),
+            options: [{ value: '', label: t(doc.languageToConfirm ? 'bibliotheque.lang.toConfirm' : 'bibliotheque.lang.unknown') }, ...LANGUAGES.map((language) => ({ value: language, label: t(`bibliotheque.lang.${language}`) }))]
+          },
           { kind: 'text', key: 'tags', label: t('bibliotheque.field.tags'), value: doc.tags.join(', '), description: t('bibliotheque.classify.tags') }
         ],
         submit: t('bibliotheque.classify.submit')
@@ -540,8 +563,16 @@ export const bibliothequeModule: BlackModule = {
         .split(',')
         .map((each) => each.trim())
         .filter(Boolean)
+      // La langue choisie : confirmée ; laissée vide, ce qu'elle était (à confirmer, ou inconnue).
+      const language = isLanguage(values.language) ? values.language : ''
+      const languageFields = language
+        ? { language, languageToConfirm: undefined, languageProbable: undefined }
+        : doc.language
+          ? { language: undefined }
+          : {}
       await store.save({
         ...doc,
+        ...languageFields,
         title: (values.title ?? '').trim() || doc.title,
         category: (values.category ?? '').trim(),
         reference: (values.reference ?? '').trim(),
@@ -551,6 +582,38 @@ export const bibliothequeModule: BlackModule = {
         tags
       })
       platform.notifier.notify(t('bibliotheque.classify.done', { title: (values.title ?? '').trim() || doc.title }), 5000)
+    }
+
+    /** La langue d'un document : une des langues, la détecter de nouveau, ou aucune. */
+    const chooseLanguage = async (record: string): Promise<void> => {
+      const doc = await store.load(record)
+      if (!doc) return
+      const chosen = await platform.ui.pickOption(
+        [
+          ...LANGUAGES.map((language) => ({
+            value: language,
+            label: t(`bibliotheque.lang.${language}`),
+            ...(language === doc.language ? { description: t('bibliotheque.lang.current') } : language === doc.languageProbable ? { description: t('bibliotheque.lang.probable') } : {})
+          })),
+          { value: 'detecter', label: t('bibliotheque.lang.detect'), description: t('bibliotheque.lang.detect.desc') },
+          { value: 'aucune', label: t('bibliotheque.lang.none'), description: t('bibliotheque.lang.none.desc') }
+        ],
+        t('bibliotheque.lang.pick', { title: doc.title })
+      )
+      if (chosen === null) return
+      if (chosen === 'detecter') {
+        const found = await store.detectLanguageOf(record)
+        platform.notifier.notify(
+          found?.language
+            ? t('bibliotheque.lang.detected', { title: doc.title, language: t(`bibliotheque.lang.${found.language}`) })
+            : t('bibliotheque.lang.undetected', { title: doc.title }),
+          6000
+        )
+        return
+      }
+      const language = isLanguage(chosen) ? chosen : ''
+      await store.setLanguage(record, language)
+      platform.notifier.notify(language ? t('bibliotheque.lang.set', { title: doc.title, language: t(`bibliotheque.lang.${language}`) }) : t('bibliotheque.lang.cleared', { title: doc.title }), 5000)
     }
 
     const newVersionOf = async (record: string): Promise<void> => {
@@ -602,6 +665,11 @@ export const bibliothequeModule: BlackModule = {
       },
       classify,
       newVersionOf,
+      chooseLanguage,
+      setLanguage: async (record, language) => {
+        const doc = await store.setLanguage(record, language)
+        if (doc) platform.notifier.notify(t('bibliotheque.lang.set', { title: doc.title, language: t(`bibliotheque.lang.${language}`) }), 5000)
+      },
       relate: async (record, previous) => {
         const doc = await store.relate(record, previous)
         if (doc) platform.notifier.notify(t('bibliotheque.related', { title: doc.title }), 5000)

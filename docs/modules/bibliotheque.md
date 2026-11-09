@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.9.0 (Black Projects 0.81.0) |
+| Version | 0.10.0 (Black Projects 0.82.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -99,6 +99,7 @@ Sans le module Workflows, la bibliothèque range et repère elle-même, comme en
 | Verser le dossier « À verser », chaque jour (`sys.bibliotheque.depot-quotidien`) | chaque jour à 8 h | `bibliotheque.depot` | actif |
 | Versions à confirmer, chaque lundi (`sys.bibliotheque.versions-a-confirmer`) | lundi à 8 h | `bibliotheque.versions-a-confirmer` : les documents à `precedentProbable`, comptés et nommés | désactivé |
 | Documents à classer, chaque lundi (`sys.bibliotheque.a-classer`) | lundi à 8 h | `bibliotheque.a-classer` : les documents sans catégorie, comptés et nommés | désactivé |
+| Langues à confirmer, chaque lundi (`sys.bibliotheque.langues-a-confirmer`, v0.10.0) | lundi à 8 h | `bibliotheque.langues-a-confirmer` : les documents dont la langue est à confirmer, comptés et nommés | désactivé |
 | Proposer un fantôme d'un document déjà dans la bibliothèque (`sys.bibliotheque.fantome`, v0.9.0) | *Bibliothèque : document déjà là* | `bibliotheque.fantome` (*Demander*) : une fenêtre — « Ne rien faire » ou « Placer un fantôme ici » | actif |
 
 `pourInbox` : le dossier `<dossier>/À verser` (`INBOX_FOLDER`, jamais parcouru comme des
@@ -203,6 +204,31 @@ ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là 
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
 
+## La langue des documents (v0.10.0, Black Projects 0.82.0)
+
+À l'entrée (`pour`), le texte du fichier est lu — par la [lecture de
+fichiers](lecture-fichiers.md), qui le donne à la bibliothèque (`setTextReader`) — et sa
+langue devinée (`language.ts`, `detectLanguage`, d'après la version complète) : les petits
+mots dont chaque langue est pleine (articles, prépositions, auxiliaires), pour le français,
+l'anglais, l'allemand, l'espagnol, l'italien, le portugais et le néerlandais, sur les
+20 000 premiers caractères.
+
+- **Sûre** — au moins 8 de ces mots, et trois fois plus que la langue suivante (un texte
+  d'une seule langue n'a presque rien d'une autre) : la fiche a `langue: fr`.
+- **Pas assez sûre** — texte trop court, document bilingue, format non lu, fichier
+  illisible, ou lecture de fichiers désactivée : **pas de langue**, `langueAConfirmer:
+  true`, et `langueProbable` quand une langue mène (au moins 3 mots, devant la suivante).
+- **Une image** : ni langue, ni rien à confirmer.
+
+À l'écran : un badge (*Français*, ou *Langue à confirmer* en orange), des filtres par
+langue et *Langue à confirmer*, « Regrouper par › **Langue** ». La fiche : *Langue* dans
+l'identification ; à confirmer, un message — **Confirmer : Français** (la probable) ou
+**Langue…** ; l'action **Langue…** (une langue, *Détecter de nouveau*, *Sans langue*) ;
+« Classer… » a un choix *Langue* (choisie : confirmée). `LibraryStore.setLanguage`,
+`detectLanguageOf`. Les workflows : `{langue}` et `{langueaconfirmer}` au *document
+versé* ; le workflow système « Langues à confirmer, chaque lundi » (désactivé). Les
+documents entrés avant la v0.10.0 n'ont pas de langue (*Détecter de nouveau*).
+
 ## Les fantômes (v0.9.0, Black Projects 0.81.0)
 
 Repris de la version complète de Black Projects. Un document n'est gardé qu'une fois.
@@ -290,6 +316,11 @@ bibliothèques principales. `bibliotheques` (les autres, par sorte) et
 `bibliothequesParDefaut` sont écrits par les pages.
 
 ## Tests
+
+`test/bibliotheque-langue.test.ts` : détecter (sûre ; trop courte, avec la probable ; bilingue),
+à l'entrée (badge, filtre, regroupement, fiche), à confirmer (la probable d'un clic), non lu
+(« Langue… », sans langue, détecter de nouveau), « Classer… », une image, sans la lecture
+de fichiers, les workflows.
 
 `test/bibliotheque-fantomes.test.ts` : le workflow système, la fenêtre (ne rien faire, placer
 un fantôme ici ; déjà un fantôme ou déjà rangé là : plus de question), la carte du

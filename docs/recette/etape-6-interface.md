@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La langue des documents (v0.82.0)
+
+- [ ] Verser (ou glisser-déposer) un long texte en français : badge *Français* ; un en
+      anglais : *Anglais* ; « Regrouper par › Langue » : une section par langue
+- [ ] Verser un texte très court (« Bonjour ») : pas de langue, badge orange *Langue à
+      confirmer* ; sa fiche : « Langue à confirmer : la détection n'a pas été assez sûre »
+      — **Confirmer : Français** (quand une langue est probable) ou **Langue…**
+- [ ] Un document moitié français, moitié anglais : à confirmer
+- [ ] Un `.dwg` (non lu) : à confirmer, sans langue probable ; **Langue…** : choisir
+      *Anglais* ; *Détecter de nouveau* ; *Sans langue* (plus rien à confirmer)
+- [ ] « Classer… » : le choix *Langue* ; choisie, elle n'est plus à confirmer
+- [ ] Une image : ni langue, ni « à confirmer »
+- [ ] Filtres *Français*, *Langue à confirmer* ; Workflows : *Langues à confirmer, chaque
+      lundi* (désactivé) ; au *document versé*, `{langue}` et `{langueaconfirmer}`
+
 ## Les fantômes de la bibliothèque (v0.81.0)
 
 - [ ] Bibliothèque › Documents : un répertoire « Normes », y glisser-déposer un PDF

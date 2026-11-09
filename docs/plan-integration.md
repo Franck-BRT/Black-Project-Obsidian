@@ -519,6 +519,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   déposé soi-même dans un lieu, un document déjà rangé ailleurs : une fenêtre, « Ne rien
   faire » ou « Placer un fantôme ici » (workflow système *Proposer un fantôme…*,
   déclencheur *Bibliothèque : document déjà là*)
+- v0.82.0 : **modules Bibliothèque et Lecture de fichiers** : la **langue** de chaque
+  document, détectée à son entrée d'après son texte ; pas assez sûre : pas de langue, *à
+  confirmer* (la plus probable proposée)
 
 ### Étape 7 — Livrables
 

@@ -80,6 +80,7 @@ catégorie).
 | Verser le dossier « À verser », chaque jour | chaque jour à 8 h | activé |
 | Versions à confirmer, chaque lundi | le lundi à 8 h | désactivé |
 | Documents à classer, chaque lundi | le lundi à 8 h | désactivé |
+| Langues à confirmer, chaque lundi | le lundi à 8 h | désactivé |
 | Proposer un fantôme d'un document déjà dans la bibliothèque | vous déposez un document déjà là, rangé ailleurs | activé |
 
 Désactiver un « Ranger… », c'est ne plus ranger ces fichiers-là ; ce que vous versez
@@ -121,7 +122,18 @@ personas prêts pour les appels d'offres, à modifier. Sur la fiche : **Modifier
 **Mettre en favori** (les favoris viennent en tête des listes), **Retirer** (mis de côté,
 rien n'est effacé).
 
-## 7. Les fantômes
+## 7. La langue des documents
+
+À son entrée, la langue d'un document est **détectée** d'après son texte (français,
+anglais, allemand, espagnol, italien, portugais, néerlandais). Si la détection est sûre,
+elle est donnée — un badge *Français* sur sa carte. Sinon — texte trop court, document
+bilingue, fichier dont le texte n'est pas lu —, il n'y a **pas de langue** : elle est **à
+confirmer** (badge orange). Sur sa fiche, **Confirmer : …** donne d'un clic la langue la
+plus probable ; **Langue…** en choisit une, la détecte de nouveau, ou dit « sans langue ».
+« Classer… » permet aussi de la choisir. Filtres par langue, et « Regrouper par ›
+Langue ». Une image n'a pas de langue à confirmer.
+
+## 8. Les fantômes
 
 Un document n'est gardé qu'une fois. Si vous déposez dans un répertoire (en le versant ou
 en le glissant-déposant) un document qui est déjà dans la bibliothèque, rangé ailleurs, il
@@ -139,7 +151,7 @@ bibliothèque » : vous pouvez le régler pour placer le fantôme sans demander 
 *Placer un fantôme sans demander*), ou le désactiver. Déclencheur : *Bibliothèque :
 document déjà là* (où il est rangé, où vous l'avez déposé…).
 
-## 8. Plusieurs bibliothèques, des répertoires
+## 9. Plusieurs bibliothèques, des répertoires
 
 Chaque sorte — documents, prompts, personas — peut avoir **plusieurs bibliothèques** :
 **Nouvelle bibliothèque** (sur sa page, ou sur l'accueil de la bibliothèque) lui donne un
@@ -163,7 +175,7 @@ répertoire, dans ce répertoire. Comme « Verser des documents » : copiés dan
 bibliothèque, une seule fois chacun. Un prompt ou un persona se retrouve par son nom où qu'il soit
 rangé.
 
-## 9. Réglages
+## 10. Réglages
 
 **Dossier de la bibliothèque** (par défaut `Bibliothèque`), **dossier des prompts** (par
 défaut `Bibliothèque/Prompts`) et **dossier des personas** (par défaut

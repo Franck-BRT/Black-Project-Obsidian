@@ -235,6 +235,24 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   })
 
   registerAction({
+    id: 'bibliotheque.langues-a-confirmer',
+    labelKey: 'bibliotheque.wf.action.languages',
+    descKey: 'bibliotheque.wf.action.languages.desc',
+    fields: [],
+    results: ['text'],
+    async run({ notifier }) {
+      const pending = (await store.all()).filter((doc) => doc.languageToConfirm).sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+      if (!pending.length) {
+        const text = t('bibliotheque.wf.languages.none')
+        return { lines: [text], results: { text } }
+      }
+      const text = t('bibliotheque.wf.languages.found', { count: pending.length, titles: someTitles(pending) })
+      notifier.notify(text, 15000)
+      return { lines: [text], paths: pending.map((doc) => doc.record), results: { text } }
+    }
+  })
+
+  registerAction({
     id: 'bibliotheque.a-classer',
     labelKey: 'bibliotheque.wf.action.unclassified',
     descKey: 'bibliotheque.wf.action.unclassified.desc',
@@ -301,6 +319,7 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   system('depot-ouverture', true, { kind: OPENING }, inbox)
   system('depot-quotidien', true, { kind: SCHEDULE, every: 'day', time: '08:00' }, inbox)
   system('versions-a-confirmer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.versions-a-confirmer', fields: {} }])
+  system('langues-a-confirmer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.langues-a-confirmer', fields: {} }])
   system('fantome', true, { kind: TRIGGER_KNOWN }, [{ kind: 'bibliotheque.fantome', fields: { quoi: 'demander', fiche: '{fiche}', dossier: '{dossier}' } }])
   system('a-classer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.a-classer', fields: {} }])
 }

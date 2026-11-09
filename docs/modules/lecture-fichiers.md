@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.8.0 (Black Projects 0.80.0) |
+| Version | 0.9.0 (Black Projects 0.82.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -197,6 +197,12 @@ lu (`setReadability`) : `archive`, `image`, `texte` (un lecteur, ou une extensio
 équivalente), sinon `non-lu` ; à sa désactivation, plus rien. Les workflows y trouvent
 `{extension}`, `{lisible}` et `{lecture}` (*document versé*), `{extensions}` et
 `{nonlisibles}` (*fichiers déposés*).
+
+## Le texte des documents versés, pour leur langue (v0.9.0, Black Projects 0.82.0)
+
+À son activation, le module donne aussi à la [bibliothèque](bibliotheque.md) de quoi lire
+le texte d'un fichier versé (`setTextReader` : `fileText`, extensions équivalentes
+comprises ; une image, une archive, un format non lu : `null`) ; elle en devine la langue.
 
 ## Ce qui n'est pas lu (aujourd'hui)
 

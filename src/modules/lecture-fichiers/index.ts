@@ -29,7 +29,7 @@ import { readShown } from './capabilities'
 import { formatsCatalogue } from './catalogue'
 import { lectureDocs } from './doc'
 import { lectureEn, lectureFr } from './i18n'
-import { setReadability } from '../bibliotheque'
+import { setReadability, setTextReader } from '../bibliotheque'
 import { isArchive } from './archive'
 import { fileText as rawFileText, isImage, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
 import { registerLectureWorkflows } from './workflows'
@@ -117,7 +117,7 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.8.0',
+  version: '0.9.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings), display),
@@ -152,6 +152,18 @@ export const lectureFichiersModule: BlackModule = {
       if (isImage(resolved)) return 'image'
       return isReadable(extension) ? 'texte' : 'non-lu'
     })
+    // Et son texte, pour deviner sa langue (un fichier non lu, une image, une archive : rien).
+    setTextReader(async (name, bytes) => {
+      const at = name.lastIndexOf('.')
+      const extension = at > name.lastIndexOf('/') ? name.slice(at + 1).toLowerCase() : ''
+      const resolved = resolveExtension(extension)
+      if (!isReadable(extension) || isImage(resolved) || isArchive(resolved)) return null
+      try {
+        return await fileText(extension, bytes)
+      } catch {
+        return null
+      }
+    })
     // Les types que l'utilisateur a choisi d'afficher : la plateforme les montre.
     display?.show(readShown(settings.get()))
     unsubscribe = settings.onChange((values) => {
@@ -161,6 +173,7 @@ export const lectureFichiersModule: BlackModule = {
   },
   deactivate() {
     setReadability(null)
+    setTextReader(null)
     unsubscribe?.()
     unsubscribe = null
     configureAliases({})

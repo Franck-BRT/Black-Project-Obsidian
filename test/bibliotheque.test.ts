@@ -146,9 +146,9 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const view = await page('bibliotheque.documents').load()
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}:${stat.value}`)).toEqual(['Documents:2', 'Taille:2 o', 'Ajoutés cette semaine:2', 'Versions à relier:0'])
-    expect(view.filters?.map((filter) => filter.id)).toEqual(['famille-sheet', 'famille-image', 'de-bibliotheque', 'a-jour'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['famille-sheet', 'famille-image', 'langue-a-confirmer', 'de-bibliotheque', 'a-jour'])
     const card = cardsOf(view).find((each) => each.title === 'Devis 2026')!
-    expect(card.badges?.map((badge) => badge.label)).toEqual(['Tableurs', 'Devis'])
+    expect(card.badges?.map((badge) => badge.label)).toEqual(['Tableurs', 'Devis', 'Langue à confirmer'])
     expect(card.text).toBe('Bibliothèque de documents — Versé à la main')
     const section = await views.homeSections().find((each) => each.id === 'bibliotheque.home')!.load()
     expect(section?.subtitle).toBe('2 document(s)')
@@ -170,7 +170,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const doc = (await pourIntoLibrary([{ name: 'Courrier acheteur.pdf', bytes: enc('c') }], { module: 'ao', label: 'Station sol', link: "Appels d'offres/Station sol/Station sol.md" }))!.added[0]!
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(fiche.title).toBe('Courrier acheteur')
-    expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'version', 'move', 'note', 'aside'])
+    expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'language', 'version', 'move', 'note', 'aside'])
     const origins = fiche.blocks.find((block) => block.kind === 'list' && block.title?.startsWith('D’où il vient'))
     expect(origins?.kind === 'list' && origins.items.map((item) => `${item.title}:${item.detail}`)).toEqual(["Analyse d'appels d'offres:Station sol"])
     await (origins?.kind === 'list' ? origins.items[0]!.open!.run() : null)
@@ -180,7 +180,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const after = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(after.title).toBe('Courrier de l’acheteur')
     const identity = after.blocks.find((block) => block.kind === 'list' && block.title === 'Identification')
-    expect(identity?.kind === 'list' && identity.items.map((item) => item.detail)).toEqual(['Courrier de l’acheteur', 'À la racine', 'CR-12', '1', 'A', 'Courrier', 'Agence', 'achat, urgent'])
+    expect(identity?.kind === 'list' && identity.items.map((item) => item.detail)).toEqual(['Courrier de l’acheteur', 'À la racine', 'Langue à confirmer', 'CR-12', '1', 'A', 'Courrier', 'Agence', 'achat, urgent'])
     await after.actions!.find((action) => action.id === 'aside')!.run()
     expect(platform.confirmed.at(-1)?.title).toBe('Retirer de la bibliothèque ?')
     expect(shown.at(-1)).toBe('bibliotheque.documents?principale%3A')
@@ -229,7 +229,7 @@ describe('la page des documents : vues et regroupements', () => {
     let view = await page('bibliotheque.documents').load()
     expect(view.layouts).toEqual(['cards', 'list', 'table'])
     expect(view.grouping).toMatchObject({ label: 'Regrouper par', current: 'origine' })
-    expect(view.grouping!.options.map((option) => option.label)).toEqual(['Origine', 'Famille', 'Catégorie', 'Mois d’ajout', 'Répertoire', 'Aucun'])
+    expect(view.grouping!.options.map((option) => option.label)).toEqual(['Origine', 'Famille', 'Catégorie', 'Langue', 'Mois d’ajout', 'Répertoire', 'Aucun'])
     expect(sections(view)).toEqual(['Bibliothèque de documents — Versé à la main (2 document(s))', 'Exigences — Import d’exigences (Plan.pdf) (1 document(s))'])
     const regroup = async (id: string) => {
       await view.grouping!.options.find((option) => option.id === id)!.run()

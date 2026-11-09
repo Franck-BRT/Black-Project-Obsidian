@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.81.0)
+## Aujourd'hui (version 0.82.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -153,7 +153,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   (déclencheur *Bibliothèque : document versé* : `{extension}`, `{lisible}`, `{lecture}`).
   Déposé dans un répertoire, un document **déjà dans la bibliothèque**, rangé ailleurs,
   n'est pas copié : une fenêtre propose **Ne rien faire** ou **Placer un fantôme ici** — une
-  petite note qui le montre et l'ouvre d'ici (« Aussi ici, rangés ailleurs »).
+  petite note qui le montre et l'ouvre d'ici (« Aussi ici, rangés ailleurs »). La
+  **langue** de chaque document est détectée à son entrée ; quand la détection n'est pas
+  assez sûre, il n'y a pas de langue et elle est **à confirmer** (sur sa fiche :
+  « Confirmer : Français », ou « Langue… »).
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une
   fois, avec sa fiche — les pièces importées dans une analyse (laissées à leur place), le
   fichier d'un import d'exigences, les échanges de types et de workflows, et ce que vous

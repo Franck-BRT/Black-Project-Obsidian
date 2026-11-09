@@ -14,6 +14,7 @@ import { HUB_PAGE } from './entriesHome'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
 import type { GhostEntry, LibraryStore } from './store'
 import type { LibraryGhost } from './ghosts'
+import { LANGUAGES, type LanguageCode } from './language'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -44,6 +45,10 @@ export interface LibraryHomeDeps {
   classify(record: string): Promise<void>
   /** Le dire nouvelle version d'un autre document (choisi). */
   newVersionOf(record: string): Promise<void>
+  /** Choisir sa langue (ou la détecter de nouveau, ou aucune). */
+  chooseLanguage(record: string): Promise<void>
+  /** Confirmer une langue (la probable) : plus à confirmer. */
+  setLanguage(record: string, language: LanguageCode): Promise<void>
   relate(record: string, previous: string): Promise<void>
   dismissLikely(record: string): Promise<void>
   /** Le retirer (après confirmation) ; rend vrai s'il l'a été. */
@@ -79,7 +84,8 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
     ...(doc.reference || version ? [{ label: [doc.reference, version].filter(Boolean).join(' · '), tone: 'neutral' as const }] : []),
     ...(doc.likelyPrevious ? [{ label: t('bibliotheque.badge.likely'), tone: 'warning' as const }] : []),
     ...(replaced ? [{ label: t('bibliotheque.badge.replaced'), tone: 'neutral' as const }] : []),
-    ...(missing ? [{ label: t('bibliotheque.badge.missing'), tone: 'danger' as const }] : [])
+    ...(missing ? [{ label: t('bibliotheque.badge.missing'), tone: 'danger' as const }] : []),
+    ...(doc.language ? [{ label: t(`bibliotheque.lang.${doc.language}`), tone: 'neutral' as const }] : doc.languageToConfirm ? [{ label: t('bibliotheque.lang.toConfirm'), tone: 'warning' as const }] : [])
   ]
   const show = deps.showPage
   return {
@@ -102,7 +108,8 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
       ...new Set(doc.origins.map((origin) => `de-${origin.module}`)),
       ...(doc.likelyPrevious ? ['a-relier'] : []),
       ...(replaced ? [] : ['a-jour']),
-      ...(missing ? ['introuvables'] : [])
+      ...(missing ? ['introuvables'] : []),
+      ...(doc.language ? [`langue-${doc.language}`] : doc.languageToConfirm ? ['langue-a-confirmer'] : [])
     ]
   }
 }
@@ -128,7 +135,7 @@ function ghostCard(deps: LibraryHomeDeps, ghost: LibraryGhost, doc: LibraryDoc):
 }
 
 /** Les regroupements des documents : par origine (d'origine), famille, catégorie, mois d'ajout, ou aucun. */
-export const DOC_GROUPINGS = ['origine', 'famille', 'categorie', 'mois', 'repertoire', 'aucun'] as const
+export const DOC_GROUPINGS = ['origine', 'famille', 'categorie', 'langue', 'mois', 'repertoire', 'aucun'] as const
 
 /** Le groupe d'un document, selon le regroupement choisi ; `null` : sans regroupement. */
 function docGroupOf(deps: LibraryHomeDeps, by: string): ((doc: LibraryDoc) => Group) | null {
@@ -146,6 +153,13 @@ function docGroupOf(deps: LibraryHomeDeps, by: string): ((doc: LibraryDoc) => Gr
       return (doc) => ({ key: doc.family, title: t(`bibliotheque.family.${doc.family}`), order: FAMILIES.indexOf(doc.family) })
     case 'categorie':
       return (doc) => (doc.category ? { key: doc.category.toLowerCase(), title: doc.category } : { key: '', title: t('bibliotheque.group.none.category'), order: 1 })
+    case 'langue':
+      return (doc) =>
+        doc.language
+          ? { key: doc.language, title: t(`bibliotheque.lang.${doc.language}`), order: LANGUAGES.indexOf(doc.language) }
+          : doc.languageToConfirm
+            ? { key: 'a-confirmer', title: t('bibliotheque.lang.toConfirm'), order: 98 }
+            : { key: '', title: t('bibliotheque.group.none.language'), order: 99 }
     case 'mois':
       return (doc) => {
         const month = doc.added.slice(0, 7)
@@ -183,6 +197,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
   const total = under.reduce((sum, doc) => sum + doc.size, 0)
   const modules = [...new Set(docs.flatMap((doc) => doc.origins.map((origin) => origin.module)))]
   const families = FAMILIES.filter((family) => docs.some((doc) => doc.family === family))
+  const languages = LANGUAGES.filter((language) => docs.some((doc) => doc.language === language))
+  const toConfirm = docs.filter((doc) => doc.languageToConfirm).length
   const stats: Stat[] = [
     { label: t('bibliotheque.stat.count'), value: String(under.length), icon: 'book' },
     { label: t('bibliotheque.stat.size'), value: readableSize(total, deps.locale), icon: 'file' },
@@ -206,6 +222,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     search: { label: t('bibliotheque.search'), placeholder: t('bibliotheque.search.placeholder') },
     filters: [
       ...families.map((family) => ({ id: `famille-${family}`, label: t(`bibliotheque.family.${family}`) })),
+      ...languages.map((language) => ({ id: `langue-${language}`, label: t(`bibliotheque.lang.${language}`) })),
+      ...(toConfirm ? [{ id: 'langue-a-confirmer', label: t('bibliotheque.lang.toConfirm') }] : []),
       ...modules.map((module) => ({ id: `de-${module}`, label: t('bibliotheque.filter.from', { module: t(`${module}.name`) }) })),
       { id: 'a-jour', label: t('bibliotheque.filter.latest') },
       ...(likely ? [{ id: 'a-relier', label: t('bibliotheque.filter.likely') }] : []),
@@ -269,6 +287,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     actions: [
       ...(present ? [{ id: 'file', label: t('bibliotheque.doc.file'), icon: 'file' as const, primary: true, run: () => deps.openFile(doc.file) }] : []),
       { id: 'classify', label: t('bibliotheque.classify'), icon: 'edit', run: () => deps.classify(doc.record) },
+      { id: 'language', label: t('bibliotheque.lang.choose'), tooltip: t('bibliotheque.lang.choose.tip'), icon: 'chat', run: () => deps.chooseLanguage(doc.record) },
       { id: 'version', label: t('bibliotheque.newVersionOf'), tooltip: t('bibliotheque.newVersionOf.tip'), icon: 'flow', run: () => deps.newVersionOf(doc.record) },
       {
         id: 'move',
@@ -308,12 +327,28 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             }
           ]
         : []),
+      // Sa langue n'a pas été détectée sûrement : à confirmer — la probable d'un clic, ou une autre.
+      ...(doc.languageToConfirm
+        ? [
+            {
+              kind: 'message' as const,
+              tone: 'warning' as const,
+              text: doc.languageProbable ? t('bibliotheque.lang.confirm.probable', { language: t(`bibliotheque.lang.${doc.languageProbable}`) }) : t('bibliotheque.lang.confirm.none'),
+              actions: [
+                ...(doc.languageProbable
+                  ? [{ id: 'confirm-language', label: t('bibliotheque.lang.confirm', { language: t(`bibliotheque.lang.${doc.languageProbable}`) }), icon: 'check' as const, primary: true, run: () => deps.setLanguage(doc.record, doc.languageProbable!) }]
+                  : []),
+                { id: 'choose-language', label: t('bibliotheque.lang.choose'), icon: 'chat' as const, ...(doc.languageProbable ? {} : { primary: true }), run: () => deps.chooseLanguage(doc.record) }
+              ]
+            }
+          ]
+        : []),
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
       { kind: 'stats', stats },
       {
         kind: 'list',
         title: t('bibliotheque.section.identity'),
-        items: [field('title', doc.title), field('place', placeLabel(deps.places, doc)), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
+        items: [field('title', doc.title), field('place', placeLabel(deps.places, doc)), field('language', doc.language ? t(`bibliotheque.lang.${doc.language}`) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
       },
       {
         kind: 'list',

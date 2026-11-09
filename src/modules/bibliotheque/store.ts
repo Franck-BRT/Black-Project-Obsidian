@@ -17,6 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
+import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
   baseName,
@@ -26,6 +27,7 @@ import {
   recordContent,
   titleFromName,
   versionKey,
+  type DocFamily,
   type DocOrigin,
   type LibraryDoc
 } from './model'
@@ -49,6 +51,11 @@ export interface StoreDeps {
   shelves?(): readonly Shelf[]
   /** Le dossier où verser, sans lieu précis : la racine de la bibliothèque par défaut. */
   target?(): string
+  /**
+   * Le texte d'un fichier (la lecture de fichiers) : `null` quand il n'est pas lu (format non
+   * lu, illisible) ; absent, rien n'est lu. Pour deviner sa langue.
+   */
+  textOf?(name: string, bytes: Uint8Array): Promise<string | null>
   /** La ligne de la note d'un fantôme, dans la langue : où est le document (`link`), dans quel lieu (`where`). */
   ghostLine?(link: string, where: string): string
 }
@@ -139,6 +146,50 @@ export class LibraryStore {
       const candidate = `${stem} (${index})${ext}`
       if (!(await this.deps.fs.exists(candidate))) return candidate
     }
+  }
+
+  /**
+   * La langue d'un document, de son texte : sûre, elle est donnée ; sinon (texte trop court,
+   * partagé, ou pas lu) elle est **à confirmer**, avec la plus probable s'il y en a une. Une
+   * image n'a pas de langue à confirmer.
+   */
+  private async languageOf(name: string, family: DocFamily, bytes: Uint8Array): Promise<Pick<LibraryDoc, 'language' | 'languageToConfirm' | 'languageProbable'>> {
+    if (family === 'image') return {}
+    let text: string | null = null
+    try {
+      text = (await this.deps.textOf?.(name, bytes)) ?? null
+    } catch {
+      text = null
+    }
+    const guess = detectLanguage(text ?? '')
+    if (guess.language) return { language: guess.language }
+    return { languageToConfirm: true, ...(guess.probable ? { languageProbable: guess.probable } : {}) }
+  }
+
+  /** Donner sa langue à un document (confirmée par l'utilisateur) ; vide : sans langue, plus à confirmer. */
+  async setLanguage(record: string, language: LanguageCode | ''): Promise<LibraryDoc | null> {
+    const doc = await this.load(record)
+    if (!doc) return null
+    const next: LibraryDoc = { ...doc }
+    delete next.language
+    delete next.languageToConfirm
+    delete next.languageProbable
+    if (language) next.language = language
+    await this.save(next)
+    return next
+  }
+
+  /** Détecter de nouveau la langue d'un document, de son fichier ; rend la fiche, ou `null`. */
+  async detectLanguageOf(record: string): Promise<LibraryDoc | null> {
+    const doc = await this.load(record)
+    if (!doc || !(await this.deps.fs.exists(doc.file))) return null
+    const found = await this.languageOf(doc.file, doc.family, new Uint8Array(await this.deps.fs.readBinary(doc.file)))
+    const next: LibraryDoc = { ...doc }
+    delete next.language
+    delete next.languageToConfirm
+    delete next.languageProbable
+    await this.save({ ...next, ...found })
+    return { ...next, ...found }
   }
 
   /** Les bibliothèques de documents : celles données, sinon la seule (son dossier). */
@@ -321,7 +372,8 @@ export class LibraryStore {
         tags: [],
         origins: [origin],
         ...(previous ? { likelyPrevious: previous.record } : {}),
-        copied: !item.path || item.owned === true
+        copied: !item.path || item.owned === true,
+        ...(await this.languageOf(item.name, family, bytes))
       }
       await this.save(doc)
       known.push(doc)
