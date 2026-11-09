@@ -241,7 +241,9 @@ liste reste marquée. Des cartes peuvent former un groupe titré avec ses bouton
 
 Une liste peut porter un intitulé (`title` : « Dernières exécutions ») ; ses éléments
 peuvent porter des filtres (`ListItem.tags`, le journal) : elle se filtre et compte alors
-comme des cartes. Les boutons sans
+comme des cartes. Un élément peut se modifier (`ListItem.edit`) : un petit bouton crayon,
+avant sa marque, dont l'intitulé (« Modifier : Titre ») est dit au survol et aux lecteurs
+d'écran — les champs d'une fiche. Les boutons sans
 fond propre (titre d'une carte, d'un élément de liste, « − » d'une tuile) ont aussi leur
 style au survol : sans lui, Obsidian leur pose un fond clair. Après chaque bouton
 d'action, l'interface redessine pages, tableau de bord et pastilles (`AfterAction`) : une

@@ -24,7 +24,7 @@ import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, sy
 import page from './doc/Bibliothèque.md'
 import { ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
 import { entryPageOf, registerEntriesHome } from './entriesHome'
-import { docPageOf, LIBRARY_PAGE, registerLibraryHome } from './home'
+import { docPageOf, LIBRARY_PAGE, registerLibraryHome, type EditableField } from './home'
 import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, type DocOrigin, type LibraryDoc } from './model'
@@ -408,7 +408,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.19.0',
+  version: '0.20.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -702,6 +702,48 @@ export const bibliothequeModule: BlackModule = {
       )
     }
 
+    /** Un champ de la fiche, seul : une petite fenêtre ; enregistré, il est confirmé (plus « à confirmer », plus « par l'IA »). */
+    const editField = async (record: string, key: EditableField): Promise<void> => {
+      const doc = await store.load(record)
+      if (!doc) return
+      const label = t(`bibliotheque.field.${key}`)
+      const current = key === 'tags' ? doc.tags.join(', ') : key === 'date' ? (doc.date ?? '') : doc[key]
+      const help: Partial<Record<EditableField, string>> = {
+        category: t('bibliotheque.classify.categories', { list: CATEGORIES.map((each) => each.name).join(', ') }),
+        tags: t('bibliotheque.classify.tags'),
+        date: t('bibliotheque.classify.date')
+      }
+      const values = await platform.ui.askForm({
+        title: t('bibliotheque.edit.title', { field: label, title: doc.title }),
+        fields: [{ kind: 'text', key: 'value', label, value: current, ...(key === 'title' ? { required: true } : {}), ...(help[key] ? { description: help[key] } : {}) }],
+        submit: t('bibliotheque.edit.submit')
+      })
+      if (!values) return
+      const value = (values.value ?? '').trim()
+      let shown = value
+      if (key === 'title') {
+        if (!value) return
+        await store.setTitle(record, value)
+      } else if (key === 'reference' || key === 'edition' || key === 'revision') {
+        await store.setIdentity(record, { reference: doc.reference, edition: doc.edition, revision: doc.revision, [key]: value })
+      } else if (key === 'date') {
+        const date = value ? parseDocDate(value) : ''
+        if (value && !date) {
+          platform.notifier.notify(t('bibliotheque.date.unreadable', { value }), 6000)
+          return
+        }
+        await store.setDate(record, date)
+        shown = date ? docDateLabel(date, active?.locale) : ''
+      } else if (key === 'category') await store.setCategory(record, value)
+      else if (key === 'issuer') await store.setIssuer(record, value)
+      else {
+        const tags = [...new Set(value.split(',').map((each) => each.trim()).filter(Boolean))]
+        await store.setTags(record, tags)
+        shown = tags.join(', ')
+      }
+      platform.notifier.notify(shown ? t('bibliotheque.edit.done', { field: label, value: shown }) : t('bibliotheque.edit.cleared', { field: label }), 5000)
+    }
+
     /** La langue d'un document : une des langues, la détecter de nouveau, ou aucune. */
     const chooseLanguage = async (record: string): Promise<void> => {
       const doc = await store.load(record)
@@ -788,6 +830,7 @@ export const bibliothequeModule: BlackModule = {
         const doc = await store.setCategory(record, category)
         if (doc) platform.notifier.notify(doc.category ? t('bibliotheque.category.confirmed', { category: doc.category }) : t('bibliotheque.category.confirmed.none', { title: doc.title }), 5000)
       },
+      editField,
       confirmDate: async (record, date) => {
         const doc = await store.setDate(record, date)
         if (doc) platform.notifier.notify(doc.date ? t('bibliotheque.date.confirmed', { date: docDateLabel(doc.date, active?.locale) }) : t('bibliotheque.date.confirmed.none', { title: doc.title }), 5000)

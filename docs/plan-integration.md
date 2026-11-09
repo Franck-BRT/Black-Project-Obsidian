@@ -555,6 +555,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   deux passes — sans IA (« Date : », « Émis le », « Toulouse, le … », ou le nom du fichier et
   le texte d'accord : sûre ; sinon la première date du texte, hors dates limites, à
   confirmer) ; pas sûre, l'IA (elle doit figurer dans le document)
+- v0.92.0 : **module Bibliothèque** : chaque champ de la fiche se **modifie seul**, par un
+  bouton crayon à gauche de son icône (`ListItem.edit` dans le contrat des pages) ; modifié,
+  il est confirmé
 
 ### Étape 7 — Livrables
 

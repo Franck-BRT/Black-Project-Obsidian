@@ -306,6 +306,8 @@ button.bp-flow-shape:focus-visible { outline: 3px solid var(--bp-focus); outline
 .bp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .bp-list-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 4px; border-top: 1px solid var(--bp-border); }
 .bp-list-item:first-child { border-top: 0; }
+.bp-list-edit { flex: none; margin-top: -2px; }
+.bp-list-edit .bp-button-icon { width: 30px; height: 30px; padding: 0; min-height: 0; display: grid; place-items: center; }
 .bp-list-mark { margin-top: 2px; border-radius: 999px; padding: 3px; border: 1px solid currentColor; display: grid; }
 .bp-list-body { min-width: 0; flex: 1; }
 .bp-list-title { font-weight: 650; overflow-wrap: anywhere; }

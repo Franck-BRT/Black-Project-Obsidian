@@ -136,6 +136,13 @@ describe('les blocs', () => {
     expect(render({ kind: 'list', items: [], empty: 'Aucune exécution.' })).toContain('Aucune exécution.')
     expect(render({ kind: 'message', tone: 'danger', text: 'Échec' })).toContain('role="alert"')
   })
+
+  it('un élément de liste qu’on peut modifier : un petit bouton, avant sa marque, qui le dit', () => {
+    const html = render({ kind: 'list', items: [{ id: 'title', title: 'Titre', detail: 'Plan', edit: { id: 'edit-title', label: 'Modifier : Titre', run: async () => {} } }, { id: 'size', title: 'Taille' }] })
+    expect(html).toMatch(/<li class="bp-list-item bp-list-editable"><span class="bp-list-edit"><button[^>]*title="Modifier : Titre"[^>]*aria-label="Modifier : Titre"/)
+    expect(html.indexOf('bp-list-edit')).toBeLessThan(html.indexOf('bp-list-mark'))
+    expect(html.match(/bp-list-edit"/g)).toHaveLength(1)
+  })
 })
 
 describe('les styles', () => {

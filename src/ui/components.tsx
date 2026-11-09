@@ -174,7 +174,12 @@ export function StatView({ stat }: { stat: StatView }) {
 function ListItemView({ item }: { item: ListItem }) {
   const tone: Tone = item.tone ?? 'neutral'
   return (
-    <li class="bp-list-item">
+    <li class={`bp-list-item${item.edit ? ' bp-list-editable' : ''}`}>
+      {item.edit && (
+        <span class="bp-list-edit">
+          <ActionButton action={{ icon: 'edit', ...item.edit }} compact />
+        </span>
+      )}
       <span class={`bp-list-mark bp-tone-${tone}`}>
         <Icon name={TONE_ICON[tone]} />
       </span>

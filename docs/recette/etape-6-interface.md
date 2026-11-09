@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Modifier un champ de la fiche (v0.92.0)
+
+- [ ] Fiche d'un document, *Identification* dépliée : un bouton crayon à gauche de l'icône
+      de chaque champ ; au survol, « Modifier : Titre », « Modifier : Émetteur »…
+- [ ] Le crayon de **Émetteur** : une petite fenêtre « Émetteur — « … » », un seul champ ;
+      « Agence spatiale », **Enregistrer** : le champ change, le message « Émetteur à
+      confirmer » disparaît
+- [ ] **Date du document** : « 3 mars 2026 » est pris (« 3 mars 2026 ») ; « bientôt » est
+      refusé ; **Étiquettes** : « réunion, station sol, réunion » donne deux étiquettes
+- [ ] Le crayon de **Rangé** ouvre *Déplacer…* ; celui de **Langue**, *Langue…*
+- [ ] Un champ vide à confirmer se lit « À confirmer »
+
 ## La date des documents (v0.91.0)
 
 - [ ] Verser un courrier qui commence par « Toulouse, le 1er mars 2026 » : date du document

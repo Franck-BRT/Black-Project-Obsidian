@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.19.0 (Black Projects 0.91.0) |
+| Version | 0.20.0 (Black Projects 0.92.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,23 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Modifier un champ de la fiche (v0.20.0, Black Projects 0.92.0)
+
+Dans la section *Identification* de la fiche, chaque champ a un bouton crayon à gauche de son
+icône (`ListItem.edit`, « Modifier : Titre ») :
+
+- **Titre, Référence, Édition, Révision, Date du document, Catégorie, Émetteur,
+  Étiquettes** : une petite fenêtre, ce seul champ, sa valeur (`editField`). Enregistré, il
+  est **confirmé** : plus « à confirmer », plus « identifié par l'IA » (les mêmes
+  `setTitle`, `setIdentity`, `setDate`, `setCategory`, `setIssuer`, `setTags` que les
+  boutons de confirmation). Un titre vide n'est pas pris ; une date illisible est refusée
+  (celle d'avant reste) ; les étiquettes, séparées par des virgules, sans doublon. Une
+  notification le dit (« Émetteur : Agence spatiale. », « Édition : vide. »).
+- **Rangé** ouvre *Déplacer…* ; **Langue**, *Langue…* ; **Référence et version** (à
+  confirmer), *Classer…*.
+
+Un champ vide à confirmer se lit « À confirmer » (et non plus « — — à confirmer »).
 
 ## La date des documents (v0.19.0, Black Projects 0.91.0)
 

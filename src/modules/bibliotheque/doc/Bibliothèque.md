@@ -25,7 +25,9 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
 - son **titre** (tiré du nom du fichier), sa **famille** (PDF, textes, tableurs,
   présentations, images, messages, notes, autres), sa **catégorie** — devinée au nom du
   fichier (CCTP, RC, Plan, Devis, Compte rendu…), ou le type de pièce donné par l'analyse —,
-  sa référence, son édition, sa révision, son émetteur, ses étiquettes : **Classer…** ;
+  sa référence, son édition, sa révision, sa date, son émetteur, ses étiquettes : **Classer…**
+  pour tout reprendre, ou le **crayon** à gauche d'un champ pour ne modifier que lui (il est
+  alors confirmé ; le crayon de *Rangé* ouvre *Déplacer…*, celui de *Langue*, *Langue…*) ;
 - **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ;
 - **d'où il vient** : chaque origine — l'analyse, l'import —, un clic y mène ;
 - **ses versions** : les précédentes et les suivantes, reliées.

@@ -24,6 +24,10 @@ export const docPageOf = (record: string): string => pageWith(DOC_PAGE, encodeUR
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
+/** Les champs d'une fiche qu'on modifie un par un (le lieu et la langue ont leurs fenêtres). */
+export const EDITABLE_FIELDS = ['title', 'reference', 'edition', 'revision', 'date', 'category', 'issuer', 'tags'] as const
+export type EditableField = (typeof EDITABLE_FIELDS)[number]
+
 export interface LibraryHomeDeps {
   t: Translate
   store: LibraryStore
@@ -50,6 +54,8 @@ export interface LibraryHomeDeps {
   chooseLanguage(record: string): Promise<void>
   /** Confirmer la catégorie : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
   confirmCategory(record: string, category: string | null): Promise<void>
+  /** Modifier un champ de sa fiche, seul (une petite fenêtre) : il est alors confirmé. */
+  editField(record: string, key: EditableField): Promise<void>
   /** Confirmer la date : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
   confirmDate(record: string, date: string | null): Promise<void>
   /** Confirmer les étiquettes : celles données (les probables, ajoutées ; vide : aucune), ou `null` — celles qu'il a. */
@@ -430,6 +436,18 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         ]
       : []),
   ]
+  const moveDoc = async (): Promise<void> => {
+    const moved = await deps.move(doc.record)
+    if (moved && moved !== doc.record) deps.showPage?.(docPageOf(moved))
+  }
+  const edits: Record<string, () => Promise<void>> = {
+    place: moveDoc,
+    language: () => deps.chooseLanguage(doc.record),
+    identity: () => deps.classify(doc.record),
+    ...Object.fromEntries(EDITABLE_FIELDS.map((key) => [key, () => deps.editField(doc.record, key)]))
+  }
+  const withEdits = (items: ListItem[]): ListItem[] =>
+    items.map((item) => (edits[item.id] ? { ...item, edit: { id: `edit-${item.id}`, label: t('bibliotheque.field.edit', { field: item.title }), icon: 'edit' as const, run: edits[item.id]! } } : item))
   const confirmNames = [
     doc.languageToConfirm ? t('bibliotheque.field.language') : '',
     doc.titleToConfirm ? t('bibliotheque.field.title') : '',
@@ -487,10 +505,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         label: t('bibliotheque.move'),
         tooltip: t('bibliotheque.move.doc.tip'),
         icon: 'folder',
-        run: async () => {
-          const moved = await deps.move(doc.record)
-          if (moved && moved !== doc.record) deps.showPage?.(docPageOf(moved))
-        }
+        run: moveDoc
       },
       { id: 'note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) },
       {
@@ -524,10 +539,11 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
       { kind: 'stats', stats },
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
+      // Chaque champ : un bouton pour le modifier, seul (le lieu : Déplacer… ; la langue : Langue… ; à confirmer : Classer…).
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
-        items: [{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), { ...field('date', doc.date ? docDateLabel(doc.date, deps.locale) : ''), ...(doc.dateToConfirm ? { detail: t('bibliotheque.date.detail.toConfirm', { date: doc.date ? docDateLabel(doc.date, deps.locale) : '—' }) } : doc.dateByAi && doc.date ? { detail: t('bibliotheque.date.detail.byAi', { date: docDateLabel(doc.date, deps.locale) }) } : {}) },
-          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category), ...(doc.categoryToConfirm ? { detail: t('bibliotheque.category.detail.toConfirm', { category: doc.category || '—' }) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category || '—' }) } : {}) }, { ...field('issuer', doc.issuer), ...(doc.issuerToConfirm ? { detail: t('bibliotheque.issuer.detail.toConfirm', { issuer: doc.issuer || '—' }) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: doc.issuer || '—' }) } : {}) }, { ...field('tags', doc.tags.join(', ')), ...(doc.tagsToConfirm ? { detail: t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') || '—' }) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {}) }]
+        items: withEdits([{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), { ...field('date', doc.date ? docDateLabel(doc.date, deps.locale) : ''), ...(doc.dateToConfirm ? { detail: (doc.date ? t('bibliotheque.date.detail.toConfirm', { date: docDateLabel(doc.date, deps.locale) }) : t('bibliotheque.detail.toConfirm')) } : doc.dateByAi && doc.date ? { detail: t('bibliotheque.date.detail.byAi', { date: docDateLabel(doc.date, deps.locale) }) } : {}) },
+          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category), ...(doc.categoryToConfirm ? { detail: (doc.category ? t('bibliotheque.category.detail.toConfirm', { category: doc.category }) : t('bibliotheque.detail.toConfirm')) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category || '—' }) } : {}) }, { ...field('issuer', doc.issuer), ...(doc.issuerToConfirm ? { detail: (doc.issuer ? t('bibliotheque.issuer.detail.toConfirm', { issuer: doc.issuer }) : t('bibliotheque.detail.toConfirm')) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: doc.issuer || '—' }) } : {}) }, { ...field('tags', doc.tags.join(', ')), ...(doc.tagsToConfirm ? { detail: (doc.tags.length ? t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') }) : t('bibliotheque.detail.toConfirm')) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {}) }])
       }),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',
