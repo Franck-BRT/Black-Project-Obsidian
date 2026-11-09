@@ -168,6 +168,8 @@ export type HomeBlock =
       /** Ce qu'il montre, pour qui ne le voit pas. */
       label: string
       stages: JourneyStage[]
+      /** Des **phases englobantes**, en bandeaux au-dessus des étapes qu'elles couvrent. */
+      spans?: JourneySpan[]
       compact?: boolean
       /** Une tuile « + » après la dernière étape : en ajouter une. */
       add?: ViewAction
@@ -209,6 +211,20 @@ export interface JourneyStage {
   phases: JourneyPhase[]
   /** Une tuile « + » sous ses phases : en ajouter une, en parallèle. */
   add?: ViewAction
+}
+
+/** Une phase qui englobe des étapes qui se suivent : un bandeau au-dessus d'elles. */
+export interface JourneySpan {
+  id: string
+  label: string
+  color: TileColor
+  /** Ses première et dernière étapes (leur rang dans `stages`, à partir de 0). */
+  from: number
+  to: number
+  detail?: string
+  progress?: JourneyProgress
+  open?: ViewAction
+  tools?: ViewAction[]
 }
 
 /** Où en est une phase : faite, en cours, à venir, sans objet. */

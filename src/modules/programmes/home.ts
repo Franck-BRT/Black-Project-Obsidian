@@ -8,7 +8,7 @@
  * dessine phase par phase.
  */
 
-import { pageWith, type Breadcrumb, type Card, type HomeBlock, type JourneyPhase, type JourneyStage, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Breadcrumb, type Card, type HomeBlock, type JourneyPhase, type JourneySpan, type JourneyStage, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { phaseKind, type PhaseContext } from './kinds'
 import { FREE_KIND, PHASE_STATUSES, progressOf, stagesOf, type Affaire, type PhaseSpec, type PhaseStatus, type Programme, type Project, type ProjectPhase, type ProjectType } from './model'
 import type { ProgrammeStore } from './store'
@@ -50,6 +50,9 @@ export interface HomeDeps {
   addTypePhase(type: string, stage: number | 'new'): Promise<void>
   moveTypePhase(type: string, phase: string, direction: Direction): Promise<void>
   removeTypePhase(type: string, phase: string): Promise<void>
+  addTypeSpan(type: string): Promise<void>
+  editTypeSpan(type: string, span: string): Promise<void>
+  removeTypeSpan(type: string, span: string): Promise<void>
 }
 
 /** Le nom d'une sorte de phase. */
@@ -94,6 +97,48 @@ async function projectStages(deps: HomeDeps, project: Project, open: boolean): P
   )
 }
 
+/**
+ * Les phases englobantes d'un projet, en bandeaux : leurs étapes (rangées comme celles du
+ * parcours) ; terminées quand toutes leurs phases le sont (ou sans objet), en cours quand
+ * l'une l'est ou qu'elles sont commencées.
+ */
+function projectSpans(deps: HomeDeps, project: Project): JourneySpan[] {
+  const { t } = deps
+  const numbers = [...new Set(project.phases.map((phase) => phase.stage))].sort((a, b) => a - b)
+  const rank = (stage: number) => {
+    const at = numbers.findIndex((each) => each >= stage)
+    return at < 0 ? numbers.length - 1 : at
+  }
+  return project.spans.map((span) => {
+    const covered = project.phases.filter((phase) => phase.stage >= span.from && phase.stage <= span.to)
+    const done = covered.filter((phase) => phase.status === 'terminee' || phase.status === 'sans-objet').length
+    const progress = covered.length && done === covered.length ? 'done' : covered.some((phase) => phase.status === 'en-cours') || done ? 'current' : 'todo'
+    return { id: span.id, label: span.name, color: span.color, from: rank(span.from), to: rank(span.to), detail: t('programmes.project.advance', { done, total: covered.length }), progress }
+  })
+}
+
+/** Les phases englobantes d'un type, en bandeaux ; dans l'éditeur, de quoi les modifier ou les retirer. */
+function typeSpans(deps: HomeDeps, type: ProjectType, editing: boolean): JourneySpan[] {
+  const { t } = deps
+  return (type.spans ?? []).map((span) => ({
+    id: span.id,
+    label: span.name,
+    color: span.color,
+    from: span.from,
+    to: span.to,
+    detail: span.from === span.to ? t('programmes.span.oneStage', { from: span.from + 1 }) : t('programmes.span.stages', { from: span.from + 1, to: span.to + 1 }),
+    ...(editing
+      ? {
+          open: { id: 'edit', label: t('programmes.span.edit'), tooltip: t('programmes.span.edit'), run: () => deps.editTypeSpan(type.id, span.id) },
+          tools: [
+            { id: 'edit', label: t('programmes.span.edit'), icon: 'edit' as const, run: () => deps.editTypeSpan(type.id, span.id) },
+            { id: 'remove', label: t('programmes.span.remove'), icon: 'trash' as const, run: () => deps.removeTypeSpan(type.id, span.id) }
+          ]
+        }
+      : {})
+  }))
+}
+
 /** Un projet en parcours miniature, son titre ouvre sa page. */
 async function projectJourney(deps: HomeDeps, project: Project, compact: boolean, programme?: Programme): Promise<HomeBlock> {
   const { t } = deps
@@ -106,6 +151,7 @@ async function projectJourney(deps: HomeDeps, project: Project, compact: boolean
     subtitle: [programme?.name, project.typeName, t('programmes.project.advance', { done, total }), t('programmes.project.affaires', { count: affaires }), current.length ? t('programmes.project.current', { names: current.map((phase) => phase.name).join(', ') }) : ''].filter(Boolean).join(' · '),
     ...(done === total && total ? { badge: { label: t('programmes.project.finished'), tone: 'success' as const } } : {}),
     stages: await projectStages(deps, project, !compact),
+    spans: projectSpans(deps, project),
     compact,
     ...(deps.showPage ? { open: { id: 'open', label: t('programmes.project.open'), run: () => deps.showPage?.(projectPageOf(project.path)) } } : {})
   }
@@ -230,7 +276,7 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     ],
     blocks: [
       { kind: 'stats', stats },
-      { kind: 'journey', title: t('programmes.project.phases'), label: t('programmes.project.journey', { name: project.name }), stages: await projectStages(deps, project, true), legend: t('programmes.project.legend') },
+      { kind: 'journey', title: t('programmes.project.phases'), label: t('programmes.project.journey', { name: project.name }), stages: await projectStages(deps, project, true), spans: projectSpans(deps, project), legend: t('programmes.project.legend') },
       {
         kind: 'section',
         id: 'programmes.projet.affaires',
@@ -325,6 +371,7 @@ function typesPage(deps: HomeDeps): PageView {
           label: t('programmes.type.journey', { name: type.name }),
           subtitle: [type.description, t('programmes.type.count', { stages: type.stages.length, phases: type.stages.flat().length })].filter(Boolean).join(' · '),
           stages: typeStages(deps, type, false),
+          spans: typeSpans(deps, type, false),
           ...(deps.showPage ? { open: { id: 'open', label: t('programmes.type.open'), run: () => deps.showPage?.(typePageOf(type.id)) } } : {})
         }))
       : [{ kind: 'message', tone: 'info', text: t('programmes.types.empty') }]
@@ -341,6 +388,7 @@ function typePage(deps: HomeDeps, param?: string): PageView {
     subtitle: [type.description, t('programmes.type.count', { stages: type.stages.length, phases: type.stages.flat().length })].filter(Boolean).join(' · '),
     actions: [
       { id: 'project', label: t('programmes.type.newProject'), icon: 'plus', primary: true, run: () => deps.newProject(undefined, type.id) },
+      { id: 'span', label: t('programmes.span.add'), tooltip: t('programmes.span.add.tip'), icon: 'columns', run: () => deps.addTypeSpan(type.id) },
       { id: 'edit', label: t('programmes.type.edit'), icon: 'edit', run: () => deps.editType(type.id) },
       { id: 'copy', label: t('programmes.type.copy'), icon: 'copy', run: () => deps.copyType(type.id) },
       { id: 'delete', label: t('programmes.type.delete'), icon: 'trash', run: () => deps.deleteType(type.id) }
@@ -351,6 +399,7 @@ function typePage(deps: HomeDeps, param?: string): PageView {
         kind: 'journey',
         label: t('programmes.type.journey', { name: type.name }),
         stages: typeStages(deps, type, true),
+        spans: typeSpans(deps, type, true),
         add: { id: 'stage', label: t('programmes.type.addStage'), tooltip: t('programmes.type.addStage.tip'), run: () => deps.addTypePhase(type.id, 'new') }
       }
     ]

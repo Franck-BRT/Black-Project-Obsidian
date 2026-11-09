@@ -619,6 +619,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   d'un appel d'offres est une phase** d'un projet (sorte `ao.analyse`, module AO)
 - v0.109.1 : plus d'« Analyses » au menu ; les couleurs et les icônes **se voient** à côté de
   leur liste (`Choice.preview`)
+- v0.110.0 : les **phases englobantes** des types de projet (bandeaux au-dessus des étapes, qui
+  suivent leurs phases ; copiées dans les projets, avec leur avancement) ; les listes de
+  couleurs et d'icônes montrent **chaque choix avec son aperçu à gauche**
 
 ### Étape 7 — Livrables
 

@@ -14,7 +14,7 @@ import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryP
 import { ViewsRegistry, type HomeBlock, type PageView } from '../src/core/views'
 import { MODULES } from '../src/modules'
 import { aoModule } from '../src/modules/ao'
-import { addParallel, addStage, movePhase, programmesModule, removePhase, starterTypes, type ProjectType } from '../src/modules/programmes'
+import { addParallel, addSpan, addStage, movePhase, programmesModule, remapSpans, removePhase, starterTypes, type ProjectType } from '../src/modules/programmes'
 
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
 const tr = (key: string) => key
@@ -167,6 +167,75 @@ describe('programmes, projets, affaires', () => {
     expect(stored.stages.map((stage) => stage.map((phase) => phase.id))).toEqual([['lancement'], ['realisation'], ['recette', 'achats'], ['cloture']])
     // Le premier projet d'un type gardé : changer le type ensuite ne le change pas.
     expect(starterTypes(tr)[1]!.stages).toHaveLength(4)
+  })
+})
+
+describe('les phases englobantes', () => {
+  const simple = (): ProjectType => starterTypes(tr).find((type) => type.id === 'projet-simple')!
+
+  it('elles suivent leurs phases quand les étapes changent : déplacées, disparues', () => {
+    const type = addSpan(simple(), { name: 'Démarrage', color: 'teal', from: 0, to: 1 })
+    expect(type.spans).toEqual([{ id: 'demarrage', name: 'Démarrage', color: 'teal', from: 0, to: 1 }])
+    // Le lancement retiré : la réalisation passe à l'étape 0 — le bandeau ne couvre plus qu'elle.
+    expect(remapSpans(type, removePhase(type, 'lancement')).spans).toEqual([{ id: 'demarrage', name: 'Démarrage', color: 'teal', from: 0, to: 0 }])
+    // La recette rejoint la réalisation : rien ne change pour le bandeau (étapes 0 et 1).
+    expect(remapSpans(type, movePhase(type, 'recette', 'left')).spans![0]).toMatchObject({ from: 0, to: 1 })
+    // Une de ses phases mise dans une étape à elle, en tête : il la couvre toujours (étapes 0 à 2).
+    const parallel = addParallel(type, 0, { id: 'cadrage', name: 'Cadrage', kind: 'libre', icon: 'flow', color: 'blue' })
+    expect(remapSpans(parallel, movePhase(parallel, 'cadrage', 'left')).spans![0]).toMatchObject({ from: 0, to: 2 })
+    // Une étape ajoutée en tête par une phase hors du bandeau : il glisse.
+    const outside = addSpan(simple(), { name: 'Fin', color: 'rose', from: 2, to: 3 })
+    const before = addParallel(outside, 1, { id: 'achats', name: 'Achats', kind: 'libre', icon: 'chart', color: 'teal' })
+    expect(remapSpans(before, movePhase(movePhase(before, 'achats', 'left'), 'achats', 'left')).spans![0]).toMatchObject({ from: 3, to: 4 })
+    // Toutes ses phases retirées : il disparaît.
+    expect(remapSpans(type, removePhase(removePhase(type, 'lancement'), 'realisation')).spans).toBeUndefined()
+  })
+
+  it('le type de départ : « Avant-vente » et « Contrat » en bandeaux ; un projet les copie, et dit où elles en sont', async () => {
+    const platform = memoryPlatform()
+    const { load, action, journey, shown } = await start(platform)
+    const types = await load('programmes.types')
+    const ao = types.blocks.find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
+    expect(ao.spans!.map((span) => [span.label, span.from, span.to, span.detail])).toEqual([
+      ['Avant-vente', 0, 4, 'étapes 1 à 5'],
+      ['Contrat', 5, 7, 'étapes 6 à 8']
+    ])
+    platform.forms.push({ name: 'P', code: '', description: '', color: 'indigo', icon: 'folder' })
+    await action(await load('programmes'), 'new')
+    platform.forms.push({ name: 'Q', programme: 'Programmes/P/P.md', type: 'reponse-ao', description: '', affaire: 'false', client: '', reference: '' })
+    await action(await load(shown.at(-1)!), 'project')
+    const projectPage = shown.at(-1)!
+    expect(read(platform, 'Programmes/P/Q/Q.md')).toContain('englobantes:\n- id: avant-vente\n  nom: Avant-vente\n  couleur: indigo\n  de: 1\n  a: 5\n')
+    expect(journey(await load(projectPage)).spans!.map((span) => [span.label, span.from, span.to, span.progress, span.detail])).toEqual([
+      ['Avant-vente', 0, 4, 'todo', '0/6 phases'],
+      ['Contrat', 5, 7, 'todo', '0/3 phases']
+    ])
+    await action(await load(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|veille`), 'status-terminee')
+    expect(journey(await load(projectPage)).spans![0]).toMatchObject({ progress: 'current', detail: '1/6 phases' })
+  })
+
+  it('l’éditeur : « Phase englobante » (de l’étape, à l’étape, couleur), la modifier, la retirer', async () => {
+    const platform = memoryPlatform()
+    const { load, action, settings } = await start(platform)
+    const editor = () => load('programmes.type?projet-simple')
+    platform.forms.push({ name: 'Livraison', from: '1', to: '2', color: 'orange', description: '' })
+    await action(await editor(), 'span')
+    expect(platform.asked.at(-1)!.fields.find((field) => field.key === 'from')).toMatchObject({ options: [{ label: 'Étape 1 — Lancement' }, { label: 'Étape 2 — Réalisation' }, { label: 'Étape 3 — Recette' }, { label: 'Étape 4 — Clôture' }] })
+    let drawn = (await editor()).blocks.find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
+    expect(drawn.spans).toMatchObject([{ label: 'Livraison', color: 'orange', from: 1, to: 2, detail: 'étapes 2 à 3' }])
+    // À l'envers : refusé.
+    await expect(
+      (async () => {
+        platform.forms.push({ name: 'X', from: '3', to: '1', color: 'orange', description: '' })
+        await action(await editor(), 'span')
+      })()
+    ).rejects.toThrow('La dernière étape vient après la première.')
+    platform.forms.push({ name: 'Livraison et recette', from: '1', to: '3', color: 'green', description: '' })
+    await drawn.spans![0]!.tools!.find((tool) => tool.id === 'edit')!.run()
+    drawn = (await editor()).blocks.find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
+    expect(drawn.spans).toMatchObject([{ label: 'Livraison et recette', from: 1, to: 3 }])
+    await drawn.spans![0]!.tools!.find((tool) => tool.id === 'remove')!.run()
+    expect((settings.programmes!.typesProjet as ProjectType[]).find((type) => type.id === 'projet-simple')!.spans).toBeUndefined()
   })
 })
 

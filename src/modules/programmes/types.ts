@@ -7,7 +7,7 @@
  * pures : un type changé est un nouveau type, rangé ensuite dans les réglages.
  */
 
-import { freeId, FREE_KIND, readProjectType, slug, type PhaseSpec, type ProjectType } from './model'
+import { freeId, FREE_KIND, readProjectType, slug, type PhaseSpec, type ProjectType, type SpanSpec } from './model'
 
 /** La clé des types de projet dans les réglages du module. */
 export const TYPES_KEY = 'typesProjet'
@@ -36,6 +36,10 @@ export function starterTypes(t: Translate): ProjectType[] {
         [phase('negociation', 'chat', 'rose')],
         [phase('execution', 'play', 'green')],
         [phase('cloture', 'lock', 'slate')]
+      ],
+      spans: [
+        { id: 'avant-vente', name: t('programmes.starter.span.avant-vente'), color: 'indigo', from: 0, to: 4 },
+        { id: 'contrat', name: t('programmes.starter.span.contrat'), color: 'green', from: 5, to: 7 }
       ]
     },
     {
@@ -132,4 +136,47 @@ export function newType(types: readonly ProjectType[], name: string, t: Translat
 /** Une copie d'un type, sous un autre nom. */
 export function copyType(types: readonly ProjectType[], type: ProjectType, name: string): ProjectType {
   return { ...type, id: freeId(slug(name), types.map((each) => each.id)), name, stages: type.stages.map((list) => list.map((phase) => ({ ...phase }))) }
+}
+
+// ── Les phases englobantes ──────────────────────────────────────────────────────────
+
+const spanIds = (type: ProjectType): string[] => [...(type.spans ?? []).map((span) => span.id), ...allPhaseIds(type)]
+
+/** Une phase englobante de plus (de l'étape `from` à `to`, à partir de 0). */
+export function addSpan(type: ProjectType, fields: Omit<SpanSpec, 'id'>): ProjectType {
+  const span: SpanSpec = { ...fields, id: freeId(slug(fields.name), spanIds(type)) }
+  return { ...type, spans: [...(type.spans ?? []), span] }
+}
+
+export function updateSpan(type: ProjectType, id: string, patch: Partial<Omit<SpanSpec, 'id'>>): ProjectType {
+  return { ...type, spans: (type.spans ?? []).map((span) => (span.id === id ? { ...span, ...patch } : span)) }
+}
+
+export function removeSpan(type: ProjectType, id: string): ProjectType {
+  const spans = (type.spans ?? []).filter((span) => span.id !== id)
+  const next: ProjectType = { ...type, spans }
+  if (!spans.length) delete next.spans
+  return next
+}
+
+/**
+ * Les phases englobantes d'un type, suivies après qu'on a changé ses étapes (une phase
+ * déplacée, une étape ajoutée ou disparue) : chacune couvre toujours les phases qu'elle
+ * couvrait — de l'étape de la première à celle de la dernière ; plus aucune : elle disparaît.
+ */
+export function remapSpans(before: ProjectType, after: ProjectType): ProjectType {
+  if (!before.spans?.length) return after
+  const stageOf = new Map<string, number>()
+  after.stages.forEach((stage, at) => stage.forEach((phase) => stageOf.set(phase.id, at)))
+  const spans = before.spans
+    .map((span): SpanSpec | null => {
+      const covered = before.stages.slice(span.from, span.to + 1).flat()
+      const now = covered.map((phase) => stageOf.get(phase.id)).filter((at): at is number => at !== undefined)
+      if (!now.length) return null
+      return { ...span, from: Math.min(...now), to: Math.max(...now) }
+    })
+    .filter((span): span is SpanSpec => span !== null)
+  const next: ProjectType = { ...after, spans }
+  if (!spans.length) delete next.spans
+  return next
 }

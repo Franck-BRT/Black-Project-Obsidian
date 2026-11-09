@@ -5,13 +5,31 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.1.1 (Black Projects 0.109.1) |
+| Version | 0.2.0 (Black Projects 0.110.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les phases englobantes ; les icônes dans la liste (v0.2.0, Black Projects 0.110.0)
+
+- Un type de projet a des **phases englobantes** (`ProjectType.spans`, `SpanSpec` : `id`,
+  `name`, `color`, `from`, `to` — ses première et dernière étapes, à partir de 0), dessinées en
+  **bandeaux** au-dessus des étapes qu'elles couvrent (`JourneySpan` du bloc `journey`, sur une
+  grille alignée sur les colonnes ; deux qui se chevauchent vont l'une sous l'autre). Le type de
+  départ « Réponse à un appel d'offres » en a deux : **Avant-vente** (étapes 1 à 5) et
+  **Contrat** (6 à 8).
+- Dans l'éditeur : **Phase englobante** (nom, de l'étape, à l'étape, couleur), chaque bandeau se
+  modifie ou se retire. Quand les étapes changent (une phase déplacée, une étape ajoutée ou
+  disparue), un bandeau suit ses phases (`remapSpans`) ; plus aucune : il disparaît.
+- Un projet les copie (`englobantes` dans son en-tête : `id`, `nom`, `couleur`, `de`, `a`, ses
+  étapes à partir de 1) ; leur bandeau dit où il en est : « 1/6 phases », terminé quand toutes
+  ses phases le sont (ou sans objet), en cours dès que l'une est commencée.
+- Les listes **Couleur** et **Icône** : un bouton (le choix et son aperçu) ouvre une liste où
+  chaque choix a son icône ou sa couleur à gauche (la liste du navigateur ne sait pas les
+  montrer) ; flèches, Entrée, Échap.
 
 ## Les couleurs et les icônes se voient ; plus d'« Analyses » au menu (v0.1.1, Black Projects 0.109.1)
 

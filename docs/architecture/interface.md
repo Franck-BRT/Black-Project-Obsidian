@@ -249,10 +249,13 @@ flèches, et dans chacune ses **phases** en tuiles (`JourneyPhase` : icône sur 
 `TileColor`, comme les tuiles de l'accueil ; `caption`, `detail`, `status` en pastille,
 `progress` — `done` (coche), `current` (anneau), `todo` (pâle), `skipped` (grisée) —, `open`,
 `tools`). Une étape peut avoir une tuile « + » (`add`), le parcours aussi (après la dernière
-étape) ; son titre peut ouvrir ce qu'il dessine (`open`) ; `compact` : en miniature. Une carte
+étape) ; son titre peut ouvrir ce qu'il dessine (`open`) ; `compact` : en miniature. Des **phases englobantes** (`spans` : `JourneySpan`, `from`, `to`, le rang
+de leurs première et dernière étapes) sont des bandeaux au-dessus des étapes qu'elles couvrent ;
+le parcours est une grille dont les colonnes sont ses étapes et ses flèches. Une carte
 peut porter une couleur (`Card.color`) : son icône sur cette couleur. Un choix d'une liste
 (`Choice.preview`) peut montrer une couleur de tuile ou une icône : les fenêtres de formulaire
-montrent celle choisie à côté de la liste.
+montrent, à la place de la liste du navigateur, un bouton qui ouvre une liste où chaque choix a
+son aperçu à gauche (flèches, Entrée, Échap).
 
 Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
 forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :

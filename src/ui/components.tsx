@@ -480,6 +480,22 @@ function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) 
       {!compact && <span>{action.label}</span>}
     </button>
   )
+  // Les phases englobantes, rangées en lignes : deux qui se chevauchent vont l'une sous l'autre.
+  const lanes: number[] = []
+  const spans = (block.spans ?? [])
+    .filter((span) => span.from <= span.to && span.from < block.stages.length)
+    .sort((a, b) => a.from - b.from || b.to - a.to)
+    .map((span) => {
+      let lane = lanes.findIndex((end) => end < span.from)
+      if (lane < 0) lane = lanes.push(-1) - 1
+      lanes[lane] = Math.min(span.to, block.stages.length - 1)
+      return { span, lane, to: Math.min(span.to, block.stages.length - 1) }
+    })
+  const stageRow = lanes.length + 1
+  const adding = !compact && block.add
+  // Une colonne par étape, une plus étroite pour chaque flèche entre deux.
+  const arrow = compact ? '16px' : '42px'
+  const columns = [...block.stages.map((_, at) => (at ? `${arrow} auto` : 'auto')), ...(adding ? [`${arrow} auto`] : [])].join(' ')
   return (
     <figure class={`bp-journey${compact ? ' is-compact' : ''}`} aria-label={block.label}>
       {(block.title || block.subtitle) && (
@@ -497,24 +513,46 @@ function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) 
           {block.subtitle && <span class="bp-journey-subtitle">{block.subtitle}</span>}
         </figcaption>
       )}
-      <ol class="bp-journey-stages">
-        {block.stages.map((stage, index) => (
-          <li key={stage.id} class="bp-journey-stage">
-            {index > 0 && <span class="bp-journey-arrow" aria-hidden="true" />}
-            <div class="bp-journey-column">
-              {!compact && stage.caption && <span class="bp-journey-stage-caption">{stage.caption}</span>}
-              <ul class="bp-journey-phases">{stage.phases.map(phase)}</ul>
-              {!compact && stage.add && adder(stage.add)}
-            </div>
-          </li>
+      <div class="bp-journey-grid" style={{ gridTemplateColumns: columns }}>
+        {spans.map(({ span, lane, to }) => (
+          <div key={`span-${span.id}`} class={`bp-journey-span bp-tile-${span.color}`} data-progress={span.progress ?? 'plain'} style={{ gridColumn: `${span.from * 2 + 1} / ${to * 2 + 2}`, gridRow: String(lane + 1) }} title={compact ? [span.label, span.detail].filter(Boolean).join(' — ') : undefined}>
+            {!compact &&
+              (span.open ? (
+                <button type="button" class="bp-journey-span-label" onClick={() => void run(span.open!)} title={span.open.tooltip ?? span.open.label}>
+                  {span.progress === 'done' && <Icon name="check" />}
+                  {span.label}
+                </button>
+              ) : (
+                <span class="bp-journey-span-label">
+                  {span.progress === 'done' && <Icon name="check" />}
+                  {span.label}
+                </span>
+              ))}
+            {!compact && span.detail && <span class="bp-journey-span-detail">{span.detail}</span>}
+            {!compact && span.tools && span.tools.length > 0 && (
+              <span class="bp-journey-span-tools">
+                {span.tools.map((tool) => (
+                  <ActionButton key={tool.id} action={tool} compact />
+                ))}
+              </span>
+            )}
+          </div>
         ))}
-        {!compact && block.add && (
-          <li class="bp-journey-stage">
-            {block.stages.length > 0 && <span class="bp-journey-arrow is-dashed" aria-hidden="true" />}
-            <div class="bp-journey-column">{adder(block.add, true)}</div>
-          </li>
-        )}
-      </ol>
+        {block.stages.map((stage, index) => [
+          index > 0 ? <span key={`arrow-${stage.id}`} class="bp-journey-arrow" aria-hidden="true" style={{ gridColumn: String(index * 2), gridRow: String(stageRow) }} /> : null,
+          <div key={stage.id} class="bp-journey-column" style={{ gridColumn: String(index * 2 + 1), gridRow: String(stageRow) }}>
+            {!compact && stage.caption && <span class="bp-journey-stage-caption">{stage.caption}</span>}
+            <ul class="bp-journey-phases">{stage.phases.map(phase)}</ul>
+            {!compact && stage.add && adder(stage.add)}
+          </div>
+        ])}
+        {adding && block.add && [
+          block.stages.length > 0 ? <span key="arrow-add" class="bp-journey-arrow is-dashed" aria-hidden="true" style={{ gridColumn: String(block.stages.length * 2), gridRow: String(stageRow) }} /> : null,
+          <div key="add" class="bp-journey-column" style={{ gridColumn: String(block.stages.length * 2 + 1), gridRow: String(stageRow) }}>
+            {adder(block.add, true)}
+          </div>
+        ]}
+      </div>
       {block.legend && <p class="bp-journey-legend">{block.legend}</p>}
     </figure>
   )

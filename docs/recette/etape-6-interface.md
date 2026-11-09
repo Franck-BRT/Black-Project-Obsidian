@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les phases englobantes ; les icônes dans la liste (v0.110.0)
+
+- [ ] **Types de projet** : « Réponse à un appel d'offres » a deux bandeaux, **Avant-vente**
+      (étapes 1 à 5) et **Contrat** (6 à 8)
+- [ ] L'éditeur d'un type : **Phase englobante** (nom, de l'étape, à l'étape, couleur) — son
+      bandeau au-dessus de ses étapes ; un clic sur son nom la modifie, sa corbeille la retire ;
+      déplacer une de ses phases : le bandeau suit
+- [ ] Un nouveau projet de ce type : ses bandeaux ; une phase terminée, le bandeau dit « 1/6
+      phases » et s'entoure (en cours)
+- [ ] Les listes Couleur et Icône : chaque choix a sa couleur ou son icône à gauche ; au clavier
+      (flèche bas, flèches, Entrée), Échap ne ferme que la liste
+
 ## Les couleurs et les icônes se voient ; plus d'« Analyses » au menu (v0.109.1)
 
 - [ ] Le menu : « Programmes », plus d'« Analyses » ; la page des analyses s'ouvre encore par sa

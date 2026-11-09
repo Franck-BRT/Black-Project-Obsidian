@@ -51,6 +51,12 @@ Sur **Types de projet**, chaque type est dessiné ; un clic sur son titre ouvre 
 - ses boutons la **déplacent** (vers l'étape d'avant ou d'après, plus haut ou plus bas dans son
   étape) ou la **retirent** ;
 - **+ Phase en parallèle** ajoute une phase à une étape ; **+ Étape**, une étape à la fin ;
+- **Phase englobante** : une phase qui couvre des étapes qui se suivent (« Avant-vente », de la
+  veille à la remise de l'offre), dessinée en bandeau au-dessus d'elles ; un clic sur son nom la
+  modifie (son nom, ses première et dernière étapes, sa couleur), sa corbeille la retire ;
 - **Nouveau type**, **Modifier**, **Dupliquer**, **Supprimer**, **Nouveau projet de ce type**.
+
+Sur un projet, chaque phase englobante dit où elle en est (« 1/6 phases ») : terminée quand
+toutes ses phases le sont, en cours dès que l'une est commencée.
 
 Les projets déjà créés **gardent leurs phases** : changer un type ne les change pas.

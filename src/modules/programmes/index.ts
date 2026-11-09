@@ -14,15 +14,15 @@ import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
 import type { Choice, FormField } from '../../core/ports'
 import { phaseKinds, type PhaseContext } from './kinds'
-import { AFFAIRE_STATUSES, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType } from './model'
+import { AFFAIRE_STATUSES, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType, type SpanSpec } from './model'
 import { programmePageOf, projectPageOf, registerProgrammesHome, typePageOf, TYPES_PAGE } from './home'
 import { AlreadyThere, ProgrammeStore } from './store'
-import { addParallel, addStage, copyType, movePhase, newPhase, newType, readTypes, removePhase, TYPES_KEY, updatePhase } from './types'
+import { addParallel, addSpan, addStage, copyType, movePhase, newPhase, newType, readTypes, remapSpans, removePhase, removeSpan, TYPES_KEY, updatePhase, updateSpan } from './types'
 import { programmesEn, programmesFr } from './i18n'
 
 // ── Interface publique ──────────────────────────────────────────────────────────────
 export { registerPhaseKind, phaseKinds, type PhaseContext, type PhaseKind } from './kinds'
-export { addParallel, addStage, AO_KIND, movePhase, removePhase, starterTypes } from './types'
+export { addParallel, addSpan, addStage, AO_KIND, movePhase, remapSpans, removePhase, starterTypes } from './types'
 export { PROGRAMMES_PAGE, PROJECT_PAGE, phasePageOf, projectPageOf, programmePageOf } from './home'
 export type { Affaire, PhaseStatus, Programme, Project, ProjectPhase, ProjectType } from './model'
 
@@ -51,7 +51,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.1.1',
+  version: '0.2.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -258,12 +258,41 @@ export const programmesModule: BlackModule = {
     })
 
     // ── Types de projet ─────────────────────────────────────────────────────────
-    const withType = async (id: string, change: (type: ProjectType) => ProjectType | null): Promise<void> => {
+    /** Un type changé ; ses étapes changées (`stages`), ses phases englobantes suivent leurs phases. */
+    const withType = async (id: string, change: (type: ProjectType) => ProjectType | null, stages = true): Promise<void> => {
       const all = types()
       const type = all.find((each) => each.id === id)
       if (!type) return
-      const next = change(type)
-      if (next) await saveTypes(all.map((each) => (each.id === id ? next : each)))
+      const changed = change(type)
+      if (!changed) return
+      const next = stages ? remapSpans(type, changed) : changed
+      await saveTypes(all.map((each) => (each.id === id ? next : each)))
+    }
+
+    /** La fenêtre d'une phase englobante : son nom, sa couleur, ses première et dernière étapes. */
+    const spanForm = async (title: string, type: ProjectType, span?: SpanSpec): Promise<Omit<SpanSpec, 'id'> | null> => {
+      const stageChoices: Choice[] = type.stages.map((stage, at) => ({ value: String(at), label: t('programmes.span.stageChoice', { number: at + 1, names: stage.map((phase) => phase.name).join(', ') }) }))
+      const values = await ui.askForm({
+        title,
+        intro: t('programmes.span.intro'),
+        fields: [
+          nameField('name', t('programmes.field.name'), span?.name ?? ''),
+          { kind: 'choice', key: 'from', label: t('programmes.span.from'), options: stageChoices, value: String(span?.from ?? 0) },
+          { kind: 'choice', key: 'to', label: t('programmes.span.to'), options: stageChoices, value: String(span?.to ?? Math.min(1, type.stages.length - 1)) },
+          { kind: 'choice', key: 'color', label: t('programmes.field.color'), options: colorChoices, value: span?.color ?? 'slate' },
+          { kind: 'textarea', key: 'description', label: t('programmes.field.description'), value: span?.description ?? '' }
+        ],
+        submit: t('programmes.save'),
+        validate: (entered) => (!(entered.name ?? '').trim() ? t('programmes.field.name.invalid') : Number(entered.to) < Number(entered.from) ? t('programmes.span.order') : null)
+      })
+      if (!values) return null
+      return {
+        name: (values.name ?? '').trim(),
+        from: Number(values.from) || 0,
+        to: Math.max(Number(values.from) || 0, Number(values.to) || 0),
+        color: TILE_COLORS.includes(values.color as never) ? (values.color as SpanSpec['color']) : 'slate',
+        ...((values.description ?? '').trim() ? { description: (values.description ?? '').trim() } : {})
+      }
     }
 
     const phaseForm = async (title: string, phase?: PhaseSpec): Promise<Omit<PhaseSpec, 'id'> | null> => {
@@ -388,6 +417,27 @@ export const programmesModule: BlackModule = {
         })
       },
       moveTypePhase: (typeId, phaseId, direction) => withType(typeId, (type) => movePhase(type, phaseId, direction)),
+      addTypeSpan: async (typeId) => {
+        const type = types().find((each) => each.id === typeId)
+        if (!type) return
+        const fields = await spanForm(t('programmes.span.add.title'), type)
+        if (fields) await withType(typeId, (current) => addSpan(current, fields), false)
+      },
+      editTypeSpan: async (typeId, spanId) => {
+        const type = types().find((each) => each.id === typeId)
+        const span = type?.spans?.find((each) => each.id === spanId)
+        if (!type || !span) return
+        const fields = await spanForm(t('programmes.span.edit.title', { name: span.name }), type, span)
+        if (fields) await withType(typeId, (current) => updateSpan(current, spanId, fields), false)
+      },
+      removeTypeSpan: async (typeId, spanId) => {
+        const span = types()
+          .find((each) => each.id === typeId)
+          ?.spans?.find((each) => each.id === spanId)
+        if (!span) return
+        const sure = await ui.confirm({ title: t('programmes.span.remove.title', { name: span.name }), message: t('programmes.span.remove.message'), confirm: t('programmes.span.remove'), cancel: t('programmes.cancel'), danger: true })
+        if (sure) await withType(typeId, (type) => removeSpan(type, spanId), false)
+      },
       removeTypePhase: async (typeId, phaseId) => {
         const phase = types()
           .find((each) => each.id === typeId)

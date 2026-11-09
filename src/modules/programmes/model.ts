@@ -44,7 +44,21 @@ export interface PhaseSpec {
   description?: string
 }
 
-/** Un **type de projet** : ses phases, en étapes (les phases d'une étape vont en parallèle). */
+/**
+ * Une **phase englobante** : elle couvre des étapes qui se suivent (« Avant-vente » : de la
+ * veille à la remise de l'offre). `from` et `to` : ses première et dernière étapes, à partir de
+ * 0 dans un type, de 1 dans un projet.
+ */
+export interface SpanSpec {
+  id: string
+  name: string
+  color: TileColor
+  from: number
+  to: number
+  description?: string
+}
+
+/** Un **type de projet** : ses phases, en étapes (les phases d'une étape vont en parallèle) ; ses phases englobantes. */
 export interface ProjectType {
   id: string
   name: string
@@ -52,6 +66,7 @@ export interface ProjectType {
   color: TileColor
   description?: string
   stages: PhaseSpec[][]
+  spans?: SpanSpec[]
 }
 
 /** Où en est une phase d'un projet. */
@@ -94,6 +109,8 @@ export interface Project {
   description: string
   created: string
   phases: ProjectPhase[]
+  /** Ses phases englobantes (leurs étapes à partir de 1). */
+  spans: SpanSpec[]
 }
 
 export type AffaireStatus = 'en-cours' | 'gagnee' | 'perdue' | 'abandonnee'
@@ -160,7 +177,22 @@ export function readProjectType(value: unknown): ProjectType | null {
         .map((stage) => (Array.isArray(stage) ? stage.map(readPhaseSpec).filter((phase): phase is PhaseSpec => phase !== null) : []))
         .filter((stage) => stage.length)
     : []
-  return { id, name, icon: asIcon(data.icon, 'flow'), color: asColor(data.color, 'indigo'), ...(plain(data.description) ? { description: plain(data.description) } : {}), stages }
+  const spans = Array.isArray(data.spans) ? data.spans.map((span) => readSpan(span, 0, stages.length - 1)).filter((span): span is SpanSpec => span !== null) : []
+  return { id, name, icon: asIcon(data.icon, 'flow'), color: asColor(data.color, 'indigo'), ...(plain(data.description) ? { description: plain(data.description) } : {}), stages, ...(spans.length ? { spans } : {}) }
+}
+
+/** Une phase englobante relue (`min`, `max` : les étapes possibles) ; `null` si elle n'en est pas une. */
+function readSpan(value: unknown, min: number, max: number, keys = { name: 'name', color: 'color', from: 'from', to: 'to' }): SpanSpec | null {
+  if (!value || typeof value !== 'object') return null
+  const data = value as Record<string, unknown>
+  const id = plain(data.id)
+  const name = plain(data[keys.name])
+  const from = Number(data[keys.from])
+  const to = Number(data[keys.to])
+  if (!id || !name || !Number.isInteger(from) || !Number.isInteger(to) || max < min) return null
+  const first = Math.min(Math.max(from, min), max)
+  const last = Math.min(Math.max(to, first), max)
+  return { id, name, color: asColor(data[keys.color], 'slate'), from: first, to: last, ...(plain(data.description) ? { description: plain(data.description) } : {}) }
 }
 
 function readPhaseSpec(value: unknown): PhaseSpec | null {
@@ -225,6 +257,8 @@ export function readProject(path: string, data: Record<string, unknown>): Projec
         })
         .filter((phase): phase is ProjectPhase => phase !== null)
     : []
+  const last = Math.max(1, ...phases.map((phase) => phase.stage))
+  const spans = Array.isArray(data.englobantes) ? data.englobantes.map((span) => readSpan(span, 1, last, { name: 'nom', color: 'couleur', from: 'de', to: 'a' })).filter((span): span is SpanSpec => span !== null) : []
   return {
     path,
     folder: folderOf(path),
@@ -236,7 +270,8 @@ export function readProject(path: string, data: Record<string, unknown>): Projec
     icon: asIcon(data.icone, 'flow'),
     description: plain(data.description),
     created: plain(data.creeLe),
-    phases
+    phases,
+    spans
   }
 }
 
@@ -262,7 +297,8 @@ export function projectData(project: Omit<Project, 'path' | 'folder' | 'name'>):
       ...(phase.end ? { fin: phase.end } : {}),
       ...(phase.link ? { lien: link(phase.link) } : {}),
       ...(phase.description ? { description: phase.description } : {})
-    }))
+    })),
+    ...(project.spans.length ? { englobantes: project.spans.map((span) => ({ id: span.id, nom: span.name, couleur: span.color, de: span.from, a: span.to, ...(span.description ? { description: span.description } : {}) })) } : {})
   }
 }
 
@@ -271,6 +307,11 @@ export function stagesOf(phases: readonly ProjectPhase[]): ProjectPhase[][] {
   const stages = new Map<number, ProjectPhase[]>()
   for (const phase of phases) stages.set(phase.stage, [...(stages.get(phase.stage) ?? []), phase])
   return [...stages.entries()].sort(([a], [b]) => a - b).map(([, list]) => list)
+}
+
+/** Les phases englobantes d'un type, copiées pour un nouveau projet (leurs étapes à partir de 1). */
+export function spansFromType(type: ProjectType): SpanSpec[] {
+  return (type.spans ?? []).map((span) => ({ ...span, from: span.from + 1, to: span.to + 1 }))
 }
 
 /** Les phases d'un type, copiées pour un nouveau projet : toutes à venir. */
