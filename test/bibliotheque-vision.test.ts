@@ -119,17 +119,17 @@ describe('ce que lit la vision', () => {
 })
 
 describe('un document sans texte : la vision seule', () => {
-  it('une image : « Lire avec la vision (IA) » seulement ; ses pages lues par le modèle d’OCR (ou de vision) : texte 1, la fiche le montre', async () => {
+  it('un scan versé (une image) : lu aussitôt par le modèle d’OCR (ou de vision), son workflow système ; texte 1, la fiche le montre', async () => {
     const platform = memoryPlatform()
-    const { pour, seen, textActions, textVersions } = await start(platform, () => '# Procès-verbal\n\nRéception prononcée le 12 mars 2026.')
+    const { pour, seen, textActions, textVersions, workflows } = await start(platform, () => '# Procès-verbal\n\nRéception prononcée le 12 mars 2026.')
+    expect(workflows().find((each) => each.system === 'sys.ia.lire-scans')).toMatchObject({
+      enabled: true,
+      name: 'Lire avec la vision un document versé sans texte (un scan, une image)',
+      trigger: { kind: 'bibliotheque.document-verse' },
+      conditions: [{ field: 'scan', op: 'not-empty', value: '' }],
+      actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}', mode: 'vision' } }]
+    })
     const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
-    // Au dépôt, rien n'est lu par la vision : on le propose.
-    expect(seen).toHaveLength(0)
-    const actions = await textActions(doc.record)
-    expect(actions.map((action) => action.label)).toEqual(['Extraire de nouveau', 'Lire avec la vision (IA)', 'Ouvrir sa note'])
-    await actions.find((action) => action.id === 'vision')!.run()
-    // Pas de question : la vision seule.
-    expect(platform.offered).toHaveLength(0)
     expect(seen).toHaveLength(1)
     expect(seen[0]!.model).toBe('pixtral-12b')
     expect(seen[0]!.image).toMatch(/^data:image\/png;base64,/)
@@ -138,8 +138,42 @@ describe('un document sans texte : la vision seule', () => {
     const note = read(platform, doc.record)
     expect(note).toMatch(/\nlecture: lue\n/)
     expect(note).toContain('> [!info] Texte 1, lu par l’IA avec la vision (1 page(s) regardée(s)) :')
+    expect(note).not.toContain('Les versions d’avant sont gardées')
     expect(note).toContain('Réception prononcée le 12 mars 2026.')
-    expect(platform.notices.at(-1)).toBe('« Scan PV » : lu par l’IA avec la vision — texte 1 (1 page(s)).')
+    expect(platform.notices).toContain('« Scan PV » : lu par l’IA avec la vision — texte 1 (1 page(s)).')
+    // Lu : la fiche propose de le relire (le texte), plus de le lire.
+    expect((await textActions(doc.record)).map((action) => action.id)).toEqual(['extract', 'proofread', 'text-note'])
+  })
+
+  it('son workflow désactivé : rien au dépôt ; la fiche propose seulement « Lire avec la vision (IA) », sans question', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, textActions, textVersions, workflows } = await start(platform, () => 'Texte lu')
+    workflows().find((each) => each.system === 'sys.ia.lire-scans')!.enabled = false
+    const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
+    expect(seen).toHaveLength(0)
+    const actions = await textActions(doc.record)
+    expect(actions.map((action) => action.label)).toEqual(['Extraire de nouveau', 'Lire avec la vision (IA)', 'Ouvrir sa note'])
+    await actions.find((action) => action.id === 'vision')!.run()
+    expect(platform.offered).toHaveLength(0)
+    expect(seen).toHaveLength(1)
+    expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 1 — lu par l’IA avec la vision'])
+  })
+
+  it('un PDF scanné (sans texte) : ses pages dessinées, lues par la vision au dépôt', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, textVersions } = await start(platform, (one) => (one.image.endsWith('UDE=') ? 'Page un' : 'Page deux'))
+    const doc = await pour('Scan.pdf', textPdf([[], []]))
+    expect(seen.map((one) => one.image)).toEqual(['data:image/jpeg;base64,UDE=', 'data:image/jpeg;base64,UDI='])
+    expect((await textVersions(doc.record))[0]!.detail).toContain('2 page(s) regardée(s)')
+    expect(read(platform, doc.record)).toContain('Page un\n\nPage deux')
+  })
+
+  it('une plateforme qui ne dessine pas les PDF : un PDF scanné n’est pas lu, ni proposé', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, textActions } = await start(platform, () => 'x', false)
+    const doc = await pour('Scan.pdf', textPdf([[]]))
+    expect(seen).toHaveLength(0)
+    expect((await textActions(doc.record)).map((action) => action.id)).not.toContain('vision')
   })
 
   it('un format qui ne se montre pas en images (un Word illisible) : rien à proposer', async () => {

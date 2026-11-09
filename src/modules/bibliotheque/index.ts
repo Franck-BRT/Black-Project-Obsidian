@@ -454,6 +454,8 @@ function pouredSubject(doc: LibraryDoc, issuers: readonly KnownIssuer[] = []): S
       emetteuraconfirmer: doc.issuerToConfirm ? t('bibliotheque.read.yes') : '',
       // Un texte extrait du fichier (lu) : la relecture par l'IA s'y attache.
       texteextrait: doc.reading === 'lue' ? t('bibliotheque.read.yes') : '',
+      // Un scan : sans texte (un PDF scanné, une image), et un modèle de vision peut le regarder.
+      scan: (doc.reading === 'sans-texte' || doc.reading === 'image') && aiVision?.(doc.file) ? t('bibliotheque.read.yes') : '',
       date: doc.date ?? '',
       dateaconfirmer: doc.dateToConfirm ? t('bibliotheque.read.yes') : '',
       etiquettes: doc.tags.join(', '),
@@ -525,7 +527,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.34.0',
+  version: '0.35.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -630,7 +632,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteurnom', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'date', 'dateaconfirmer', 'texteextrait', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteurnom', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'date', 'dateaconfirmer', 'texteextrait', 'scan', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,

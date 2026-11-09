@@ -277,6 +277,9 @@ async function checkConnection(context: ModuleContext): Promise<string> {
 /** Le workflow système qui relit le texte extrait d'un document avec l'IA. */
 const PROOFREAD_SYSTEM = 'sys.ia.relire-textes'
 
+/** Le workflow système qui lit un scan versé avec la vision. */
+const SCAN_SYSTEM = 'sys.ia.lire-scans'
+
 /** Les champs d'un document de la bibliothèque, et le workflow système qui les cherche avec l'IA. */
 const AI_RESEARCH: Readonly<Record<ResearchField, string>> = {
   language: 'sys.ia.langue-documents',
@@ -295,7 +298,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.23.0',
+  version: '0.24.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -461,6 +464,19 @@ export const iaModule: BlackModule = {
         trigger: { kind: 'bibliotheque.document-verse' },
         conditions: [{ field: 'texteextrait', op: 'not-empty', value: '' }],
         actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}' } }]
+      })
+    })
+    // Un scan versé (sans texte : un PDF scanné, une image) : lu par le modèle de vision, ses pages en images (actif).
+    registerSystemWorkflow({
+      id: SCAN_SYSTEM,
+      moduleKey: 'ia.name',
+      enabledByDefault: true,
+      make: (tr) => ({
+        name: tr('ia.sys.lire-scans'),
+        mode: 'auto',
+        trigger: { kind: 'bibliotheque.document-verse' },
+        conditions: [{ field: 'scan', op: 'not-empty', value: '' }],
+        actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}', mode: 'vision' } }]
       })
     })
     // Les étiquettes d'un document versé, quand la première passe sans IA ne les a pas lues sûrement (actif).

@@ -605,6 +605,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   vision** (pages en images : `Platform.pages`, le pdf.js d'Obsidian ; messages avec images) ;
   un scan se **lit avec la vision** ; les **formules mathématiques** (LaTeX, dessinées par le
   MathJax d'Obsidian ; équations Word converties)
+- v0.107.0 : **IA, Bibliothèque** : les **scans lus avec la vision au dépôt** (workflow système
+  `sys.ia.lire-scans`, actif ; variable `{scan}`)
 
 ### Étape 7 — Livrables
 

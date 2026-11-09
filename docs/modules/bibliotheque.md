@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.34.0 (Black Projects 0.106.0) |
+| Version | 0.35.0 (Black Projects 0.107.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,13 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## La variable `{scan}` (v0.35.0, Black Projects 0.107.0)
+
+Le sujet d'un *document versé* a une variable `{scan}` : « oui » quand le document n'a pas de
+texte (`sans-texte`, `image`) et qu'un modèle de vision peut le regarder (`setAiVision`). Le
+workflow système du module IA `sys.ia.lire-scans` la prend pour condition : un scan versé est
+lu avec la vision aussitôt.
 
 ## Relire avec un modèle simple ou avec la vision ; lire un scan (v0.34.0, Black Projects 0.106.0)
 

@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les scans lus avec la vision au dépôt (v0.107.0)
+
+- [ ] Un modèle de vision réglé, verser un PDF scanné (ou une image) : des notices disent la
+      lecture avec la vision, puis « lu par l'IA avec la vision — texte 1 » ; la fiche montre le
+      texte, le journal des workflows le dit
+- [ ] Le workflow système « Lire avec la vision un document versé sans texte… » désactivé : rien
+      au dépôt ; la fiche propose **Lire avec la vision (IA)**
+
 ## Relire avec la vision ; lire un scan ; les formules (v0.106.0)
 
 - [ ] Page IA : un modèle de vision choisi. Sur la fiche d'un PDF avec du texte, **Relire avec

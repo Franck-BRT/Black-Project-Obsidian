@@ -94,8 +94,9 @@ relance quand on **extrait de nouveau** le texte d'un document, ou par **Relire 
 Sur la fiche, **Relire avec l'IA** fait choisir le modèle : **simple** (le texte extrait) ou **avec
 la vision** (chaque page d'un PDF, ou l'image, regardée et comparée au texte extrait — plus sûr,
 plus lent) ; l'étape du workflow a le même choix (champ *Modèle*). Un document sans texte (un
-scan) se lit avec la vision seule (**Lire avec la vision (IA)**), par le modèle d'OCR — sinon
-celui de vision. Les formules mathématiques sont écrites en LaTeX.
+scan, une image) est **lu avec la vision dès son dépôt** — le workflow système « Lire avec la
+vision un document versé sans texte… » (activé), par le modèle d'OCR, sinon celui de vision ;
+désactivé, la fiche propose **Lire avec la vision (IA)**. Les formules mathématiques sont écrites en LaTeX.
 
 Ces workflows servent aussi au bouton **Relancer la recherche** d'un champ, sur la fiche
 d'un document de la bibliothèque : quand la recherche sans IA n'est pas sûre, celui du champ
