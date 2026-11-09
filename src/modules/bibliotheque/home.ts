@@ -460,13 +460,13 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     identity: () => deps.classify(doc.record),
     ...Object.fromEntries(EDITABLE_FIELDS.map((key) => [key, () => deps.editField(doc.record, key)]))
   }
-  // Relancer la recherche d'un champ dans le document (la référence, l'édition, la révision : ensemble).
+  // Relancer la recherche d'un champ dans le document : ce seul champ (« Référence et version » : les trois ensemble).
   const researched: Record<string, ResearchField> = {
     title: 'title',
     language: 'language',
-    reference: 'identity',
-    edition: 'identity',
-    revision: 'identity',
+    reference: 'reference',
+    edition: 'edition',
+    revision: 'revision',
     identity: 'identity',
     date: 'date',
     category: 'category',

@@ -28,7 +28,7 @@ import { docPageOf, LIBRARY_PAGE, registerLibraryHome, type EditableField } from
 import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, versionLabel, type DocOrigin, type LibraryDoc } from './model'
-import { LibraryStore, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
+import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
 import { defaultShelfOf, folderName, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
@@ -471,7 +471,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.24.0',
+  version: '0.24.1',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -832,7 +832,15 @@ export const bibliothequeModule: BlackModule = {
         const system = aiResearch.get(field)
         if (system) {
           if (!(await runSystemWorkflow(system, TRIGGER_POURED, pouredSubject(doc, await knownIssuers())))) notes.push(t('bibliotheque.research.aiOff'))
-          doc = (await store.load(record)) ?? doc
+          // L'IA a pu en dire plus (la référence et la version, ensemble) : seul ce champ change.
+          const after = (await store.load(record)) ?? doc
+          const kept: LibraryDoc = { ...doc }
+          for (const key of RESEARCH_KEYS[field]) {
+            if (after[key] === undefined) delete kept[key]
+            else (kept as unknown as Record<string, unknown>)[key] = after[key]
+          }
+          if (JSON.stringify(kept) !== JSON.stringify(after)) await store.save(kept)
+          doc = kept
         } else notes.push(t('bibliotheque.research.aiNone'))
       }
       const label = t(`bibliotheque.field.${field}`)
@@ -842,6 +850,9 @@ export const bibliothequeModule: BlackModule = {
         title: { toConfirm: doc.titleToConfirm, byAi: doc.titleByAi, value: doc.title, probable: doc.titleProbable },
         language: { toConfirm: doc.languageToConfirm, byAi: doc.languageByAi, value: doc.language ? t(`bibliotheque.lang.${doc.language}`) : '', probable: doc.languageProbable ? t(`bibliotheque.lang.${doc.languageProbable}`) : '' },
         identity: { toConfirm: doc.identityToConfirm, byAi: doc.identityByAi, value: [doc.reference, versionLabel(doc) ? t('bibliotheque.identity.version', { version: versionLabel(doc) }) : ''].filter(Boolean).join(', '), probable: '' },
+        reference: { toConfirm: doc.identityToConfirm, byAi: doc.identityByAi, value: doc.reference, probable: '' },
+        edition: { toConfirm: doc.identityToConfirm, byAi: doc.identityByAi, value: doc.edition, probable: '' },
+        revision: { toConfirm: doc.identityToConfirm, byAi: doc.identityByAi, value: doc.revision, probable: '' },
         date: { toConfirm: doc.dateToConfirm, byAi: doc.dateByAi, value: doc.date ? docDateLabel(doc.date, locale) : '', probable: doc.dateProbable ? docDateLabel(doc.dateProbable, locale) : '' },
         category: { toConfirm: doc.categoryToConfirm, byAi: doc.categoryByAi, value: doc.category, probable: doc.categoryProbable },
         issuer: { toConfirm: doc.issuerToConfirm, byAi: doc.issuerByAi, value: issuerLabelIn(doc.issuer, issuers), probable: doc.issuerProbable ? issuerLabelIn(doc.issuerProbable, issuers) : '' },

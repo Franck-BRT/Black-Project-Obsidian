@@ -134,7 +134,24 @@ function likelyPreviousOf(doc: Pick<LibraryDoc, 'record' | 'file' | 'family' | '
 }
 
 /** Les champs d'une fiche dont on relance la recherche dans le document (la référence, l'édition, la révision : ensemble). */
-export type ResearchField = 'title' | 'language' | 'identity' | 'date' | 'category' | 'issuer' | 'tags'
+export type ResearchField = 'title' | 'language' | 'identity' | 'reference' | 'edition' | 'revision' | 'date' | 'category' | 'issuer' | 'tags'
+
+/**
+ * Ce que relancer la recherche d'un champ peut changer dans sa fiche — rien d'autre : la
+ * référence seule ne touche ni l'édition ni la révision (« Référence et version » : les trois).
+ */
+export const RESEARCH_KEYS: Readonly<Record<ResearchField, readonly (keyof LibraryDoc)[]>> = {
+  title: ['title', 'titleToConfirm', 'titleProbable', 'titleByAi'],
+  language: ['language', 'languageToConfirm', 'languageProbable', 'languageByAi'],
+  identity: ['reference', 'edition', 'revision', 'identityToConfirm', 'identityByAi'],
+  reference: ['reference', 'identityToConfirm', 'identityByAi'],
+  edition: ['edition', 'identityToConfirm', 'identityByAi'],
+  revision: ['revision', 'identityToConfirm', 'identityByAi'],
+  date: ['date', 'dateToConfirm', 'dateProbable', 'dateByAi'],
+  category: ['category', 'categoryToConfirm', 'categoryProbable', 'categoryByAi'],
+  issuer: ['issuer', 'issuerToConfirm', 'issuerProbable', 'issuerByAi'],
+  tags: ['tags', 'tagsToConfirm', 'tagsProbable', 'tagsByAi']
+}
 
 export class LibraryStore {
   constructor(private readonly deps: StoreDeps) {}
@@ -428,6 +445,14 @@ export class LibraryStore {
       if (found.edition) next.edition = found.edition
       if (found.revision) next.revision = found.revision
       if (!found.sure) next.identityToConfirm = true
+    } else if (field === 'reference' || field === 'edition' || field === 'revision') {
+      // Ce seul champ : les deux autres restent tels qu'ils sont (changés à la main, peut-être).
+      const found = guessIdentity(text ?? '', name)
+      sure = found.sure && !!found[field]
+      if (found[field]) next[field] = found[field]
+      delete next.identityByAi
+      if (sure) delete next.identityToConfirm
+      else next.identityToConfirm = true
     } else if (field === 'date') {
       const found = guessDocDate(text ?? '', name)
       delete next.dateToConfirm

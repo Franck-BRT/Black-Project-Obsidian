@@ -94,15 +94,26 @@ describe('relancer la recherche d’un champ, sans IA', () => {
     expect(platform.notices.at(-1)).toBe('Date du document : trouvé dans le document — 12 mars 2026.')
   })
 
-  it('la référence, l’édition, la révision : relancées ensemble', async () => {
+  it('la référence, l’édition, la révision : chacune seule ; « Référence et version », les trois', async () => {
     const platform = memoryPlatform()
     const { pour, tool } = await start(platform, [lectureFichiersModule, bibliothequeModule])
-    const doc = await pour('Plan.txt', 'Plan de management\nRéf. : PMP-01\nÉdition 2\nLe plan.')
+    const doc = await pour('Plan.txt', 'Plan de management\nRéf. : PMP-01\nÉdition 2\nRévision B\nLe plan.')
+    expect(read(platform, doc.record)).toMatch(/\nreference: PMP-01\nedition: "2"\nrevision: B\n/)
+    // La référence changée à la main, puis la révision relancée : la référence ne bouge pas.
     platform.forms.push({ value: 'X-9' })
     await (await tool(doc.record, 'reference', 'edit')).run()
+    platform.forms.push({ value: 'Z' })
+    await (await tool(doc.record, 'revision', 'edit')).run()
+    await (await tool(doc.record, 'revision', 'research')).run()
+    expect(read(platform, doc.record)).toMatch(/\nreference: X-9\nedition: "2"\nrevision: B\n/)
+    expect(platform.notices.at(-1)).toBe('Révision : trouvé dans le document — B.')
+    // L'édition relancée : elle seule.
     await (await tool(doc.record, 'edition', 'research')).run()
-    expect(read(platform, doc.record)).toMatch(/\nreference: PMP-01\nedition: "2"\n/)
-    expect(platform.notices.at(-1)).toBe('Référence et version : trouvé dans le document — PMP-01, version 2.')
+    expect(read(platform, doc.record)).toMatch(/\nreference: X-9\nedition: "2"\nrevision: B\n/)
+    // La référence relancée : celle du document revient.
+    await (await tool(doc.record, 'reference', 'research')).run()
+    expect(read(platform, doc.record)).toMatch(/\nreference: PMP-01\n/)
+    expect(platform.notices.at(-1)).toBe('Référence : trouvé dans le document — PMP-01.')
   })
 
   it('pas sûr : à confirmer, avec ce qui a été lu ; sans le module IA, c’est dit', async () => {
@@ -151,6 +162,21 @@ describe('relancer la recherche d’un champ, avec l’IA', () => {
     await (await tool(doc.record, 'title', 'research')).run()
     expect(platform.requests.length).toBe(before)
     expect(platform.notices.at(-1)).toBe('Titre : trouvé dans le document — Plan de management.')
+  })
+
+  it('l’IA dit la référence et la version ensemble : relancer la révision ne change qu’elle', async () => {
+    const platform = memoryPlatform()
+    const { pour, tool } = await start(platform)
+    answering(platform, (system) => (system.startsWith('Tu identifies la langue') ? 'fr' : undefined))
+    const doc = await pour('Note.txt', 'Note de suivi\nLa révision C de la note NS-44, édition 3, est jointe.')
+    platform.forms.push({ value: 'MA-REF' })
+    await (await tool(doc.record, 'reference', 'edit')).run()
+    platform.forms.push({ value: '9' })
+    await (await tool(doc.record, 'edition', 'edit')).run()
+    answering(platform, (system) => (system.includes('référence') ? { reference: 'NS-44', edition: '3', revision: 'C', certain: true } : undefined))
+    await (await tool(doc.record, 'revision', 'research')).run()
+    expect(read(platform, doc.record)).toMatch(/\nreference: MA-REF\nedition: "9"\nrevision: C\n/)
+    expect(platform.notices.at(-1)).toBe('Révision : identifié par l’IA — C.')
   })
 
   it('son workflow système désactivé : l’IA n’est pas demandée, et c’est dit', async () => {

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.24.0 (Black Projects 0.96.0) |
+| Version | 0.24.1 (Black Projects 0.96.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,15 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Correctif : relancer un champ ne change que lui (v0.24.1, Black Projects 0.96.1)
+
+Relancer la recherche de la **révision** (ou de l'édition, de la référence) refaisait la
+référence et la version ensemble : une référence changée à la main revenait à celle du
+document. Désormais chacun de ces trois boutons ne touche que son champ (`ResearchField`
+`reference`, `edition`, `revision`) ; la ligne « Référence et version » relance les trois.
+Et quel que soit le champ, ce que l'IA dit de plus (son étape « référence et version » rend
+les trois) est écarté : seul le champ relancé change (`RESEARCH_KEYS`).
 
 ## La liste des émetteurs (v0.24.0, Black Projects 0.96.0)
 
