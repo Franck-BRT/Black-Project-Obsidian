@@ -592,6 +592,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   (cohérence, mise en forme, corrections ; prompt, persona, skill de l'étape ; par morceaux,
   avec un garde-fou) — un workflow système actif ; le texte relu est une nouvelle **version du
   texte** (l'extraite gardée ; édition et révision inchangées), qu'on **compare** (bloc `diff`)
+- v0.103.0 : **modules Bibliothèque et IA** : **Extraire de nouveau** relance la relecture par
+  l'IA ; un bouton **Relire avec l'IA** sur la fiche ; la relecture **se dit** (notices : début,
+  morceaux, résultat, IA non réglée)
 
 ### Étape 7 — Livrables
 

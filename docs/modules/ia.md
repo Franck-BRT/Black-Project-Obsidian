@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.21.0 (Black Projects 0.102.0) |
+| Version | 0.22.0 (Black Projects 0.103.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,14 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## La relecture se dit ; extraire de nouveau la relance (v0.22.0, Black Projects 0.103.0)
+
+- `ia.relire-texte` dit, par notices, son début, chaque morceau suivant, et son résultat (relu,
+  rien à corriger, trop changé, IA non réglée) : son workflow système réussit sans rien dire.
+- Le module dit son workflow système de relecture à la bibliothèque (`setAiProofread`) :
+  « Extraire de nouveau » l'exécute ensuite, et « Relire avec l'IA » (section *Texte extrait*
+  de la fiche) le relance.
 
 ## Relire le texte extrait (v0.21.0, Black Projects 0.102.0)
 

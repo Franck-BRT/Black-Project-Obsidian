@@ -12,7 +12,7 @@
  * tout le reste de Black Projects fonctionne : seules ces fonctions le disent.
  */
 
-import { setAiResearch, type ResearchField } from '../bibliotheque'
+import { setAiProofread, setAiResearch, type ResearchField } from '../bibliotheque'
 import { OPENING, registerAction, registerAiGuidance, registerSystemWorkflow } from '../workflows'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
@@ -274,6 +274,9 @@ async function checkConnection(context: ModuleContext): Promise<string> {
   return t('ia.wf.check.ok', { count: models.length })
 }
 
+/** Le workflow système qui relit le texte extrait d'un document avec l'IA. */
+const PROOFREAD_SYSTEM = 'sys.ia.relire-textes'
+
 /** Les champs d'un document de la bibliothèque, et le workflow système qui les cherche avec l'IA. */
 const AI_RESEARCH: Readonly<Record<ResearchField, string>> = {
   language: 'sys.ia.langue-documents',
@@ -292,7 +295,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.21.0',
+  version: '0.22.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -329,6 +332,8 @@ export const iaModule: BlackModule = {
     registerAiGuidance(libraryGuidance((key, vars) => context.i18n.t(key, vars)))
     // « Relancer la recherche » d'un champ, sur la fiche d'un document : ses workflows système avec l'IA.
     for (const [field, system] of Object.entries(AI_RESEARCH)) setAiResearch(field as ResearchField, system)
+    // « Extraire de nouveau » le texte d'un document, ou « Relire avec l'IA » : son workflow système de relecture.
+    setAiProofread(PROOFREAD_SYSTEM)
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)))
     // Vérifier la connexion à l'ouverture : une action, et son workflow système (actif d'origine).
     registerAction({
@@ -445,7 +450,7 @@ export const iaModule: BlackModule = {
     })
     // Le texte extrait d'un document versé, relu par l'IA : cohérence, mise en forme, corrections (une nouvelle version du texte).
     registerSystemWorkflow({
-      id: 'sys.ia.relire-textes',
+      id: PROOFREAD_SYSTEM,
       moduleKey: 'ia.name',
       enabledByDefault: true,
       make: (tr) => ({
@@ -501,5 +506,6 @@ export const iaModule: BlackModule = {
     lastTest = null
     registerAiGuidance(null)
     for (const field of Object.keys(AI_RESEARCH)) setAiResearch(field as ResearchField, null)
+    setAiProofread(null)
   }
 }

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.30.0 (Black Projects 0.102.0) |
+| Version | 0.31.0 (Black Projects 0.103.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,20 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Extraire de nouveau, relire avec l'IA (v0.31.0, Black Projects 0.103.0)
+
+- **Extraire de nouveau** le texte d'un document (lu) exécute ensuite le workflow système de
+  relecture par l'IA (`runSystemWorkflow`, comme au dépôt) : le texte extrait de nouveau est une
+  version de plus, aussitôt relue — s'il est actif. Le module IA dit ce workflow à la
+  bibliothèque à son activation (`setAiProofread`) : elle ne connaît pas ses identifiants.
+- **Relire avec l'IA** : un bouton de la section *Texte extrait* (le texte lu, le module IA
+  actif), qui relance cette relecture ; le workflow désactivé (ou le module Workflows
+  inactif), une notice le dit.
+- La relecture **se dit** (notices) : son début (« relecture du texte par l'IA en cours (n
+  morceau(x))… »), ses morceaux, puis ce qu'elle a donné — son workflow système, comme tous,
+  ne disait rien quand il réussissait : au dépôt, on ne voyait pas qu'elle avait eu lieu. L'IA
+  non réglée, elle le dit aussi.
 
 ## Les versions du texte ; la relecture par l'IA (v0.30.0, Black Projects 0.102.0)
 

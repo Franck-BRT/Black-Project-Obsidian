@@ -57,6 +57,10 @@ export interface LibraryHomeDeps {
   showTextVersion(record: string, number: number): Promise<void>
   /** (Re)transcrire son fichier dans sa fiche. */
   transcribe(record: string): Promise<void>
+  /** La relecture du texte extrait par l'IA est-elle là (le module IA actif) ? */
+  canProofread(): boolean
+  /** Relire son texte extrait avec l'IA (son workflow système) : une nouvelle version du texte. */
+  proofread(record: string): Promise<void>
   /** Ses étiquettes hors de la liste : les y ajouter. */
   addTags(record: string): Promise<void>
   /** Les étiquettes de la liste. */
@@ -569,6 +573,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   const characters = (doc.characters ?? 0).toLocaleString('fr-FR')
   const textActions: ViewAction[] = [
     { id: 'extract', label: t(doc.reading ? 'bibliotheque.text.extract.again' : 'bibliotheque.text.extract'), tooltip: t('bibliotheque.text.extract.tip'), icon: 'refresh', ...(doc.reading ? {} : { primary: true }), run: () => deps.transcribe(doc.record) },
+    ...(doc.reading === 'lue' && deps.canProofread()
+      ? [{ id: 'proofread', label: t('bibliotheque.text.proofread'), tooltip: t('bibliotheque.text.proofread.tip'), icon: 'spark' as const, run: () => deps.proofread(doc.record) }]
+      : []),
     { id: 'text-note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) }
   ]
   const textSection: HomeBlock = {

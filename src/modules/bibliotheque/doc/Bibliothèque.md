@@ -40,8 +40,9 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   section « Texte extrait » de la fiche le montre en entier, mis en forme (titres, listes,
   tableaux, citations) — et, l'IA réglée, **relu par l'IA** : une nouvelle version du texte
   (*Versions* › « Versions du texte » : **Comparer**, **Le montrer sur la fiche** ; l'extraite
-  est gardée, l'édition et la révision ne changent pas), **Extraire de nouveau** le relit (vos notes
-  ne bougent pas) ;
+  est gardée, l'édition et la révision ne changent pas) ; des notices disent la relecture en
+  cours, puis ce qu'elle a donné. **Extraire de nouveau** relit le fichier (vos notes ne bougent
+  pas), puis l'IA relit ce texte ; **Relire avec l'IA** relance la relecture seule ;
 - **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ; le
   crayon devant *Fichier* le **renomme** (dans son dossier, son extension gardée) — les liens
   vers lui, dans tout le coffre (la note de sa pièce, celle de l'analyse…), sont mis à jour ;

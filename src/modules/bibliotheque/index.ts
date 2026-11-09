@@ -404,6 +404,17 @@ export function setAiResearch(field: ResearchField, systemWorkflow: string | nul
   else aiResearch.delete(field)
 }
 
+/**
+ * Le workflow système qui relit le texte extrait avec l'IA (le module IA le dit) : extraire de
+ * nouveau le texte d'un document l'exécute ensuite, et la fiche propose de le relancer.
+ */
+let aiProofread: string | null = null
+
+/** Pour le module IA : le workflow système qui relit le texte extrait (`null` : plus aucun). */
+export function setAiProofread(systemWorkflow: string | null): void {
+  aiProofread = systemWorkflow
+}
+
 async function emitPoured(doc: LibraryDoc): Promise<void> {
   await emitWorkflowEvent(TRIGGER_POURED, pouredSubject(doc, active ? await active.issuers() : []))
 }
@@ -504,7 +515,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.30.0',
+  version: '0.31.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1247,6 +1258,16 @@ export const bibliothequeModule: BlackModule = {
             : t('bibliotheque.text.extracted.none', { title: done.doc.title, state }),
           6000
         )
+        // Le texte extrait de nouveau : relu par l'IA, comme au dépôt (son workflow système, s'il est actif).
+        if (done.transcript.state === 'lue' && aiProofread) await runSystemWorkflow(aiProofread, TRIGGER_POURED, pouredSubject(done.doc, await knownIssuers()))
+      },
+      canProofread: () => aiProofread !== null,
+      proofread: async (record) => {
+        const doc = await store.load(record)
+        if (!doc) return
+        if (!aiProofread || !(await runSystemWorkflow(aiProofread, TRIGGER_POURED, pouredSubject(doc, await knownIssuers())))) {
+          platform.notifier.notify(t('bibliotheque.text.proofread.off'), 10000)
+        }
       },
       tagList: () => knownTags(),
       pieceTypeOutside: (code) => !!code && !libraryPieceTypes().some((type) => type.code === code),

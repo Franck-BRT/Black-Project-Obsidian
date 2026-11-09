@@ -246,9 +246,12 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     needsAi: true,
     fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
     results: ['text'],
-    async run({ fields, guidance }) {
+    async run({ fields, guidance, notifier }) {
+      // Une relecture prend du temps, et son workflow système ne dit rien quand il réussit :
+      // elle se dit elle-même — son début, ses morceaux, ce qu'elle a donné.
       const say = (key: string, vars?: Record<string, string | number>) => {
         const text = t(key, vars)
+        notifier.notify(text, 10000)
         return { lines: [text], results: { text } }
       }
       const record = (fields.fiche ?? '').trim()
@@ -260,9 +263,11 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       const text = ((await libraryTranscript(record)) ?? '').trim()
       if (!text) return say('ia.wf.proofread.noText', { title: doc.title })
       const chunks = proofreadChunks(text)
+      notifier.notify(t('ia.wf.proofread.start', { title: doc.title, parts: chunks.length }), 8000)
       const out: string[] = []
       let kept = 0
       for (const [index, chunk] of chunks.entries()) {
+        if (index > 0) notifier.notify(t('ia.wf.proofread.progress', { title: doc.title, part: index + 1, parts: chunks.length }), 5000)
         let answer: string
         try {
           answer = await ai.chat({

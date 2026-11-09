@@ -88,6 +88,9 @@ début de son texte ; ce qu'elle trouve doit y figurer — elle n'invente rien.
 document versé est relu — sa cohérence, sa mise en forme, ce que l'extraction a abîmé —, sans
 en changer le sens ; avec le prompt, le persona, le skill choisis dans son étape. Le texte relu
 est une nouvelle version du texte du document : l'extraite est gardée, on les compare.
+Des notices disent la relecture en cours (et ses morceaux), puis ce qu'elle a donné. Elle se
+relance quand on **extrait de nouveau** le texte d'un document, ou par **Relire avec l'IA**
+(section *Texte extrait* de sa fiche).
 
 Ces workflows servent aussi au bouton **Relancer la recherche** d'un champ, sur la fiche
 d'un document de la bibliothèque : quand la recherche sans IA n'est pas sûre, celui du champ

@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Extraire de nouveau, relire avec l'IA (v0.103.0)
+
+- [ ] L'IA réglée, verser un document : une notice « relecture du texte par l'IA en cours… »,
+      puis « texte relu par l'IA — texte 2… » (ou « rien trouvé à corriger »)
+- [ ] Sur sa fiche, *Texte extrait* › **Extraire de nouveau** : « texte 3 — extrait du
+      fichier », puis la relecture se lance seule : « texte 4 — relu par l'IA »
+- [ ] **Relire avec l'IA** (même section) : la relecture se relance, ses notices le disent ;
+      le workflow système « Relire avec l'IA le texte extrait… » désactivé : une notice le dit
+- [ ] L'IA non réglée : au dépôt, une notice dit que le texte n'est pas relu
+
 ## La relecture du texte par l'IA ; les versions du texte (v0.102.0)
 
 - [ ] L'IA réglée, verser un document au texte abîmé (mots coupés « pré- sent », puces « • ») :

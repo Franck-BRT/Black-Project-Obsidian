@@ -29,10 +29,10 @@ const JOURNAL = 'Black Projects/Workflows/Journal des workflows.md'
 const RAW = 'Plan qualité\nRéf. : PQ-07\nÉdition 2\n\nLe pré- sent plan dé crit l’orga nisation.\n\n• Revue de con ception\n• Revue de recette'
 const FIXED = '# Plan qualité\n\nRéf. : PQ-07 — Édition 2\n\nLe présent plan décrit l’organisation.\n\n- Revue de conception\n- Revue de recette'
 
-async function start(platform: MemoryPlatform, proofread: (text: string, system: string) => string) {
+async function start(platform: MemoryPlatform, proofread: (text: string, system: string) => string, ia: Record<string, unknown> = SERVEUR) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ia: SERVEUR }
+  const settings: Record<string, Record<string, unknown>> = { ia }
   const views = new ViewsRegistry()
   const shown: string[] = []
   for (const module of ALL) {
@@ -187,14 +187,66 @@ describe('la relecture par l’IA, au versement', () => {
     expect(read(platform, `${folder}/Texte 2.md`)).toMatch(/\npersona: Juriste marchés publics\n/)
   })
 
-  it('le texte extrait de nouveau, quand il a des versions : une version de plus', async () => {
+  it('la relecture se dit : son début, puis ce qu’elle a donné (son workflow système ne dit rien d’autre)', async () => {
     const platform = memoryPlatform()
-    const { page, pour, textVersions } = await start(platform, () => FIXED)
-    const doc = await pour('Plan qualité.txt', RAW)
-    const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
+    const { pour } = await start(platform, () => FIXED)
+    await pour('Plan qualité.txt', RAW)
+    const start_ = platform.notices.indexOf('« Plan qualité » : relecture du texte par l’IA en cours (1 morceau(x))…')
+    expect(start_).toBeGreaterThanOrEqual(0)
+    expect(platform.notices.indexOf('« Plan qualité » : texte relu par l’IA — texte 2 (1 morceau(x)) ; celui d’avant est gardé.')).toBeGreaterThan(start_)
+  })
+
+  it('sans IA réglée : dit, au versement, que le texte n’est pas relu', async () => {
+    const platform = memoryPlatform()
+    const { pour } = await start(platform, () => FIXED, {})
+    await pour('Plan qualité.txt', RAW)
+    expect(platform.notices).toContain('« Plan qualité » : l’IA n’est pas réglée ; le texte n’est pas relu.')
+  })
+})
+
+describe('extraire de nouveau, relire avec l’IA', () => {
+  const textSection = async (page: (id: string) => { load(param: string): Promise<{ blocks: HomeBlock[] }> }, record: string) => {
+    const fiche = await page('bibliotheque.document').load(encodeURIComponent(record))
     const texte = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.texte')
-    await (texte!.blocks[0]!.kind === 'message' ? texte!.blocks[0]!.actions![0]!.run() : null)
+    const message = texte!.blocks[0]!
+    return message.kind === 'message' ? message.actions ?? [] : []
+  }
+
+  it('le texte extrait de nouveau : une version de plus, aussitôt relue par l’IA', async () => {
+    const platform = memoryPlatform()
+    const { page, pour, textVersions, asked } = await start(platform, () => FIXED)
+    const doc = await pour('Plan qualité.txt', RAW)
+    expect(asked).toHaveLength(1)
+    await (await textSection(page, doc.record)).find((action) => action.id === 'extract')!.run()
+    expect(asked).toHaveLength(2)
+    expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 4 — relu par l’IA', 'Texte 3 — extrait du fichier', 'Texte 2 — relu par l’IA', 'Texte 1 — extrait du fichier'])
+    expect(read(platform, doc.record)).toMatch(/\ntexteVersion: 4\n/)
+    expect(platform.notices).toContain('« Plan qualité » : texte relu par l’IA — texte 4 (1 morceau(x)) ; celui d’avant est gardé.')
+  })
+
+  it('extrait de nouveau, la relecture désactivée : une version de plus, sans IA', async () => {
+    const platform = memoryPlatform()
+    const { page, pour, textVersions, asked, workflows } = await start(platform, () => FIXED)
+    const doc = await pour('Plan qualité.txt', RAW)
+    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.enabled = false
+    await (await textSection(page, doc.record)).find((action) => action.id === 'extract')!.run()
+    expect(asked).toHaveLength(1)
     expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 3 — extrait du fichier', 'Texte 2 — relu par l’IA', 'Texte 1 — extrait du fichier'])
     expect(read(platform, doc.record)).toMatch(/\ntexteVersion: 3\n/)
+  })
+
+  it('« Relire avec l’IA » sur la fiche : relance la relecture ; désactivée, le dit', async () => {
+    const platform = memoryPlatform()
+    let answer = FIXED
+    const { page, pour, textVersions, workflows } = await start(platform, () => answer)
+    const doc = await pour('Plan qualité.txt', RAW)
+    const actions = await textSection(page, doc.record)
+    expect(actions.map((action) => action.label)).toEqual(['Extraire de nouveau', 'Relire avec l’IA', 'Ouvrir sa note'])
+    answer = FIXED.replace('organisation', 'organisation qualité')
+    await actions.find((action) => action.id === 'proofread')!.run()
+    expect((await textVersions(doc.record)).map((item) => item.title)[0]).toBe('Texte 3 — relu par l’IA')
+    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.enabled = false
+    await actions.find((action) => action.id === 'proofread')!.run()
+    expect(platform.notices.at(-1)).toBe('La relecture par l’IA n’a pas été lancée : son workflow système « Relire le texte extrait avec l’IA » est désactivé, ou le module Workflows n’est pas actif.')
   })
 })
