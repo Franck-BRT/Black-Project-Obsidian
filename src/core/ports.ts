@@ -33,6 +33,8 @@ export interface FileSystem {
   list(folder: VaultPath): Promise<FolderListing>
   /** Déplace ou renomme un fichier ; crée le dossier d'arrivée s'il manque. Les liens vers lui suivent quand la plateforme le permet. */
   rename(from: VaultPath, to: VaultPath): Promise<void>
+  /** Tous les fichiers du coffre, hors dossiers cachés (`.obsidian`…) — l'index de la plateforme, quand elle en a un. */
+  allFiles?(): Promise<VaultPath[]>
 }
 
 export interface HttpRequest {

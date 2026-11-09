@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.93.0)
+## Aujourd'hui (version 0.94.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -174,7 +174,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   ou « Classer… » sur la fiche. Chaque champ de la fiche se modifie aussi seul : le crayon
   à gauche de son icône ouvre une petite fenêtre (le champ est alors confirmé) ; le bouton à
   côté **relance la recherche** du champ dans le document (sans IA, puis avec l'IA si ce
-  n'est pas sûr). Les dates se choisissent aussi dans un **calendrier**.
+  n'est pas sûr). Les dates se choisissent aussi dans un **calendrier**. Le crayon devant
+  *Fichier* **renomme le fichier** ; les liens vers lui, dans le coffre, suivent.
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une
   fois, avec sa fiche — les pièces importées dans une analyse (laissées à leur place), le
   fichier d'un import d'exigences, les échanges de types et de workflows, et ce que vous

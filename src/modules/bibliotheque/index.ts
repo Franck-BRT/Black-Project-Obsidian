@@ -425,7 +425,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.21.0',
+  version: '0.22.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -755,6 +755,34 @@ export const bibliothequeModule: BlackModule = {
       platform.notifier.notify([said, ...(state.toConfirm ? notes : [])].join(' '), 8000)
     }
 
+    /** Renommer le fichier d'un document : son nom, sans l'extension (gardée) ; les liens vers lui suivent. */
+    const renameFile = async (record: string): Promise<void> => {
+      const doc = await store.load(record)
+      if (!doc) return
+      const name = baseName(doc.file)
+      const extension = /\.[^./]+$/.exec(name)?.[0] ?? ''
+      const values = await platform.ui.askForm({
+        title: t('bibliotheque.file.rename.title', { name }),
+        fields: [
+          {
+            kind: 'text',
+            key: 'name',
+            label: t('bibliotheque.file.rename.name'),
+            value: extension ? name.slice(0, -extension.length) : name,
+            required: true,
+            description: extension ? t('bibliotheque.file.rename.desc', { extension }) : t('bibliotheque.file.rename.desc.none')
+          }
+        ],
+        submit: t('bibliotheque.file.rename.submit')
+      })
+      if (!values) return
+      const done = await store.renameFile(record, values.name ?? '')
+      if (done === 'invalid') platform.notifier.notify(t('bibliotheque.file.rename.invalid'), 8000)
+      else if (done === 'exists') platform.notifier.notify(t('bibliotheque.file.rename.exists', { name: `${(values.name ?? '').trim()}${extension}` }), 8000)
+      else if (done && done.doc.file !== doc.file)
+        platform.notifier.notify(t(done.notes ? 'bibliotheque.file.renamed.links' : 'bibliotheque.file.renamed', { name: baseName(done.doc.file), count: done.notes }), 6000)
+    }
+
     /** Un champ de la fiche, seul : une petite fenêtre ; enregistré, il est confirmé (plus « à confirmer », plus « par l'IA »). */
     const editField = async (record: string, key: EditableField): Promise<void> => {
       const doc = await store.load(record)
@@ -885,6 +913,7 @@ export const bibliothequeModule: BlackModule = {
       },
       editField,
       researchField,
+      renameFile,
       confirmDate: async (record, date) => {
         const doc = await store.setDate(record, date)
         if (doc) platform.notifier.notify(doc.date ? t('bibliotheque.date.confirmed', { date: docDateLabel(doc.date, active?.locale) }) : t('bibliotheque.date.confirmed.none', { title: doc.title }), 5000)

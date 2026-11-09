@@ -88,6 +88,11 @@ export class ObsidianFileSystem implements FileSystem {
     else await this.adapter.rename(source, target)
   }
 
+  /** L'index du coffre d'Obsidian (sans ses dossiers cachés). */
+  async allFiles(): Promise<string[]> {
+    return this.app.vault.getFiles().map((file) => file.path)
+  }
+
   async list(folder: string): Promise<FolderListing> {
     const listed = await this.adapter.list(normalizePath(folder))
     return { files: listed.files, folders: listed.folders }

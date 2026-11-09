@@ -44,7 +44,7 @@ Ce que le cœur attend de la plateforme :
 
 | Port | Rôle | Implémentation Obsidian |
 | --- | --- | --- |
-| `FileSystem` | lire, écrire, lister les fichiers du coffre | lectures par `app.vault.adapter`, écritures par l'API du coffre (`create`, `modify`…) pour que l'index d'Obsidian suive sur-le-champ |
+| `FileSystem` | lire, écrire, lister les fichiers du coffre ; renommer (les liens suivent) ; tous ses fichiers (`allFiles`, facultatif) | lectures par `app.vault.adapter`, écritures par l'API du coffre (`create`, `modify`…) pour que l'index d'Obsidian suive sur-le-champ ; `renameFile` du gestionnaire de fichiers ; `allFiles` par `vault.getFiles()` |
 | `Http` | appels réseau (serveur d'IA) | `requestUrl`, qui passe les restrictions d'origine |
 | `Notifier` | messages brefs à l'utilisateur | `Notice` |
 | `Ui` | choisir un fichier, une option ou plusieurs (cases à cocher), formulaire, confirmation, fichiers de l'ordinateur, montrer un texte, ouvrir la note voulue, connaître la note ouverte | les fenêtres de `src/ui` (les mêmes que dans l'application de bureau), la liste des fichiers du coffre, `<input type=file>`, `getLeaf().openFile` |

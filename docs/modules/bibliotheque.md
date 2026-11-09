@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.21.0 (Black Projects 0.93.0) |
+| Version | 0.22.0 (Black Projects 0.94.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,28 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Renommer le fichier (v0.22.0, Black Projects 0.94.0)
+
+Dans la section *Le fichier* de la fiche, un bouton crayon devant le champ *Fichier*
+(« Renommer le fichier ») : une petite fenêtre, le nom **sans l'extension** (gardée ; tapée
+quand même, elle n'est pas doublée). Le fichier reste dans son dossier
+(`LibraryStore.renameFile`, par `fs.rename` : dans Obsidian, son gestionnaire de fichiers).
+
+**Rien ne casse derrière** : la fiche prend le nouveau chemin, puis les liens vers le fichier
+sont réécrits dans toutes les notes du coffre (hors dossiers cachés) — la note de sa pièce
+d'analyse (`fichier: "[[…]]"`, le lien de son encadré), celle de l'analyse, toute autre note :
+`[[chemin]]`, `[[chemin|texte]]`, `[[chemin#…]]`, `![[chemin]]`, `[texte](chemin)`, et
+`[[nom]]` quand ce nom ne désignait que lui (un autre fichier du même nom ailleurs : non).
+Obsidian le fait déjà selon son réglage « mettre à jour les liens » ; ce qu'il a fait n'est plus
+à faire, et ce qu'il n'a pas fait (réglage désactivé) l'est quand même. Les notes passent par
+l'index du coffre (`FileSystem.allFiles`, nouveau dans le port ; sans lui, ses dossiers sont
+parcourus).
+
+Un nom vide, qui commence par un point, ou qui contient `\ / : * ? " < > | # ^ [ ]` est
+refusé ; un nom déjà pris dans le dossier aussi — rien ne bouge, et c'est dit. Sinon :
+« Fichier renommé : « … » ; les liens de n note(s) mis à jour. » La fiche (sa note) garde son
+nom.
 
 ## Relancer la recherche d'un champ ; la date au calendrier (v0.21.0, Black Projects 0.93.0)
 

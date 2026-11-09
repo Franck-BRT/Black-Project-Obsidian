@@ -31,7 +31,9 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   le bouton à côté du crayon **relance la recherche** de ce champ dans le document — sans
   IA d'abord, puis avec l'IA si ce n'est pas sûr (son workflow système, pour ce document) ;
   la date se choisit aussi dans un **calendrier** (le bouton à côté du champ) ;
-- **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ;
+- **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ; le
+  crayon devant *Fichier* le **renomme** (dans son dossier, son extension gardée) — les liens
+  vers lui, dans tout le coffre (la note de sa pièce, celle de l'analyse…), sont mis à jour ;
 - **d'où il vient** : chaque origine — l'analyse, l'import —, un clic y mène ;
 - **ses versions** : les précédentes et les suivantes, reliées.
 

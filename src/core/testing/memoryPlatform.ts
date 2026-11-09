@@ -130,6 +130,7 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
         store.delete(from)
         put(to, bytes)
       },
+      allFiles: async () => [...store.keys()].filter((path) => !path.split('/').some((part) => part.startsWith('.'))),
       list: async (folder) => {
         const prefix = folder ? `${folder}/` : ''
         const direct = (path: string) => path.startsWith(prefix) && !path.slice(prefix.length).includes('/')

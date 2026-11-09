@@ -562,6 +562,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   recherche** d'un champ dans le document (sans IA, puis — pas sûr — son workflow système
   avec l'IA, pour ce document : `runSystemWorkflow`) ; la **date au calendrier**
   (`FormField.calendar`)
+- v0.94.0 : **module Bibliothèque** : **renommer le fichier** d'un document depuis sa fiche
+  (dans son dossier, l'extension gardée) ; les liens vers lui suivent dans tout le coffre —
+  sa fiche, la note de sa pièce, celle de l'analyse… (`FileSystem.allFiles`)
 
 ### Étape 7 — Livrables
 

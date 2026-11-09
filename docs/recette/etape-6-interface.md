@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Renommer le fichier (v0.94.0)
+
+- [ ] Fiche d'un document, *Le fichier* dépliée : un bouton crayon devant *Fichier*
+      (« Renommer le fichier ») ; la fenêtre propose le nom sans l'extension
+- [ ] « Devis antenne v2 », **Renommer** : le fichier s'appelle « Devis antenne v2.txt », dans
+      le même dossier ; la fiche montre le nouveau chemin, **Ouvrir le fichier** l'ouvre
+- [ ] Une pièce d'analyse renommée ainsi : sa note de pièce et le tableau de l'analyse
+      l'ouvrent toujours ; une note qui le citait (`[[…]]`, `[[…|texte]]`) aussi —
+      « Paramètres d'Obsidian › Fichiers et liens › Mettre à jour les liens internes »
+      désactivé compris
+- [ ] « a/b », « .cache », un nom déjà pris dans le dossier : refusés, rien ne bouge
+
 ## Relancer la recherche d'un champ ; la date au calendrier (v0.93.0)
 
 - [ ] Fiche d'un document qui dit « Titre : Plan qualité du projet », *Identification*

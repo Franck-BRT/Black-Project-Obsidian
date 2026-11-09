@@ -330,6 +330,65 @@ export class LibraryStore {
   }
 
   /**
+   * **Renommer le fichier** d'un document, dans son dossier : `name` sans extension (celle du
+   * fichier est gardée). Puis les liens vers lui, dans tout le coffre, suivent — sa fiche, la
+   * note de sa pièce, celle de l'analyse… : `[[chemin]]`, `[[chemin|texte]]`, `![[…]]`,
+   * `[texte](chemin)`, et `[[nom]]` quand ce nom ne désignait que lui. (Obsidian le fait déjà
+   * selon ses réglages : ce qu'il a fait n'est plus à faire.) Rend la fiche et le nombre de
+   * notes mises à jour ; `invalid` (un nom vide ou interdit), `exists` (déjà pris).
+   */
+  async renameFile(record: string, name: string): Promise<{ doc: LibraryDoc; notes: number } | 'invalid' | 'exists' | null> {
+    const { fs } = this.deps
+    const doc = await this.load(record)
+    if (!doc || !(await fs.exists(doc.file))) return null
+    const extension = /\.[^./]+$/.exec(doc.file)?.[0] ?? ''
+    const wanted = name.trim().replace(/\s+/g, ' ')
+    const stem = extension && wanted.toLowerCase().endsWith(extension.toLowerCase()) ? wanted.slice(0, -extension.length).trim() : wanted
+    if (!stem || /[\\/:*?"<>|#^[\]]/.test(stem) || stem.startsWith('.')) return 'invalid'
+    const folder = doc.file.includes('/') ? doc.file.slice(0, doc.file.lastIndexOf('/')) : ''
+    const target = `${folder ? `${folder}/` : ''}${stem}${extension}`
+    if (target === doc.file) return { doc, notes: 0 }
+    if (target.toLowerCase() !== doc.file.toLowerCase() && (await fs.exists(target))) return 'exists'
+    const from = doc.file
+    await fs.rename(from, target)
+    const moved: LibraryDoc = { ...doc, file: target }
+    await this.save(moved)
+    const notes = await this.relink(from, target)
+    return { doc: moved, notes }
+  }
+
+  /** Les liens vers un fichier, dans les notes du coffre (hors dossiers cachés), suivent son nouveau chemin ; rend combien de notes ont changé. */
+  private async relink(from: string, to: string): Promise<number> {
+    const { fs } = this.deps
+    // L'index du coffre ; sans lui, ses dossiers parcourus.
+    const files: string[] = []
+    const walk = async (folder: string): Promise<void> => {
+      const listed = await fs.list(folder)
+      files.push(...listed.files)
+      for (const sub of listed.folders) if (!baseName(sub).startsWith('.')) await walk(sub)
+    }
+    if (fs.allFiles) files.push(...(await fs.allFiles()))
+    else await walk('')
+    const notes = files.filter((file) => file.endsWith('.md'))
+    const oldName = baseName(from)
+    // Le nom seul ne désignait que lui : aucun autre fichier ne le porte.
+    const nameAlone = !files.some((file) => file !== to && baseName(file) === oldName)
+    const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const targets = [from, ...(nameAlone ? [oldName] : [])]
+    const wiki = new RegExp(`(!?\\[\\[)(${targets.map(escape).join('|')})(?=[\\]|#])`, 'g')
+    const markdown = new RegExp(`(\\]\\()(${[from, encodeURI(from), from.replace(/ /g, '%20')].map(escape).join('|')})(?=[)#])`, 'g')
+    let changed = 0
+    for (const note of notes) {
+      const text = await fs.readText(note)
+      const next = text.replace(wiki, (_all, open: string, found: string) => `${open}${found === from ? to : baseName(to)}`).replace(markdown, (_all, open: string) => `${open}${encodeURI(to)}`)
+      if (next === text) continue
+      await fs.writeText(note, next)
+      changed++
+    }
+    return changed
+  }
+
+  /**
    * **Relancer la recherche** d'un champ dans le document (la première passe, sans IA), son
    * texte relu : trouvé sûrement, il est donné et confirmé ; sinon il est à confirmer, avec
    * ce qui a été lu (probable) — la valeur qu'il a reste. Rend la fiche, et si c'est sûr ;

@@ -54,6 +54,8 @@ export interface LibraryHomeDeps {
   chooseLanguage(record: string): Promise<void>
   /** Confirmer la catégorie : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
   confirmCategory(record: string, category: string | null): Promise<void>
+  /** Renommer son fichier (dans son dossier) ; les liens vers lui, dans le coffre, suivent. */
+  renameFile(record: string): Promise<void>
   /** Relancer la recherche d'un champ dans le document : sans IA, puis — pas sûr — avec l'IA (son workflow système). */
   researchField(record: string, field: ResearchField): Promise<void>
   /** Modifier un champ de sa fiche, seul (une petite fenêtre) : il est alors confirmé. */
@@ -571,7 +573,15 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',
         items: [
-          { ...field('file', doc.file), ...(present ? { open: { id: 'open', label: t('bibliotheque.doc.file'), run: () => deps.openFile(doc.file) } } : { tone: 'danger' as const }) },
+          {
+            ...field('file', doc.file),
+            ...(present
+              ? {
+                  open: { id: 'open', label: t('bibliotheque.doc.file'), run: () => deps.openFile(doc.file) },
+                  tools: [{ id: 'rename-file', label: t('bibliotheque.file.rename'), icon: 'edit' as const, run: () => deps.renameFile(doc.record) }]
+                }
+              : { tone: 'danger' as const })
+          },
           field('stored', t(doc.copied ? 'bibliotheque.stored.copied' : 'bibliotheque.stored.inPlace')),
           field('hash', doc.hash.slice(0, 16))
         ]
