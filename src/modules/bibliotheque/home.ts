@@ -49,6 +49,8 @@ export interface LibraryHomeDeps {
   chooseLanguage(record: string): Promise<void>
   /** Confirmer la catégorie : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
   confirmCategory(record: string, category: string | null): Promise<void>
+  /** Confirmer les étiquettes : celles données (les probables, ajoutées ; vide : aucune), ou `null` — celles qu'il a. */
+  confirmTags(record: string, tags: readonly string[] | null): Promise<void>
   /** Confirmer l'émetteur : celui donné (le probable ; vide : aucun), ou `null` — celui qu'il a. */
   confirmIssuer(record: string, issuer: string | null): Promise<void>
   /** Confirmer le titre : celui donné (le probable), ou `null` — celui qu'il a. */
@@ -121,7 +123,8 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
       ...(doc.identityToConfirm ? ['identite-a-confirmer'] : []),
       ...(doc.titleToConfirm ? ['titre-a-confirmer'] : []),
       ...(doc.issuerToConfirm ? ['emetteur-a-confirmer'] : []),
-      ...(doc.categoryToConfirm ? ['categorie-a-confirmer'] : [])
+      ...(doc.categoryToConfirm ? ['categorie-a-confirmer'] : []),
+      ...(doc.tagsToConfirm ? ['etiquettes-a-confirmer'] : [])
     ]
   }
 }
@@ -240,6 +243,7 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
       ...(docs.some((doc) => doc.titleToConfirm) ? [{ id: 'titre-a-confirmer', label: t('bibliotheque.title.toConfirm') }] : []),
       ...(docs.some((doc) => doc.issuerToConfirm) ? [{ id: 'emetteur-a-confirmer', label: t('bibliotheque.issuer.toConfirm') }] : []),
       ...(docs.some((doc) => doc.categoryToConfirm) ? [{ id: 'categorie-a-confirmer', label: t('bibliotheque.category.toConfirm') }] : []),
+      ...(docs.some((doc) => doc.tagsToConfirm) ? [{ id: 'etiquettes-a-confirmer', label: t('bibliotheque.tags.toConfirm') }] : []),
       ...modules.map((module) => ({ id: `de-${module}`, label: t('bibliotheque.filter.from', { module: t(`${module}.name`) }) })),
       { id: 'a-jour', label: t('bibliotheque.filter.latest') },
       ...(likely ? [{ id: 'a-relier', label: t('bibliotheque.filter.likely') }] : []),
@@ -342,6 +346,31 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
           }
         ]
       : []),
+    // Ses étiquettes n'ont pas été lues sûrement : celles que le texte suggère (ajoutées), celles qu'il a, aucune, ou d'autres.
+    ...(doc.tagsToConfirm
+      ? [
+          {
+            kind: 'message' as const,
+            tone: 'warning' as const,
+            text: doc.tagsProbable?.length ? t('bibliotheque.tags.confirm.probable', { probable: doc.tagsProbable.join(', ') }) : t('bibliotheque.tags.confirm.none'),
+            actions: [
+              ...(doc.tagsProbable?.length
+                ? [
+                    {
+                      id: 'use-tags',
+                      label: t(doc.tags.length ? 'bibliotheque.tags.add' : 'bibliotheque.tags.use'),
+                      icon: 'check' as const,
+                      primary: true,
+                      run: () => deps.confirmTags(doc.record, [...new Set([...doc.tags, ...doc.tagsProbable!])])
+                    }
+                  ]
+                : []),
+              { id: 'keep-tags', label: t(doc.tags.length ? 'bibliotheque.identity.confirm' : 'bibliotheque.tags.none'), icon: 'cross' as const, run: () => deps.confirmTags(doc.record, null) },
+              { id: 'classify-tags', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.tagsProbable?.length ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+            ]
+          }
+        ]
+      : []),
     // Son émetteur n'a pas été lu sûrement : celui lu au début du document (probable), aucun, ou un autre.
     ...(doc.issuerToConfirm
       ? [
@@ -384,6 +413,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     doc.titleToConfirm ? t('bibliotheque.field.title') : '',
     doc.categoryToConfirm ? t('bibliotheque.field.category') : '',
     doc.issuerToConfirm ? t('bibliotheque.field.issuer') : '',
+    doc.tagsToConfirm ? t('bibliotheque.field.tags') : '',
     doc.identityToConfirm ? t('bibliotheque.field.identity') : ''
   ].filter(Boolean)
   const confirmBlocks: HomeBlock[] =
@@ -474,7 +504,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
         items: [{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision),
-          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category), ...(doc.categoryToConfirm ? { detail: t('bibliotheque.category.detail.toConfirm', { category: doc.category || '—' }) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category || '—' }) } : {}) }, { ...field('issuer', doc.issuer), ...(doc.issuerToConfirm ? { detail: t('bibliotheque.issuer.detail.toConfirm', { issuer: doc.issuer || '—' }) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: doc.issuer || '—' }) } : {}) }, field('tags', doc.tags.join(', '))]
+          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category), ...(doc.categoryToConfirm ? { detail: t('bibliotheque.category.detail.toConfirm', { category: doc.category || '—' }) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category || '—' }) } : {}) }, { ...field('issuer', doc.issuer), ...(doc.issuerToConfirm ? { detail: t('bibliotheque.issuer.detail.toConfirm', { issuer: doc.issuer || '—' }) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: doc.issuer || '—' }) } : {}) }, { ...field('tags', doc.tags.join(', ')), ...(doc.tagsToConfirm ? { detail: t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') || '—' }) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {}) }]
       }),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',

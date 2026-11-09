@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.89.0)
+## Aujourd'hui (version 0.90.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -165,7 +165,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   De même pour le **titre** (« Titre : … » au début du document ; sinon celui du nom du
   fichier, à confirmer — « Prendre « … » » sur la fiche), pour la **catégorie** (donnée par
   l'analyse, ou le nom du fichier et le texte d'accord ; sinon à confirmer, l'IA choisissant
-  dans la liste), pour l'**émetteur** (« Émetteur :
+  dans la liste), pour les **étiquettes** (« Mots-clés : … » ; sinon les mots qui reviennent
+  le plus, proposés — l'IA en donne de 3 à 6, celles déjà en usage d'abord), pour l'**émetteur** (« Émetteur :
   … », « Émis par… » ; sinon l'organisme lu en tête, à confirmer) et pour la **référence** et la
   **version** (édition, révision) : lues au début du
   document ou dans le nom du fichier ; pas sûres, l'IA les cherche ; sinon « C'est juste »

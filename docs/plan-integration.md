@@ -547,6 +547,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   — sans IA (donnée par l'analyse, dite par le document, ou le nom du fichier et le texte
   d'accord : sûre ; sinon, à confirmer) ; pas sûre, l'IA (dans la liste des catégories) ;
   sur la fiche, ce qui reste à confirmer regroupé dans « À confirmer (n) »
+- v0.90.0 : **modules Bibliothèque et IA** : les **étiquettes** des documents, en deux
+  passes — sans IA (« Mots-clés : » : sûres ; sinon les mots qui reviennent le plus,
+  proposés, à confirmer) ; pas sûres, l'IA (de 3 à 6, celles en usage d'abord ; dites par
+  le document ou déjà employées)
 
 ### Étape 7 — Livrables
 

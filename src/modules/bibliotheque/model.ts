@@ -172,6 +172,11 @@ export interface LibraryDoc {
   categoryProbable?: string
   /** Sa catégorie a été identifiée par l'IA. */
   categoryByAi?: boolean
+  /** Ses étiquettes n'ont pas été lues sûrement : à confirmer, avec celles que le texte suggère. */
+  tagsToConfirm?: boolean
+  tagsProbable?: string[]
+  /** Ses étiquettes ont été données par l'IA. */
+  tagsByAi?: boolean
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -217,7 +222,10 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.issuerByAi ? { emetteurIdentifiePar: 'ia' } : {}),
     ...(doc.categoryToConfirm ? { categorieAConfirmer: true } : {}),
     ...(doc.categoryToConfirm && doc.categoryProbable ? { categorieProbable: doc.categoryProbable } : {}),
-    ...(doc.categoryByAi ? { categorieIdentifieePar: 'ia' } : {})
+    ...(doc.categoryByAi ? { categorieIdentifieePar: 'ia' } : {}),
+    ...(doc.tagsToConfirm ? { etiquettesAConfirmer: true } : {}),
+    ...(doc.tagsToConfirm && doc.tagsProbable?.length ? { etiquettesProbables: doc.tagsProbable } : {}),
+    ...(doc.tagsByAi ? { etiquettesIdentifieesPar: 'ia' } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -271,7 +279,10 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(data.emetteurIdentifiePar === 'ia' ? { issuerByAi: true } : {}),
     ...(data.categorieAConfirmer === true ? { categoryToConfirm: true } : {}),
     ...(data.categorieAConfirmer === true && typeof data.categorieProbable === 'string' && data.categorieProbable.trim() ? { categoryProbable: data.categorieProbable.trim() } : {}),
-    ...(data.categorieIdentifieePar === 'ia' ? { categoryByAi: true } : {})
+    ...(data.categorieIdentifieePar === 'ia' ? { categoryByAi: true } : {}),
+    ...(data.etiquettesAConfirmer === true ? { tagsToConfirm: true } : {}),
+    ...(data.etiquettesAConfirmer === true && Array.isArray(data.etiquettesProbables) && data.etiquettesProbables.length ? { tagsProbable: data.etiquettesProbables.map(text).filter(Boolean) } : {}),
+    ...(data.etiquettesIdentifieesPar === 'ia' ? { tagsByAi: true } : {})
   }
 }
 

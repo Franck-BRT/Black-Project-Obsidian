@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les étiquettes des documents (v0.90.0)
+
+- [ ] Verser un texte qui dit « Mots-clés : antenne, station sol » : ces étiquettes, rien à
+      confirmer
+- [ ] Verser `Visite antenne.txt` (« Rapport de maintenance de l'antenne de la station
+      sol… », sans mots-clés) : « Étiquettes à confirmer : le texte du document suggère
+      « antenne, maintenance, station » » — **Prendre ces étiquettes**, **Pas d'étiquettes**,
+      **Classer…** ; le filtre *Étiquettes à confirmer*
+- [ ] L'IA réglée : le workflow système « Donner avec l'IA les étiquettes d'un document… »
+      (actif) les donne (« données par l'IA » sur la fiche), en reprenant celles déjà en usage
+
 ## La catégorie des documents (v0.89.0)
 
 - [ ] Verser `CCTP station sol.txt` qui commence par « Cahier des clauses techniques

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.17.0 (Black Projects 0.89.0) |
+| Version | 0.18.0 (Black Projects 0.90.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,27 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Les étiquettes des documents (v0.18.0, Black Projects 0.90.0)
+
+En deux passes, comme la catégorie.
+
+1. **Sans IA**, à l'entrée (`guessTags`) : **sûres** quand le document les dit avec leur
+   mot (« Mots-clés : », « Keywords: », « Étiquettes : », « Tags : », séparées par des
+   virgules ou des points-virgules ; au plus douze). Sinon `etiquettesAConfirmer: true`, et
+   `etiquettesProbables` : les mots d'au moins six lettres qui reviennent au moins trois fois
+   au début du texte (les cinq plus fréquents, sans les mots courants des marchés —
+   « document », « titulaire », « prestations »…).
+2. **Avec l'IA** : le workflow système du [module IA](ia.md) « Donner avec l'IA les
+   étiquettes d'un document… » (actif, `{etiquettesaconfirmer}` pas vide) ; elle reçoit les
+   étiquettes déjà en usage (`libraryTags`, les plus employées d'abord) pour garder un
+   vocabulaire commun ; `tagsFoundIn` ne garde que celles que le document dit ou que la
+   bibliothèque emploie déjà (`setTagsByAi`, `etiquettesIdentifieesPar: ia`).
+
+Sur la fiche : **Prendre ces étiquettes** (ou **Ajouter ces étiquettes**, s'il en a déjà),
+**Pas d'étiquettes** (ou **C'est juste**), **Classer…** ; dans la section « À confirmer
+(n) » quand il y a autre chose ; le filtre *Étiquettes à confirmer* ; `{etiquettes}` et
+`{etiquettesaconfirmer}` au *document versé*.
 
 ## La catégorie des documents (v0.17.0, Black Projects 0.89.0)
 

@@ -39,7 +39,7 @@ export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
-export { categoryFromText, guessDocCategory, guessIdentity, guessIssuer, guessTitle, IDENTITY_HEAD, issuerFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type IdentityGuess, type IssuerGuess, type TitleGuess } from './identity'
+export { categoryFromText, guessDocCategory, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess } from './identity'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -283,6 +283,21 @@ export async function libraryCategories(): Promise<string[]> {
   return [...seen.values()]
 }
 
+/** Pour l'IA : les étiquettes qu'elle a données — plus à confirmer, et on sait qui l'a dit. */
+export async function setTagsByAi(record: string, tags: readonly string[]): Promise<LibraryDoc | null> {
+  return active ? active.store.setTags(record, tags, true) : null
+}
+
+/** Pour l'IA : les étiquettes déjà en usage dans la bibliothèque (un vocabulaire commun), les plus employées d'abord. */
+export async function libraryTags(): Promise<string[]> {
+  const counts = new Map<string, { tag: string; count: number }>()
+  for (const tag of active ? (await active.store.all()).flatMap((doc) => doc.tags) : []) {
+    const seen = counts.get(tag.toLowerCase())
+    counts.set(tag.toLowerCase(), { tag: seen?.tag ?? tag, count: (seen?.count ?? 0) + 1 })
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, 'fr')).map((each) => each.tag)
+}
+
 /** Pour l'IA : l'émetteur qu'elle a identifié (vide : aucun) — plus à confirmer, et on sait qui l'a dit. */
 export async function setIssuerByAi(record: string, issuer: string): Promise<LibraryDoc | null> {
   return active ? active.store.setIssuer(record, issuer, true) : null
@@ -321,6 +336,8 @@ async function emitPoured(doc: LibraryDoc): Promise<void> {
       categorieaconfirmer: doc.categoryToConfirm ? t('bibliotheque.read.yes') : '',
       emetteur: doc.issuer,
       emetteuraconfirmer: doc.issuerToConfirm ? t('bibliotheque.read.yes') : '',
+      etiquettes: doc.tags.join(', '),
+      etiquettesaconfirmer: doc.tagsToConfirm ? t('bibliotheque.read.yes') : '',
       fiche: doc.record
     }
   })
@@ -378,7 +395,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.17.0',
+  version: '0.18.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -452,7 +469,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteuraconfirmer', 'categorieaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,
@@ -647,6 +664,9 @@ export const bibliothequeModule: BlackModule = {
         categoryToConfirm: undefined,
         categoryProbable: undefined,
         categoryByAi: undefined,
+        tagsToConfirm: undefined,
+        tagsProbable: undefined,
+        tagsByAi: undefined,
         title: (values.title ?? '').trim() || doc.title,
         category: (values.category ?? '').trim(),
         reference: (values.reference ?? '').trim(),
@@ -743,6 +763,10 @@ export const bibliothequeModule: BlackModule = {
       confirmCategory: async (record, category) => {
         const doc = await store.setCategory(record, category)
         if (doc) platform.notifier.notify(doc.category ? t('bibliotheque.category.confirmed', { category: doc.category }) : t('bibliotheque.category.confirmed.none', { title: doc.title }), 5000)
+      },
+      confirmTags: async (record, tags) => {
+        const doc = await store.setTags(record, tags)
+        if (doc) platform.notifier.notify(doc.tags.length ? t('bibliotheque.tags.confirmed', { tags: doc.tags.join(', ') }) : t('bibliotheque.tags.confirmed.none', { title: doc.title }), 5000)
       },
       confirmIssuer: async (record, issuer) => {
         const doc = await store.setIssuer(record, issuer)

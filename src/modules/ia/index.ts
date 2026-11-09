@@ -26,7 +26,7 @@ import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor,
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
-export { readCategoryAnswer, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTitleAnswer } from './workflows'
+export { readCategoryAnswer, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer } from './workflows'
 export {
   buildChatBody,
   cosine,
@@ -277,7 +277,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.15.0',
+  version: '0.16.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -411,6 +411,19 @@ export const iaModule: BlackModule = {
         trigger: { kind: 'bibliotheque.document-verse' },
         conditions: [{ field: 'categorieaconfirmer', op: 'not-empty', value: '' }],
         actions: [{ kind: 'ia.categorie-document', fields: { fiche: '{fiche}' } }]
+      })
+    })
+    // Les étiquettes d'un document versé, quand la première passe sans IA ne les a pas lues sûrement (actif).
+    registerSystemWorkflow({
+      id: 'sys.ia.etiquettes-documents',
+      moduleKey: 'ia.name',
+      enabledByDefault: true,
+      make: (tr) => ({
+        name: tr('ia.sys.etiquettes-documents'),
+        mode: 'auto',
+        trigger: { kind: 'bibliotheque.document-verse' },
+        conditions: [{ field: 'etiquettesaconfirmer', op: 'not-empty', value: '' }],
+        actions: [{ kind: 'ia.etiquettes-document', fields: { fiche: '{fiche}' } }]
       })
     })
     // L'émetteur d'un document versé, quand la première passe sans IA ne l'a pas lu sûrement (actif).

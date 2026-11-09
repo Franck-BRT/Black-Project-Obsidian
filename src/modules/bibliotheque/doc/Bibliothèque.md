@@ -158,6 +158,12 @@ celle du nom du fichier reste, **à confirmer** : la fiche propose celle que le 
 est réglée, choisit d'abord dans la liste des catégories. Plusieurs choses à confirmer : un
 seul encadré « À confirmer (n) » les rassemble sur la fiche.
 
+**Les étiquettes** aussi : dites par le document (« Mots-clés : », « Étiquettes : »), elles
+sont données. Sinon elles sont **à confirmer** : la fiche propose les mots qui reviennent le
+plus au début du texte (**Prendre ces étiquettes**), **Pas d'étiquettes**, ou **Classer…** ;
+l'IA, si elle est réglée, en donne d'abord de 3 à 6, en reprenant celles déjà employées dans
+la bibliothèque. Filtre *Étiquettes à confirmer*.
+
 **L'émetteur** aussi : dit par le document (« Émetteur : », « Émis par », « Pouvoir
 adjudicateur : »…), il est donné. Sinon il est **à confirmer** : la fiche propose
 l'organisme lu au début du document (**Prendre « … »**), **Pas d'émetteur**, ou

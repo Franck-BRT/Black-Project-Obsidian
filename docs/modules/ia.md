@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.15.0 (Black Projects 0.89.0) |
+| Version | 0.16.0 (Black Projects 0.90.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,15 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## Les étiquettes d'un document, avec l'IA (v0.16.0, Black Projects 0.90.0)
+
+`sys.ia.etiquettes-documents` (actif ; *document versé*, si `{etiquettesaconfirmer}` n'est
+pas vide), action `ia.etiquettes-document` : les étiquettes déjà en usage (`libraryTags`, 60
+au plus) dans la consigne, réponse JSON imposée (`tags`, `certain`), de 3 à 6 étiquettes.
+`readTagsAnswer` : pas certaine, rien ; certaine et aucune : aucune ; sinon celles que le
+document dit ou que la bibliothèque emploie déjà (écrites alors comme elle), six au plus ;
+aucune ne tient : rien, elles restent à confirmer. Elles s'ajoutent à celles qu'il a.
 
 ## La catégorie d'un document, avec l'IA (v0.15.0, Black Projects 0.89.0)
 

@@ -74,7 +74,8 @@ une réponse nette donne la langue (« identifiée par l'IA ») ; sinon elle res
 
 De même pour le **titre** (« Identifier avec l'IA le titre d'un document… », activé) : le
 titre de la page de garde, fait des mots du document ; pour la **catégorie** (« Identifier avec l'IA la catégorie d'un document… », activé) :
-choisie dans la liste des catégories ; et pour l'**émetteur**
+choisie dans la liste des catégories ; pour les **étiquettes** (« Donner avec l'IA les étiquettes d'un document… », activé) :
+de 3 à 6, celles déjà en usage dans la bibliothèque d'abord, dites par le document sinon ; et pour l'**émetteur**
 (« Identifier avec l'IA l'émetteur d'un document… », activé) : l'organisme qui a écrit le
 document, qui doit y figurer. Et **« Identifier avec l'IA la
 référence et la version d'un document, quand la première passe n'est pas sûre »** (activé) : quand le document ne les dit pas clairement

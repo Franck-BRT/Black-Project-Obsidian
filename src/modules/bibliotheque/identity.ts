@@ -256,3 +256,58 @@ export function guessDocCategory(text: string, fileName: string, given = ''): Ca
   if (fromName && fromName === fromText) return { category: fromName, sure: true, probable: '' }
   return { category: fromName, sure: false, probable: fromText && fromText !== fromName ? fromText : '' }
 }
+
+/**
+ * Les **étiquettes** d'un document (ses mots-clés). **Sûres** quand il les dit avec leur mot
+ * (« Mots-clés : », « Keywords: », « Étiquettes : ») ; sinon, à confirmer — avec, proposés,
+ * les mots importants qui reviennent le plus au début de son texte ; l'IA peut trancher.
+ */
+export interface TagsGuess {
+  tags: string[]
+  sure: boolean
+}
+
+const TAGS_HEAD = 6000
+const LABELLED_TAGS = /^\s*(?:mots?[-\s]cl[ée]s?|keywords?|[ée]tiquettes?|tags?)\s*[:：]\s*(.{2,300}?)\s*$/imu
+/** Des mots longs et fréquents qui ne disent rien du sujet. */
+const COMMON = new Set(
+  'document documents present presente presentes dossier dossiers marche marches doivent devront pendant egalement notamment toutes chaque autres celle celles ceux cette ainsi article articles annexe annexes conditions conformement concernant suivant suivants suivantes titulaire titulaires respect ensemble prestations prestation cadre should within whether therefore following section sections shall document provided according'
+    .split(' ')
+)
+
+const splitTags = (raw: string): string[] => [
+  ...new Set(
+    raw
+      .split(/[,;|·•\/]+/)
+      .map((tag) => tag.replace(/^[#\s"'«“]+|[\s"'»”.]+$/g, '').trim())
+      .filter((tag) => tag.length >= 2 && tag.length <= 40)
+  )
+]
+
+export function guessTags(text: string): TagsGuess {
+  const head = text.slice(0, TAGS_HEAD)
+  const labelled = LABELLED_TAGS.exec(head)?.[1]
+  if (labelled && splitTags(labelled).length) return { tags: splitTags(labelled).slice(0, 12), sure: true }
+  // Les mots d'au moins six lettres, sans accents ni casse, comptés ; ceux qui reviennent trois fois et plus.
+  const counts = new Map<string, { count: number; shown: string }>()
+  for (const word of head.match(/\p{L}{6,}/gu) ?? []) {
+    const key = word.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+    if (COMMON.has(key)) continue
+    const seen = counts.get(key)
+    counts.set(key, { count: (seen?.count ?? 0) + 1, shown: seen?.shown ?? word.toLowerCase() })
+  }
+  const tags = [...counts.values()]
+    .filter((each) => each.count >= 3)
+    .sort((a, b) => b.count - a.count || a.shown.localeCompare(b.shown, 'fr'))
+    .slice(0, 5)
+    .map((each) => each.shown)
+  return { tags, sure: false }
+}
+
+/** Les étiquettes données par l'IA : gardées si le document les dit, ou si la bibliothèque les emploie déjà. */
+export function tagsFoundIn(tags: readonly string[], text: string, known: readonly string[]): string[] {
+  const fold = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+  const hay = fold(text)
+  const usual = new Set(known.map(fold))
+  return [...new Set(tags.map((tag) => tag.trim()).filter((tag) => tag.length >= 2 && tag.length <= 40 && tag.split(/\s+/).length <= 4))].filter((tag) => usual.has(fold(tag)) || hay.includes(fold(tag)))
+}

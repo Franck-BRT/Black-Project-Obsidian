@@ -17,7 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
-import { guessDocCategory, guessIdentity, guessIssuer, guessTitle, type DocIdentity } from './identity'
+import { guessDocCategory, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
@@ -190,10 +190,14 @@ export class LibraryStore {
     // L'émetteur : dit sûrement par le document, il est donné ; sinon, à confirmer (avec le probable lu).
     const issued = guessIssuer(text ?? '')
     const issuer: Partial<LibraryDoc> = issued.sure ? { issuer: issued.issuer } : { issuerToConfirm: true, ...(issued.issuer ? { issuerProbable: issued.issuer } : {}) }
+    // Les étiquettes : dites par le document, données ; sinon à confirmer (avec celles que le texte suggère).
+    const tagged = guessTags(text ?? '')
+    const tags: Partial<LibraryDoc> = tagged.sure ? { tags: tagged.tags } : { tagsToConfirm: true, ...(tagged.tags.length ? { tagsProbable: tagged.tags } : {}) }
     return {
       ...title,
       ...issuer,
       ...category,
+      ...tags,
       ...this.languageOfText(text),
       ...(identity.reference ? { reference: identity.reference } : {}),
       ...(identity.edition ? { edition: identity.edition } : {}),
@@ -247,6 +251,19 @@ export class LibraryStore {
     delete next.titleProbable
     delete next.titleByAi
     if (byAi) next.titleByAi = true
+    await this.save(next)
+    return next
+  }
+
+  /** Ses étiquettes, données (par l'IA, ou confirmées ; vide : aucune) : plus à confirmer. `null` : celles qu'il a sont confirmées. */
+  async setTags(record: string, tags: readonly string[] | null, byAi = false): Promise<LibraryDoc | null> {
+    const doc = await this.load(record)
+    if (!doc) return null
+    const next: LibraryDoc = { ...doc, ...(tags === null ? {} : { tags: [...tags] }) }
+    delete next.tagsToConfirm
+    delete next.tagsProbable
+    delete next.tagsByAi
+    if (byAi) next.tagsByAi = true
     await this.save(next)
     return next
   }

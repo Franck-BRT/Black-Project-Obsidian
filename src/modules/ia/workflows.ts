@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, libraryCategories, libraryDoc, libraryDocText, setCategoryByAi, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, libraryCategories, libraryDoc, libraryDocText, libraryTags, setCategoryByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -136,7 +136,84 @@ export function readCategoryAnswer(answer: unknown, categories: readonly string[
   return categories.find((category) => category.toLowerCase() === wanted) ?? null
 }
 
+const TAGS_SCHEMA = {
+  name: 'etiquettes_document',
+  schema: {
+    type: 'object',
+    properties: { tags: { type: 'array', items: { type: 'string' } }, certain: { type: 'boolean' } },
+    required: ['tags', 'certain'],
+    additionalProperties: false
+  }
+}
+
+/** Le nombre d'étiquettes gardées, au plus. */
+const MAX_AI_TAGS = 6
+
+/**
+ * Les étiquettes que l'IA a données : pas certaine, `null` ; certaine et aucune : `[]` ; sinon
+ * celles que le document dit, ou que la bibliothèque emploie déjà (écrites alors comme elle) —
+ * au plus six. Aucune ne tient : `null`, rien n'est inventé.
+ */
+export function readTagsAnswer(answer: unknown, text: string, known: readonly string[]): string[] | null {
+  if (typeof answer !== 'object' || answer === null) return null
+  const reply = answer as { tags?: unknown; certain?: unknown }
+  if (reply.certain !== true || !Array.isArray(reply.tags)) return null
+  const given = reply.tags.filter((tag): tag is string => typeof tag === 'string').map((tag) => tag.replace(/^[#"«“\s]+|["»”\s.]+$/g, '').trim()).filter(Boolean)
+  if (!given.length) return []
+  const usual = new Map(known.map((tag) => [tag.toLowerCase(), tag]))
+  const kept = tagsFoundIn(given, text, known).map((tag) => usual.get(tag.toLowerCase()) ?? tag.toLowerCase())
+  return kept.length ? [...new Set(kept)].slice(0, MAX_AI_TAGS) : null
+}
+
 export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string): void {
+  /**
+   * Les étiquettes d'un document de la bibliothèque, quand la première passe sans IA ne les a
+   * pas lues sûrement : le début de son texte, et les étiquettes déjà en usage, demandés à
+   * l'IA. Certaine : ses étiquettes sont données (« données par l'IA »), si le document les
+   * dit ou si la bibliothèque les emploie ; sinon, elles restent à confirmer, sans erreur.
+   */
+  registerAction({
+    id: 'ia.etiquettes-document',
+    labelKey: 'ia.wf.action.tags',
+    descKey: 'ia.wf.action.tags.desc',
+    needsAi: true,
+    fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
+    results: ['text'],
+    async run({ fields, guidance }) {
+      const say = (key: string, vars?: Record<string, string | number>) => {
+        const text = t(key, vars)
+        return { lines: [text], results: { text } }
+      }
+      const record = (fields.fiche ?? '').trim()
+      const doc = record ? await libraryDoc(record) : null
+      if (!doc) return say('ia.wf.language.noDoc', { record })
+      if (!doc.tagsToConfirm) return say('ia.wf.tags.already', { title: doc.title })
+      const ai = client()?.withInstructions(guidance)
+      if (!ai) return say('ia.wf.tags.noAi', { title: doc.title })
+      const text = ((await libraryDocText(record)) ?? '').trim()
+      if (!text) return say('ia.wf.tags.noText', { title: doc.title })
+      const fileName = doc.file.slice(doc.file.lastIndexOf('/') + 1)
+      const known = await libraryTags()
+      let answer: unknown
+      try {
+        answer = await ai.chatJson<unknown>({
+          messages: [
+            { role: 'system', content: t('ia.wf.tags.system', { list: known.slice(0, 60).join(', ') || t('ia.wf.tags.noKnown') }) },
+            { role: 'user', content: `${t('ia.wf.identity.file', { name: fileName })}\n\n${text.slice(0, IDENTITY_HEAD)}` }
+          ],
+          temperature: 0,
+          schema: TAGS_SCHEMA
+        })
+      } catch (error) {
+        throw new Error(describe(error))
+      }
+      const tags = readTagsAnswer(answer, text.slice(0, IDENTITY_HEAD), known)
+      if (tags === null) return say('ia.wf.tags.unsure', { title: doc.title })
+      const saved = await setTagsByAi(record, [...new Set([...doc.tags, ...tags])])
+      return say(tags.length ? 'ia.wf.tags.found' : 'ia.wf.tags.nothing', { title: doc.title, tags: (saved?.tags ?? tags).join(', ') })
+    }
+  })
+
   /**
    * La catégorie d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas
    * établie sûrement : le début de son texte et la liste des catégories connues demandés à
