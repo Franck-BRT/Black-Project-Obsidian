@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.24.1 (Black Projects 0.96.1) |
+| Version | 0.25.0 (Black Projects 0.97.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,18 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Un émetteur hors de la liste : l'y ajouter (v0.25.0, Black Projects 0.97.0)
+
+Quand l'émetteur d'un document n'est pas dans la liste des émetteurs, la fiche le dit
+(« Thales Alenia Space — hors de la liste des émetteurs ») et la ligne *Émetteur* a un
+troisième bouton (icône `plus`) : **« Ajouter « Thales Alenia Space » à la liste des
+émetteurs »**. La fenêtre d'un nouvel émetteur s'ouvre, son **nom** et un **code proposés**
+(`suggestIssuerCode` : les initiales — « TAS » —, un sigle déjà écrit — « SNCF » —, ou les
+quatre premières lettres d'un seul mot). Créé, il devient l'émetteur du document, **et des
+autres documents qui portaient ce nom** (`adoptIssuer`, sans accents ni casse ; comme
+émetteur ou comme émetteur proposé) ; la notification le dit. « ＋ Ajouter un émetteur à la
+liste… » (le crayon, *Classer…*) fait de même.
 
 ## Correctif : relancer un champ ne change que lui (v0.24.1, Black Projects 0.96.1)
 

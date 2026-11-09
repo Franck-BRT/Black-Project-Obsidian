@@ -14,7 +14,7 @@ import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type HomeBlock, type ListItem } from '../src/core/views'
-import { bibliothequeModule, guessIssuer, knownIssuerCode, pourIntoLibrary, type KnownIssuer } from '../src/modules/bibliotheque'
+import { bibliothequeModule, guessIssuer, knownIssuerCode, pourIntoLibrary, suggestIssuerCode, type KnownIssuer } from '../src/modules/bibliotheque'
 import { iaModule, readIssuerAnswer } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule } from '../src/modules/workflows'
@@ -154,6 +154,58 @@ describe('l’émetteur d’un document, dans la liste', () => {
     expect(read(platform, 'Bibliothèque/Émetteurs/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
     expect(read(platform, doc.record)).toMatch(/\nemetteur: TAS\n/)
     expect((await issuerItem(doc.record))?.detail).toBe('TAS — Thales Alenia Space')
+  })
+})
+
+describe('un émetteur hors de la liste : l’y ajouter', () => {
+  it('un code proposé : les initiales, un sigle déjà écrit, ou les quatre premières lettres', () => {
+    expect(suggestIssuerCode('Thales Alenia Space')).toBe('TAS')
+    expect(suggestIssuerCode('Direction générale de l’armement')).toBe('DGA')
+    expect(suggestIssuerCode('Groupe SNCF')).toBe('SNCF')
+    expect(suggestIssuerCode('Airbus')).toBe('AIRB')
+    expect(suggestIssuerCode('')).toBe('')
+  })
+
+  it('la fiche le dit, et un bouton l’ajoute : son nom et un code proposés ; il devient celui du document, et des autres qui portaient ce nom', async () => {
+    const platform = memoryPlatform()
+    const { pour, addIssuer, issuerItem } = await start(platform)
+    await addIssuer('ESA', 'Agence spatiale européenne')
+    const doc = await pour('Note.txt', 'Émetteur : Thales Alenia Space\nTexte.')
+    const other = await pour('Autre note.txt', 'Émetteur : THALES ALENIA SPACE\nAutre texte.')
+    const known = await pour('Spécification.txt', 'Agence spatiale européenne\nSpécification.')
+    const item = await issuerItem(doc.record)
+    expect(item?.detail).toBe('Thales Alenia Space — hors de la liste des émetteurs')
+    expect(item?.tools?.map((tool) => [tool.id, tool.label, tool.icon])).toEqual([
+      ['edit-issuer', 'Modifier : Émetteur', 'edit'],
+      ['research-issuer', 'Relancer la recherche dans le document : Émetteur', 'refresh'],
+      ['add-issuer', 'Ajouter « Thales Alenia Space » à la liste des émetteurs', 'plus']
+    ])
+    // Un émetteur de la liste : pas de bouton.
+    expect((await issuerItem(known.record))?.tools?.map((tool) => tool.id)).toEqual(['edit-issuer', 'research-issuer'])
+    platform.forms.push({ code: 'TAS', name: 'Thales Alenia Space', category: '', description: '', text: '', favorite: 'false' })
+    await item!.tools!.find((tool) => tool.id === 'add-issuer')!.run()
+    expect(platform.asked.at(-1)!.fields.slice(0, 2)).toMatchObject([
+      { key: 'code', value: 'TAS' },
+      { key: 'name', value: 'Thales Alenia Space' }
+    ])
+    expect(read(platform, 'Bibliothèque/Émetteurs/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
+    expect(read(platform, doc.record)).toMatch(/\nemetteur: TAS\n/)
+    expect(read(platform, other.record)).toMatch(/\nemetteur: TAS\n/)
+    expect(platform.notices.at(-1)).toBe('« TAS — Thales Alenia Space » ajouté à la liste des émetteurs ; c’est l’émetteur du document. 1 autre(s) document(s) émis par « Thales Alenia Space » le prennent aussi.')
+    const after = await issuerItem(doc.record)
+    expect(after?.detail).toBe('TAS — Thales Alenia Space')
+    expect(after?.tools?.map((tool) => tool.id)).toEqual(['edit-issuer', 'research-issuer'])
+  })
+
+  it('fermer la fenêtre : rien n’est ajouté, rien ne change', async () => {
+    const platform = memoryPlatform()
+    const { pour, issuerItem } = await start(platform)
+    const doc = await pour('Note.txt', 'Émetteur : Thales Alenia Space\nTexte.')
+    const before = read(platform, doc.record)
+    platform.forms.push(null)
+    await (await issuerItem(doc.record))!.tools!.find((tool) => tool.id === 'add-issuer')!.run()
+    expect(read(platform, doc.record)).toBe(before)
+    expect(platform.files.has('Bibliothèque/Émetteurs/Thales Alenia Space.md')).toBe(false)
   })
 })
 

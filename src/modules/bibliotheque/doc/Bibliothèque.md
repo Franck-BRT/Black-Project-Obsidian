@@ -189,7 +189,9 @@ autres noms sous lesquels il signe, un par ligne (« European Space Agency »). 
 émetteur. L'émetteur d'un document y est **reconnu** (son nom, un autre nom, ou son code en
 tête du document), **s'y choisit** (le crayon du champ, *Classer…* : une liste, et
 « ＋ Ajouter un émetteur à la liste… », son nom proposé) et se lit « ESA — Agence spatiale
-européenne ».
+européenne ». Un émetteur **hors de la liste** est dit tel sur la fiche ; le bouton **+** de
+sa ligne l'y ajoute (son nom et un code proposés — « TAS » pour Thales Alenia Space) : il
+devient l'émetteur du document, et des autres documents qui portaient ce nom.
 
 **L'émetteur** aussi : dit par le document (« Émetteur : », « Émis par », « Pouvoir
 adjudicateur : »…), il est donné. Sinon il est **à confirmer** : la fiche propose

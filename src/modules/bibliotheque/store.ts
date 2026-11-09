@@ -350,6 +350,27 @@ export class LibraryStore {
   }
 
   /**
+   * Un émetteur ajouté à la liste : les documents qui portaient son nom (tel quel, sans
+   * accents ni casse) prennent son code — comme émetteur, ou comme émetteur proposé. Rend
+   * combien ont changé.
+   */
+  async adoptIssuer(name: string, code: string, except = ''): Promise<number> {
+    const fold = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim()
+    const wanted = fold(name)
+    if (!wanted || !code) return 0
+    let changed = 0
+    for (const doc of await this.all()) {
+      if (doc.record === except) continue
+      const issuer = fold(doc.issuer) === wanted
+      const probable = !!doc.issuerProbable && fold(doc.issuerProbable) === wanted
+      if (!issuer && !probable) continue
+      await this.save({ ...doc, ...(issuer ? { issuer: code } : {}), ...(probable ? { issuerProbable: code } : {}) })
+      changed++
+    }
+    return changed
+  }
+
+  /**
    * **Renommer le fichier** d'un document, dans son dossier : `name` sans extension (celle du
    * fichier est gardée). Puis les liens vers lui, dans tout le coffre, suivent — sa fiche, la
    * note de sa pièce, celle de l'analyse… : `[[chemin]]`, `[[chemin|texte]]`, `![[…]]`,

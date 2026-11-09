@@ -204,6 +204,20 @@ const foldName = (value: string) =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim()
 
+/** Un code proposé pour un émetteur, d'après son nom : les initiales (« Thales Alenia Space » → « TAS ») ; un seul mot, ses quatre premières lettres. */
+export function suggestIssuerCode(name: string): string {
+  const words = name
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((word) => word && !/^(?:de|du|des|la|le|les|l|d|et|of|the|and|for|pour|en|a|au|aux)$/i.test(word))
+  if (!words.length) return ''
+  if (words.length === 1) return words[0]!.slice(0, 4).toUpperCase()
+  // Un sigle déjà écrit (« ESA », « SNCF ») : gardé.
+  const acronym = words.find((word) => word.length >= 2 && word.length <= 6 && word === word.toUpperCase() && /\p{L}/u.test(word))
+  return acronym ?? words.map((word) => word[0]!.toUpperCase()).join('').slice(0, 8)
+}
+
 /** Le code d'un émetteur de la liste écrit par son code, son nom ou l'un de ses autres noms ; vide s'il n'y est pas. */
 export function knownIssuerCode(value: string, known: readonly KnownIssuer[]): string {
   const wanted = foldName(value)

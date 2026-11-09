@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Un émetteur hors de la liste : l'y ajouter (v0.97.0)
+
+- [ ] Verser deux documents « Émetteur : Thales Alenia Space » : sur la fiche de l'un,
+      « Thales Alenia Space — hors de la liste des émetteurs », et un bouton **+** « Ajouter
+      « Thales Alenia Space » à la liste des émetteurs » (les icônes restent alignées)
+- [ ] Le cliquer : la fenêtre propose le code « TAS » et le nom ; **Créer** : « TAS — Thales
+      Alenia Space » ; la notification dit que l'autre document le prend aussi ; le bouton
+      disparaît
+- [ ] Un émetteur de la liste : pas de bouton **+** ; fermer la fenêtre : rien ne change
+
 ## Correctif : relancer un champ ne change que lui (v0.96.1)
 
 - [ ] Un document « Réf. : PMP-01 / Édition 2 / Révision B » : changer la **référence** au

@@ -39,8 +39,8 @@ export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport, ResearchField } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
-import { CATEGORY_TYPER, docDateLabel, knownIssuerCode, parseDocDate, type KnownIssuer, type PieceTyper } from './identity'
-export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess, type PieceTyper, pieceTypeCode, knownIssuerCode, type KnownIssuer } from './identity'
+import { CATEGORY_TYPER, docDateLabel, knownIssuerCode, parseDocDate, suggestIssuerCode, type KnownIssuer, type PieceTyper } from './identity'
+export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess, type PieceTyper, pieceTypeCode, knownIssuerCode, suggestIssuerCode, type KnownIssuer } from './identity'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -471,7 +471,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.24.1',
+  version: '0.25.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -711,12 +711,30 @@ export const bibliothequeModule: BlackModule = {
       }))
     }
     /** Ajouter un émetteur à la liste (sa fenêtre, le nom proposé) ; rend son code. */
-    const newIssuer = async (name: string): Promise<string | null> => {
-      const draft = await entryForm('issuer', undefined, { name })
+    const newIssuer = async (name: string): Promise<EntryDraft | null> => {
+      const draft = await entryForm('issuer', undefined, { name, code: suggestIssuerCode(name) })
       if (!draft) return null
       await entries.issuer.create(draft)
-      platform.notifier.notify(t('bibliotheque.issuer.created', { name: entryTitle(draft) }), 5000)
-      return draft.code || draft.name
+      return draft
+    }
+    /**
+     * L'émetteur d'un document, hors de la liste : l'y ajouter (sa fenêtre, son nom et un code
+     * proposés) ; il devient celui du document — et des autres documents qui portaient ce nom.
+     */
+    const addIssuerFor = async (record: string): Promise<string | null> => {
+      const doc = await store.load(record)
+      if (!doc) return null
+      const raw = knownIssuerCode(doc.issuer, await knownIssuers()) ? '' : doc.issuer
+      const draft = await newIssuer(raw)
+      if (!draft) return null
+      const code = draft.code || draft.name
+      await store.setIssuer(record, code)
+      const others = raw ? await store.adoptIssuer(raw, code, record) : 0
+      platform.notifier.notify(
+        [t('bibliotheque.issuer.added', { issuer: entryTitle(draft) }), ...(others ? [t('bibliotheque.issuer.adopted', { count: others, name: raw })] : [])].join(' '),
+        6000
+      )
+      return code
     }
     /** L'émetteur d'un document à choisir : « Aucun », ceux de la liste, celui qu'il a s'il n'y est pas, et en ajouter un. */
     const issuerOptions = (current: string, known: readonly KnownIssuer[]): Choice[] => [
@@ -808,10 +826,7 @@ export const bibliothequeModule: BlackModule = {
         tags
       })
       // « Ajouter un émetteur à la liste… » : sa fenêtre, puis il devient celui du document.
-      if (values.issuer === NEW_ISSUER) {
-        const code = await newIssuer(knownIssuerCode(doc.issuer, await knownIssuers()) ? '' : doc.issuer)
-        if (code) await store.setIssuer(record, code)
-      }
+      if (values.issuer === NEW_ISSUER) await addIssuerFor(record)
       platform.notifier.notify(
         [t('bibliotheque.classify.done', { title: (values.title ?? '').trim() || doc.title }), ...(typedDate && !parseDocDate(typedDate) ? [t('bibliotheque.date.unreadable', { value: typedDate })] : [])].join(' '),
         5000
@@ -937,14 +952,13 @@ export const bibliothequeModule: BlackModule = {
         shown = value ? pieceTypeText(value) : ''
       }
       else if (key === 'issuer') {
-        let code = value
+        // « Ajouter un émetteur à la liste… » : sa fenêtre ; ce qu'elle a fait est dit.
         if (value === NEW_ISSUER) {
-          const added = await newIssuer(knownIssuerCode(doc.issuer, await knownIssuers()) ? '' : doc.issuer)
-          if (!added) return
-          code = added
+          await addIssuerFor(record)
+          return
         }
-        await store.setIssuer(record, code)
-        shown = code ? issuerLabelIn(code, await knownIssuers()) : ''
+        await store.setIssuer(record, value)
+        shown = value ? issuerLabelIn(value, await knownIssuers()) : ''
       }
       else {
         const tags = [...new Set(value.split(',').map((each) => each.trim()).filter(Boolean))]
@@ -1041,6 +1055,7 @@ export const bibliothequeModule: BlackModule = {
         if (doc) platform.notifier.notify(doc.category ? t('bibliotheque.category.confirmed', { category: doc.category }) : t('bibliotheque.category.confirmed.none', { title: doc.title }), 5000)
       },
       editField,
+      addIssuer: async (record) => void (await addIssuerFor(record)),
       typeText: pieceTypeText,
       issuers: () => knownIssuers(),
       researchField,

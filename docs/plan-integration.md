@@ -574,6 +574,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.96.1 : **correctif** — relancer la recherche d'un champ ne change que lui (la révision
   relancée ne remet plus la référence ; l'IA, qui rend la référence et la version ensemble,
   non plus)
+- v0.97.0 : **module Bibliothèque** : un émetteur **hors de la liste** est dit sur la fiche,
+  et un bouton l'y **ajoute** (son nom et un code proposés) ; les autres documents qui
+  portaient ce nom le prennent aussi
 
 ### Étape 7 — Livrables
 
