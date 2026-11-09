@@ -15,7 +15,7 @@ import { grouped, groupingOf, groupingSelector, type Group } from '../../core/gr
 import type { GhostEntry, LibraryStore, ResearchField } from './store'
 import type { LibraryGhost } from './ghosts'
 import { LANGUAGES, type LanguageCode } from './language'
-import { docDateLabel, type KnownIssuer } from './identity'
+import { docDateLabel, type KnownIssuer, type KnownTag } from './identity'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -52,6 +52,10 @@ export interface LibraryHomeDeps {
   newVersionOf(record: string): Promise<void>
   /** Choisir sa langue (ou la détecter de nouveau, ou aucune). */
   chooseLanguage(record: string): Promise<void>
+  /** Ses étiquettes hors de la liste : les y ajouter. */
+  addTags(record: string): Promise<void>
+  /** Les étiquettes de la liste. */
+  tagList(): Promise<readonly KnownTag[]>
   /** Son type de pièce, hors de la liste : l'y ajouter (un type du module Typage des pièces). */
   addPieceType(record: string): Promise<void>
   /** Une valeur hors de la liste des types de pièce ? */
@@ -311,6 +315,10 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   // Un émetteur de la liste : son code et son nom.
   const issuers = await deps.issuers()
   const outsideType = deps.pieceTypeOutside(doc.category)
+  // Ses étiquettes hors de la liste des étiquettes.
+  const tagList = await deps.tagList()
+  const foldTag = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
+  const outsideTags = doc.tags.filter((tag) => !tagList.some((each) => [each.name, ...each.aliases].some((name) => foldTag(name) === foldTag(tag))))
   const outsideIssuer = !!doc.issuer && !issuers.some((each) => each.code === doc.issuer)
   const issuerText = (value: string): string => {
     const found = issuers.find((each) => each.code === value)
@@ -490,6 +498,10 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         ...(researched[item.id]
           ? [{ id: `research-${item.id}`, label: t('bibliotheque.field.research', { field: item.title }), icon: 'refresh' as const, run: () => deps.researchField(doc.record, researched[item.id]!) }]
           : []),
+        // Des étiquettes hors de la liste : les y ajouter, en un clic.
+        ...(item.id === 'tags' && outsideTags.length
+          ? [{ id: 'add-tags', label: t('bibliotheque.tags.addThese', { tags: outsideTags.join(', ') }), icon: 'plus' as const, run: () => deps.addTags(doc.record) }]
+          : []),
         // Un type de pièce hors de la liste : l'y ajouter, en un clic.
         ...(item.id === 'category' && outsideType && deps.canAddPieceType()
           ? [{ id: 'add-type', label: t('bibliotheque.category.addThis', { category: doc.category }), icon: 'plus' as const, run: () => deps.addPieceType(doc.record) }]
@@ -596,7 +608,17 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
         items: withEdits([{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), { ...field('date', doc.date ? docDateLabel(doc.date, deps.locale) : ''), ...(doc.dateToConfirm ? { detail: (doc.date ? t('bibliotheque.date.detail.toConfirm', { date: docDateLabel(doc.date, deps.locale) }) : t('bibliotheque.detail.toConfirm')) } : doc.dateByAi && doc.date ? { detail: t('bibliotheque.date.detail.byAi', { date: docDateLabel(doc.date, deps.locale) }) } : {}) },
-          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category ? deps.typeText(doc.category) : ''), ...(outsideType ? { detail: t('bibliotheque.category.detail.outside', { category: doc.category }) } : doc.categoryToConfirm ? { detail: (doc.category ? t('bibliotheque.category.detail.toConfirm', { category: deps.typeText(doc.category) }) : t('bibliotheque.detail.toConfirm')) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category ? deps.typeText(doc.category) : '—' }) } : {}) }, { ...field('issuer', issuerText(doc.issuer)), ...(outsideIssuer ? { detail: t('bibliotheque.issuer.detail.outside', { issuer: doc.issuer }) } : doc.issuerToConfirm ? { detail: (doc.issuer ? t('bibliotheque.issuer.detail.toConfirm', { issuer: issuerText(doc.issuer) }) : t('bibliotheque.detail.toConfirm')) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: issuerText(doc.issuer) || '—' }) } : {}) }, { ...field('tags', doc.tags.join(', ')), ...(doc.tagsToConfirm ? { detail: (doc.tags.length ? t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') }) : t('bibliotheque.detail.toConfirm')) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {}) }])
+          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category ? deps.typeText(doc.category) : ''), ...(outsideType ? { detail: t('bibliotheque.category.detail.outside', { category: doc.category }) } : doc.categoryToConfirm ? { detail: (doc.category ? t('bibliotheque.category.detail.toConfirm', { category: deps.typeText(doc.category) }) : t('bibliotheque.detail.toConfirm')) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category ? deps.typeText(doc.category) : '—' }) } : {}) }, { ...field('issuer', issuerText(doc.issuer)), ...(outsideIssuer ? { detail: t('bibliotheque.issuer.detail.outside', { issuer: doc.issuer }) } : doc.issuerToConfirm ? { detail: (doc.issuer ? t('bibliotheque.issuer.detail.toConfirm', { issuer: issuerText(doc.issuer) }) : t('bibliotheque.detail.toConfirm')) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: issuerText(doc.issuer) || '—' }) } : {}) }, {
+            ...field('tags', doc.tags.join(', ')),
+            ...(outsideTags.length
+              ? {
+                  detail:
+                    outsideTags.length === doc.tags.length
+                      ? t('bibliotheque.tags.detail.outside', { tags: doc.tags.join(', ') })
+                      : t('bibliotheque.tags.detail.someOutside', { tags: doc.tags.join(', '), outside: outsideTags.join(', ') })
+                }
+              : doc.tagsToConfirm ? { detail: (doc.tags.length ? t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') }) : t('bibliotheque.detail.toConfirm')) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {})
+          }])
       }),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',

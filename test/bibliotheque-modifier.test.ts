@@ -120,17 +120,24 @@ describe('modifier un champ de la fiche', () => {
     expect((await fields()).find((item) => item.id === 'date')?.detail).toBe('3 mars 2026')
   })
 
-  it('la catégorie, l’émetteur, les étiquettes (séparées par des virgules, sans doublon)', async () => {
+  it('la catégorie, l’émetteur, les étiquettes (à cocher ; d’autres, écrites, sans doublon)', async () => {
     const platform = memoryPlatform()
     const { doc, fields, edit } = await start(platform)
     await edit('category', 'Compte rendu')
     await edit('issuer', 'Agence spatiale')
-    await edit('tags', 'réunion, station sol, réunion')
+    const tagsTool = async () => (await fields()).find((item) => item.id === 'tags')!.tools![0]!.run()
+    platform.manyAnswers.push(null)
+    await tagsTool()
+    const other = platform.manyAsked.at(-1)!.choices.at(-1)!
+    expect(other.label).toBe('＋ Autre(s) étiquette(s)…')
+    platform.manyAnswers.push([other.value])
+    platform.forms.push({ value: 'réunion, station sol, réunion', list: 'false' })
+    await tagsTool()
     const note = read(platform, doc.record)
     expect(note).toMatch(/\ncategorie: Compte rendu\n/)
     expect(note).toMatch(/\nemetteur: Agence spatiale\n/)
     expect(note).not.toMatch(/categorieAConfirmer|emetteurAConfirmer|etiquettesAConfirmer/)
-    expect((await fields()).find((item) => item.id === 'tags')?.detail).toBe('réunion, station sol')
+    expect((await fields()).find((item) => item.id === 'tags')?.detail).toBe('réunion, station sol — hors de la liste des étiquettes')
     expect(platform.notices.at(-1)).toBe('Étiquettes : réunion, station sol.')
   })
 

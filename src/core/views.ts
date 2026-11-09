@@ -54,6 +54,7 @@ export type IconName =
   | 'lock'
   | 'back'
   | 'building'
+  | 'tag'
 
 /** Un bouton : ce qu'il dit, ce qu'il fait. */
 export interface ViewAction {

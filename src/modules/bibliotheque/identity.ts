@@ -386,10 +386,39 @@ const splitTags = (raw: string): string[] => [
   )
 ]
 
-export function guessTags(text: string): TagsGuess {
+/** Une étiquette de la liste : son nom, ses autres formes (un pluriel, un synonyme). */
+export interface KnownTag {
+  name: string
+  aliases: readonly string[]
+}
+
+/** Une étiquette ramenée à celle de la liste (son nom, ou l'une de ses autres formes, sans accents ni casse) ; sinon telle quelle. */
+export function canonicalTag(tag: string, known: readonly KnownTag[]): string {
+  const wanted = foldName(tag)
+  if (!wanted) return tag.trim()
+  return known.find((each) => [each.name, ...each.aliases].some((name) => foldName(name) === wanted))?.name ?? tag.trim()
+}
+
+/** Des étiquettes ramenées à celles de la liste, sans doublon. */
+export function canonicalTags(tags: readonly string[], known: readonly KnownTag[]): string[] {
+  const out = new Map<string, string>()
+  for (const tag of tags) {
+    const name = canonicalTag(tag, known)
+    if (name && !out.has(foldName(name))) out.set(foldName(name), name)
+  }
+  return [...out.values()]
+}
+
+export function guessTags(text: string, known: readonly KnownTag[] = []): TagsGuess {
   const head = text.slice(0, TAGS_HEAD)
   const labelled = LABELLED_TAGS.exec(head)?.[1]
-  if (labelled && splitTags(labelled).length) return { tags: splitTags(labelled).slice(0, 12), sure: true }
+  if (labelled && splitTags(labelled).length) return { tags: canonicalTags(splitTags(labelled), known).slice(0, 12), sure: true }
+  // Les étiquettes de la liste que le texte dit (leur nom, une autre forme, en mots entiers) : proposées d'abord.
+  if (known.length) {
+    const folded = ` ${foldName(head)} `
+    const said = known.filter((each) => [each.name, ...each.aliases].some((name) => foldName(name).length >= 2 && folded.includes(` ${foldName(name)} `)))
+    if (said.length) return { tags: said.slice(0, 6).map((each) => each.name), sure: false }
+  }
   // Les mots d'au moins six lettres, sans accents ni casse, comptés ; ceux qui reviennent trois fois et plus.
   const counts = new Map<string, { count: number; shown: string }>()
   for (const word of head.match(/\p{L}{6,}/gu) ?? []) {
@@ -403,7 +432,7 @@ export function guessTags(text: string): TagsGuess {
     .sort((a, b) => b.count - a.count || a.shown.localeCompare(b.shown, 'fr'))
     .slice(0, 5)
     .map((each) => each.shown)
-  return { tags, sure: false }
+  return { tags: canonicalTags(tags, known), sure: false }
 }
 
 /** Les étiquettes données par l'IA : gardées si le document les dit, ou si la bibliothèque les emploie déjà. */

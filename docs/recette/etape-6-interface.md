@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La liste des étiquettes (v0.99.0)
+
+- [ ] Bibliothèque : une carte **Étiquettes** ; **Nouvelle étiquette** : « antenne », autres
+      formes « antennes »
+- [ ] Verser un texte « Mots-clés : antennes, radar » : étiquettes « antenne, radar — hors de
+      la liste : radar » ; le bouton **+** « Ajouter à la liste des étiquettes : radar » :
+      coché, **Ajouter** — « radar » est dans la liste, la mention disparaît
+- [ ] Le crayon de *Étiquettes* : une liste à cocher (antenne — « antennes » dessous —,
+      radar, « ＋ Autre(s) étiquette(s)… ») ; une autre écrite est ajoutée à la liste
+- [ ] Un texte sans mots-clés qui parle « des antennes » : « antenne » proposée
+
 ## Un type de pièce hors de la liste : l'y ajouter (v0.98.0)
 
 - [ ] Un document à une ancienne catégorie (« Devis ») : « Devis — hors de la liste des types

@@ -17,12 +17,18 @@ import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 export const HUB_PAGE = 'bibliotheque.accueil'
-export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills', issuer: 'bibliotheque.issuers' }
-export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer' }
+export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = {
+  prompt: 'bibliotheque.prompts',
+  persona: 'bibliotheque.personas',
+  skill: 'bibliotheque.skills',
+  issuer: 'bibliotheque.issuers',
+  tag: 'bibliotheque.tags'
+}
+export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag' }
 export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(ENTRY_PAGE[kind], encodeURIComponent(path))
 
-type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building'
-const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building' }
+type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag'
+const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag' }
 
 export interface EntriesHomeDeps {
   t: Translate
@@ -222,9 +228,10 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const personas = await deps.stores.persona.all()
   const skills = await deps.stores.skill.all()
   const issuers = await deps.stores.issuer.all()
+  const tags = await deps.stores.tag.all()
   const go = (page: string): ViewAction => ({ id: 'open', label: t('bibliotheque.hub.open'), run: () => deps.showPage?.(page) })
   // Plusieurs bibliothèques d'une sorte : une section par sorte, une carte par bibliothèque.
-  const several = (['document', 'prompt', 'persona', 'skill', 'issuer'] as const).some((kind) => deps.places[kind].shelves().length > 1)
+  const several = (['document', 'prompt', 'persona', 'skill', 'issuer', 'tag'] as const).some((kind) => deps.places[kind].shelves().length > 1)
   if (several) {
     const placed = await deps.placedDocuments()
     const section = (kind: 'document' | EntryKind, icon: KindIcon, items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
@@ -251,7 +258,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
             { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
             { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
             { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' },
-            { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' }
+            { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
+            { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
           ]
         },
         ...(documents.likely ? [{ kind: 'message' as const, tone: 'warning' as const, text: t('bibliotheque.home.likely', { count: documents.likely }) }] : []),
@@ -259,7 +267,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         section('prompt', 'chat', prompts),
         section('persona', 'spark', personas),
         section('skill', 'list', skills),
-        section('issuer', 'building', issuers)
+        section('issuer', 'building', issuers),
+        section('tag', 'tag', tags)
       ]
     }
   }
@@ -282,7 +291,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
           { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
           { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
           { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' },
-            { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' }
+            { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
+            { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
         ]
       },
       {
@@ -292,7 +302,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
           card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt),
           card('personas', 'spark', personas.length, ENTRIES_PAGE.persona),
           card('skills', 'list', skills.length, ENTRIES_PAGE.skill),
-          card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer)
+          card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer),
+          card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)
         ]
       }
     ]
@@ -313,7 +324,7 @@ export function registerEntriesHome(views: ViewsRegistrar | undefined, deps: Ent
       icon: ICON[kind],
       color: 'teal',
       group: t('bibliotheque.name'),
-      order: { prompt: 28, persona: 29, skill: 30, issuer: 31 }[kind],
+      order: { prompt: 28, persona: 29, skill: 30, issuer: 31, tag: 32 }[kind],
       description: t(`bibliotheque.${kind}.tile`),
       page: ENTRIES_PAGE[kind],
       run: () => show(ENTRIES_PAGE[kind])

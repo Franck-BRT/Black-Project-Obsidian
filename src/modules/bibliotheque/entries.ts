@@ -19,15 +19,16 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, toYaml, type YamlReader } from '../../core/yaml'
 import { MAIN_SHELF, type Shelf } from './shelves'
 
-export type EntryKind = 'prompt' | 'persona' | 'skill' | 'issuer'
-export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill', 'issuer']
+export type EntryKind = 'prompt' | 'persona' | 'skill' | 'issuer' | 'tag'
+export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill', 'issuer', 'tag']
 /** Celles qui servent à l'IA (les champs Prompt, Persona, Skill des étapes de workflow). */
 export const AI_ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill']
 export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = {
   prompt: 'bibliotheque-prompt',
   persona: 'bibliotheque-persona',
   skill: 'bibliotheque-skill',
-  issuer: 'bibliotheque-emetteur'
+  issuer: 'bibliotheque-emetteur',
+  tag: 'bibliotheque-etiquette'
 }
 
 export interface LibraryEntry {

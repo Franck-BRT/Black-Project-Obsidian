@@ -39,8 +39,8 @@ export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport, ResearchField } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
-import { CATEGORY_TYPER, docDateLabel, knownIssuerCode, parseDocDate, suggestIssuerCode, suggestTypeCode, type KnownIssuer, type PieceTyper } from './identity'
-export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess, type PieceTyper, pieceTypeCode, knownIssuerCode, suggestIssuerCode, suggestTypeCode, type KnownIssuer } from './identity'
+import { canonicalTag, canonicalTags, CATEGORY_TYPER, docDateLabel, knownIssuerCode, parseDocDate, suggestIssuerCode, suggestTypeCode, type KnownIssuer, type KnownTag, type PieceTyper } from './identity'
+export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess, type PieceTyper, pieceTypeCode, knownIssuerCode, suggestIssuerCode, suggestTypeCode, canonicalTags, canonicalTag, type KnownIssuer, type KnownTag } from './identity'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -53,6 +53,8 @@ export const DEFAULT_PERSONAS_FOLDER = 'Bibliothèque/Personas'
 export const DEFAULT_SKILLS_FOLDER = 'Bibliothèque/Skills'
 export const ISSUERS_FOLDER_KEY = 'dossierEmetteurs'
 export const DEFAULT_ISSUERS_FOLDER = 'Bibliothèque/Émetteurs'
+export const TAGS_FOLDER_KEY = 'dossierEtiquettes'
+export const DEFAULT_TAGS_FOLDER = 'Bibliothèque/Étiquettes'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
 export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
@@ -69,6 +71,8 @@ let active: {
   locale: string
   /** Les émetteurs de la liste. */
   issuers(): Promise<KnownIssuer[]>
+  /** Les étiquettes de la liste. */
+  tagList(): Promise<KnownTag[]>
 } | null = null
 
 /** Les prompts, ou les personas, de la bibliothèque (favoris d'abord) ; aucun sans le module actif. */
@@ -317,7 +321,8 @@ export const libraryDateLabel = (value: string): string => docDateLabel(value, a
 
 /** Pour l'IA : les étiquettes qu'elle a données — plus à confirmer, et on sait qui l'a dit. */
 export async function setTagsByAi(record: string, tags: readonly string[]): Promise<LibraryDoc | null> {
-  return active ? active.store.setTags(record, tags, true) : null
+  // Ramenées à celles de la liste (une autre forme → l'étiquette).
+  return active ? active.store.setTags(record, canonicalTags(tags, await active.tagList()), true) : null
 }
 
 /** Pour l'IA : les étiquettes déjà en usage dans la bibliothèque (un vocabulaire commun), les plus employées d'abord. */
@@ -327,11 +332,16 @@ export async function libraryTags(): Promise<string[]> {
     const seen = counts.get(tag.toLowerCase())
     counts.set(tag.toLowerCase(), { tag: seen?.tag ?? tag, count: (seen?.count ?? 0) + 1 })
   }
-  return [...counts.values()].sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, 'fr')).map((each) => each.tag)
+  const used = [...counts.values()].sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, 'fr')).map((each) => each.tag)
+  // Celles de la liste des étiquettes d'abord : le vocabulaire commun.
+  const listed = active ? (await active.tagList()).map((each) => each.name) : []
+  return [...new Map([...listed, ...used].map((tag) => [tag.toLowerCase(), tag])).values()]
 }
 
 /** Le choix « Ajouter un émetteur à la liste… » d'une liste d'émetteurs. */
 const NEW_ISSUER = '\u0000nouvel-emetteur'
+/** Le choix « Autre(s) étiquette(s)… » d'une liste d'étiquettes. */
+const NEW_TAGS = '\u0000autres-etiquettes'
 /** Le choix « Ajouter un type de pièce… » d'une liste de types. */
 const NEW_TYPE = '\u0000nouveau-type'
 
@@ -427,7 +437,8 @@ const FOLDER_KEYS: Readonly<Record<EntryKind, readonly [string, string]>> = {
   prompt: [PROMPTS_FOLDER_KEY, DEFAULT_PROMPTS_FOLDER],
   persona: [PERSONAS_FOLDER_KEY, DEFAULT_PERSONAS_FOLDER],
   skill: [SKILLS_FOLDER_KEY, DEFAULT_SKILLS_FOLDER],
-  issuer: [ISSUERS_FOLDER_KEY, DEFAULT_ISSUERS_FOLDER]
+  issuer: [ISSUERS_FOLDER_KEY, DEFAULT_ISSUERS_FOLDER],
+  tag: [TAGS_FOLDER_KEY, DEFAULT_TAGS_FOLDER]
 }
 
 const entriesFolderField = (kind: EntryKind): TextField => ({
@@ -458,7 +469,7 @@ export function bibliothequeFeatures(): ModuleDetails {
       },
       { titleKey: 'bibliotheque.feature.section.places', features: [feature('shelves', 'available'), feature('directories', 'available'), feature('move', 'available')] },
       { titleKey: 'bibliotheque.feature.section.ai', features: [feature('prompts', 'available'), feature('personas', 'available'), feature('skills', 'available'), feature('starters', 'available')] },
-      { titleKey: 'bibliotheque.feature.section.issuers', features: [feature('issuers', 'available')] },
+      { titleKey: 'bibliotheque.feature.section.issuers', features: [feature('issuers', 'available'), feature('tagList', 'available')] },
       { titleKey: 'bibliotheque.feature.section.next', features: [feature('text', 'planned', 7), feature('delivery', 'planned', 7)] }
     ]
   }
@@ -473,11 +484,11 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.26.0',
+  version: '0.27.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer')],
+  settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('tag')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
@@ -487,7 +498,15 @@ export const bibliothequeModule: BlackModule = {
     const skillsFolder = () => folderOf(settings.get(), SKILLS_FOLDER_KEY, DEFAULT_SKILLS_FOLDER)
     // Les bibliothèques de chaque sorte : la principale (le dossier des réglages), puis celles ajoutées.
     const issuersFolder = () => folderOf(settings.get(), ISSUERS_FOLDER_KEY, DEFAULT_ISSUERS_FOLDER)
-    const mainFolder: Record<ShelfKind, () => string> = { document: () => folderOf(settings.get()), prompt: promptsFolder, persona: personasFolder, skill: skillsFolder, issuer: issuersFolder }
+    const tagsFolder = () => folderOf(settings.get(), TAGS_FOLDER_KEY, DEFAULT_TAGS_FOLDER)
+    const mainFolder: Record<ShelfKind, () => string> = {
+      document: () => folderOf(settings.get()),
+      prompt: promptsFolder,
+      persona: personasFolder,
+      skill: skillsFolder,
+      issuer: issuersFolder,
+      tag: tagsFolder
+    }
     const shelves = (kind: ShelfKind): Shelf[] => shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`))
     const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
     const store = new LibraryStore({
@@ -500,6 +519,7 @@ export const bibliothequeModule: BlackModule = {
       textOf: async (name, bytes) => (textReader ? textReader(name, bytes) : null),
       typer: () => pieceTyper ?? CATEGORY_TYPER,
       issuers: () => knownIssuers(),
+      tags: () => knownTags(),
       // Les prompts et les personas, rangés sous la bibliothèque (ou ailleurs) : pas des documents.
       skip: () => ENTRY_KINDS.flatMap((kind) => shelves(kind)).map((shelf) => shelf.folder),
       shelves: () => shelves('document'),
@@ -507,7 +527,7 @@ export const bibliothequeModule: BlackModule = {
     })
     const entryStore = (kind: EntryKind) =>
       new EntryStore(kind, { fs: platform.fs, yaml: platform.yaml, folder: mainFolder[kind], shelves: () => shelves(kind), target: () => defaultShelf(kind).folder })
-    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona'), skill: entryStore('skill'), issuer: entryStore('issuer') }
+    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona'), skill: entryStore('skill'), issuer: entryStore('issuer'), tag: entryStore('tag') }
     const subdirectories = (kind: ShelfKind) => (folder: string) => (kind === 'document' ? store.subdirectories(folder) : entries[kind].subdirectories(folder))
     /** Un dossier d'une bibliothèque de documents, en mots : « Normes › ECSS » (son nom d'abord quand il y en a plusieurs). */
     const placeOfFolder = (folder: string): string => {
@@ -537,7 +557,7 @@ export const bibliothequeModule: BlackModule = {
       if (ghost) platform.notifier.notify(t('bibliotheque.ghost.done', { title: doc.title, ici }), 6000)
       return ghost
     }
-    active = { store, t, entries, ui: platform.ui, placeOfFolder, offerGhost, locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR', issuers: () => knownIssuers() }
+    active = { store, t, entries, ui: platform.ui, placeOfFolder, offerGhost, locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR', issuers: () => knownIssuers(), tagList: () => knownTags() }
     // Les listes des champs Prompt, Persona, Skill des étapes de workflow qui demandent l'IA.
     for (const kind of AI_ENTRY_KINDS)
       registerFieldSource(`bibliotheque.${kind}`, async () =>
@@ -567,13 +587,14 @@ export const bibliothequeModule: BlackModule = {
     })
 
     // ── Les bibliothèques et leurs répertoires ──
-    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills', issuer: 'bibliotheque.issuers' }
+    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills', issuer: 'bibliotheque.issuers', tag: 'bibliotheque.tags' }
     const SHELF_ROOT: Record<ShelfKind, string> = {
       document: 'Bibliothèques/Documents',
       prompt: 'Bibliothèques/Prompts',
       persona: 'Bibliothèques/Personas',
       skill: 'Bibliothèques/Skills',
-      issuer: 'Bibliothèques/Émetteurs'
+      issuer: 'Bibliothèques/Émetteurs',
+      tag: 'Bibliothèques/Étiquettes'
     }
     const allShelfFolders = () => SHELF_KINDS.flatMap((kind) => shelves(kind).map((shelf) => shelf.folder))
     /** Une nouvelle bibliothèque : son nom, son dossier (proposé d'après le nom), par défaut ou non. */
@@ -652,7 +673,7 @@ export const bibliothequeModule: BlackModule = {
       setDefault,
       removeShelf
     })
-    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill'), issuer: placesOf('issuer') }
+    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill'), issuer: placesOf('issuer'), tag: placesOf('tag') }
     /** Choisir où ranger : chaque bibliothèque de la sorte, chacun de ses répertoires (sauf là où c'est déjà). */
     const pickPlace = async (kind: ShelfKind, current: string, title: string): Promise<string | null> => {
       const options = (await allPlaces(shelves(kind), subdirectories(kind)))
@@ -711,6 +732,82 @@ export const bibliothequeModule: BlackModule = {
           .map((line) => line.replace(/^[-*•]\s*/, '').trim())
           .filter(Boolean)
       }))
+    }
+    /** Les étiquettes de la liste : leur nom, leurs autres formes. */
+    async function knownTags(): Promise<KnownTag[]> {
+      return (await entries.tag.all()).map((entry) => ({
+        name: entry.name,
+        aliases: entry.text
+          .split('\n')
+          .map((line) => line.replace(/^[-*•]\s*/, '').trim())
+          .filter(Boolean)
+      }))
+    }
+    /** Ajouter des étiquettes à la liste (une note chacune) ; rend celles ajoutées. */
+    const listTags = async (names: readonly string[]): Promise<string[]> => {
+      const known = await knownTags()
+      const fresh = names.filter((name) => name.trim() && !known.some((each) => each.name.toLowerCase() === name.trim().toLowerCase()))
+      for (const name of fresh) await entries.tag.create({ name: name.trim(), text: '', category: '', description: '', favorite: false })
+      return fresh
+    }
+    /**
+     * Les étiquettes d'un document, à cocher : celles de la liste, les siennes qui n'y sont
+     * pas, et « Autre(s) étiquette(s)… » (à écrire ; ajoutées à la liste d'un même geste).
+     */
+    const chooseTags = async (record: string): Promise<void> => {
+      const doc = await store.load(record)
+      if (!doc) return
+      const known = await knownTags()
+      const current = canonicalTags(doc.tags, known)
+      const outside = current.filter((tag) => !known.some((each) => each.name === tag))
+      const chosen = await platform.ui.pickMany({
+        title: t('bibliotheque.tags.choose.title', { title: doc.title }),
+        intro: t('bibliotheque.tags.choose.intro'),
+        choices: [
+          ...[...known]
+            .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+            .map((each) => ({ value: each.name, label: each.name, ...(each.aliases.length ? { description: each.aliases.join(', ') } : {}) })),
+          ...outside.map((tag) => ({ value: tag, label: t('bibliotheque.tags.outside', { tag }) })),
+          { value: NEW_TAGS, label: t('bibliotheque.tags.other') }
+        ],
+        selected: current,
+        submit: t('bibliotheque.edit.submit')
+      })
+      if (!chosen) return
+      let tags = chosen.filter((value) => value !== NEW_TAGS)
+      if (chosen.includes(NEW_TAGS)) {
+        const values = await platform.ui.askForm({
+          title: t('bibliotheque.tags.other.title', { title: doc.title }),
+          fields: [
+            { kind: 'text', key: 'value', label: t('bibliotheque.tags.other.field'), required: true, description: t('bibliotheque.classify.tags') },
+            { kind: 'toggle', key: 'list', label: t('bibliotheque.tags.other.list'), value: true }
+          ],
+          submit: t('bibliotheque.edit.submit')
+        })
+        if (!values) return
+        const typed = canonicalTags((values.value ?? '').split(','), known)
+        if (values.list === 'true') await listTags(typed)
+        tags = [...tags, ...typed]
+      }
+      const saved = await store.setTags(record, canonicalTags(tags, await knownTags()))
+      if (saved) platform.notifier.notify(saved.tags.length ? t('bibliotheque.edit.done', { field: t('bibliotheque.field.tags'), value: saved.tags.join(', ') }) : t('bibliotheque.edit.cleared', { field: t('bibliotheque.field.tags') }), 5000)
+    }
+    /** Les étiquettes d'un document hors de la liste : les y ajouter (cochées ; on en décoche). */
+    const addTagsFor = async (record: string): Promise<void> => {
+      const doc = await store.load(record)
+      if (!doc) return
+      const known = await knownTags()
+      const outside = doc.tags.filter((tag) => !known.some((each) => each.name.toLowerCase() === canonicalTag(tag, known).toLowerCase()))
+      if (!outside.length) return
+      const chosen = await platform.ui.pickMany({
+        title: t('bibliotheque.tags.add.title'),
+        intro: t('bibliotheque.tags.add.intro', { title: doc.title }),
+        choices: outside.map((tag) => ({ value: tag, label: tag })),
+        submit: t('bibliotheque.tags.add.submit')
+      })
+      if (!chosen?.length) return
+      const added = await listTags(chosen)
+      if (added.length) platform.notifier.notify(t('bibliotheque.tags.added', { count: added.length, tags: added.join(', ') }), 6000)
     }
     /** Ajouter un émetteur à la liste (sa fenêtre, le nom proposé) ; rend son code. */
     const newIssuer = async (name: string): Promise<EntryDraft | null> => {
@@ -950,13 +1047,14 @@ export const bibliothequeModule: BlackModule = {
 
     /** Un champ de la fiche, seul : une petite fenêtre ; enregistré, il est confirmé (plus « à confirmer », plus « par l'IA »). */
     const editField = async (record: string, key: EditableField): Promise<void> => {
+      // Les étiquettes : à cocher dans la liste.
+      if (key === 'tags') return chooseTags(record)
       const doc = await store.load(record)
       if (!doc) return
       const label = t(`bibliotheque.field.${key}`)
-      const current = key === 'tags' ? doc.tags.join(', ') : key === 'date' ? (doc.date ?? '') : doc[key]
+      const current = key === 'date' ? (doc.date ?? '') : doc[key]
       const help: Partial<Record<EditableField, string>> = {
         category: t('bibliotheque.classify.categories', { list: CATEGORIES.map((each) => each.name).join(', ') }),
-        tags: t('bibliotheque.classify.tags'),
         date: t('bibliotheque.classify.date')
       }
       const values = await platform.ui.askForm({
@@ -1004,11 +1102,7 @@ export const bibliothequeModule: BlackModule = {
         await store.setIssuer(record, value)
         shown = value ? issuerLabelIn(value, await knownIssuers()) : ''
       }
-      else {
-        const tags = [...new Set(value.split(',').map((each) => each.trim()).filter(Boolean))]
-        await store.setTags(record, tags)
-        shown = tags.join(', ')
-      }
+
       platform.notifier.notify(shown ? t('bibliotheque.edit.done', { field: label, value: shown }) : t('bibliotheque.edit.cleared', { field: label }), 5000)
     }
 
@@ -1101,6 +1195,8 @@ export const bibliothequeModule: BlackModule = {
       editField,
       addIssuer: async (record) => void (await addIssuerFor(record)),
       addPieceType: async (record) => void (await addPieceTypeFor(record)),
+      addTags: (record) => addTagsFor(record),
+      tagList: () => knownTags(),
       pieceTypeOutside: (code) => !!code && !libraryPieceTypes().some((type) => type.code === code),
       canAddPieceType: () => !!pieceTyper?.add,
       typeText: pieceTypeText,
@@ -1165,10 +1261,10 @@ export const bibliothequeModule: BlackModule = {
           ...(kind === 'issuer'
             ? [{ kind: 'text' as const, key: 'code', label: t('bibliotheque.issuer.field.code'), required: true, value: current?.code ?? preset.code ?? '', placeholder: t('bibliotheque.issuer.field.code.placeholder'), description: t('bibliotheque.issuer.field.code.desc') }]
             : []),
-          { kind: 'text', key: 'name', label: t(kind === 'issuer' ? 'bibliotheque.issuer.field.name' : 'bibliotheque.entry.field.name'), required: true, value: current?.name ?? preset.name ?? '', ...(kind === 'issuer' ? { placeholder: t('bibliotheque.issuer.field.name.placeholder') } : {}) },
+          { kind: 'text', key: 'name', label: t(kind === 'issuer' || kind === 'tag' ? `bibliotheque.${kind}.field.name` : 'bibliotheque.entry.field.name'), required: true, value: current?.name ?? preset.name ?? '', ...(kind === 'issuer' ? { placeholder: t('bibliotheque.issuer.field.name.placeholder') } : {}) },
           { kind: 'text', key: 'category', label: t('bibliotheque.entry.field.category'), value: current?.category ?? '', ...(categories.length ? { description: t('bibliotheque.entry.field.category.known', { list: categories.join(', ') }) } : {}) },
           { kind: 'text', key: 'description', label: t('bibliotheque.entry.field.description'), value: current?.description ?? '', placeholder: t(`bibliotheque.${kind}.field.description.placeholder`) },
-          { kind: 'textarea', key: 'text', label: t(`bibliotheque.${kind}.text`), required: kind !== 'issuer', value: current?.text ?? '', placeholder: t(`bibliotheque.${kind}.field.text.placeholder`), tooltip: t(`bibliotheque.${kind}.field.text.tip`) },
+          { kind: 'textarea', key: 'text', label: t(`bibliotheque.${kind}.text`), required: kind !== 'issuer' && kind !== 'tag', value: current?.text ?? '', placeholder: t(`bibliotheque.${kind}.field.text.placeholder`), tooltip: t(`bibliotheque.${kind}.field.text.tip`) },
           { kind: 'toggle', key: 'favorite', label: t('bibliotheque.entry.favorite'), value: current?.favorite ?? false, tooltip: t(`bibliotheque.${kind}.field.favorite.tip`) }
         ],
         submit: current ? t('bibliotheque.entry.save') : t('bibliotheque.entry.create')
@@ -1176,7 +1272,7 @@ export const bibliothequeModule: BlackModule = {
       const name = values?.name?.trim()
       const text = values?.text?.trim() ?? ''
       const code = (values?.code ?? '').trim().replace(/\s+/g, ' ')
-      if (!values || !name || (!text && kind !== 'issuer') || (kind === 'issuer' && !code)) return null
+      if (!values || !name || (!text && kind !== 'issuer' && kind !== 'tag') || (kind === 'issuer' && !code)) return null
       return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true', ...(kind === 'issuer' ? { code } : {}) }
     }
     const createEntry = async (kind: EntryKind, folder?: string): Promise<string | null> => {

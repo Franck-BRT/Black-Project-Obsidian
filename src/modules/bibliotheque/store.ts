@@ -17,7 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
-import { CATEGORY_TYPER, guessDocCategory, guessDocDate, type KnownIssuer, type PieceTyper, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
+import { CATEGORY_TYPER, guessDocCategory, guessDocDate, type KnownIssuer, type KnownTag, type PieceTyper, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
@@ -56,6 +56,8 @@ export interface StoreDeps {
    * lu, illisible) ; absent, rien n'est lu. Pour deviner sa langue.
    */
   textOf?(name: string, bytes: Uint8Array): Promise<string | null>
+  /** Les étiquettes de la liste (nom, autres formes) : celles d'un document y sont ramenées. */
+  tags?(): Promise<readonly KnownTag[]>
   /** Les émetteurs de la liste (code, nom, autres noms) : l'émetteur d'un document y est reconnu. */
   issuers?(): Promise<readonly KnownIssuer[]>
   /** Les types de pièce (le module Typage des pièces) ; absent : les catégories de la bibliothèque. */
@@ -214,7 +216,7 @@ export class LibraryStore {
     const issued = guessIssuer(text ?? '', (await this.deps.issuers?.()) ?? [])
     const issuer: Partial<LibraryDoc> = issued.sure ? { issuer: issued.issuer } : { issuerToConfirm: true, ...(issued.issuer ? { issuerProbable: issued.issuer } : {}) }
     // Les étiquettes : dites par le document, données ; sinon à confirmer (avec celles que le texte suggère).
-    const tagged = guessTags(text ?? '')
+    const tagged = guessTags(text ?? '', (await this.deps.tags?.()) ?? [])
     const tags: Partial<LibraryDoc> = tagged.sure ? { tags: tagged.tags } : { tagsToConfirm: true, ...(tagged.tags.length ? { tagsProbable: tagged.tags } : {}) }
     // La date : dite par le document (ou le nom et le texte d'accord), donnée ; sinon à confirmer (avec celle lue).
     const dated = guessDocDate(text ?? '', name)
@@ -520,7 +522,7 @@ export class LibraryStore {
       if (found.sure) next.issuer = found.issuer
       else Object.assign(next, { issuerToConfirm: true }, found.issuer && found.issuer !== doc.issuer ? { issuerProbable: found.issuer } : {})
     } else {
-      const found = guessTags(text ?? '')
+      const found = guessTags(text ?? '', (await this.deps.tags?.()) ?? [])
       delete next.tagsToConfirm
       delete next.tagsProbable
       delete next.tagsByAi

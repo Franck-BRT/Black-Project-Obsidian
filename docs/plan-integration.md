@@ -580,6 +580,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.98.0 : **modules Bibliothèque et Typage des pièces** : de même, un **type de pièce hors
   de la liste** est dit sur la fiche, et un bouton l'**ajoute** aux types personnalisés du
   module (code proposé, mêmes règles que ses réglages) ; les autres documents suivent
+- v0.99.0 : **module Bibliothèque** : la liste des **étiquettes** — une bibliothèque de plus
+  (un nom, d'autres formes) ; les étiquettes d'un document y sont ramenées, reconnues,
+  cochées (le crayon) ; hors de la liste, un bouton les y ajoute ; l'IA la reçoit d'abord
 
 ### Étape 7 — Livrables
 

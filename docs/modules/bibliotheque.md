@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.26.0 (Black Projects 0.98.0) |
+| Version | 0.27.0 (Black Projects 0.99.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,30 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## La liste des étiquettes (v0.27.0, Black Projects 0.99.0)
+
+Une **cinquième bibliothèque** : les **étiquettes** (`EntryKind` `tag`, `bp-type:
+bibliotheque-etiquette`, dossier `Bibliothèque/Étiquettes`, réglage `dossierEtiquettes`,
+icône `tag`) — un vocabulaire commun. Une note par étiquette : son **nom** (`nom`, « antenne »)
+et, dans le corps, ses **autres formes**, une par ligne (« antennes », « antenna »). Pas de
+code ; pas d'exemples.
+
+Les **étiquettes d'un document** s'y rattachent :
+
+- **ramenées** à celles de la liste (`canonicalTag`, `canonicalTags` : une autre forme, sans
+  accents ni casse → l'étiquette) — dites par le document, données par l'IA, écrites ;
+- **reconnues** : sans « Mots-clés : », celles de la liste que le texte nomme (nom ou autre
+  forme, en mots entiers) sont proposées d'abord (`guessTags(text, known)`), à confirmer ;
+- **cochées** : le crayon ouvre une liste à cocher (`pickMany`) — celles de la liste (leurs
+  autres formes en dessous), les siennes qui n'y sont pas (« … (hors de la liste des
+  étiquettes) »), et « ＋ Autre(s) étiquette(s)… » : à écrire, ajoutées à la liste d'un même
+  geste (case cochée d'origine) ;
+- **hors de la liste** : la fiche le dit (« antenne, radar — hors de la liste : radar ») et
+  un bouton **+** « Ajouter à la liste des étiquettes : radar » les y ajoute (cochées ; on en
+  décoche), une note chacune.
+
+L'IA reçoit la liste d'abord (`libraryTags` : celles de la liste, puis celles en usage).
 
 ## Un type de pièce hors de la liste : l'y ajouter (v0.26.0, Black Projects 0.98.0)
 

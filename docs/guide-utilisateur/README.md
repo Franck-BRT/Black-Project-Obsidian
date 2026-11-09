@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.98.0)
+## Aujourd'hui (version 0.99.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -171,7 +171,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   (Bibliothèque › Émetteurs : un code, un nom, d'autres noms ; « ＋ Ajouter un émetteur à la
   liste… » depuis la fiche ; un émetteur hors de la liste a son bouton **+** pour l'y
   ajouter, un code proposé, et les autres documents de ce nom suivent) et reconnu dans le
-  document, pour les **étiquettes** (« Mots-clés : … » ; sinon les mots qui reviennent
+  document, pour les **étiquettes** (une liste dans Bibliothèque › **Étiquettes** : elles s'y cochent,
+  s'y ajoutent d'un bouton **+**, leurs autres formes y sont ramenées ; « Mots-clés : … » ;
+  sinon celles de la liste que dit le texte, puis les mots qui reviennent
   le plus, proposés — l'IA en donne de 3 à 6, celles déjà en usage d'abord), pour la **date** du document (« Date : … », « Toulouse, le … » ;
   sinon la première date du texte, hors dates limites, proposée), pour l'**émetteur** (« Émetteur :
   … », « Émis par… » ; sinon l'organisme lu en tête, à confirmer) et pour la **référence** et la

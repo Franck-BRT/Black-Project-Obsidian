@@ -172,6 +172,13 @@ l'ajoute aux types de pièce du module *Typage des pièces* (un code proposé) :
 type du document, et des autres documents qui l'avaient. Plusieurs choses à confirmer : un
 seul encadré « À confirmer (n) » les rassemble sur la fiche.
 
+**La liste des étiquettes** (Bibliothèque › **Étiquettes**) : un vocabulaire commun — une
+note par étiquette, son nom (« antenne ») et ses autres formes, une par ligne (« antennes »).
+Les étiquettes d'un document y sont ramenées (« antennes » → « antenne »), y sont reconnues
+dans le texte, **se cochent** (le crayon du champ ; « ＋ Autre(s) étiquette(s)… » pour en
+écrire, ajoutées à la liste) ; celles **hors de la liste** sont dites, et le bouton **+** les
+y ajoute.
+
 **Les étiquettes** aussi : dites par le document (« Mots-clés : », « Étiquettes : »), elles
 sont données. Sinon elles sont **à confirmer** : la fiche propose les mots qui reviennent le
 plus au début du texte (**Prendre ces étiquettes**), **Pas d'étiquettes**, ou **Classer…** ;

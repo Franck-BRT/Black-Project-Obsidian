@@ -161,6 +161,6 @@ describe('la seconde passe, avec l’IA', () => {
     expect(fiche.blocks.flatMap(unfold).some((block) => block.kind === 'message' && block.text.startsWith('Étiquettes à confirmer'))).toBe(false)
     const identity = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.identite')
     const list = identity?.blocks[0]
-    expect(list?.kind === 'list' && list.items.find((item) => item.id === 'tags')?.detail).toBe('Maintenance, antenne, station sol — données par l’IA')
+    expect(list?.kind === 'list' && list.items.find((item) => item.id === 'tags')?.detail).toBe('Maintenance, antenne, station sol — hors de la liste des étiquettes')
   })
 })

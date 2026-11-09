@@ -223,7 +223,7 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     // L'accueil : une section par sorte, une carte par bibliothèque.
     const hub = await page('bibliotheque.accueil').load()
     const sections = hub.blocks.flatMap((block) => (block.kind === 'section' ? [block.title] : []))
-    expect(sections).toEqual(['Documents', 'Prompts', 'Personas', 'Skills', 'Émetteurs'])
+    expect(sections).toEqual(['Documents', 'Prompts', 'Personas', 'Skills', 'Émetteurs', 'Étiquettes'])
     expect(cardsIn(hub.blocks).filter((card) => card.id.startsWith('prompt:')).map((card) => [card.title, card.subtitle])).toEqual([
       ['Prompts', '1 prompt(s)'],
       ['Relecture', '0 prompt(s)']
