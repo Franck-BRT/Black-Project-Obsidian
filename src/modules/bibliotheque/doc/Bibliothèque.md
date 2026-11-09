@@ -166,7 +166,10 @@ pièces*, vos types compris : donné par l'analyse (le type d'une pièce), dit p
 (« Type de document : »), ou le nom du fichier et le texte d'accord : il est sûr. Sinon
 celui du nom du fichier reste, **à confirmer** : la fiche propose celui que le texte suggère
 (**Prendre « CCTP »**), **Garder le type actuel**, ou **Classer…** ; l'IA, si elle
-est réglée, choisit d'abord dans la liste des types. Le crayon du champ ouvre la liste. Plusieurs choses à confirmer : un
+est réglée, choisit d'abord dans la liste des types. Le crayon du champ ouvre la liste. Un
+type **hors de la liste** (une ancienne catégorie) est dit tel ; le bouton **+** de sa ligne
+l'ajoute aux types de pièce du module *Typage des pièces* (un code proposé) : il devient le
+type du document, et des autres documents qui l'avaient. Plusieurs choses à confirmer : un
 seul encadré « À confirmer (n) » les rassemble sur la fiche.
 
 **Les étiquettes** aussi : dites par le document (« Mots-clés : », « Étiquettes : »), elles

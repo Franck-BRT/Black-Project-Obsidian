@@ -577,6 +577,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.97.0 : **module Bibliothèque** : un émetteur **hors de la liste** est dit sur la fiche,
   et un bouton l'y **ajoute** (son nom et un code proposés) ; les autres documents qui
   portaient ce nom le prennent aussi
+- v0.98.0 : **modules Bibliothèque et Typage des pièces** : de même, un **type de pièce hors
+  de la liste** est dit sur la fiche, et un bouton l'**ajoute** aux types personnalisés du
+  module (code proposé, mêmes règles que ses réglages) ; les autres documents suivent
 
 ### Étape 7 — Livrables
 

@@ -371,7 +371,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.8.0',
+  version: '0.9.0',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),
@@ -416,6 +416,23 @@ export const typagePiecesModule: BlackModule = {
       ofText: (text) => {
         const code = classifyPiece('', text)
         return code === OTHER_TYPE ? '' : code
+      },
+      // Un type ajouté depuis la bibliothèque : comme dans les réglages (« Types de pièces personnalisés »), mêmes règles.
+      check: (code, name) => {
+        const problem = validateType(normalizeTypeCode(code), normalizeLabel(name), readCustomTypes(context.settings.get()))
+        return problem ? context.i18n.t(problem.key, problem.vars) : null
+      },
+      add: async (code, name) => {
+        const values = context.settings.get()
+        const typed = normalizeTypeCode(code)
+        const named = normalizeLabel(name)
+        const problem = validateType(typed, named, readCustomTypes(values))
+        if (problem) return { error: context.i18n.t(problem.key, problem.vars) }
+        const stored = values[TYPES_KEY]
+        const next = { ...values, [TYPES_KEY]: { ...(typeof stored === 'object' && stored !== null && !Array.isArray(stored) ? stored : {}), [typed]: named } }
+        await context.settings.save(next)
+        configureTyping(next)
+        return { code: typed }
       }
     })
     // Le workflow système : signaler les pièces sans type reconnu, à l'import.

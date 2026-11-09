@@ -204,6 +204,18 @@ const foldName = (value: string) =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim()
 
+/** Un code proposé pour un type de pièce, d'après son nom : un mot, lui en capitales (« DEVIS ») ; plusieurs, leurs initiales (« Note de calcul » → « NDC »). */
+export function suggestTypeCode(name: string): string {
+  const words = name
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((word) => word && !/^(?:de|du|des|la|le|les|l|d|et|of|the|and|for|pour|en|a|au|aux)$/i.test(word))
+  if (!words.length) return ''
+  if (words.length === 1) return words[0]!.toUpperCase().slice(0, 20)
+  return words.map((word) => word[0]!.toUpperCase()).join('').slice(0, 20)
+}
+
 /** Un code proposé pour un émetteur, d'après son nom : les initiales (« Thales Alenia Space » → « TAS ») ; un seul mot, ses quatre premières lettres. */
 export function suggestIssuerCode(name: string): string {
   const words = name
@@ -315,6 +327,10 @@ export interface PieceTyper {
   ofName(fileName: string): string
   /** Le type que dit le début du texte ; vide si aucun. */
   ofText(text: string): string
+  /** Ajouter un type à la liste (les types personnalisés) : son code, ou pourquoi il ne peut pas l'être. Absent : la liste ne s'étend pas d'ici. */
+  add?(code: string, label: string): Promise<{ code: string } | { error: string }>
+  /** Pourquoi ce code et ce libellé ne peuvent pas être ajoutés (`null` : ils le peuvent). */
+  check?(code: string, label: string): string | null
 }
 
 /** Sans le module Typage des pièces : les catégories de la bibliothèque. */

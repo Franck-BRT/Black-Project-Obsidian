@@ -27,7 +27,8 @@ trouve « Annexes »). Vos mots-clés passent avant ceux du module.
 
 Ces types servent aussi à la **bibliothèque de documents** : le champ « Type de pièce » de
 chaque document y est reconnu et s'y choisit, vos types compris (un type désactivé n'y est
-plus proposé).
+plus proposé). Sur la fiche d'un document, un type hors de la liste s'y ajoute en un clic
+(bouton **+**) : il devient l'un de vos types.
 
 ## Vos types
 

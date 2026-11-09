@@ -16,7 +16,7 @@ import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type HomeBlock } from '../src/core/views'
-import { bibliothequeModule, guessDocCategory, pieceTypeCode, pourIntoLibrary, type PieceTyper } from '../src/modules/bibliotheque'
+import { bibliothequeModule, guessDocCategory, pieceTypeCode, pourIntoLibrary, suggestTypeCode, type PieceTyper } from '../src/modules/bibliotheque'
 import { iaModule, readCategoryAnswer } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { typagePiecesModule } from '../src/modules/typage-pieces'
@@ -54,7 +54,7 @@ async function start(platform: MemoryPlatform, modules: readonly BlackModule[] =
   const pour = async (name: string, text: string) => (await pourIntoLibrary([{ name, bytes: bytes(text) }], { module: 'bibliotheque', label: '' }))!.added[0]!
   const system = () => ((settings.workflows?.workflows ?? []) as Workflow[]).find((each) => each.system === 'sys.ia.categorie-documents')
   const journal = () => (platform.files.has(JOURNAL) ? read(platform, JOURNAL) : '')
-  return { page, pour, system, journal }
+  return { page, pour, system, journal, settings }
 }
 
 afterEach(async () => {
@@ -139,7 +139,8 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(labels[0]).toBe('— Aucun —')
     expect(labels).toContain('CCTP — Cahier des clauses techniques particulières')
     expect(labels).toContain('RC — Règlement de la consultation')
-    expect(labels.at(-1)).toBe('Devis (hors de la liste des types)')
+    expect(labels.at(-2)).toBe('Devis (hors de la liste des types)')
+    expect(labels.at(-1)).toBe('＋ Ajouter un type de pièce…')
     expect(field).toMatchObject({ value: 'Devis' })
     expect(read(platform, doc.record)).toMatch(/\ncategorie: RC\n/)
     expect(platform.notices.at(-1)).toBe('Type de pièce : RC — Règlement de la consultation.')
@@ -154,6 +155,79 @@ describe('à l’entrée, et sur la fiche', () => {
     const { pour } = await start(platform, [lectureFichiersModule, bibliothequeModule])
     const doc = await pour('Devis station.txt', COVER.replace('station sol', 'antenne'))
     expect(doc).toMatchObject({ category: 'Devis', categoryToConfirm: true, categoryProbable: 'CCTP' })
+  })
+})
+
+describe('un type de pièce hors de la liste : l’y ajouter', () => {
+  const categoryItem = async (page: (id: string) => { load: (param?: string) => Promise<{ blocks: HomeBlock[] }> }, record: string) => {
+    const fiche = await page('bibliotheque.document').load(encodeURIComponent(record))
+    const identity = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.identite')
+    const list = identity?.blocks[0]
+    return list?.kind === 'list' ? list.items.find((item) => item.id === 'category') : undefined
+  }
+  const oldCategory = async (platform: MemoryPlatform, record: string, value: string) =>
+    platform.fs.writeText(record, read(platform, record).replace(/\ncategorie: [^\n]*\n/, `\ncategorie: ${value}\n`))
+
+  it('un code proposé : un mot, en capitales ; plusieurs, leurs initiales', () => {
+    expect(suggestTypeCode('Devis')).toBe('DEVIS')
+    expect(suggestTypeCode('Note de calcul')).toBe('NC')
+    expect(suggestTypeCode('Plan d’assurance qualité')).toBe('PAQ')
+    expect(suggestTypeCode('')).toBe('')
+  })
+
+  it('la fiche le dit, un bouton l’ajoute aux types du module : il devient celui du document, et des autres', async () => {
+    const platform = memoryPlatform()
+    const { page, pour, settings } = await start(platform, [lectureFichiersModule, typagePiecesModule, bibliothequeModule])
+    const doc = await pour('Note.txt', 'Bonjour.')
+    const other = await pour('Autre.txt', 'Bonsoir.')
+    await oldCategory(platform, doc.record, 'Devis')
+    await oldCategory(platform, other.record, 'devis')
+    const item = await categoryItem(page, doc.record)
+    expect(item?.detail).toBe('Devis — hors de la liste des types de pièce')
+    expect(item?.tools?.map((tool) => [tool.id, tool.label, tool.icon])).toContainEqual(['add-type', 'Ajouter « Devis » aux types de pièce', 'plus'])
+    platform.forms.push({ code: 'DEVIS', label: 'Devis' })
+    await item!.tools!.find((tool) => tool.id === 'add-type')!.run()
+    expect(platform.asked.at(-1)!.fields).toMatchObject([
+      { key: 'code', value: 'DEVIS', required: true },
+      { key: 'label', value: 'Devis', required: true }
+    ])
+    expect(settings['typage-pieces']?.typesPerso).toEqual({ DEVIS: 'Devis' })
+    expect(read(platform, doc.record)).toMatch(/\ncategorie: DEVIS\n/)
+    expect(read(platform, other.record)).toMatch(/\ncategorie: DEVIS\n/)
+    expect(platform.notices.at(-1)).toBe('« DEVIS — Devis » ajouté aux types de pièce ; c’est le type du document. 1 autre(s) document(s) de type « Devis » le prennent aussi.')
+    const after = await categoryItem(page, doc.record)
+    expect(after?.detail).toBe('DEVIS — Devis')
+    expect(after?.tools?.map((tool) => tool.id)).not.toContain('add-type')
+    // Il est maintenant de la liste — et reconnu au nom des fichiers.
+    const next = await pour('DEVIS antenne.txt', 'Le devis de l’antenne.')
+    expect(next.category).toBe('DEVIS')
+  })
+
+  it('un code refusé (un type du module) : rien n’est ajouté, et c’est dit ; « ＋ Ajouter un type de pièce… » dans la liste', async () => {
+    const platform = memoryPlatform()
+    const { page, pour, settings } = await start(platform, [lectureFichiersModule, typagePiecesModule, bibliothequeModule])
+    const doc = await pour('Note.txt', 'Bonjour.')
+    await oldCategory(platform, doc.record, 'Devis')
+    const item = await categoryItem(page, doc.record)
+    // La fenêtre le refuse, comme les réglages du module : elle ne se ferme pas.
+    platform.forms.push({ code: 'CCTP', label: 'Devis' })
+    await expect(item!.tools!.find((tool) => tool.id === 'add-type')!.run()).rejects.toThrow('CCTP est déjà un type du module.')
+    expect(settings['typage-pieces']?.typesPerso).toBeUndefined()
+    expect(read(platform, doc.record)).toMatch(/\ncategorie: Devis\n/)
+    platform.forms.push(null)
+    await item!.tools!.find((tool) => tool.id === 'edit-category')!.run()
+    const field = platform.asked.at(-1)!.fields[0]!
+    expect(field.kind === 'choice' && field.options.at(-1)?.label).toBe('＋ Ajouter un type de pièce…')
+  })
+
+  it('sans le module Typage des pièces : pas de bouton', async () => {
+    const platform = memoryPlatform()
+    const { page, pour } = await start(platform, [lectureFichiersModule, bibliothequeModule])
+    const doc = await pour('Note.txt', 'Bonjour.')
+    await oldCategory(platform, doc.record, 'Fiche réflexe')
+    const item = await categoryItem(page, doc.record)
+    expect(item?.detail).toBe('Fiche réflexe — hors de la liste des types de pièce')
+    expect(item?.tools?.map((tool) => tool.id)).not.toContain('add-type')
   })
 })
 

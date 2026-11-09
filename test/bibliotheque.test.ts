@@ -202,7 +202,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const after = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(after.title).toBe('Courrier de l’acheteur')
     const identity = sectionList(after.blocks, 'Identification')
-    expect(identity?.kind === 'list' && identity.items.map((item) => item.detail)).toEqual(['Courrier de l’acheteur', 'À la racine', 'Langue à confirmer', 'CR-12', '1', 'A', '12 mars 2026', 'Courrier', 'Agence — hors de la liste des émetteurs', 'achat, urgent'])
+    expect(identity?.kind === 'list' && identity.items.map((item) => item.detail)).toEqual(['Courrier de l’acheteur', 'À la racine', 'Langue à confirmer', 'CR-12', '1', 'A', '12 mars 2026', 'Courrier — hors de la liste des types de pièce', 'Agence — hors de la liste des émetteurs', 'achat, urgent'])
     expect(read(platform, doc.record)).toMatch(/\ndateDocument: "2026-03-12"\n/)
     await after.actions!.find((action) => action.id === 'aside')!.run()
     expect(platform.confirmed.at(-1)?.title).toBe('Retirer de la bibliothèque ?')

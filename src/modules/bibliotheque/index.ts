@@ -39,8 +39,8 @@ export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport, ResearchField } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
-import { CATEGORY_TYPER, docDateLabel, knownIssuerCode, parseDocDate, suggestIssuerCode, type KnownIssuer, type PieceTyper } from './identity'
-export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess, type PieceTyper, pieceTypeCode, knownIssuerCode, suggestIssuerCode, type KnownIssuer } from './identity'
+import { CATEGORY_TYPER, docDateLabel, knownIssuerCode, parseDocDate, suggestIssuerCode, suggestTypeCode, type KnownIssuer, type PieceTyper } from './identity'
+export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess, type PieceTyper, pieceTypeCode, knownIssuerCode, suggestIssuerCode, suggestTypeCode, type KnownIssuer } from './identity'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -332,6 +332,8 @@ export async function libraryTags(): Promise<string[]> {
 
 /** Le choix « Ajouter un émetteur à la liste… » d'une liste d'émetteurs. */
 const NEW_ISSUER = '\u0000nouvel-emetteur'
+/** Le choix « Ajouter un type de pièce… » d'une liste de types. */
+const NEW_TYPE = '\u0000nouveau-type'
 
 /** Un émetteur en mots : « ESA — Agence spatiale européenne » s'il est de la liste ; sinon tel quel. */
 export function issuerLabelIn(value: string, known: readonly KnownIssuer[]): string {
@@ -471,7 +473,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.25.0',
+  version: '0.26.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -750,8 +752,44 @@ export const bibliothequeModule: BlackModule = {
       return [
         { value: '', label: t('bibliotheque.category.unset') },
         ...types.map((type) => ({ value: type.code, label: pieceTypeText(type.code) })),
-        ...(current && !types.some((type) => type.code === current) ? [{ value: current, label: t('bibliotheque.category.outside', { category: current }) }] : [])
+        ...(current && !types.some((type) => type.code === current) ? [{ value: current, label: t('bibliotheque.category.outside', { category: current }) }] : []),
+        // Le module Typage des pièces actif : ajouter un type à sa liste, d'ici.
+        ...(pieceTyper?.add ? [{ value: NEW_TYPE, label: t('bibliotheque.category.add') }] : [])
       ]
+    }
+    /**
+     * Le type de pièce d'un document, hors de la liste : l'y ajouter (un type personnalisé du
+     * module Typage des pièces — son code proposé, son libellé) ; il devient celui du
+     * document, et des autres documents qui avaient cette valeur.
+     */
+    const addPieceTypeFor = async (record: string): Promise<string | null> => {
+      const doc = await store.load(record)
+      const typer = pieceTyper
+      if (!doc || !typer?.add) return null
+      const raw = libraryPieceTypes().some((type) => type.code === doc.category) ? '' : doc.category
+      const values = await platform.ui.askForm({
+        title: raw ? t('bibliotheque.category.add.title', { category: raw }) : t('bibliotheque.category.add.new'),
+        intro: t('bibliotheque.category.add.intro'),
+        fields: [
+          { kind: 'text', key: 'code', label: t('bibliotheque.category.add.code'), value: suggestTypeCode(raw), required: true, description: t('bibliotheque.category.add.code.desc') },
+          { kind: 'text', key: 'label', label: t('bibliotheque.category.add.label'), value: raw, required: true }
+        ],
+        submit: t('bibliotheque.category.add.submit'),
+        validate: (typed) => typer.check?.(typed.code ?? '', typed.label ?? '') ?? null
+      })
+      if (!values) return null
+      const added = await typer.add(values.code ?? '', values.label ?? '')
+      if ('error' in added) {
+        platform.notifier.notify(added.error, 8000)
+        return null
+      }
+      await store.setCategory(record, added.code)
+      const others = raw ? await store.adoptCategory(raw, added.code, record) : 0
+      platform.notifier.notify(
+        [t('bibliotheque.category.added', { category: pieceTypeText(added.code) }), ...(others ? [t('bibliotheque.category.adopted', { count: others, name: raw })] : [])].join(' '),
+        6000
+      )
+      return added.code
     }
 
     const classify = async (record: string): Promise<void> => {
@@ -818,7 +856,7 @@ export const bibliothequeModule: BlackModule = {
         tagsProbable: undefined,
         tagsByAi: undefined,
         title: (values.title ?? '').trim() || doc.title,
-        category: (values.category ?? '').trim(),
+        category: values.category === NEW_TYPE ? doc.category : (values.category ?? '').trim(),
         reference: (values.reference ?? '').trim(),
         edition: (values.edition ?? '').trim(),
         revision: (values.revision ?? '').trim(),
@@ -827,6 +865,7 @@ export const bibliothequeModule: BlackModule = {
       })
       // « Ajouter un émetteur à la liste… » : sa fenêtre, puis il devient celui du document.
       if (values.issuer === NEW_ISSUER) await addIssuerFor(record)
+      if (values.category === NEW_TYPE) await addPieceTypeFor(record)
       platform.notifier.notify(
         [t('bibliotheque.classify.done', { title: (values.title ?? '').trim() || doc.title }), ...(typedDate && !parseDocDate(typedDate) ? [t('bibliotheque.date.unreadable', { value: typedDate })] : [])].join(' '),
         5000
@@ -948,6 +987,11 @@ export const bibliothequeModule: BlackModule = {
         await store.setDate(record, date)
         shown = date ? docDateLabel(date, active?.locale) : ''
       } else if (key === 'category') {
+        // « Ajouter un type de pièce… » : sa fenêtre ; ce qu'elle a fait est dit.
+        if (value === NEW_TYPE) {
+          await addPieceTypeFor(record)
+          return
+        }
         await store.setCategory(record, value)
         shown = value ? pieceTypeText(value) : ''
       }
@@ -1056,6 +1100,9 @@ export const bibliothequeModule: BlackModule = {
       },
       editField,
       addIssuer: async (record) => void (await addIssuerFor(record)),
+      addPieceType: async (record) => void (await addPieceTypeFor(record)),
+      pieceTypeOutside: (code) => !!code && !libraryPieceTypes().some((type) => type.code === code),
+      canAddPieceType: () => !!pieceTyper?.add,
       typeText: pieceTypeText,
       issuers: () => knownIssuers(),
       researchField,

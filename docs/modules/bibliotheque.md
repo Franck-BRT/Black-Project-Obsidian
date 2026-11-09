@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.25.0 (Black Projects 0.97.0) |
+| Version | 0.26.0 (Black Projects 0.98.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,20 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Un type de pièce hors de la liste : l'y ajouter (v0.26.0, Black Projects 0.98.0)
+
+Comme pour l'émetteur : un type de pièce hors de la liste (une ancienne catégorie,
+« Devis ») est dit sur la fiche (« Devis — hors de la liste des types de pièce » ; l'est aussi
+un émetteur hors de sa liste, même à confirmer), et — le module Typage des pièces actif — sa
+ligne a un bouton **+** « Ajouter « Devis » aux types de pièce ». Sa fenêtre : un **code
+proposé** (`suggestTypeCode` : un mot, en capitales — « DEVIS » ; plusieurs, leurs initiales —
+« Plan d'assurance qualité » → « PAQ ») et le **libellé** ; elle refuse ce que refusent les
+réglages du module (`PieceTyper.check` : un code invalide, un type du module, un type déjà
+ajouté). Ajouté (`PieceTyper.add` : un type personnalisé du module, comme dans « Types de
+pièces personnalisés » ; son code est aussi reconnu dans le nom des fichiers), il devient le
+type du document, et des autres documents qui avaient cette valeur (`adoptCategory`). Dans la
+liste du crayon et de *Classer…* : « ＋ Ajouter un type de pièce… ».
 
 ## Un émetteur hors de la liste : l'y ajouter (v0.25.0, Black Projects 0.97.0)
 

@@ -350,6 +350,27 @@ export class LibraryStore {
   }
 
   /**
+   * Un type de pièce ajouté à la liste : les documents qui avaient cette valeur (une ancienne
+   * catégorie, sans accents ni casse) prennent son code — comme type, ou comme type proposé.
+   * Rend combien ont changé.
+   */
+  async adoptCategory(value: string, code: string, except = ''): Promise<number> {
+    const fold = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim()
+    const wanted = fold(value)
+    if (!wanted || !code) return 0
+    let changed = 0
+    for (const doc of await this.all()) {
+      if (doc.record === except) continue
+      const category = fold(doc.category) === wanted
+      const probable = !!doc.categoryProbable && fold(doc.categoryProbable) === wanted
+      if (!category && !probable) continue
+      await this.save({ ...doc, ...(category ? { category: code } : {}), ...(probable ? { categoryProbable: code } : {}) })
+      changed++
+    }
+    return changed
+  }
+
+  /**
    * Un émetteur ajouté à la liste : les documents qui portaient son nom (tel quel, sans
    * accents ni casse) prennent son code — comme émetteur, ou comme émetteur proposé. Rend
    * combien ont changé.

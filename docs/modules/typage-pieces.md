@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `typage-pieces` |
-| Version | 0.8.0 (Black Projects 0.95.0) |
+| Version | 0.9.0 (Black Projects 0.98.0) |
 | Emplacement | `src/modules/typage-pieces/` |
 | Interface publique | `src/modules/typage-pieces/index.ts` |
 | Guide de maintenance | [`src/modules/typage-pieces/README.md`](../../src/modules/typage-pieces/README.md) |
@@ -123,6 +123,10 @@ elle retype aussitôt les pièces de toutes ses analyses.
 reconnaît (`classifyPiece` sur le nom du fichier, puis sur le début du texte ; « autre
 pièce » n'est pas une reconnaissance). Le champ « Type de pièce » de chaque document s'y
 choisit ; désactivé, le module retire sa liste.
+
+**Depuis la bibliothèque (v0.9.0, Black Projects 0.98.0)** : le module lui donne aussi de
+quoi **ajouter un type** (`add`, `check`) — un type personnalisé, enregistré dans ses réglages
+(`typesPerso`) avec les mêmes règles que « Types de pièces personnalisés » (`validateType`).
 
 ## Réglages (`modules['typage-pieces']`)
 

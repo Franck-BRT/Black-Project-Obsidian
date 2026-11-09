@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Un type de pièce hors de la liste : l'y ajouter (v0.98.0)
+
+- [ ] Un document à une ancienne catégorie (« Devis ») : « Devis — hors de la liste des types
+      de pièce », et un bouton **+** « Ajouter « Devis » aux types de pièce »
+- [ ] Le cliquer : code proposé « DEVIS », libellé « Devis » ; « CCTP » est refusé dans la
+      fenêtre (« CCTP est déjà un type du module. ») ; **Ajouter** : « DEVIS — Devis » ; les
+      autres documents « Devis » aussi ; le type est dans *Typage des pièces* › « Types de
+      pièces personnalisés », et un fichier « DEVIS … » est reconnu
+- [ ] Le crayon de « Type de pièce » : « ＋ Ajouter un type de pièce… » en fin de liste
+- [ ] Sans le module Typage des pièces : pas de bouton
+
 ## Un émetteur hors de la liste : l'y ajouter (v0.97.0)
 
 - [ ] Verser deux documents « Émetteur : Thales Alenia Space » : sur la fiche de l'un,
