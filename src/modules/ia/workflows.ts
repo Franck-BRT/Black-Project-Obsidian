@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem, PageImages } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
@@ -232,8 +232,16 @@ export function readProofread(answer: string, original: string): string | null {
   return ratio >= 0.6 && ratio <= 1.6 ? text : null
 }
 
-/** Les pages qu'un modèle de vision regarde, au plus, dans un document (les suivantes : non). */
-export const VISION_MAX_PAGES = 30
+/**
+ * Le modèle qui regarde les images, **réglé exprès** : pour lire un scan, celui d'OCR sinon celui
+ * de vision ; pour relire avec la vision, celui de vision sinon celui d'OCR. Jamais celui
+ * d'analyse : il ne voit pas, souvent, et le serveur refuse les images. Vide : aucun.
+ */
+export function visionModelOf(client: AiClient, use: 'vision' | 'ocr'): string {
+  const vision = client.connection.visionModel.trim()
+  const ocr = client.connection.ocrModel.trim()
+  return use === 'ocr' ? ocr || vision : vision || ocr
+}
 
 /** Les fichiers qu'un modèle de vision peut regarder : les images, et les PDF quand la plateforme sait dessiner leurs pages. */
 export function visionReadable(file: string, canDrawPdf: boolean): boolean {
@@ -286,94 +294,113 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     ],
     results: ['text'],
     async run({ fields, vars, guidance, notifier }) {
-      // Une relecture prend du temps, et son workflow système ne dit rien quand il réussit :
-      // elle se dit elle-même — son début, ses morceaux, ce qu'elle a donné.
-      const say = (key: string, values?: Record<string, string | number>) => {
-        const text = t(key, values)
-        notifier.notify(text, 10000)
-        return { lines: [text], results: { text } }
+      const reading = (fields.fiche ?? '').trim()
+      try {
+        return await proofread()
+      } finally {
+        // Finie, réussie ou non : plus en cours sur les fiches.
+        aiReadingEnded(reading)
       }
-      const record = (fields.fiche ?? '').trim()
-      const doc = record ? await libraryDoc(record) : null
-      if (!doc) return say('ia.wf.language.noDoc', { record })
-      const base = client()
-      const ai = base?.withInstructions(guidance)
-      if (!ai || !base) return say('ia.wf.proofread.noAi', { title: doc.title })
-      const guided = {
-        ...(fields.prompt?.trim() ? { prompt: fields.prompt.trim() } : {}),
-        ...(fields.persona?.trim() ? { persona: fields.persona.trim() } : {}),
-        ...(fields.skill?.trim() ? { skill: fields.skill.trim() } : {})
-      }
-      // Le mode : celui choisi sur la fiche (« Relire avec l'IA »), sinon celui de l'étape ; un
-      // document sans texte (un scan, une image) ne se lit qu'avec la vision.
-      const text = doc.reading === 'lue' ? ((await libraryTranscript(record)) ?? '').trim() : ''
-      const mode = !text ? 'vision' : (vars.relecture || fields.mode || 'texte').trim() === 'vision' ? 'vision' : 'texte'
-      if (mode === 'vision') {
-        const seen = await pageImages(doc.file)
-        if (!seen) return text ? say('ia.wf.vision.cannotProofread', { title: doc.title }) : say('ia.wf.vision.cannot', { title: doc.title })
-        if (!seen.images.length) return say('ia.wf.vision.noPage', { title: doc.title })
-        const model = base.modelFor(text ? 'vision' : 'ocr')
-        const count = seen.images.length
-        notifier.notify(t(text ? 'ia.wf.vision.startProofread' : 'ia.wf.vision.start', { title: doc.title, pages: count, model }), 8000)
-        if (seen.pages > count) notifier.notify(t('ia.wf.vision.firstPages', { title: doc.title, pages: count, total: seen.pages }), 10000)
-        const out: string[] = []
-        let kept = 0
-        for (const [index, image] of seen.images.entries()) {
-          if (index > 0) notifier.notify(t('ia.wf.vision.progress', { title: doc.title, page: index + 1, pages: count }), 5000)
-          const pageText = text ? (seen.texts?.[index] ?? '') : ''
-          const ask = [t('ia.wf.vision.page', { page: index + 1, pages: seen.pages }), pageText ? `${t('ia.wf.vision.pageText')}\n\n${pageText}` : t(text ? 'ia.wf.vision.pageNoText' : 'ia.wf.vision.pageRead')].join('\n\n')
-          let answer: string
-          try {
-            answer = await ai.chat({
-              model,
-              messages: [
-                { role: 'system', content: t('ia.wf.vision.system') },
-                { role: 'user', content: [{ type: 'text', text: ask }, { type: 'image_url', image_url: { url: image } }] }
-              ],
-              temperature: 0
-            })
-          } catch (error) {
-            throw new Error(describe(error))
+      async function proofread() {
+          // Une relecture prend du temps, et son workflow système ne dit rien quand il réussit :
+          // elle se dit elle-même — son début, ses morceaux, ce qu'elle a donné.
+          const say = (key: string, values?: Record<string, string | number>) => {
+            const text = t(key, values)
+            notifier.notify(text, 10000)
+            return { lines: [text], results: { text } }
           }
-          const read = readVisionPage(answer, pageText)
-          if (read === null) kept++
-          out.push(read ?? pageText)
-        }
-        const seenText = out.filter((part) => part.trim()).join('\n\n').trim()
-        if (!seenText) return say('ia.wf.vision.nothingRead', { title: doc.title })
-        if (text && seenText.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
-        const version = await addTextVersionByAi(record, seenText, { model, ...guided, vision: count, ...(kept ? { kept } : {}) })
-        if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
-        return say(text ? 'ia.wf.vision.doneProofread' : 'ia.wf.vision.done', { title: doc.title, number: version.number, pages: count })
+          const record = (fields.fiche ?? '').trim()
+          const doc = record ? await libraryDoc(record) : null
+          if (!doc) return say('ia.wf.language.noDoc', { record })
+          const base = client()
+          const ai = base?.withInstructions(guidance)
+          if (!ai || !base) return say('ia.wf.proofread.noAi', { title: doc.title })
+          // Une lecture commence : dite sur les fiches (les boutons grisés, la file d'attente).
+          aiReadingProgress(record, doc.title)
+          const guided = {
+            ...(fields.prompt?.trim() ? { prompt: fields.prompt.trim() } : {}),
+            ...(fields.persona?.trim() ? { persona: fields.persona.trim() } : {}),
+            ...(fields.skill?.trim() ? { skill: fields.skill.trim() } : {})
+          }
+          // Le mode : celui choisi sur la fiche (« Relire avec l'IA »), sinon celui de l'étape ; un
+          // document sans texte (un scan, une image) ne se lit qu'avec la vision.
+          const text = doc.reading === 'lue' ? ((await libraryTranscript(record)) ?? '').trim() : ''
+          const mode = !text ? 'vision' : (vars.relecture || fields.mode || 'texte').trim() === 'vision' ? 'vision' : 'texte'
+          if (mode === 'vision') {
+            const seen = await pageImages(doc.file)
+            if (!seen) return text ? say('ia.wf.vision.cannotProofread', { title: doc.title }) : say('ia.wf.vision.cannot', { title: doc.title })
+            try {
+              if (!seen.pages) return say('ia.wf.vision.noPage', { title: doc.title })
+              // Un modèle qui voit, réglé exprès : celui d'analyse, souvent, ne lit pas les images (le serveur refuse).
+              const model = visionModelOf(base, text ? 'vision' : 'ocr')
+              if (!model) return say('ia.wf.vision.noModel', { title: doc.title })
+              const count = seen.pages
+              notifier.notify(t(text ? 'ia.wf.vision.startProofread' : 'ia.wf.vision.start', { title: doc.title, pages: count, model }), 8000)
+              const out: string[] = []
+              let kept = 0
+              for (let index = 0; index < count; index++) {
+                const image = await seen.image(index)
+                if (index > 0) notifier.notify(t('ia.wf.vision.progress', { title: doc.title, page: index + 1, pages: count }), 5000)
+                aiReadingProgress(record, doc.title, t('ia.reading.page', { page: index + 1, pages: count }))
+                const pageText = text ? (seen.texts?.[index] ?? '') : ''
+                const ask = [t('ia.wf.vision.page', { page: index + 1, pages: seen.pages }), pageText ? `${t('ia.wf.vision.pageText')}\n\n${pageText}` : t(text ? 'ia.wf.vision.pageNoText' : 'ia.wf.vision.pageRead')].join('\n\n')
+                let answer: string
+                try {
+                  answer = await ai.chat({
+                    model,
+                    messages: [
+                      { role: 'system', content: t('ia.wf.vision.system') },
+                      { role: 'user', content: [{ type: 'text', text: ask }, { type: 'image_url', image_url: { url: image } }] }
+                    ],
+                    temperature: 0
+                  })
+                } catch (error) {
+                  throw new Error(describe(error))
+                }
+                const read = readVisionPage(answer, pageText)
+                if (read === null) kept++
+                out.push(read ?? pageText)
+              }
+              const seenText = out.filter((part) => part.trim()).join('\n\n').trim()
+              if (!seenText) return say('ia.wf.vision.nothingRead', { title: doc.title })
+              if (text && seenText.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
+              const version = await addTextVersionByAi(record, seenText, { model, ...guided, vision: count, ...(kept ? { kept } : {}) })
+              if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
+              return say(text ? 'ia.wf.vision.doneProofread' : 'ia.wf.vision.done', { title: doc.title, number: version.number, pages: count })
+            } finally {
+              await seen.close()
+            }
+          }
+          const chunks = proofreadChunks(text)
+          notifier.notify(t('ia.wf.proofread.start', { title: doc.title, parts: chunks.length }), 8000)
+          const out: string[] = []
+          let kept = 0
+          for (const [index, chunk] of chunks.entries()) {
+            if (index > 0) notifier.notify(t('ia.wf.proofread.progress', { title: doc.title, part: index + 1, parts: chunks.length }), 5000)
+            aiReadingProgress(record, doc.title, t('ia.reading.part', { part: index + 1, parts: chunks.length }))
+            let answer: string
+            try {
+              answer = await ai.chat({
+                messages: [
+                  { role: 'system', content: t('ia.wf.proofread.system') },
+                  { role: 'user', content: chunks.length > 1 ? `${t('ia.wf.proofread.part', { part: index + 1, parts: chunks.length })}\n\n${chunk}` : chunk }
+                ],
+                temperature: 0
+              })
+            } catch (error) {
+              throw new Error(describe(error))
+            }
+            const read = readProofread(answer, chunk)
+            if (read === null) kept++
+            out.push(read ?? chunk)
+          }
+          const proofread = out.join('\n\n').trim()
+          if (kept === chunks.length) return say('ia.wf.proofread.allKept', { title: doc.title })
+          if (proofread.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
+          const version = await addTextVersionByAi(record, proofread, { model: base.connection.model, ...guided, ...(kept ? { kept } : {}) })
+          if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
+          return say(kept ? 'ia.wf.proofread.doneKept' : 'ia.wf.proofread.done', { title: doc.title, number: version.number, parts: chunks.length, kept })
       }
-      const chunks = proofreadChunks(text)
-      notifier.notify(t('ia.wf.proofread.start', { title: doc.title, parts: chunks.length }), 8000)
-      const out: string[] = []
-      let kept = 0
-      for (const [index, chunk] of chunks.entries()) {
-        if (index > 0) notifier.notify(t('ia.wf.proofread.progress', { title: doc.title, part: index + 1, parts: chunks.length }), 5000)
-        let answer: string
-        try {
-          answer = await ai.chat({
-            messages: [
-              { role: 'system', content: t('ia.wf.proofread.system') },
-              { role: 'user', content: chunks.length > 1 ? `${t('ia.wf.proofread.part', { part: index + 1, parts: chunks.length })}\n\n${chunk}` : chunk }
-            ],
-            temperature: 0
-          })
-        } catch (error) {
-          throw new Error(describe(error))
-        }
-        const read = readProofread(answer, chunk)
-        if (read === null) kept++
-        out.push(read ?? chunk)
-      }
-      const proofread = out.join('\n\n').trim()
-      if (kept === chunks.length) return say('ia.wf.proofread.allKept', { title: doc.title })
-      if (proofread.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
-      const version = await addTextVersionByAi(record, proofread, { model: base.connection.model, ...guided, ...(kept ? { kept } : {}) })
-      if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
-      return say(kept ? 'ia.wf.proofread.doneKept' : 'ia.wf.proofread.done', { title: doc.title, number: version.number, parts: chunks.length, kept })
     }
   })
 
@@ -383,17 +410,21 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
    * `null` : ce fichier ne se montre pas ainsi (un autre format, une plateforme qui ne dessine
    * pas les PDF).
    */
-  async function pageImages(file: string): Promise<{ pages: number; images: string[]; texts?: string[] } | null> {
+  async function pageImages(file: string): Promise<{ pages: number; image(index: number): Promise<string>; texts?: string[]; close(): Promise<void> } | null> {
     const extension = file.slice(file.lastIndexOf('.') + 1).toLowerCase()
     const files = fs()
     if (!(await files.exists(file))) return null
-    if (isImage(extension)) return { pages: 1, images: [imageDataUrl(extension, new Uint8Array(await files.readBinary(file)))] }
+    if (isImage(extension)) {
+      const url = imageDataUrl(extension, new Uint8Array(await files.readBinary(file)))
+      return { pages: 1, image: async () => url, close: async () => undefined }
+    }
     const draw = pages()
     if (extension !== 'pdf' || !draw) return null
     const bytes = new Uint8Array(await files.readBinary(file))
-    const drawn = await draw.pdf(bytes, { max: VISION_MAX_PAGES, width: 1400 })
+    const drawn = await draw.open(bytes)
     const texts = await pdfPageTexts(bytes).catch(() => undefined)
-    return { ...drawn, ...(texts ? { texts } : {}) }
+    // Chaque page dessinée quand vient son tour : toutes, sans limite, jamais toutes en mémoire.
+    return { pages: drawn.pages, image: (index) => drawn.page(index + 1, 1400), close: () => drawn.close(), ...(texts ? { texts } : {}) }
   }
 
   /**

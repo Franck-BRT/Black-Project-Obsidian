@@ -158,6 +158,10 @@ export default class BlackProjectsPlugin extends Plugin {
 
     // L'accueil suit le coffre : un fichier créé, modifié, renommé ou supprimé le fait se recharger.
     const refresh = debounce(() => this.refreshHome(), 1500, true)
+    // Un module dit que ses pages ont changé (une lecture par l'IA avance) : redessinées, sans attendre le coffre.
+    const redraw = debounce(() => this.refreshHome(), 300, true)
+    const stop = this.views.onChanged(() => redraw())
+    this.register(stop)
     for (const name of ['create', 'modify', 'delete', 'rename'] as const) {
       this.registerEvent(this.app.vault.on(name as 'create', (file) => file instanceof TFile && !file.path.startsWith('.') && refresh()))
     }

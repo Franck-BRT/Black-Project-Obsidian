@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.24.0 (Black Projects 0.107.0) |
+| Version | 0.25.0 (Black Projects 0.108.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,19 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## Un modèle de vision réglé exprès ; sans limite de pages ; la lecture se suit (v0.25.0, Black Projects 0.108.0)
+
+- **Correctif** : les images n'étaient envoyées qu'au modèle de l'usage, qui retombait sur celui
+  d'analyse quand ni vision ni OCR n'étaient choisis — un modèle qui ne lit que du texte, que le
+  serveur refusait (« … is not a multimodal model », 400). Maintenant `visionModelOf` ne rend
+  que le modèle de vision ou d'OCR **choisi exprès** ; sans lui, rien n'est montré en images
+  (`setAiVision` : faux), aucun scan n'est lu au dépôt, et une étape réglée « avec la vision »
+  le dit par une notice (`ia.wf.vision.noModel`) au lieu d'échouer.
+- **Plus de limite de 30 pages** : les pages d'un PDF sont dessinées **une à une**, quand vient
+  leur tour (`PageImages.open`, `DrawnPdf.page`), puis le PDF est refermé.
+- `ia.relire-texte` dit où il en est à la bibliothèque (`aiReadingProgress` : « page 2 sur 35 »,
+  « morceau 3 sur 5 » ; `aiReadingEnded` à la fin, réussie ou non).
 
 ## Les scans lus avec la vision au dépôt (v0.24.0, Black Projects 0.107.0)
 

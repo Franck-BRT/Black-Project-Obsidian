@@ -131,33 +131,34 @@ interface PdfJsDocument {
   destroy(): Promise<void>
 }
 
-/** Les pages d'un PDF dessinées par le pdf.js d'Obsidian, sur un canevas, en JPEG. */
+/** Les pages d'un PDF dessinées par le pdf.js d'Obsidian, une à une, sur un canevas, en JPEG. */
 export const obsidianPages: PageImages = {
-  async pdf(bytes, options = {}) {
+  async open(bytes) {
     const pdfjs = (await loadPdfJs()) as PdfJs
     // Une copie : pdf.js garde le tampon qu'on lui donne.
     const document = await pdfjs.getDocument({ data: bytes.slice() }).promise
-    try {
-      const count = Math.min(document.numPages, options.max ?? document.numPages)
-      const images: string[] = []
-      for (let number = 1; number <= count; number++) {
+    return {
+      pages: document.numPages,
+      async page(number, width = 1400) {
         const page = await document.getPage(number)
         const natural = page.getViewport({ scale: 1 })
-        const viewport = page.getViewport({ scale: (options.width ?? 1400) / natural.width })
+        const viewport = page.getViewport({ scale: width / natural.width })
         const canvas = activeDocument.createElement('canvas')
         canvas.width = Math.round(viewport.width)
         canvas.height = Math.round(viewport.height)
         const context = canvas.getContext('2d')
-        if (!context) break
+        if (!context) throw new Error('canvas 2d')
         // Un fond blanc : une page sans fond deviendrait noire en JPEG.
         context.fillStyle = '#ffffff'
         context.fillRect(0, 0, canvas.width, canvas.height)
         await page.render({ canvasContext: context, viewport }).promise
-        images.push(canvas.toDataURL('image/jpeg', 0.85))
-      }
-      return { pages: document.numPages, images }
-    } finally {
-      await document.destroy()
+        const image = canvas.toDataURL('image/jpeg', 0.85)
+        // Le canevas rendu tout de suite : un long PDF ne garde pas ses pages en mémoire.
+        canvas.width = 0
+        canvas.height = 0
+        return image
+      },
+      close: () => document.destroy()
     }
   }
 }

@@ -310,11 +310,16 @@ export interface Platform {
 
 /** Les pages d'un document, dessinées en images. */
 export interface PageImages {
-  /**
-   * Les pages d'un PDF, de la première à la `max`-ième, en images (des data URL JPEG, de
-   * `width` pixels de large) ; et son nombre de pages.
-   */
-  pdf(bytes: Uint8Array, options?: { max?: number; width?: number }): Promise<{ pages: number; images: string[] }>
+  /** Un PDF ouvert pour dessiner ses pages une à une (sans limite : jamais toutes en mémoire) ; à fermer après. */
+  open(bytes: Uint8Array): Promise<DrawnPdf>
+}
+
+/** Un PDF ouvert : son nombre de pages, et chacune dessinée à la demande. */
+export interface DrawnPdf {
+  pages: number
+  /** La page `number` (à partir de 1) en image : une data URL JPEG de `width` pixels de large. */
+  page(number: number, width?: number): Promise<string>
+  close(): Promise<void>
 }
 
 export interface SecretStore {

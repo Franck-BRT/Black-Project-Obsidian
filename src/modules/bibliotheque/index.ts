@@ -29,7 +29,7 @@ import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
-import { baseName, CATEGORIES, nestHeadings, versionLabel, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
+import { baseName, CATEGORIES, nestHeadings, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
@@ -417,6 +417,33 @@ export function setAiProofread(systemWorkflow: string | null): void {
   aiProofread = systemWorkflow
 }
 
+/**
+ * La **lecture par l'IA** du texte d'un document — une seule à la fois (le moteur des
+ * workflows les passe l'une après l'autre) : celle en cours, où elle en est, et celles qu'on a
+ * mises en file d'attente. Les pages ouvertes se redessinent à chaque changement.
+ */
+let aiRunning: AiReading | null = null
+const aiQueue: AiReading[] = []
+let pagesChanged: () => void = () => undefined
+
+/** Pour le module IA : une lecture commence (`detail` : où elle en est), ou avance. */
+export function aiReadingProgress(record: string, title: string, detail = ''): void {
+  const queued = aiQueue.findIndex((each) => each.record === record)
+  if (queued >= 0) aiQueue.splice(queued, 1)
+  aiRunning = { record, title, detail }
+  pagesChanged()
+}
+
+/** Pour le module IA : la lecture de ce document est finie (réussie ou non). */
+export function aiReadingEnded(record: string): void {
+  if (aiRunning?.record !== record) return
+  aiRunning = null
+  pagesChanged()
+}
+
+/** La lecture par l'IA en cours, et la file d'attente. */
+export const aiReadingNow = (): { running: AiReading | null; queue: readonly AiReading[] } => ({ running: aiRunning, queue: [...aiQueue] })
+
 /** Ce qu'un modèle de vision peut regarder (le module IA le dit : une image, un PDF que la plateforme dessine). */
 let aiVision: ((file: string) => boolean) | null = null
 
@@ -527,7 +554,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.35.0',
+  version: '0.36.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -619,6 +646,8 @@ export const bibliothequeModule: BlackModule = {
       if (ghost) platform.notifier.notify(t('bibliotheque.ghost.done', { title: doc.title, ici }), 6000)
       return ghost
     }
+    // Une lecture par l'IA qui commence, avance, finit : les pages ouvertes se redessinent.
+    pagesChanged = () => context.views?.changed?.()
     active = { store, t, entries, ui: platform.ui, placeOfFolder, offerGhost, locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR', issuers: () => knownIssuers(), tagList: () => knownTags() }
     // Les listes des champs Prompt, Persona, Skill des étapes de workflow qui demandent l'IA.
     for (const kind of AI_ENTRY_KINDS)
@@ -1298,6 +1327,7 @@ export const bibliothequeModule: BlackModule = {
         // Le texte extrait de nouveau : relu par l'IA, comme au dépôt (son workflow système, s'il est actif).
         if (done.transcript.state === 'lue' && aiProofread) await runSystemWorkflow(aiProofread, TRIGGER_POURED, pouredSubject(done.doc, await knownIssuers()))
       },
+      aiReading: aiReadingNow,
       proofreading: (doc) => ({ text: aiProofread !== null && doc.reading === 'lue', vision: aiProofread !== null && !!aiVision?.(doc.file) }),
       proofread: async (record) => {
         const doc = await store.load(record)
@@ -1316,11 +1346,27 @@ export const bibliothequeModule: BlackModule = {
           if (!chosen) return
           mode = chosen === 'vision' ? 'vision' : 'texte'
         }
+        // L'IA lit déjà un document : celui-ci attend son tour (dit sur les fiches).
+        const waits = aiRunning !== null && aiRunning.record !== doc.record
+        if (waits && !aiQueue.some((each) => each.record === doc.record)) {
+          aiQueue.push({ record: doc.record, title: doc.title, detail: '' })
+          pagesChanged()
+          platform.notifier.notify(t('bibliotheque.ai.enqueued', { title: doc.title, position: aiQueue.length, running: aiRunning!.title }), 6000)
+        }
         const subject = pouredSubject(doc, await knownIssuers())
         // Le mode choisi passe par une variable du sujet ; un scan, sans texte, est lu quand même (la condition du workflow le demande).
         const asked: Subject = { ...subject, vars: { ...subject.vars, relecture: mode, ...(withText ? {} : { texteextrait: t('bibliotheque.text.proofread.byVision') }) } }
-        if (!aiProofread || !(await runSystemWorkflow(aiProofread, TRIGGER_POURED, asked))) {
-          platform.notifier.notify(t('bibliotheque.text.proofread.off'), 10000)
+        try {
+          if (!aiProofread || !(await runSystemWorkflow(aiProofread, TRIGGER_POURED, asked))) {
+            platform.notifier.notify(t('bibliotheque.text.proofread.off'), 10000)
+          }
+        } finally {
+          // Passé (ou pas lancé) : plus en file d'attente.
+          const left = aiQueue.findIndex((each) => each.record === doc.record)
+          if (left >= 0) {
+            aiQueue.splice(left, 1)
+            pagesChanged()
+          }
         }
       },
       tagList: () => knownTags(),

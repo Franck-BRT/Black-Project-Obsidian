@@ -247,7 +247,12 @@ lecteurs d'écran entendent « Retiré : … », « Ajouté : … ».
 Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
 forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :
 réduit et sûr (le texte devient des éléments, jamais du HTML injecté ; un lien, son texte). Le
-texte extrait d'un document s'y lit. Les **formules mathématiques** en LaTeX — `$…$` (ou `\(…\)`) dans une phrase, `$$…$$` (ou `\[…\]`)
+texte extrait d'un document s'y lit. Un bouton (`ViewAction`) peut être **grisé** (`disabled`, son infobulle dit pourquoi). Un module
+dont les pages changent sans que le coffre bouge (une lecture par l'IA qui avance) le dit par
+`views.changed()` : les pages ouvertes se redessinent (`ViewsRegistry.onChanged`, écouté par
+l'hôte).
+
+Les **formules mathématiques** en LaTeX — `$…$` (ou `\(…\)`) dans une phrase, `$$…$$` (ou `\[…\]`)
 seules — sont dessinées par la plateforme (`setMathRenderer` : dans Obsidian, `renderMath`, son
 MathJax) ; sans elle, leur LaTeX est montré à part. « 10 $ et 20 $ » reste du texte. Une liste « aérée » (des lignes vides entre ses éléments) reste une liste ; une liste coupe la
 phrase qu'elle suit (comme dans Obsidian) ; une liste numérotée garde son premier numéro. Des

@@ -137,6 +137,13 @@ export interface Transcript {
  * d'avant l'IA, on compare. La fiche montre la dernière. L'édition et la révision du
  * document, elles, ne changent pas.
  */
+/** Une lecture par l'IA du texte d'un document : lequel, et où elle en est (« page 2 sur 5 »). */
+export interface AiReading {
+  record: string
+  title: string
+  detail: string
+}
+
 export interface TextVersion {
   /** Sa note. */
   path: string

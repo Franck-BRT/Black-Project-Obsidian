@@ -22,7 +22,7 @@ import { AiClient, type AiConnection } from './client'
 import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
 import { registerIaHome, USE_FIELD, type ConnectionTest } from './home'
-import { libraryGuidance, registerIaWorkflows, visionReadable } from './workflows'
+import { libraryGuidance, registerIaWorkflows, visionModelOf, visionReadable } from './workflows'
 import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, usesOf, type ModelUse } from './models'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -298,7 +298,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.24.0',
+  version: '0.25.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -338,7 +338,11 @@ export const iaModule: BlackModule = {
     // « Extraire de nouveau » le texte d'un document, ou « Relire avec l'IA » : son workflow système de relecture.
     setAiProofread(PROOFREAD_SYSTEM)
     // Les fichiers qu'un modèle de vision regarde : les images, et les PDF si la plateforme sait dessiner leurs pages.
-    setAiVision((file) => visionReadable(file, !!context.platform.pages))
+    setAiVision((file) => {
+      // Un modèle de vision (ou d'OCR) réglé exprès : sans lui, rien n'est montré en images.
+      const client = aiClient()
+      return client !== null && visionModelOf(client, 'vision') !== '' && visionReadable(file, !!context.platform.pages)
+    })
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)), () => context.platform.pages)
     // Vérifier la connexion à l'ouverture : une action, et son workflow système (actif d'origine).
     registerAction({

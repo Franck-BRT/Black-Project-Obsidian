@@ -47,6 +47,8 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   **modèle simple** (le texte) ou un **modèle avec la vision** (les pages d'un PDF ou une image
   regardées, comparées au texte) ; un document **sans texte** (un scan, une image) est lu avec la
   vision dès son dépôt (sinon, **Lire avec la vision (IA)**) ; les formules mathématiques s'affichent mises en forme ;
+  pendant que l'IA lit un document, ses boutons sont grisés et la fiche dit où elle en est
+  (« page 2 sur 35 ») ; sur un autre document, **Ajouter à la file d'attente** ;
 - **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ; le
   crayon devant *Fichier* le **renomme** (dans son dossier, son extension gardée) — les liens
   vers lui, dans tout le coffre (la note de sa pièce, celle de l'analyse…), sont mis à jour ;

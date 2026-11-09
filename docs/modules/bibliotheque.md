@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.35.0 (Black Projects 0.107.0) |
+| Version | 0.36.0 (Black Projects 0.108.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,18 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## La lecture par l'IA en cours, la file d'attente (v0.36.0, Black Projects 0.108.0)
+
+- La bibliothèque tient **la lecture par l'IA en cours** (le document, où elle en est) et **la
+  file d'attente** (`aiReadingNow`) ; le module IA la tient à jour. À chaque changement, les
+  pages ouvertes se redessinent (`views.changed()`).
+- Sur la fiche, section *Texte extrait* :
+  - le document en cours de lecture : **Lecture par l'IA en cours…** grisé, *Extraire de
+    nouveau* grisé, et « L'IA lit ce document — page 2 sur 35 » ;
+  - un autre document en cours : **Ajouter à la file d'attente** (au lieu de *Relire avec
+    l'IA*) — il passera après (le moteur des workflows les enchaîne) ; puis **En file d'attente
+    (n)** grisé, et « L'IA lit « … » — page 11 sur 35 ; n en file d'attente ».
 
 ## La variable `{scan}` (v0.35.0, Black Projects 0.107.0)
 

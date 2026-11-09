@@ -44,7 +44,7 @@ export function ActionButton({ action, compact }: { action: ViewAction; compact?
       type="button"
       class={`bp-button${action.primary ? ' bp-button-primary' : ''}${iconOnly ? ' bp-button-icon' : ''}`}
       onClick={run}
-      disabled={busy}
+      disabled={busy || action.disabled === true}
       aria-busy={busy}
       title={action.tooltip ?? (iconOnly ? action.label : undefined)}
       aria-label={iconOnly ? action.label : undefined}

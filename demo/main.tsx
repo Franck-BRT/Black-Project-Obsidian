@@ -82,22 +82,25 @@ platform.ui = {
 platform.notifier = { notify: (message) => toast(message) }
 // Les pages d'un PDF « dessinées » : sans pdf.js hors d'Obsidian, un aperçu de démonstration par page (son texte écrit sur une page blanche).
 platform.pages = {
-  pdf: async (bytes, options = {}) => {
+  open: async (bytes) => {
     const texts = await pdfPageTexts(bytes)
-    const images = texts.slice(0, options.max ?? texts.length).map((text, at) => {
-      const canvas = document.createElement('canvas')
-      canvas.width = 700
-      canvas.height = 990
-      const context = canvas.getContext('2d')!
-      context.fillStyle = '#ffffff'
-      context.fillRect(0, 0, canvas.width, canvas.height)
-      context.fillStyle = '#111111'
-      context.font = '20px sans-serif'
-      context.fillText(`Page ${at + 1} — aperçu de démonstration`, 40, 50)
-      text.split('\n').slice(0, 40).forEach((line, row) => context.fillText(line.slice(0, 70), 40, 100 + row * 24))
-      return canvas.toDataURL('image/jpeg', 0.8)
-    })
-    return { pages: texts.length, images }
+    return {
+      pages: texts.length,
+      page: async (number) => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 700
+        canvas.height = 990
+        const context = canvas.getContext('2d')!
+        context.fillStyle = '#ffffff'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+        context.fillStyle = '#111111'
+        context.font = '20px sans-serif'
+        context.fillText(`Page ${number} — aperçu de démonstration`, 40, 50)
+        ;(texts[number - 1] ?? '').split('\n').slice(0, 40).forEach((line, row) => context.fillText(line.slice(0, 70), 40, 100 + row * 24))
+        return canvas.toDataURL('image/jpeg', 0.8)
+      },
+      close: async () => undefined
+    }
   }
 }
 // Un serveur d'IA simulé : il répond en citant le premier extrait transmis (aucune IA réelle).
@@ -131,6 +134,8 @@ platform.http = {
     // Lire une page avec la vision : sans IA réelle, le texte extrait de la page corrigé, ou un texte de démonstration (un scan).
     const seeing = (sent.messages?.[0]?.content ?? '').includes('Tu lis une page d’un document')
     const pageText = (sent.messages?.at(-1)?.content ?? '').split('à vérifier d’après l’image :\n\n')[1]
+    // Une page regardée prend un peu de temps, comme avec un vrai modèle : on voit la lecture avancer.
+    if (seeing) await new Promise((resolve) => setTimeout(resolve, 250))
     const content = seeing
       ? pageText
         ? proofread(pageText)
@@ -171,6 +176,8 @@ const day = (offset: number) => {
 const utf8 = (text: string) => new TextEncoder().encode(text)
 
 let mounted: ReturnType<typeof mountApp> | null = null
+// Un module dit que ses pages ont changé (une lecture par l'IA avance) : redessinées.
+views.onChanged(() => mounted?.refresh())
 const commands = new Map<string, () => void | Promise<void>>()
 
 /** Les réglages du cœur, le temps de la visite : la démonstration n'a pas de coffre où les garder. */

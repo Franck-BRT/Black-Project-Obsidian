@@ -49,11 +49,14 @@ interface Seen {
   image: string
 }
 
-async function start(platform: MemoryPlatform, see: (seen: Seen) => string, drawsPdf = true) {
+let drawnPages = 2
+let closed = 0
+
+async function start(platform: MemoryPlatform, see: (seen: Seen) => string, drawsPdf = true, ia: Record<string, unknown> = SERVEUR, gate: () => Promise<void> = async () => {}) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
-  if (drawsPdf) platform.pages = { pdf: async (_bytes, options) => ({ pages: 2, images: ['data:image/jpeg;base64,UDE=', 'data:image/jpeg;base64,UDI='].slice(0, options?.max ?? 2) }) }
-  const settings: Record<string, Record<string, unknown>> = { ia: SERVEUR }
+  if (drawsPdf) platform.pages = { open: async () => ({ pages: drawnPages, page: async (number) => `data:image/jpeg;base64,${btoa(`P${number}`)}`, close: async () => void closed++ }) }
+  const settings: Record<string, Record<string, unknown>> = { ia }
   const views = new ViewsRegistry()
   for (const module of ALL) {
     const context: ModuleContext = {
@@ -83,6 +86,7 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string, draw
     }
     if (system.includes('Tu relis un texte extrait automatiquement')) {
       proofread.push(body.model)
+      await gate()
       return chat(body.messages.at(-1)!.content as string)
     }
     return chat({ title: '', issuer: '', category: '', date: '', tags: [], reference: '', edition: '', revision: '', certain: false })
@@ -168,6 +172,23 @@ describe('un document sans texte : la vision seule', () => {
     expect(read(platform, doc.record)).toContain('Page un\n\nPage deux')
   })
 
+  it('sans limite de pages : un scan de 45 pages, chacune dessinée à son tour, toutes lues ; le PDF refermé', async () => {
+    const platform = memoryPlatform()
+    drawnPages = 45
+    closed = 0
+    try {
+      const { pour, seen, textVersions } = await start(platform, (one) => `Lu sur ${one.text.split('.')[0]}`)
+      const doc = await pour('Gros scan.pdf', textPdf([[]]))
+      expect(seen).toHaveLength(45)
+      expect(seen.at(-1)!.text).toContain('Page 45 sur 45.')
+      expect((await textVersions(doc.record))[0]!.detail).toContain('45 page(s) regardée(s)')
+      expect(read(platform, doc.record)).toContain('Lu sur Page 45 sur 45')
+      expect(closed).toBe(1)
+    } finally {
+      drawnPages = 2
+    }
+  })
+
   it('une plateforme qui ne dessine pas les PDF : un PDF scanné n’est pas lu, ni proposé', async () => {
     const platform = memoryPlatform()
     const { pour, seen, textActions } = await start(platform, () => 'x', false)
@@ -239,3 +260,65 @@ describe('un PDF avec du texte : le modèle à choisir', () => {
     expect(proofread).toHaveLength(0)
   })
 })
+
+describe('sans modèle de vision réglé', () => {
+  const SANS_VISION = { adresse: 'http://ia.exemple.fr/v1', modele: 'deepseek-v4-flash' }
+
+  it('un scan versé : rien n’est envoyé en images (le modèle d’analyse ne les lit pas) ; rien n’est proposé', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, textActions } = await start(platform, () => 'x', true, SANS_VISION)
+    const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
+    expect(seen).toHaveLength(0)
+    expect((await textActions(doc.record)).map((action) => action.id)).not.toContain('vision')
+  })
+
+  it('l’étape réglée « avec la vision » : une notice le dit, aucune image envoyée', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, workflows } = await start(platform, () => 'x', true, SANS_VISION)
+    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.actions[0]!.fields.mode = 'vision'
+    await pour('Plan.pdf', textPdf([['Plan qualite']]))
+    expect(seen).toHaveLength(0)
+    expect(platform.notices).toContain('« Plan » : aucun modèle de vision ni d’OCR n’est choisi (page IA) — le modèle d’analyse ne lit pas les images ; rien n’est envoyé.')
+  })
+})
+
+describe('une lecture en cours, la file d’attente', () => {
+  it('pendant que l’IA lit un document : son bouton grisé ; un autre « Ajouter à la file d’attente », puis grisé « En file d’attente » ; après, tout revient', async () => {
+    const platform = memoryPlatform()
+    let release: () => void = () => {}
+    let held = false
+    let asked: () => void = () => {}
+    const reached = () => new Promise<void>((resolve) => (asked = resolve))
+    const gate = () => {
+      if (!held) return Promise.resolve()
+      asked()
+      return new Promise<void>((resolve) => (release = resolve))
+    }
+    const { pour, textActions, textVersions } = await start(platform, () => '', false, SERVEUR, gate)
+    const one = await pour('Un.txt', new TextEncoder().encode('Le pre- mier texte.'))
+    const two = await pour('Deux.txt', new TextEncoder().encode('Le se- cond texte.'))
+    held = true
+    const reading = reached()
+    const first = (await textActions(one.record)).find((action) => action.id === 'proofread')!.run()
+    await reading
+    // Le premier : en cours, grisé ; l'extraction aussi.
+    const here = await textActions(one.record)
+    expect(here.find((action) => action.id === 'proofread')).toMatchObject({ label: 'Lecture par l’IA en cours…', disabled: true })
+    expect(here.find((action) => action.id === 'extract')!.disabled).toBe(true)
+    // Le second : à mettre en file d'attente.
+    const other = (await textActions(two.record)).find((action) => action.id === 'proofread')!
+    expect(other.label).toBe('Ajouter à la file d’attente')
+    expect(other.disabled).toBeUndefined()
+    const second = other.run()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect((await textActions(two.record)).find((action) => action.id === 'proofread')).toMatchObject({ label: 'En file d’attente (1)', disabled: true })
+    expect(platform.notices).toContain('« Deux » : ajouté à la file d’attente (position 1) — l’IA lit « Un ».')
+    held = false
+    release()
+    await Promise.all([first, second])
+    expect((await textActions(one.record)).find((action) => action.id === 'proofread')).toMatchObject({ label: 'Relire avec l’IA' })
+    expect((await textActions(two.record)).find((action) => action.id === 'proofread')!.disabled).toBeUndefined()
+    expect(await textVersions(two.record)).toEqual([])
+  })
+})
+

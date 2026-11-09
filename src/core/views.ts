@@ -64,6 +64,8 @@ export interface ViewAction {
   tooltip?: string
   /** Mis en avant (l'action principale d'un bloc). */
   primary?: boolean
+  /** Grisé : on ne peut pas s'en servir pour l'instant (son infobulle dit pourquoi). */
+  disabled?: boolean
   run(): void | Promise<void>
 }
 
@@ -379,10 +381,27 @@ export interface ViewsRegistrar {
    * (`ModuleContext.showNote`) ouvre sa page, dans l'onglet, plutôt que la note.
    */
   notePage?(resolver: NotePageResolver): void
+  /**
+   * Ce que montrent ses pages a changé sans que le coffre bouge (une lecture par l'IA commence,
+   * avance) : les pages ouvertes se redessinent.
+   */
+  changed?(): void
 }
 
 /** Les déclarations de tous les modules actifs, rangées. */
 export class ViewsRegistry implements ViewsRegistrar {
+  private readonly listeners = new Set<() => void>()
+
+  /** Être prévenu quand un module dit que ses pages ont changé ; rend de quoi ne plus l'être. */
+  onChanged(listener: () => void): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  changed(): void {
+    for (const listener of [...this.listeners]) listener()
+  }
+
   private readonly sections = new Map<string, HomeSection>()
   private readonly entries = new Map<string, NavEntry>()
   private readonly tiles = new Map<string, TileSpec>()

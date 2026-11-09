@@ -9,7 +9,7 @@
  */
 
 import { pageWith, type Badge, type Card, type HomeBlock, type IconName, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
-import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc, type TextVersion } from './model'
+import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type AiReading, type LibraryDoc, type TextVersion } from './model'
 import { HUB_PAGE } from './entriesHome'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
 import type { GhostEntry, LibraryStore, ResearchField } from './store'
@@ -59,6 +59,8 @@ export interface LibraryHomeDeps {
   deleteTextVersion(record: string, number: number): Promise<void>
   /** (Re)transcrire son fichier dans sa fiche. */
   transcribe(record: string): Promise<void>
+  /** La lecture par l'IA en cours (un document, où elle en est) et celles qui attendent. */
+  aiReading(): { running: AiReading | null; queue: readonly AiReading[] }
   /** Ce que l'IA peut faire de son texte : le relire (il y en a un), le regarder avec la vision (une image, un PDF). */
   proofreading(doc: LibraryDoc): { text: boolean; vision: boolean }
   /** Relire son texte extrait avec l'IA (le modèle choisi), ou, sans texte, le lire avec la vision : une nouvelle version du texte. */
@@ -578,17 +580,44 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   const shownText = doc.textVersion ? (await deps.store.textVersions(doc.record)).find((each) => each.number === doc.textVersion) : undefined
   const characters = (doc.characters ?? 0).toLocaleString('fr-FR')
   const proofreading = deps.proofreading(doc)
+  // L'IA, en ce moment : lit-elle ce document, l'a-t-on mis en file d'attente, en lit-elle un autre ?
+  const { running, queue } = deps.aiReading()
+  const readingHere = running?.record === doc.record
+  const queuedAt = queue.findIndex((each) => each.record === doc.record) + 1
+  const busyElsewhere = running !== null && !readingHere
+  /** Le bouton qui fait lire (relire) son texte par l'IA, selon ce qu'elle fait en ce moment. */
+  const aiButton = (id: string, label: string, tooltip: string, primary: boolean): ViewAction =>
+    readingHere
+      ? { id, label: t('bibliotheque.ai.button.running'), tooltip: t('bibliotheque.ai.button.running.tip'), icon: 'clock', disabled: true, run: () => undefined }
+      : queuedAt
+        ? { id, label: t('bibliotheque.ai.button.queued', { position: queuedAt }), tooltip: t('bibliotheque.ai.button.queued.tip', { title: running?.title ?? '' }), icon: 'clock', disabled: true, run: () => undefined }
+        : busyElsewhere
+          ? { id, label: t('bibliotheque.ai.button.enqueue'), tooltip: t('bibliotheque.ai.button.enqueue.tip', { title: running.title }), icon: 'clock', run: () => deps.proofread(doc.record) }
+          : { id, label, tooltip, icon: 'spark', ...(primary ? { primary: true } : {}), run: () => deps.proofread(doc.record) }
   const textActions: ViewAction[] = [
-    { id: 'extract', label: t(doc.reading ? 'bibliotheque.text.extract.again' : 'bibliotheque.text.extract'), tooltip: t('bibliotheque.text.extract.tip'), icon: 'refresh', ...(doc.reading ? {} : { primary: true }), run: () => deps.transcribe(doc.record) },
-    ...(doc.reading === 'lue' && proofreading.text
-      ? [{ id: 'proofread', label: t('bibliotheque.text.proofread'), tooltip: t(proofreading.vision ? 'bibliotheque.text.proofread.tipChoice' : 'bibliotheque.text.proofread.tip'), icon: 'spark' as const, run: () => deps.proofread(doc.record) }]
-      : []),
+    {
+      id: 'extract',
+      label: t(doc.reading ? 'bibliotheque.text.extract.again' : 'bibliotheque.text.extract'),
+      tooltip: t(readingHere || queuedAt ? 'bibliotheque.ai.extract.wait' : 'bibliotheque.text.extract.tip'),
+      icon: 'refresh',
+      ...(doc.reading ? {} : { primary: true }),
+      // Pas pendant que l'IA lit son texte (ou va le lire) : la version qu'elle écrira serait celle d'un autre texte.
+      ...(readingHere || queuedAt ? { disabled: true } : {}),
+      run: () => deps.transcribe(doc.record)
+    },
+    ...(doc.reading === 'lue' && proofreading.text ? [aiButton('proofread', t('bibliotheque.text.proofread'), t(proofreading.vision ? 'bibliotheque.text.proofread.tipChoice' : 'bibliotheque.text.proofread.tip'), false)] : []),
     // Sans texte (un scan, une image) : la lecture avec la vision seule.
-    ...(doc.reading !== 'lue' && proofreading.vision
-      ? [{ id: 'vision', label: t('bibliotheque.text.readVision'), tooltip: t('bibliotheque.text.readVision.tip'), icon: 'spark' as const, primary: true, run: () => deps.proofread(doc.record) }]
-      : []),
+    ...(doc.reading !== 'lue' && proofreading.vision ? [aiButton('vision', t('bibliotheque.text.readVision'), t('bibliotheque.text.readVision.tip'), true)] : []),
     { id: 'text-note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) }
   ]
+  // Où en est l'IA : sur ce document, ou sur un autre (ce document passera après).
+  const aiStatus: HomeBlock[] = readingHere
+    ? [{ kind: 'message', tone: 'info', text: t('bibliotheque.ai.status.here', { detail: running.detail || t('bibliotheque.ai.status.starting') }) }]
+    : queuedAt
+      ? [{ kind: 'message', tone: 'info', text: t('bibliotheque.ai.status.queued', { position: queuedAt, title: running?.title ?? '' }) }]
+      : busyElsewhere
+        ? [{ kind: 'message', tone: 'neutral', text: t('bibliotheque.ai.status.elsewhere', { title: running.title, detail: running.detail || t('bibliotheque.ai.status.starting'), waiting: queue.length }) }]
+        : []
   const textSection: HomeBlock = {
     kind: 'section',
     id: 'bibliotheque.document.texte',
@@ -615,6 +644,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
               actions: textActions
             }
           : { kind: 'message', tone: 'warning', text: `${t(`bibliotheque.text.state.${doc.reading}`)} — ${t(`bibliotheque.text.state.${doc.reading}.help`)}`, actions: textActions },
+      ...aiStatus,
       ...(doc.reading === 'lue'
         ? [
             {

@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La lecture en cours, la file d'attente ; sans limite de pages ; un modèle de vision exprès (v0.108.0)
+
+- [ ] Relire avec la vision un long PDF (plus de 30 pages) : toutes ses pages sont lues ; sur sa
+      fiche, « Lecture par l'IA en cours… » et « Extraire de nouveau » grisés, « L'IA lit ce
+      document — page n sur N » avance
+- [ ] Pendant ce temps, la fiche d'un autre document : « Ajouter à la file d'attente » ; cliqué,
+      « En file d'attente (1) » grisé ; il est relu ensuite, et ses boutons reviennent
+- [ ] Sans modèle de vision ni d'OCR choisi : un scan versé n'est pas envoyé en images (pas
+      d'erreur « not a multimodal model ») ; « Lire avec la vision » n'est pas proposé
+
 ## Les scans lus avec la vision au dépôt (v0.107.0)
 
 - [ ] Un modèle de vision réglé, verser un PDF scanné (ou une image) : des notices disent la

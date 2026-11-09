@@ -96,7 +96,9 @@ la vision** (chaque page d'un PDF, ou l'image, regardée et comparée au texte e
 plus lent) ; l'étape du workflow a le même choix (champ *Modèle*). Un document sans texte (un
 scan, une image) est **lu avec la vision dès son dépôt** — le workflow système « Lire avec la
 vision un document versé sans texte… » (activé), par le modèle d'OCR, sinon celui de vision ;
-désactivé, la fiche propose **Lire avec la vision (IA)**. Les formules mathématiques sont écrites en LaTeX.
+désactivé, la fiche propose **Lire avec la vision (IA)**. Il faut un modèle de vision (ou d'OCR) choisi sur la page IA :
+sans lui, rien n'est envoyé en images (le modèle d'analyse ne les lit pas, souvent). Toutes les
+pages sont lues, une à une. Les formules mathématiques sont écrites en LaTeX.
 
 Ces workflows servent aussi au bouton **Relancer la recherche** d'un champ, sur la fiche
 d'un document de la bibliothèque : quand la recherche sans IA n'est pas sûre, celui du champ

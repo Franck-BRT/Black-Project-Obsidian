@@ -45,7 +45,7 @@ Ce que le cœur attend de la plateforme :
 | Port | Rôle | Implémentation Obsidian |
 | --- | --- | --- |
 | `FileSystem` | lire, écrire, lister les fichiers du coffre ; renommer (les liens suivent) ; tous ses fichiers (`allFiles`, facultatif) ; supprimer un fichier (`trash`, facultatif : à la corbeille) | lectures par `app.vault.adapter`, écritures par l'API du coffre (`create`, `modify`…) pour que l'index d'Obsidian suive sur-le-champ ; `renameFile` du gestionnaire de fichiers ; `allFiles` par `vault.getFiles()` ; `trash` par `fileManager.trashFile` (la corbeille choisie dans les réglages du coffre) |
-| `PageImages` (`pages`, facultatif) | les pages d'un PDF en images (JPEG), pour un modèle de vision | le pdf.js d'Obsidian (`loadPdfJs`), dessiné sur un canevas ; la démonstration dessine un aperçu de chaque page |
+| `PageImages` (`pages`, facultatif) | un PDF ouvert (`open`), ses pages dessinées une à une en images (JPEG) pour un modèle de vision, sans limite de pages | le pdf.js d'Obsidian (`loadPdfJs`), chaque page sur un canevas rendu aussitôt ; la démonstration dessine un aperçu de chaque page |
 | `Http` | appels réseau (serveur d'IA) | `requestUrl`, qui passe les restrictions d'origine |
 | `Notifier` | messages brefs à l'utilisateur | `Notice` |
 | `Ui` | choisir un fichier, une option ou plusieurs (cases à cocher), formulaire, confirmation, fichiers de l'ordinateur, montrer un texte, ouvrir la note voulue, connaître la note ouverte | les fenêtres de `src/ui` (les mêmes que dans l'application de bureau), la liste des fichiers du coffre, `<input type=file>`, `getLeaf().openFile` |

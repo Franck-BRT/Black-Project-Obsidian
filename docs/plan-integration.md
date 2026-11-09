@@ -607,6 +607,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   MathJax d'Obsidian ; équations Word converties)
 - v0.107.0 : **IA, Bibliothèque** : les **scans lus avec la vision au dépôt** (workflow système
   `sys.ia.lire-scans`, actif ; variable `{scan}`)
+- v0.108.0 : **IA, Bibliothèque** : la **lecture en cours se suit** sur les fiches (boutons grisés,
+  progression, **file d'attente**) ; **sans limite de pages** (dessinées une à une) ; correctif :
+  les images seulement à un modèle de vision ou d'OCR choisi exprès
 
 ### Étape 7 — Livrables
 
