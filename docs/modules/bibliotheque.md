@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.20.0 (Black Projects 0.92.0) |
+| Version | 0.21.0 (Black Projects 0.93.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,33 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Relancer la recherche d'un champ ; la date au calendrier (v0.21.0, Black Projects 0.93.0)
+
+À côté du crayon de chaque champ de la fiche (sauf *Rangé*), un bouton **Relancer la
+recherche dans le document** (`ListItem.tools`, icône `refresh`) :
+
+1. **Sans IA** (`LibraryStore.researchField`) : le texte du document relu, la première passe
+   de ce champ refaite — la référence, l'édition, la révision ensemble. Trouvé sûrement : il
+   est donné et confirmé (même s'il avait été changé à la main). Sinon il est **à
+   confirmer**, avec ce qui a été lu (probable) ; la valeur qu'il a reste.
+2. **Avec l'IA**, si ce n'est pas sûr : le workflow système du [module IA](ia.md) qui
+   cherche ce champ (`setAiResearch`, que le module IA renseigne) est exécuté pour ce
+   document (`runSystemWorkflow` du [module Workflows](workflows.md)) — avec le prompt, le
+   persona, le skill choisis dans son étape ; le journal le garde.
+
+Ce qui en sort est dit : « Titre : trouvé dans le document — … », « Émetteur : identifié
+par l'IA — … », « Date du document : pas trouvé sûrement ; « 12 février 2026 » proposé, à
+confirmer. » — et pourquoi l'IA n'a pas été demandée (son workflow désactivé, le module
+absent).
+
+**La date au calendrier** : dans *Classer…* et la fenêtre du crayon, le champ *Date du
+document* a un bouton calendrier (`FormField.calendar`) qui ouvre celui du système ; la
+date choisie est écrite `AAAA-MM-JJ`. La saisie reste libre (« 12 mars 2026 »,
+« mars 2026 »).
+
+Les petits boutons d'une liste gardent leur place sur chaque ligne (celle de *Rangé* n'en a
+qu'un) : les icônes restent alignées.
 
 ## Modifier un champ de la fiche (v0.20.0, Black Projects 0.92.0)
 

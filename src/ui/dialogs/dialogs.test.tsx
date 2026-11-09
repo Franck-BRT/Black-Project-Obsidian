@@ -55,6 +55,30 @@ describe('les fenêtres du port Ui', () => {
     expect(html).toContain('>Créer</button>')
   })
 
+  it('un champ de date : le calendrier à côté (la date écrite AAAA-MM-JJ y est montrée) ; sans calendrier, le champ seul', () => {
+    const html = renderToString(
+      <FormDialog
+        form={{
+          title: 'Date',
+          fields: [
+            { kind: 'text', key: 'date', label: 'Date du document', value: '2026-03-12', calendar: true },
+            { kind: 'text', key: 'other', label: 'Autre', value: '12 mars 2026', calendar: true },
+            { kind: 'text', key: 'plain', label: 'Titre' }
+          ],
+          submit: 'Enregistrer'
+        }}
+        t={t}
+        onDone={noop}
+      />
+    )
+    expect(html).toMatch(/<div class="bp-input-row"><input class="bp-input" type="text" id="bp-field-date"[^>]*><span class="bp-calendar"><button type="button" class="bp-button bp-button-icon" title="Choisir dans le calendrier" aria-label="Choisir dans le calendrier">/)
+    expect(html).toMatch(/class="bp-calendar-picker" type="date" tabindex="-1" aria-hidden="true" value="2026-03-12"/)
+    // Écrite autrement : le calendrier s'ouvre sans date choisie.
+    expect(html).toMatch(/id="bp-field-other"[^]*?type="date" tabindex="-1" aria-hidden="true" value\/>/)
+    expect(html.match(/bp-input-row/g)).toHaveLength(2)
+    expect(html).toMatch(/<input class="bp-input" type="text" id="bp-field-plain"/)
+  })
+
   it('une confirmation qui détruit : le bouton rouge, le focus sur « Annuler »', () => {
     const html = renderToString(<ConfirmDialog view={{ title: 'Supprimer', message: 'Sûr ?', confirm: 'Supprimer', cancel: 'Annuler', danger: true }} t={t} onDone={noop} />)
     expect(html).toContain('data-autofocus="true">Annuler</button>')

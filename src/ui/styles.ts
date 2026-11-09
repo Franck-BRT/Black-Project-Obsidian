@@ -306,8 +306,8 @@ button.bp-flow-shape:focus-visible { outline: 3px solid var(--bp-focus); outline
 .bp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .bp-list-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 4px; border-top: 1px solid var(--bp-border); }
 .bp-list-item:first-child { border-top: 0; }
-.bp-list-edit { flex: none; margin-top: -2px; }
-.bp-list-edit .bp-button-icon { width: 30px; height: 30px; padding: 0; min-height: 0; display: grid; place-items: center; }
+.bp-list-tools { flex: none; display: flex; gap: 4px; margin-top: -2px; }
+.bp-list-tools .bp-button-icon { width: 30px; min-width: 0; height: 30px; padding: 0; min-height: 0; display: grid; place-items: center; }
 .bp-list-mark { margin-top: 2px; border-radius: 999px; padding: 3px; border: 1px solid currentColor; display: grid; }
 .bp-list-body { min-width: 0; flex: 1; }
 .bp-list-title { font-weight: 650; overflow-wrap: anywhere; }
@@ -405,6 +405,11 @@ button.bp-flow-shape:focus-visible { outline: 3px solid var(--bp-focus); outline
 .bp-field-error { color: var(--bp-danger); font-size: 0.88em; display: flex; gap: 6px; align-items: center; }
 .bp-input, .bp-select, .bp-textarea { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius-small); background: var(--bp-bg); color: var(--bp-text); font: inherit; letter-spacing: inherit; word-spacing: inherit; }
 .bp-textarea { min-height: 120px; resize: vertical; line-height: var(--bp-line); }
+.bp-input-row { display: flex; gap: 8px; align-items: stretch; }
+.bp-input-row .bp-input { flex: 1; min-width: 0; }
+.bp-calendar { position: relative; display: flex; flex: none; }
+/* Le champ date du système, sous le bouton : invisible, mais son calendrier s'ouvre là. */
+.bp-calendar-picker { position: absolute; inset: auto 0 0 auto; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }
 .bp-input:focus, .bp-select:focus, .bp-textarea:focus { border-color: var(--bp-focus); }
 .bp-input[aria-invalid="true"], .bp-textarea[aria-invalid="true"] { border-color: var(--bp-danger); }
 .bp-select { appearance: auto; }

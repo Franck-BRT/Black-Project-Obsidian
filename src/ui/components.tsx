@@ -171,13 +171,16 @@ export function StatView({ stat }: { stat: StatView }) {
   )
 }
 
-function ListItemView({ item }: { item: ListItem }) {
+/** Un élément de liste ; `slots` : les petits boutons de l'élément qui en a le plus — leur place est gardée, les marques s'alignent. */
+function ListItemView({ item, slots = 0 }: { item: ListItem; slots?: number }) {
   const tone: Tone = item.tone ?? 'neutral'
   return (
-    <li class={`bp-list-item${item.edit ? ' bp-list-editable' : ''}`}>
-      {item.edit && (
-        <span class="bp-list-edit">
-          <ActionButton action={{ icon: 'edit', ...item.edit }} compact />
+    <li class={`bp-list-item${item.tools?.length ? ' bp-list-editable' : ''}`}>
+      {slots > 0 && (
+        <span class="bp-list-tools" style={{ minWidth: `${slots * 30 + (slots - 1) * 4}px` }}>
+          {(item.tools ?? []).map((tool) => (
+            <ActionButton key={tool.id} action={{ icon: 'edit', ...tool }} compact />
+          ))}
         </span>
       )}
       <span class={`bp-list-mark bp-tone-${tone}`}>
@@ -509,7 +512,7 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
       const list = block.items.length ? (
         <ul class="bp-list">
           {block.items.map((item) => (
-            <ListItemView key={item.id} item={item} />
+            <ListItemView key={item.id} item={item} slots={Math.max(0, ...block.items.map((each) => each.tools?.length ?? 0))} />
           ))}
         </ul>
       ) : (

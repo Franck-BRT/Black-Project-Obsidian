@@ -20,15 +20,15 @@ import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import type { Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
-import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, systemWorkflowManages, workflowRunning } from '../workflows'
+import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, runSystemWorkflow, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
 import { ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
 import { entryPageOf, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, type EditableField } from './home'
 import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
-import { baseName, CATEGORIES, type DocOrigin, type LibraryDoc } from './model'
-import { LibraryStore, type PourItem, type PourOptions, type PourReport } from './store'
+import { baseName, CATEGORIES, versionLabel, type DocOrigin, type LibraryDoc } from './model'
+import { LibraryStore, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
 import { defaultShelfOf, folderName, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
@@ -36,7 +36,7 @@ import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, r
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export type { DocOrigin, LibraryDoc } from './model'
-export type { PourItem, PourOptions, PourReport } from './store'
+export type { PourItem, PourOptions, PourReport, ResearchField } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
 import { docDateLabel, parseDocDate } from './identity'
@@ -327,9 +327,26 @@ export async function setIdentityByAi(record: string, identity: { reference: str
 /** Le module est-il actif (les autres modules le disent à l'utilisateur, au besoin) ? */
 export const libraryActive = (): boolean => active !== null
 
+/**
+ * Les workflows système qui cherchent un champ avec l'IA (le module IA les dit) : relancer la
+ * recherche d'un champ les exécute pour le document, quand la première passe n'est pas sûre.
+ */
+const aiResearch = new Map<ResearchField, string>()
+
+/** Pour le module IA : le workflow système qui cherche ce champ avec l'IA (`null` : plus aucun). */
+export function setAiResearch(field: ResearchField, systemWorkflow: string | null): void {
+  if (systemWorkflow) aiResearch.set(field, systemWorkflow)
+  else aiResearch.delete(field)
+}
+
 async function emitPoured(doc: LibraryDoc): Promise<void> {
+  await emitWorkflowEvent(TRIGGER_POURED, pouredSubject(doc))
+}
+
+/** Le sujet d'un document versé, et ses variables (ce qu'on en sait, ce qui est à confirmer). */
+function pouredSubject(doc: LibraryDoc): Subject {
   const t = active?.t ?? ((key: string) => key)
-  await emitWorkflowEvent(TRIGGER_POURED, {
+  return {
     ...NO_SUBJECT,
     key: doc.record,
     label: doc.title,
@@ -353,7 +370,7 @@ async function emitPoured(doc: LibraryDoc): Promise<void> {
       etiquettesaconfirmer: doc.tagsToConfirm ? t('bibliotheque.read.yes') : '',
       fiche: doc.record
     }
-  })
+  }
 }
 
 const folderField: TextField = {
@@ -408,7 +425,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.20.0',
+  version: '0.21.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -638,7 +655,7 @@ export const bibliothequeModule: BlackModule = {
           { kind: 'text', key: 'edition', label: t('bibliotheque.field.edition'), value: doc.edition, placeholder: '2' },
           { kind: 'text', key: 'revision', label: t('bibliotheque.field.revision'), value: doc.revision, placeholder: 'B' },
           { kind: 'text', key: 'issuer', label: t('bibliotheque.field.issuer'), value: doc.issuer },
-          { kind: 'text', key: 'date', label: t('bibliotheque.field.date'), value: doc.date ?? '', placeholder: '2026-03-12', description: t('bibliotheque.classify.date') },
+          { kind: 'text', key: 'date', label: t('bibliotheque.field.date'), value: doc.date ?? '', placeholder: '2026-03-12', description: t('bibliotheque.classify.date'), calendar: true },
           {
             kind: 'choice',
             key: 'language',
@@ -702,6 +719,42 @@ export const bibliothequeModule: BlackModule = {
       )
     }
 
+    /**
+     * Relancer la recherche d'un champ dans le document : la première passe, sans IA ; pas
+     * sûre, le workflow système qui le cherche avec l'IA (s'il y en a un, activé), pour ce
+     * document. Ce qui en sort est dit.
+     */
+    const researchField = async (record: string, field: ResearchField): Promise<void> => {
+      const first = await store.researchField(record, field)
+      if (!first) return
+      let doc = first.doc
+      const notes: string[] = []
+      if (!first.sure) {
+        const system = aiResearch.get(field)
+        if (system) {
+          if (!(await runSystemWorkflow(system, TRIGGER_POURED, pouredSubject(doc)))) notes.push(t('bibliotheque.research.aiOff'))
+          doc = (await store.load(record)) ?? doc
+        } else notes.push(t('bibliotheque.research.aiNone'))
+      }
+      const label = t(`bibliotheque.field.${field}`)
+      const locale = active?.locale
+      const state = {
+        title: { toConfirm: doc.titleToConfirm, byAi: doc.titleByAi, value: doc.title, probable: doc.titleProbable },
+        language: { toConfirm: doc.languageToConfirm, byAi: doc.languageByAi, value: doc.language ? t(`bibliotheque.lang.${doc.language}`) : '', probable: doc.languageProbable ? t(`bibliotheque.lang.${doc.languageProbable}`) : '' },
+        identity: { toConfirm: doc.identityToConfirm, byAi: doc.identityByAi, value: [doc.reference, versionLabel(doc) ? t('bibliotheque.identity.version', { version: versionLabel(doc) }) : ''].filter(Boolean).join(', '), probable: '' },
+        date: { toConfirm: doc.dateToConfirm, byAi: doc.dateByAi, value: doc.date ? docDateLabel(doc.date, locale) : '', probable: doc.dateProbable ? docDateLabel(doc.dateProbable, locale) : '' },
+        category: { toConfirm: doc.categoryToConfirm, byAi: doc.categoryByAi, value: doc.category, probable: doc.categoryProbable },
+        issuer: { toConfirm: doc.issuerToConfirm, byAi: doc.issuerByAi, value: doc.issuer, probable: doc.issuerProbable },
+        tags: { toConfirm: doc.tagsToConfirm, byAi: doc.tagsByAi, value: doc.tags.join(', '), probable: doc.tagsProbable?.join(', ') }
+      }[field]
+      const said = state.toConfirm
+        ? state.probable
+          ? t('bibliotheque.research.probable', { field: label, probable: state.probable })
+          : t('bibliotheque.research.toConfirm', { field: label })
+        : t(state.byAi ? 'bibliotheque.research.byAi' : 'bibliotheque.research.sure', { field: label, value: state.value || '—' })
+      platform.notifier.notify([said, ...(state.toConfirm ? notes : [])].join(' '), 8000)
+    }
+
     /** Un champ de la fiche, seul : une petite fenêtre ; enregistré, il est confirmé (plus « à confirmer », plus « par l'IA »). */
     const editField = async (record: string, key: EditableField): Promise<void> => {
       const doc = await store.load(record)
@@ -715,7 +768,7 @@ export const bibliothequeModule: BlackModule = {
       }
       const values = await platform.ui.askForm({
         title: t('bibliotheque.edit.title', { field: label, title: doc.title }),
-        fields: [{ kind: 'text', key: 'value', label, value: current, ...(key === 'title' ? { required: true } : {}), ...(help[key] ? { description: help[key] } : {}) }],
+        fields: [{ kind: 'text', key: 'value', label, value: current, ...(key === 'title' ? { required: true } : {}), ...(help[key] ? { description: help[key] } : {}), ...(key === 'date' ? { calendar: true, placeholder: '2026-03-12' } : {}) }],
         submit: t('bibliotheque.edit.submit')
       })
       if (!values) return
@@ -831,6 +884,7 @@ export const bibliothequeModule: BlackModule = {
         if (doc) platform.notifier.notify(doc.category ? t('bibliotheque.category.confirmed', { category: doc.category }) : t('bibliotheque.category.confirmed.none', { title: doc.title }), 5000)
       },
       editField,
+      researchField,
       confirmDate: async (record, date) => {
         const doc = await store.setDate(record, date)
         if (doc) platform.notifier.notify(doc.date ? t('bibliotheque.date.confirmed', { date: docDateLabel(doc.date, active?.locale) }) : t('bibliotheque.date.confirmed.none', { title: doc.title }), 5000)

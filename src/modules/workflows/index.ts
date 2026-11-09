@@ -105,6 +105,21 @@ export async function emitWorkflowEvent(trigger: string, subject: Subject): Prom
   }
 }
 
+/**
+ * Relancer un workflow système pour un sujet (refaire, pour un document, ce qu'il fait à son
+ * dépôt) : présent, activé, son déclencheur `trigger`, ses conditions remplies — exécuté et
+ * écrit au journal. Rend s'il l'a été (désactivé, absent, conditions non remplies : non).
+ */
+export async function runSystemWorkflow(id: string, trigger: string, subject: Subject): Promise<boolean> {
+  if (!engine) return false
+  try {
+    return await engine.emitTo({ trigger, subject }, (workflow) => workflow.system === id)
+  } catch (error) {
+    console.error('[Black Projects] workflows', error)
+    return false
+  }
+}
+
 /** Exécute les workflows planifiés dont l'heure est venue (la minuterie le fait ; les tests aussi). */
 export async function runDueWorkflows(): Promise<void> {
   await engine?.tick()
@@ -182,7 +197,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.18.0',
+  version: '0.19.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),

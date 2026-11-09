@@ -12,7 +12,7 @@ import { pageWith, type Badge, type Card, type HomeBlock, type IconName, type Ho
 import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc } from './model'
 import { HUB_PAGE } from './entriesHome'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
-import type { GhostEntry, LibraryStore } from './store'
+import type { GhostEntry, LibraryStore, ResearchField } from './store'
 import type { LibraryGhost } from './ghosts'
 import { LANGUAGES, type LanguageCode } from './language'
 import { docDateLabel } from './identity'
@@ -54,6 +54,8 @@ export interface LibraryHomeDeps {
   chooseLanguage(record: string): Promise<void>
   /** Confirmer la catégorie : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
   confirmCategory(record: string, category: string | null): Promise<void>
+  /** Relancer la recherche d'un champ dans le document : sans IA, puis — pas sûr — avec l'IA (son workflow système). */
+  researchField(record: string, field: ResearchField): Promise<void>
   /** Modifier un champ de sa fiche, seul (une petite fenêtre) : il est alors confirmé. */
   editField(record: string, key: EditableField): Promise<void>
   /** Confirmer la date : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
@@ -446,8 +448,29 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     identity: () => deps.classify(doc.record),
     ...Object.fromEntries(EDITABLE_FIELDS.map((key) => [key, () => deps.editField(doc.record, key)]))
   }
+  // Relancer la recherche d'un champ dans le document (la référence, l'édition, la révision : ensemble).
+  const researched: Record<string, ResearchField> = {
+    title: 'title',
+    language: 'language',
+    reference: 'identity',
+    edition: 'identity',
+    revision: 'identity',
+    identity: 'identity',
+    date: 'date',
+    category: 'category',
+    issuer: 'issuer',
+    tags: 'tags'
+  }
   const withEdits = (items: ListItem[]): ListItem[] =>
-    items.map((item) => (edits[item.id] ? { ...item, edit: { id: `edit-${item.id}`, label: t('bibliotheque.field.edit', { field: item.title }), icon: 'edit' as const, run: edits[item.id]! } } : item))
+    items.map((item) => {
+      const tools: ViewAction[] = [
+        ...(edits[item.id] ? [{ id: `edit-${item.id}`, label: t('bibliotheque.field.edit', { field: item.title }), icon: 'edit' as const, run: edits[item.id]! }] : []),
+        ...(researched[item.id]
+          ? [{ id: `research-${item.id}`, label: t('bibliotheque.field.research', { field: item.title }), icon: 'refresh' as const, run: () => deps.researchField(doc.record, researched[item.id]!) }]
+          : [])
+      ]
+      return tools.length ? { ...item, tools } : item
+    })
   const confirmNames = [
     doc.languageToConfirm ? t('bibliotheque.field.language') : '',
     doc.titleToConfirm ? t('bibliotheque.field.title') : '',

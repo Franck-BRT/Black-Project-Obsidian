@@ -12,6 +12,7 @@
  * tout le reste de Black Projects fonctionne : seules ces fonctions le disent.
  */
 
+import { setAiResearch, type ResearchField } from '../bibliotheque'
 import { OPENING, registerAction, registerAiGuidance, registerSystemWorkflow } from '../workflows'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
@@ -273,11 +274,22 @@ async function checkConnection(context: ModuleContext): Promise<string> {
   return t('ia.wf.check.ok', { count: models.length })
 }
 
+/** Les champs d'un document de la bibliothèque, et le workflow système qui les cherche avec l'IA. */
+const AI_RESEARCH: Readonly<Record<ResearchField, string>> = {
+  language: 'sys.ia.langue-documents',
+  title: 'sys.ia.titre-documents',
+  identity: 'sys.ia.identite-documents',
+  date: 'sys.ia.date-documents',
+  category: 'sys.ia.categorie-documents',
+  issuer: 'sys.ia.emetteur-documents',
+  tags: 'sys.ia.etiquettes-documents'
+}
+
 export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.17.0',
+  version: '0.18.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -312,6 +324,8 @@ export const iaModule: BlackModule = {
     })
     // Les consignes de la bibliothèque (prompt, persona, skill) d'une étape de workflow qui demande l'IA.
     registerAiGuidance(libraryGuidance((key, vars) => context.i18n.t(key, vars)))
+    // « Relancer la recherche » d'un champ, sur la fiche d'un document : ses workflows système avec l'IA.
+    for (const [field, system] of Object.entries(AI_RESEARCH)) setAiResearch(field as ResearchField, system)
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)))
     // Vérifier la connexion à l'ouverture : une action, et son workflow système (actif d'origine).
     registerAction({
@@ -470,5 +484,6 @@ export const iaModule: BlackModule = {
     active = null
     lastTest = null
     registerAiGuidance(null)
+    for (const field of Object.keys(AI_RESEARCH)) setAiResearch(field as ResearchField, null)
   }
 }

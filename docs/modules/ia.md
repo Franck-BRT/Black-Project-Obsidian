@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.17.0 (Black Projects 0.91.0) |
+| Version | 0.18.0 (Black Projects 0.93.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,13 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## Relancer, depuis la fiche (v0.18.0, Black Projects 0.93.0)
+
+Le module dit à la bibliothèque quel workflow système cherche chaque champ avec l'IA
+(`setAiResearch` : langue, titre, référence et version, date, catégorie, émetteur,
+étiquettes ; retiré quand il est désactivé) : le bouton **Relancer la recherche** d'un champ,
+sur la fiche d'un document, l'exécute pour ce document quand la première passe n'est pas sûre.
 
 ## La date d'un document, avec l'IA (v0.17.0, Black Projects 0.91.0)
 

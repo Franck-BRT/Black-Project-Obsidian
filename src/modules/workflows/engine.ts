@@ -99,6 +99,22 @@ export class WorkflowEngine {
     return this.running ? Promise.resolve() : run
   }
 
+  /**
+   * Pour un évènement, les seuls workflows choisis (un workflow système, pour un document) :
+   * exécutés s'ils y répondent (activés, déclencheur, conditions), comme à l'évènement ; rend
+   * si l'un l'a été.
+   */
+  emitTo(event: WorkflowEvent, only: (workflow: Workflow) => boolean): Promise<boolean> {
+    const run = this.queue.then(async () => {
+      const today = dayOf(this.deps.now())
+      const chosen = this.deps.load().filter((each) => only(each) && usable(each) && matches(each, event, today))
+      for (const workflow of chosen) await this.execute(workflow, event, false)
+      return chosen.length > 0
+    })
+    this.queue = run.catch(() => undefined)
+    return run
+  }
+
   /** Un workflow est-il en train de s'exécuter ? */
   get busy(): boolean {
     return this.running > 0

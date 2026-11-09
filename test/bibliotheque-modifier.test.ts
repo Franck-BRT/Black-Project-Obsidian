@@ -49,7 +49,7 @@ async function start(platform: MemoryPlatform) {
   }
   const edit = async (id: string, value: string) => {
     platform.forms.push({ value })
-    await (await fields()).find((item) => item.id === id)!.edit!.run()
+    await (await fields()).find((item) => item.id === id)!.tools![0]!.run()
   }
   return { doc, fields, edit }
 }
@@ -59,21 +59,22 @@ afterEach(async () => {
 })
 
 describe('modifier un champ de la fiche', () => {
-  it('chaque champ a son bouton « Modifier : … »', async () => {
+  it('chaque champ a son bouton « Modifier : … », puis « Relancer la recherche… » (sauf le lieu)', async () => {
     const { fields } = await start(memoryPlatform())
     const items = await fields()
-    expect(items.map((item) => [item.id, item.edit?.label, item.edit?.icon])).toEqual([
-      ['title', 'Modifier : Titre', 'edit'],
-      ['place', 'Modifier : Rangé', 'edit'],
-      ['language', 'Modifier : Langue', 'edit'],
-      ['reference', 'Modifier : Référence', 'edit'],
-      ['edition', 'Modifier : Édition', 'edit'],
-      ['revision', 'Modifier : Révision', 'edit'],
-      ['date', 'Modifier : Date du document', 'edit'],
-      ['identity', 'Modifier : Référence et version', 'edit'],
-      ['category', 'Modifier : Catégorie', 'edit'],
-      ['issuer', 'Modifier : Émetteur', 'edit'],
-      ['tags', 'Modifier : Étiquettes', 'edit']
+    const R = 'Relancer la recherche dans le document : '
+    expect(items.map((item) => [item.id, ...(item.tools ?? []).map((tool) => `${tool.icon}:${tool.label}`)])).toEqual([
+      ['title', 'edit:Modifier : Titre', `refresh:${R}Titre`],
+      ['place', 'edit:Modifier : Rangé'],
+      ['language', 'edit:Modifier : Langue', `refresh:${R}Langue`],
+      ['reference', 'edit:Modifier : Référence', `refresh:${R}Référence`],
+      ['edition', 'edit:Modifier : Édition', `refresh:${R}Édition`],
+      ['revision', 'edit:Modifier : Révision', `refresh:${R}Révision`],
+      ['date', 'edit:Modifier : Date du document', `refresh:${R}Date du document`],
+      ['identity', 'edit:Modifier : Référence et version', `refresh:${R}Référence et version`],
+      ['category', 'edit:Modifier : Catégorie', `refresh:${R}Catégorie`],
+      ['issuer', 'edit:Modifier : Émetteur', `refresh:${R}Émetteur`],
+      ['tags', 'edit:Modifier : Étiquettes', `refresh:${R}Étiquettes`]
     ])
   })
 
@@ -138,7 +139,7 @@ describe('modifier un champ de la fiche', () => {
     const { doc, fields } = await start(platform)
     const before = read(platform, doc.record)
     platform.forms.push(null)
-    await (await fields()).find((item) => item.id === 'issuer')!.edit!.run()
+    await (await fields()).find((item) => item.id === 'issuer')!.tools![0]!.run()
     expect(read(platform, doc.record)).toBe(before)
   })
 })

@@ -558,6 +558,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.92.0 : **module Bibliothèque** : chaque champ de la fiche se **modifie seul**, par un
   bouton crayon à gauche de son icône (`ListItem.edit` dans le contrat des pages) ; modifié,
   il est confirmé
+- v0.93.0 : **modules Bibliothèque, IA, Workflows** : à côté du crayon, **relancer la
+  recherche** d'un champ dans le document (sans IA, puis — pas sûr — son workflow système
+  avec l'IA, pour ce document : `runSystemWorkflow`) ; la **date au calendrier**
+  (`FormField.calendar`)
 
 ### Étape 7 — Livrables
 

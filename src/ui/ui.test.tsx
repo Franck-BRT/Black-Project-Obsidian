@@ -137,11 +137,22 @@ describe('les blocs', () => {
     expect(render({ kind: 'message', tone: 'danger', text: 'Échec' })).toContain('role="alert"')
   })
 
-  it('un élément de liste qu’on peut modifier : un petit bouton, avant sa marque, qui le dit', () => {
-    const html = render({ kind: 'list', items: [{ id: 'title', title: 'Titre', detail: 'Plan', edit: { id: 'edit-title', label: 'Modifier : Titre', run: async () => {} } }, { id: 'size', title: 'Taille' }] })
-    expect(html).toMatch(/<li class="bp-list-item bp-list-editable"><span class="bp-list-edit"><button[^>]*title="Modifier : Titre"[^>]*aria-label="Modifier : Titre"/)
-    expect(html.indexOf('bp-list-edit')).toBeLessThan(html.indexOf('bp-list-mark'))
-    expect(html.match(/bp-list-edit"/g)).toHaveLength(1)
+  it('un élément de liste qu’on peut modifier, relancer : de petits boutons, avant sa marque, qui se disent', () => {
+    const run = async () => {}
+    const html = render({
+      kind: 'list',
+      items: [
+        { id: 'title', title: 'Titre', detail: 'Plan', tools: [{ id: 'edit-title', label: 'Modifier : Titre', run }, { id: 'research-title', label: 'Relancer la recherche : Titre', icon: 'refresh', run }] },
+        { id: 'size', title: 'Taille' }
+      ]
+    })
+    expect(html).toMatch(/<li class="bp-list-item bp-list-editable"><span class="bp-list-tools" style="min-width: ?64px;?"><button[^>]*title="Modifier : Titre"[^>]*aria-label="Modifier : Titre"/)
+    expect(html).toMatch(/aria-label="Relancer la recherche : Titre"/)
+    expect(html.indexOf('bp-list-tools')).toBeLessThan(html.indexOf('bp-list-mark'))
+    // L'élément sans bouton garde leur place : les marques restent alignées.
+    expect(html).toMatch(/<li class="bp-list-item"><span class="bp-list-tools" style="min-width: ?64px;?"><\/span><span class="bp-list-mark/)
+    // Une liste sans boutons : rien de plus.
+    expect(render({ kind: 'list', items: [{ id: 'a', title: 'A' }] })).not.toContain('bp-list-tools')
   })
 })
 

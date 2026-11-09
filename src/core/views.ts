@@ -124,8 +124,8 @@ export interface ListItem {
   when?: string
   tone?: Tone
   open?: ViewAction
-  /** Le modifier (un champ d'une fiche) : un petit bouton, avant sa marque, qui le dit au survol. */
-  edit?: ViewAction
+  /** De petits boutons (icône seule), avant sa marque, qui se disent au survol : modifier un champ d'une fiche, relancer sa recherche. */
+  tools?: ViewAction[]
   /** Les filtres d'une page auxquels l'élément répond (comme `Card.tags`). */
   tags?: string[]
 }

@@ -104,6 +104,8 @@ export type FormField =
       tooltip?: string
       required?: boolean
       value?: string
+      /** Une date : un bouton à côté du champ ouvre un calendrier, qui l'écrit en `AAAA-MM-JJ` (la saisie reste libre). */
+      calendar?: boolean
     }
   | {
       kind: 'choice'

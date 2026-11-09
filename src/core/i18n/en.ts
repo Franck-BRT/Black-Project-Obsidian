@@ -27,6 +27,7 @@ export const en: Record<string, string> = {
   'ui.picker.help': '{count} choice(s) — ↑ ↓ to browse, Enter to choose, Esc to cancel.',
   'ui.form.missing': 'Some required fields are empty.',
   'ui.form.required': 'Required.',
+  'ui.form.calendar': 'Pick from the calendar',
   'ui.pickMany.count': '{count} ticked out of {total}',
   'ui.list.count': '{shown} of {total}',
   'home.tile.group': 'Black Projects',

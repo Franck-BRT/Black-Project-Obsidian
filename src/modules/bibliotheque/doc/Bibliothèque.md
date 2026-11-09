@@ -28,6 +28,9 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   sa référence, son édition, sa révision, sa date, son émetteur, ses étiquettes : **Classer…**
   pour tout reprendre, ou le **crayon** à gauche d'un champ pour ne modifier que lui (il est
   alors confirmé ; le crayon de *Rangé* ouvre *Déplacer…*, celui de *Langue*, *Langue…*) ;
+  le bouton à côté du crayon **relance la recherche** de ce champ dans le document — sans
+  IA d'abord, puis avec l'IA si ce n'est pas sûr (son workflow système, pour ce document) ;
+  la date se choisit aussi dans un **calendrier** (le bouton à côté du champ) ;
 - **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ;
 - **d'où il vient** : chaque origine — l'analyse, l'import —, un clic y mène ;
 - **ses versions** : les précédentes et les suivantes, reliées.

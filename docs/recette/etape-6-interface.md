@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Relancer la recherche d'un champ ; la date au calendrier (v0.93.0)
+
+- [ ] Fiche d'un document qui dit « Titre : Plan qualité du projet », *Identification*
+      dépliée : à côté du crayon, un bouton « Relancer la recherche dans le document : Titre »
+      (pas pour *Rangé*) ; les icônes restent alignées
+- [ ] Changer le titre au crayon, puis relancer : « Titre : trouvé dans le document — Plan
+      qualité du projet. », le titre revient
+- [ ] Relancer un champ que le document ne dit pas sûrement (l'émetteur) : à confirmer, avec
+      ce qui a été lu ; l'IA réglée, son workflow système est exécuté pour ce document
+      (« identifié par l'IA », et une ligne au journal) ; ce workflow désactivé : « L'IA n'a
+      pas été demandée : son workflow système est désactivé. »
+- [ ] Le crayon de *Date du document* (et *Classer…*) : un bouton calendrier à côté du champ ;
+      la date choisie s'écrit 2026-04-03 ; **Enregistrer** : « 3 avril 2026 »
+
 ## Modifier un champ de la fiche (v0.92.0)
 
 - [ ] Fiche d'un document, *Identification* dépliée : un bouton crayon à gauche de l'icône

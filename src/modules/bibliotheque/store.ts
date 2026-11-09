@@ -130,6 +130,9 @@ function likelyPreviousOf(doc: Pick<LibraryDoc, 'record' | 'file' | 'family' | '
     .sort((a, b) => b.added.localeCompare(a.added))[0]
 }
 
+/** Les champs d'une fiche dont on relance la recherche dans le document (la référence, l'édition, la révision : ensemble). */
+export type ResearchField = 'title' | 'language' | 'identity' | 'date' | 'category' | 'issuer' | 'tags'
+
 export class LibraryStore {
   constructor(private readonly deps: StoreDeps) {}
 
@@ -324,6 +327,83 @@ export class LibraryStore {
     } catch {
       return null
     }
+  }
+
+  /**
+   * **Relancer la recherche** d'un champ dans le document (la première passe, sans IA), son
+   * texte relu : trouvé sûrement, il est donné et confirmé ; sinon il est à confirmer, avec
+   * ce qui a été lu (probable) — la valeur qu'il a reste. Rend la fiche, et si c'est sûr ;
+   * `null` sans fiche.
+   */
+  async researchField(record: string, field: ResearchField): Promise<{ doc: LibraryDoc; sure: boolean } | null> {
+    const doc = await this.load(record)
+    if (!doc) return null
+    const text = doc.family === 'image' ? null : await this.textOfRecord(record)
+    const name = baseName(doc.file)
+    const next: LibraryDoc = { ...doc }
+    let sure = false
+    if (field === 'language') {
+      delete next.language
+      delete next.languageToConfirm
+      delete next.languageProbable
+      delete next.languageByAi
+      Object.assign(next, this.languageOfText(text))
+      sure = !!next.language
+    } else if (field === 'title') {
+      const found = guessTitle(text ?? '')
+      delete next.titleToConfirm
+      delete next.titleProbable
+      delete next.titleByAi
+      sure = found.sure
+      if (found.sure) next.title = found.title
+      else Object.assign(next, { titleToConfirm: true }, found.title && found.title.toLowerCase() !== doc.title.toLowerCase() ? { titleProbable: found.title } : {})
+    } else if (field === 'identity') {
+      const found = guessIdentity(text ?? '', name)
+      delete next.identityToConfirm
+      delete next.identityByAi
+      sure = found.sure
+      if (found.reference) next.reference = found.reference
+      if (found.edition) next.edition = found.edition
+      if (found.revision) next.revision = found.revision
+      if (!found.sure) next.identityToConfirm = true
+    } else if (field === 'date') {
+      const found = guessDocDate(text ?? '', name)
+      delete next.dateToConfirm
+      delete next.dateProbable
+      delete next.dateByAi
+      sure = found.sure
+      if (found.sure) next.date = found.date
+      else Object.assign(next, { dateToConfirm: true }, found.date && found.date !== doc.date ? { dateProbable: found.date } : {})
+    } else if (field === 'category') {
+      const found = guessDocCategory(text ?? '', name)
+      delete next.categoryToConfirm
+      delete next.categoryProbable
+      delete next.categoryByAi
+      sure = found.sure
+      if (found.sure) next.category = found.category
+      else Object.assign(next, { categoryToConfirm: true }, found.probable && found.probable !== doc.category ? { categoryProbable: found.probable } : {})
+    } else if (field === 'issuer') {
+      const found = guessIssuer(text ?? '')
+      delete next.issuerToConfirm
+      delete next.issuerProbable
+      delete next.issuerByAi
+      sure = found.sure
+      if (found.sure) next.issuer = found.issuer
+      else Object.assign(next, { issuerToConfirm: true }, found.issuer && found.issuer !== doc.issuer ? { issuerProbable: found.issuer } : {})
+    } else {
+      const found = guessTags(text ?? '')
+      delete next.tagsToConfirm
+      delete next.tagsProbable
+      delete next.tagsByAi
+      sure = found.sure
+      if (found.sure) next.tags = found.tags
+      else {
+        const fresh = found.tags.filter((tag) => !doc.tags.some((had) => had.toLowerCase() === tag.toLowerCase()))
+        Object.assign(next, { tagsToConfirm: true }, fresh.length ? { tagsProbable: fresh } : {})
+      }
+    }
+    await this.save(next)
+    return { doc: next, sure }
   }
 
   /** Détecter de nouveau la langue d'un document, de son fichier ; rend la fiche, ou `null`. */

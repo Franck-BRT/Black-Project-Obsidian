@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.18.0 (Black Projects 0.86.0) |
+| Version | 0.19.0 (Black Projects 0.93.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -268,6 +268,14 @@ supplémentaire… ») ; l'action les reçoit (`ActionRun.guidance`) et les donn
 Le **logigramme** : une étape d'IA est `ai` — fond turquoise, « Étape n · IA », l'icône
 étincelle, et ce qu'on a choisi (« Persona : … · Skill : … ») ; une légende le dit dès
 qu'il y en a une. Les étapes sans IA : fond gris.
+
+## Relancer un workflow système pour un sujet (v0.19.0, Black Projects 0.93.0)
+
+`runSystemWorkflow(id, trigger, subject)` : refaire, pour un sujet (un document), ce qu'un
+workflow système fait à son évènement — présent, activé, son déclencheur et ses conditions
+remplies, il est exécuté (`WorkflowEngine.emitTo`, à la suite des autres) et écrit au
+journal ; rend s'il l'a été. La bibliothèque s'en sert pour **relancer la recherche** d'un
+champ avec l'IA, depuis la fiche d'un document.
 
 ## Le moteur (`engine.ts`)
 

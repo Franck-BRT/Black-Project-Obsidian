@@ -83,6 +83,10 @@ référence et la version d'un document, quand la première passe n'est pas sûr
 (référence lue seulement dans le nom du fichier, version absente…), l'IA les cherche au
 début de son texte ; ce qu'elle trouve doit y figurer — elle n'invente rien.
 
+Ces workflows servent aussi au bouton **Relancer la recherche** d'un champ, sur la fiche
+d'un document de la bibliothèque : quand la recherche sans IA n'est pas sûre, celui du champ
+est exécuté pour ce document (désactivé, l'IA n'est pas demandée, et c'est dit).
+
 Deux autres workflows système le suivent :
 
 | Workflow système | Ce qu'il fait | D'origine |

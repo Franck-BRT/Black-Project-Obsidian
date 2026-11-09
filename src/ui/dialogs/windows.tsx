@@ -7,7 +7,7 @@
  * qui l'ouvre et attend la réponse.
  */
 
-import { useMemo, useState } from 'preact/hooks'
+import { useMemo, useRef, useState } from 'preact/hooks'
 import type { Choice, ConfirmView, FormField, FormView, ListAnswer, ListState, ListView, MessageAnswer, MessageView, PickManyView, TextView } from '../../core/ports'
 import type { Translate } from '../host'
 import { Icon } from '../icons'
@@ -87,6 +87,45 @@ function initialValues(form: FormView): Record<string, string> {
   return values
 }
 
+/**
+ * Le calendrier d'un champ de date : un bouton qui ouvre celui du système (un champ date
+ * caché sous lui) ; la date choisie est écrite dans le champ, en `AAAA-MM-JJ`. La date déjà
+ * écrite ainsi y est montrée d'abord.
+ */
+function CalendarButton({ value, label, onPick }: { value: string; label: string; onPick: (date: string) => void }) {
+  const picker = useRef<HTMLInputElement>(null)
+  const open = () => {
+    const input = picker.current
+    if (!input) return
+    try {
+      input.showPicker()
+    } catch {
+      // Sans `showPicker` (ou refusé) : le champ date lui-même, qui ouvre son calendrier.
+      input.focus()
+      input.click()
+    }
+  }
+  return (
+    <span class="bp-calendar">
+      <button type="button" class="bp-button bp-button-icon" title={label} aria-label={label} onClick={open}>
+        <Icon name="calendar" />
+      </button>
+      <input
+        ref={picker}
+        class="bp-calendar-picker"
+        type="date"
+        tabIndex={-1}
+        aria-hidden="true"
+        value={/^\d{4}-\d{2}-\d{2}$/.test(value.trim()) ? value.trim() : ''}
+        onChange={(event) => {
+          const date = (event.target as HTMLInputElement).value
+          if (date) onPick(date)
+        }}
+      />
+    </span>
+  )
+}
+
 export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; onDone: (values: Record<string, string> | null) => void }) {
   const [values, setValues] = useState(() => initialValues(form))
   const [missing, setMissing] = useState<string[]>([])
@@ -104,6 +143,19 @@ export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; 
     setError(problem)
     if (!problem) onDone({ ...values })
   }
+  const textInput = (spec: Extract<FormField, { kind: 'text' }>, common: Record<string, unknown>, invalid: boolean, index: number) => (
+    <input
+      class="bp-input"
+      type="text"
+      {...common}
+      placeholder={spec.placeholder}
+      aria-invalid={invalid}
+      aria-required={spec.required}
+      value={values[spec.key]}
+      onInput={(event) => set(spec.key, (event.target as HTMLInputElement).value)}
+      data-autofocus={index === 0 ? true : undefined}
+    />
+  )
   const field = (spec: FormField, index: number) => {
     const id = `bp-field-${spec.key}`
     const descId = spec.description ? `${id}-desc` : undefined
@@ -160,18 +212,13 @@ export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; 
             onInput={(event) => set(spec.key, (event.target as HTMLTextAreaElement).value)}
             data-autofocus={index === 0 ? true : undefined}
           />
+        ) : spec.calendar ? (
+          <div class="bp-input-row">
+            {textInput(spec, common, invalid, index)}
+            <CalendarButton value={values[spec.key] ?? ''} label={t('ui.form.calendar')} onPick={(date) => set(spec.key, date)} />
+          </div>
         ) : (
-          <input
-            class="bp-input"
-            type="text"
-            {...common}
-            placeholder={spec.placeholder}
-            aria-invalid={invalid}
-            aria-required={spec.required}
-            value={values[spec.key]}
-            onInput={(event) => set(spec.key, (event.target as HTMLInputElement).value)}
-            data-autofocus={index === 0 ? true : undefined}
-          />
+          textInput(spec, common, invalid, index)
         )}
         {invalid && (
           <div class="bp-field-error" id={`${id}-error`}>
