@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.28.0 (Black Projects 0.100.0) |
+| Version | 0.29.0 (Black Projects 0.101.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -204,6 +204,15 @@ ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là 
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
 
+## Le texte extrait, mis en forme et en entier (v0.29.0, Black Projects 0.101.0)
+
+Sur la fiche, le texte extrait est **mis en forme** — c'est du Markdown (celui de la lecture
+de fichiers) : titres, paragraphes, listes à puces et numérotées (imbriquées), tableaux,
+citations, blocs de code, filets ; en ligne, gras, italique, code, et le texte des liens. Un
+nouveau bloc du contrat des pages, `{ kind: 'markdown', text }`, et son rendu
+(`src/ui/markdown.tsx`) : des éléments, jamais du HTML injecté. Il est montré **en entier**
+(plus de limite à 20 000 caractères).
+
 ## Le texte extrait, dans la fiche (v0.28.0, Black Projects 0.100.0)
 
 Exactement comme pour une **pièce d'analyse** : à son entrée, le texte du fichier est
@@ -221,7 +230,7 @@ Exactement comme pour une **pièce d'analyse** : à son entrée, le texte du fic
 - **Sur la fiche**, une section repliable de plus, **« Texte extrait »** (après *Versions*) :
   en en-tête l'état (« Lu — 227 caractères », « Image », « Pas encore extrait »…) ; l'encadré,
   **Extraire de nouveau** (ou **Extraire le texte**, pour un document versé avant) et **Ouvrir
-  sa note** ; puis le texte (ses 20 000 premiers caractères ; la suite dans la note).
+  sa note** ; puis le texte, en entier et **mis en forme** (v0.29.0 : voir plus bas).
 - Sans la lecture de fichiers, rien n'est transcrit.
 
 ## La liste des étiquettes (v0.27.0, Black Projects 0.99.0)

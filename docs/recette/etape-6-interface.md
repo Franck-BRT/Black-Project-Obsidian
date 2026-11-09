@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le texte extrait, mis en forme et en entier (v0.101.0)
+
+- [ ] Verser un document avec des titres, une liste (imbriquée), un tableau, du gras et de
+      l'italique : la section « Texte extrait » les montre mis en forme
+- [ ] Un long document : le texte est montré en entier sur la fiche
+- [ ] Un texte qui contient `<script>` ou `<b>` : affichés tels quels, comme du texte
+
 ## Le texte extrait (v0.100.0)
 
 - [ ] Verser un fichier texte (ou un PDF) : sa fiche (sa note) a, après « Notes »,

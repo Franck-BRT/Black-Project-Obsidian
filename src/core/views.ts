@@ -139,6 +139,8 @@ export type HomeBlock =
   | { kind: 'list'; items: ListItem[]; empty?: string; /** Un intitulé au-dessus de la liste. */ title?: string; /** Du texte avant la liste, dans le même cadre (l'introduction d'une section). */ intro?: string[] }
   | { kind: 'message'; tone: Tone; text: string; actions?: ViewAction[] }
   /** Du texte à lire, en paragraphes (une note produite) ; la recherche ne garde que ceux qui répondent. */
+  /** Du Markdown, mis en forme (titres, listes, tableaux, citations, code ; gras, italique) : le texte extrait d'un document. */
+  | { kind: 'markdown'; text: string; empty?: string; /** Un intitulé au-dessus. */ title?: string }
   | { kind: 'text'; paragraphs: string[]; empty?: string; /** Un intitulé au-dessus du texte. */ title?: string; /** Du texte tel quel, espaces et retours gardés (un bloc de code, une arborescence). */ preformatted?: boolean }
   /**
    * Un **logigramme** : ce qui se passe, de haut en bas — un début (ce qui déclenche), des

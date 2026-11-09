@@ -109,10 +109,16 @@ describe('le texte extrait, dans la fiche', () => {
     expect(texte).toMatchObject({ title: 'Texte extrait', subtitle: `Lu — ${doc.characters} caractères`, icon: 'file', collapsed: true })
     expect(texte!.blocks[0]).toMatchObject({ kind: 'message', tone: 'info', text: `Document lu : ${doc.characters} caractères de texte extrait.` })
     expect(texte!.blocks[0]!.kind === 'message' && texte!.blocks[0]!.actions!.map((action) => action.label)).toEqual(['Extraire de nouveau', 'Ouvrir sa note'])
-    expect(texte!.blocks[1]).toMatchObject({ kind: 'text', paragraphs: ['Compte rendu de réunion.', 'Les décisions sont prises.'] })
-    // Les titres : leur texte, sans les dièses de la note.
-    const titled = await pour('Plan.md', '# Plan qualité\n\nLe plan.')
-    expect((await section(titled.record))!.blocks[1]).toMatchObject({ kind: 'text', paragraphs: ['Plan qualité', 'Le plan.'] })
+    // Mis en forme : du Markdown (ses titres, ses listes, ses tableaux).
+    expect(texte!.blocks[1]).toMatchObject({ kind: 'markdown', text: 'Compte rendu de réunion.\n\nLes décisions sont prises.' })
+    // En entier, aussi long soit-il.
+    const long = Array.from({ length: 3000 }, (_, at) => `Paragraphe ${at + 1} du document.`).join('\n\n')
+    const big = await pour('Long.md', long)
+    const shown = (await section(big.record))!.blocks[1]
+    expect(shown?.kind === 'markdown' && shown.text.length).toBe(long.length)
+    expect(shown?.kind === 'markdown' && shown.text.endsWith('Paragraphe 3000 du document.')).toBe(true)
+    const titled = await pour('Plan.md', '# Plan qualité\n\n- un\n- deux')
+    expect((await section(titled.record))!.blocks[1]).toMatchObject({ kind: 'markdown', text: '### Plan qualité\n\n- un\n- deux' })
   })
 
   it('« Extraire de nouveau » : relu, réécrit entre ses marques ; les notes de l’utilisateur ne bougent pas', async () => {

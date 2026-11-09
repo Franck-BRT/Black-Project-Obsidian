@@ -12,6 +12,7 @@ import { useContext, useState } from 'preact/hooks'
 import type { Badge as BadgeView, Breadcrumb, Card as CardView, Deadline, FlowNode, HomeBlock, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
 import type { Translate } from './host'
 import { useFileDrop, type DropState } from './drop'
+import { Markdown } from './markdown'
 import { Icon } from './icons'
 import { daysUntil, deadlineTone, starGlyphs, TONE_ICON } from './logic'
 
@@ -534,6 +535,17 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
         </div>
       ) : (
         list
+      )
+    }
+    case 'markdown': {
+      const body = block.text.trim() ? <Markdown text={block.text} /> : <p class="bp-empty">{block.empty ?? t('ui.empty')}</p>
+      return block.title ? (
+        <div class="bp-block">
+          <h3 class="bp-block-title">{block.title}</h3>
+          {body}
+        </div>
+      ) : (
+        body
       )
     }
     case 'text': {

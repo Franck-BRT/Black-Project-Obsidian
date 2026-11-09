@@ -586,6 +586,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.100.0 : **modules Bibliothèque et Lecture de fichiers** : le **texte extrait** de chaque
   document, transcrit dans sa fiche comme celui d'une pièce d'analyse (entre des marques,
   avec son encadré) ; une section « Texte extrait » sur la fiche, « Extraire de nouveau »
+- v0.101.0 : le texte extrait, sur la fiche, **mis en forme** (un bloc `markdown` dans le
+  contrat des pages : titres, listes, tableaux, citations, code) et **en entier**
 
 ### Étape 7 — Livrables
 

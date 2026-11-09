@@ -37,7 +37,8 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
 - **le texte extrait** : comme pour une pièce d'analyse, le texte du fichier est transcrit
   dans la fiche (sa note), après vos notes, entre deux marques — « ## Texte extrait », un
   encadré qui dit la lecture (lu, scan, image, format non lu, illisible), puis le texte ; la
-  section « Texte extrait » de la fiche le montre, **Extraire de nouveau** le relit (vos notes
+  section « Texte extrait » de la fiche le montre en entier, mis en forme (titres, listes,
+  tableaux, citations), **Extraire de nouveau** le relit (vos notes
   ne bougent pas) ;
 - **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ; le
   crayon devant *Fichier* le **renomme** (dans son dossier, son extension gardée) — les liens

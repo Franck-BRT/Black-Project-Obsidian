@@ -239,6 +239,11 @@ workflows »), et dépendre d'une autre page (`PageSpec.parent`) : l'entrée du 
 liste reste marquée. Des cartes peuvent former un groupe titré avec ses boutons
 (`title`, `actions` : « Actions (2) » et « Ajouter une action »).
 
+Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
+forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :
+réduit et sûr (le texte devient des éléments, jamais du HTML injecté ; un lien, son texte). Le
+texte extrait d'un document s'y lit.
+
 Une liste peut porter un intitulé (`title` : « Dernières exécutions ») ; ses éléments
 peuvent porter des filtres (`ListItem.tags`, le journal) : elle se filtre et compte alors
 comme des cartes. Un élément peut porter de petits boutons (`ListItem.tools`), avant sa

@@ -516,7 +516,6 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       return tools.length ? { ...item, tools } : item
     })
   // Le texte du fichier, transcrit dans la fiche (comme une pièce d'analyse) : son état, ses actions, son texte.
-  const TEXT_SHOWN = 20000
   const transcript = doc.reading === 'lue' ? ((await deps.store.transcriptText(doc.record)) ?? '') : ''
   const characters = (doc.characters ?? 0).toLocaleString('fr-FR')
   const textActions: ViewAction[] = [
@@ -539,16 +538,10 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       ...(doc.reading === 'lue'
         ? [
             {
-              kind: 'text' as const,
-              paragraphs: [
-                ...transcript
-                  .slice(0, TEXT_SHOWN)
-                  .split(/\n{2,}/)
-                  // Ses titres (« ### … » dans la note) : leur texte, sans les dièses.
-                  .map((paragraph) => paragraph.trim().replace(/^#{1,6} /, ''))
-                  .filter(Boolean),
-                ...(transcript.length > TEXT_SHOWN ? [t('bibliotheque.text.cut', { characters })] : [])
-              ],
+              // Mis en forme : ses titres, ses listes, ses tableaux (le Markdown de la lecture de fichiers).
+              kind: 'markdown' as const,
+              // En entier.
+              text: transcript,
               empty: t('bibliotheque.text.none')
             }
           ]
