@@ -53,6 +53,6 @@ describe('readSpreadsheet', () => {
       /^## Planning\n\n\| Tâche \| Début \| Durée \(j\) \| Coût € \|/
     )
     const xlsx = buildXlsx([{ name: 'Lot', columns: [{ label: 'Tâche', width: 10 }], rows: [['Radier']] }])
-    expect(await fileText('xlsm', xlsx)).toBe('## Lot\n\n| Tâche |\n| Radier |')
+    expect(await fileText('xlsm', xlsx)).toBe('## Lot\n\n| Tâche |\n| --- |\n| Radier |')
   })
 })

@@ -595,6 +595,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.103.0 : **modules Bibliothèque et IA** : **Extraire de nouveau** relance la relecture par
   l'IA ; un bouton **Relire avec l'IA** sur la fiche ; la relecture **se dit** (notices : début,
   morceaux, résultat, IA non réglée)
+- v0.104.0 : **Lecture de fichiers, Bibliothèque** : les tableaux extraits écrits en **tableaux
+  Markdown complets** (ligne de séparation, colonnes alignées — `gridSpan` d'un `.docx` —, sans
+  colonnes vides), que la fiche et Obsidian montrent en tableaux ; les fiches d'avant aussi
 
 ### Étape 7 — Livrables
 

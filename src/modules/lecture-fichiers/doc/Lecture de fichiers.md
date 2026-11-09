@@ -11,7 +11,9 @@ extérieur et n'utilise pas le réseau.
 
 Du texte structuré : les titres avec leur niveau, les paragraphes, les listes, et **les
 tableaux gardés en lignes et en colonnes** — c'est souvent là que sont les exigences et
-les prix.
+les prix. Les tableaux s'écrivent en vrais tableaux Markdown (une ligne d'en-tête, sa ligne
+de séparation), qu'Obsidian montre en tableaux ; les colonnes vides (cases fusionnées) en
+sont retirées.
 
 ## Où il sert
 

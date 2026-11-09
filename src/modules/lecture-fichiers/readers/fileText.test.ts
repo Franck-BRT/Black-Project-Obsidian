@@ -30,7 +30,7 @@ describe('blocksText', () => {
         '# Planning',
         '## Génie civil',
         '- Sondages en zone B',
-        '| Tâche | Début | Fin |\n| Soutènement | 14/09/2026 | 09/10/2026 |\n| Deux lignes / barre | a | b |'
+        '| Tâche | Début | Fin |\n| --- | --- | --- |\n| Soutènement | 14/09/2026 | 09/10/2026 |\n| Deux lignes / barre | a | b |'
       ].join('\n\n')
     )
   })
@@ -43,7 +43,7 @@ describe('fileText', () => {
     )
     expect(
       await fileText('html', bytes('<h1>Planning</h1><table><tr><td>Radier</td><td>13/11/2026</td></tr></table>'))
-    ).toBe('# Planning\n\n| Radier | 13/11/2026 |')
+    ).toBe('# Planning\n\n| Radier | 13/11/2026 |\n| --- | --- |')
   })
 
   it('reads a test bench’s .result as text, in UTF-8 or in the Windows code page', async () => {
@@ -68,7 +68,7 @@ describe('fileText', () => {
         rows: [['Radier', 20]]
       }
     ])
-    expect(await fileText('xlsx', workbook)).toBe('## Lot 1\n\n| Tâche | Jours |\n| Radier | 20 |')
+    expect(await fileText('xlsx', workbook)).toBe('## Lot 1\n\n| Tâche | Jours |\n| --- | --- |\n| Radier | 20 |')
   })
 
   it('says why a file gives no text', async () => {

@@ -59,3 +59,15 @@ describe('le Markdown mis en forme', () => {
     expect(out).toBe('<div class="bp-diff"><p class="bp-diff-same">A</p><del class="bp-diff-removed" aria-label="Retiré : B">B</del><ins class="bp-diff-added" aria-label="Ajouté : B2">B2</ins></div>')
   })
 })
+
+describe('les tableaux sans ligne de séparation', () => {
+  it('des lignes « | … | » : un tableau, la première en en-tête, sans les colonnes vides', () => {
+    expect(parseMarkdown('Avant\n| MARCHE ou CONTRAT | | | | CLASSIFICATION | | | | CATEGORIE | | | |\n| M-12 | | | | C2 | | | | Services | | | |\n\nAprès')).toEqual([
+      { kind: 'paragraph', text: 'Avant' },
+      { kind: 'table', head: ['MARCHE ou CONTRAT', 'CLASSIFICATION', 'CATEGORIE'], rows: [['M-12', 'C2', 'Services']] },
+      { kind: 'paragraph', text: 'Après' }
+    ])
+    // Un tableau complet : ses colonnes vides de bout en bout retirées aussi.
+    expect(parseMarkdown('| a | | b |\n| --- | --- | --- |\n| 1 | | 2 |')).toEqual([{ kind: 'table', head: ['a', 'b'], rows: [['1', '2']] }])
+  })
+})

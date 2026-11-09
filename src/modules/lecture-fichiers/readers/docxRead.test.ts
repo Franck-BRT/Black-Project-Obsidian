@@ -32,7 +32,7 @@ function wordLike(): Uint8Array {
     `<w:p><w:pPr><w:outlineLvl w:val="0"/></w:pPr>${run('Chapitre à la main')}</w:p>`,
     `<w:sdt><w:sdtContent><w:p><w:pPr><w:pStyle w:val="Citation"/></w:pPr>${run('Parce que.')}</w:p></w:sdtContent></w:sdt>`,
     `<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>${run('un point')}</w:p>`,
-    `<w:tbl><w:tr><w:tc><w:p>${run('ID')}</w:p></w:tc><w:tc><w:p>${run('Texte')}</w:p></w:tc></w:tr><w:tr><w:tc><w:p>${run('SYS-14')}</w:p></w:tc><w:tc><w:p>${run('Ligne un')}</w:p><w:p>${run('ligne deux')}</w:p></w:tc></w:tr></w:tbl>`,
+    `<w:tbl><w:tr><w:tc><w:p>${run('ID')}</w:p></w:tc><w:tc><w:p>${run('Texte')}</w:p></w:tc></w:tr><w:tr><w:tc><w:p>${run('SYS-14')}</w:p></w:tc><w:tc><w:p>${run('Ligne un')}</w:p><w:p>${run('ligne deux')}</w:p></w:tc></w:tr><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/></w:tcPr><w:p>${run('Sur deux colonnes')}</w:p></w:tc></w:tr></w:tbl>`,
     `<w:p>${run('Deux')}<w:r><w:br/></w:r>${run('lignes')}</w:p>`
   ].join('')
   return zip([
@@ -65,7 +65,9 @@ describe('readDocx', () => {
       'list: un point',
       [
         ['ID', 'Texte'],
-        ['SYS-14', 'Ligne un\nligne deux']
+        ['SYS-14', 'Ligne un\nligne deux'],
+        // A cell over two columns: its text, then an empty cell — the columns stay in line.
+        ['Sur deux colonnes', '']
       ],
       'normal: Deux\nlignes'
     ])

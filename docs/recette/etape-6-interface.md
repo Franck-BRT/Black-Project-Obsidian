@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les tableaux du texte extrait (v0.104.0)
+
+- [ ] Verser un document Word ou PDF avec un tableau (des cases fusionnées) : sur la fiche,
+      *Texte extrait* le montre en tableau (en-tête, lignes), sans colonnes vides
+- [ ] **Ouvrir sa note** : en lecture, Obsidian montre aussi un tableau (la note a sa ligne
+      `| --- |`), et non des « | » dans un paragraphe
+- [ ] Une fiche transcrite avant cette version : la fiche montre déjà le tableau ;
+      **Extraire de nouveau** corrige aussi la note
+
 ## Extraire de nouveau, relire avec l'IA (v0.103.0)
 
 - [ ] L'IA réglée, verser un document : une notice « relecture du texte par l'IA en cours… »,

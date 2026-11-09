@@ -153,7 +153,11 @@ function tableOf(node: XmlNode): DocxReadTable {
       row.children
         .flatMap((part) => (localName(part) === 'sdt' ? childrenLocal(childLocal(part, 'sdtContent'), 'tc') : [part]))
         .filter((part) => localName(part) === 'tc')
-        .map(cellText)
+        // A cell spread over several columns: its text, then empty cells, so the columns stay in line.
+        .flatMap((cell) => {
+          const span = Number(childLocal(childLocal(cell, 'tcPr'), 'gridSpan')?.attrs['w:val'] ?? 1)
+          return [cellText(cell), ...Array<string>(Number.isInteger(span) && span > 1 ? Math.min(span, 64) - 1 : 0).fill('')]
+        })
     )
   }
 }

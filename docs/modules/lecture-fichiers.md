@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.10.0 (Black Projects 0.100.0) |
+| Version | 0.11.0 (Black Projects 0.104.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -16,6 +16,17 @@
 
 Le module transforme un document en texte que l'outil, puis l'IA, peuvent lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
 colonnes** — c'est là que sont souvent les exigences et les prix.
+
+## Des tableaux Markdown complets (v0.11.0, Black Projects 0.104.0)
+
+Les tableaux lus (Word, PDF, Excel, PowerPoint, HTML, anciens `.doc` et `.rtf`) s'écrivaient en
+lignes `| a | b |` **sans ligne de séparation** : ni Obsidian ni la fiche d'un document ne les
+montraient en tableaux — des barres dans un paragraphe. Ils s'écrivent maintenant en tableaux
+Markdown complets (`markdownTable` de `src/core/tables.ts`) : la première ligne en en-tête,
+`| --- |`, puis les lignes, toutes du même nombre de colonnes ; sans ligne vide ni colonne vide
+de bout en bout (cases fusionnées, bordures). Les `.doc` et `.rtf` passent par
+`completeTables`. Dans un `.docx`, une case sur plusieurs colonnes (`gridSpan`) est suivie de
+cases vides : les colonnes restent alignées.
 
 ## Dans Obsidian
 

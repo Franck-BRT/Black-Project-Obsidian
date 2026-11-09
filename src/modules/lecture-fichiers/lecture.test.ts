@@ -25,7 +25,7 @@ describe('readVaultFile', () => {
     const workbook = buildXlsx([{ name: 'BPU', columns: [{ label: 'Poste', width: 8 }], rows: [['Antenne']] }])
     const platform = memoryPlatform({ 'BPU.xlsx': workbook })
     const outcome = await readVaultFile(platform.fs, 'BPU.xlsx')
-    expect(outcome.ok && outcome.text).toBe('## BPU\n\n| Poste |\n| Antenne |')
+    expect(outcome.ok && outcome.text).toBe('## BPU\n\n| Poste |\n| --- |\n| Antenne |')
   })
 
   it('dit pourquoi un fichier ne se lit pas, sans lever d’exception', async () => {

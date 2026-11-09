@@ -11,6 +11,7 @@
  */
 
 import type { ComponentChildren, JSX } from 'preact'
+import { isPipeRow, isTableSeparator, pipeCells, tableRows } from '../core/tables'
 
 export type MarkdownNode =
   | { kind: 'heading'; level: number; text: string }
@@ -73,7 +74,17 @@ export function parseMarkdown(source: string): MarkdownNode[] {
       const rows: string[][] = []
       at += 2
       while (at < lines.length && lines[at]!.includes('|') && lines[at]!.trim()) rows.push(cells(lines[at++]!))
-      nodes.push({ kind: 'table', head, rows })
+      const [first = head, ...rest] = tableRows([head, ...rows])
+      nodes.push({ kind: 'table', head: first, rows: rest })
+      continue
+    }
+    // Des lignes « | … | » sans séparation (un texte extrait d'avant) : un tableau aussi, la
+    // première ligne en en-tête, sans les colonnes vides.
+    if (isPipeRow(line) && !isTableSeparator(line)) {
+      const run: string[][] = []
+      while (at < lines.length && isPipeRow(lines[at]!) && !isTableSeparator(lines[at]!)) run.push(pipeCells(lines[at++]!))
+      const [head, ...rows] = tableRows(run)
+      if (head?.length) nodes.push({ kind: 'table', head, rows })
       continue
     }
     // Une citation : ses lignes, sans leur « > », lues comme un texte à part.
@@ -99,7 +110,8 @@ export function parseMarkdown(source: string): MarkdownNode[] {
       !FENCE.test(lines[at]!) &&
       !/^\s*>/.test(lines[at]!) &&
       !(BULLET.test(lines[at]!) && body.length === 0) &&
-      !(lines[at]!.includes('|') && at + 1 < lines.length && TABLE_SEPARATOR.test(lines[at + 1]!))
+      !(lines[at]!.includes('|') && at + 1 < lines.length && TABLE_SEPARATOR.test(lines[at + 1]!)) &&
+      !(isPipeRow(lines[at]!) && body.length > 0)
     )
       body.push(lines[at++]!.trim())
     if (!body.length) body.push(lines[at++]!.trim())

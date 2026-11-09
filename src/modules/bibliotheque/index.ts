@@ -15,6 +15,7 @@
  * rien. Voir README.md pour la maintenance.
  */
 
+import { completeTables } from '../../core/tables'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
@@ -515,7 +516,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.31.0',
+  version: '0.32.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -564,7 +565,8 @@ export const bibliothequeModule: BlackModule = {
             ? [`> [!info] ${t('bibliotheque.text.read', { characters: transcript.text.length.toLocaleString('fr-FR') })}`]
             : [`> [!warning] ${t(`bibliotheque.text.state.${transcript.state}`)}`, `> ${t(`bibliotheque.text.state.${transcript.state}.help`)}`]),
           '',
-          transcript.state === 'lue' && transcript.text.trim() ? nestHeadings(transcript.text.trim()) : `*${t('bibliotheque.text.none')}*`
+          // Ses tableaux complets (leur ligne de séparation), pour qu'Obsidian les montre en tableaux.
+          transcript.state === 'lue' && transcript.text.trim() ? nestHeadings(completeTables(transcript.text.trim())) : `*${t('bibliotheque.text.none')}*`
         ].join('\n'),
       issuers: () => knownIssuers(),
       tags: () => knownTags(),

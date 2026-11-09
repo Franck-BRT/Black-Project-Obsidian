@@ -10,6 +10,7 @@ import { readPdf } from './pdfRead'
 import { pdfBlocks } from './pdfText'
 import { readPptx } from './pptxRead'
 import { readSpreadsheet } from './xlsRead'
+import { completeTables, markdownTable } from '../../../core/tables'
 
 /**
  * A file, as text a model can read — the one door every reader is reached through.
@@ -122,21 +123,11 @@ export class FileReadError extends Error {
   }
 }
 
-function cell(text: string): string {
-  return text
-    .replace(/\s*\n\s*/g, ' ')
-    .replace(/\|/g, '/')
-    .trim()
-}
-
-/** Rows of cells as lines a model reads as a table, one row a line. */
-function rowsText(rows: string[][]): string {
-  return rows
-    .map((row) => row.map(cell))
-    .filter((row) => row.some(Boolean))
-    .map((row) => `| ${row.join(' | ')} |`)
-    .join('\n')
-}
+/**
+ * Rows of cells as a Markdown table a model reads, and Obsidian shows as a table: the first
+ * row its header, then the separator line, then the rows — empty rows and columns left out.
+ */
+const rowsText = (rows: string[][]): string => markdownTable(rows)
 
 /** Paragraphs and tables, as Markdown: a heading keeps its level, a list item its bullet. */
 export function blocksText(blocks: DocxReadBlock[]): string {
@@ -163,8 +154,9 @@ export function blocksText(blocks: DocxReadBlock[]): string {
  * document renamed, a web page saved as a document, or plain text.
  */
 async function oldWordText(bytes: Uint8Array): Promise<string> {
-  if (isCfb(bytes)) return readDoc(bytes)
-  if (isRtf(bytes)) return readRtf(bytes)
+  // Their tables come as rows of cells, one a line: made Markdown tables.
+  if (isCfb(bytes)) return completeTables(readDoc(bytes))
+  if (isRtf(bytes)) return completeTables(readRtf(bytes))
   if (bytes[0] === 0x50 && bytes[1] === 0x4b) return blocksText(await readDocx(bytes))
   const text = plainText(bytes)
   return /^\s*</.test(text) && /<(html|body|p|div)\b/i.test(text) ? blocksText(readHtml(text)) : text

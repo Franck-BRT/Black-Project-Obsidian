@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.31.0 (Black Projects 0.103.0) |
+| Version | 0.32.0 (Black Projects 0.104.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,16 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Les tableaux du texte extrait (v0.32.0, Black Projects 0.104.0)
+
+- Le texte écrit dans la fiche (`transcriptBlock`) a ses tableaux complétés (`completeTables`
+  de `src/core/tables.ts`) : des lignes `| … |` sans ligne de séparation — un texte relu par
+  l'IA, une version remontrée — deviennent un tableau Markdown, qu'Obsidian montre.
+- La section *Texte extrait* (le bloc `markdown`, `src/ui/markdown.tsx`) montre aussi en
+  tableau des lignes `| … |` sans séparation (les fiches transcrites avant), la première en
+  en-tête, sans les colonnes vides de bout en bout. Dans la note, « Extraire de nouveau » les
+  réécrit.
 
 ## Extraire de nouveau, relire avec l'IA (v0.31.0, Black Projects 0.103.0)
 
