@@ -142,6 +142,12 @@ Quand la détection sans IA n'est pas sûre et que l'{{link:Modules/IA|IA}} est 
 document… ») : une réponse nette donne la langue, notée « identifiée par l'IA » ; sinon elle
 reste à confirmer.
 
+**La référence et la version** (édition, révision) sont aussi lues à l'entrée : au début du
+document (« Réf. : … », « Édition 2 », « Indice B », « Version 2.1 »), sinon dans le nom du
+fichier. Lues clairement dans le document : données. Sinon, elles sont **à confirmer** —
+l'IA, si elle est réglée, les cherche ; sur la fiche, **C'est juste** les confirme telles
+quelles, ou **Classer…** les corrige. Filtre *Référence et version à confirmer*.
+
 ## 8. Les fantômes
 
 Un document n'est gardé qu'une fois. Si vous déposez dans un répertoire (en le versant ou

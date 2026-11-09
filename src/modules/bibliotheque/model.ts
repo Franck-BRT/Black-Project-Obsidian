@@ -153,6 +153,10 @@ export interface LibraryDoc {
   languageProbable?: LanguageCode
   /** Sa langue a été identifiée par l'IA (la détection sans IA n'était pas sûre). */
   languageByAi?: boolean
+  /** Sa référence et sa version n'ont pas été lues sûrement (absentes, ou du seul nom du fichier) : à confirmer. */
+  identityToConfirm?: boolean
+  /** Sa référence et sa version ont été identifiées par l'IA. */
+  identityByAi?: boolean
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -187,7 +191,9 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.language ? { langue: doc.language } : {}),
     ...(doc.language && doc.languageByAi ? { langueIdentifieePar: 'ia' } : {}),
     ...(doc.languageToConfirm ? { langueAConfirmer: true } : {}),
-    ...(doc.languageToConfirm && doc.languageProbable ? { langueProbable: doc.languageProbable } : {})
+    ...(doc.languageToConfirm && doc.languageProbable ? { langueProbable: doc.languageProbable } : {}),
+    ...(doc.identityToConfirm ? { identiteAConfirmer: true } : {}),
+    ...(doc.identityByAi ? { identiteIdentifieePar: 'ia' } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -230,7 +236,9 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(isLanguage(data.langue) ? { language: data.langue } : {}),
     ...(isLanguage(data.langue) && data.langueIdentifieePar === 'ia' ? { languageByAi: true } : {}),
     ...(data.langueAConfirmer === true ? { languageToConfirm: true } : {}),
-    ...(data.langueAConfirmer === true && isLanguage(data.langueProbable) ? { languageProbable: data.langueProbable } : {})
+    ...(data.langueAConfirmer === true && isLanguage(data.langueProbable) ? { languageProbable: data.langueProbable } : {}),
+    ...(data.identiteAConfirmer === true ? { identityToConfirm: true } : {}),
+    ...(data.identiteIdentifieePar === 'ia' ? { identityByAi: true } : {})
   }
 }
 

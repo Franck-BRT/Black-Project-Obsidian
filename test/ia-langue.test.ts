@@ -107,7 +107,7 @@ describe('la langue d’un document, avec l’IA quand la détection n’est pas
     expect(journal()).toContain('« Visite » : l’IA n’a pas pu trancher ; la langue reste à confirmer.')
   })
 
-  it('une détection sûre sans IA : rien n’est demandé à l’IA', async () => {
+  it('une détection sûre sans IA : la langue n’est pas demandée à l’IA', async () => {
     const platform = memoryPlatform()
     const { pour } = await start(platform)
     const before = platform.requests.length
@@ -115,7 +115,8 @@ describe('la langue d’un document, avec l’IA quand la détection n’est pas
       'Cahier des charges.txt',
       'Le présent cahier des charges définit les exigences techniques de la station sol. Les offres sont remises dans le délai fixé par le règlement de la consultation, et le titulaire doit fournir les pièces demandées pour chaque lot. Les prix sont fermes et la durée du marché est de quatre ans avec une reconduction.'
     )
-    expect(platform.requests.length).toBe(before)
+    const asked = platform.requests.slice(before).map((request) => (JSON.parse(request.body!) as { messages: { content: string }[] }).messages[0]!.content)
+    expect(asked.some((content) => content.startsWith('Tu identifies la langue'))).toBe(false)
   })
 
   it('l’IA pas réglée, ou pas de texte lu : la langue reste à confirmer, et c’est dit au journal', async () => {

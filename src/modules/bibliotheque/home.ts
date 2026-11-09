@@ -47,6 +47,8 @@ export interface LibraryHomeDeps {
   newVersionOf(record: string): Promise<void>
   /** Choisir sa langue (ou la détecter de nouveau, ou aucune). */
   chooseLanguage(record: string): Promise<void>
+  /** Confirmer la référence et la version telles qu'elles sont : plus à confirmer. */
+  confirmIdentity(record: string): Promise<void>
   /** Confirmer une langue (la probable) : plus à confirmer. */
   setLanguage(record: string, language: LanguageCode): Promise<void>
   relate(record: string, previous: string): Promise<void>
@@ -109,7 +111,8 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
       ...(doc.likelyPrevious ? ['a-relier'] : []),
       ...(replaced ? [] : ['a-jour']),
       ...(missing ? ['introuvables'] : []),
-      ...(doc.language ? [`langue-${doc.language}`] : doc.languageToConfirm ? ['langue-a-confirmer'] : [])
+      ...(doc.language ? [`langue-${doc.language}`] : doc.languageToConfirm ? ['langue-a-confirmer'] : []),
+      ...(doc.identityToConfirm ? ['identite-a-confirmer'] : [])
     ]
   }
 }
@@ -224,6 +227,7 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
       ...families.map((family) => ({ id: `famille-${family}`, label: t(`bibliotheque.family.${family}`) })),
       ...languages.map((language) => ({ id: `langue-${language}`, label: t(`bibliotheque.lang.${language}`) })),
       ...(toConfirm ? [{ id: 'langue-a-confirmer', label: t('bibliotheque.lang.toConfirm') }] : []),
+      ...(docs.some((doc) => doc.identityToConfirm) ? [{ id: 'identite-a-confirmer', label: t('bibliotheque.identity.toConfirm') }] : []),
       ...modules.map((module) => ({ id: `de-${module}`, label: t('bibliotheque.filter.from', { module: t(`${module}.name`) }) })),
       { id: 'a-jour', label: t('bibliotheque.filter.latest') },
       ...(likely ? [{ id: 'a-relier', label: t('bibliotheque.filter.likely') }] : []),
@@ -354,12 +358,32 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             }
           ]
         : []),
+      // Sa référence et sa version n'ont pas été lues sûrement : à confirmer (telles quelles, ou « Classer… »).
+      ...(doc.identityToConfirm
+        ? [
+            {
+              kind: 'message' as const,
+              tone: 'warning' as const,
+              text:
+                doc.reference || versionLabel(doc)
+                  ? t('bibliotheque.identity.confirm.found', { found: [doc.reference, versionLabel(doc) ? t('bibliotheque.identity.version', { version: versionLabel(doc) }) : ''].filter(Boolean).join(', ') })
+                  : t('bibliotheque.identity.confirm.none'),
+              actions: [
+                ...(doc.reference || versionLabel(doc)
+                  ? [{ id: 'confirm-identity', label: t('bibliotheque.identity.confirm'), icon: 'check' as const, primary: true, run: () => deps.confirmIdentity(doc.record) }]
+                  : []),
+                { id: 'classify-identity', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.reference || versionLabel(doc) ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+              ]
+            }
+          ]
+        : []),
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
       { kind: 'stats', stats },
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
-        items: [field('title', doc.title), field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
+        items: [field('title', doc.title), field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision),
+          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
       }),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',

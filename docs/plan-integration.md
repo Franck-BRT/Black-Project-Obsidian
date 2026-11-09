@@ -529,6 +529,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   IA** : la langue d'un document, quand la détection sans IA n'est pas sûre, identifiée par
   l'IA (workflow système actif) ; **Workflows** : un workflow système qui dort (son module
   inactif) n'est plus dit cassé
+- v0.85.0 : **modules Bibliothèque et IA** : la **référence** et la **version** (édition,
+  révision) des documents, en deux passes — sans IA à l'entrée (le texte, puis le nom du
+  fichier) ; pas sûres, l'IA (workflow système actif ; elle n'invente pas de référence)
 
 ### Étape 7 — Livrables
 

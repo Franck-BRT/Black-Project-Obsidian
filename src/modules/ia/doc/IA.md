@@ -72,6 +72,11 @@ sûre »** (activé) : quand un document entre dans la {{link:Modules/Bibliothè
 et que sa langue n'a pas pu être détectée sûrement, le début de son texte est donné à l'IA ;
 une réponse nette donne la langue (« identifiée par l'IA ») ; sinon elle reste à confirmer.
 
+De même, **« Identifier avec l'IA la référence et la version d'un document, quand la
+première passe n'est pas sûre »** (activé) : quand le document ne les dit pas clairement
+(référence lue seulement dans le nom du fichier, version absente…), l'IA les cherche au
+début de son texte ; ce qu'elle trouve doit y figurer — elle n'invente rien.
+
 Deux autres workflows système le suivent :
 
 | Workflow système | Ce qu'il fait | D'origine |

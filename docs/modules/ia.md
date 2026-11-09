@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.10.0 (Black Projects 0.84.0) |
+| Version | 0.11.0 (Black Projects 0.85.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -118,6 +118,18 @@ répondre qu'un code (fr, en, de, es, it, pt, nl) ou « ? » s'il n'est pas sûr
 donnée (`setLanguageByAi` : `langue`, `langueIdentifieePar: ia` ; plus à confirmer). Sinon
 — « ? », une phrase, l'IA pas réglée, pas de texte lu, une image —, la langue reste à
 confirmer, sans erreur ; le journal le dit. Une détection sûre ne demande rien à l'IA.
+
+## La référence et la version d'un document, avec l'IA (v0.11.0, Black Projects 0.85.0)
+
+Le même principe pour la référence, l'édition et la révision : quand la première passe sans
+IA de la [bibliothèque](bibliotheque.md) n'est pas sûre, le workflow système **« Identifier
+avec l'IA la référence et la version d'un document, quand la première passe n'est pas
+sûre »** (`sys.ia.identite-documents`, actif ; *document versé*, si `{identiteaconfirmer}`
+n'est pas vide), action `ia.identite-document` : le nom du fichier et le début du texte
+(6 000 caractères) au modèle d'analyse, température 0, une réponse JSON imposée
+(`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
+une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
+certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
 
 ## Interface publique
 

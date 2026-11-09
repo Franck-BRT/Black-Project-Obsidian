@@ -17,6 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
+import { guessIdentity, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
@@ -154,13 +155,37 @@ export class LibraryStore {
    * image n'a pas de langue à confirmer.
    */
   private async languageOf(name: string, family: DocFamily, bytes: Uint8Array): Promise<Pick<LibraryDoc, 'language' | 'languageToConfirm' | 'languageProbable'>> {
-    if (family === 'image') return {}
-    let text: string | null = null
+    return family === 'image' ? {} : this.languageOfText(await this.readText(name, bytes))
+  }
+
+  /** Le texte d'un fichier (la lecture de fichiers) ; `null` s'il n'est pas lu. */
+  private async readText(name: string, bytes: Uint8Array): Promise<string | null> {
     try {
-      text = (await this.deps.textOf?.(name, bytes)) ?? null
+      return (await this.deps.textOf?.(name, bytes)) ?? null
     } catch {
-      text = null
+      return null
     }
+  }
+
+  /**
+   * Ce qu'un document dit de lui à son entrée, son texte lu une fois : sa **langue** et sa
+   * **référence**, son **édition**, sa **révision** (première passe, sans IA). Pas sûres :
+   * à confirmer — une seconde passe, avec l'IA, peut trancher. Une image : rien.
+   */
+  private async readIdentity(name: string, family: DocFamily, bytes: Uint8Array): Promise<Partial<LibraryDoc>> {
+    if (family === 'image') return {}
+    const text = await this.readText(name, bytes)
+    const identity = guessIdentity(text ?? '', name)
+    return {
+      ...this.languageOfText(text),
+      ...(identity.reference ? { reference: identity.reference } : {}),
+      ...(identity.edition ? { edition: identity.edition } : {}),
+      ...(identity.revision ? { revision: identity.revision } : {}),
+      ...(identity.sure ? {} : { identityToConfirm: true })
+    }
+  }
+
+  private languageOfText(text: string | null): Pick<LibraryDoc, 'language' | 'languageToConfirm' | 'languageProbable'> {
     const guess = detectLanguage(text ?? '')
     if (guess.language) return { language: guess.language }
     return { languageToConfirm: true, ...(guess.probable ? { languageProbable: guess.probable } : {}) }
@@ -177,6 +202,21 @@ export class LibraryStore {
     delete next.languageByAi
     if (language) next.language = language
     if (language && byAi) next.languageByAi = true
+    await this.save(next)
+    return next
+  }
+
+  /**
+   * Sa référence et sa version, données (par l'IA, ou confirmées) : plus à confirmer. Rien de
+   * donné (`null`) : celles qu'il a sont confirmées telles quelles.
+   */
+  async setIdentity(record: string, identity: DocIdentity | null, byAi = false): Promise<LibraryDoc | null> {
+    const doc = await this.load(record)
+    if (!doc) return null
+    const next: LibraryDoc = { ...doc, ...(identity ?? {}) }
+    delete next.identityToConfirm
+    delete next.identityByAi
+    if (byAi) next.identityByAi = true
     await this.save(next)
     return next
   }
@@ -387,7 +427,7 @@ export class LibraryStore {
         origins: [origin],
         ...(previous ? { likelyPrevious: previous.record } : {}),
         copied: !item.path || item.owned === true,
-        ...(await this.languageOf(item.name, family, bytes))
+        ...(await this.readIdentity(item.name, family, bytes))
       }
       await this.save(doc)
       known.push(doc)

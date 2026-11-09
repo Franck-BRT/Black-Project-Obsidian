@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.84.0)
+## Aujourd'hui (version 0.85.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -160,6 +160,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   Le fichier, D'où il vient et Versions sont repliées d'origine (leur en-tête en dit
   l'essentiel) : un clic les déplie. Quand la détection de la langue n'est pas sûre et que
   l'IA est réglée, l'IA l'identifie (« identifiée par l'IA ») ; sinon elle reste à confirmer.
+  De même pour la **référence** et la **version** (édition, révision) : lues au début du
+  document ou dans le nom du fichier ; pas sûres, l'IA les cherche ; sinon « C'est juste »
+  ou « Classer… » sur la fiche.
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une
   fois, avec sa fiche — les pièces importées dans une analyse (laissées à leur place), le
   fichier d'un import d'exigences, les échanges de types et de workflows, et ce que vous

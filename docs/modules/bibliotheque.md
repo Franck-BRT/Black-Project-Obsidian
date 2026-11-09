@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.12.0 (Black Projects 0.84.0) |
+| Version | 0.13.0 (Black Projects 0.85.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -204,6 +204,31 @@ ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là 
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
 
+## La référence et la version des documents (v0.13.0, Black Projects 0.85.0)
+
+En deux passes, comme la langue.
+
+1. **Sans IA**, à l'entrée (`identity.ts`, `guessIdentity`, d'après la version complète) :
+   le début du texte (6 000 caractères) — « Réf. : DLA-NM-0000000-01-PSP », « Document No. »,
+   « Édition 2 », « Issue 3 », « Révision 15 », « Rév. B », « Indice C », « Version 2.1 »
+   (édition 2, révision 1) —, puis, pour ce qu'il n'a pas dit, le nom du fichier
+   (« ECSS-E-ST-10C_ed2_rev15 », « indB », « v2.1 »). Une référence plausible : lettres et
+   chiffres, séparés, ni un mot ni une date. **Sûres** quand le texte dit la référence ET la
+   version, avec leur mot ; sinon les valeurs trouvées sont données mais `identiteAConfirmer:
+   true`. Une image : rien.
+2. **Avec l'IA**, quand ce n'est pas sûr : le workflow système du [module IA](ia.md)
+   « Identifier avec l'IA la référence et la version d'un document… » (actif, *document
+   versé* dont `{identiteaconfirmer}` n'est pas vide) ; certaine, ce qu'elle dit est donné
+   (`setIdentityByAi`, `identiteIdentifieePar: ia`), ce qu'elle ne dit pas gardé de la
+   première passe ; une référence qu'on ne retrouve ni dans le texte ni dans le nom du
+   fichier est écartée (`referenceFoundIn`).
+
+À l'écran : sur la fiche, à confirmer, un message — **C'est juste** (les valeurs telles
+quelles) ou **Classer…** ; Identification : *Référence et version* (« à confirmer »,
+« Identifiées par l'IA ») ; le filtre *Référence et version à confirmer*. « Classer… »
+enregistré : confirmées. Les workflows : `{reference}`, `{edition}`, `{revision}`,
+`{identiteaconfirmer}` (vide quand elles sont sûres) au *document versé*.
+
 ## La langue des documents (v0.10.0, Black Projects 0.82.0)
 
 À l'entrée (`pour`), le texte du fichier est lu — par la [lecture de
@@ -328,6 +353,11 @@ bibliothèques principales. `bibliotheques` (les autres, par sorte) et
 `bibliothequesParDefaut` sont écrits par les pages.
 
 ## Tests
+
+`test/bibliotheque-identite.test.ts` : la première passe (le texte avec leur mot : sûres ; le
+nom du fichier, en partie, rien, une date : à confirmer), à l'entrée (sûres : rien demandé à
+l'IA ; à confirmer : message, « C'est juste », « Classer… », filtre), la seconde passe (lire
+la réponse, référence inventée écartée ; le workflow système ; certaine ; pas certaine).
 
 `test/bibliotheque-langue.test.ts` : détecter (sûre ; trop courte, avec la probable ; bilingue),
 à l'entrée (badge, filtre, regroupement, fiche), à confirmer (la probable d'un clic), non lu

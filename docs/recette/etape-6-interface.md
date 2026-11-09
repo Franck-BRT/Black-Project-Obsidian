@@ -70,6 +70,22 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La référence et la version des documents (v0.85.0)
+
+- [ ] Verser un texte qui commence par « Réf. : CCTP-2026-118 » et « Édition 3 » : sa carte
+      dit « CCTP-2026-118 · 3 » ; sa fiche : rien à confirmer ; l'IA n'est pas appelée pour
+      cela
+- [ ] Verser `ECSS-E-ST-10C_ed2_rev15.dwg` : référence ECSS-E-ST-10C, version 2-15, mais
+      « Référence et version à confirmer » (lues dans le nom du fichier) ; **C'est juste** les
+      confirme ; filtre *Référence et version à confirmer*
+- [ ] IA réglée, un texte qui les dit sans leur mot (« deuxième édition du document
+      DLA-NM-… ») : l'IA les identifie (« Identifiées par l'IA ») ; pas certaine : à
+      confirmer, sans erreur ; une référence qui n'est pas dans le document n'est jamais
+      gardée
+- [ ] « Classer… » enregistré : plus rien à confirmer
+- [ ] Workflows, filtre Système : « Identifier avec l'IA la référence et la version… »
+      (actif) ; au *document versé*, `{reference}`, `{edition}`, `{revision}`
+
 ## « Retour » remonte au niveau supérieur ; la langue avec l'IA (v0.84.0)
 
 - [ ] Bibliothèque › Documents › Normes › ECSS : « Retour : Normes », puis « Retour :
