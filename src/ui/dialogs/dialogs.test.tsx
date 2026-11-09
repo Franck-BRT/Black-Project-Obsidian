@@ -55,7 +55,7 @@ describe('les fenêtres du port Ui', () => {
     expect(html).toContain('>Créer</button>')
   })
 
-  it('une liste de couleurs ou d’icônes : celle choisie montrée à côté ; une liste sans aperçu, seule', () => {
+  it('une liste de couleurs ou d’icônes : chaque choix son aperçu à gauche de son nom ; une liste sans aperçu, celle du navigateur', () => {
     const html = renderToString(
       <FormDialog
         form={{
@@ -71,9 +71,11 @@ describe('les fenêtres du port Ui', () => {
         onDone={noop}
       />
     )
-    expect(html).toMatch(/<div class="bp-input-row"><select class="bp-select" id="bp-field-color"[\s\S]*?<\/select><span class="bp-choice-preview bp-tile-violet" aria-hidden="true" data-preview="color"><\/span><\/div>/)
-    expect(html).toMatch(/<span class="bp-choice-preview" aria-hidden="true" data-preview="icon"><svg[^>]*class="bp-icon/)
-    expect(html).not.toContain('data-preview="plain"')
+    // Un bouton (pas la liste du navigateur, qui ne sait pas montrer d'icône) : l'aperçu du choix à gauche de son nom.
+    expect(html).toMatch(/<div class="bp-pick"><button type="button" class="bp-select bp-choice-button" id="bp-field-color" aria-haspopup="listbox" aria-expanded="false"[^>]*><span class="bp-choice-swatch bp-tile-violet" aria-hidden="true"><\/span><span class="bp-choice-label">Violet<\/span><\/button><\/div>/)
+    expect(html).toMatch(/id="bp-field-icon"[^>]*><span class="bp-choice-swatch" aria-hidden="true"><svg[^>]*class="bp-icon[\s\S]*?<span class="bp-choice-label">Étoile<\/span>/)
+    // Sans aperçu : la liste du navigateur.
+    expect(html).toMatch(/<select class="bp-select" id="bp-field-plain"/)
   })
 
   it('un champ de date : le calendrier à côté (la date écrite AAAA-MM-JJ y est montrée) ; sans calendrier, le champ seul', () => {

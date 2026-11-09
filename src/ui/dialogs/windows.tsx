@@ -7,7 +7,7 @@
  * qui l'ouvre et attend la réponse.
  */
 
-import { useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import type { Choice, ConfirmView, FormField, FormView, ListAnswer, ListState, ListView, MessageAnswer, MessageView, PickManyView, TextView } from '../../core/ports'
 import type { Translate } from '../host'
 import { Icon } from '../icons'
@@ -126,6 +126,113 @@ function CalendarButton({ value, label, onPick }: { value: string; label: string
   )
 }
 
+/** Ce que montre un choix : sa couleur (en tuile), son icône. */
+function Swatch({ preview }: { preview: Choice['preview'] }) {
+  return (
+    <span class={`bp-choice-swatch${preview?.color ? ` bp-tile-${preview.color}` : ''}`} aria-hidden="true">
+      {preview?.icon && <Icon name={preview.icon} />}
+    </span>
+  )
+}
+
+/**
+ * Une liste dont les choix se voient (une couleur, une icône), que la liste du navigateur ne
+ * sait pas montrer : un bouton (le choix en cours, son aperçu à gauche) qui ouvre la liste
+ * des choix, chacun son aperçu à gauche. Au clavier : flèches, Entrée, Échap.
+ */
+function PreviewChoice(props: { id: string; describedBy: string | undefined; title: string | undefined; options: readonly Choice[]; value: string; onChange(value: string): void; autofocus: boolean }) {
+  const { id, options, value } = props
+  const [open, setOpen] = useState(false)
+  const at = Math.max(0, options.findIndex((option) => option.value === value))
+  const [active, setActive] = useState(at)
+  const button = useRef<HTMLButtonElement>(null)
+  const list = useRef<HTMLUListElement>(null)
+  const chosen = options[at]
+  // Au clavier, le choix en cours reste visible dans la liste.
+  useEffect(() => {
+    if (open) list.current?.querySelector('.is-active')?.scrollIntoView?.({ block: 'nearest' })
+  }, [open, active])
+  const show = () => {
+    setActive(at)
+    setOpen(true)
+    // La liste prend le clavier dès qu'elle est là.
+    setTimeout(() => list.current?.focus(), 0)
+  }
+  const close = (back = true) => {
+    setOpen(false)
+    if (back) button.current?.focus()
+  }
+  const pick = (index: number) => {
+    const option = options[index]
+    if (option) props.onChange(option.value)
+    close()
+  }
+  const onListKey = (event: KeyboardEvent) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActive((current) => Math.min(options.length - 1, Math.max(0, current + (event.key === 'ArrowDown' ? 1 : -1))))
+    } else if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault()
+      setActive(event.key === 'Home' ? 0 : options.length - 1)
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      pick(active)
+    } else if (event.key === 'Escape') {
+      // La liste se ferme ; la fenêtre, elle, reste.
+      event.preventDefault()
+      event.stopPropagation()
+      close()
+    } else if (event.key === 'Tab') close(false)
+  }
+  return (
+    <div class="bp-pick">
+      <button
+        ref={button}
+        type="button"
+        class="bp-select bp-choice-button"
+        id={id}
+        title={props.title}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={`${id}-list`}
+        aria-describedby={props.describedBy}
+        data-autofocus={props.autofocus ? true : undefined}
+        onClick={() => (open ? close() : show())}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault()
+            show()
+          }
+        }}
+      >
+        <Swatch preview={chosen?.preview} />
+        <span class="bp-choice-label">{chosen?.label ?? ''}</span>
+      </button>
+      {open && (
+        <ul ref={list} class="bp-choice-list" role="listbox" id={`${id}-list`} tabIndex={-1} aria-activedescendant={`${id}-option-${active}`} onKeyDown={onListKey} onBlur={(event) => !list.current?.contains(event.relatedTarget as Node | null) && event.relatedTarget !== button.current && close(false)}>
+          {options.map((option, index) => (
+            <li
+              key={option.value}
+              id={`${id}-option-${index}`}
+              role="option"
+              class={`bp-choice-option${index === active ? ' is-active' : ''}`}
+              aria-selected={option.value === value}
+              title={option.description}
+              onMouseEnter={() => setActive(index)}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => pick(index)}
+            >
+              <Swatch preview={option.preview} />
+              <span>{option.label}</span>
+              {option.value === value && <Icon name="check" />}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; onDone: (values: Record<string, string> | null) => void }) {
   const [values, setValues] = useState(() => initialValues(form))
   const [missing, setMissing] = useState<string[]>([])
@@ -193,28 +300,18 @@ export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; 
           </div>
         )}
         {spec.kind === 'choice' ? (
-          (() => {
-            const select = (
-              <select class="bp-select" {...common} value={values[spec.key]} onChange={(event) => set(spec.key, (event.target as HTMLSelectElement).value)} data-autofocus={index === 0 ? true : undefined}>
-                {spec.options.map((option) => (
-                  <option key={option.value} value={option.value} title={option.description}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            )
-            // Des choix qui se voient (une couleur, une icône) : celui choisi, montré à côté.
-            if (!spec.options.some((option) => option.preview)) return select
-            const preview = spec.options.find((option) => option.value === values[spec.key])?.preview
-            return (
-              <div class="bp-input-row">
-                {select}
-                <span class={`bp-choice-preview${preview?.color ? ` bp-tile-${preview.color}` : ''}`} aria-hidden="true" data-preview={spec.key}>
-                  {preview?.icon && <Icon name={preview.icon} />}
-                </span>
-              </div>
-            )
-          })()
+          spec.options.some((option) => option.preview) ? (
+            // Des choix qui se voient (une couleur, une icône) : chacun montré à gauche de son nom.
+            <PreviewChoice id={id} describedBy={common['aria-describedby']} title={spec.tooltip} options={spec.options} value={values[spec.key] ?? ''} onChange={(value) => set(spec.key, value)} autofocus={index === 0} />
+          ) : (
+            <select class="bp-select" {...common} value={values[spec.key]} onChange={(event) => set(spec.key, (event.target as HTMLSelectElement).value)} data-autofocus={index === 0 ? true : undefined}>
+              {spec.options.map((option) => (
+                <option key={option.value} value={option.value} title={option.description}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          )
         ) : spec.kind === 'textarea' ? (
           <textarea
             class="bp-textarea"
