@@ -26,6 +26,7 @@ import { MODULES } from '../src/modules'
 import { createAnalysis, importFiles } from '../src/modules/ao'
 import { addStarterEntries } from '../src/modules/bibliotheque'
 import { requirementsAt } from '../src/modules/exigences'
+import { pdfPageTexts } from '../src/modules/lecture-fichiers'
 import { dialogWindows, mountApp, type DialogHost, type ModuleWindowHost } from '../src/ui'
 
 const params = new URLSearchParams(location.search)
@@ -79,16 +80,39 @@ platform.ui = {
     })
 }
 platform.notifier = { notify: (message) => toast(message) }
+// Les pages d'un PDF « dessinées » : sans pdf.js hors d'Obsidian, un aperçu de démonstration par page (son texte écrit sur une page blanche).
+platform.pages = {
+  pdf: async (bytes, options = {}) => {
+    const texts = await pdfPageTexts(bytes)
+    const images = texts.slice(0, options.max ?? texts.length).map((text, at) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 700
+      canvas.height = 990
+      const context = canvas.getContext('2d')!
+      context.fillStyle = '#ffffff'
+      context.fillRect(0, 0, canvas.width, canvas.height)
+      context.fillStyle = '#111111'
+      context.font = '20px sans-serif'
+      context.fillText(`Page ${at + 1} — aperçu de démonstration`, 40, 50)
+      text.split('\n').slice(0, 40).forEach((line, row) => context.fillText(line.slice(0, 70), 40, 100 + row * 24))
+      return canvas.toDataURL('image/jpeg', 0.8)
+    })
+    return { pages: texts.length, images }
+  }
+}
 // Un serveur d'IA simulé : il répond en citant le premier extrait transmis (aucune IA réelle).
 platform.http = {
   request: async (request) => {
     // « Tester la connexion » : la liste des modèles du serveur.
     if (request.url.endsWith('/models')) return { status: 200, text: JSON.stringify({ data: ['bge-m3', 'bge-reranker-v2-m3', 'mistral-small-3.2', 'qwen2.5-vl-7b-instruct', 'olmocr-7b'].map((id) => ({ id })) }) }
     if (!request.url.endsWith('/chat/completions')) return { status: 404, text: '' }
-    const sent = JSON.parse(request.body ?? '{}') as {
-      messages?: { content: string }[]
+    const raw = JSON.parse(request.body ?? '{}') as {
+      messages?: { content: string | { type: string; text?: string }[] }[]
       response_format?: { json_schema?: { schema?: { properties?: Record<string, { type?: string }> } } }
     }
+    // Un message avec des images (la vision) : son texte seulement.
+    const textOf = (content: string | { type: string; text?: string }[]) => (typeof content === 'string' ? content : content.map((part) => part.text ?? '').join('\n'))
+    const sent = { ...raw, messages: raw.messages?.map((message) => ({ content: textOf(message.content) })) }
     const asked = (sent.messages ?? []).map((message) => message.content).join('\n')
     const question = (sent.messages?.at(-1)?.content ?? '').split('\n').filter(Boolean).at(-1) ?? ''
     // Traduire une exigence : le texte repris tel quel (les chiffres ne bougent pas), et une note.
@@ -104,7 +128,14 @@ platform.http = {
       if (lines[0] && !lines[0].startsWith('#') && !lines[0].startsWith('(')) lines[0] = `# ${lines[0]}`
       return lines.join('\n')
     }
-    const content = proofreading
+    // Lire une page avec la vision : sans IA réelle, le texte extrait de la page corrigé, ou un texte de démonstration (un scan).
+    const seeing = (sent.messages?.[0]?.content ?? '').includes('Tu lis une page d’un document')
+    const pageText = (sent.messages?.at(-1)?.content ?? '').split('à vérifier d’après l’image :\n\n')[1]
+    const content = seeing
+      ? pageText
+        ? proofread(pageText)
+        : '# Procès-verbal de réception\n\nLecture de démonstration par la vision, sans IA réelle : le texte de la page aurait été lu dans l’image.\n\n| Lot | Réserves |\n| --- | --- |\n| Lot 1 | Aucune |'
+      : proofreading
       ? proofread(sent.messages?.at(-1)?.content ?? '')
       : asked.includes('You translate requirements')
       ? JSON.stringify({ text: `[EN] ${sent.messages?.at(-1)?.content.trim() ?? ''}`, notes: 'Traduction de démonstration, sans IA réelle : le texte source est repris tel quel.' })
@@ -130,7 +161,7 @@ platform.http = {
 const views = new ViewsRegistry()
 const settings: Record<string, Record<string, unknown>> = {
   ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false },
-  ia: { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small-3.2', modeleEmbeddings: 'bge-m3', modeleReranking: 'bge-reranker-v2-m3', modelesServeur: ['bge-m3', 'bge-reranker-v2-m3', 'mistral-small-3.2', 'qwen2.5-vl-7b-instruct', 'olmocr-7b'] }
+  ia: { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small-3.2', modeleEmbeddings: 'bge-m3', modeleReranking: 'bge-reranker-v2-m3', modeleVision: 'qwen2.5-vl-7b-instruct', modeleOcr: 'olmocr-7b', modelesServeur: ['bge-m3', 'bge-reranker-v2-m3', 'mistral-small-3.2', 'qwen2.5-vl-7b-instruct', 'olmocr-7b'] }
 }
 const day = (offset: number) => {
   const date = new Date()

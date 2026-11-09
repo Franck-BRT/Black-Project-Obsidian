@@ -7,8 +7,9 @@
  * étapes suivantes reprennent, et, si on le demande, une note où l'écrire.
  */
 
-import type { FileSystem } from '../../core/ports'
+import type { FileSystem, PageImages } from '../../core/ports'
 import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -231,7 +232,32 @@ export function readProofread(answer: string, original: string): string | null {
   return ratio >= 0.6 && ratio <= 1.6 ? text : null
 }
 
-export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string): void {
+/** Les pages qu'un modèle de vision regarde, au plus, dans un document (les suivantes : non). */
+export const VISION_MAX_PAGES = 30
+
+/** Les fichiers qu'un modèle de vision peut regarder : les images, et les PDF quand la plateforme sait dessiner leurs pages. */
+export function visionReadable(file: string, canDrawPdf: boolean): boolean {
+  const extension = file.slice(file.lastIndexOf('.') + 1).toLowerCase()
+  return isImage(extension) || (extension === 'pdf' && canDrawPdf)
+}
+
+/**
+ * Ce qu'un modèle de vision a lu d'une page : sans les clôtures de code ; s'il y avait un texte
+ * extrait de la page, une réponse bien plus courte (moins de la moitié) le garde — elle en a
+ * perdu. Vide : `null`.
+ */
+export function readVisionPage(answer: string, pageText: string): string | null {
+  const text = answer
+    .trim()
+    .replace(/^```(?:markdown|md)?\s*\n/i, '')
+    .replace(/\n```\s*$/, '')
+    .trim()
+  if (!text) return null
+  const weight = (value: string) => value.replace(/\s+/g, '').length
+  return pageText && weight(text) < weight(pageText) * 0.5 ? null : text
+}
+
+export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string, pages: () => PageImages | undefined = () => undefined): void {
   /**
    * **Relire le texte extrait** d'un document avec l'IA : vérifier sa cohérence, le remettre
    * en forme (Markdown), corriger ce que l'extraction a abîmé — sans en changer le sens. Par
@@ -244,13 +270,26 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     labelKey: 'ia.wf.action.proofread',
     descKey: 'ia.wf.action.proofread.desc',
     needsAi: true,
-    fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
+    fields: [
+      { key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' },
+      {
+        key: 'mode',
+        labelKey: 'ia.wf.field.proofreadMode',
+        tooltipKey: 'ia.wf.field.proofreadMode.tip',
+        kind: 'choice',
+        defaultValue: 'texte',
+        options: [
+          { value: 'texte', labelKey: 'ia.wf.proofreadMode.texte' },
+          { value: 'vision', labelKey: 'ia.wf.proofreadMode.vision' }
+        ]
+      }
+    ],
     results: ['text'],
-    async run({ fields, guidance, notifier }) {
+    async run({ fields, vars, guidance, notifier }) {
       // Une relecture prend du temps, et son workflow système ne dit rien quand il réussit :
       // elle se dit elle-même — son début, ses morceaux, ce qu'elle a donné.
-      const say = (key: string, vars?: Record<string, string | number>) => {
-        const text = t(key, vars)
+      const say = (key: string, values?: Record<string, string | number>) => {
+        const text = t(key, values)
         notifier.notify(text, 10000)
         return { lines: [text], results: { text } }
       }
@@ -260,8 +299,53 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       const base = client()
       const ai = base?.withInstructions(guidance)
       if (!ai || !base) return say('ia.wf.proofread.noAi', { title: doc.title })
-      const text = ((await libraryTranscript(record)) ?? '').trim()
-      if (!text) return say('ia.wf.proofread.noText', { title: doc.title })
+      const guided = {
+        ...(fields.prompt?.trim() ? { prompt: fields.prompt.trim() } : {}),
+        ...(fields.persona?.trim() ? { persona: fields.persona.trim() } : {}),
+        ...(fields.skill?.trim() ? { skill: fields.skill.trim() } : {})
+      }
+      // Le mode : celui choisi sur la fiche (« Relire avec l'IA »), sinon celui de l'étape ; un
+      // document sans texte (un scan, une image) ne se lit qu'avec la vision.
+      const text = doc.reading === 'lue' ? ((await libraryTranscript(record)) ?? '').trim() : ''
+      const mode = !text ? 'vision' : (vars.relecture || fields.mode || 'texte').trim() === 'vision' ? 'vision' : 'texte'
+      if (mode === 'vision') {
+        const seen = await pageImages(doc.file)
+        if (!seen) return text ? say('ia.wf.vision.cannotProofread', { title: doc.title }) : say('ia.wf.vision.cannot', { title: doc.title })
+        if (!seen.images.length) return say('ia.wf.vision.noPage', { title: doc.title })
+        const model = base.modelFor(text ? 'vision' : 'ocr')
+        const count = seen.images.length
+        notifier.notify(t(text ? 'ia.wf.vision.startProofread' : 'ia.wf.vision.start', { title: doc.title, pages: count, model }), 8000)
+        if (seen.pages > count) notifier.notify(t('ia.wf.vision.firstPages', { title: doc.title, pages: count, total: seen.pages }), 10000)
+        const out: string[] = []
+        let kept = 0
+        for (const [index, image] of seen.images.entries()) {
+          if (index > 0) notifier.notify(t('ia.wf.vision.progress', { title: doc.title, page: index + 1, pages: count }), 5000)
+          const pageText = text ? (seen.texts?.[index] ?? '') : ''
+          const ask = [t('ia.wf.vision.page', { page: index + 1, pages: seen.pages }), pageText ? `${t('ia.wf.vision.pageText')}\n\n${pageText}` : t(text ? 'ia.wf.vision.pageNoText' : 'ia.wf.vision.pageRead')].join('\n\n')
+          let answer: string
+          try {
+            answer = await ai.chat({
+              model,
+              messages: [
+                { role: 'system', content: t('ia.wf.vision.system') },
+                { role: 'user', content: [{ type: 'text', text: ask }, { type: 'image_url', image_url: { url: image } }] }
+              ],
+              temperature: 0
+            })
+          } catch (error) {
+            throw new Error(describe(error))
+          }
+          const read = readVisionPage(answer, pageText)
+          if (read === null) kept++
+          out.push(read ?? pageText)
+        }
+        const seenText = out.filter((part) => part.trim()).join('\n\n').trim()
+        if (!seenText) return say('ia.wf.vision.nothingRead', { title: doc.title })
+        if (text && seenText.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
+        const version = await addTextVersionByAi(record, seenText, { model, ...guided, vision: count, ...(kept ? { kept } : {}) })
+        if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
+        return say(text ? 'ia.wf.vision.doneProofread' : 'ia.wf.vision.done', { title: doc.title, number: version.number, pages: count })
+      }
       const chunks = proofreadChunks(text)
       notifier.notify(t('ia.wf.proofread.start', { title: doc.title, parts: chunks.length }), 8000)
       const out: string[] = []
@@ -287,17 +371,30 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       const proofread = out.join('\n\n').trim()
       if (kept === chunks.length) return say('ia.wf.proofread.allKept', { title: doc.title })
       if (proofread.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
-      const version = await addTextVersionByAi(record, proofread, {
-        model: base.connection.model,
-        ...(fields.prompt?.trim() ? { prompt: fields.prompt.trim() } : {}),
-        ...(fields.persona?.trim() ? { persona: fields.persona.trim() } : {}),
-        ...(fields.skill?.trim() ? { skill: fields.skill.trim() } : {}),
-        ...(kept ? { kept } : {})
-      })
+      const version = await addTextVersionByAi(record, proofread, { model: base.connection.model, ...guided, ...(kept ? { kept } : {}) })
       if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
       return say(kept ? 'ia.wf.proofread.doneKept' : 'ia.wf.proofread.done', { title: doc.title, number: version.number, parts: chunks.length, kept })
     }
   })
+
+  /**
+   * Les pages d'un fichier en images, pour un modèle qui voit : une image, elle-même ; un PDF,
+   * ses pages dessinées par la plateforme (et le texte que l'extraction a lu sur chacune).
+   * `null` : ce fichier ne se montre pas ainsi (un autre format, une plateforme qui ne dessine
+   * pas les PDF).
+   */
+  async function pageImages(file: string): Promise<{ pages: number; images: string[]; texts?: string[] } | null> {
+    const extension = file.slice(file.lastIndexOf('.') + 1).toLowerCase()
+    const files = fs()
+    if (!(await files.exists(file))) return null
+    if (isImage(extension)) return { pages: 1, images: [imageDataUrl(extension, new Uint8Array(await files.readBinary(file)))] }
+    const draw = pages()
+    if (extension !== 'pdf' || !draw) return null
+    const bytes = new Uint8Array(await files.readBinary(file))
+    const drawn = await draw.pdf(bytes, { max: VISION_MAX_PAGES, width: 1400 })
+    const texts = await pdfPageTexts(bytes).catch(() => undefined)
+    return { ...drawn, ...(texts ? { texts } : {}) }
+  }
 
   /**
    * La date d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas lue

@@ -4,13 +4,17 @@
 /**
  * Du **Markdown mis en forme** — celui que produit la lecture de fichiers (le texte extrait
  * d'un document) : titres, paragraphes, listes (à puces, numérotées, imbriquées), tableaux,
- * citations, blocs de code, filets ; en ligne, gras, italique, code, liens (leur texte).
+ * citations, blocs de code, filets, **formules mathématiques** (LaTeX : `$…$` dans une phrase,
+ * `$$…$$` seules) ; en ligne, gras, italique, code, liens (leur texte). Les formules sont
+ * dessinées par la plateforme qui sait le faire (le MathJax d'Obsidian, `setMathRenderer`) ;
+ * sans elle, leur LaTeX est montré tel quel, à part.
  *
  * Volontairement réduit, et sûr : le texte devient des éléments, jamais du HTML injecté (ce
  * qui ressemble à une balise reste du texte) ; un lien n'emmène nulle part, son texte suffit.
  */
 
 import type { ComponentChildren, JSX } from 'preact'
+import { useEffect, useRef } from 'preact/hooks'
 import { isPipeRow, isTableSeparator, pipeCells, tableRows } from '../core/tables'
 
 export type MarkdownNode =
@@ -21,6 +25,7 @@ export type MarkdownNode =
   | { kind: 'code'; text: string }
   | { kind: 'table'; head: string[]; rows: string[][] }
   | { kind: 'rule' }
+  | { kind: 'math'; text: string }
 
 const HEADING = /^(#{1,6})\s+(.*?)\s*#*\s*$/
 const BULLET = /^(\s*)(?:[-*+•▪◦‣]|\d{1,3}[.)])\s+(.*)$/
@@ -28,6 +33,40 @@ const ORDERED = /^\s*\d{1,3}[.)]\s+/
 const FENCE = /^\s*(```|~~~)/
 const RULE = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/
 const TABLE_SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/
+
+/** Une formule seule sur ses lignes : `$$ … $$` ou `\\[ … \\]`. */
+const MATH_OPEN = /^\s*(\$\$|\\\[)/
+const MATH_CLOSE: Record<string, RegExp> = { $$: /\$\$\s*$/, '\\[': /\\\]\s*$/ }
+
+/** Qui dessine une formule (LaTeX) ; `display` : seule sur sa ligne. Sans lui, son texte. */
+type MathRenderer = (tex: string, display: boolean) => HTMLElement | null
+let mathRenderer: MathRenderer | null = null
+
+/** Pour la plateforme : dessiner les formules (Obsidian : `renderMath`) ; `null` : plus personne. */
+export function setMathRenderer(renderer: MathRenderer | null): void {
+  mathRenderer = renderer
+}
+
+/** Une formule : dessinée par la plateforme, sinon son LaTeX, à part. */
+function MathView({ tex, display }: { tex: string; display: boolean }) {
+  const host = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const element = host.current
+    if (!element || !mathRenderer) return
+    const drawn = mathRenderer(tex, display)
+    if (!drawn) return
+    element.replaceChildren(drawn)
+  }, [tex, display])
+  return display ? (
+    <div ref={host as never} class="bp-math bp-math-display">
+      <code>{tex}</code>
+    </div>
+  ) : (
+    <span ref={host as never} class="bp-math">
+      <code>{tex}</code>
+    </span>
+  )
+}
 
 /** Le retrait d'une ligne (une tabulation : deux espaces). */
 const indent = (line: string): number => /^(\s*)/.exec(line)![1]!.replace(/\t/g, '  ').length
@@ -69,6 +108,23 @@ export function parseMarkdown(source: string): MarkdownNode[] {
     if (RULE.test(line)) {
       nodes.push({ kind: 'rule' })
       at++
+      continue
+    }
+    // Une formule seule : jusqu'à sa fermeture (sur la même ligne, ou plus bas).
+    const math = MATH_OPEN.exec(line)
+    if (math) {
+      const close = MATH_CLOSE[math[1]!]!
+      const rest = line.slice(line.indexOf(math[1]!) + math[1]!.length)
+      const body: string[] = []
+      if (close.test(rest)) body.push(rest.replace(close, ''))
+      else {
+        body.push(rest)
+        at++
+        while (at < lines.length && !close.test(lines[at]!)) body.push(lines[at++]!)
+        if (at < lines.length) body.push(lines[at]!.replace(close, ''))
+      }
+      at++
+      nodes.push({ kind: 'math', text: body.join('\n').trim() })
       continue
     }
     // Un tableau : une ligne d'en-tête, sa ligne de séparation, ses lignes.
@@ -134,6 +190,7 @@ export function parseMarkdown(source: string): MarkdownNode[] {
       !HEADING.test(lines[at]!) &&
       !FENCE.test(lines[at]!) &&
       !/^\s*>/.test(lines[at]!) &&
+      !MATH_OPEN.test(lines[at]!) &&
       // Une puce coupe un paragraphe (comme dans Obsidian) ; un numéro, s'il commence à 1.
       !(BULLET.test(lines[at]!) && (body.length === 0 || !ORDERED.test(lines[at]!) || /^\s*1[.)]\s/.test(lines[at]!))) &&
       !(lines[at]!.includes('|') && at + 1 < lines.length && TABLE_SEPARATOR.test(lines[at + 1]!)) &&
@@ -170,15 +227,18 @@ function parseList(block: readonly string[]): MarkdownNode {
 /** Le texte d'une ligne mis en forme : **gras**, *italique*, `code`, [lien](…) (son texte). */
 export function inline(text: string): ComponentChildren[] {
   const out: ComponentChildren[] = []
-  const pattern = /(\*\*|__)(.+?)\1|(\*|_)(?!\s)(.+?)(?<!\s)\3|`([^`]+)`|!?\[([^\]]+)\]\([^)]*\)/g
+  // Une formule d'abord : ses « _ » et « * » ne sont pas de l'italique. `$` collé à son texte des
+  // deux côtés, pas suivi d'un chiffre (« 10 $ et 20 $ » reste du texte) ; ou `\( … \)`.
+  const pattern = /\$(?![\s$])([^$\n]+?)(?<![\s\\])\$(?!\d)|\\\((.+?)\\\)|(\*\*|__)(.+?)\3|(\*|_)(?!\s)(.+?)(?<!\s)\5|`([^`]+)`|!?\[([^\]]+)\]\([^)]*\)/g
   let last = 0
   let key = 0
   for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
     if (match.index > last) out.push(text.slice(last, match.index))
-    if (match[2] !== undefined) out.push(<strong key={key++}>{inline(match[2])}</strong>)
-    else if (match[4] !== undefined) out.push(<em key={key++}>{inline(match[4])}</em>)
-    else if (match[5] !== undefined) out.push(<code key={key++}>{match[5]}</code>)
-    else if (match[6] !== undefined) out.push(match[6])
+    if (match[1] !== undefined || match[2] !== undefined) out.push(<MathView key={key++} tex={(match[1] ?? match[2])!.trim()} display={false} />)
+    else if (match[4] !== undefined) out.push(<strong key={key++}>{inline(match[4])}</strong>)
+    else if (match[6] !== undefined) out.push(<em key={key++}>{inline(match[6])}</em>)
+    else if (match[7] !== undefined) out.push(<code key={key++}>{match[7]}</code>)
+    else if (match[8] !== undefined) out.push(match[8])
     last = match.index + match[0].length
   }
   if (last < text.length) out.push(text.slice(last))
@@ -240,6 +300,8 @@ function render(nodes: readonly MarkdownNode[]): JSX.Element[] {
         )
       case 'rule':
         return <hr key={index} />
+      case 'math':
+        return <MathView key={index} tex={node.text} display={true} />
     }
   })
 }

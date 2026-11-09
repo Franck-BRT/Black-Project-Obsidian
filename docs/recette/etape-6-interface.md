@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Relire avec la vision ; lire un scan ; les formules (v0.106.0)
+
+- [ ] Page IA : un modèle de vision choisi. Sur la fiche d'un PDF avec du texte, **Relire avec
+      l'IA** : la question « Modèle simple / Modèle avec la vision » ; avec la vision, les
+      notices disent les pages ; une version « lu par l'IA avec la vision » (n page(s) regardée(s))
+- [ ] Un document Word, PowerPoint… : pas de question, le modèle simple
+- [ ] Un scan (PDF sans texte, ou une image) : *Texte extrait* ne propose que **Lire avec la
+      vision (IA)** ; après, « Texte 1 — lu par l'IA avec la vision », la fiche montre le texte
+- [ ] L'étape du workflow « Relire avec l'IA le texte extrait… » : champ **Modèle** (simple par
+      défaut) ; réglé « avec la vision », la relecture au dépôt regarde les pages
+- [ ] Un document Word avec des équations : sur la fiche et dans la note, les formules dessinées
+      (fractions, puissances, sommes) ; « 10 $ et 20 $ » reste du texte
+
 ## Les listes du texte extrait ; supprimer une version du texte (v0.105.0)
 
 - [ ] Verser un document Word avec une liste numérotée et une liste à puces à deux niveaux :

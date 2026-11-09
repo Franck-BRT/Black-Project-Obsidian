@@ -8,10 +8,10 @@
  * dans Obsidian. L'application de bureau fournira les mêmes interfaces à sa façon.
  */
 
-import { normalizePath, Notice, parseYaml, requestUrl, TFile, TFolder, type App, type Plugin } from 'obsidian'
+import { loadPdfJs, normalizePath, Notice, parseYaml, requestUrl, TFile, TFolder, type App, type Plugin } from 'obsidian'
 import type { I18n } from '../core/i18n'
 import type { Appearance } from '../core/appearance'
-import type { FileDisplay, FileSystem, FolderListing, Http, Notifier, Platform, SecretStore, SettingsStorage } from '../core/ports'
+import type { FileDisplay, FileSystem, FolderListing, Http, Notifier, PageImages, Platform, SecretStore, SettingsStorage } from '../core/ports'
 import { obsidianUi } from './ui'
 
 function parentOf(path: string): string {
@@ -115,6 +115,50 @@ export const obsidianHttp: Http = {
       throw: false
     })
     return { status: response.status, text: response.text }
+  }
+}
+
+/** Ce qu'on utilise de pdf.js, celui qu'Obsidian embarque pour montrer les PDF. */
+interface PdfJs {
+  getDocument(source: { data: Uint8Array }): { promise: Promise<PdfJsDocument> }
+}
+interface PdfJsDocument {
+  numPages: number
+  getPage(number: number): Promise<{
+    getViewport(options: { scale: number }): { width: number; height: number }
+    render(options: { canvasContext: CanvasRenderingContext2D; viewport: unknown }): { promise: Promise<void> }
+  }>
+  destroy(): Promise<void>
+}
+
+/** Les pages d'un PDF dessinées par le pdf.js d'Obsidian, sur un canevas, en JPEG. */
+export const obsidianPages: PageImages = {
+  async pdf(bytes, options = {}) {
+    const pdfjs = (await loadPdfJs()) as PdfJs
+    // Une copie : pdf.js garde le tampon qu'on lui donne.
+    const document = await pdfjs.getDocument({ data: bytes.slice() }).promise
+    try {
+      const count = Math.min(document.numPages, options.max ?? document.numPages)
+      const images: string[] = []
+      for (let number = 1; number <= count; number++) {
+        const page = await document.getPage(number)
+        const natural = page.getViewport({ scale: 1 })
+        const viewport = page.getViewport({ scale: (options.width ?? 1400) / natural.width })
+        const canvas = activeDocument.createElement('canvas')
+        canvas.width = Math.round(viewport.width)
+        canvas.height = Math.round(viewport.height)
+        const context = canvas.getContext('2d')
+        if (!context) break
+        // Un fond blanc : une page sans fond deviendrait noire en JPEG.
+        context.fillStyle = '#ffffff'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+        await page.render({ canvasContext: context, viewport }).promise
+        images.push(canvas.toDataURL('image/jpeg', 0.85))
+      }
+      return { pages: document.numPages, images }
+    } finally {
+      await document.destroy()
+    }
   }
 }
 
@@ -239,6 +283,7 @@ export function obsidianPlatform(plugin: Plugin, version: string, i18n: I18n, ap
     ui: obsidianUi(app, i18n, appearance),
     display: obsidianDisplay(plugin),
     yaml: { parse: (text) => parseYaml(text) as unknown },
+    pages: obsidianPages,
     ...obsidianSecrets(app)
   }
 }

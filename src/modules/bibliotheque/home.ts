@@ -59,9 +59,9 @@ export interface LibraryHomeDeps {
   deleteTextVersion(record: string, number: number): Promise<void>
   /** (Re)transcrire son fichier dans sa fiche. */
   transcribe(record: string): Promise<void>
-  /** La relecture du texte extrait par l'IA est-elle là (le module IA actif) ? */
-  canProofread(): boolean
-  /** Relire son texte extrait avec l'IA (son workflow système) : une nouvelle version du texte. */
+  /** Ce que l'IA peut faire de son texte : le relire (il y en a un), le regarder avec la vision (une image, un PDF). */
+  proofreading(doc: LibraryDoc): { text: boolean; vision: boolean }
+  /** Relire son texte extrait avec l'IA (le modèle choisi), ou, sans texte, le lire avec la vision : une nouvelle version du texte. */
   proofread(record: string): Promise<void>
   /** Ses étiquettes hors de la liste : les y ajouter. */
   addTags(record: string): Promise<void>
@@ -352,8 +352,12 @@ export async function comparePage(deps: LibraryHomeDeps, param: string | undefin
 }
 
 /** Une version du texte, en mots : « Texte 2 — relu par l'IA ». */
-export const textVersionLabel = (t: (key: string, vars?: Record<string, string | number>) => string, version: TextVersion): string =>
-  t(version.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number: version.number })
+export const textVersionLabel = (t: (key: string, vars?: Record<string, string | number>) => string, version: Pick<TextVersion, 'origin' | 'number' | 'vision'>): string =>
+  t(version.origin !== 'ia' ? 'bibliotheque.textVersion.extraction' : version.vision ? 'bibliotheque.textVersion.vision' : 'bibliotheque.textVersion.ia', { number: version.number })
+
+/** Ce que dit l'encadré du texte extrait d'une version : « Texte 2, relu par l'IA : 1 234 caractères. » */
+export const textVersionInfo = (t: (key: string, vars?: Record<string, string | number>) => string, version: Pick<TextVersion, 'origin' | 'number' | 'vision'>, characters: string): string =>
+  t(version.origin !== 'ia' ? 'bibliotheque.text.versionExtraction' : version.vision ? 'bibliotheque.text.versionVision' : 'bibliotheque.text.versionIa', { number: version.number, characters, pages: version.vision ?? 0 })
 
 /** La fiche d'un document. */
 export async function docPage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
@@ -573,10 +577,15 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   // La version du texte que montre la fiche (relu par l'IA…), dite en en-tête.
   const shownText = doc.textVersion ? (await deps.store.textVersions(doc.record)).find((each) => each.number === doc.textVersion) : undefined
   const characters = (doc.characters ?? 0).toLocaleString('fr-FR')
+  const proofreading = deps.proofreading(doc)
   const textActions: ViewAction[] = [
     { id: 'extract', label: t(doc.reading ? 'bibliotheque.text.extract.again' : 'bibliotheque.text.extract'), tooltip: t('bibliotheque.text.extract.tip'), icon: 'refresh', ...(doc.reading ? {} : { primary: true }), run: () => deps.transcribe(doc.record) },
-    ...(doc.reading === 'lue' && deps.canProofread()
-      ? [{ id: 'proofread', label: t('bibliotheque.text.proofread'), tooltip: t('bibliotheque.text.proofread.tip'), icon: 'spark' as const, run: () => deps.proofread(doc.record) }]
+    ...(doc.reading === 'lue' && proofreading.text
+      ? [{ id: 'proofread', label: t('bibliotheque.text.proofread'), tooltip: t(proofreading.vision ? 'bibliotheque.text.proofread.tipChoice' : 'bibliotheque.text.proofread.tip'), icon: 'spark' as const, run: () => deps.proofread(doc.record) }]
+      : []),
+    // Sans texte (un scan, une image) : la lecture avec la vision seule.
+    ...(doc.reading !== 'lue' && proofreading.vision
+      ? [{ id: 'vision', label: t('bibliotheque.text.readVision'), tooltip: t('bibliotheque.text.readVision.tip'), icon: 'spark' as const, primary: true, run: () => deps.proofread(doc.record) }]
       : []),
     { id: 'text-note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) }
   ]
@@ -601,7 +610,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
               kind: 'message',
               tone: 'info',
               text: shownText
-                ? `${t(shownText.origin === 'ia' ? 'bibliotheque.text.versionIa' : 'bibliotheque.text.versionExtraction', { number: shownText.number, characters })} ${t('bibliotheque.text.versionsKept')}`
+                ? [textVersionInfo(t, shownText, characters), shownText.number > 1 ? t('bibliotheque.text.versionsKept') : ''].filter(Boolean).join(' ')
                 : t('bibliotheque.text.read', { characters }),
               actions: textActions
             }
@@ -663,6 +672,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       version.skill ? t('bibliotheque.textVersion.skill', { name: version.skill }) : '',
       version.prompt ? t('bibliotheque.textVersion.prompt', { name: version.prompt }) : '',
       version.kept ? t('bibliotheque.textVersion.kept', { count: version.kept }) : '',
+      version.vision ? t('bibliotheque.textVersion.pages', { count: version.vision }) : '',
       version.number === shownVersion ? t('bibliotheque.textVersion.shown') : ''
     ]
       .filter(Boolean)

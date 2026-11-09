@@ -95,3 +95,23 @@ describe('une liste juste après une phrase', () => {
   })
 })
 
+describe('les formules mathématiques', () => {
+  it('$$…$$ seule (sur une ligne ou plusieurs), \\[…\\] : un bloc ; elle coupe un paragraphe', () => {
+    expect(parseMarkdown('Soit :\n$$\n\\frac{a}{b}\n$$\nDonc $$x = 1$$ ici\n\\[ E = mc^2 \\]')).toEqual([
+      { kind: 'paragraph', text: 'Soit :' },
+      { kind: 'math', text: '\\frac{a}{b}' },
+      { kind: 'paragraph', text: 'Donc $$x = 1$$ ici' },
+      { kind: 'math', text: 'E = mc^2' }
+    ])
+  })
+
+  it('en ligne : $…$ et \\(…\\), sans italique dedans ; « 10 $ et 20 $ » reste du texte ; sans moteur, le LaTeX à part', () => {
+    const html = renderToString(<Markdown text={'L’aire $\\pi r_1^2$, soit \\(a_b\\) ; prix : 10 $ et 20 $.\n\n$$\\sum_{i=1}^{n} x_i$$'} />)
+    expect(html).toContain('<span class="bp-math"><code>\\pi r_1^2</code></span>')
+    expect(html).toContain('<span class="bp-math"><code>a_b</code></span>')
+    expect(html).toContain('prix : 10 $ et 20 $.')
+    expect(html).toContain('<div class="bp-math bp-math-display"><code>\\sum_{i=1}^{n} x_i</code></div>')
+    expect(html).not.toContain('<em>')
+  })
+})
+

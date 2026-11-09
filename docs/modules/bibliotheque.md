@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.33.0 (Black Projects 0.105.0) |
+| Version | 0.34.0 (Black Projects 0.106.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,21 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Relire avec un modèle simple ou avec la vision ; lire un scan (v0.34.0, Black Projects 0.106.0)
+
+- **Relire avec l'IA** (section *Texte extrait*) : quand le fichier se montre en images (un PDF
+  que la plateforme dessine, une image), une question — **Modèle simple** (le texte extrait)
+  ou **Modèle avec la vision** (les pages en images, comparées au texte extrait). Sinon, le
+  modèle simple, sans question.
+- **Un document sans texte** (un scan, une image) : la fiche ne propose que **Lire avec la
+  vision (IA)** — le workflow système de relecture exécuté avec `{relecture}` = `vision` (et
+  `{texteextrait}` dit « à lire avec la vision », pour sa condition). Son texte devient le
+  « Texte 1 — lu par l'IA avec la vision » (aucun texte d'avant n'est gardé : il n'y en avait
+  pas) ; la fiche est alors lue.
+- Une version lue avec la vision le dit : « Texte n — lu par l'IA avec la vision », et dans sa
+  liste « n page(s) regardée(s) » (`vision` dans sa note).
+- Le texte extrait affiché rend les **formules mathématiques** (voir le bloc `markdown`).
 
 ## Supprimer une version du texte ; les listes du texte extrait (v0.33.0, Black Projects 0.105.0)
 

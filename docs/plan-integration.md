@@ -601,6 +601,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.105.0 : **Lecture de fichiers, Bibliothèque** : des **listes** fidèles (éléments l'un sous
   l'autre, niveaux, numéros — Word, HTML, PowerPoint ; puces tapées en vraies puces) ;
   **supprimer une version du texte** et sa note (à la corbeille du coffre : `FileSystem.trash`)
+- v0.106.0 : **IA, Bibliothèque, Lecture de fichiers** : relire avec un **modèle simple ou avec la
+  vision** (pages en images : `Platform.pages`, le pdf.js d'Obsidian ; messages avec images) ;
+  un scan se **lit avec la vision** ; les **formules mathématiques** (LaTeX, dessinées par le
+  MathJax d'Obsidian ; équations Word converties)
 
 ### Étape 7 — Livrables
 

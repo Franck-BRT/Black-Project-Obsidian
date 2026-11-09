@@ -43,7 +43,10 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   cette version** — sa note va à la corbeille ; l'extraite
   est gardée, l'édition et la révision ne changent pas) ; des notices disent la relecture en
   cours, puis ce qu'elle a donné. **Extraire de nouveau** relit le fichier (vos notes ne bougent
-  pas), puis l'IA relit ce texte ; **Relire avec l'IA** relance la relecture seule ;
+  pas), puis l'IA relit ce texte ; **Relire avec l'IA** relance la relecture seule — avec un
+  **modèle simple** (le texte) ou un **modèle avec la vision** (les pages d'un PDF ou une image
+  regardées, comparées au texte) ; un document **sans texte** (un scan) propose **Lire avec la
+  vision (IA)** ; les formules mathématiques s'affichent mises en forme ;
 - **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ; le
   crayon devant *Fichier* le **renomme** (dans son dossier, son extension gardée) — les liens
   vers lui, dans tout le coffre (la note de sa pièce, celle de l'analyse…), sont mis à jour ;

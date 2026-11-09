@@ -26,7 +26,7 @@ import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, ru
 import page from './doc/Bibliothèque.md'
 import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
 import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
-import { docPageOf, LIBRARY_PAGE, registerLibraryHome, type EditableField } from './home'
+import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, versionLabel, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
@@ -335,7 +335,7 @@ export async function libraryTranscript(record: string): Promise<string | null> 
 }
 
 /** Pour l'IA : son texte relu — une nouvelle version du texte du document (celle d'avant est gardée). */
-export async function addTextVersionByAi(record: string, text: string, about: { model?: string; prompt?: string; persona?: string; skill?: string; kept?: number }): Promise<TextVersion | null> {
+export async function addTextVersionByAi(record: string, text: string, about: { model?: string; prompt?: string; persona?: string; skill?: string; kept?: number; vision?: number }): Promise<TextVersion | null> {
   return active ? active.store.addTextVersion(record, text, { origin: 'ia', ...about }) : null
 }
 
@@ -415,6 +415,14 @@ let aiProofread: string | null = null
 /** Pour le module IA : le workflow système qui relit le texte extrait (`null` : plus aucun). */
 export function setAiProofread(systemWorkflow: string | null): void {
   aiProofread = systemWorkflow
+}
+
+/** Ce qu'un modèle de vision peut regarder (le module IA le dit : une image, un PDF que la plateforme dessine). */
+let aiVision: ((file: string) => boolean) | null = null
+
+/** Pour le module IA : les fichiers qu'un modèle de vision peut regarder (`null` : aucun). */
+export function setAiVision(canSee: ((file: string) => boolean) | null): void {
+  aiVision = canSee
 }
 
 async function emitPoured(doc: LibraryDoc): Promise<void> {
@@ -517,7 +525,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.33.0',
+  version: '0.34.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -559,8 +567,9 @@ export const bibliothequeModule: BlackModule = {
           '',
           ...(version
             ? [
-                `> [!info] ${t(version.origin === 'ia' ? 'bibliotheque.text.versionIa' : 'bibliotheque.text.versionExtraction', { number: version.number, characters: transcript.text.length.toLocaleString('fr-FR') })}`,
-                `> ${t('bibliotheque.text.versionsKept')}`
+                `> [!info] ${textVersionInfo(t, version, transcript.text.length.toLocaleString('fr-FR'))}`,
+                // Des versions d'avant, s'il y en a (un scan lu par la vision n'en a pas).
+                ...(version.number > 1 ? [`> ${t('bibliotheque.text.versionsKept')}`] : [])
               ]
             : transcript.state === 'lue'
             ? [`> [!info] ${t('bibliotheque.text.read', { characters: transcript.text.length.toLocaleString('fr-FR') })}`]
@@ -1249,13 +1258,13 @@ export const bibliothequeModule: BlackModule = {
       addTags: (record) => addTagsFor(record),
       showTextVersion: async (record, number) => {
         const version = await store.showTextVersion(record, number)
-        if (version) platform.notifier.notify(t('bibliotheque.textVersion.shownDone', { version: t(version.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number }) }), 5000)
+        if (version) platform.notifier.notify(t('bibliotheque.textVersion.shownDone', { version: textVersionLabel(t, version) }), 5000)
       },
       deleteTextVersion: async (record, number) => {
         const versions = await store.textVersions(record)
         const version = versions.find((each) => each.number === number)
         if (!version) return
-        const label = t(version.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number })
+        const label = textVersionLabel(t, version)
         const shownNow = ((await store.load(record))?.textVersion ?? versions.at(-1)?.number) === number
         const sure = await platform.ui.confirm({
           title: t('bibliotheque.textVersion.delete.title', { version: label }),
@@ -1269,7 +1278,7 @@ export const bibliothequeModule: BlackModule = {
         if (!done) return
         platform.notifier.notify(
           done.shown && shownNow
-            ? t('bibliotheque.textVersion.deleted.shown', { version: label, shown: t(done.shown.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number: done.shown.number }) })
+            ? t('bibliotheque.textVersion.deleted.shown', { version: label, shown: textVersionLabel(t, done.shown) })
             : t('bibliotheque.textVersion.deleted', { version: label }),
           6000
         )
@@ -1287,11 +1296,28 @@ export const bibliothequeModule: BlackModule = {
         // Le texte extrait de nouveau : relu par l'IA, comme au dépôt (son workflow système, s'il est actif).
         if (done.transcript.state === 'lue' && aiProofread) await runSystemWorkflow(aiProofread, TRIGGER_POURED, pouredSubject(done.doc, await knownIssuers()))
       },
-      canProofread: () => aiProofread !== null,
+      proofreading: (doc) => ({ text: aiProofread !== null && doc.reading === 'lue', vision: aiProofread !== null && !!aiVision?.(doc.file) }),
       proofread: async (record) => {
         const doc = await store.load(record)
         if (!doc) return
-        if (!aiProofread || !(await runSystemWorkflow(aiProofread, TRIGGER_POURED, pouredSubject(doc, await knownIssuers())))) {
+        const withText = doc.reading === 'lue'
+        // Un texte : le modèle à choisir, simple ou avec la vision (si le fichier se montre en images) ; sans texte, la vision seule.
+        let mode: 'texte' | 'vision' = withText ? 'texte' : 'vision'
+        if (withText && aiVision?.(doc.file)) {
+          const chosen = await platform.ui.pickOption(
+            [
+              { value: 'texte', label: t('bibliotheque.text.proofread.texte'), description: t('bibliotheque.text.proofread.texte.desc') },
+              { value: 'vision', label: t('bibliotheque.text.proofread.vision'), description: t('bibliotheque.text.proofread.vision.desc') }
+            ],
+            t('bibliotheque.text.proofread.choose')
+          )
+          if (!chosen) return
+          mode = chosen === 'vision' ? 'vision' : 'texte'
+        }
+        const subject = pouredSubject(doc, await knownIssuers())
+        // Le mode choisi passe par une variable du sujet ; un scan, sans texte, est lu quand même (la condition du workflow le demande).
+        const asked: Subject = { ...subject, vars: { ...subject.vars, relecture: mode, ...(withText ? {} : { texteextrait: t('bibliotheque.text.proofread.byVision') }) } }
+        if (!aiProofread || !(await runSystemWorkflow(aiProofread, TRIGGER_POURED, asked))) {
           platform.notifier.notify(t('bibliotheque.text.proofread.off'), 10000)
         }
       },

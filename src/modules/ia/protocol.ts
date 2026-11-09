@@ -33,9 +33,13 @@ export class LlmError extends Error {
   }
 }
 
+/** A part of a message: text, or an image (a data URL) for a model that sees. */
+export type ChatPart = { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
-  content: string
+  /** Text; or, for a model that sees, text and images. */
+  content: string | ChatPart[]
 }
 
 export interface ChatRequest {

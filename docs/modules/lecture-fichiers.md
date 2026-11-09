@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.12.0 (Black Projects 0.105.0) |
+| Version | 0.13.0 (Black Projects 0.106.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -16,6 +16,16 @@
 
 Le module transforme un document en texte que l'outil, puis l'IA, peuvent lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
 colonnes** — c'est là que sont souvent les exigences et les prix.
+
+## Les équations de Word en LaTeX ; le texte page par page (v0.13.0, Black Projects 0.106.0)
+
+- Les **équations** d'un `.docx` (Office Math, `m:oMath`) s'écrivent en LaTeX
+  (`readers/omml.ts`) : `$…$` dans une phrase, `$$…$$` seules (`m:oMathPara`). Fractions,
+  puissances et indices, racines, sommes et intégrales, parenthèses, fonctions (`\sin`…),
+  accents, limites, matrices, symboles (grec, ≤, ×, ∞…) ; le reste, pour son contenu. Avant,
+  leurs caractères étaient mis bout à bout (« r2 »).
+- `pdfPageTexts(octets)` : le texte d'un PDF **page par page** — ce qu'on dit à un modèle de
+  vision que l'extraction a lu sur la page qu'il regarde.
 
 ## Des listes Markdown fidèles (v0.12.0, Black Projects 0.105.0)
 

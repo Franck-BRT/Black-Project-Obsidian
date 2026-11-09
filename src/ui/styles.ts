@@ -341,6 +341,8 @@ button.bp-flow-shape:focus-visible { outline: 3px solid var(--bp-focus); outline
 .bp-md pre code { background: none; padding: 0; }
 .bp-md hr { border: 0; border-top: 1px solid var(--bp-border); margin: 1em 0; }
 .bp-md-table { overflow-x: auto; margin: 0.6em 0; }
+.bp-math-display { display: block; margin: 0.7em 0; text-align: center; overflow-x: auto; overflow-y: hidden; }
+.bp-math-display > code { display: inline-block; text-align: left; white-space: pre-wrap; }
 .bp-md table { border-collapse: collapse; font-size: 0.92em; }
 .bp-md th, .bp-md td { border: 1px solid var(--bp-border); padding: 4px 8px; text-align: left; vertical-align: top; }
 .bp-md th { background: var(--bp-surface-2); font-weight: 600; }

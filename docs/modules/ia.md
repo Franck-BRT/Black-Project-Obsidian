@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.22.0 (Black Projects 0.103.0) |
+| Version | 0.23.0 (Black Projects 0.106.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,27 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## La relecture avec la vision ; les formules en LaTeX (v0.23.0, Black Projects 0.106.0)
+
+- `ia.relire-texte` a un champ **Modèle** (`mode`) : `texte` (le modèle d'analyse relit le texte
+  extrait, par morceaux — comme avant) ou `vision` (le modèle de vision regarde chaque page en
+  image). Le choix fait sur la fiche passe par la variable `{relecture}` du sujet, qui prime
+  sur le champ ; un document **sans texte** (un scan, une image) se lit toujours avec la vision.
+- **Avec la vision** : les pages d'un PDF dessinées par la plateforme (`Platform.pages`, au plus
+  `VISION_MAX_PAGES` = 30 ; au-delà, une notice le dit), une image telle quelle ; chaque page
+  envoyée avec **le texte que l'extraction y a lu** (`pdfPageTexts` de la lecture de fichiers),
+  à vérifier et corriger d'après l'image — ou, sans texte, à lire. Le modèle : celui de vision
+  pour une relecture, celui d'OCR (sinon de vision) pour un document sans texte. Garde-fou
+  (`readVisionPage`) : une page bien plus courte que son texte extrait (moins de la moitié)
+  garde celui-ci. Le résultat : une version du texte « lu par l'IA avec la vision »
+  (`vision` : le nombre de pages regardées).
+- Les messages au serveur peuvent porter des images (`ChatPart` : `image_url`, en data URL),
+  au format compatible OpenAI.
+- Les consignes de relecture (texte et vision) demandent les **formules en LaTeX** (`$…$`,
+  `$$…$$`).
+- `setAiVision` dit à la bibliothèque quels fichiers un modèle de vision peut regarder
+  (`visionReadable` : les images, et les PDF quand la plateforme les dessine).
 
 ## La relecture se dit ; extraire de nouveau la relance (v0.22.0, Black Projects 0.103.0)
 

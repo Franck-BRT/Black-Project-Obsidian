@@ -6,7 +6,7 @@ import { isCfb } from '../formats/cfb'
 import { readDoc } from './docRead'
 import { isRtf, readRtf } from './rtfRead'
 import { readHtml } from './htmlRead'
-import { readPdf } from './pdfRead'
+import { readPdf, type PdfContent } from './pdfRead'
 import { pdfBlocks } from './pdfText'
 import { readPptx } from './pptxRead'
 import { readSpreadsheet } from './xlsRead'
@@ -103,6 +103,19 @@ export function imageDataUrl(extension: string, bytes: Uint8Array): string {
     binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000))
   }
   return `data:${IMAGES[extension.toLowerCase()] ?? 'application/octet-stream'};base64,${btoa(binary)}`
+}
+
+/**
+ * A PDF's text page by page (one string a page, empty for a page without text): what a
+ * model that sees a page is told the extraction read there, to check it against the image.
+ */
+export async function pdfPageTexts(bytes: Uint8Array): Promise<string[]> {
+  const content = await readPdf(bytes)
+  return Array.from({ length: content.pages }, (_, at) => {
+    const page = at + 1
+    const own: PdfContent = { pages: content.pages, problems: content.problems, items: content.items.filter((item) => item.page === page), rects: content.rects.filter((rect) => rect.page === page) }
+    return blocksText(pdfBlocks(own)).trim()
+  })
 }
 
 /** A PDF's text and its number of pages, which together say whether the text is the document. */

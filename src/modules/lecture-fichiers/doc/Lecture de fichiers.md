@@ -14,7 +14,8 @@ tableaux gardés en lignes et en colonnes** — c'est souvent là que sont les e
 les prix. Les tableaux s'écrivent en vrais tableaux Markdown (une ligne d'en-tête, sa ligne
 de séparation), qu'Obsidian montre en tableaux ; les colonnes vides (cases fusionnées) en
 sont retirées. Les listes gardent leurs niveaux et leurs numéros, leurs éléments l'un sous
-l'autre ; les puces tapées (« • ») deviennent de vraies puces.
+l'autre ; les puces tapées (« • ») deviennent de vraies puces. Les équations d'un document Word
+s'écrivent en LaTeX ($…$), qu'Obsidian dessine.
 
 ## Où il sert
 

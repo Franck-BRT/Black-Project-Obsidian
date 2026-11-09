@@ -141,6 +141,15 @@ describe('readDocx', () => {
     ])
   })
 
+  it('reads an equation as LaTeX: in a sentence $…$, on its own $$…$$', async () => {
+    const M = 'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'
+    const body =
+      `<w:p><w:r><w:t xml:space="preserve">Le rayon </w:t></w:r><m:oMath ${M}><m:sSup><m:e><m:r><m:t>r</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup></m:oMath><w:r><w:t xml:space="preserve"> compte.</w:t></w:r></w:p>` +
+      `<w:p><m:oMathPara ${M}><m:oMath><m:f><m:num><m:r><m:t>a</m:t></m:r></m:num><m:den><m:r><m:t>b</m:t></m:r></m:den></m:f></m:oMath></m:oMathPara></w:p>`
+    const blocks = await readDocx(await zip([{ name: 'word/document.xml', data: utf8(`<w:document ${W}><w:body>${body}</w:body></w:document>`) }]))
+    expect(blocks.map((block) => (block.kind === 'p' ? block.text : ''))).toEqual(['Le rayon ${r}^{2}$ compte.', '$$\\frac{a}{b}$$'])
+  })
+
   it('says a file is not a Word document', async () => {
     await expect(readDocx(zip([{ name: 'a.txt', data: utf8('x') }]))).rejects.toThrow(/document\.xml/)
   })

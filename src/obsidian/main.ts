@@ -6,7 +6,7 @@
  * vérifie les droits, active ce qui peut l'être et branche les commandes.
  */
 
-import { debounce, Plugin, TFile } from 'obsidian'
+import { debounce, finishRenderMath, Plugin, renderMath, TFile } from 'obsidian'
 import { createI18n, type I18n } from '../core/i18n'
 import { describeEntitlements, EVALUATION, type Entitlements } from '../core/licence'
 import type { BlackModule, ModuleCommand, ModuleContext, ModuleDescriptor } from '../core/modules/module'
@@ -24,7 +24,7 @@ import { BlackHomeView, HOME_VIEW } from './homeView'
 import { ViewsRegistry } from '../core/views'
 import { modulePageOf, SETTINGS_PAGE, settingsPage } from '../core/settingsPage'
 import type { Appearance } from '../core/appearance'
-import { dialogWindows, openModuleWindow, type AppHost, type ModuleWindowHost, type Page } from '../ui'
+import { dialogWindows, openModuleWindow, setMathRenderer, type AppHost, type ModuleWindowHost, type Page } from '../ui'
 import { obsidianDialogHost } from './ui'
 
 export default class BlackProjectsPlugin extends Plugin {
@@ -46,6 +46,12 @@ export default class BlackProjectsPlugin extends Plugin {
     this.config = readSettings(await this.storage.load())
     this.i18n = createI18n(this.config.language)
     this.platform = obsidianPlatform(this, this.manifest.version, this.i18n, () => this.config.appearance)
+    // Les formules mathématiques des pages (le texte extrait d'un document) : par le MathJax d'Obsidian.
+    setMathRenderer((tex, display) => {
+      const element = renderMath(tex, display)
+      void finishRenderMath()
+      return element
+    })
     // La visionneuse des fichiers qu'Obsidian n'ouvre pas, quand l'utilisateur choisit de les afficher.
     this.registerView(FILE_VIEW, (leaf) => new BlackFileView(leaf, this))
     // L'accueil : l'interface de Black Projects (src/ui), montée dans un onglet.
@@ -268,6 +274,7 @@ export default class BlackProjectsPlugin extends Plugin {
   }
 
   override async onunload(): Promise<void> {
+    setMathRenderer(null)
     await this.registry.deactivateAll((module, error) => console.error(`[Black Projects] module ${module.id}`, error))
   }
 

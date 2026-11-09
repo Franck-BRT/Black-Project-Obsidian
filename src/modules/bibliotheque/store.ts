@@ -727,14 +727,15 @@ export class LibraryStore {
    * le texte que montrait la fiche est d'abord gardé (« Texte 1 », extrait du fichier). La fiche
    * montre la nouvelle ; l'édition et la révision du document ne changent pas.
    */
-  async addTextVersion(record: string, text: string, about: Pick<TextVersion, 'origin'> & Partial<Pick<TextVersion, 'model' | 'prompt' | 'persona' | 'skill' | 'kept'>>): Promise<TextVersion | null> {
+  async addTextVersion(record: string, text: string, about: Pick<TextVersion, 'origin'> & Partial<Pick<TextVersion, 'model' | 'prompt' | 'persona' | 'skill' | 'kept' | 'vision'>>): Promise<TextVersion | null> {
     const { fs } = this.deps
     const doc = await this.load(record)
     if (!doc) return null
     const folder = this.textVersionsFolder(doc)
     let versions = await this.textVersions(record)
     await fs.ensureFolder(folder)
-    if (!versions.length) {
+    // Le texte que montrait la fiche, gardé d'abord — s'il y en avait un (un scan lu par la vision n'en avait pas).
+    if (!versions.length && doc.reading === 'lue') {
       const first = await this.transcriptText(record)
       if (first !== null) {
         const kept: Omit<TextVersion, 'path'> = { number: 1, origin: 'extraction', date: doc.added || this.deps.today(), text: first }

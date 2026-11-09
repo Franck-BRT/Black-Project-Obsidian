@@ -151,6 +151,8 @@ export interface TextVersion {
   skill?: string
   /** Relu par l'IA : les morceaux gardés tels quels (une réponse qui résumait, ajoutait). */
   kept?: number
+  /** Lu par l'IA avec la vision : les pages du document regardées en images (leur nombre). */
+  vision?: number
   text: string
 }
 
@@ -170,7 +172,8 @@ export function textVersionContent(version: Omit<TextVersion, 'path'>, record: s
     ...(version.prompt ? { prompt: version.prompt } : {}),
     ...(version.persona ? { persona: version.persona } : {}),
     ...(version.skill ? { skill: version.skill } : {}),
-    ...(version.kept ? { gardes: version.kept } : {})
+    ...(version.kept ? { gardes: version.kept } : {}),
+    ...(version.vision ? { vision: version.vision } : {})
   }
   return `---\n${toYaml(data)}\n---\n\n${version.text.trim()}\n`
 }
@@ -189,6 +192,7 @@ export function readTextVersion(path: string, data: Record<string, unknown> | nu
     ...(plain(data.persona) ? { persona: plain(data.persona) } : {}),
     ...(plain(data.skill) ? { skill: plain(data.skill) } : {}),
     ...(Number(data.gardes) ? { kept: Number(data.gardes) } : {}),
+    ...(Number(data.vision) ? { vision: Number(data.vision) } : {}),
     text: body.trim()
   }
 }

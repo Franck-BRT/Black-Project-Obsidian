@@ -3,6 +3,7 @@
 
 import { unzip } from '../formats/unzip'
 import { childLocal, childrenLocal, localName, parseXml, type XmlNode } from '../formats/xmlParse'
+import { equationText } from './omml'
 
 /**
  * Reading a Word document, by hand.
@@ -55,7 +56,9 @@ function textInto(node: XmlNode, out: string[]): void {
   for (const part of node.children) {
     const name = localName(part)
     if (SKIPPED.has(name)) continue
-    if (name === 't') out.push(part.text)
+    // An equation (Office Math): in LaTeX, `$…$` — `$$…$$` when set on its own.
+    if (name === 'oMath' || name === 'oMathPara') out.push(equationText(part))
+    else if (name === 't') out.push(part.text)
     else if (name === 'tab') out.push('\t')
     else if (name === 'br' || name === 'cr') out.push('\n')
     else if (name === 'noBreakHyphen') out.push('-')

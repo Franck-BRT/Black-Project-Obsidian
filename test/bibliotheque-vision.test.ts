@@ -1,0 +1,207 @@
+// Copyright © 2026 Black Room Technologies. Tous droits réservés.
+// Logiciel propriétaire — voir le fichier LICENSE.
+
+/**
+ * La **relecture avec la vision** : sur la fiche, « Relire avec l'IA » fait choisir le modèle —
+ * simple (le texte extrait) ou avec la vision (les pages en images, comparées au texte de
+ * chacune), quand le fichier se montre en images (un PDF que la plateforme dessine, une
+ * image). Un document **sans texte** (un scan, une image) ne propose que « Lire avec la
+ * vision (IA) » : le modèle lit ses pages ; son texte devient une version du texte.
+ */
+
+import { afterEach, describe, expect, it } from 'vitest'
+import { createI18n } from '../src/core/i18n'
+import type { ModuleContext } from '../src/core/modules/module'
+import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
+import { ViewsRegistry, type HomeBlock, type ListItem, type ViewAction } from '../src/core/views'
+import { bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
+import { iaModule, readVisionPage } from '../src/modules/ia'
+import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
+import { workflowsModule, type Workflow } from '../src/modules/workflows'
+
+const ALL = [lectureFichiersModule, bibliothequeModule, workflowsModule, iaModule]
+const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small', modeleVision: 'pixtral-12b' }
+const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
+const chat = (content: unknown) => ({ status: 200, text: JSON.stringify({ choices: [{ message: { content: typeof content === 'string' ? content : JSON.stringify(content) }, finish_reason: 'stop' }] }) })
+
+/** Un PDF de texte, une page par liste de lignes (Helvetica, sans compression). */
+function textPdf(pages: string[][]): Uint8Array {
+  const objects: string[] = ['<< /Type /Catalog /Pages 2 0 R >>', `<< /Type /Pages /Kids [${pages.map((_, at) => `${4 + at * 2} 0 R`).join(' ')}] /Count ${pages.length} >>`, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>']
+  for (const [at, lines] of pages.entries()) {
+    const body = lines.map((line, row) => `BT /F1 12 Tf 72 ${720 - row * 18} Td (${line}) Tj ET`).join('\n')
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + at * 2} 0 R >>`)
+    objects.push(`<< /Length ${body.length} >>\nstream\n${body}\nendstream`)
+  }
+  let out = '%PDF-1.4\n'
+  const offsets: number[] = []
+  for (const [at, object] of objects.entries()) {
+    offsets.push(out.length)
+    out += `${at + 1} 0 obj\n${object}\nendobj\n`
+  }
+  const xref = out.length
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
+  return new TextEncoder().encode(out)
+}
+
+interface Seen {
+  model: string
+  text: string
+  image: string
+}
+
+async function start(platform: MemoryPlatform, see: (seen: Seen) => string, drawsPdf = true) {
+  const i18n = createI18n('fr')
+  for (const module of ALL) i18n.register('fr', module.texts.fr)
+  if (drawsPdf) platform.pages = { pdf: async (_bytes, options) => ({ pages: 2, images: ['data:image/jpeg;base64,UDE=', 'data:image/jpeg;base64,UDI='].slice(0, options?.max ?? 2) }) }
+  const settings: Record<string, Record<string, unknown>> = { ia: SERVEUR }
+  const views = new ViewsRegistry()
+  for (const module of ALL) {
+    const context: ModuleContext = {
+      moduleId: module.id,
+      platform,
+      i18n,
+      settings: { get: () => settings[module.id] ?? {}, save: async (values) => void (settings[module.id] = values), onChange: () => () => {} },
+      commands: { register: () => {} },
+      views,
+      showPage: () => {}
+    }
+    await module.activate(context)
+  }
+  const original = platform.http.request.bind(platform.http)
+  const seen: Seen[] = []
+  const proofread: string[] = []
+  platform.http.request = async (request) => {
+    if (!request.url.endsWith('/chat/completions')) return original(request)
+    const body = JSON.parse(request.body!) as { model: string; messages: { content: string | { type: string; text?: string; image_url?: { url: string } }[] }[] }
+    const system = body.messages[0]!.content as string
+    if (system.startsWith('Tu identifies la langue')) return chat('fr')
+    if (system.includes('Tu lis une page d’un document')) {
+      const parts = body.messages.at(-1)!.content as { type: string; text?: string; image_url?: { url: string } }[]
+      const one: Seen = { model: body.model, text: parts.find((part) => part.type === 'text')!.text!, image: parts.find((part) => part.type === 'image_url')!.image_url!.url }
+      seen.push(one)
+      return chat(see(one))
+    }
+    if (system.includes('Tu relis un texte extrait automatiquement')) {
+      proofread.push(body.model)
+      return chat(body.messages.at(-1)!.content as string)
+    }
+    return chat({ title: '', issuer: '', category: '', date: '', tags: [], reference: '', edition: '', revision: '', certain: false })
+  }
+  const page = (id: string) => views.pages().find((each) => each.id === id)!
+  const pour = async (name: string, bytes: Uint8Array) => (await pourIntoLibrary([{ name, bytes }], { module: 'bibliotheque', label: '' }))!.added[0]!
+  const workflows = () => (settings.workflows?.workflows ?? []) as Workflow[]
+  const textActions = async (record: string): Promise<ViewAction[]> => {
+    const fiche = await page('bibliotheque.document').load(encodeURIComponent(record))
+    const texte = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.texte')
+    const message = texte!.blocks[0]!
+    return message.kind === 'message' ? (message.actions ?? []) : []
+  }
+  const textVersions = async (record: string): Promise<ListItem[]> => {
+    const fiche = await page('bibliotheque.document').load(encodeURIComponent(record))
+    const versions = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.versions')
+    const list = versions?.blocks.find((block) => block.kind === 'list' && block.title === 'Versions du texte')
+    return list?.kind === 'list' ? list.items : []
+  }
+  return { pour, seen, proofread, workflows, textActions, textVersions }
+}
+
+afterEach(async () => {
+  for (const module of [...ALL].reverse()) await module.deactivate?.()
+})
+
+describe('ce que lit la vision', () => {
+  it('une réponse sans ses clôtures ; bien plus courte que le texte extrait de la page : écartée', () => {
+    expect(readVisionPage('```markdown\n# Plan\n```', '')).toBe('# Plan')
+    expect(readVisionPage('', 'texte')).toBeNull()
+    expect(readVisionPage('Plan.', 'Le présent plan décrit l’organisation qualité du projet.')).toBeNull()
+    expect(readVisionPage('Le présent plan décrit l’organisation.', 'Le pré- sent plan dé crit l’orga nisation.')).toBe('Le présent plan décrit l’organisation.')
+  })
+})
+
+describe('un document sans texte : la vision seule', () => {
+  it('une image : « Lire avec la vision (IA) » seulement ; ses pages lues par le modèle d’OCR (ou de vision) : texte 1, la fiche le montre', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, textActions, textVersions } = await start(platform, () => '# Procès-verbal\n\nRéception prononcée le 12 mars 2026.')
+    const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
+    // Au dépôt, rien n'est lu par la vision : on le propose.
+    expect(seen).toHaveLength(0)
+    const actions = await textActions(doc.record)
+    expect(actions.map((action) => action.label)).toEqual(['Extraire de nouveau', 'Lire avec la vision (IA)', 'Ouvrir sa note'])
+    await actions.find((action) => action.id === 'vision')!.run()
+    // Pas de question : la vision seule.
+    expect(platform.offered).toHaveLength(0)
+    expect(seen).toHaveLength(1)
+    expect(seen[0]!.model).toBe('pixtral-12b')
+    expect(seen[0]!.image).toMatch(/^data:image\/png;base64,/)
+    expect(seen[0]!.text).toContain('Le document n’a pas de texte lisible')
+    expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 1 — lu par l’IA avec la vision'])
+    const note = read(platform, doc.record)
+    expect(note).toMatch(/\nlecture: lue\n/)
+    expect(note).toContain('> [!info] Texte 1, lu par l’IA avec la vision (1 page(s) regardée(s)) :')
+    expect(note).toContain('Réception prononcée le 12 mars 2026.')
+    expect(platform.notices.at(-1)).toBe('« Scan PV » : lu par l’IA avec la vision — texte 1 (1 page(s)).')
+  })
+
+  it('un format qui ne se montre pas en images (un Word illisible) : rien à proposer', async () => {
+    const platform = memoryPlatform()
+    const { pour, textActions } = await start(platform, () => '')
+    const doc = await pour('Abîmé.docx', new Uint8Array([1, 2, 3]))
+    expect((await textActions(doc.record)).map((action) => action.id)).not.toContain('vision')
+  })
+})
+
+describe('un PDF avec du texte : le modèle à choisir', () => {
+  const PDF = textPdf([['Plan qualite', 'Le pre- sent plan'], ['Revue de con- ception']])
+
+  it('« Relire avec l’IA » demande le modèle : avec la vision, chaque page en image et son texte extrait ; une nouvelle version', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, proofread, textActions, textVersions, workflows } = await start(platform, (one) => (one.text.includes('Page 1') ? '# Plan qualité\n\nLe présent plan' : 'Revue de conception'))
+    const doc = await pour('Plan.pdf', PDF)
+    // Au dépôt : la relecture de l'étape, avec le modèle simple.
+    expect(seen).toHaveLength(0)
+    expect(proofread).toEqual(['mistral-small'])
+    // L'étape a son champ « Modèle » (simple par défaut).
+    expect(workflows().find((each) => each.system === 'sys.ia.relire-textes')!.actions[0]!.kind).toBe('ia.relire-texte')
+    platform.choices.push('vision')
+    await (await textActions(doc.record)).find((action) => action.id === 'proofread')!.run()
+    expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Modèle simple', 'Modèle avec la vision'])
+    expect(seen.map((one) => one.image)).toEqual(['data:image/jpeg;base64,UDE=', 'data:image/jpeg;base64,UDI='])
+    expect(seen[0]!.text).toContain('Page 1 sur 2.')
+    expect(seen[0]!.text).toContain('Le texte extrait automatiquement de cette page, à vérifier d’après l’image :\n\nPlan qualite\nLe pre- sent plan')
+    expect(seen[1]!.text).toContain('Revue de con- ception')
+    const items = await textVersions(doc.record)
+    // Le texte extrait gardé (texte 1) ; le relu par la vision, texte 2 (la relecture simple du dépôt n'avait rien changé).
+    expect(items.map((item) => item.title)).toEqual(['Texte 2 — lu par l’IA avec la vision', 'Texte 1 — extrait du fichier'])
+    expect(items[0]!.detail).toContain('2 page(s) regardée(s)')
+    expect(items[0]!.detail).toContain('pixtral-12b')
+    expect(read(platform, doc.record)).toContain('Revue de conception')
+  })
+
+  it('le modèle simple choisi : la relecture du texte, sans image', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, proofread, textActions } = await start(platform, () => 'x')
+    const doc = await pour('Plan.pdf', PDF)
+    platform.choices.push('texte')
+    await (await textActions(doc.record)).find((action) => action.id === 'proofread')!.run()
+    expect(seen).toHaveLength(0)
+    expect(proofread).toEqual(['mistral-small', 'mistral-small'])
+  })
+
+  it('une plateforme qui ne dessine pas les PDF : pas de question, le modèle simple', async () => {
+    const platform = memoryPlatform()
+    const { pour, proofread, textActions } = await start(platform, () => 'x', false)
+    const doc = await pour('Plan.pdf', PDF)
+    await (await textActions(doc.record)).find((action) => action.id === 'proofread')!.run()
+    expect(platform.offered).toHaveLength(0)
+    expect(proofread).toHaveLength(2)
+  })
+
+  it('l’étape du workflow réglée « avec la vision » : au dépôt, la relecture se fait avec la vision', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, proofread, workflows } = await start(platform, () => 'Texte vu')
+    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.actions[0]!.fields.mode = 'vision'
+    await pour('Plan.pdf', PDF)
+    expect(seen).toHaveLength(2)
+    expect(proofread).toHaveLength(0)
+  })
+})

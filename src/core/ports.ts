@@ -304,6 +304,17 @@ export interface Platform {
    * jamais dans les réglages synchronisés. Absent si la plateforme n'en a pas.
    */
   secrets?: SecretStore
+  /** Les pages d'un PDF en images, pour un modèle qui voit ; absent si la plateforme ne sait pas les dessiner. */
+  pages?: PageImages
+}
+
+/** Les pages d'un document, dessinées en images. */
+export interface PageImages {
+  /**
+   * Les pages d'un PDF, de la première à la `max`-ième, en images (des data URL JPEG, de
+   * `width` pixels de large) ; et son nombre de pages.
+   */
+  pdf(bytes: Uint8Array, options?: { max?: number; width?: number }): Promise<{ pages: number; images: string[] }>
 }
 
 export interface SecretStore {
