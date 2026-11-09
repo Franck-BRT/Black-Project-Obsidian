@@ -84,6 +84,11 @@ référence et la version d'un document, quand la première passe n'est pas sûr
 (référence lue seulement dans le nom du fichier, version absente…), l'IA les cherche au
 début de son texte ; ce qu'elle trouve doit y figurer — elle n'invente rien.
 
+**« Relire avec l'IA le texte extrait d'un document… »** (activé) : le texte extrait d'un
+document versé est relu — sa cohérence, sa mise en forme, ce que l'extraction a abîmé —, sans
+en changer le sens ; avec le prompt, le persona, le skill choisis dans son étape. Le texte relu
+est une nouvelle version du texte du document : l'extraite est gardée, on les compare.
+
 Ces workflows servent aussi au bouton **Relancer la recherche** d'un champ, sur la fiche
 d'un document de la bibliothèque : quand la recherche sans IA n'est pas sûre, celui du champ
 est exécuté pour ce document (désactivé, l'IA n'est pas demandée, et c'est dit).

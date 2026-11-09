@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -196,7 +196,104 @@ export function readTagsAnswer(answer: unknown, text: string, known: readonly st
   return kept.length ? [...new Set(kept)].slice(0, MAX_AI_TAGS) : null
 }
 
+/** La taille d'un morceau de texte relu à la fois (en caractères) : qu'il tienne, avec sa réponse, dans le modèle. */
+export const PROOFREAD_CHUNK = 6000
+
+/** Le texte en morceaux, coupés entre deux paragraphes (un paragraphe trop long : seul). */
+export function proofreadChunks(text: string, size = PROOFREAD_CHUNK): string[] {
+  const chunks: string[] = []
+  let current = ''
+  for (const paragraph of text.split(/\n{2,}/)) {
+    if (current && current.length + paragraph.length + 2 > size) {
+      chunks.push(current)
+      current = ''
+    }
+    current = current ? `${current}\n\n${paragraph}` : paragraph
+  }
+  if (current.trim()) chunks.push(current)
+  return chunks
+}
+
+/**
+ * Un morceau relu par l'IA, gardé s'il reste le même texte : ni résumé ni allongé (sa longueur,
+ * sans les blancs, entre 60 % et 160 % de l'original) ; sinon `null` — l'original reste. Les
+ * clôtures de code dont elle l'entoure parfois sont ôtées.
+ */
+export function readProofread(answer: string, original: string): string | null {
+  const text = answer
+    .trim()
+    .replace(/^```(?:markdown|md)?\s*\n/i, '')
+    .replace(/\n```\s*$/, '')
+    .trim()
+  const weight = (value: string) => value.replace(/\s+/g, '').length
+  if (!text || !weight(original)) return null
+  const ratio = weight(text) / weight(original)
+  return ratio >= 0.6 && ratio <= 1.6 ? text : null
+}
+
 export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string): void {
+  /**
+   * **Relire le texte extrait** d'un document avec l'IA : vérifier sa cohérence, le remettre
+   * en forme (Markdown), corriger ce que l'extraction a abîmé — sans en changer le sens. Par
+   * morceaux ; un morceau trop changé (résumé, allongé) garde son original. Le texte relu est
+   * une **nouvelle version du texte** (celle d'avant est gardée, comparable) ; l'édition et la
+   * révision du document ne changent pas. Prompt, persona, skill : ceux de l'étape.
+   */
+  registerAction({
+    id: 'ia.relire-texte',
+    labelKey: 'ia.wf.action.proofread',
+    descKey: 'ia.wf.action.proofread.desc',
+    needsAi: true,
+    fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
+    results: ['text'],
+    async run({ fields, guidance }) {
+      const say = (key: string, vars?: Record<string, string | number>) => {
+        const text = t(key, vars)
+        return { lines: [text], results: { text } }
+      }
+      const record = (fields.fiche ?? '').trim()
+      const doc = record ? await libraryDoc(record) : null
+      if (!doc) return say('ia.wf.language.noDoc', { record })
+      const base = client()
+      const ai = base?.withInstructions(guidance)
+      if (!ai || !base) return say('ia.wf.proofread.noAi', { title: doc.title })
+      const text = ((await libraryTranscript(record)) ?? '').trim()
+      if (!text) return say('ia.wf.proofread.noText', { title: doc.title })
+      const chunks = proofreadChunks(text)
+      const out: string[] = []
+      let kept = 0
+      for (const [index, chunk] of chunks.entries()) {
+        let answer: string
+        try {
+          answer = await ai.chat({
+            messages: [
+              { role: 'system', content: t('ia.wf.proofread.system') },
+              { role: 'user', content: chunks.length > 1 ? `${t('ia.wf.proofread.part', { part: index + 1, parts: chunks.length })}\n\n${chunk}` : chunk }
+            ],
+            temperature: 0
+          })
+        } catch (error) {
+          throw new Error(describe(error))
+        }
+        const read = readProofread(answer, chunk)
+        if (read === null) kept++
+        out.push(read ?? chunk)
+      }
+      const proofread = out.join('\n\n').trim()
+      if (kept === chunks.length) return say('ia.wf.proofread.allKept', { title: doc.title })
+      if (proofread.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
+      const version = await addTextVersionByAi(record, proofread, {
+        model: base.connection.model,
+        ...(fields.prompt?.trim() ? { prompt: fields.prompt.trim() } : {}),
+        ...(fields.persona?.trim() ? { persona: fields.persona.trim() } : {}),
+        ...(fields.skill?.trim() ? { skill: fields.skill.trim() } : {}),
+        ...(kept ? { kept } : {})
+      })
+      if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
+      return say(kept ? 'ia.wf.proofread.doneKept' : 'ia.wf.proofread.done', { title: doc.title, number: version.number, parts: chunks.length, kept })
+    }
+  })
+
   /**
    * La date d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas lue
    * sûrement : le début de son texte demandé à l'IA. Certaine, et le document la dit : donnée

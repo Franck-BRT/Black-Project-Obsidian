@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.20.1 (Black Projects 0.96.1) |
+| Version | 0.21.0 (Black Projects 0.102.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,23 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## Relire le texte extrait (v0.21.0, Black Projects 0.102.0)
+
+`sys.ia.relire-textes` (actif ; *document versé*, si `{texteextrait}` n'est pas vide), action
+`ia.relire-texte` (« Relire le texte extrait avec l'IA ») : vérifier la cohérence du texte
+extrait d'un document de la bibliothèque, le remettre en forme (Markdown : titres, listes,
+tableaux), corriger ce que l'extraction a abîmé — sans en changer le sens (la consigne :
+n'ajouter rien, ne pas résumer, ne pas traduire, garder chiffres, références, noms, ordre).
+
+- Ses champs **Prompt**, **Persona**, **Skill** (ceux de toute étape d'IA) : choisis dans les
+  bibliothèques, leurs consignes données à l'IA ; nommés dans la version.
+- **Par morceaux** (`proofreadChunks` : 6 000 caractères, coupés entre deux paragraphes), à
+  température 0. **Garde-fou** (`readProofread`) : un morceau dont la longueur (sans les
+  blancs) sort de 60 %–160 % de l'original — un résumé, un ajout — garde son original ; tous
+  ainsi : rien n'est gardé. Rien de changé : aucune version.
+- Le texte relu : une **nouvelle version du texte** du document (la première, extraite du
+  fichier, gardée et comparable) ; son édition et sa révision ne changent pas.
 
 ## L'émetteur, dans la liste des émetteurs (v0.20.0, Black Projects 0.96.0)
 

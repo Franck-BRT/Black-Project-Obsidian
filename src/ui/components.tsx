@@ -537,6 +537,37 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
         list
       )
     }
+    case 'diff': {
+      const body = block.parts.length ? (
+        <div class="bp-diff">
+          {block.parts.map((part, index) =>
+            part.change === 'same' ? (
+              <p key={index} class="bp-diff-same">
+                {part.text}
+              </p>
+            ) : part.change === 'removed' ? (
+              <del key={index} class="bp-diff-removed" aria-label={`${block.labels.removed} : ${part.text}`}>
+                {part.text}
+              </del>
+            ) : (
+              <ins key={index} class="bp-diff-added" aria-label={`${block.labels.added} : ${part.text}`}>
+                {part.text}
+              </ins>
+            )
+          )}
+        </div>
+      ) : (
+        <p class="bp-empty">{block.empty ?? t('ui.empty')}</p>
+      )
+      return block.title ? (
+        <div class="bp-block">
+          <h3 class="bp-block-title">{block.title}</h3>
+          {body}
+        </div>
+      ) : (
+        body
+      )
+    }
     case 'markdown': {
       const body = block.text.trim() ? <Markdown text={block.text} /> : <p class="bp-empty">{block.empty ?? t('ui.empty')}</p>
       return block.title ? (

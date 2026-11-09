@@ -27,7 +27,7 @@ import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, type EditableField } from './home'
 import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
-import { baseName, CATEGORIES, nestHeadings, versionLabel, type DocOrigin, type LibraryDoc, type Transcript } from './model'
+import { baseName, CATEGORIES, nestHeadings, versionLabel, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
@@ -35,7 +35,7 @@ import { defaultShelfOf, folderName, SHELF_KINDS, shelvesOf, withDefaultShelf, w
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
-export type { DocOrigin, LibraryDoc, Transcript, TranscriptState } from './model'
+export type { DocOrigin, LibraryDoc, TextVersion, Transcript, TranscriptState } from './model'
 export type { PourItem, PourOptions, PourReport, ResearchField } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
@@ -327,6 +327,16 @@ export async function setDateByAi(record: string, date: string): Promise<Library
 /** Une date de document en mots, dans la langue de l'application (« 12 mars 2026 »). */
 export const libraryDateLabel = (value: string): string => docDateLabel(value, active?.locale)
 
+/** Pour l'IA : le texte que montre la fiche d'un document (sa dernière version) ; `null` s'il n'y en a pas. */
+export async function libraryTranscript(record: string): Promise<string | null> {
+  return active ? active.store.transcriptText(record) : null
+}
+
+/** Pour l'IA : son texte relu — une nouvelle version du texte du document (celle d'avant est gardée). */
+export async function addTextVersionByAi(record: string, text: string, about: { model?: string; prompt?: string; persona?: string; skill?: string; kept?: number }): Promise<TextVersion | null> {
+  return active ? active.store.addTextVersion(record, text, { origin: 'ia', ...about }) : null
+}
+
 /** Pour l'IA : les étiquettes qu'elle a données — plus à confirmer, et on sait qui l'a dit. */
 export async function setTagsByAi(record: string, tags: readonly string[]): Promise<LibraryDoc | null> {
   // Ramenées à celles de la liste (une autre forme → l'étiquette).
@@ -421,6 +431,8 @@ function pouredSubject(doc: LibraryDoc, issuers: readonly KnownIssuer[] = []): S
       // Son nom, s'il est de la liste (le code est dans {emetteur}) ; sinon tel quel.
       emetteurnom: issuers.find((each) => each.code === doc.issuer)?.name ?? doc.issuer,
       emetteuraconfirmer: doc.issuerToConfirm ? t('bibliotheque.read.yes') : '',
+      // Un texte extrait du fichier (lu) : la relecture par l'IA s'y attache.
+      texteextrait: doc.reading === 'lue' ? t('bibliotheque.read.yes') : '',
       date: doc.date ?? '',
       dateaconfirmer: doc.dateToConfirm ? t('bibliotheque.read.yes') : '',
       etiquettes: doc.tags.join(', '),
@@ -492,7 +504,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.29.0',
+  version: '0.30.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -528,11 +540,16 @@ export const bibliothequeModule: BlackModule = {
       typer: () => pieceTyper ?? CATEGORY_TYPER,
       // Le texte du fichier, transcrit dans sa fiche — comme une pièce d'analyse (la lecture de fichiers le donne).
       transcribe: async (name, bytes) => (transcriber ? transcriber(name, bytes) : null),
-      transcriptBlock: (transcript) =>
+      transcriptBlock: (transcript, version) =>
         [
           `## ${t('bibliotheque.text.heading')}`,
           '',
-          ...(transcript.state === 'lue'
+          ...(version
+            ? [
+                `> [!info] ${t(version.origin === 'ia' ? 'bibliotheque.text.versionIa' : 'bibliotheque.text.versionExtraction', { number: version.number, characters: transcript.text.length.toLocaleString('fr-FR') })}`,
+                `> ${t('bibliotheque.text.versionsKept')}`
+              ]
+            : transcript.state === 'lue'
             ? [`> [!info] ${t('bibliotheque.text.read', { characters: transcript.text.length.toLocaleString('fr-FR') })}`]
             : [`> [!warning] ${t(`bibliotheque.text.state.${transcript.state}`)}`, `> ${t(`bibliotheque.text.state.${transcript.state}.help`)}`]),
           '',
@@ -590,7 +607,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteurnom', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'date', 'dateaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteurnom', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'date', 'dateaconfirmer', 'texteextrait', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,
@@ -1216,6 +1233,10 @@ export const bibliothequeModule: BlackModule = {
       addIssuer: async (record) => void (await addIssuerFor(record)),
       addPieceType: async (record) => void (await addPieceTypeFor(record)),
       addTags: (record) => addTagsFor(record),
+      showTextVersion: async (record, number) => {
+        const version = await store.showTextVersion(record, number)
+        if (version) platform.notifier.notify(t('bibliotheque.textVersion.shownDone', { version: t(version.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number }) }), 5000)
+      },
       transcribe: async (record) => {
         const done = await store.transcribe(record)
         if (!done) return platform.notifier.notify(t('bibliotheque.text.unavailable'), 8000)

@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La relecture du texte par l'IA ; les versions du texte (v0.102.0)
+
+- [ ] L'IA réglée, verser un document au texte abîmé (mots coupés « pré- sent », puces « • ») :
+      le workflow système « Relire avec l'IA le texte extrait d'un document… » (actif) le relit ;
+      la fiche montre « Texte 2 — relu par l'IA » ; son édition et sa révision n'ont pas changé
+- [ ] *Versions* › **Versions du texte** : « Texte 2 — relu par l'IA » (date, modèle, montré
+      sur la fiche), « Texte 1 — extrait du fichier » ; leurs notes dans `Bibliothèque/_textes/…`
+- [ ] **Comparer avec le texte 1** : la page des passages retirés (barrés) et ajoutés
+      (surlignés), chacun suivi de son remplaçant
+- [ ] **Le montrer sur la fiche** (texte 1) : la fiche montre de nouveau le texte extrait
+- [ ] L'étape du workflow : choisir un persona, un skill, un prompt de la bibliothèque — ses
+      consignes données à l'IA, nommées dans la version
+- [ ] Une IA qui résumerait : rien n'est gardé, le journal le dit ; IA non réglée : le journal
+      le dit, rien ne change
+
 ## Le texte extrait, mis en forme et en entier (v0.101.0)
 
 - [ ] Verser un document avec des titres, une liste (imbriquée), un tableau, du gras et de

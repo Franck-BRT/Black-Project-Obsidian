@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.29.0 (Black Projects 0.101.0) |
+| Version | 0.30.0 (Black Projects 0.102.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,29 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Les versions du texte ; la relecture par l'IA (v0.30.0, Black Projects 0.102.0)
+
+Le texte d'un document a des **versions** — distinctes de ses versions de document : son
+**édition** et sa **révision** n'y changent pas.
+
+- **Une note par version** (`bp-type: bibliotheque-texte` : `document`, `version`,
+  `origine` — `extraction` ou `ia` —, `date`, et pour l'IA `modele`, `prompt`, `persona`,
+  `skill`, `gardes`), rangées dans `<bibliothèque>/_textes/<empreinte du fichier>/Texte n.md`
+  (elles suivent la fiche, déplacée ou renommée).
+- **La première** est gardée au premier changement (`addTextVersion`) : « Texte 1 — extrait
+  du fichier ». La fiche montre la dernière (`texteVersion` dans son en-tête ; l'encadré du
+  texte la nomme : « Texte 2, relu par l'IA… les versions d'avant sont gardées »).
+  **Extraire de nouveau**, quand il y a des versions : une de plus.
+- **Sur la fiche**, la section *Versions* a une liste **Versions du texte** (la dernière
+  d'abord : date, modèle, persona, skill, prompt ; « montré sur la fiche ») : chacune ouvre sa
+  note, **Comparer avec le texte n-1** (la page `bibliotheque.comparer` : passages retirés,
+  ajoutés, gardés — un bloc `diff`, `diffParagraphs` de `src/core/diff.ts`), **Le montrer sur
+  la fiche** (`showTextVersion` : rien n'est effacé). L'en-tête de *Texte extrait* dit la
+  version montrée.
+- **La relecture par l'IA** : l'étape `ia.relire-texte` du [module IA](ia.md) et son
+  workflow système (actif, au *document versé* dont `{texteextrait}` n'est pas vide) en font
+  une nouvelle version (`addTextVersionByAi`).
 
 ## Le texte extrait, mis en forme et en entier (v0.29.0, Black Projects 0.101.0)
 

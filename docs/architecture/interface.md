@@ -239,6 +239,11 @@ workflows »), et dépendre d'une autre page (`PageSpec.parent`) : l'entrée du 
 liste reste marquée. Des cartes peuvent former un groupe titré avec ses boutons
 (`title`, `actions` : « Actions (2) » et « Ajouter une action »).
 
+Un bloc `diff` (`{ kind: 'diff', parts, labels }`) compare deux textes, paragraphe par
+paragraphe (`diffParagraphs`, `src/core/diff.ts`) : les gardés en retrait, les retirés barrés
+(`<del>`), les ajoutés surlignés (`<ins>`), chaque retiré suivi de celui qui le remplace ; les
+lecteurs d'écran entendent « Retiré : … », « Ajouté : … ».
+
 Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
 forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :
 réduit et sûr (le texte devient des éléments, jamais du HTML injecté ; un lien, son texte). Le

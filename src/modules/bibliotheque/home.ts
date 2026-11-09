@@ -9,13 +9,14 @@
  */
 
 import { pageWith, type Badge, type Card, type HomeBlock, type IconName, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
-import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc } from './model'
+import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc, type TextVersion } from './model'
 import { HUB_PAGE } from './entriesHome'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
 import type { GhostEntry, LibraryStore, ResearchField } from './store'
 import type { LibraryGhost } from './ghosts'
 import { LANGUAGES, type LanguageCode } from './language'
 import { docDateLabel, type KnownIssuer, type KnownTag } from './identity'
+import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -52,6 +53,8 @@ export interface LibraryHomeDeps {
   newVersionOf(record: string): Promise<void>
   /** Choisir sa langue (ou la détecter de nouveau, ou aucune). */
   chooseLanguage(record: string): Promise<void>
+  /** Remontrer sur la fiche une version gardée de son texte. */
+  showTextVersion(record: string, number: number): Promise<void>
   /** (Re)transcrire son fichier dans sa fiche. */
   transcribe(record: string): Promise<void>
   /** Ses étiquettes hors de la liste : les y ajouter. */
@@ -292,15 +295,59 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
 }
 
 /** Une section repliable de la fiche, repliée d'origine (l'interface se souvient ensuite de ce qu'on en a fait, le temps de la session). */
-const fold = (id: string, title: string, subtitle: string, icon: IconName, list: HomeBlock): HomeBlock => ({
+const fold = (id: string, title: string, subtitle: string, icon: IconName, list: HomeBlock | HomeBlock[]): HomeBlock => ({
   kind: 'section',
   id: `bibliotheque.document.${id}`,
   title,
   ...(subtitle ? { subtitle } : {}),
   icon,
   collapsed: true,
-  blocks: [list]
+  blocks: Array.isArray(list) ? list : [list]
 })
+
+export const COMPARE_PAGE = 'bibliotheque.comparer'
+/** La page qui compare deux versions du texte d'un document. */
+export const comparePageOf = (record: string, before: number, after: number): string => pageWith(COMPARE_PAGE, `${encodeURIComponent(record)}|${before}|${after}`)
+
+/** Deux versions du texte d'un document, comparées : ce qui a été retiré, ajouté. */
+export async function comparePage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
+  const { t } = deps
+  const [rawRecord = '', a = '', b = ''] = (param ?? '').split('|')
+  const record = decodeURIComponent(rawRecord)
+  const doc = await deps.store.load(record)
+  const back: ViewAction = { id: 'back', label: doc?.title ?? t('bibliotheque.back'), run: () => deps.showPage?.(docPageOf(record)) }
+  const versions = doc ? await deps.store.textVersions(record) : []
+  const before = versions.find((each) => each.number === Number(a))
+  const after = versions.find((each) => each.number === Number(b))
+  if (!doc || !before || !after) return { title: t('bibliotheque.compare.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.compare.missing') }] }
+  const parts = diffParagraphs(before.text, after.text)
+  const removed = parts.filter((part) => part.change === 'removed').length
+  const added = parts.filter((part) => part.change === 'added').length
+  return {
+    title: t('bibliotheque.compare.title', { before: before.number, after: after.number }),
+    subtitle: `${doc.title} · ${textVersionLabel(t, before)} → ${textVersionLabel(t, after)}`,
+    back,
+    actions: [
+      { id: 'note-before', label: t('bibliotheque.compare.open', { number: before.number }), icon: 'book', run: () => deps.showNote(before.path) },
+      { id: 'note-after', label: t('bibliotheque.compare.open', { number: after.number }), icon: 'book', run: () => deps.showNote(after.path) }
+    ],
+    blocks: [
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('bibliotheque.compare.removed'), value: String(removed), icon: 'cross', ...(removed ? { tone: 'danger' as const } : {}) },
+          { label: t('bibliotheque.compare.added'), value: String(added), icon: 'plus', ...(added ? { tone: 'success' as const } : {}) },
+          { label: t('bibliotheque.compare.same'), value: String(parts.length - removed - added), icon: 'check' }
+        ]
+      },
+      { kind: 'diff', parts, labels: { removed: t('bibliotheque.compare.removed.one'), added: t('bibliotheque.compare.added.one') }, empty: t('bibliotheque.compare.empty') }
+    ]
+  }
+}
+
+/** Une version du texte, en mots : « Texte 2 — relu par l'IA ». */
+export const textVersionLabel = (t: (key: string, vars?: Record<string, string | number>) => string, version: TextVersion): string =>
+  t(version.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number: version.number })
 
 /** La fiche d'un document. */
 export async function docPage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
@@ -517,6 +564,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     })
   // Le texte du fichier, transcrit dans la fiche (comme une pièce d'analyse) : son état, ses actions, son texte.
   const transcript = doc.reading === 'lue' ? ((await deps.store.transcriptText(doc.record)) ?? '') : ''
+  // La version du texte que montre la fiche (relu par l'IA…), dite en en-tête.
+  const shownText = doc.textVersion ? (await deps.store.textVersions(doc.record)).find((each) => each.number === doc.textVersion) : undefined
   const characters = (doc.characters ?? 0).toLocaleString('fr-FR')
   const textActions: ViewAction[] = [
     { id: 'extract', label: t(doc.reading ? 'bibliotheque.text.extract.again' : 'bibliotheque.text.extract'), tooltip: t('bibliotheque.text.extract.tip'), icon: 'refresh', ...(doc.reading ? {} : { primary: true }), run: () => deps.transcribe(doc.record) },
@@ -526,14 +575,27 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     kind: 'section',
     id: 'bibliotheque.document.texte',
     title: t('bibliotheque.section.text'),
-    subtitle: !doc.reading ? t('bibliotheque.section.text.never') : doc.reading === 'lue' ? t('bibliotheque.section.text.read', { characters }) : t(`bibliotheque.text.state.${doc.reading}`),
+    subtitle: !doc.reading
+      ? t('bibliotheque.section.text.never')
+      : shownText
+        ? `${textVersionLabel(t, shownText)} · ${t('bibliotheque.section.text.characters', { characters })}`
+        : doc.reading === 'lue'
+          ? t('bibliotheque.section.text.read', { characters })
+          : t(`bibliotheque.text.state.${doc.reading}`),
     icon: 'file',
     collapsed: true,
     blocks: [
       !doc.reading
         ? { kind: 'message', tone: 'info', text: t('bibliotheque.text.never'), actions: textActions }
         : doc.reading === 'lue'
-          ? { kind: 'message', tone: 'info', text: t('bibliotheque.text.read', { characters }), actions: textActions }
+          ? {
+              kind: 'message',
+              tone: 'info',
+              text: shownText
+                ? `${t(shownText.origin === 'ia' ? 'bibliotheque.text.versionIa' : 'bibliotheque.text.versionExtraction', { number: shownText.number, characters })} ${t('bibliotheque.text.versionsKept')}`
+                : t('bibliotheque.text.read', { characters }),
+              actions: textActions
+            }
           : { kind: 'message', tone: 'warning', text: `${t(`bibliotheque.text.state.${doc.reading}`)} — ${t(`bibliotheque.text.state.${doc.reading}.help`)}`, actions: textActions },
       ...(doc.reading === 'lue'
         ? [
@@ -577,6 +639,34 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     open: open(other)
   })
   const likely = doc.likelyPrevious ? byRecord.get(doc.likelyPrevious) : undefined
+  // Les versions de son texte, la dernière d'abord : chacune s'ouvre, se compare à la précédente, se remontre sur la fiche.
+  const textVersions = await deps.store.textVersions(doc.record)
+  const shownVersion = doc.textVersion ?? textVersions.at(-1)?.number
+  const textVersionItems: ListItem[] = [...textVersions].reverse().map((version) => ({
+    id: `texte-${version.number}`,
+    title: textVersionLabel(t, version),
+    detail: [
+      version.date,
+      version.model ?? '',
+      version.persona ? t('bibliotheque.textVersion.persona', { name: version.persona }) : '',
+      version.skill ? t('bibliotheque.textVersion.skill', { name: version.skill }) : '',
+      version.prompt ? t('bibliotheque.textVersion.prompt', { name: version.prompt }) : '',
+      version.kept ? t('bibliotheque.textVersion.kept', { count: version.kept }) : '',
+      version.number === shownVersion ? t('bibliotheque.textVersion.shown') : ''
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    tone: version.number === shownVersion ? ('info' as const) : ('neutral' as const),
+    open: { id: 'open', label: t('bibliotheque.textVersion.open'), run: () => deps.showNote(version.path) },
+    tools: [
+      ...(version.number > 1
+        ? [{ id: `compare-${version.number}`, label: t('bibliotheque.textVersion.compare', { number: version.number - 1 }), icon: 'columns' as const, run: () => deps.showPage?.(comparePageOf(doc.record, version.number - 1, version.number)) }]
+        : []),
+      ...(version.number !== shownVersion
+        ? [{ id: `show-${version.number}`, label: t('bibliotheque.textVersion.show'), icon: 'eye' as const, run: () => deps.showTextVersion(doc.record, version.number) }]
+        : [])
+    ]
+  }))
 
   const stats: Stat[] = [
     { label: t('bibliotheque.field.family'), value: t(`bibliotheque.family.${doc.family}`), icon: ICON[doc.family] },
@@ -686,11 +776,24 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             })
           ]
         : []),
-      fold('versions', t('bibliotheque.section.versions'), older.length + newer.length ? t('bibliotheque.section.versions.sub', { count: older.length + newer.length }) : t('bibliotheque.versions.none'), 'flow', {
-        kind: 'list',
-        items: [...newer.reverse().map((each) => versionItem(each, 'apres')), ...older.map((each) => versionItem(each, 'avant'))],
-        empty: t('bibliotheque.versions.none')
-      }),
+      fold(
+        'versions',
+        t('bibliotheque.section.versions'),
+        [
+          older.length + newer.length ? t('bibliotheque.section.versions.sub', { count: older.length + newer.length }) : t('bibliotheque.versions.none'),
+          ...(textVersions.length ? [t('bibliotheque.section.versions.texts', { count: textVersions.length })] : [])
+        ].join(' · '),
+        'flow',
+        [
+          {
+            kind: 'list',
+            items: [...newer.reverse().map((each) => versionItem(each, 'apres')), ...older.map((each) => versionItem(each, 'avant'))],
+            empty: t('bibliotheque.versions.none')
+          },
+          // Les versions de son texte (extrait, relu par l'IA…) : l'édition et la révision n'y changent pas.
+          ...(textVersions.length ? [{ kind: 'list' as const, title: t('bibliotheque.textVersions.title'), items: textVersionItems }] : [])
+        ]
+      ),
       textSection
     ]
   }
@@ -732,6 +835,7 @@ export function registerLibraryHome(views: ViewsRegistrar | undefined, deps: Lib
   const show = deps.showPage
   views.page({ id: LIBRARY_PAGE, title: t('bibliotheque.page.title'), icon: 'book', parent: HUB_PAGE, load: (param) => libraryPage(deps, param) })
   views.page({ id: DOC_PAGE, title: t('bibliotheque.doc.title'), icon: 'file', parent: LIBRARY_PAGE, load: (param) => docPage(deps, param) })
+  views.page({ id: COMPARE_PAGE, title: t('bibliotheque.compare.page'), icon: 'columns', parent: DOC_PAGE, load: (param) => comparePage(deps, param) })
   // Le menu mène à la bibliothèque : ses documents, ses prompts, ses personas.
   views.nav({ id: 'bibliotheque', label: t('bibliotheque.nav'), icon: 'book', order: 25, page: HUB_PAGE, run: () => show(HUB_PAGE) })
   views.tile({

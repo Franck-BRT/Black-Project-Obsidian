@@ -93,7 +93,20 @@ platform.http = {
     const question = (sent.messages?.at(-1)?.content ?? '').split('\n').filter(Boolean).at(-1) ?? ''
     // Traduire une exigence : le texte repris tel quel (les chiffres ne bougent pas), et une note.
     // Relire une exigence : un avis, des constats, des propositions, en JSON comme le ferait le serveur.
-    const content = asked.includes('You translate requirements')
+    // Relire un texte extrait : sans IA réelle, des corrections de démonstration — mots recollés, puces en liste, premier titre.
+    const proofreading = (sent.messages?.[0]?.content ?? '').includes('Tu relis un texte extrait automatiquement')
+    const proofread = (text: string) => {
+      const lines = text
+        .replace(/(\p{L})- (\p{L})/gu, '$1$2')
+        .replace(/ {2,}/g, ' ')
+        .split('\n')
+        .map((line) => line.replace(/^\s*[•▪]\s*/, '- '))
+      if (lines[0] && !lines[0].startsWith('#') && !lines[0].startsWith('(')) lines[0] = `# ${lines[0]}`
+      return lines.join('\n')
+    }
+    const content = proofreading
+      ? proofread(sent.messages?.at(-1)?.content ?? '')
+      : asked.includes('You translate requirements')
       ? JSON.stringify({ text: `[EN] ${sent.messages?.at(-1)?.content.trim() ?? ''}`, notes: 'Traduction de démonstration, sans IA réelle : le texte source est repris tel quel.' })
       : asked.includes('"assessment"')
         ? JSON.stringify({

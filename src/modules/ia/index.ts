@@ -27,7 +27,7 @@ import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor,
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
-export { readCategoryAnswer, readDateAnswer, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer } from './workflows'
+export { proofreadChunks, readCategoryAnswer, readDateAnswer, readProofread, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer } from './workflows'
 export {
   buildChatBody,
   cosine,
@@ -292,7 +292,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.20.1',
+  version: '0.21.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -441,6 +441,19 @@ export const iaModule: BlackModule = {
         trigger: { kind: 'bibliotheque.document-verse' },
         conditions: [{ field: 'dateaconfirmer', op: 'not-empty', value: '' }],
         actions: [{ kind: 'ia.date-document', fields: { fiche: '{fiche}' } }]
+      })
+    })
+    // Le texte extrait d'un document versé, relu par l'IA : cohérence, mise en forme, corrections (une nouvelle version du texte).
+    registerSystemWorkflow({
+      id: 'sys.ia.relire-textes',
+      moduleKey: 'ia.name',
+      enabledByDefault: true,
+      make: (tr) => ({
+        name: tr('ia.sys.relire-textes'),
+        mode: 'auto',
+        trigger: { kind: 'bibliotheque.document-verse' },
+        conditions: [{ field: 'texteextrait', op: 'not-empty', value: '' }],
+        actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}' } }]
       })
     })
     // Les étiquettes d'un document versé, quand la première passe sans IA ne les a pas lues sûrement (actif).

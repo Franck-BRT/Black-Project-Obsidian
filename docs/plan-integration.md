@@ -588,6 +588,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   avec son encadré) ; une section « Texte extrait » sur la fiche, « Extraire de nouveau »
 - v0.101.0 : le texte extrait, sur la fiche, **mis en forme** (un bloc `markdown` dans le
   contrat des pages : titres, listes, tableaux, citations, code) et **en entier**
+- v0.102.0 : **modules Bibliothèque et IA** : la **relecture du texte extrait par l'IA**
+  (cohérence, mise en forme, corrections ; prompt, persona, skill de l'étape ; par morceaux,
+  avec un garde-fou) — un workflow système actif ; le texte relu est une nouvelle **version du
+  texte** (l'extraite gardée ; édition et révision inchangées), qu'on **compare** (bloc `diff`)
 
 ### Étape 7 — Livrables
 

@@ -45,4 +45,17 @@ describe('le Markdown mis en forme', () => {
     expect(renderToString(<BlockView block={{ kind: 'markdown', text: '- un\n- deux', title: 'Texte' }} t={t} now={new Date()} locale="fr-FR" />)).toContain('<h3 class="bp-block-title">Texte</h3><div class="bp-md"><ul><li>un</li><li>deux</li></ul></div>')
     expect(renderToString(<BlockView block={{ kind: 'markdown', text: '  ', empty: 'Rien.' }} t={t} now={new Date()} locale="fr-FR" />)).toContain('Rien.')
   })
+
+  it('le bloc « diff » : gardés, retirés (barrés), ajoutés — dits aux lecteurs d’écran', () => {
+    const t = createI18n('fr').t
+    const out = renderToString(
+      <BlockView
+        block={{ kind: 'diff', parts: [{ change: 'same', text: 'A' }, { change: 'removed', text: 'B' }, { change: 'added', text: 'B2' }], labels: { removed: 'Retiré', added: 'Ajouté' } }}
+        t={t}
+        now={new Date()}
+        locale="fr-FR"
+      />
+    )
+    expect(out).toBe('<div class="bp-diff"><p class="bp-diff-same">A</p><del class="bp-diff-removed" aria-label="Retiré : B">B</del><ins class="bp-diff-added" aria-label="Ajouté : B2">B2</ins></div>')
+  })
 })

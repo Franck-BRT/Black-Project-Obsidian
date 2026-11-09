@@ -26,12 +26,16 @@ import {
   readRecord,
   recordContent,
   titleFromName,
+  readTextVersion,
+  TEXT_VERSIONS_FOLDER,
+  textVersionContent,
   transcriptBlockOf,
   versionKey,
   withTranscript,
   type DocFamily,
   type DocOrigin,
   type LibraryDoc,
+  type TextVersion,
   type Transcript
 } from './model'
 
@@ -65,8 +69,8 @@ export interface StoreDeps {
   issuers?(): Promise<readonly KnownIssuer[]>
   /** Transcrire un fichier (la lecture de fichiers) : son texte, ou pourquoi il n'y en a pas ; absent, rien n'est transcrit. */
   transcribe?(name: string, bytes: Uint8Array): Promise<Transcript | null>
-  /** Le texte extrait, tel qu'écrit dans la fiche : son titre, son encadré, son texte (dans la langue). */
-  transcriptBlock?(transcript: Transcript): string
+  /** Le texte extrait, tel qu'écrit dans la fiche : son titre, son encadré, son texte (dans la langue) ; une version (relue par l'IA…), dite dans l'encadré. */
+  transcriptBlock?(transcript: Transcript, version?: TextVersion): string
   /** Les types de pièce (le module Typage des pièces) ; absent : les catégories de la bibliothèque. */
   typer?(): PieceTyper
   /** La ligne de la note d'un fantôme, dans la langue : où est le document (`link`), dans quel lieu (`where`). */
@@ -690,11 +694,72 @@ export class LibraryStore {
   }
 
   /** Écrire (réécrire) le texte extrait dans la fiche, entre ses marques ; le reste de la note ne bouge pas. */
-  private async writeTranscript(doc: LibraryDoc, transcript: Transcript): Promise<void> {
+  private async writeTranscript(doc: LibraryDoc, transcript: Transcript, version?: TextVersion): Promise<void> {
     const { fs, yaml } = this.deps
     if (!this.deps.transcriptBlock || !(await fs.exists(doc.record))) return
     const body = readYamlFrontmatter(yaml, await fs.readText(doc.record)).body
-    await fs.writeText(doc.record, recordContent(doc, this.deps.notesHeading(), withTranscript(body, this.deps.transcriptBlock(transcript))))
+    await fs.writeText(doc.record, recordContent(doc, this.deps.notesHeading(), withTranscript(body, this.deps.transcriptBlock(transcript, version))))
+  }
+
+  /** Le dossier des versions du texte d'un document : d'après l'empreinte de son fichier (il suit la fiche, déplacée ou renommée). */
+  private textVersionsFolder(doc: LibraryDoc): string {
+    return `${this.root}/${TEXT_VERSIONS_FOLDER}/${(doc.hash || baseName(doc.record)).slice(0, 16)}`
+  }
+
+  /** Les versions du texte d'un document, de la première à la dernière ; aucune tant que l'IA ne l'a pas relu. */
+  async textVersions(record: string): Promise<TextVersion[]> {
+    const { fs, yaml } = this.deps
+    const doc = await this.load(record)
+    if (!doc) return []
+    const folder = this.textVersionsFolder(doc)
+    if (!(await fs.exists(folder))) return []
+    const versions: TextVersion[] = []
+    for (const path of (await fs.list(folder)).files.filter((each) => each.endsWith('.md'))) {
+      const { data, body } = readYamlFrontmatter(yaml, await fs.readText(path))
+      const version = readTextVersion(path, data, body)
+      if (version) versions.push(version)
+    }
+    return versions.sort((a, b) => a.number - b.number)
+  }
+
+  /**
+   * Une **nouvelle version du texte** (relue par l'IA, extraite de nouveau) : la première fois,
+   * le texte que montrait la fiche est d'abord gardé (« Texte 1 », extrait du fichier). La fiche
+   * montre la nouvelle ; l'édition et la révision du document ne changent pas.
+   */
+  async addTextVersion(record: string, text: string, about: Pick<TextVersion, 'origin'> & Partial<Pick<TextVersion, 'model' | 'prompt' | 'persona' | 'skill' | 'kept'>>): Promise<TextVersion | null> {
+    const { fs } = this.deps
+    const doc = await this.load(record)
+    if (!doc) return null
+    const folder = this.textVersionsFolder(doc)
+    let versions = await this.textVersions(record)
+    await fs.ensureFolder(folder)
+    if (!versions.length) {
+      const first = await this.transcriptText(record)
+      if (first !== null) {
+        const kept: Omit<TextVersion, 'path'> = { number: 1, origin: 'extraction', date: doc.added || this.deps.today(), text: first }
+        await fs.writeText(`${folder}/Texte 1.md`, textVersionContent(kept, record))
+        versions = [{ ...kept, path: `${folder}/Texte 1.md` }]
+      }
+    }
+    const number = (versions.at(-1)?.number ?? 0) + 1
+    const version: TextVersion = { ...about, number, date: this.deps.today(), text: text.trim(), path: `${folder}/Texte ${number}.md` }
+    await fs.writeText(version.path, textVersionContent(version, record))
+    const next: LibraryDoc = { ...doc, reading: 'lue', characters: version.text.length, textVersion: number }
+    await this.save(next)
+    await this.writeTranscript(next, { state: 'lue', text: version.text }, version)
+    return version
+  }
+
+  /** Montrer de nouveau une version gardée du texte (la fiche la montre ; rien n'est effacé). */
+  async showTextVersion(record: string, number: number): Promise<TextVersion | null> {
+    const doc = await this.load(record)
+    const version = (await this.textVersions(record)).find((each) => each.number === number)
+    if (!doc || !version) return null
+    const next: LibraryDoc = { ...doc, reading: 'lue', characters: version.text.length, textVersion: number }
+    await this.save(next)
+    await this.writeTranscript(next, { state: 'lue', text: version.text }, version)
+    return version
   }
 
   /** (Re)transcrire le fichier d'un document dans sa fiche ; rend la fiche et la transcription, ou `null` (pas de fichier, pas de lecture). */
@@ -704,7 +769,13 @@ export class LibraryStore {
     if (!doc || !(await fs.exists(doc.file))) return null
     const transcript = await this.transcribeBytes(baseName(doc.file), doc.family, new Uint8Array(await fs.readBinary(doc.file)))
     if (!transcript) return null
+    // Des versions déjà gardées (relu par l'IA…) : le texte extrait de nouveau en est une de plus.
+    if (transcript.state === 'lue' && (await this.textVersions(record)).length) {
+      await this.addTextVersion(record, transcript.text, { origin: 'extraction' })
+      return { doc: (await this.load(record)) ?? doc, transcript }
+    }
     const next: LibraryDoc = { ...doc, reading: transcript.state, characters: transcript.text.length }
+    delete next.textVersion
     await this.save(next)
     await this.writeTranscript(next, transcript)
     return { doc: next, transcript }

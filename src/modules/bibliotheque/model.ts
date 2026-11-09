@@ -131,6 +131,68 @@ export interface Transcript {
   text: string
 }
 
+/**
+ * Une **version du texte** d'un document : le texte extrait du fichier (1), puis ceux qui le
+ * suivent — relu par l'IA, extrait de nouveau. Chacune sa note, gardée : on retrouve le texte
+ * d'avant l'IA, on compare. La fiche montre la dernière. L'édition et la révision du
+ * document, elles, ne changent pas.
+ */
+export interface TextVersion {
+  /** Sa note. */
+  path: string
+  number: number
+  /** D'où vient ce texte : extrait du fichier, ou relu par l'IA. */
+  origin: 'extraction' | 'ia'
+  date: string
+  /** Relu par l'IA : le modèle, et ce qui l'a guidée (prompt, persona, skill). */
+  model?: string
+  prompt?: string
+  persona?: string
+  skill?: string
+  /** Relu par l'IA : les morceaux gardés tels quels (une réponse qui résumait, ajoutait). */
+  kept?: number
+  text: string
+}
+
+export const TEXT_VERSION_TYPE = 'bibliotheque-texte'
+/** Le dossier des versions du texte des documents, à côté de leurs fiches. */
+export const TEXT_VERSIONS_FOLDER = '_textes'
+
+/** La note d'une version du texte : son en-tête (d'où elle vient), puis le texte. */
+export function textVersionContent(version: Omit<TextVersion, 'path'>, record: string): string {
+  const data: Record<string, unknown> = {
+    'bp-type': TEXT_VERSION_TYPE,
+    document: link(record),
+    version: version.number,
+    origine: version.origin,
+    date: version.date,
+    ...(version.model ? { modele: version.model } : {}),
+    ...(version.prompt ? { prompt: version.prompt } : {}),
+    ...(version.persona ? { persona: version.persona } : {}),
+    ...(version.skill ? { skill: version.skill } : {}),
+    ...(version.kept ? { gardes: version.kept } : {})
+  }
+  return `---\n${toYaml(data)}\n---\n\n${version.text.trim()}\n`
+}
+
+/** Une version du texte relue de sa note ; `null` si ce n'en est pas une. */
+export function readTextVersion(path: string, data: Record<string, unknown> | null, body: string): TextVersion | null {
+  if (!data || data['bp-type'] !== TEXT_VERSION_TYPE) return null
+  const plain = (value: unknown) => (typeof value === 'string' ? value.trim() : typeof value === 'number' ? String(value) : '')
+  return {
+    path,
+    number: Number(data.version) || 0,
+    origin: data.origine === 'ia' ? 'ia' : 'extraction',
+    date: plain(data.date),
+    ...(plain(data.modele) ? { model: plain(data.modele) } : {}),
+    ...(plain(data.prompt) ? { prompt: plain(data.prompt) } : {}),
+    ...(plain(data.persona) ? { persona: plain(data.persona) } : {}),
+    ...(plain(data.skill) ? { skill: plain(data.skill) } : {}),
+    ...(Number(data.gardes) ? { kept: Number(data.gardes) } : {}),
+    text: body.trim()
+  }
+}
+
 /** Le texte extrait, dans la note d'un document : entre ces marques (le reste de la note est à l'utilisateur). */
 export const TEXT_START = '<!-- bp:texte:debut — texte extrait du fichier, tenu à jour par Black Projects ; ne pas modifier entre ces marques -->'
 export const TEXT_END = '<!-- bp:texte:fin -->'
@@ -217,6 +279,8 @@ export interface LibraryDoc {
   /** Son texte extrait (dans sa note) : comment s'est passée la lecture, combien de caractères. */
   reading?: TranscriptState
   characters?: number
+  /** La version de son texte que montre sa fiche (ses versions : des notes à part) ; absente, le texte extrait du fichier, seul. */
+  textVersion?: number
   /** Ses étiquettes n'ont pas été lues sûrement : à confirmer, avec celles que le texte suggère. */
   tagsToConfirm?: boolean
   tagsProbable?: string[]
@@ -273,6 +337,7 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.dateToConfirm && doc.dateProbable ? { dateProbable: doc.dateProbable } : {}),
     ...(doc.dateByAi ? { dateIdentifieePar: 'ia' } : {}),
     ...(doc.reading ? { lecture: doc.reading, caracteres: doc.characters ?? 0 } : {}),
+    ...(doc.textVersion ? { texteVersion: doc.textVersion } : {}),
     ...(doc.tagsToConfirm ? { etiquettesAConfirmer: true } : {}),
     ...(doc.tagsToConfirm && doc.tagsProbable?.length ? { etiquettesProbables: doc.tagsProbable } : {}),
     ...(doc.tagsByAi ? { etiquettesIdentifieesPar: 'ia' } : {})
@@ -335,6 +400,7 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(data.dateAConfirmer === true && text(data.dateProbable) ? { dateProbable: text(data.dateProbable) } : {}),
     ...(data.dateIdentifieePar === 'ia' ? { dateByAi: true } : {}),
     ...(TRANSCRIPT_STATES.includes(data.lecture as TranscriptState) ? { reading: data.lecture as TranscriptState, characters: Number(data.caracteres) || 0 } : {}),
+    ...(Number(data.texteVersion) ? { textVersion: Number(data.texteVersion) } : {}),
     ...(data.etiquettesAConfirmer === true ? { tagsToConfirm: true } : {}),
     ...(data.etiquettesAConfirmer === true && Array.isArray(data.etiquettesProbables) && data.etiquettesProbables.length ? { tagsProbable: data.etiquettesProbables.map(text).filter(Boolean) } : {}),
     ...(data.etiquettesIdentifieesPar === 'ia' ? { tagsByAi: true } : {})
