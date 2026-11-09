@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La liste des émetteurs (v0.96.0)
+
+- [ ] Bibliothèque : une carte **Émetteurs** ; **Nouvel émetteur** : Code « ESA », Nom
+      « Agence spatiale européenne », Autres noms « European Space Agency » ; la carte
+      « ESA — Agence spatiale européenne », une note dans `Bibliothèque/Émetteurs`
+- [ ] Verser un document qui commence par « European Space Agency » : émetteur « ESA —
+      Agence spatiale européenne », rien à confirmer
+- [ ] Un document « Émetteur : Thales Alenia Space » : le crayon de *Émetteur* — une liste
+      (« — Aucun — », ESA…, « Thales Alenia Space (hors de la liste des émetteurs) »,
+      « ＋ Ajouter un émetteur à la liste… ») ; ajouter : la fenêtre propose le nom, code
+      « TAS » : l'émetteur devient « TAS — Thales Alenia Space »
+- [ ] L'IA réglée : sa consigne nomme les émetteurs connus ; elle répond par le code
+
 ## Le type de pièce (v0.95.0)
 
 - [ ] Fiche d'un document : le champ « Type de pièce » (et non plus « Catégorie »), dit avec

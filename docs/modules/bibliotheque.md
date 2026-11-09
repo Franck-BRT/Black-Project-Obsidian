@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.23.0 (Black Projects 0.95.0) |
+| Version | 0.24.0 (Black Projects 0.96.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,34 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## La liste des émetteurs (v0.24.0, Black Projects 0.96.0)
+
+Une **quatrième bibliothèque** à côté des prompts, des personas et des skills : les
+**émetteurs** (`EntryKind` `issuer`, `bp-type: bibliotheque-emetteur`, dossier
+`Bibliothèque/Émetteurs`, réglage `dossierEmetteurs`). Comme les types de pièce : un **code**
+(`code`, « ESA ») et un **nom** (`nom`, « Agence spatiale européenne ») ; le corps de la note :
+ses **autres noms**, un par ligne (« European Space Agency »). Ses pages, ses répertoires et
+ses bibliothèques comme les autres ; carte « ESA — Agence spatiale européenne » ; pas
+d'exemples (chacun a les siens) ; icône `building`.
+
+L'**émetteur d'un document** s'y rattache :
+
+- **Reconnu** (`guessIssuer(text, known)`) : dit avec son mot (« Émetteur : European Space
+  Agency ») → son code ; sinon, un seul émetteur de la liste en tête du document (ses 15
+  premières lignes : son nom ou un autre nom, sans accents ni casse ; son code tel quel, en
+  mot entier) → sûr ; plusieurs → le premier, à confirmer. Hors de la liste : comme avant (le
+  nom lu, gardé tel quel).
+- **Enregistré par son code** (`emetteur: ESA`) ; dit sur la fiche « ESA — Agence spatiale
+  européenne » (`issuerLabelIn`) ; `{emetteur}` donne le code, `{emetteurnom}` (nouveau) le nom.
+- **Choisi dans une liste** (le crayon, *Classer…*) : « — Aucun — », les émetteurs (par code),
+  celui qu'il a s'il n'y est pas (« … (hors de la liste des émetteurs) »), et **« ＋ Ajouter un
+  émetteur à la liste… »** : la fenêtre d'un nouvel émetteur, son nom proposé (celui lu dans
+  le document) ; créé, il devient celui du document.
+- **L'IA** reçoit la liste (`libraryIssuers`) et répond par le code ; voir le [module IA](ia.md).
+
+Les champs Prompt, Persona, Skill des étapes de workflow ne listent pas les émetteurs
+(`AI_ENTRY_KINDS`).
 
 ## Le type de pièce, à la place de la catégorie (v0.23.0, Black Projects 0.95.0)
 

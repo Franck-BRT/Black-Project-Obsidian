@@ -40,7 +40,8 @@ const PATHS: Record<IconName, string> = {
   hide: 'M3 3l18 18M10.6 6.1A10.5 10.5 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.2 3.6M6.6 7.6A17 17 0 0 0 2 12s4 6 10 6a9.6 9.6 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2',
   grip: 'M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01',
   lock: 'M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4',
-  back: 'M19 12H5M11 6l-6 6 6 6'
+  back: 'M19 12H5M11 6l-6 6 6 6',
+  building: 'M3 21h18M5 21V4h9v17M14 9h5v12M8 8h3M8 12h3M8 16h3M16.5 13h.5M16.5 17h.5'
 }
 
 export function Icon({ name, label }: { name: IconName; label?: string }) {

@@ -568,6 +568,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.95.0 : **modules Bibliothèque, Typage des pièces, IA** : la **catégorie** des documents
   devient leur **type de pièce**, dans la liste du module Typage des pièces (vos types
   compris) ; une liste à choisir sur la fiche ; l'IA y choisit
+- v0.96.0 : **modules Bibliothèque et IA** : la liste des **émetteurs** — une bibliothèque de
+  plus (un code, un nom, d'autres noms) ; l'émetteur d'un document y est reconnu, s'y choisit
+  (ou s'y ajoute depuis la fiche), dit « ESA — Agence spatiale européenne » ; l'IA y choisit
 
 ### Étape 7 — Livrables
 

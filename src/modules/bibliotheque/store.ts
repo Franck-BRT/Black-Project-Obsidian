@@ -17,7 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
-import { CATEGORY_TYPER, guessDocCategory, guessDocDate, type PieceTyper, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
+import { CATEGORY_TYPER, guessDocCategory, guessDocDate, type KnownIssuer, type PieceTyper, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
@@ -56,6 +56,8 @@ export interface StoreDeps {
    * lu, illisible) ; absent, rien n'est lu. Pour deviner sa langue.
    */
   textOf?(name: string, bytes: Uint8Array): Promise<string | null>
+  /** Les émetteurs de la liste (code, nom, autres noms) : l'émetteur d'un document y est reconnu. */
+  issuers?(): Promise<readonly KnownIssuer[]>
   /** Les types de pièce (le module Typage des pièces) ; absent : les catégories de la bibliothèque. */
   typer?(): PieceTyper
   /** La ligne de la note d'un fantôme, dans la langue : où est le document (`link`), dans quel lieu (`where`). */
@@ -192,7 +194,7 @@ export class LibraryStore {
       ? { title: titled.title }
       : { titleToConfirm: true, ...(titled.title && titled.title.toLowerCase() !== fromName.toLowerCase() ? { titleProbable: titled.title } : {}) }
     // L'émetteur : dit sûrement par le document, il est donné ; sinon, à confirmer (avec le probable lu).
-    const issued = guessIssuer(text ?? '')
+    const issued = guessIssuer(text ?? '', (await this.deps.issuers?.()) ?? [])
     const issuer: Partial<LibraryDoc> = issued.sure ? { issuer: issued.issuer } : { issuerToConfirm: true, ...(issued.issuer ? { issuerProbable: issued.issuer } : {}) }
     // Les étiquettes : dites par le document, données ; sinon à confirmer (avec celles que le texte suggère).
     const tagged = guessTags(text ?? '')
@@ -443,7 +445,7 @@ export class LibraryStore {
       if (found.sure) next.category = found.category
       else Object.assign(next, { categoryToConfirm: true }, found.probable && found.probable !== doc.category ? { categoryProbable: found.probable } : {})
     } else if (field === 'issuer') {
-      const found = guessIssuer(text ?? '')
+      const found = guessIssuer(text ?? '', (await this.deps.issuers?.()) ?? [])
       delete next.issuerToConfirm
       delete next.issuerProbable
       delete next.issuerByAi

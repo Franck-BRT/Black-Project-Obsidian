@@ -85,7 +85,10 @@ platform.http = {
     // « Tester la connexion » : la liste des modèles du serveur.
     if (request.url.endsWith('/models')) return { status: 200, text: JSON.stringify({ data: ['bge-m3', 'bge-reranker-v2-m3', 'mistral-small-3.2', 'qwen2.5-vl-7b-instruct', 'olmocr-7b'].map((id) => ({ id })) }) }
     if (!request.url.endsWith('/chat/completions')) return { status: 404, text: '' }
-    const sent = JSON.parse(request.body ?? '{}') as { messages?: { content: string }[] }
+    const sent = JSON.parse(request.body ?? '{}') as {
+      messages?: { content: string }[]
+      response_format?: { json_schema?: { schema?: { properties?: Record<string, { type?: string }> } } }
+    }
     const asked = (sent.messages ?? []).map((message) => message.content).join('\n')
     const question = (sent.messages?.at(-1)?.content ?? '').split('\n').filter(Boolean).at(-1) ?? ''
     // Traduire une exigence : le texte repris tel quel (les chiffres ne bougent pas), et une note.
@@ -100,7 +103,14 @@ platform.http = {
           })
         : asked.includes('"findings"')
           ? JSON.stringify({ findings: [] })
-          : `Réponse de démonstration, sans IA réelle : le premier extrait transmis répond à « ${question.slice(0, 120)} » [1].`
+          : sent.response_format?.json_schema?.schema?.properties
+            ? // Une réponse imposée (identifier un titre, un émetteur, une date…) : sans IA réelle, « pas sûr ».
+              JSON.stringify(
+                Object.fromEntries(
+                  Object.entries(sent.response_format.json_schema.schema.properties).map(([key, spec]) => [key, spec.type === 'boolean' ? false : spec.type === 'array' ? [] : ''])
+                )
+              )
+            : `Réponse de démonstration, sans IA réelle : le premier extrait transmis répond à « ${question.slice(0, 120)} » [1].`
     return { status: 200, text: JSON.stringify({ choices: [{ message: { content }, finish_reason: 'stop' }] }) }
   }
 }

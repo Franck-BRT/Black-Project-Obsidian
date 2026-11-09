@@ -15,7 +15,7 @@ import { grouped, groupingOf, groupingSelector, type Group } from '../../core/gr
 import type { GhostEntry, LibraryStore, ResearchField } from './store'
 import type { LibraryGhost } from './ghosts'
 import { LANGUAGES, type LanguageCode } from './language'
-import { docDateLabel } from './identity'
+import { docDateLabel, type KnownIssuer } from './identity'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -52,6 +52,8 @@ export interface LibraryHomeDeps {
   newVersionOf(record: string): Promise<void>
   /** Choisir sa langue (ou la détecter de nouveau, ou aucune). */
   chooseLanguage(record: string): Promise<void>
+  /** Les émetteurs de la liste : celui d'un document est dit par son code et son nom. */
+  issuers(): Promise<readonly KnownIssuer[]>
   /** Un type de pièce en mots : « CCTP — Cahier des clauses techniques particulières ». */
   typeText(code: string): string
   /** Confirmer la catégorie : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
@@ -298,6 +300,12 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   if (!doc) return { title: t('bibliotheque.doc.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.doc.missing') }] }
   const present = await deps.exists(doc.file)
   const ghosts = await deps.store.ghostsOf(doc)
+  // Un émetteur de la liste : son code et son nom.
+  const issuers = await deps.issuers()
+  const issuerText = (value: string): string => {
+    const found = issuers.find((each) => each.code === value)
+    return found ? (found.name && found.name !== found.code ? `${found.code} — ${found.name}` : found.code) : value
+  }
   // Ce qui reste à confirmer (la langue, le titre, la catégorie, l'émetteur, la référence) : un message chacun —
   // plusieurs, ensemble dans une section, dépliée, que l'en-tête résume.
   const confirming: HomeBlock[] = [
@@ -394,10 +402,10 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
           {
             kind: 'message' as const,
             tone: 'warning' as const,
-            text: doc.issuerProbable ? t('bibliotheque.issuer.confirm.probable', { probable: doc.issuerProbable }) : t('bibliotheque.issuer.confirm.none'),
+            text: doc.issuerProbable ? t('bibliotheque.issuer.confirm.probable', { probable: issuerText(doc.issuerProbable) }) : t('bibliotheque.issuer.confirm.none'),
             actions: [
               ...(doc.issuerProbable
-                ? [{ id: 'use-issuer', label: t('bibliotheque.issuer.use', { issuer: doc.issuerProbable }), icon: 'check' as const, primary: true, run: () => deps.confirmIssuer(doc.record, doc.issuerProbable!) }]
+                ? [{ id: 'use-issuer', label: t('bibliotheque.issuer.use', { issuer: issuerText(doc.issuerProbable) }), icon: 'check' as const, primary: true, run: () => deps.confirmIssuer(doc.record, doc.issuerProbable!) }]
                 : []),
               { id: 'keep-issuer', label: t(doc.issuer ? 'bibliotheque.identity.confirm' : 'bibliotheque.issuer.none'), icon: 'cross' as const, run: () => deps.confirmIssuer(doc.record, null) },
               { id: 'classify-issuer', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.issuerProbable ? {} : { primary: true }), run: () => deps.classify(doc.record) }
@@ -570,7 +578,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
         items: withEdits([{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), { ...field('date', doc.date ? docDateLabel(doc.date, deps.locale) : ''), ...(doc.dateToConfirm ? { detail: (doc.date ? t('bibliotheque.date.detail.toConfirm', { date: docDateLabel(doc.date, deps.locale) }) : t('bibliotheque.detail.toConfirm')) } : doc.dateByAi && doc.date ? { detail: t('bibliotheque.date.detail.byAi', { date: docDateLabel(doc.date, deps.locale) }) } : {}) },
-          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category ? deps.typeText(doc.category) : ''), ...(doc.categoryToConfirm ? { detail: (doc.category ? t('bibliotheque.category.detail.toConfirm', { category: deps.typeText(doc.category) }) : t('bibliotheque.detail.toConfirm')) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category ? deps.typeText(doc.category) : '—' }) } : {}) }, { ...field('issuer', doc.issuer), ...(doc.issuerToConfirm ? { detail: (doc.issuer ? t('bibliotheque.issuer.detail.toConfirm', { issuer: doc.issuer }) : t('bibliotheque.detail.toConfirm')) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: doc.issuer || '—' }) } : {}) }, { ...field('tags', doc.tags.join(', ')), ...(doc.tagsToConfirm ? { detail: (doc.tags.length ? t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') }) : t('bibliotheque.detail.toConfirm')) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {}) }])
+          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category ? deps.typeText(doc.category) : ''), ...(doc.categoryToConfirm ? { detail: (doc.category ? t('bibliotheque.category.detail.toConfirm', { category: deps.typeText(doc.category) }) : t('bibliotheque.detail.toConfirm')) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category ? deps.typeText(doc.category) : '—' }) } : {}) }, { ...field('issuer', issuerText(doc.issuer)), ...(doc.issuerToConfirm ? { detail: (doc.issuer ? t('bibliotheque.issuer.detail.toConfirm', { issuer: issuerText(doc.issuer) }) : t('bibliotheque.detail.toConfirm')) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: issuerText(doc.issuer) || '—' }) } : {}) }, { ...field('tags', doc.tags.join(', ')), ...(doc.tagsToConfirm ? { detail: (doc.tags.length ? t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') }) : t('bibliotheque.detail.toConfirm')) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {}) }])
       }),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',

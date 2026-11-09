@@ -19,9 +19,16 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, toYaml, type YamlReader } from '../../core/yaml'
 import { MAIN_SHELF, type Shelf } from './shelves'
 
-export type EntryKind = 'prompt' | 'persona' | 'skill'
-export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill']
-export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque-prompt', persona: 'bibliotheque-persona', skill: 'bibliotheque-skill' }
+export type EntryKind = 'prompt' | 'persona' | 'skill' | 'issuer'
+export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill', 'issuer']
+/** Celles qui servent à l'IA (les champs Prompt, Persona, Skill des étapes de workflow). */
+export const AI_ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill']
+export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = {
+  prompt: 'bibliotheque-prompt',
+  persona: 'bibliotheque-persona',
+  skill: 'bibliotheque-skill',
+  issuer: 'bibliotheque-emetteur'
+}
 
 export interface LibraryEntry {
   kind: EntryKind
@@ -33,6 +40,8 @@ export interface LibraryEntry {
   category: string
   description: string
   favorite: boolean
+  /** Un **émetteur** : son code court (« ESA », « DGA ») ; son nom est `name`. */
+  code?: string
   /** Où est sa note (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -67,6 +76,7 @@ export function entryContent(kind: EntryKind, draft: EntryDraft): string {
   const data: Record<string, unknown> = {
     'bp-type': ENTRY_TYPE[kind],
     nom: draft.name.trim(),
+    ...(draft.code?.trim() ? { code: draft.code.trim() } : {}),
     ...(draft.category.trim() ? { categorie: draft.category.trim() } : {}),
     ...(draft.description.trim() ? { description: draft.description.trim() } : {}),
     ...(draft.favorite ? { favori: true } : {})
@@ -86,14 +96,15 @@ export function readEntry(kind: EntryKind, path: string, data: Record<string, un
     text: body.replace(/%%[\s\S]*?%%/g, '').trim(),
     category: plain(data.categorie ?? data['catégorie'] ?? data.category),
     description: plain(data.description),
-    favorite: data.favori === true || data.favorite === true
+    favorite: data.favori === true || data.favorite === true,
+    ...(plain(data.code) ? { code: plain(data.code) } : {})
   }
 }
 
 /** Toutes les entrées contiennent-elles chaque mot cherché (nom, catégorie, description, texte) ? */
 export function matchesEntry(entry: LibraryEntry, query: string): boolean {
   const words = fold(query).split(/\s+/).filter(Boolean)
-  const hay = fold([entry.name, entry.category, entry.description, entry.text].join('\n'))
+  const hay = fold([entry.code ?? '', entry.name, entry.category, entry.description, entry.text].join('\n'))
   return words.every((word) => hay.includes(word))
 }
 

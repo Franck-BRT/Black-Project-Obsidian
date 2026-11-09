@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.19.0 (Black Projects 0.95.0) |
+| Version | 0.20.0 (Black Projects 0.96.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,14 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## L'émetteur, dans la liste des émetteurs (v0.20.0, Black Projects 0.96.0)
+
+`ia.emetteur-document` donne à l'IA la liste des émetteurs de la bibliothèque (« Les émetteurs
+connus (code (nom)) : ESA (Agence spatiale européenne)… Si c'est l'un d'eux, réponds par son
+code. »). `readIssuerAnswer(answer, text, fileName, known)` : un émetteur de la liste (par son
+code, son nom, un autre nom, « ESA (…) » aussi) est gardé par son code si le document le dit
+(un de ses noms, ou son code en mot entier) ; hors de la liste, comme avant.
 
 ## Le type de pièce d'un document (v0.19.0, Black Projects 0.95.0)
 

@@ -176,5 +176,7 @@ const SKILLS: Record<Language, EntryDraft[]> = {
 /** Les exemples d'une bibliothèque, dans la langue de l'utilisateur. */
 export function startersFor(kind: EntryKind, language: string): EntryDraft[] {
   const lang: Language = language === 'en' ? 'en' : 'fr'
+  // Les émetteurs sont ceux de chacun : pas d'exemples.
+  if (kind === 'issuer') return []
   return (kind === 'prompt' ? PROMPTS : kind === 'persona' ? PERSONAS : SKILLS)[lang]
 }

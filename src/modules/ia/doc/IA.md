@@ -78,7 +78,8 @@ choisie dans la liste des catégories ; pour la **date** (« Identifier avec l'I
 celle de son édition ou de sa signature, qui doit y figurer ; pour les **étiquettes** (« Donner avec l'IA les étiquettes d'un document… », activé) :
 de 3 à 6, celles déjà en usage dans la bibliothèque d'abord, dites par le document sinon ; et pour l'**émetteur**
 (« Identifier avec l'IA l'émetteur d'un document… », activé) : l'organisme qui a écrit le
-document, qui doit y figurer. Et **« Identifier avec l'IA la
+document, qui doit y figurer — choisi, s'il y est, dans la liste des émetteurs de la
+bibliothèque (par son code). Et **« Identifier avec l'IA la
 référence et la version d'un document, quand la première passe n'est pas sûre »** (activé) : quand le document ne les dit pas clairement
 (référence lue seulement dans le nom du fichier, version absente…), l'IA les cherche au
 début de son texte ; ce qu'elle trouve doit y figurer — elle n'invente rien.

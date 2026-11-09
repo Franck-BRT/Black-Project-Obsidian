@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, dateFoundIn, libraryDateLabel, libraryPieceTypes, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -107,14 +107,22 @@ const ISSUER_SCHEMA = {
 
 /**
  * L'émetteur que l'IA a dit : pas certaine, `null` ; certaine et vide : aucun émetteur (`''`) ;
- * sinon, gardé s'il n'est pas trop long et que le document le dit (elle n'invente pas).
+ * un émetteur de la liste (par son code, son nom, un autre nom) que le document dit : son
+ * code ; sinon, gardé s'il n'est pas trop long et que le document le dit (elle n'invente pas).
  */
-export function readIssuerAnswer(answer: unknown, text: string, fileName: string): string | null {
+export function readIssuerAnswer(answer: unknown, text: string, fileName: string, known: readonly KnownIssuer[] = []): string | null {
   if (typeof answer !== 'object' || answer === null) return null
   const reply = answer as { issuer?: unknown; certain?: unknown }
   if (reply.certain !== true || typeof reply.issuer !== 'string') return null
   const issuer = reply.issuer.replace(/\s+/g, ' ').replace(/^["«“\s]+|["»”\s.]+$/g, '').trim()
   if (!issuer) return ''
+  // « ESA (Agence spatiale européenne) », « ESA — … » : le code, devant.
+  const code = knownIssuerCode(issuer, known) || knownIssuerCode(issuer.split(/\s+[(—–-]\s*/)[0] ?? '', known)
+  const listed = known.find((each) => each.code === code)
+  if (listed) {
+    const said = [listed.name, ...listed.aliases].some((name) => issuerFoundIn(name, text, fileName)) || new RegExp(`(?<![\\p{L}\\p{N}])${listed.code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').test(`${text} ${fileName}`)
+    return said ? listed.code : null
+  }
   return issuer.length <= 80 && issuerFoundIn(issuer, text, fileName) ? issuer : null
 }
 
@@ -357,12 +365,13 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       if (!ai) return say('ia.wf.issuer.noAi', { title: doc.title })
       const text = ((await libraryDocText(record)) ?? '').trim()
       if (!text) return say('ia.wf.issuer.noText', { title: doc.title })
+      const known = await libraryIssuers()
       const fileName = doc.file.slice(doc.file.lastIndexOf('/') + 1)
       let answer: unknown
       try {
         answer = await ai.chatJson<unknown>({
           messages: [
-            { role: 'system', content: t('ia.wf.issuer.system') },
+            { role: 'system', content: [t('ia.wf.issuer.system'), ...(known.length ? [t('ia.wf.issuer.known', { list: known.map((each) => (each.name && each.name !== each.code ? `${each.code} (${each.name})` : each.code)).join(', ') })] : [])].join(' ') },
             { role: 'user', content: `${t('ia.wf.identity.file', { name: fileName })}\n\n${text.slice(0, IDENTITY_HEAD)}` }
           ],
           temperature: 0,
@@ -371,10 +380,10 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       } catch (error) {
         throw new Error(describe(error))
       }
-      const issuer = readIssuerAnswer(answer, text, fileName)
+      const issuer = readIssuerAnswer(answer, text, fileName, known)
       if (issuer === null) return say('ia.wf.issuer.unsure', { title: doc.title })
       await setIssuerByAi(record, issuer)
-      return say(issuer ? 'ia.wf.issuer.found' : 'ia.wf.issuer.nobody', { title: doc.title, issuer })
+      return say(issuer ? 'ia.wf.issuer.found' : 'ia.wf.issuer.nobody', { title: doc.title, issuer: issuerLabelIn(issuer, known) })
     }
   })
 

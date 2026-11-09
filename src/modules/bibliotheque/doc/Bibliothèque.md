@@ -181,6 +181,14 @@ propose la première date du texte — jamais une date limite ou une échéance 
 (« 12/02/2026 », « 12 février 2026 ») ; l'IA, si elle est réglée, la cherche d'abord.
 Filtre *Date à confirmer*.
 
+**La liste des émetteurs** (Bibliothèque › **Émetteurs**) : comme les types de pièce, un
+**code** (« ESA ») et un **nom** (« Agence spatiale européenne ») — et, s'il le faut, les
+autres noms sous lesquels il signe, un par ligne (« European Space Agency »). Une note par
+émetteur. L'émetteur d'un document y est **reconnu** (son nom, un autre nom, ou son code en
+tête du document), **s'y choisit** (le crayon du champ, *Classer…* : une liste, et
+« ＋ Ajouter un émetteur à la liste… », son nom proposé) et se lit « ESA — Agence spatiale
+européenne ».
+
 **L'émetteur** aussi : dit par le document (« Émetteur : », « Émis par », « Pouvoir
 adjudicateur : »…), il est donné. Sinon il est **à confirmer** : la fiche propose
 l'organisme lu au début du document (**Prendre « … »**), **Pas d'émetteur**, ou

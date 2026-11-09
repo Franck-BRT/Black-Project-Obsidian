@@ -53,6 +53,7 @@ export type IconName =
   | 'grip'
   | 'lock'
   | 'back'
+  | 'building'
 
 /** Un bouton : ce qu'il dit, ce qu'il fait. */
 export interface ViewAction {

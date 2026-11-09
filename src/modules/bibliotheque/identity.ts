@@ -189,17 +189,60 @@ const cleanIssuer = (raw: string): string =>
     .replace(/^[-–—•*:\s]+|[-–—:;,.\s]+$/g, '')
     .trim()
 
-export function guessIssuer(text: string): IssuerGuess {
+/** Un émetteur de la liste : son code, son nom, ses autres noms. */
+export interface KnownIssuer {
+  code: string
+  name: string
+  aliases: readonly string[]
+}
+
+const foldName = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+
+/** Le code d'un émetteur de la liste écrit par son code, son nom ou l'un de ses autres noms ; vide s'il n'y est pas. */
+export function knownIssuerCode(value: string, known: readonly KnownIssuer[]): string {
+  const wanted = foldName(value)
+  if (!wanted) return ''
+  return known.find((each) => foldName(each.code) === wanted || [each.name, ...each.aliases].some((name) => foldName(name) === wanted))?.code ?? ''
+}
+
+/** Les émetteurs de la liste que dit un texte : leur nom ou un autre nom (sans accents ni casse), leur code tel quel, en mot entier. */
+function knownIssuersIn(text: string, known: readonly KnownIssuer[]): KnownIssuer[] {
+  const folded = ` ${foldName(text)} `
+  return known.filter(
+    (each) =>
+      [each.name, ...each.aliases].some((name) => foldName(name).length >= 3 && folded.includes(` ${foldName(name)} `)) ||
+      (each.code.length >= 2 && new RegExp(`(?<![\\p{L}\\p{N}])${each.code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').test(text))
+  )
+}
+
+export function guessIssuer(text: string, known: readonly KnownIssuer[] = []): IssuerGuess {
   const head = text.slice(0, ISSUER_HEAD)
   const labelled = LABELLED_ISSUER.exec(head)?.[1]
-  if (labelled && cleanIssuer(labelled).length >= 2) return { issuer: cleanIssuer(labelled), sure: true }
+  // Dit avec son mot : sûr — par son code, s'il est de la liste.
+  if (labelled && cleanIssuer(labelled).length >= 2) return { issuer: knownIssuerCode(cleanIssuer(labelled), known) || knownIssuersIn(labelled, known)[0]?.code || cleanIssuer(labelled), sure: true }
   const lines = head
     .split(/\r?\n/)
     .map((line) => cleanIssuer(line))
     .filter(Boolean)
     .slice(0, 25)
+  // Un émetteur de la liste, en tête du document (sa page de garde) : un seul, sûr ; plusieurs, le premier, probable.
+  if (known.length) {
+    const top = lines.slice(0, 15)
+    const named = known
+      .map((each) => ({ each, at: top.findIndex((line) => knownIssuersIn(line, [each]).length > 0) }))
+      .filter((found) => found.at >= 0)
+      .sort((a, b) => a.at - b.at)
+    if (named.length === 1) return { issuer: named[0]!.each.code, sure: true }
+    if (named.length > 1) return { issuer: named[0]!.each.code, sure: false }
+  }
   const found = lines.find((line) => line.length >= 3 && line.length <= 80 && ORGANISATION.test(line))
-  return { issuer: found ?? '', sure: false }
+  return { issuer: found ? knownIssuerCode(found, known) || found : '', sure: false }
 }
 
 /** Un émetteur donné par l'IA, gardé seulement si le document le dit (tel quel, ou l'essentiel de ses mots) : elle n'invente pas. */
