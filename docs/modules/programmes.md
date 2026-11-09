@@ -5,13 +5,35 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.2.0 (Black Projects 0.110.0) |
+| Version | 0.3.0 (Black Projects 0.111.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Le planning ; les documents attendus (v0.3.0, Black Projects 0.111.0)
+
+- **Durées** : une phase d'un type a sa durée prévue (`PhaseSpec.duration`, en jours
+  calendaires) ; un projet la copie (`duree`).
+- **Démarrage** : « Démarrer le projet » (sa date, `demarrage` dans l'en-tête) ; les **dates
+  prévues** de toutes ses phases en découlent (`planPhases`, `prevuDebut` / `prevuFin`,
+  recalculées à chaque enregistrement) : les phases d'une étape commencent ensemble ; l'étape
+  suivante le lendemain de la fin de la plus longue ; sans durée ou sans objet, un jour sans
+  retarder la suite. Changer la durée d'une phase (« Ses dates ») décale les suivantes.
+- **Retard** (`isLate`) : la fin prévue passée, la phase ni terminée ni sans objet — sa tuile
+  dit « En retard », la page du projet le compte sous la fin prévue.
+- **Documents attendus** : dans le type, l'interrupteur « Des documents sont attendus », puis
+  les types de pièce (plusieurs ; ceux de la lecture des types de pièces : `libraryPieceTypes`) —
+  `PhaseSpec.documents` ; un projet les copie (`documents` : `type`, `recu`, `lien`, `le`). Sur la
+  page de la phase : leur liste (attendu, reçu le…), **Reçu** / **Pas encore reçu**, **Relier le
+  fichier** (il est alors reçu), **Documents attendus** pour en ajouter ou en retirer ; la tuile
+  dit « 1/3 documents ».
+- Modifier une phase d'un type la réécrit tout entière (`replacePhase`) : une durée, des
+  documents, une description retirés disparaissent.
+- Le type de départ « Réponse à un appel d'offres » a des durées et attend des documents
+  (analyse : RC, CCAP, CCTP ; rédaction : mémoire ; chiffrage : BPU ; remise : AE).
 
 ## Les phases englobantes ; les icônes dans la liste (v0.2.0, Black Projects 0.110.0)
 

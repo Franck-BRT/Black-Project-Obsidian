@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le planning ; les documents attendus (v0.111.0)
+
+- [ ] Un projet : **Démarrer le projet** (une date) — la notice dit la fin prévue ; chaque tuile
+      dit « prévue du … au … » ; la page dit le démarrage et la fin prévue
+- [ ] Une date de démarrage passée : les phases dont la fin prévue est passée disent « En
+      retard » ; **Ses dates** d'une phase : changer sa durée décale les suivantes
+- [ ] L'éditeur d'un type : une phase a sa **durée prévue** et l'interrupteur **Des documents sont
+      attendus** — activé, la fenêtre des types de pièce (en cocher plusieurs) ; sa tuile dit
+      « 10 j · 2 document(s) attendu(s) » ; l'interrupteur coupé, plus de documents
+- [ ] La phase « Analyse de l'appel d'offres » d'un projet : RC, CCAP, CCTP attendus ; **Reçu**,
+      **Relier le fichier** ; **Documents attendus** pour en ajouter ; la tuile dit « 1/3
+      documents »
+
 ## Les phases englobantes ; les icônes dans la liste (v0.110.0)
 
 - [ ] **Types de projet** : « Réponse à un appel d'offres » a deux bandeaux, **Avant-vente**

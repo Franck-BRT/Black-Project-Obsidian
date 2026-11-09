@@ -34,6 +34,12 @@ export const PHASE_ICONS: readonly IconName[] = ['flow', 'search', 'file', 'list
 export const FREE_KIND = 'libre'
 
 /** Une phase d'un type de projet. */
+/** Un document qu'une phase attend : son type de pièce (« CCTP »), et un nom s'il en faut un. */
+export interface ExpectedDocSpec {
+  type: string
+  label?: string
+}
+
 export interface PhaseSpec {
   id: string
   name: string
@@ -42,6 +48,19 @@ export interface PhaseSpec {
   icon: IconName
   color: TileColor
   description?: string
+  /** Sa durée prévue, en jours (calendaires). */
+  duration?: number
+  /** Les documents qu'elle attend (plusieurs, au besoin). */
+  documents?: ExpectedDocSpec[]
+}
+
+/** Un document attendu par une phase d'un projet : reçu ou non, et où il est. */
+export interface ExpectedDoc extends ExpectedDocSpec {
+  received?: boolean
+  /** Le fichier ou la note qui le porte. */
+  link?: string
+  /** Le jour où il a été reçu. */
+  on?: string
 }
 
 /**
@@ -74,14 +93,19 @@ export type PhaseStatus = 'a-venir' | 'en-cours' | 'terminee' | 'sans-objet'
 export const PHASE_STATUSES: readonly PhaseStatus[] = ['a-venir', 'en-cours', 'terminee', 'sans-objet']
 
 /** Une phase d'un projet : celle de son type, et où il en est. */
-export interface ProjectPhase extends PhaseSpec {
+export interface ProjectPhase extends Omit<PhaseSpec, 'documents'> {
   /** Son étape, à partir de 1. */
   stage: number
   status: PhaseStatus
+  /** Ses dates réelles : commencée, terminée. */
   start?: string
   end?: string
+  /** Ses dates prévues : du démarrage du projet et des durées des phases d'avant. */
+  plannedStart?: string
+  plannedEnd?: string
   /** Ce qui la porte : une note (l'analyse de l'appel d'offres, son chemin). */
   link?: string
+  documents?: ExpectedDoc[]
 }
 
 export interface Programme {
@@ -108,6 +132,8 @@ export interface Project {
   icon: IconName
   description: string
   created: string
+  /** Le jour où il a démarré : les dates prévues de ses phases en découlent. */
+  start?: string
   phases: ProjectPhase[]
   /** Ses phases englobantes (leurs étapes à partir de 1). */
   spans: SpanSpec[]
@@ -201,7 +227,39 @@ function readPhaseSpec(value: unknown): PhaseSpec | null {
   const id = plain(data.id)
   const name = plain(data.name)
   if (!id || !name) return null
-  return { id, name, kind: plain(data.kind) || FREE_KIND, icon: asIcon(data.icon, 'flow'), color: asColor(data.color, 'indigo'), ...(plain(data.description) ? { description: plain(data.description) } : {}) }
+  const duration = Number(data.duration)
+  const documents = readDocs(data.documents, 'type')
+  return {
+    id,
+    name,
+    kind: plain(data.kind) || FREE_KIND,
+    icon: asIcon(data.icon, 'flow'),
+    color: asColor(data.color, 'indigo'),
+    ...(plain(data.description) ? { description: plain(data.description) } : {}),
+    ...(Number.isFinite(duration) && duration >= 0 && data.duration !== undefined && data.duration !== '' ? { duration: Math.round(duration) } : {}),
+    ...(documents.length ? { documents } : {})
+  }
+}
+
+/** Des documents attendus relus (`type` : la clé de leur type de pièce). */
+function readDocs(value: unknown, typeKey: string): ExpectedDoc[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((each): ExpectedDoc | null => {
+      if (typeof each === 'string') return each.trim() ? { type: each.trim() } : null
+      if (!each || typeof each !== 'object') return null
+      const data = each as Record<string, unknown>
+      const type = plain(data[typeKey])
+      if (!type) return null
+      return {
+        type,
+        ...(plain(data.label ?? data.nom) ? { label: plain(data.label ?? data.nom) } : {}),
+        ...(data.received === true || data.recu === true ? { received: true } : {}),
+        ...(unlink(data.link ?? data.lien) ? { link: unlink(data.link ?? data.lien) } : {}),
+        ...(plain(data.on ?? data.le) ? { on: plain(data.on ?? data.le) } : {})
+      }
+    })
+    .filter((doc): doc is ExpectedDoc => doc !== null)
 }
 
 /** Le lien wiki d'une note : `[[Programmes/X/X.md]]`. */
@@ -242,7 +300,7 @@ export function readProject(path: string, data: Record<string, unknown>): Projec
   const phases = Array.isArray(data.phases)
     ? data.phases
         .map((value): ProjectPhase | null => {
-          const spec = readPhaseSpec({ ...(value as Record<string, unknown>), name: (value as Record<string, unknown>)?.nom, kind: (value as Record<string, unknown>)?.sorte, icon: (value as Record<string, unknown>)?.icone, color: (value as Record<string, unknown>)?.couleur })
+          const spec = readPhaseSpec({ ...(value as Record<string, unknown>), name: (value as Record<string, unknown>)?.nom, kind: (value as Record<string, unknown>)?.sorte, icon: (value as Record<string, unknown>)?.icone, color: (value as Record<string, unknown>)?.couleur, duration: (value as Record<string, unknown>)?.duree, documents: undefined })
           if (!spec) return null
           const raw = value as Record<string, unknown>
           const status = PHASE_STATUSES.includes(raw.statut as PhaseStatus) ? (raw.statut as PhaseStatus) : 'a-venir'
@@ -252,7 +310,10 @@ export function readProject(path: string, data: Record<string, unknown>): Projec
             status,
             ...(plain(raw.debut) ? { start: plain(raw.debut) } : {}),
             ...(plain(raw.fin) ? { end: plain(raw.fin) } : {}),
-            ...(unlink(raw.lien) ? { link: unlink(raw.lien) } : {})
+            ...(plain(raw.prevuDebut) ? { plannedStart: plain(raw.prevuDebut) } : {}),
+            ...(plain(raw.prevuFin) ? { plannedEnd: plain(raw.prevuFin) } : {}),
+            ...(unlink(raw.lien) ? { link: unlink(raw.lien) } : {}),
+            ...((docs) => (docs.length ? { documents: docs } : {}))(readDocs(raw.documents, 'type'))
           }
         })
         .filter((phase): phase is ProjectPhase => phase !== null)
@@ -270,6 +331,7 @@ export function readProject(path: string, data: Record<string, unknown>): Projec
     icon: asIcon(data.icone, 'flow'),
     description: plain(data.description),
     created: plain(data.creeLe),
+    ...(plain(data.demarrage) ? { start: plain(data.demarrage) } : {}),
     phases,
     spans
   }
@@ -285,6 +347,7 @@ export function projectData(project: Omit<Project, 'path' | 'folder' | 'name'>):
     icone: project.icon,
     ...(project.description ? { description: project.description } : {}),
     creeLe: project.created,
+    ...(project.start ? { demarrage: project.start } : {}),
     phases: project.phases.map((phase) => ({
       id: phase.id,
       nom: phase.name,
@@ -293,9 +356,13 @@ export function projectData(project: Omit<Project, 'path' | 'folder' | 'name'>):
       couleur: phase.color,
       etape: phase.stage,
       statut: phase.status,
+      ...(phase.duration !== undefined ? { duree: phase.duration } : {}),
+      ...(phase.plannedStart ? { prevuDebut: phase.plannedStart } : {}),
+      ...(phase.plannedEnd ? { prevuFin: phase.plannedEnd } : {}),
       ...(phase.start ? { debut: phase.start } : {}),
       ...(phase.end ? { fin: phase.end } : {}),
       ...(phase.link ? { lien: link(phase.link) } : {}),
+      ...(phase.documents?.length ? { documents: phase.documents.map((doc) => ({ type: doc.type, ...(doc.label ? { nom: doc.label } : {}), ...(doc.received ? { recu: true } : {}), ...(doc.link ? { lien: link(doc.link) } : {}), ...(doc.on ? { le: doc.on } : {}) })) } : {}),
       ...(phase.description ? { description: phase.description } : {})
     })),
     ...(project.spans.length ? { englobantes: project.spans.map((span) => ({ id: span.id, nom: span.name, couleur: span.color, de: span.from, a: span.to, ...(span.description ? { description: span.description } : {}) })) } : {})
@@ -316,8 +383,47 @@ export function spansFromType(type: ProjectType): SpanSpec[] {
 
 /** Les phases d'un type, copiées pour un nouveau projet : toutes à venir. */
 export function phasesFromType(type: ProjectType): ProjectPhase[] {
-  return type.stages.flatMap((stage, at) => stage.map((phase) => ({ ...phase, stage: at + 1, status: 'a-venir' as PhaseStatus })))
+  return type.stages.flatMap((stage, at) => stage.map((phase) => ({ ...phase, stage: at + 1, status: 'a-venir' as PhaseStatus, ...(phase.documents ? { documents: phase.documents.map((doc) => ({ ...doc })) } : {}) })))
 }
+
+/** Un jour plus `days` jours (AAAA-MM-JJ). */
+export function addDays(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+/**
+ * Les **dates prévues** des phases d'un projet, de son démarrage : les phases d'une étape
+ * commencent ensemble, le jour où l'étape commence, et durent leur durée (une durée de 5 jours
+ * finit le 5e jour) ; l'étape suivante commence le lendemain de la fin de la plus longue. Une
+ * phase sans durée, ou sans objet, tient en un jour sans retarder la suite. Sans démarrage :
+ * aucune date prévue.
+ */
+export function planPhases(phases: readonly ProjectPhase[], start: string | undefined): ProjectPhase[] {
+  if (!start)
+    return phases.map((phase) => {
+      const unplanned = { ...phase }
+      delete unplanned.plannedStart
+      delete unplanned.plannedEnd
+      return unplanned
+    })
+  const out = new Map<string, ProjectPhase>()
+  let day = start
+  for (const stage of stagesOf(phases)) {
+    let longest = 0
+    for (const phase of stage) {
+      const days = phase.status === 'sans-objet' ? 0 : Math.max(0, phase.duration ?? 0)
+      longest = Math.max(longest, days)
+      out.set(phase.id, { ...phase, plannedStart: day, plannedEnd: addDays(day, Math.max(0, days - 1)) })
+    }
+    if (longest > 0) day = addDays(day, longest)
+  }
+  return phases.map((phase) => out.get(phase.id) ?? phase)
+}
+
+/** Une phase en retard : sa fin prévue passée, et pas terminée (ni sans objet). */
+export const isLate = (phase: ProjectPhase, today: string): boolean => !!phase.plannedEnd && phase.plannedEnd < today && phase.status !== 'terminee' && phase.status !== 'sans-objet'
 
 /** Une affaire relue de sa note. */
 export function readAffaire(path: string, data: Record<string, unknown>): Affaire {

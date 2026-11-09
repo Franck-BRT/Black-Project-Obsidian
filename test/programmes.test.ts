@@ -14,7 +14,7 @@ import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryP
 import { ViewsRegistry, type HomeBlock, type PageView } from '../src/core/views'
 import { MODULES } from '../src/modules'
 import { aoModule } from '../src/modules/ao'
-import { addParallel, addSpan, addStage, movePhase, programmesModule, remapSpans, removePhase, starterTypes, type ProjectType } from '../src/modules/programmes'
+import { addParallel, addSpan, addStage, movePhase, planPhases, programmesModule, remapSpans, removePhase, starterTypes, type ProjectPhase, type ProjectType } from '../src/modules/programmes'
 
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
 const tr = (key: string) => key
@@ -140,7 +140,7 @@ describe('programmes, projets, affaires', () => {
     await action(await load(phasePage), 'status-terminee')
     phase = await load(phasePage)
     expect(phase.blocks.find((block) => block.kind === 'message')).toMatchObject({ tone: 'success' })
-    expect(read(platform, 'Programmes/P/Projet/Projet.md')).toMatch(/- id: lancement\n(?:  .*\n)*?  statut: terminee\n  debut: "[\d-]+"\n  fin: "[\d-]+"\n/)
+    expect(read(platform, 'Programmes/P/Projet/Projet.md')).toMatch(/- id: lancement\n(?:  .*\n)*?  statut: terminee\n(?:  .*\n)*?  debut: "[\d-]+"\n  fin: "[\d-]+"\n/)
     const stages = journey(await load(projectPage)).stages
     expect(stages.map((stage) => stage.phases[0]!.progress)).toEqual(['done', 'todo', 'todo', 'todo'])
     expect(stages[0]!.phases[0]!.status).toEqual({ label: 'Terminée', tone: 'success' })
@@ -239,6 +239,112 @@ describe('les phases englobantes', () => {
   })
 })
 
+describe('le planning : des durées, un démarrage, des dates prévues', () => {
+  const phase = (id: string, stage: number, duration?: number, status: ProjectPhase['status'] = 'a-venir'): ProjectPhase => ({ id, name: id, kind: 'libre', icon: 'flow', color: 'indigo', stage, status, ...(duration !== undefined ? { duration } : {}) })
+
+  it('les phases d’une étape commencent ensemble ; la suivante le lendemain de la fin de la plus longue ; sans durée ou sans objet : un jour, sans retarder', () => {
+    const planned = planPhases([phase('lancement', 1, 5), phase('realisation', 2, 30), phase('achats', 2, 10), phase('jalon', 3), phase('option', 4, 20, 'sans-objet'), phase('cloture', 5, 3)], '2026-03-02')
+    expect(planned.map((each) => [each.id, each.plannedStart, each.plannedEnd])).toEqual([
+      ['lancement', '2026-03-02', '2026-03-06'],
+      ['realisation', '2026-03-07', '2026-04-05'],
+      ['achats', '2026-03-07', '2026-03-16'],
+      ['jalon', '2026-04-06', '2026-04-06'],
+      ['option', '2026-04-06', '2026-04-06'],
+      ['cloture', '2026-04-06', '2026-04-08']
+    ])
+    expect(planPhases(planned, undefined).every((each) => !each.plannedStart && !each.plannedEnd)).toBe(true)
+  })
+
+  it('« Démarrer le projet » : les dates prévues écrites ; la fin prévue ; une phase dont la fin est passée est en retard ; changer une durée décale la suite', async () => {
+    const platform = memoryPlatform()
+    const { load, action, journey, shown } = await start(platform)
+    platform.forms.push({ name: 'P', code: '', description: '', color: 'indigo', icon: 'folder' })
+    await action(await load('programmes'), 'new')
+    platform.forms.push({ name: 'Q', programme: 'Programmes/P/P.md', type: 'projet-simple', description: '', affaire: 'false', client: '', reference: '' })
+    await action(await load(shown.at(-1)!), 'project')
+    const projectPage = shown.at(-1)!
+    let project = await load(projectPage)
+    expect(project.actions!.find((each) => each.id === 'start')).toMatchObject({ label: 'Démarrer le projet', primary: true })
+    expect(project.blocks[0]!.kind === 'stats' && project.blocks[0].stats.map((stat) => [stat.label, stat.value])).toContainEqual(['Démarrage', 'pas démarré'])
+    // Démarré il y a longtemps : 5 + 30 + 10 + 5 jours.
+    platform.forms.push({ start: '2020-01-06' })
+    await action(project, 'start')
+    expect(platform.notices.at(-1)).toBe('« Q » démarré : fin prévue le 2020-02-24.')
+    const note = read(platform, 'Programmes/P/Q/Q.md')
+    expect(note).toMatch(/\ndemarrage: "2020-01-06"\n/)
+    expect(note).toMatch(/- id: lancement\n(?:  .*\n)*?  duree: 5\n  prevuDebut: "2020-01-06"\n  prevuFin: "2020-01-10"\n/)
+    project = await load(projectPage)
+    expect(project.actions!.find((each) => each.id === 'start')!.label).toBe('Date de démarrage')
+    const stats = project.blocks[0]!.kind === 'stats' ? project.blocks[0].stats : []
+    expect(stats.find((stat) => stat.label === 'Fin prévue')).toMatchObject({ value: '24/02/2020', tone: 'danger', hint: '4 phase(s) en retard' })
+    const tiles = journey(project).stages.map((stage) => stage.phases[0]!)
+    expect(tiles[0]).toMatchObject({ status: { label: 'En retard', tone: 'danger' }, detail: 'prévue du 06/01/2020 au 10/01/2020' })
+    // La durée du lancement passe à 10 jours : la réalisation commence 5 jours plus tard.
+    platform.forms.push({ start: '', end: '', duration: '10' })
+    await action(await load(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|lancement`), 'dates')
+    expect(read(platform, 'Programmes/P/Q/Q.md')).toMatch(/- id: realisation\n(?:  .*\n)*?  duree: 30\n  prevuDebut: "2020-01-16"\n  prevuFin: "2020-02-14"\n/)
+    // Une durée qui n'en est pas une : refusée.
+    platform.forms.push({ start: '', end: '', duration: 'dix' })
+    await expect(action(await load(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|lancement`), 'dates')).rejects.toThrow('Une durée est un nombre de jours (0 ou plus).')
+  })
+})
+
+describe('les documents attendus', () => {
+  it('le type : l’interrupteur, puis les types de pièce (plusieurs) ; la tuile le dit', async () => {
+    const platform = memoryPlatform()
+    const { load, settings } = await start(platform)
+    const editor = () => load('programmes.type?projet-simple')
+    const drawn = async () => (await editor()).blocks.find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
+    platform.forms.push({ name: 'Recette', kind: 'libre', icon: 'check', color: 'orange', duration: '10', documents: 'true', description: '' })
+    platform.manyAnswers.push(['PV', 'RAPPORT'])
+    await (await drawn()).stages[2]!.phases[0]!.open!.run()
+    expect(platform.manyAsked.at(-1)!.title).toBe('Les documents attendus par « Recette »')
+    const recette = (settings.programmes!.typesProjet as ProjectType[]).find((type) => type.id === 'projet-simple')!.stages[2]![0]!
+    expect(recette).toMatchObject({ duration: 10, documents: [{ type: 'PV' }, { type: 'RAPPORT' }] })
+    expect((await drawn()).stages[2]!.phases[0]!.detail).toBe('10 j · 2 document(s) attendu(s)')
+    // L'interrupteur coupé : plus de documents.
+    platform.forms.push({ name: 'Recette', kind: 'libre', icon: 'check', color: 'orange', duration: '10', documents: 'false', description: '' })
+    await (await drawn()).stages[2]!.phases[0]!.open!.run()
+    expect((settings.programmes!.typesProjet as ProjectType[]).find((type) => type.id === 'projet-simple')!.stages[2]![0]!.documents).toBeUndefined()
+  })
+
+  it('le projet : la phase les liste (attendus, reçus) ; « Reçu », « Relier le fichier », « Documents attendus » pour en ajouter', async () => {
+    const platform = memoryPlatform()
+    const { load, action, shown } = await start(platform)
+    platform.forms.push({ name: 'P', code: '', description: '', color: 'indigo', icon: 'folder' })
+    await action(await load('programmes'), 'new')
+    platform.forms.push({ name: 'Q', programme: 'Programmes/P/P.md', type: 'reponse-ao', description: '', affaire: 'false', client: '', reference: '' })
+    await action(await load(shown.at(-1)!), 'project')
+    const phasePage = `programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|analyse-ao`
+    const docs = async () => (await load(phasePage)).blocks.find((block) => block.kind === 'list')
+    let list = await docs()
+    expect(list?.kind === 'list' && [list.title, list.items.map((item) => [item.title, item.detail, item.tone])]).toEqual([
+      'Documents attendus (0/3 reçus)',
+      [
+        ['RC — Règlement de la consultation', 'Attendu', 'warning'],
+        ['CCAP — Cahier des clauses administratives particulières', 'Attendu', 'warning'],
+        ['CCTP — Cahier des clauses techniques particulières', 'Attendu', 'warning']
+      ]
+    ])
+    await (list?.kind === 'list' ? list.items[0]!.tools!.find((tool) => tool.id === 'receive')!.run() : null)
+    platform.nextPick = 'Dossier/CCTP.pdf'
+    list = await docs()
+    await (list?.kind === 'list' ? list.items[2]!.tools!.find((tool) => tool.id === 'link')!.run() : null)
+    list = await docs()
+    expect(list?.kind === 'list' && list.items.map((item) => [item.tone, item.detail?.startsWith('Reçu · le ')])).toEqual([
+      ['success', true],
+      ['warning', false],
+      ['success', true]
+    ])
+    expect(read(platform, 'Programmes/P/Q/Q.md')).toMatch(/  documents:\n  - type: RC\n    recu: true\n    le: "[\d-]+"\n  - type: CCAP\n  - type: CCTP\n    recu: true\n    lien: "\[\[Dossier\/CCTP\.pdf\]\]"\n/)
+    // En ajouter un : « Documents attendus » (ceux d'avant gardés, avec leur état).
+    platform.manyAnswers.push(['RC', 'CCAP', 'CCTP', 'DQE'])
+    await action(await load(phasePage), 'documents')
+    list = await docs()
+    expect(list?.kind === 'list' && [list.title, list.items.at(-1)!.title]).toEqual(['Documents attendus (2/4 reçus)', 'DQE — Détail quantitatif estimatif'])
+  })
+})
+
 describe('l’analyse d’un appel d’offres, phase d’un projet', () => {
   it('« Créer l’analyse » depuis la phase : l’analyse du module AO, reliée ; la phase commence ; sa tuile la nomme', async () => {
     const platform = memoryPlatform()
@@ -249,11 +355,11 @@ describe('l’analyse d’un appel d’offres, phase d’un projet', () => {
     await action(await load(shown.at(-1)!), 'project')
     const projectPage = shown.at(-1)!
     const aoTile = journey(await load(projectPage)).stages[1]!.phases[0]!
-    expect(aoTile).toMatchObject({ caption: 'Analyse d’appel d’offres', detail: 'pas encore d’analyse' })
+    expect(aoTile).toMatchObject({ caption: 'Analyse d’appel d’offres', detail: 'pas encore d’analyse · 0/3 documents' })
     await aoTile.open!.run()
     const phasePage = shown.at(-1)!
     const phase = await load(phasePage)
-    expect(phase.actions!.map((each) => each.label)).toEqual(['Créer l’analyse', 'Relier une analyse existante', 'Ses dates'])
+    expect(phase.actions!.map((each) => each.label)).toEqual(['Créer l’analyse', 'Relier une analyse existante', 'Ses dates', 'Documents attendus'])
     // La fenêtre de l'analyse : le nom du projet proposé ; puis « plus tard » pour l'import.
     platform.forms.push({ name: 'Station sol', position: 'candidat', buyer: 'CNES', reference: '' })
     platform.choices.push('later')
@@ -262,11 +368,11 @@ describe('l’analyse d’un appel d’offres, phase d’un projet', () => {
     const analysis = `Appels d'offres/Station sol/Station sol.md`
     expect(platform.files.has(analysis)).toBe(true)
     expect(shown.at(-1)).toBe(`ao.fiche?${encodeURIComponent(analysis)}`)
-    expect(read(platform, 'Programmes/P/Station sol/Station sol.md')).toMatch(/- id: analyse-ao\n(?:  .*\n)*?  statut: en-cours\n  debut: "[\d-]+"\n  lien: "\[\[Appels d'offres\/Station sol\/Station sol\.md\]\]"\n/)
+    expect(read(platform, 'Programmes/P/Station sol/Station sol.md')).toMatch(/- id: analyse-ao\n(?:  .*\n)*?  statut: en-cours\n(?:  .*\n)*?  debut: "[\d-]+"\n  lien: "\[\[Appels d'offres\/Station sol\/Station sol\.md\]\]"\n/)
     const tile = journey(await load(projectPage)).stages[1]!.phases[0]!
-    expect(tile).toMatchObject({ detail: 'analyse « Station sol »', progress: 'current' })
+    expect(tile).toMatchObject({ detail: 'analyse « Station sol » · 0/3 documents', progress: 'current' })
     const linked = await load(phasePage)
-    expect(linked.actions!.map((each) => each.label)).toEqual(['Ouvrir l’analyse', 'Relier une autre analyse', 'Délier', 'Ses dates'])
+    expect(linked.actions!.map((each) => each.label)).toEqual(['Ouvrir l’analyse', 'Relier une autre analyse', 'Délier', 'Ses dates', 'Documents attendus'])
     expect(linked.blocks.find((block) => block.kind === 'cards')).toMatchObject({ cards: [{ title: 'Station sol', facts: [{ label: 'Pièces', value: '0' }] }] })
   })
 
@@ -278,7 +384,7 @@ describe('l’analyse d’un appel d’offres, phase d’un projet', () => {
     platform.forms.push({ name: 'X', programme: 'Programmes/P/P.md', type: 'reponse-ao', description: '', affaire: 'false', client: '', reference: '' })
     await action(await load(shown.at(-1)!), 'project')
     const phase = await load(`programmes.phase?${encodeURIComponent('Programmes/P/X/X.md')}|analyse-ao`)
-    expect(phase.actions!.map((each) => each.id)).toEqual(['dates'])
+    expect(phase.actions!.map((each) => each.id)).toEqual(['dates', 'documents'])
     expect(phase.blocks.at(-1)).toMatchObject({ kind: 'message', tone: 'warning' })
     expect(programmesModule.id).toBe('programmes')
   })

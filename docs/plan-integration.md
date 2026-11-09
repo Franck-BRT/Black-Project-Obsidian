@@ -622,6 +622,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.110.0 : les **phases englobantes** des types de projet (bandeaux au-dessus des étapes, qui
   suivent leurs phases ; copiées dans les projets, avec leur avancement) ; les listes de
   couleurs et d'icônes montrent **chaque choix avec son aperçu à gauche**
+- v0.111.0 : le **planning** des projets (durées des phases dans les types, date de démarrage,
+  dates prévues qui en découlent, retard) ; les **documents attendus** par phase (plusieurs,
+  par type de pièce ; reçus, reliés)
 
 ### Étape 7 — Livrables
 

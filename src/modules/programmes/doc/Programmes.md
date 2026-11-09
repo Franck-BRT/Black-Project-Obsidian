@@ -24,7 +24,16 @@ des flèches :
 - **coche verte** : terminée ; **anneau** : en cours ; **pâle** : à venir ; **grisée** : sans objet.
 
 Un clic sur une phase ouvre sa page : **La commencer** (elle prend la date du jour pour
-début), **La terminer** (date de fin), **Sans objet**, **À venir**, et **Ses dates**.
+début), **La terminer** (date de fin), **Sans objet**, **À venir**, et **Ses dates** (début,
+fin, durée prévue).
+
+**Démarrer le projet** : sa date de démarrage ; les **dates prévues** de toutes ses phases en
+découlent (leurs durées) — les phases d'une étape commencent ensemble, l'étape suivante le
+lendemain de la fin de la plus longue. Changer la durée d'une phase décale les suivantes. Une
+phase dont la fin prévue est passée, et qui n'est pas terminée, est **en retard**.
+
+**Documents attendus** : une phase peut attendre des documents (plusieurs) ; sa page les liste
+— **Reçu**, **Relier le fichier** — et **Documents attendus** en ajoute ou en retire.
 
 ## 3. L'analyse d'un appel d'offres, une phase
 
@@ -47,7 +56,8 @@ chiffrage en parallèle, remise, négociation, exécution, clôture) et **Projet
 Sur **Types de projet**, chaque type est dessiné ; un clic sur son titre ouvre son **éditeur** :
 
 - un clic sur une phase la **modifie** : son nom, sa **sorte** (libre, ou celle d'un module —
-  l'analyse d'un appel d'offres), son icône, sa couleur, ce qu'on y fait ;
+  l'analyse d'un appel d'offres), son icône, sa couleur, sa **durée prévue**, si des **documents
+  sont attendus** (l'interrupteur, puis leurs types de pièce, plusieurs au besoin), ce qu'on y fait ;
 - ses boutons la **déplacent** (vers l'étape d'avant ou d'après, plus haut ou plus bas dans son
   étape) ou la **retirent** ;
 - **+ Phase en parallèle** ajoute une phase à une étape ; **+ Étape**, une étape à la fin ;

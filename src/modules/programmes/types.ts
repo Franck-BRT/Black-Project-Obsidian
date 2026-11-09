@@ -19,7 +19,15 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 /** Les types de projet de départ, dans la langue de l'utilisateur. */
 export function starterTypes(t: Translate): ProjectType[] {
-  const phase = (id: string, icon: PhaseSpec['icon'], color: PhaseSpec['color'], kind = FREE_KIND): PhaseSpec => ({ id, name: t(`programmes.starter.phase.${id}`), kind, icon, color })
+  const phase = (id: string, icon: PhaseSpec['icon'], color: PhaseSpec['color'], duration: number, kind = FREE_KIND, documents: string[] = []): PhaseSpec => ({
+    id,
+    name: t(`programmes.starter.phase.${id}`),
+    kind,
+    icon,
+    color,
+    duration,
+    ...(documents.length ? { documents: documents.map((type) => ({ type })) } : {})
+  })
   return [
     {
       id: 'reponse-ao',
@@ -28,14 +36,15 @@ export function starterTypes(t: Translate): ProjectType[] {
       color: 'indigo',
       description: t('programmes.starter.reponse-ao.desc'),
       stages: [
-        [phase('veille', 'search', 'slate')],
-        [phase('analyse-ao', 'file', 'indigo', AO_KIND)],
-        [phase('go-no-go', 'check', 'orange')],
-        [phase('redaction', 'edit', 'blue'), phase('chiffrage', 'chart', 'teal')],
-        [phase('remise', 'upload', 'violet')],
-        [phase('negociation', 'chat', 'rose')],
-        [phase('execution', 'play', 'green')],
-        [phase('cloture', 'lock', 'slate')]
+        [phase('veille', 'search', 'slate', 10)],
+        // L'analyse attend le dossier de l'acheteur : son règlement, ses cahiers des charges.
+        [phase('analyse-ao', 'file', 'indigo', 10, AO_KIND, ['RC', 'CCAP', 'CCTP'])],
+        [phase('go-no-go', 'check', 'orange', 2)],
+        [phase('redaction', 'edit', 'blue', 15, FREE_KIND, ['MEMOIRE']), phase('chiffrage', 'chart', 'teal', 10, FREE_KIND, ['BPU'])],
+        [phase('remise', 'upload', 'violet', 1, FREE_KIND, ['AE'])],
+        [phase('negociation', 'chat', 'rose', 15)],
+        [phase('execution', 'play', 'green', 180)],
+        [phase('cloture', 'lock', 'slate', 10)]
       ],
       spans: [
         { id: 'avant-vente', name: t('programmes.starter.span.avant-vente'), color: 'indigo', from: 0, to: 4 },
@@ -48,7 +57,7 @@ export function starterTypes(t: Translate): ProjectType[] {
       icon: 'flow',
       color: 'teal',
       description: t('programmes.starter.projet-simple.desc'),
-      stages: [[phase('lancement', 'play', 'teal')], [phase('realisation', 'edit', 'blue')], [phase('recette', 'check', 'orange')], [phase('cloture', 'lock', 'slate')]]
+      stages: [[phase('lancement', 'play', 'teal', 5)], [phase('realisation', 'edit', 'blue', 30)], [phase('recette', 'check', 'orange', 10)], [phase('cloture', 'lock', 'slate', 5)]]
     }
   ]
 }
@@ -77,6 +86,11 @@ export function addStage(type: ProjectType, phase: PhaseSpec, after = type.stage
 /** Une phase de plus dans une étape (à partir de 0) : en parallèle des autres. */
 export function addParallel(type: ProjectType, stage: number, phase: PhaseSpec): ProjectType {
   return { ...type, stages: type.stages.map((list, at) => (at === stage ? [...list, phase] : list)) }
+}
+
+/** Une phase réécrite tout entière (ce qu'on n'a plus — une durée, des documents — disparaît). */
+export function replacePhase(type: ProjectType, id: string, fields: Omit<PhaseSpec, 'id'>): ProjectType {
+  return { ...type, stages: type.stages.map((list) => list.map((phase) => (phase.id === id ? { ...fields, id } : phase))) }
 }
 
 export function updatePhase(type: ProjectType, id: string, patch: Partial<Omit<PhaseSpec, 'id'>>): ProjectType {

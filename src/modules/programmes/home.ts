@@ -8,9 +8,9 @@
  * dessine phase par phase.
  */
 
-import { pageWith, type Breadcrumb, type Card, type HomeBlock, type JourneyPhase, type JourneySpan, type JourneyStage, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Breadcrumb, type Card, type HomeBlock, type JourneyPhase, type JourneySpan, type JourneyStage, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { phaseKind, type PhaseContext } from './kinds'
-import { FREE_KIND, PHASE_STATUSES, progressOf, stagesOf, type Affaire, type PhaseSpec, type PhaseStatus, type Programme, type Project, type ProjectPhase, type ProjectType } from './model'
+import { FREE_KIND, isLate, PHASE_STATUSES, progressOf, stagesOf, type Affaire, type PhaseSpec, type PhaseStatus, type Programme, type Project, type ProjectPhase, type ProjectType } from './model'
 import type { ProgrammeStore } from './store'
 import type { Direction } from './types'
 
@@ -51,6 +51,18 @@ export interface HomeDeps {
   moveTypePhase(type: string, phase: string, direction: Direction): Promise<void>
   removeTypePhase(type: string, phase: string): Promise<void>
   addTypeSpan(type: string): Promise<void>
+  /** Aujourd'hui (AAAA-MM-JJ) : une phase dont la fin prévue est passée est en retard. */
+  today(): string
+  /** Un type de pièce en mots : « CCTP — Cahier des clauses techniques particulières ». */
+  docLabel(type: string): string
+  /** Démarrer le projet (sa date) : les dates prévues de ses phases en découlent. */
+  startProject(project: string): Promise<void>
+  /** Les documents qu'une phase d'un projet attend : les choisir. */
+  chooseDocuments(project: string, phase: string): Promise<void>
+  /** Un document attendu : reçu, ou plus. */
+  setDocument(project: string, phase: string, index: number, received: boolean): Promise<void>
+  /** Un document attendu : relier le fichier qui le porte (il est alors reçu). */
+  linkDocument(project: string, phase: string, index: number): Promise<void>
   editTypeSpan(type: string, span: string): Promise<void>
   removeTypeSpan(type: string, span: string): Promise<void>
 }
@@ -59,6 +71,12 @@ export interface HomeDeps {
 export function kindLabel(t: Translate, kind: string): string {
   if (kind === FREE_KIND) return t('programmes.kind.libre')
   return phaseKind(kind)?.label ?? t('programmes.kind.unknown', { kind })
+}
+
+/** Un jour en court : « 12/03 » (l'année, si ce n'est pas celle d'aujourd'hui). */
+export function shortDay(day: string, year = new Date().getFullYear()): string {
+  const [y = '', m = '', d = ''] = day.split('-')
+  return Number(y) === year ? `${d}/${m}` : `${d}/${m}/${y}`
 }
 
 const STATUS_TONE: Record<PhaseStatus, 'neutral' | 'info' | 'success' | 'warning'> = { 'a-venir': 'neutral', 'en-cours': 'info', terminee: 'success', 'sans-objet': 'warning' }
@@ -79,7 +97,15 @@ async function projectStages(deps: HomeDeps, project: Project, open: boolean): P
       caption: t('programmes.stage', { number: at + 1 }),
       phases: await Promise.all(
         stage.map(async (phase): Promise<JourneyPhase> => {
-          const detail = (await phaseKind(phase.kind)?.detail?.(phase).catch(() => null)) ?? (phase.end ? t('programmes.phase.endOn', { date: phase.end }) : undefined)
+          const late = isLate(phase, deps.today())
+          const docs = phase.documents ?? []
+          const detail = [
+            (await phaseKind(phase.kind)?.detail?.(phase).catch(() => null)) ?? (phase.end ? t('programmes.phase.endOn', { date: shortDay(phase.end) }) : ''),
+            phase.plannedStart && phase.status !== 'terminee' ? t('programmes.phase.planned', { from: shortDay(phase.plannedStart), to: shortDay(phase.plannedEnd ?? phase.plannedStart) }) : '',
+            docs.length ? t('programmes.docs.count', { received: docs.filter((doc) => doc.received).length, total: docs.length }) : ''
+          ]
+            .filter(Boolean)
+            .join(' · ')
           return {
             id: phase.id,
             label: phase.name,
@@ -87,7 +113,7 @@ async function projectStages(deps: HomeDeps, project: Project, open: boolean): P
             color: phase.color,
             ...(phase.kind !== FREE_KIND ? { caption: kindLabel(t, phase.kind) } : {}),
             ...(detail ? { detail } : {}),
-            status: { label: t(`programmes.status.${phase.status}`), tone: STATUS_TONE[phase.status] },
+            status: late ? { label: t('programmes.status.late'), tone: 'danger' as const } : { label: t(`programmes.status.${phase.status}`), tone: STATUS_TONE[phase.status] },
             progress: progressOf(phase.status),
             ...(open && deps.showPage ? { open: { id: 'open', label: t('programmes.phase.open', { name: phase.name }), tooltip: t('programmes.phase.open', { name: phase.name }), run: () => deps.showPage?.(phasePageOf(project.path, phase.id)) } } : {})
           }
@@ -251,9 +277,13 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
   const affaires = await store.affaires(project)
   const { done, total, current } = advance(project)
   const next = project.phases.find((phase) => phase.status === 'a-venir')
+  const ends = project.phases.map((phase) => phase.plannedEnd).filter((day): day is string => !!day).sort()
+  const late = project.phases.filter((phase) => isLate(phase, deps.today()))
   const stats: Stat[] = [
     { label: t('programmes.project.advanceLabel'), value: t('programmes.project.advance', { done, total }), icon: 'check', ...(done === total && total ? { tone: 'success' as const } : {}) },
     { label: t('programmes.project.currentLabel'), value: current.map((phase) => phase.name).join(', ') || (next ? t('programmes.project.next', { name: next.name }) : '—'), icon: 'play' },
+    { label: t('programmes.project.startLabel'), value: project.start ? shortDay(project.start) : t('programmes.project.notStarted'), icon: 'calendar' },
+    { label: t('programmes.project.endLabel'), value: ends.length ? shortDay(ends.at(-1)!) : '—', icon: 'clock', ...(late.length ? { tone: 'danger' as const, hint: t('programmes.project.lateHint', { count: late.length }) } : {}) },
     { label: t('programmes.fact.affaires'), value: String(affaires.length), icon: 'building' }
   ]
   const affaireCards: Card[] = affaires.map((affaire) => ({
@@ -271,7 +301,8 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     breadcrumb: crumbs(deps, [{ label: programme?.name ?? '—', ...(programme ? { page: programmePageOf(programme.path) } : {}) }, { label: project.name }]),
     subtitle: [project.typeName, project.description].filter(Boolean).join(' · '),
     actions: [
-      { id: 'affaire', label: t('programmes.affaire.new'), icon: 'plus', primary: true, run: () => deps.newAffaire(project.path) },
+      { id: 'start', label: t(project.start ? 'programmes.project.restart' : 'programmes.project.start'), tooltip: t('programmes.project.start.tip'), icon: 'calendar', ...(project.start ? {} : { primary: true }), run: () => deps.startProject(project.path) },
+      { id: 'affaire', label: t('programmes.affaire.new'), icon: 'plus', ...(project.start ? { primary: true } : {}), run: () => deps.newAffaire(project.path) },
       { id: 'note', label: t('programmes.note'), icon: 'book', run: () => deps.openNote(project.path) }
     ],
     blocks: [
@@ -307,15 +338,43 @@ async function phasePage(deps: HomeDeps, param?: string): Promise<PageView> {
     ...(status === phase.status ? { disabled: true, tooltip: t('programmes.status.already') } : {}),
     run: () => deps.setPhaseStatus(project.path, phase.id, status)
   }))
-  const dates = [phase.start ? t('programmes.phase.startOn', { date: phase.start }) : '', phase.end ? t('programmes.phase.endOn', { date: phase.end }) : ''].filter(Boolean).join(' · ')
+  const late = isLate(phase, deps.today())
+  const dates = [
+    phase.plannedStart ? t('programmes.phase.plannedLong', { from: shortDay(phase.plannedStart), to: shortDay(phase.plannedEnd ?? phase.plannedStart) }) : project.start ? '' : t('programmes.phase.notPlanned'),
+    phase.duration !== undefined ? t('programmes.phase.duration', { days: phase.duration }) : '',
+    phase.start ? t('programmes.phase.startOn', { date: shortDay(phase.start) }) : '',
+    phase.end ? t('programmes.phase.endOn', { date: shortDay(phase.end) }) : '',
+    late ? t('programmes.phase.lateSays') : ''
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  const docs = phase.documents ?? []
+  const docItems: ListItem[] = docs.map((doc, index) => ({
+    id: `doc-${index}`,
+    title: [deps.docLabel(doc.type), doc.label].filter(Boolean).join(' — '),
+    detail: doc.received ? [t('programmes.docs.received'), doc.on ? t('programmes.docs.receivedOn', { date: shortDay(doc.on) }) : '', doc.link ? doc.link.slice(doc.link.lastIndexOf('/') + 1) : ''].filter(Boolean).join(' · ') : t('programmes.docs.expected'),
+    tone: doc.received ? ('success' as const) : ('warning' as const),
+    ...(doc.link ? { open: { id: 'open', label: t('programmes.docs.open'), run: () => deps.openNote(doc.link!) } } : {}),
+    tools: [
+      doc.received
+        ? { id: 'unreceive', label: t('programmes.docs.unreceive'), icon: 'cross' as const, run: () => deps.setDocument(project.path, phase.id, index, false) }
+        : { id: 'receive', label: t('programmes.docs.receive'), icon: 'check' as const, run: () => deps.setDocument(project.path, phase.id, index, true) },
+      { id: 'link', label: t('programmes.docs.link'), icon: 'file' as const, run: () => deps.linkDocument(project.path, phase.id, index) }
+    ]
+  }))
   return {
     title: phase.name,
     breadcrumb: crumbs(deps, [{ label: programme?.name ?? '—', ...(programme ? { page: programmePageOf(programme.path) } : {}) }, { label: project.name, page: projectPageOf(project.path) }, { label: phase.name }]),
     subtitle: [kindLabel(t, phase.kind), t('programmes.stage', { number: phase.stage }), t(`programmes.status.${phase.status}`)].join(' · '),
-    actions: [...(kind ? kind.actions(context) : []), { id: 'dates', label: t('programmes.phase.dates'), icon: 'calendar', run: () => deps.editPhaseDates(project.path, phase.id) }],
+    actions: [
+      ...(kind ? kind.actions(context) : []),
+      { id: 'dates', label: t('programmes.phase.dates'), icon: 'calendar', run: () => deps.editPhaseDates(project.path, phase.id) },
+      { id: 'documents', label: t('programmes.docs.choose'), tooltip: t('programmes.docs.choose.tip'), icon: 'file', run: () => deps.chooseDocuments(project.path, phase.id) }
+    ],
     blocks: [
       { kind: 'journey', label: t('programmes.project.journey', { name: project.name }), title: project.name, stages: (await projectStages(deps, project, true)).map((stage) => ({ ...stage, phases: stage.phases.map((each) => (each.id === phase.id ? { ...each, progress: each.progress === 'done' ? 'done' : ('current' as const) } : { ...each, progress: each.progress === 'current' ? ('todo' as const) : each.progress })) })), compact: true, ...(deps.showPage ? { open: { id: 'open', label: t('programmes.project.open'), run: () => deps.showPage?.(projectPageOf(project.path)) } } : {}) },
-      { kind: 'message', tone: STATUS_TONE[phase.status] === 'neutral' ? 'info' : STATUS_TONE[phase.status], text: [t(`programmes.status.says.${phase.status}`), dates, phase.description ?? ''].filter(Boolean).join(' — '), actions: statusActions },
+      { kind: 'message', tone: late ? 'danger' : STATUS_TONE[phase.status] === 'neutral' ? 'info' : STATUS_TONE[phase.status], text: [t(`programmes.status.says.${phase.status}`), dates, phase.description ?? ''].filter(Boolean).join(' — '), actions: statusActions },
+      ...(docs.length ? [{ kind: 'list' as const, title: t('programmes.docs.title', { received: docs.filter((doc) => doc.received).length, total: docs.length }), items: docItems }] : []),
       ...(kind?.blocks ? await kind.blocks(context) : []),
       ...(phase.kind === FREE_KIND ? [] : kind ? [] : [{ kind: 'message' as const, tone: 'warning' as const, text: t('programmes.kind.off', { kind: phase.kind }) }])
     ]
@@ -348,7 +407,9 @@ function typeStages(deps: HomeDeps, type: ProjectType, editing: boolean): Journe
         icon: phase.icon,
         color: phase.color,
         ...(phase.kind !== FREE_KIND ? { caption: kindLabel(t, phase.kind) } : {}),
-        ...(phase.description ? { detail: phase.description } : {}),
+        ...((detail) => (detail ? { detail } : {}))(
+          [phase.duration !== undefined ? t('programmes.phase.durationShort', { days: phase.duration }) : '', phase.documents?.length ? t('programmes.docs.expectedCount', { count: phase.documents.length }) : '', phase.description ?? ''].filter(Boolean).join(' · ')
+        ),
         ...(editing ? { open: { id: 'edit', label: t('programmes.type.phase.edit'), tooltip: t('programmes.type.phase.edit'), run: () => deps.editTypePhase(type.id, phase.id) }, tools } : {})
       }
     }),

@@ -25,6 +25,7 @@ import {
   affaireData,
   baseName,
   phasesFromType,
+  planPhases,
   spansFromType,
   PROGRAMME_TYPE,
   programmeData,
@@ -148,19 +149,33 @@ export class ProgrammeStore {
     return (await this.project(path))!
   }
 
+  /** Enregistrer un projet ; ses dates prévues recalculées (de son démarrage, des durées). */
   private async saveProject(project: Project): Promise<Project> {
-    await this.write(project.path, projectData(project), project.name)
+    const planned = { ...project, phases: planPhases(project.phases, project.start) }
+    await this.write(project.path, projectData(planned), project.name)
     return (await this.project(project.path))!
   }
 
+  /** Le démarrage d'un projet (vide : pas démarré) : toutes les dates prévues en découlent. */
+  async setStart(path: string, start: string): Promise<Project | null> {
+    const project = await this.project(path)
+    if (!project) return null
+    const next: Project = { ...project }
+    if (start) next.start = start
+    else delete next.start
+    return this.saveProject(next)
+  }
+
   /** Une phase d'un projet changée (son état, ses dates, ce qui la porte). */
-  async setPhase(path: string, id: string, patch: Partial<Pick<ProjectPhase, 'status' | 'start' | 'end' | 'link'>>): Promise<Project | null> {
+  async setPhase(path: string, id: string, patch: Partial<Pick<ProjectPhase, 'status' | 'start' | 'end' | 'link' | 'duration' | 'documents'>>): Promise<Project | null> {
     const project = await this.project(path)
     if (!project || !project.phases.some((phase) => phase.id === id)) return null
     const phases = project.phases.map((phase) => {
       if (phase.id !== id) return phase
       const next: ProjectPhase = { ...phase, ...patch }
       for (const key of ['start', 'end', 'link'] as const) if (key in patch && !patch[key]) delete next[key]
+      if ('duration' in patch && patch.duration === undefined) delete next.duration
+      if ('documents' in patch && !patch.documents?.length) delete next.documents
       return next
     })
     return this.saveProject({ ...project, phases })

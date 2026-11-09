@@ -9,20 +9,22 @@
  */
 
 import { localToday } from '../../core/dates'
+import { libraryPieceTypes, pieceTypeText } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
 import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
 import type { Choice, FormField } from '../../core/ports'
 import { phaseKinds, type PhaseContext } from './kinds'
-import { AFFAIRE_STATUSES, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType, type SpanSpec } from './model'
+import { AFFAIRE_STATUSES, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type ExpectedDoc, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType, type SpanSpec } from './model'
 import { programmePageOf, projectPageOf, registerProgrammesHome, typePageOf, TYPES_PAGE } from './home'
 import { AlreadyThere, ProgrammeStore } from './store'
-import { addParallel, addSpan, addStage, copyType, movePhase, newPhase, newType, readTypes, remapSpans, removePhase, removeSpan, TYPES_KEY, updatePhase, updateSpan } from './types'
+import { addParallel, addSpan, addStage, copyType, movePhase, newPhase, newType, readTypes, remapSpans, removePhase, removeSpan, replacePhase, TYPES_KEY, updateSpan } from './types'
 import { programmesEn, programmesFr } from './i18n'
 
 // ── Interface publique ──────────────────────────────────────────────────────────────
 export { registerPhaseKind, phaseKinds, type PhaseContext, type PhaseKind } from './kinds'
 export { addParallel, addSpan, addStage, AO_KIND, movePhase, remapSpans, removePhase, starterTypes } from './types'
+export { addDays, isLate, planPhases } from './model'
 export { PROGRAMMES_PAGE, PROJECT_PAGE, phasePageOf, projectPageOf, programmePageOf } from './home'
 export type { Affaire, PhaseStatus, Programme, Project, ProjectPhase, ProjectType } from './model'
 
@@ -51,7 +53,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.2.0',
+  version: '0.3.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -230,6 +232,25 @@ export const programmesModule: BlackModule = {
       changed()
     }
 
+    /** Une durée saisie : un nombre de jours, entier, positif ou nul ; vide : aucune. */
+    const durationOf = (input: string | undefined): number | undefined | null => {
+      const text = (input ?? '').trim()
+      if (!text) return undefined
+      return /^\d{1,4}$/.test(text) ? Number(text) : null
+    }
+    /** Les types de pièce, pour choisir les documents attendus (plusieurs) ; `null` : renoncé. */
+    const pickDocTypes = async (title: string, chosen: readonly string[]): Promise<string[] | null> => {
+      const types = libraryPieceTypes()
+      const known = new Set(types.map((type) => type.code))
+      return ui.pickMany({
+        title,
+        intro: t('programmes.docs.pick.intro'),
+        choices: [...types.map((type) => ({ value: type.code, label: pieceTypeText(type.code) })), ...chosen.filter((code) => !known.has(code)).map((code) => ({ value: code, label: code }))],
+        selected: chosen,
+        submit: t('programmes.docs.pick.submit')
+      })
+    }
+
     const editPhaseDates = async (projectPath: string, id: string): Promise<void> => {
       const project = await store.project(projectPath)
       const phase = project?.phases.find((each) => each.id === id)
@@ -238,13 +259,38 @@ export const programmesModule: BlackModule = {
         title: t('programmes.phase.dates.title', { name: phase.name }),
         fields: [
           { kind: 'text', key: 'start', label: t('programmes.field.start'), placeholder: 'AAAA-MM-JJ', calendar: true, value: phase.start ?? '' },
-          { kind: 'text', key: 'end', label: t('programmes.field.end'), placeholder: 'AAAA-MM-JJ', calendar: true, value: phase.end ?? '' }
+          { kind: 'text', key: 'end', label: t('programmes.field.end'), placeholder: 'AAAA-MM-JJ', calendar: true, value: phase.end ?? '' },
+          { kind: 'text', key: 'duration', label: t('programmes.field.duration'), description: t('programmes.field.duration.desc'), value: phase.duration !== undefined ? String(phase.duration) : '' }
         ],
         submit: t('programmes.save'),
-        validate: (entered) => (['start', 'end'].every((key) => !(entered[key] ?? '').trim() || /^\d{4}-\d{2}-\d{2}$/.test((entered[key] ?? '').trim())) ? null : t('programmes.field.date.invalid'))
+        validate: (entered) =>
+          !['start', 'end'].every((key) => !(entered[key] ?? '').trim() || /^\d{4}-\d{2}-\d{2}$/.test((entered[key] ?? '').trim())) ? t('programmes.field.date.invalid') : durationOf(entered.duration) === null ? t('programmes.field.duration.invalid') : null
       })
       if (!values) return
-      await store.setPhase(projectPath, id, { start: (values.start ?? '').trim(), end: (values.end ?? '').trim() })
+      // Sa durée changée : les dates prévues des phases suivantes suivent.
+      await store.setPhase(projectPath, id, { start: (values.start ?? '').trim(), end: (values.end ?? '').trim(), duration: durationOf(values.duration) ?? undefined })
+    }
+
+    const startProject = async (projectPath: string): Promise<void> => {
+      const project = await store.project(projectPath)
+      if (!project) return
+      const values = await ui.askForm({
+        title: t('programmes.project.start.title', { name: project.name }),
+        intro: t('programmes.project.start.intro'),
+        fields: [{ kind: 'text', key: 'start', label: t('programmes.field.projectStart'), placeholder: 'AAAA-MM-JJ', calendar: true, required: true, value: project.start ?? localToday() }],
+        submit: t('programmes.save'),
+        validate: (entered) => (/^\d{4}-\d{2}-\d{2}$/.test((entered.start ?? '').trim()) ? null : t('programmes.field.date.invalid'))
+      })
+      if (!values) return
+      const planned = await store.setStart(projectPath, (values.start ?? '').trim())
+      const end = planned?.phases.map((phase) => phase.plannedEnd ?? '').sort().at(-1)
+      notify(end ? t('programmes.project.started', { name: project.name, end }) : t('programmes.project.startedNoDuration', { name: project.name }), 8000)
+    }
+
+    const withDocs = async (projectPath: string, id: string, change: (docs: ExpectedDoc[]) => ExpectedDoc[]): Promise<void> => {
+      const phase = (await store.project(projectPath))?.phases.find((each) => each.id === id)
+      if (!phase) return
+      await store.setPhase(projectPath, id, { documents: change([...(phase.documents ?? [])]) })
     }
 
     const phaseContext = (project: Project, phase: ProjectPhase): PhaseContext => ({
@@ -303,12 +349,21 @@ export const programmesModule: BlackModule = {
           { kind: 'choice', key: 'kind', label: t('programmes.field.kind'), tooltip: t('programmes.field.kind.tip'), options: kindChoices(), value: phase?.kind ?? FREE_KIND },
           { kind: 'choice', key: 'icon', label: t('programmes.field.icon'), options: iconChoices, value: phase?.icon ?? 'flow' },
           { kind: 'choice', key: 'color', label: t('programmes.field.color'), options: colorChoices, value: phase?.color ?? 'indigo' },
+          { kind: 'text', key: 'duration', label: t('programmes.field.duration'), description: t('programmes.field.duration.desc'), value: phase?.duration !== undefined ? String(phase.duration) : '' },
+          { kind: 'toggle', key: 'documents', label: t('programmes.field.documents'), description: t('programmes.field.documents.desc'), value: !!phase?.documents?.length },
           { kind: 'textarea', key: 'description', label: t('programmes.field.phaseDescription'), value: phase?.description ?? '' }
         ],
         submit: t('programmes.save'),
-        validate: (entered) => ((entered.name ?? '').trim() ? null : t('programmes.field.name.invalid'))
+        validate: (entered) => (!(entered.name ?? '').trim() ? t('programmes.field.name.invalid') : durationOf(entered.duration) === null ? t('programmes.field.duration.invalid') : null)
       })
       if (!values) return null
+      // Des documents attendus : lesquels (plusieurs, au besoin) ; renoncer garde ceux d'avant.
+      let documents = phase?.documents ?? []
+      if (values.documents === 'true') {
+        const types = await pickDocTypes(t('programmes.docs.pick.title', { name: (values.name ?? '').trim() }), documents.map((doc) => doc.type))
+        if (types) documents = types.map((type) => documents.find((doc) => doc.type === type) ?? { type })
+      } else documents = []
+      const duration = durationOf(values.duration)
       // Une sorte d'un module : son icône et sa couleur d'abord, si l'on n'en a pas choisi d'autres.
       const kind = values.kind || FREE_KIND
       const declared = phaseKinds().find((each) => each.id === kind)
@@ -318,7 +373,9 @@ export const programmesModule: BlackModule = {
         kind,
         icon: untouched && declared ? declared.icon : PHASE_ICONS.includes(values.icon as never) ? (values.icon as PhaseSpec['icon']) : 'flow',
         color: untouched && declared ? declared.color : TILE_COLORS.includes(values.color as never) ? (values.color as PhaseSpec['color']) : 'indigo',
-        ...((values.description ?? '').trim() ? { description: (values.description ?? '').trim() } : {})
+        ...((values.description ?? '').trim() ? { description: (values.description ?? '').trim() } : {}),
+        ...(typeof duration === 'number' ? { duration } : {}),
+        ...(documents.length ? { documents } : {})
       }
     }
 
@@ -346,6 +403,30 @@ export const programmesModule: BlackModule = {
       setPhaseStatus,
       editPhaseDates,
       phaseContext,
+      today: localToday,
+      docLabel: pieceTypeText,
+      startProject,
+      chooseDocuments: async (projectPath, id) => {
+        const phase = (await store.project(projectPath))?.phases.find((each) => each.id === id)
+        if (!phase) return
+        const types = await pickDocTypes(t('programmes.docs.pick.title', { name: phase.name }), (phase.documents ?? []).map((doc) => doc.type))
+        if (types) await withDocs(projectPath, id, (docs) => types.map((type) => docs.find((doc) => doc.type === type) ?? { type }))
+      },
+      setDocument: (projectPath, id, index, received) =>
+        withDocs(projectPath, id, (docs) =>
+          docs.map((doc, at) => {
+            if (at !== index) return doc
+            if (received) return { ...doc, received: true, on: localToday() }
+            const rest: ExpectedDoc = { ...doc }
+            delete rest.received
+            delete rest.on
+            return rest
+          })
+        ),
+      linkDocument: async (projectPath, id, index) => {
+        const path = await ui.pickFile({ placeholder: t('programmes.docs.link.placeholder') })
+        if (path) await withDocs(projectPath, id, (docs) => docs.map((doc, at) => (at === index ? { ...doc, link: path, received: true, on: doc.on ?? localToday() } : doc)))
+      },
       newType: async () => {
         const named = await typeName(t('programmes.type.new'))
         if (!named) return
@@ -406,7 +487,7 @@ export const programmesModule: BlackModule = {
           .find((each) => each.id === phaseId)
         if (!phase) return
         const fields = await phaseForm(t('programmes.type.phase.edit.title', { name: phase.name }), phase)
-        if (fields) await withType(typeId, (type) => updatePhase(type, phaseId, fields))
+        if (fields) await withType(typeId, (type) => replacePhase(type, phaseId, fields))
       },
       addTypePhase: async (typeId, stage) => {
         const fields = await phaseForm(stage === 'new' ? t('programmes.type.addStage') : t('programmes.type.addParallel'))
