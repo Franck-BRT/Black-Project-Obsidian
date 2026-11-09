@@ -610,6 +610,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.108.0 : **IA, Bibliothèque** : la **lecture en cours se suit** sur les fiches (boutons grisés,
   progression, **file d'attente**) ; **sans limite de pages** (dessinées une à une) ; correctif :
   les images seulement à un modèle de vision ou d'OCR choisi exprès
+- v0.108.1 : **IA** (correctif) : les images comme le module de gestion de projet — modèle
+  d'OCR, de vision, sinon d'analyse ; un seul message sans système ; 4 096 jetons ; une page
+  redemandée ; un refus du serveur dit une fois, puis plus d'images à ce modèle
 
 ### Étape 7 — Livrables
 

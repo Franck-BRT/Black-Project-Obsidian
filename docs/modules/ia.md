@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.25.0 (Black Projects 0.108.0) |
+| Version | 0.25.1 (Black Projects 0.108.1) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,25 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## Correctif : les images comme le module de gestion de projet (v0.25.1, Black Projects 0.108.1)
+
+Comparé au module de gestion de projet (qui lit les scans avec le même serveur) :
+
+- **Le modèle** : celui d'OCR, sinon de vision, **sinon celui d'analyse** (`visionModelOf`) —
+  comme lui ; la 0.108.0 refusait le modèle d'analyse, que beaucoup de modèles récents
+  rendent capable de voir.
+- **La requête** : **un seul message utilisateur**, la consigne puis l'image, **sans message
+  système** (certains modèles qui voient refusent un message système à côté d'une image) ; les
+  consignes de l'étape (prompt, persona, skill) en tête du texte ; au moins **4 096 jetons**
+  de réponse (une page entière écrite).
+- **Une page qui échoue** est redemandée deux fois, un moment après (pas un refus 4xx) ; encore
+  en échec, son texte extrait garde sa place (ou la page est dite non lue) et la lecture
+  continue ; aucune page lue : l'étape échoue.
+- **Un refus des images** par le serveur (400 qui parle d'image, de vision, de « multimodal ») :
+  dit une fois, clairement (`ia.wf.vision.refused` : le modèle, la réponse du serveur, choisir un
+  modèle qui voit) ; ce modèle n'est plus montré d'images jusqu'au prochain démarrage
+  (`imagesRefused` : `setAiVision` faux, aucun scan envoyé au dépôt).
 
 ## Un modèle de vision réglé exprès ; sans limite de pages ; la lecture se suit (v0.25.0, Black Projects 0.108.0)
 

@@ -12,6 +12,7 @@ import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReading
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
+import { LlmError } from './protocol'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -240,8 +241,30 @@ export function readProofread(answer: string, original: string): string | null {
 export function visionModelOf(client: AiClient, use: 'vision' | 'ocr'): string {
   const vision = client.connection.visionModel.trim()
   const ocr = client.connection.ocrModel.trim()
-  return use === 'ocr' ? ocr || vision : vision || ocr
+  // Sinon celui d'analyse, comme le module de gestion de projet : bien des modèles récents voient.
+  const text = client.connection.model.trim()
+  return use === 'ocr' ? ocr || vision || text : vision || ocr || text
 }
+
+/**
+ * Les modèles dont le serveur a refusé les images (« … is not a multimodal model ») : on ne
+ * les leur montre plus, jusqu'au prochain démarrage — un scan versé n'échoue pas à chaque fois.
+ */
+const imagesRefusedBy = new Set<string>()
+
+/** Le serveur a-t-il refusé les images pour ce modèle ? */
+export const imagesRefused = (model: string): boolean => imagesRefusedBy.has(model)
+
+/** Pour les tests : oublier les refus. */
+export const forgetImageRefusals = (): void => imagesRefusedBy.clear()
+
+/** Une erreur qui dit que le modèle ne prend pas d'images (une requête refusée, 400, qui parle d'image ou de multimodal). */
+export function refusesImages(error: unknown): boolean {
+  if (!(error instanceof LlmError) || error.kind !== 'http' || (error.status ?? 0) >= 500) return false
+  return /multi-?modal|image|vision|does not support (image|vision)/i.test(error.message)
+}
+
+const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Les fichiers qu'un modèle de vision peut regarder : les images, et les PDF quand la plateforme sait dessiner leurs pages. */
 export function visionReadable(file: string, canDrawPdf: boolean): boolean {
@@ -338,29 +361,45 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
               notifier.notify(t(text ? 'ia.wf.vision.startProofread' : 'ia.wf.vision.start', { title: doc.title, pages: count, model }), 8000)
               const out: string[] = []
               let kept = 0
+              let failed = 0
               for (let index = 0; index < count; index++) {
                 const image = await seen.image(index)
                 if (index > 0) notifier.notify(t('ia.wf.vision.progress', { title: doc.title, page: index + 1, pages: count }), 5000)
                 aiReadingProgress(record, doc.title, t('ia.reading.page', { page: index + 1, pages: count }))
                 const pageText = text ? (seen.texts?.[index] ?? '') : ''
                 const ask = [t('ia.wf.vision.page', { page: index + 1, pages: seen.pages }), pageText ? `${t('ia.wf.vision.pageText')}\n\n${pageText}` : t(text ? 'ia.wf.vision.pageNoText' : 'ia.wf.vision.pageRead')].join('\n\n')
-                let answer: string
-                try {
-                  answer = await ai.chat({
-                    model,
-                    messages: [
-                      { role: 'system', content: t('ia.wf.vision.system') },
-                      { role: 'user', content: [{ type: 'text', text: ask }, { type: 'image_url', image_url: { url: image } }] }
-                    ],
-                    temperature: 0
-                  })
-                } catch (error) {
-                  throw new Error(describe(error))
+                // Un seul message, la consigne puis l'image, sans message système : la forme que
+                // tous les modèles qui voient acceptent (certains refusent un message système à
+                // côté d'une image). La place d'une page entière écrite : 4 096 jetons au moins.
+                const asked = { model, messages: [{ role: 'user' as const, content: [{ type: 'text' as const, text: [guidance?.trim(), t('ia.wf.vision.system'), ask].filter(Boolean).join('\n\n') }, { type: 'image_url' as const, image_url: { url: image } }] }], temperature: 0, maxTokens: Math.max(base.connection.maxTokens, 4096) }
+                let answer: string | null = null
+                let last: unknown = null
+                // Une page qui échoue est redemandée, deux fois, un moment après — sauf un refus du serveur (4xx), qui ne changera pas.
+                for (let attempt = 0; attempt < 3 && answer === null; attempt++) {
+                  if (attempt) await pause(attempt * 2000)
+                  try {
+                    answer = await base.chat(asked)
+                  } catch (error) {
+                    last = error
+                    if (refusesImages(error)) {
+                      imagesRefusedBy.add(model)
+                      return say('ia.wf.vision.refused', { title: doc.title, model, reason: describe(error) })
+                    }
+                    if (error instanceof LlmError && error.kind === 'http' && (error.status ?? 500) < 500) break
+                  }
+                }
+                if (answer === null) {
+                  failed++
+                  // Une page non lue : son texte extrait garde sa place (ou la page est dite), la lecture continue.
+                  out.push(pageText || `*${t('ia.wf.vision.pageFailed', { page: index + 1, reason: describe(last) })}*`)
+                  continue
                 }
                 const read = readVisionPage(answer, pageText)
                 if (read === null) kept++
                 out.push(read ?? pageText)
               }
+              // Aucune page lue : l'erreur du serveur, telle quelle.
+              if (failed === count) throw new Error(t('ia.wf.vision.allFailed', { title: doc.title, model }))
               const seenText = out.filter((part) => part.trim()).join('\n\n').trim()
               if (!seenText) return say('ia.wf.vision.nothingRead', { title: doc.title })
               if (text && seenText.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })

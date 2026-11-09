@@ -22,11 +22,12 @@ import { AiClient, type AiConnection } from './client'
 import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
 import { registerIaHome, USE_FIELD, type ConnectionTest } from './home'
-import { libraryGuidance, registerIaWorkflows, visionModelOf, visionReadable } from './workflows'
+import { imagesRefused, libraryGuidance, registerIaWorkflows, visionModelOf, visionReadable } from './workflows'
 import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, usesOf, type ModelUse } from './models'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
+export { forgetImageRefusals } from './workflows'
 export { proofreadChunks, readCategoryAnswer, readDateAnswer, readProofread, readVisionPage, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer } from './workflows'
 export {
   buildChatBody,
@@ -298,7 +299,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.25.0',
+  version: '0.25.1',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -341,7 +342,7 @@ export const iaModule: BlackModule = {
     setAiVision((file) => {
       // Un modèle de vision (ou d'OCR) réglé exprès : sans lui, rien n'est montré en images.
       const client = aiClient()
-      return client !== null && visionModelOf(client, 'vision') !== '' && visionReadable(file, !!context.platform.pages)
+      return client !== null && visionModelOf(client, 'vision') !== '' && !imagesRefused(visionModelOf(client, 'vision')) && visionReadable(file, !!context.platform.pages)
     })
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)), () => context.platform.pages)
     // Vérifier la connexion à l'ouverture : une action, et son workflow système (actif d'origine).

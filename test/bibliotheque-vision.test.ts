@@ -15,7 +15,7 @@ import type { ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type HomeBlock, type ListItem, type ViewAction } from '../src/core/views'
 import { bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
-import { iaModule, readVisionPage } from '../src/modules/ia'
+import { forgetImageRefusals, iaModule, readVisionPage } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
@@ -52,7 +52,7 @@ interface Seen {
 let drawnPages = 2
 let closed = 0
 
-async function start(platform: MemoryPlatform, see: (seen: Seen) => string, drawsPdf = true, ia: Record<string, unknown> = SERVEUR, gate: () => Promise<void> = async () => {}) {
+async function start(platform: MemoryPlatform, see: (seen: Seen) => string, drawsPdf = true, ia: Record<string, unknown> = SERVEUR, gate: () => Promise<void> = async () => {}, refuses: (model: string) => boolean = () => false) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
   if (drawsPdf) platform.pages = { open: async () => ({ pages: drawnPages, page: async (number) => `data:image/jpeg;base64,${btoa(`P${number}`)}`, close: async () => void closed++ }) }
@@ -76,14 +76,18 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string, draw
   platform.http.request = async (request) => {
     if (!request.url.endsWith('/chat/completions')) return original(request)
     const body = JSON.parse(request.body!) as { model: string; messages: { content: string | { type: string; text?: string; image_url?: { url: string } }[] }[] }
-    const system = body.messages[0]!.content as string
-    if (system.startsWith('Tu identifies la langue')) return chat('fr')
-    if (system.includes('Tu lis une page d’un document')) {
-      const parts = body.messages.at(-1)!.content as { type: string; text?: string; image_url?: { url: string } }[]
-      const one: Seen = { model: body.model, text: parts.find((part) => part.type === 'text')!.text!, image: parts.find((part) => part.type === 'image_url')!.image_url!.url }
+    const first = body.messages[0]!.content
+    // Une image : un seul message (la consigne, puis l'image), sans message système.
+    if (typeof first !== 'string') {
+      expect(body.messages).toHaveLength(1)
+      const one: Seen = { model: body.model, text: first.find((part) => part.type === 'text')!.text!, image: first.find((part) => part.type === 'image_url')!.image_url!.url }
+      expect(one.text).toContain('Tu lis une page d’un document')
+      if (refuses(body.model)) return { status: 400, text: JSON.stringify({ error: { message: `litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': {'error': {'message': '${body.model} is not a multimodal model'}}}` } }) }
       seen.push(one)
       return chat(see(one))
     }
+    const system = first
+    if (system.startsWith('Tu identifies la langue')) return chat('fr')
     if (system.includes('Tu relis un texte extrait automatiquement')) {
       proofread.push(body.model)
       await gate()
@@ -110,6 +114,7 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string, draw
 }
 
 afterEach(async () => {
+  forgetImageRefusals()
   for (const module of [...ALL].reverse()) await module.deactivate?.()
 })
 
@@ -177,7 +182,7 @@ describe('un document sans texte : la vision seule', () => {
     drawnPages = 45
     closed = 0
     try {
-      const { pour, seen, textVersions } = await start(platform, (one) => `Lu sur ${one.text.split('.')[0]}`)
+      const { pour, seen, textVersions } = await start(platform, (one) => `Lu sur ${/Page \d+ sur \d+/.exec(one.text)![0]}`)
       const doc = await pour('Gros scan.pdf', textPdf([[]]))
       expect(seen).toHaveLength(45)
       expect(seen.at(-1)!.text).toContain('Page 45 sur 45.')
@@ -261,24 +266,29 @@ describe('un PDF avec du texte : le modèle à choisir', () => {
   })
 })
 
-describe('sans modèle de vision réglé', () => {
+describe('sans modèle de vision réglé : celui d’analyse, comme l’autre module', () => {
   const SANS_VISION = { adresse: 'http://ia.exemple.fr/v1', modele: 'deepseek-v4-flash' }
 
-  it('un scan versé : rien n’est envoyé en images (le modèle d’analyse ne les lit pas) ; rien n’est proposé', async () => {
+  it('un modèle d’analyse qui voit : le scan lui est montré, et lu', async () => {
     const platform = memoryPlatform()
-    const { pour, seen, textActions } = await start(platform, () => 'x', true, SANS_VISION)
+    const { pour, seen, textVersions } = await start(platform, () => 'Lu par le modèle d’analyse', true, SANS_VISION)
     const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
-    expect(seen).toHaveLength(0)
-    expect((await textActions(doc.record)).map((action) => action.id)).not.toContain('vision')
+    expect(seen.map((one) => one.model)).toEqual(['deepseek-v4-flash'])
+    expect((await textVersions(doc.record))[0]!.title).toBe('Texte 1 — lu par l’IA avec la vision')
   })
 
-  it('l’étape réglée « avec la vision » : une notice le dit, aucune image envoyée', async () => {
+  it('un modèle que le serveur dit sans vision : dit une fois, clairement ; plus rien ne lui est montré en images', async () => {
     const platform = memoryPlatform()
-    const { pour, seen, workflows } = await start(platform, () => 'x', true, SANS_VISION)
-    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.actions[0]!.fields.mode = 'vision'
-    await pour('Plan.pdf', textPdf([['Plan qualite']]))
+    const { pour, seen, textActions } = await start(platform, () => 'x', true, SANS_VISION, async () => {}, () => true)
+    await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
+    expect(platform.notices.find((notice) => notice.includes('refuse les images'))).toMatch(/^« Scan PV » : le serveur refuse les images pour le modèle deepseek-v4-flash \(.*is not a multimodal model.*\)\. Choisissez un modèle qui voit sur la page IA/)
+    // Un autre scan : rien n'est envoyé, rien n'est proposé.
+    const requests = platform.requests.length
+    const other = await pour('Scan 2.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1]))
     expect(seen).toHaveLength(0)
-    expect(platform.notices).toContain('« Plan » : aucun modèle de vision ni d’OCR n’est choisi (page IA) — le modèle d’analyse ne lit pas les images ; rien n’est envoyé.')
+    expect(platform.requests.filter((request) => (request.body ?? '').includes('image_url')).length).toBe(0)
+    expect(platform.requests.length).toBeGreaterThanOrEqual(requests)
+    expect((await textActions(other.record)).map((action) => action.id)).not.toContain('vision')
   })
 })
 
