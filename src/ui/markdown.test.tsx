@@ -71,3 +71,27 @@ describe('les tableaux sans ligne de séparation', () => {
     expect(parseMarkdown('| a | | b |\n| --- | --- | --- |\n| 1 | | 2 |')).toEqual([{ kind: 'table', head: ['a', 'b'], rows: [['1', '2']] }])
   })
 })
+
+describe('les listes aérées, numérotées', () => {
+  it('des lignes vides entre ses éléments ne coupent pas une liste ; une numérotée garde son début', () => {
+    expect(parseMarkdown('- a\n\n- b\n\n    - b1\n\n- c\n\nFin')).toEqual([
+      { kind: 'list', ordered: false, items: [{ text: 'a', children: [] }, { text: 'b', children: [{ kind: 'list', ordered: false, items: [{ text: 'b1', children: [] }] }] }, { text: 'c', children: [] }] },
+      { kind: 'paragraph', text: 'Fin' }
+    ])
+    expect(parseMarkdown('3. trois\n4. quatre\n- puce')).toEqual([
+      { kind: 'list', ordered: true, start: 3, items: [{ text: 'trois', children: [] }, { text: 'quatre', children: [] }] },
+      { kind: 'list', ordered: false, items: [{ text: 'puce', children: [] }] }
+    ])
+  })
+})
+
+describe('une liste juste après une phrase', () => {
+  it('coupe le paragraphe (comme dans Obsidian) ; « 2026. » au fil d’une phrase, non', () => {
+    expect(parseMarkdown('Les revues :\n- Conception\n- Recette\nEn 2025, puis\n2026. Fin')).toEqual([
+      { kind: 'paragraph', text: 'Les revues :' },
+      { kind: 'list', ordered: false, items: [{ text: 'Conception', children: [] }, { text: 'Recette', children: [] }] },
+      { kind: 'paragraph', text: 'En 2025, puis 2026. Fin' }
+    ])
+  })
+})
+

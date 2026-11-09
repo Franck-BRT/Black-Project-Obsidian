@@ -39,7 +39,8 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   encadré qui dit la lecture (lu, scan, image, format non lu, illisible), puis le texte ; la
   section « Texte extrait » de la fiche le montre en entier, mis en forme (titres, listes,
   tableaux, citations) — et, l'IA réglée, **relu par l'IA** : une nouvelle version du texte
-  (*Versions* › « Versions du texte » : **Comparer**, **Le montrer sur la fiche** ; l'extraite
+  (*Versions* › « Versions du texte » : **Comparer**, **Le montrer sur la fiche**, **Supprimer
+  cette version** — sa note va à la corbeille ; l'extraite
   est gardée, l'édition et la révision ne changent pas) ; des notices disent la relecture en
   cours, puis ce qu'elle a donné. **Extraire de nouveau** relit le fichier (vos notes ne bougent
   pas), puis l'IA relit ce texte ; **Relire avec l'IA** relance la relecture seule ;

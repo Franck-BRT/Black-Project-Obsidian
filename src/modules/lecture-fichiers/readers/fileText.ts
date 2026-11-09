@@ -10,6 +10,7 @@ import { readPdf } from './pdfRead'
 import { pdfBlocks } from './pdfText'
 import { readPptx } from './pptxRead'
 import { readSpreadsheet } from './xlsRead'
+import { completeLists, listItem } from '../../../core/lists'
 import { completeTables, markdownTable } from '../../../core/tables'
 
 /**
@@ -129,21 +130,34 @@ export class FileReadError extends Error {
  */
 const rowsText = (rows: string[][]): string => markdownTable(rows)
 
-/** Paragraphs and tables, as Markdown: a heading keeps its level, a list item its bullet. */
+/**
+ * Paragraphs and tables, as Markdown: a heading keeps its level, a list item its bullet (or
+ * its number) and its depth — the items of one list one under the other, so Markdown, and
+ * Obsidian, see one list.
+ */
 export function blocksText(blocks: DocxReadBlock[]): string {
   const out: string[] = []
+  let inList = false
   for (const block of blocks) {
     if (block.kind === 'table') {
       const table = rowsText(block.rows)
       if (table) out.push(table)
+      inList = false
       continue
     }
     const text = block.text.trim()
     if (!text) continue
+    if (block.style === 'list') {
+      const item = listItem(text, block.listLevel ?? 0, block.ordered ?? false)
+      if (inList) out[out.length - 1] += `\n${item}`
+      else out.push(item)
+      inList = true
+      continue
+    }
+    inList = false
     if (block.style === 'title') out.push(`# ${text}`)
     else if (block.style === 'heading') out.push(`${'#'.repeat(Math.min(6, (block.level ?? 1) + 1))} ${text}`)
-    else if (block.style === 'list') out.push(`- ${text}`)
-    else out.push(text)
+    else out.push(completeLists(text))
   }
   return out.join('\n\n')
 }
@@ -155,8 +169,8 @@ export function blocksText(blocks: DocxReadBlock[]): string {
  */
 async function oldWordText(bytes: Uint8Array): Promise<string> {
   // Their tables come as rows of cells, one a line: made Markdown tables.
-  if (isCfb(bytes)) return completeTables(readDoc(bytes))
-  if (isRtf(bytes)) return completeTables(readRtf(bytes))
+  if (isCfb(bytes)) return completeLists(completeTables(readDoc(bytes)))
+  if (isRtf(bytes)) return completeLists(completeTables(readRtf(bytes)))
   if (bytes[0] === 0x50 && bytes[1] === 0x4b) return blocksText(await readDocx(bytes))
   const text = plainText(bytes)
   return /^\s*</.test(text) && /<(html|body|p|div)\b/i.test(text) ? blocksText(readHtml(text)) : text
@@ -188,7 +202,7 @@ export async function fileText(extension: string, bytes: Uint8Array): Promise<st
             shape.kind === 'table'
               ? rowsText(shape.rows)
               : shape.paragraphs
-                  .map((paragraph) => (paragraph.bullet ? `- ${paragraph.text}` : paragraph.text))
+                  .map((paragraph) => (paragraph.bullet ? listItem(paragraph.text, paragraph.level ?? 0, paragraph.ordered ?? false) : paragraph.text))
                   .filter((line) => line.trim())
                   .join('\n')
           )

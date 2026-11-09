@@ -598,6 +598,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.104.0 : **Lecture de fichiers, Bibliothèque** : les tableaux extraits écrits en **tableaux
   Markdown complets** (ligne de séparation, colonnes alignées — `gridSpan` d'un `.docx` —, sans
   colonnes vides), que la fiche et Obsidian montrent en tableaux ; les fiches d'avant aussi
+- v0.105.0 : **Lecture de fichiers, Bibliothèque** : des **listes** fidèles (éléments l'un sous
+  l'autre, niveaux, numéros — Word, HTML, PowerPoint ; puces tapées en vraies puces) ;
+  **supprimer une version du texte** et sa note (à la corbeille du coffre : `FileSystem.trash`)
 
 ### Étape 7 — Livrables
 

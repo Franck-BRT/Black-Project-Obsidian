@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.11.0 (Black Projects 0.104.0) |
+| Version | 0.12.0 (Black Projects 0.105.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -16,6 +16,19 @@
 
 Le module transforme un document en texte que l'outil, puis l'IA, peuvent lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
 colonnes** — c'est là que sont souvent les exigences et les prix.
+
+## Des listes Markdown fidèles (v0.12.0, Black Projects 0.105.0)
+
+- Les éléments d'une liste s'écrivent **l'un sous l'autre** (une seule liste pour Markdown et
+  Obsidian ; avant, une ligne vide entre chacun), avec leur **niveau** (quatre espaces par
+  niveau) et leur **genre** : `- ` pour une puce, `1. ` pour un numéro (`listItem` de
+  `src/core/lists.ts`).
+- **Word** (`.docx`) : le niveau (`w:ilvl`) et le genre lus dans `word/numbering.xml`
+  (`numFmt` : `bullet` ou un numéro), sinon d'après le style (« List Number 2 ») — champs
+  `listLevel` et `ordered` d'un paragraphe. **HTML** : une liste dans un élément, un niveau de
+  plus ; `<ol>`, numérotée. **PowerPoint** : `lvl` et `buAutoNum`.
+- Les **puces tapées** dans le texte (« • », « ▪ », « – »…, qui ne sont pas des listes pour
+  Markdown) deviennent `- ` (`completeLists`) ; dans un élément de liste, elles sont retirées.
 
 ## Des tableaux Markdown complets (v0.11.0, Black Projects 0.104.0)
 

@@ -134,8 +134,8 @@ describe('la relecture par l’IA, au versement', () => {
     // La section Versions : les versions du texte, la dernière d'abord.
     const items = await textVersions(doc.record)
     expect(items.map((item) => [item.title, item.tools?.map((tool) => tool.label)])).toEqual([
-      ['Texte 2 — relu par l’IA', ['Comparer avec le texte 1']],
-      ['Texte 1 — extrait du fichier', ['Le montrer sur la fiche']]
+      ['Texte 2 — relu par l’IA', ['Comparer avec le texte 1', 'Supprimer cette version']],
+      ['Texte 1 — extrait du fichier', ['Le montrer sur la fiche', 'Supprimer cette version']]
     ])
     expect(items[0]!.detail).toContain('mistral-small')
     expect(items[0]!.detail).toContain('montré sur la fiche')
@@ -248,5 +248,62 @@ describe('extraire de nouveau, relire avec l’IA', () => {
     workflows().find((each) => each.system === 'sys.ia.relire-textes')!.enabled = false
     await actions.find((action) => action.id === 'proofread')!.run()
     expect(platform.notices.at(-1)).toBe('La relecture par l’IA n’a pas été lancée : son workflow système « Relire le texte extrait avec l’IA » est désactivé, ou le module Workflows n’est pas actif.')
+  })
+})
+
+describe('supprimer une version du texte', () => {
+  const tool = (item: ListItem, id: string) => item.tools!.find((each) => each.id.startsWith(id))!
+
+  it('une version que la fiche ne montre pas : sa note supprimée, après confirmation ; la fiche ne change pas', async () => {
+    const platform = memoryPlatform()
+    const { pour, textVersions } = await start(platform, () => FIXED)
+    const doc = await pour('Plan qualité.txt', RAW)
+    const folder = `Bibliothèque/_textes/${doc.hash.slice(0, 16)}`
+    // Refusée : rien ne change.
+    platform.confirmations.push(false)
+    await tool((await textVersions(doc.record))[1]!, 'delete').run()
+    expect(platform.files.has(`${folder}/Texte 1.md`)).toBe(true)
+    platform.confirmations.push(true)
+    await tool((await textVersions(doc.record))[1]!, 'delete').run()
+    expect(platform.confirmed.at(-1)).toMatchObject({ title: 'Supprimer « Texte 1 — extrait du fichier » ?', confirm: 'Supprimer', danger: true })
+    expect(platform.files.has(`${folder}/Texte 1.md`)).toBe(false)
+    expect(platform.notices.at(-1)).toBe('Texte 1 — extrait du fichier : supprimé, avec sa note.')
+    const items = await textVersions(doc.record)
+    // Le texte 2, sans précédente : plus rien à comparer.
+    expect(items.map((item) => [item.title, item.tools?.map((each) => each.label)])).toEqual([['Texte 2 — relu par l’IA', ['Supprimer cette version']]])
+    expect(read(platform, doc.record)).toMatch(/\ntexteVersion: 2\n/)
+  })
+
+  it('celle que montre la fiche : la dernière qui reste la remplace ; une précédente supprimée, on compare à celle d’avant', async () => {
+    const platform = memoryPlatform()
+    const { page, pour, textVersions } = await start(platform, () => FIXED)
+    const doc = await pour('Plan qualité.txt', RAW)
+    const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
+    const texte = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.texte')
+    await (texte!.blocks[0]!.kind === 'message' ? texte!.blocks[0]!.actions!.find((action) => action.id === 'extract')!.run() : null)
+    // Texte 4 (relu), 3 (extrait), 2 (relu), 1 (extrait) ; on supprime le 3, puis le 4, montré.
+    platform.confirmations.push(true, true)
+    await tool((await textVersions(doc.record)).find((item) => item.title.startsWith('Texte 3'))!, 'delete').run()
+    expect((await textVersions(doc.record))[0]!.tools!.map((each) => each.label)).toEqual(['Comparer avec le texte 2', 'Supprimer cette version'])
+    await tool((await textVersions(doc.record))[0]!, 'delete').run()
+    expect(platform.confirmed.at(-1)!.message).toContain('C’est la version que montre la fiche')
+    expect(platform.notices.at(-1)).toBe('Texte 4 — relu par l’IA : supprimé, avec sa note ; la fiche montre maintenant Texte 2 — relu par l’IA.')
+    expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 2 — relu par l’IA', 'Texte 1 — extrait du fichier'])
+    expect(read(platform, doc.record)).toMatch(/\ntexteVersion: 2\n/)
+    expect(read(platform, doc.record)).toContain('> [!info] Texte 2, relu par l’IA :')
+  })
+
+  it('la dernière qui reste : la fiche garde son texte, sans version', async () => {
+    const platform = memoryPlatform()
+    const { pour, textVersions } = await start(platform, () => FIXED)
+    const doc = await pour('Plan qualité.txt', RAW)
+    platform.confirmations.push(true, true)
+    await tool((await textVersions(doc.record))[1]!, 'delete').run()
+    await tool((await textVersions(doc.record))[0]!, 'delete').run()
+    expect(await textVersions(doc.record)).toEqual([])
+    const note = read(platform, doc.record)
+    expect(note).not.toMatch(/texteVersion/)
+    expect(note).toContain('- Revue de conception')
+    expect(note).toContain('> [!info] Document lu :')
   })
 })

@@ -30,6 +30,10 @@ export interface DocxReadParagraph {
   /** The style as the document names it, for a reader looking for one of its own. */
   styleName: string
   text: string
+  /** A list item's depth, 0 at the top level. Only set on list items below the top. */
+  listLevel?: number
+  /** A numbered list item (1., a., i.…), rather than a bullet. */
+  ordered?: boolean
 }
 
 export interface DocxReadTable {
@@ -111,7 +115,30 @@ function classify(
   return { style: 'normal', name }
 }
 
-function paragraphOf(node: XmlNode, styles: Map<string, StyleInfo>): DocxReadParagraph {
+/** For each list (`numId`), and each of its levels, whether it is numbered: from `word/numbering.xml`. */
+export type Numbering = Map<string, Map<number, boolean>>
+
+export function readNumbering(source: string | undefined): Numbering {
+  const lists: Numbering = new Map()
+  if (!source) return lists
+  const root = parseXml(source)
+  const abstracts = new Map<string, Map<number, boolean>>()
+  for (const abstract of childrenLocal(root, 'abstractNum')) {
+    const levels = new Map<number, boolean>()
+    for (const level of childrenLocal(abstract, 'lvl')) {
+      const format = childLocal(level, 'numFmt')?.attrs['w:val'] ?? 'decimal'
+      levels.set(Number(level.attrs['w:ilvl'] ?? 0), format !== 'bullet' && format !== 'none')
+    }
+    abstracts.set(abstract.attrs['w:abstractNumId'] ?? '', levels)
+  }
+  for (const num of childrenLocal(root, 'num')) {
+    const levels = abstracts.get(childLocal(num, 'abstractNumId')?.attrs['w:val'] ?? '')
+    if (levels) lists.set(num.attrs['w:numId'] ?? '', levels)
+  }
+  return lists
+}
+
+function paragraphOf(node: XmlNode, styles: Map<string, StyleInfo>, numbering: Numbering = new Map()): DocxReadParagraph {
   const properties = childLocal(node, 'pPr')
   const styleId = childLocal(properties, 'pStyle')?.attrs['w:val'] ?? ''
   const found = classify(styleId, styles)
@@ -129,6 +156,17 @@ function paragraphOf(node: XmlNode, styles: Map<string, StyleInfo>): DocxReadPar
     paragraph.level = Number(outline) + 1
   } else if (found.level !== undefined) paragraph.level = found.level
   if (paragraph.style === 'normal' && numbered) paragraph.style = 'list'
+  if (paragraph.style === 'list') {
+    // Its depth and its kind: the paragraph's numbering, else its style (« List Number 2 »).
+    const numPr = childLocal(properties, 'numPr')
+    const ilvl = Number(childLocal(numPr, 'ilvl')?.attrs['w:val'] ?? NaN)
+    const styled = /(\d)\s*$/.exec(found.name)
+    const level = Number.isInteger(ilvl) ? ilvl : styled ? Number(styled[1]) - 1 : 0
+    if (level > 0) paragraph.listLevel = Math.min(level, 8)
+    const numId = childLocal(numPr, 'numId')?.attrs['w:val']
+    const ordered = numId !== undefined ? numbering.get(numId)?.get(level) : /number/.test(found.name) || undefined
+    if (ordered) paragraph.ordered = true
+  }
   return paragraph
 }
 
@@ -162,19 +200,19 @@ function tableOf(node: XmlNode): DocxReadTable {
   }
 }
 
-function blocksOf(node: XmlNode | null, styles: Map<string, StyleInfo>, out: DocxReadBlock[]): void {
+function blocksOf(node: XmlNode | null, styles: Map<string, StyleInfo>, out: DocxReadBlock[], numbering: Numbering = new Map()): void {
   for (const part of node?.children ?? []) {
     const name = localName(part)
-    if (name === 'p') out.push(paragraphOf(part, styles))
+    if (name === 'p') out.push(paragraphOf(part, styles, numbering))
     else if (name === 'tbl') out.push(tableOf(part))
     // A content control around paragraphs or a table: what it holds is the document.
-    else if (name === 'sdt') blocksOf(childLocal(part, 'sdtContent'), styles, out)
+    else if (name === 'sdt') blocksOf(childLocal(part, 'sdtContent'), styles, out, numbering)
   }
 }
 
 /** The document body, as paragraphs and tables in reading order. */
 export async function readDocx(bytes: Uint8Array): Promise<DocxReadBlock[]> {
-  const entries = await unzip(bytes, (name) => name === 'word/document.xml' || name === 'word/styles.xml')
+  const entries = await unzip(bytes, (name) => name === 'word/document.xml' || name === 'word/styles.xml' || name === 'word/numbering.xml')
   const decoder = new TextDecoder()
   const part = (name: string) => {
     const found = entries.find((entry) => entry.name === name)
@@ -184,6 +222,6 @@ export async function readDocx(bytes: Uint8Array): Promise<DocxReadBlock[]> {
   if (!document) throw new DocxError('no word/document.xml in the archive')
   const styles = readStyles(part('word/styles.xml'))
   const out: DocxReadBlock[] = []
-  blocksOf(childLocal(parseXml(document), 'body'), styles, out)
+  blocksOf(childLocal(parseXml(document), 'body'), styles, out, readNumbering(part('word/numbering.xml')))
   return out
 }

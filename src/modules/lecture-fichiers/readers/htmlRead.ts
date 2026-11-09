@@ -428,6 +428,13 @@ export function readHtml(source: string): DocxReadBlock[] {
     if (text) blocks.push({ kind: 'p', style, styleName: node.attrs.class ?? node.name, text, ...extra })
   }
 
+  // How deep the list being read is: a list inside an item is a level below.
+  let listDepth = 0
+  const deeper = (node: HtmlNode): void => {
+    listDepth++
+    walk(node)
+    listDepth--
+  }
   const walk = (node: HtmlNode): void => {
     for (const child of node.children) {
       if (typeof child === 'string') {
@@ -462,15 +469,16 @@ export function readHtml(source: string): DocxReadBlock[] {
           if (typeof item === 'string') continue
           if (item.name !== 'li') {
             // A list set straight inside a list — how a sub-level is often written.
-            walk({ ...child, name: 'div', children: [item] })
+            if (nested(item)) deeper({ ...child, name: 'div', children: [item] })
+            else walk({ ...child, name: 'div', children: [item] })
             continue
           }
           const own = { ...item, children: item.children.filter((part) => !nested(part)) }
           // An item holding headings or paragraphs is a numbered part of the document, not
           // a bullet: a page saved out of a word processor numbers its headings this way.
           if (holdsParts(own)) walk(own)
-          else paragraph('list', own)
-          walk({ ...item, name: 'div', children: item.children.filter(nested) })
+          else paragraph('list', own, { ...(listDepth ? { listLevel: Math.min(listDepth, 8) } : {}), ...(name === 'ol' ? { ordered: true } : {}) })
+          deeper({ ...item, name: 'div', children: item.children.filter(nested) })
         }
       } else if (name === 'table') {
         const rows = tableRows(child)

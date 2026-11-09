@@ -25,6 +25,17 @@ describe('readHtml', () => {
     expect(JSON.stringify(blocks)).not.toContain('alert')
   })
 
+  it('une liste dans une liste : un niveau de plus ; une liste numérotée le dit', () => {
+    const blocks = readHtml('<ol><li>Préparer<ul><li>Le site</li><li>Les accès<ul><li>Badges</li></ul></li></ul></li><li>Livrer</li></ol>')
+    expect(blocks.map((block) => (block.kind === 'p' ? [block.text, block.listLevel ?? 0, block.ordered ?? false] : null))).toEqual([
+      ['Préparer', 0, true],
+      ['Le site', 1, false],
+      ['Les accès', 1, false],
+      ['Badges', 2, false],
+      ['Livrer', 0, true]
+    ])
+  })
+
   it('décode les entités nommées et numériques', () => {
     expect(decodeHtml('&lt;CCTP&gt; &amp; &#233;t&#xE9;')).toBe('<CCTP> & été')
   })

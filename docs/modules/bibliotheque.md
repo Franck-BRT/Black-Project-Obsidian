@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.32.0 (Black Projects 0.104.0) |
+| Version | 0.33.0 (Black Projects 0.105.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,18 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Supprimer une version du texte ; les listes du texte extrait (v0.33.0, Black Projects 0.105.0)
+
+- **Supprimer cette version** (la corbeille, parmi les outils de chaque version de *Versions du
+  texte*), après confirmation : sa note va à la corbeille du coffre (`FileSystem.trash`,
+  nouveau dans le port — dans Obsidian `fileManager.trashFile`, selon le réglage du coffre ;
+  sans lui, mise de côté dans `_retirés`). `store.deleteTextVersion` : celle que montrait la
+  fiche est remplacée par la dernière qui reste (aucune : le texte reste sur la fiche, sans
+  version). Les numéros ne changent pas ; **Comparer** se fait avec la précédente qui reste.
+- Le texte écrit dans la fiche a ses puces tapées (« • ») changées en `- ` (`completeLists`).
+  Le bloc `markdown` de la fiche : une liste aérée reste une liste, une liste coupe la phrase
+  qu'elle suit (« Les revues : » puis ses puces), une numérotée garde son premier numéro.
 
 ## Les tableaux du texte extrait (v0.32.0, Black Projects 0.104.0)
 

@@ -55,6 +55,8 @@ export interface LibraryHomeDeps {
   chooseLanguage(record: string): Promise<void>
   /** Remontrer sur la fiche une version gardée de son texte. */
   showTextVersion(record: string, number: number): Promise<void>
+  /** Supprimer une version de son texte, et sa note (après confirmation). */
+  deleteTextVersion(record: string, number: number): Promise<void>
   /** (Re)transcrire son fichier dans sa fiche. */
   transcribe(record: string): Promise<void>
   /** La relecture du texte extrait par l'IA est-elle là (le module IA actif) ? */
@@ -649,6 +651,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   // Les versions de son texte, la dernière d'abord : chacune s'ouvre, se compare à la précédente, se remontre sur la fiche.
   const textVersions = await deps.store.textVersions(doc.record)
   const shownVersion = doc.textVersion ?? textVersions.at(-1)?.number
+  // La précédente d'une version : celle d'avant qui reste (une version supprimée laisse un trou).
+  const previousOf = (number: number) => textVersions.filter((each) => each.number < number).at(-1)
   const textVersionItems: ListItem[] = [...textVersions].reverse().map((version) => ({
     id: `texte-${version.number}`,
     title: textVersionLabel(t, version),
@@ -666,12 +670,14 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     tone: version.number === shownVersion ? ('info' as const) : ('neutral' as const),
     open: { id: 'open', label: t('bibliotheque.textVersion.open'), run: () => deps.showNote(version.path) },
     tools: [
-      ...(version.number > 1
-        ? [{ id: `compare-${version.number}`, label: t('bibliotheque.textVersion.compare', { number: version.number - 1 }), icon: 'columns' as const, run: () => deps.showPage?.(comparePageOf(doc.record, version.number - 1, version.number)) }]
-        : []),
+      ...((previous) =>
+        previous
+          ? [{ id: `compare-${version.number}`, label: t('bibliotheque.textVersion.compare', { number: previous.number }), icon: 'columns' as const, run: () => deps.showPage?.(comparePageOf(doc.record, previous.number, version.number)) }]
+          : [])(previousOf(version.number)),
       ...(version.number !== shownVersion
         ? [{ id: `show-${version.number}`, label: t('bibliotheque.textVersion.show'), icon: 'eye' as const, run: () => deps.showTextVersion(doc.record, version.number) }]
-        : [])
+        : []),
+      { id: `delete-${version.number}`, label: t('bibliotheque.textVersion.delete'), icon: 'trash' as const, run: () => deps.deleteTextVersion(doc.record, version.number) }
     ]
   }))
 

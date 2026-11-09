@@ -751,6 +751,36 @@ export class LibraryStore {
     return version
   }
 
+  /**
+   * **Supprimer une version du texte**, et sa note (à la corbeille, quand la plateforme en a
+   * une ; sinon mise de côté). Celle que montrait la fiche : la dernière qui reste la remplace
+   * (aucune : le texte reste sur la fiche, sans version). Les autres ne changent pas.
+   */
+  async deleteTextVersion(record: string, number: number): Promise<{ removed: TextVersion; shown: TextVersion | null } | null> {
+    const { fs } = this.deps
+    const doc = await this.load(record)
+    const versions = await this.textVersions(record)
+    const removed = versions.find((each) => each.number === number)
+    if (!doc || !removed) return null
+    if (fs.trash) await fs.trash(removed.path)
+    else {
+      const shelf = this.shelves().find((each) => record.startsWith(`${each.folder}/`)) ?? this.shelves()[0]!
+      const aside = `${shelf.folder}/${SET_ASIDE_FOLDER}`
+      await fs.ensureFolder(aside)
+      await fs.rename(removed.path, await this.free(`${aside}/${baseName(removed.path)}`))
+    }
+    const left = versions.filter((each) => each !== removed)
+    const shown = doc.textVersion ?? versions.at(-1)?.number
+    if (shown !== number) return { removed, shown: left.find((each) => each.number === shown) ?? null }
+    const latest = left.at(-1) ?? null
+    if (latest) return { removed, shown: await this.showTextVersion(record, latest.number) }
+    const next: LibraryDoc = { ...doc }
+    delete next.textVersion
+    await this.save(next)
+    await this.writeTranscript(next, { state: 'lue', text: removed.text })
+    return { removed, shown: null }
+  }
+
   /** Montrer de nouveau une version gardée du texte (la fiche la montre ; rien n'est effacé). */
   async showTextVersion(record: string, number: number): Promise<TextVersion | null> {
     const doc = await this.load(record)

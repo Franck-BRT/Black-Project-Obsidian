@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les listes du texte extrait ; supprimer une version du texte (v0.105.0)
+
+- [ ] Verser un document Word avec une liste numérotée et une liste à puces à deux niveaux :
+      sur la fiche et dans sa note (Obsidian), une seule liste chacune, numéros et niveaux gardés
+- [ ] Un texte avec « Les revues : » puis des lignes « • … » : une vraie liste, sous la phrase
+- [ ] *Versions* › *Versions du texte* › la corbeille d'une version : une confirmation, puis sa
+      note est à la corbeille du coffre ; les autres versions ne changent pas
+- [ ] Supprimer la version montrée sur la fiche : la dernière qui reste la remplace (la notice
+      le dit) ; « Comparer » se fait avec la précédente qui reste
+
 ## Les tableaux du texte extrait (v0.104.0)
 
 - [ ] Verser un document Word ou PDF avec un tableau (des cases fusionnées) : sur la fiche,

@@ -21,6 +21,10 @@ export interface PptxReadParagraph {
   text: string
   /** Marked with a bullet or a number in the slide itself. */
   bullet: boolean
+  /** Its depth in the slide's list, 0 at the top. Only set below the top. */
+  level?: number
+  /** Numbered rather than bulleted. */
+  ordered?: boolean
 }
 
 export interface PptxReadText {
@@ -70,9 +74,13 @@ function paragraphText(paragraph: XmlNode): string {
 function paragraphsOf(body: XmlNode | null): PptxReadParagraph[] {
   return childrenLocal(body, 'p').map((paragraph) => {
     const properties = childLocal(paragraph, 'pPr')
+    const level = Number(properties?.attrs.lvl ?? 0)
+    const ordered = childLocal(properties, 'buAutoNum') !== null
     return {
       text: paragraphText(paragraph),
-      bullet: childLocal(properties, 'buChar') !== null || childLocal(properties, 'buAutoNum') !== null
+      bullet: childLocal(properties, 'buChar') !== null || ordered,
+      ...(Number.isInteger(level) && level > 0 ? { level: Math.min(level, 8) } : {}),
+      ...(ordered ? { ordered: true } : {})
     }
   })
 }

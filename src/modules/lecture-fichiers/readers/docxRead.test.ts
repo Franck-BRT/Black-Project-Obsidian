@@ -117,6 +117,30 @@ describe('readDocx', () => {
     ])
   })
 
+  it('reads a list item’s depth, and whether its list is numbered', async () => {
+    const run = (text: string) => `<w:r><w:t>${text}</w:t></w:r>`
+    const item = (text: string, numId: string, ilvl: string) =>
+      `<w:p><w:pPr><w:numPr><w:ilvl w:val="${ilvl}"/><w:numId w:val="${numId}"/></w:numPr></w:pPr>${run(text)}</w:p>`
+    const numbering = `<w:numbering ${W}>
+      <w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:numFmt w:val="decimal"/></w:lvl><w:lvl w:ilvl="1"><w:numFmt w:val="bullet"/></w:lvl></w:abstractNum>
+      <w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/></w:lvl></w:abstractNum>
+      <w:num w:numId="5"><w:abstractNumId w:val="0"/></w:num><w:num w:numId="6"><w:abstractNumId w:val="1"/></w:num>
+    </w:numbering>`
+    const body = [item('Préparer', '5', '0'), item('Le site', '5', '1'), item('Livrer', '5', '0'), item('Une puce', '6', '0')].join('')
+    const blocks = await readDocx(
+      await zip([
+        { name: 'word/document.xml', data: utf8(`<w:document ${W}><w:body>${body}</w:body></w:document>`) },
+        { name: 'word/numbering.xml', data: utf8(numbering) }
+      ])
+    )
+    expect(blocks.map((block) => (block.kind === 'p' ? [block.style, block.text, block.listLevel ?? 0, block.ordered ?? false] : null))).toEqual([
+      ['list', 'Préparer', 0, true],
+      ['list', 'Le site', 1, false],
+      ['list', 'Livrer', 0, true],
+      ['list', 'Une puce', 0, false]
+    ])
+  })
+
   it('says a file is not a Word document', async () => {
     await expect(readDocx(zip([{ name: 'a.txt', data: utf8('x') }]))).rejects.toThrow(/document\.xml/)
   })

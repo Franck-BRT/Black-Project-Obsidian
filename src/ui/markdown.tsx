@@ -16,7 +16,7 @@ import { isPipeRow, isTableSeparator, pipeCells, tableRows } from '../core/table
 export type MarkdownNode =
   | { kind: 'heading'; level: number; text: string }
   | { kind: 'paragraph'; text: string }
-  | { kind: 'list'; ordered: boolean; items: { text: string; children: MarkdownNode[] }[] }
+  | { kind: 'list'; ordered: boolean; start?: number; items: { text: string; children: MarkdownNode[] }[] }
   | { kind: 'quote'; children: MarkdownNode[] }
   | { kind: 'code'; text: string }
   | { kind: 'table'; head: string[]; rows: string[][] }
@@ -28,6 +28,9 @@ const ORDERED = /^\s*\d{1,3}[.)]\s+/
 const FENCE = /^\s*(```|~~~)/
 const RULE = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/
 const TABLE_SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/
+
+/** Le retrait d'une ligne (une tabulation : deux espaces). */
+const indent = (line: string): number => /^(\s*)/.exec(line)![1]!.replace(/\t/g, '  ').length
 
 const cells = (line: string): string[] =>
   line
@@ -95,9 +98,31 @@ export function parseMarkdown(source: string): MarkdownNode[] {
       continue
     }
     // Une liste : ses éléments ; un élément plus en retrait appartient au précédent.
+    // Des lignes vides entre ses éléments (une liste « aérée ») ne la coupent pas ; une puce
+    // devenue numéro (ou l'inverse), au même niveau, en commence une autre.
     if (BULLET.test(line)) {
+      const base = indent(line)
+      const ordered = ORDERED.test(line)
       const block: string[] = []
-      while (at < lines.length && lines[at]!.trim() && (BULLET.test(lines[at]!) || /^\s{2,}\S/.test(lines[at]!))) block.push(lines[at++]!)
+      while (at < lines.length) {
+        const current = lines[at]!
+        if (!current.trim()) {
+          let next = at + 1
+          while (next < lines.length && !lines[next]!.trim()) next++
+          const following = lines[next]
+          const goesOn =
+            following !== undefined &&
+            (indent(following) > base + 1 || (BULLET.test(following) && indent(following) === base && ORDERED.test(following) === ordered))
+          if (!goesOn) break
+          at = next
+          continue
+        }
+        const item = BULLET.test(current)
+        if (item && indent(current) <= base && block.length && (indent(current) < base || ORDERED.test(current) !== ordered)) break
+        if (!item && !/^\s{2,}\S/.test(current)) break
+        block.push(current)
+        at++
+      }
       nodes.push(parseList(block))
       continue
     }
@@ -109,7 +134,8 @@ export function parseMarkdown(source: string): MarkdownNode[] {
       !HEADING.test(lines[at]!) &&
       !FENCE.test(lines[at]!) &&
       !/^\s*>/.test(lines[at]!) &&
-      !(BULLET.test(lines[at]!) && body.length === 0) &&
+      // Une puce coupe un paragraphe (comme dans Obsidian) ; un numéro, s'il commence à 1.
+      !(BULLET.test(lines[at]!) && (body.length === 0 || !ORDERED.test(lines[at]!) || /^\s*1[.)]\s/.test(lines[at]!))) &&
       !(lines[at]!.includes('|') && at + 1 < lines.length && TABLE_SEPARATOR.test(lines[at + 1]!)) &&
       !(isPipeRow(lines[at]!) && body.length > 0)
     )
@@ -121,7 +147,6 @@ export function parseMarkdown(source: string): MarkdownNode[] {
 }
 
 function parseList(block: readonly string[]): MarkdownNode {
-  const indent = (line: string) => /^(\s*)/.exec(line)![1]!.replace(/\t/g, '  ').length
   const base = indent(block[0]!)
   const items: { text: string; children: MarkdownNode[] }[] = []
   let nested: string[] = []
@@ -136,7 +161,10 @@ function parseList(block: readonly string[]): MarkdownNode {
     } else nested.push(line)
   }
   flush()
-  return { kind: 'list', ordered: ORDERED.test(block[0]!), items }
+  const ordered = ORDERED.test(block[0]!)
+  // Une liste numérotée qui ne commence pas à 1 (« 3. ») le garde.
+  const start = ordered ? Number(/^\s*(\d+)/.exec(block[0]!)![1]) : 1
+  return { kind: 'list', ordered, ...(start !== 1 ? { start } : {}), items }
 }
 
 /** Le texte d'une ligne mis en forme : **gras**, *italique*, `code`, [lien](…) (son texte). */
@@ -169,7 +197,7 @@ function render(nodes: readonly MarkdownNode[]): JSX.Element[] {
       case 'list': {
         const Tag = node.ordered ? 'ol' : 'ul'
         return (
-          <Tag key={index}>
+          <Tag key={index} {...(node.start !== undefined ? { start: node.start } : {})}>
             {node.items.map((item, at) => (
               <li key={at}>
                 {inline(item.text)}

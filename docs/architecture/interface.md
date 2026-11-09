@@ -247,7 +247,9 @@ lecteurs d'écran entendent « Retiré : … », « Ajouté : … ».
 Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
 forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :
 réduit et sûr (le texte devient des éléments, jamais du HTML injecté ; un lien, son texte). Le
-texte extrait d'un document s'y lit. Des lignes `| … |` sans ligne de séparation y sont aussi un tableau
+texte extrait d'un document s'y lit. Une liste « aérée » (des lignes vides entre ses éléments) reste une liste ; une liste coupe la
+phrase qu'elle suit (comme dans Obsidian) ; une liste numérotée garde son premier numéro. Des
+lignes `| … |` sans ligne de séparation y sont aussi un tableau
 (la première en en-tête) ; les colonnes vides de bout en bout en sont retirées (`src/core/tables.ts`).
 
 Une liste peut porter un intitulé (`title` : « Dernières exécutions ») ; ses éléments

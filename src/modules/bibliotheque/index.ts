@@ -15,6 +15,7 @@
  * rien. Voir README.md pour la maintenance.
  */
 
+import { completeLists } from '../../core/lists'
 import { completeTables } from '../../core/tables'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
@@ -516,7 +517,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.32.0',
+  version: '0.33.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -566,7 +567,7 @@ export const bibliothequeModule: BlackModule = {
             : [`> [!warning] ${t(`bibliotheque.text.state.${transcript.state}`)}`, `> ${t(`bibliotheque.text.state.${transcript.state}.help`)}`]),
           '',
           // Ses tableaux complets (leur ligne de séparation), pour qu'Obsidian les montre en tableaux.
-          transcript.state === 'lue' && transcript.text.trim() ? nestHeadings(completeTables(transcript.text.trim())) : `*${t('bibliotheque.text.none')}*`
+          transcript.state === 'lue' && transcript.text.trim() ? nestHeadings(completeLists(completeTables(transcript.text.trim()))) : `*${t('bibliotheque.text.none')}*`
         ].join('\n'),
       issuers: () => knownIssuers(),
       tags: () => knownTags(),
@@ -1249,6 +1250,29 @@ export const bibliothequeModule: BlackModule = {
       showTextVersion: async (record, number) => {
         const version = await store.showTextVersion(record, number)
         if (version) platform.notifier.notify(t('bibliotheque.textVersion.shownDone', { version: t(version.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number }) }), 5000)
+      },
+      deleteTextVersion: async (record, number) => {
+        const versions = await store.textVersions(record)
+        const version = versions.find((each) => each.number === number)
+        if (!version) return
+        const label = t(version.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number })
+        const shownNow = ((await store.load(record))?.textVersion ?? versions.at(-1)?.number) === number
+        const sure = await platform.ui.confirm({
+          title: t('bibliotheque.textVersion.delete.title', { version: label }),
+          message: t(shownNow ? 'bibliotheque.textVersion.delete.messageShown' : 'bibliotheque.textVersion.delete.message', { version: label }),
+          confirm: t('bibliotheque.textVersion.delete.confirm'),
+          cancel: t('bibliotheque.cancel'),
+          danger: true
+        })
+        if (!sure) return
+        const done = await store.deleteTextVersion(record, number)
+        if (!done) return
+        platform.notifier.notify(
+          done.shown && shownNow
+            ? t('bibliotheque.textVersion.deleted.shown', { version: label, shown: t(done.shown.origin === 'ia' ? 'bibliotheque.textVersion.ia' : 'bibliotheque.textVersion.extraction', { number: done.shown.number }) })
+            : t('bibliotheque.textVersion.deleted', { version: label }),
+          6000
+        )
       },
       transcribe: async (record) => {
         const done = await store.transcribe(record)

@@ -36,6 +36,22 @@ describe('blocksText', () => {
   })
 })
 
+describe('blocksText : les listes', () => {
+  it('les éléments d’une liste l’un sous l’autre, leur niveau, leur numéro ; une puce tapée, en liste', () => {
+    expect(
+      blocksText([
+        { kind: 'p', style: 'normal', styleName: '', text: 'Les étapes :' },
+        { kind: 'p', style: 'list', styleName: '', text: 'Préparer', ordered: true },
+        { kind: 'p', style: 'list', styleName: '', text: 'Le site', listLevel: 1 },
+        { kind: 'p', style: 'list', styleName: '', text: '• Les accès', listLevel: 1 },
+        { kind: 'p', style: 'list', styleName: '', text: 'Livrer', ordered: true },
+        { kind: 'p', style: 'normal', styleName: '', text: '• Une puce tapée\n• Une autre' },
+        { kind: 'p', style: 'list', styleName: '', text: 'Nouvelle liste' }
+      ])
+    ).toBe(['Les étapes :', '1. Préparer\n    - Le site\n    - Les accès\n1. Livrer', '- Une puce tapée\n- Une autre', '- Nouvelle liste'].join('\n\n'))
+  })
+})
+
 describe('fileText', () => {
   it('reads plain text as it is, and HTML as its paragraphs and tables', async () => {
     expect(await fileText('CSV', bytes('Tâche;Fin\r\nSoutènement;09/10/2026\r\n'))).toBe(
