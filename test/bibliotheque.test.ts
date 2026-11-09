@@ -191,7 +191,9 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
       ['bibliotheque.document.identite', 'Identification', '', true],
       ['bibliotheque.document.fichier', 'Le fichier', 'Courrier acheteur.pdf', true],
       ['bibliotheque.document.origines', 'D’où il vient (1)', "Analyse d'appels d'offres — Station sol", true],
-      ['bibliotheque.document.versions', 'Versions', 'Aucune autre version reliée.', true]
+      ['bibliotheque.document.versions', 'Versions', 'Aucune autre version reliée.', true],
+      // Son texte, transcrit dans la fiche (un faux PDF : illisible, comme le serait une pièce d'analyse).
+      ['bibliotheque.document.texte', 'Texte extrait', 'Illisible', true]
     ])
     const origins = sectionList(fiche.blocks, (title) => title.startsWith('D’où il vient'))
     expect(origins?.kind === 'list' && origins.items.map((item) => `${item.title}:${item.detail}`)).toEqual(["Analyse d'appels d'offres:Station sol"])

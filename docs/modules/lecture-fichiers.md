@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.9.0 (Black Projects 0.82.0) |
+| Version | 0.10.0 (Black Projects 0.100.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -214,6 +214,13 @@ comprises ; une image, une archive, un format non lu : `null`) ; elle en devine 
 Limite connue de `markdownRead` : les lignes d'un paragraphe restent ensemble, comme
 elles ont été écrites ; une liste collée à un paragraphe, sans ligne vide, en fait donc
 partie.
+
+## La transcription des documents de la bibliothèque (v0.10.0, Black Projects 0.100.0)
+
+À son activation, le module donne à la [bibliothèque](bibliotheque.md) de quoi transcrire un
+fichier versé (`setTranscriber`) : son texte, ou pourquoi il n'y en a pas — `image`,
+`non-lue` (format non lu, archive), `sans-texte` (un scan, un document vide), `illisible` —,
+comme la lecture des pièces d'une analyse. Désactivé, il la retire.
 
 ## Organisation
 

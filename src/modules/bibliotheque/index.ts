@@ -27,7 +27,7 @@ import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, type EditableField } from './home'
 import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
-import { baseName, CATEGORIES, versionLabel, type DocOrigin, type LibraryDoc } from './model'
+import { baseName, CATEGORIES, nestHeadings, versionLabel, type DocOrigin, type LibraryDoc, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
@@ -35,7 +35,7 @@ import { defaultShelfOf, folderName, SHELF_KINDS, shelvesOf, withDefaultShelf, w
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
-export type { DocOrigin, LibraryDoc } from './model'
+export type { DocOrigin, LibraryDoc, Transcript, TranscriptState } from './model'
 export type { PourItem, PourOptions, PourReport, ResearchField } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
@@ -234,6 +234,14 @@ let textReader: ((name: string, bytes: Uint8Array) => Promise<string | null>) | 
 /** Pour la lecture de fichiers : lire le texte d'un fichier versé (`null` : plus rien). */
 export function setTextReader(reader: ((name: string, bytes: Uint8Array) => Promise<string | null>) | null): void {
   textReader = reader
+}
+
+/** Le texte d'un fichier versé, ou pourquoi il n'y en a pas : la lecture de fichiers le donne (comme pour les pièces d'une analyse). */
+let transcriber: ((name: string, bytes: Uint8Array) => Promise<Transcript>) | null = null
+
+/** Pour la lecture de fichiers : transcrire un fichier versé (`null` : plus rien). */
+export function setTranscriber(transcribe: ((name: string, bytes: Uint8Array) => Promise<Transcript>) | null): void {
+  transcriber = transcribe
 }
 
 /** L'extension d'un nom de fichier, en minuscules, sans le point ; vide s'il n'en a pas. */
@@ -484,7 +492,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.27.0',
+  version: '0.28.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -518,6 +526,18 @@ export const bibliothequeModule: BlackModule = {
       ghostLine: (link, where) => t('bibliotheque.ghost.line', { link, where }),
       textOf: async (name, bytes) => (textReader ? textReader(name, bytes) : null),
       typer: () => pieceTyper ?? CATEGORY_TYPER,
+      // Le texte du fichier, transcrit dans sa fiche — comme une pièce d'analyse (la lecture de fichiers le donne).
+      transcribe: async (name, bytes) => (transcriber ? transcriber(name, bytes) : null),
+      transcriptBlock: (transcript) =>
+        [
+          `## ${t('bibliotheque.text.heading')}`,
+          '',
+          ...(transcript.state === 'lue'
+            ? [`> [!info] ${t('bibliotheque.text.read', { characters: transcript.text.length.toLocaleString('fr-FR') })}`]
+            : [`> [!warning] ${t(`bibliotheque.text.state.${transcript.state}`)}`, `> ${t(`bibliotheque.text.state.${transcript.state}.help`)}`]),
+          '',
+          transcript.state === 'lue' && transcript.text.trim() ? nestHeadings(transcript.text.trim()) : `*${t('bibliotheque.text.none')}*`
+        ].join('\n'),
       issuers: () => knownIssuers(),
       tags: () => knownTags(),
       // Les prompts et les personas, rangés sous la bibliothèque (ou ailleurs) : pas des documents.
@@ -1196,6 +1216,17 @@ export const bibliothequeModule: BlackModule = {
       addIssuer: async (record) => void (await addIssuerFor(record)),
       addPieceType: async (record) => void (await addPieceTypeFor(record)),
       addTags: (record) => addTagsFor(record),
+      transcribe: async (record) => {
+        const done = await store.transcribe(record)
+        if (!done) return platform.notifier.notify(t('bibliotheque.text.unavailable'), 8000)
+        const state = t(`bibliotheque.text.state.${done.transcript.state}`)
+        platform.notifier.notify(
+          done.transcript.state === 'lue'
+            ? t('bibliotheque.text.extracted', { title: done.doc.title, state, characters: done.transcript.text.length.toLocaleString('fr-FR') })
+            : t('bibliotheque.text.extracted.none', { title: done.doc.title, state }),
+          6000
+        )
+      },
       tagList: () => knownTags(),
       pieceTypeOutside: (code) => !!code && !libraryPieceTypes().some((type) => type.code === code),
       canAddPieceType: () => !!pieceTyper?.add,

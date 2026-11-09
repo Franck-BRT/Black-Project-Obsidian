@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.27.0 (Black Projects 0.99.0) |
+| Version | 0.28.0 (Black Projects 0.100.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,26 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Le texte extrait, dans la fiche (v0.28.0, Black Projects 0.100.0)
+
+Exactement comme pour une **pièce d'analyse** : à son entrée, le texte du fichier est
+**transcrit dans sa fiche** (sa note).
+
+- **La transcription** vient de la [lecture de fichiers](lecture-fichiers.md)
+  (`setTranscriber` : le texte, ou pourquoi il n'y en a pas — `lue`, `sans-texte` (un scan),
+  `image`, `non-lue`, `illisible`, les mêmes états que les pièces). Le fichier est lu **une
+  fois** : ce texte sert aussi aux premières passes (langue, titre, type de pièce…).
+- **Dans la note**, après la section des notes de l'utilisateur, entre deux marques
+  (`<!-- bp:texte:debut … -->`, `<!-- bp:texte:fin -->`) : « ## Texte extrait », un encadré
+  (`> [!info] Document lu : n caractères de texte extrait.`, ou `> [!warning]` et pourquoi),
+  puis le texte, ses titres descendus de deux niveaux (`nestHeadings`). Ce qui est hors des
+  marques n'est jamais touché. L'en-tête garde `lecture` et `caracteres`.
+- **Sur la fiche**, une section repliable de plus, **« Texte extrait »** (après *Versions*) :
+  en en-tête l'état (« Lu — 227 caractères », « Image », « Pas encore extrait »…) ; l'encadré,
+  **Extraire de nouveau** (ou **Extraire le texte**, pour un document versé avant) et **Ouvrir
+  sa note** ; puis le texte (ses 20 000 premiers caractères ; la suite dans la note).
+- Sans la lecture de fichiers, rien n'est transcrit.
 
 ## La liste des étiquettes (v0.27.0, Black Projects 0.99.0)
 

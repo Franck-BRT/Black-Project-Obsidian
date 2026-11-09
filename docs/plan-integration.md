@@ -583,6 +583,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.99.0 : **module Bibliothèque** : la liste des **étiquettes** — une bibliothèque de plus
   (un nom, d'autres formes) ; les étiquettes d'un document y sont ramenées, reconnues,
   cochées (le crayon) ; hors de la liste, un bouton les y ajoute ; l'IA la reçoit d'abord
+- v0.100.0 : **modules Bibliothèque et Lecture de fichiers** : le **texte extrait** de chaque
+  document, transcrit dans sa fiche comme celui d'une pièce d'analyse (entre des marques,
+  avec son encadré) ; une section « Texte extrait » sur la fiche, « Extraire de nouveau »
 
 ### Étape 7 — Livrables
 

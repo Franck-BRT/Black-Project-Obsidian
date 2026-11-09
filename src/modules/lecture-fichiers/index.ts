@@ -29,9 +29,9 @@ import { readShown } from './capabilities'
 import { formatsCatalogue } from './catalogue'
 import { lectureDocs } from './doc'
 import { lectureEn, lectureFr } from './i18n'
-import { setReadability, setTextReader } from '../bibliotheque'
+import { setReadability, setTextReader, setTranscriber } from '../bibliotheque'
 import { isArchive } from './archive'
-import { fileText as rawFileText, isImage, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
+import { fileText as rawFileText, FileReadError, isImage, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
 import { registerLectureWorkflows } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -117,7 +117,7 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.9.0',
+  version: '0.10.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings), display),
@@ -164,6 +164,21 @@ export const lectureFichiersModule: BlackModule = {
         return null
       }
     })
+    // Et sa transcription, écrite dans sa fiche — comme le texte d'une pièce d'analyse.
+    setTranscriber(async (name, bytes) => {
+      const at = name.lastIndexOf('.')
+      const extension = at > name.lastIndexOf('/') ? name.slice(at + 1).toLowerCase() : ''
+      const resolved = resolveExtension(extension)
+      if (isImage(resolved)) return { state: 'image', text: '' }
+      if (!isReadable(extension) || isArchive(resolved)) return { state: 'non-lue', text: '' }
+      try {
+        return { state: 'lue', text: await fileText(extension, bytes) }
+      } catch (error) {
+        if (error instanceof FileReadError && error.problem === 'empty') return { state: 'sans-texte', text: '' }
+        if (error instanceof FileReadError && error.problem === 'unsupported') return { state: 'non-lue', text: '' }
+        return { state: 'illisible', text: '' }
+      }
+    })
     // Les types que l'utilisateur a choisi d'afficher : la plateforme les montre.
     display?.show(readShown(settings.get()))
     unsubscribe = settings.onChange((values) => {
@@ -174,6 +189,7 @@ export const lectureFichiersModule: BlackModule = {
   deactivate() {
     setReadability(null)
     setTextReader(null)
+    setTranscriber(null)
     unsubscribe?.()
     unsubscribe = null
     configureAliases({})

@@ -52,6 +52,8 @@ export interface LibraryHomeDeps {
   newVersionOf(record: string): Promise<void>
   /** Choisir sa langue (ou la détecter de nouveau, ou aucune). */
   chooseLanguage(record: string): Promise<void>
+  /** (Re)transcrire son fichier dans sa fiche. */
+  transcribe(record: string): Promise<void>
   /** Ses étiquettes hors de la liste : les y ajouter. */
   addTags(record: string): Promise<void>
   /** Les étiquettes de la liste. */
@@ -513,6 +515,46 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       ]
       return tools.length ? { ...item, tools } : item
     })
+  // Le texte du fichier, transcrit dans la fiche (comme une pièce d'analyse) : son état, ses actions, son texte.
+  const TEXT_SHOWN = 20000
+  const transcript = doc.reading === 'lue' ? ((await deps.store.transcriptText(doc.record)) ?? '') : ''
+  const characters = (doc.characters ?? 0).toLocaleString('fr-FR')
+  const textActions: ViewAction[] = [
+    { id: 'extract', label: t(doc.reading ? 'bibliotheque.text.extract.again' : 'bibliotheque.text.extract'), tooltip: t('bibliotheque.text.extract.tip'), icon: 'refresh', ...(doc.reading ? {} : { primary: true }), run: () => deps.transcribe(doc.record) },
+    { id: 'text-note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) }
+  ]
+  const textSection: HomeBlock = {
+    kind: 'section',
+    id: 'bibliotheque.document.texte',
+    title: t('bibliotheque.section.text'),
+    subtitle: !doc.reading ? t('bibliotheque.section.text.never') : doc.reading === 'lue' ? t('bibliotheque.section.text.read', { characters }) : t(`bibliotheque.text.state.${doc.reading}`),
+    icon: 'file',
+    collapsed: true,
+    blocks: [
+      !doc.reading
+        ? { kind: 'message', tone: 'info', text: t('bibliotheque.text.never'), actions: textActions }
+        : doc.reading === 'lue'
+          ? { kind: 'message', tone: 'info', text: t('bibliotheque.text.read', { characters }), actions: textActions }
+          : { kind: 'message', tone: 'warning', text: `${t(`bibliotheque.text.state.${doc.reading}`)} — ${t(`bibliotheque.text.state.${doc.reading}.help`)}`, actions: textActions },
+      ...(doc.reading === 'lue'
+        ? [
+            {
+              kind: 'text' as const,
+              paragraphs: [
+                ...transcript
+                  .slice(0, TEXT_SHOWN)
+                  .split(/\n{2,}/)
+                  // Ses titres (« ### … » dans la note) : leur texte, sans les dièses.
+                  .map((paragraph) => paragraph.trim().replace(/^#{1,6} /, ''))
+                  .filter(Boolean),
+                ...(transcript.length > TEXT_SHOWN ? [t('bibliotheque.text.cut', { characters })] : [])
+              ],
+              empty: t('bibliotheque.text.none')
+            }
+          ]
+        : [])
+    ]
+  }
   const confirmNames = [
     doc.languageToConfirm ? t('bibliotheque.field.language') : '',
     doc.titleToConfirm ? t('bibliotheque.field.title') : '',
@@ -655,7 +697,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         kind: 'list',
         items: [...newer.reverse().map((each) => versionItem(each, 'apres')), ...older.map((each) => versionItem(each, 'avant'))],
         empty: t('bibliotheque.versions.none')
-      })
+      }),
+      textSection
     ]
   }
 }

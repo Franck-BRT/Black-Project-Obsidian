@@ -26,10 +26,13 @@ import {
   readRecord,
   recordContent,
   titleFromName,
+  transcriptBlockOf,
   versionKey,
+  withTranscript,
   type DocFamily,
   type DocOrigin,
-  type LibraryDoc
+  type LibraryDoc,
+  type Transcript
 } from './model'
 
 /** Le sous-dossier des fichiers copiés, et celui des documents retirés : jamais parcourus comme des fiches. */
@@ -60,6 +63,10 @@ export interface StoreDeps {
   tags?(): Promise<readonly KnownTag[]>
   /** Les émetteurs de la liste (code, nom, autres noms) : l'émetteur d'un document y est reconnu. */
   issuers?(): Promise<readonly KnownIssuer[]>
+  /** Transcrire un fichier (la lecture de fichiers) : son texte, ou pourquoi il n'y en a pas ; absent, rien n'est transcrit. */
+  transcribe?(name: string, bytes: Uint8Array): Promise<Transcript | null>
+  /** Le texte extrait, tel qu'écrit dans la fiche : son titre, son encadré, son texte (dans la langue). */
+  transcriptBlock?(transcript: Transcript): string
   /** Les types de pièce (le module Typage des pièces) ; absent : les catégories de la bibliothèque. */
   typer?(): PieceTyper
   /** La ligne de la note d'un fantôme, dans la langue : où est le document (`link`), dans quel lieu (`where`). */
@@ -197,9 +204,10 @@ export class LibraryStore {
    * **référence**, son **édition**, sa **révision** (première passe, sans IA). Pas sûres :
    * à confirmer — une seconde passe, avec l'IA, peut trancher. Une image : rien.
    */
-  private async readIdentity(name: string, family: DocFamily, bytes: Uint8Array, given = ''): Promise<Partial<LibraryDoc>> {
+  private async readIdentity(name: string, family: DocFamily, bytes: Uint8Array, given = '', preread?: string | null): Promise<Partial<LibraryDoc>> {
     if (family === 'image') return {}
-    const text = await this.readText(name, bytes)
+    // Déjà lu (sa transcription) : pas une seconde fois.
+    const text = preread !== undefined ? preread : await this.readText(name, bytes)
     // La catégorie : donnée par celui qui dépose, dite par le document, ou le nom et le texte d'accord : sûre ; sinon à confirmer.
     const sorted = guessDocCategory(text ?? '', name, given, this.deps.typer?.())
     const category: Partial<LibraryDoc> = sorted.sure
@@ -670,6 +678,51 @@ export class LibraryStore {
   }
 
   /** Réécrire l'en-tête d'une fiche, sa section de notes gardée. */
+  /** La transcription d'un fichier ; `null` sans lecture de fichiers. */
+  private async transcribeBytes(name: string, family: DocFamily, bytes: Uint8Array): Promise<Transcript | null> {
+    if (!this.deps.transcribe) return null
+    if (family === 'image') return { state: 'image', text: '' }
+    try {
+      return await this.deps.transcribe(name, bytes)
+    } catch {
+      return { state: 'illisible', text: '' }
+    }
+  }
+
+  /** Écrire (réécrire) le texte extrait dans la fiche, entre ses marques ; le reste de la note ne bouge pas. */
+  private async writeTranscript(doc: LibraryDoc, transcript: Transcript): Promise<void> {
+    const { fs, yaml } = this.deps
+    if (!this.deps.transcriptBlock || !(await fs.exists(doc.record))) return
+    const body = readYamlFrontmatter(yaml, await fs.readText(doc.record)).body
+    await fs.writeText(doc.record, recordContent(doc, this.deps.notesHeading(), withTranscript(body, this.deps.transcriptBlock(transcript))))
+  }
+
+  /** (Re)transcrire le fichier d'un document dans sa fiche ; rend la fiche et la transcription, ou `null` (pas de fichier, pas de lecture). */
+  async transcribe(record: string): Promise<{ doc: LibraryDoc; transcript: Transcript } | null> {
+    const { fs } = this.deps
+    const doc = await this.load(record)
+    if (!doc || !(await fs.exists(doc.file))) return null
+    const transcript = await this.transcribeBytes(baseName(doc.file), doc.family, new Uint8Array(await fs.readBinary(doc.file)))
+    if (!transcript) return null
+    const next: LibraryDoc = { ...doc, reading: transcript.state, characters: transcript.text.length }
+    await this.save(next)
+    await this.writeTranscript(next, transcript)
+    return { doc: next, transcript }
+  }
+
+  /** Le texte extrait écrit dans la fiche (sans son titre ni son encadré) ; `null` s'il n'y en a pas. */
+  async transcriptText(record: string): Promise<string | null> {
+    const { fs, yaml } = this.deps
+    if (!(await fs.exists(record))) return null
+    const block = transcriptBlockOf(readYamlFrontmatter(yaml, await fs.readText(record)).body)
+    if (block === null) return null
+    const lines = block.split('\n')
+    // Son titre (« ## Texte extrait »), puis son encadré (« > … »), puis le texte.
+    let at = lines[0]?.startsWith('## ') ? 1 : 0
+    while (at < lines.length && (lines[at]!.startsWith('>') || !lines[at]!.trim())) at++
+    return lines.slice(at).join('\n').trim()
+  }
+
   async save(doc: LibraryDoc): Promise<void> {
     const { fs, yaml } = this.deps
     const body = (await fs.exists(doc.record)) ? readYamlFrontmatter(yaml, await fs.readText(doc.record)).body : undefined
@@ -715,6 +768,8 @@ export class LibraryStore {
       const record = await this.free(`${options.folder ?? this.target}/${safeName(title)}.md`)
       // Une version précédente probable (le nom du fichier versé fait foi : un fichier copié a pu être renommé).
       const previous = options.detectVersions === false ? undefined : likelyPreviousOf({ record, file: item.name, family, hash }, known, batch)
+      // Son texte, transcrit dans sa fiche (comme une pièce d'analyse) — et lu une seule fois.
+      const transcript = await this.transcribeBytes(item.name, family, bytes)
       const doc: LibraryDoc = {
         record,
         title,
@@ -732,9 +787,11 @@ export class LibraryStore {
         origins: [origin],
         ...(previous ? { likelyPrevious: previous.record } : {}),
         copied: !item.path || item.owned === true,
-        ...(await this.readIdentity(item.name, family, bytes, item.category || options.category || ''))
+        ...(transcript ? { reading: transcript.state, characters: transcript.text.length } : {}),
+        ...(await this.readIdentity(item.name, family, bytes, item.category || options.category || '', transcript ? (transcript.state === 'lue' ? transcript.text : null) : undefined))
       }
       await this.save(doc)
+      if (transcript) await this.writeTranscript(doc, transcript)
       known.push(doc)
       batch.add(doc.record)
       report.added.push(doc)

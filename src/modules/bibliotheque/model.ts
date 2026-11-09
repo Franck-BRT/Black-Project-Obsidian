@@ -121,6 +121,41 @@ export interface DocOrigin {
   link?: string
 }
 
+/** Ce qu'a donné la lecture du fichier — comme pour les pièces d'une analyse. */
+export type TranscriptState = 'lue' | 'sans-texte' | 'image' | 'non-lue' | 'illisible'
+export const TRANSCRIPT_STATES: readonly TranscriptState[] = ['lue', 'sans-texte', 'image', 'non-lue', 'illisible']
+
+/** Le texte d'un fichier, ou pourquoi il n'y en a pas. */
+export interface Transcript {
+  state: TranscriptState
+  text: string
+}
+
+/** Le texte extrait, dans la note d'un document : entre ces marques (le reste de la note est à l'utilisateur). */
+export const TEXT_START = '<!-- bp:texte:debut — texte extrait du fichier, tenu à jour par Black Projects ; ne pas modifier entre ces marques -->'
+export const TEXT_END = '<!-- bp:texte:fin -->'
+
+/** Les titres du texte extrait, descendus de deux niveaux pour tenir sous « Texte extrait » (comme pour une pièce d'analyse). */
+export function nestHeadings(text: string): string {
+  return text.replace(/^(#{1,6}) /gm, (_, hashes: string) => `${'#'.repeat(Math.min(6, hashes.length + 2))} `)
+}
+
+/** La note d'un document, son texte extrait mis (ou remis) entre ses marques — à la fin, la première fois. */
+export function withTranscript(body: string, block: string): string {
+  const start = body.indexOf(TEXT_START)
+  const end = body.indexOf(TEXT_END)
+  const wrapped = `${TEXT_START}\n${block.trim()}\n${TEXT_END}`
+  if (start !== -1 && end > start) return body.slice(0, start) + wrapped + body.slice(end + TEXT_END.length)
+  return `${body.trimEnd()}\n\n${wrapped}\n`
+}
+
+/** Ce qui est entre les marques du texte extrait ; `null` s'il n'y en a pas. */
+export function transcriptBlockOf(body: string): string | null {
+  const start = body.indexOf(TEXT_START)
+  const end = body.indexOf(TEXT_END)
+  return start !== -1 && end > start ? body.slice(start + TEXT_START.length, end).trim() : null
+}
+
 export interface LibraryDoc {
   /** La note qui le décrit : son identité. */
   record: string
@@ -179,6 +214,9 @@ export interface LibraryDoc {
   dateProbable?: string
   /** Sa date a été identifiée par l'IA. */
   dateByAi?: boolean
+  /** Son texte extrait (dans sa note) : comment s'est passée la lecture, combien de caractères. */
+  reading?: TranscriptState
+  characters?: number
   /** Ses étiquettes n'ont pas été lues sûrement : à confirmer, avec celles que le texte suggère. */
   tagsToConfirm?: boolean
   tagsProbable?: string[]
@@ -234,6 +272,7 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.dateToConfirm ? { dateAConfirmer: true } : {}),
     ...(doc.dateToConfirm && doc.dateProbable ? { dateProbable: doc.dateProbable } : {}),
     ...(doc.dateByAi ? { dateIdentifieePar: 'ia' } : {}),
+    ...(doc.reading ? { lecture: doc.reading, caracteres: doc.characters ?? 0 } : {}),
     ...(doc.tagsToConfirm ? { etiquettesAConfirmer: true } : {}),
     ...(doc.tagsToConfirm && doc.tagsProbable?.length ? { etiquettesProbables: doc.tagsProbable } : {}),
     ...(doc.tagsByAi ? { etiquettesIdentifieesPar: 'ia' } : {})
@@ -295,6 +334,7 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(data.dateAConfirmer === true ? { dateToConfirm: true } : {}),
     ...(data.dateAConfirmer === true && text(data.dateProbable) ? { dateProbable: text(data.dateProbable) } : {}),
     ...(data.dateIdentifieePar === 'ia' ? { dateByAi: true } : {}),
+    ...(TRANSCRIPT_STATES.includes(data.lecture as TranscriptState) ? { reading: data.lecture as TranscriptState, characters: Number(data.caracteres) || 0 } : {}),
     ...(data.etiquettesAConfirmer === true ? { tagsToConfirm: true } : {}),
     ...(data.etiquettesAConfirmer === true && Array.isArray(data.etiquettesProbables) && data.etiquettesProbables.length ? { tagsProbable: data.etiquettesProbables.map(text).filter(Boolean) } : {}),
     ...(data.etiquettesIdentifieesPar === 'ia' ? { tagsByAi: true } : {})

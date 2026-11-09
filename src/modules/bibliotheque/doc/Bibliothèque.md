@@ -34,13 +34,18 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   il ne change que ce champ (la révision relancée laisse la référence ; « Référence et
   version » relance les trois) ;
   la date se choisit aussi dans un **calendrier** (le bouton à côté du champ) ;
+- **le texte extrait** : comme pour une pièce d'analyse, le texte du fichier est transcrit
+  dans la fiche (sa note), après vos notes, entre deux marques — « ## Texte extrait », un
+  encadré qui dit la lecture (lu, scan, image, format non lu, illisible), puis le texte ; la
+  section « Texte extrait » de la fiche le montre, **Extraire de nouveau** le relit (vos notes
+  ne bougent pas) ;
 - **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ; le
   crayon devant *Fichier* le **renomme** (dans son dossier, son extension gardée) — les liens
   vers lui, dans tout le coffre (la note de sa pièce, celle de l'analyse…), sont mis à jour ;
 - **d'où il vient** : chaque origine — l'analyse, l'import —, un clic y mène ;
 - **ses versions** : les précédentes et les suivantes, reliées.
 
-Ces quatre parties sont **repliées** d'origine : leur en-tête en dit l'essentiel (le
+Ces cinq parties sont **repliées** d'origine : leur en-tête en dit l'essentiel (le
 type de pièce et la version, le nom du fichier, d'où il vient, combien d'autres versions) ; un
 clic les déplie. Ce que vous dépliez le reste, le temps de la session.
 

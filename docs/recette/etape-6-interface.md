@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le texte extrait (v0.100.0)
+
+- [ ] Verser un fichier texte (ou un PDF) : sa fiche (sa note) a, après « Notes »,
+      « ## Texte extrait », l'encadré « Document lu : n caractères de texte extrait. » et le
+      texte (ses titres descendus de deux niveaux) ; l'en-tête, `lecture: lue` et `caracteres`
+- [ ] Une image, un format non lu, un PDF scanné : l'encadré dit pourquoi il n'y a pas de texte
+- [ ] La fiche : une section repliée « Texte extrait » (« Lu — n caractères ») ; dépliée,
+      l'encadré, **Extraire de nouveau**, **Ouvrir sa note**, puis le texte
+- [ ] Écrire sous « Notes », changer le fichier, **Extraire de nouveau** : le texte change,
+      vos notes restent
+- [ ] Un document versé avant cette version : « Pas encore extrait » ; **Extraire le texte**
+
 ## La liste des étiquettes (v0.99.0)
 
 - [ ] Bibliothèque : une carte **Étiquettes** ; **Nouvelle étiquette** : « antenne », autres
