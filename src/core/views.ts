@@ -93,6 +93,8 @@ export interface Card {
   title: string
   subtitle?: string
   icon?: IconName
+  /** Son icône sur cette couleur, comme une tuile de l'accueil (un programme, un type de projet). */
+  color?: TileColor
   badges?: Badge[]
   /** Un extrait (la formulation d'une exigence) : trois lignes au plus, le reste coupé. */
   text?: string
@@ -154,6 +156,30 @@ export type HomeBlock =
    */
   | { kind: 'flowchart'; title?: string; label: string; nodes: FlowNode[]; /** Ce que disent les couleurs, sous le logigramme. */ legend?: string }
   /**
+   * Un **parcours** : des étapes de gauche à droite, reliées par des flèches (comme un
+   * logigramme) ; chaque étape a une ou plusieurs **phases** côte à côte (menées en parallèle),
+   * dessinées en tuiles (comme celles de l'accueil) : leur icône sur leur couleur, leur état.
+   * Les phases d'un projet, celles d'un type de projet qu'on dessine. `compact` : en miniature
+   * (sur une carte), sans libellés ni outils.
+   */
+  | {
+      kind: 'journey'
+      title?: string
+      /** Ce qu'il montre, pour qui ne le voit pas. */
+      label: string
+      stages: JourneyStage[]
+      compact?: boolean
+      /** Une tuile « + » après la dernière étape : en ajouter une. */
+      add?: ViewAction
+      legend?: string
+      /** Son titre ouvre ce qu'il dessine (un projet, sur la page de son programme). */
+      open?: ViewAction
+      /** Sous le titre : « Réponse à appel d'offres · 2 affaires ». */
+      subtitle?: string
+      /** Une pastille à côté du titre. */
+      badge?: Badge
+    }
+  /**
    * Une **section repliable** : un intitulé (un clic la replie ou la déplie) et ses blocs —
    * d'autres sections comprises (des sous-sections). Repliée d'origine si `collapsed` ;
    * l'interface se souvient ensuite de ce que l'utilisateur en a fait, le temps de la
@@ -175,6 +201,37 @@ export type HomeBlock =
     }
 
 /** Une forme d'un logigramme. */
+/** Une étape d'un parcours : ses phases, menées en même temps. */
+export interface JourneyStage {
+  id: string
+  /** Au-dessus de ses phases : « Étape 2 ». */
+  caption?: string
+  phases: JourneyPhase[]
+  /** Une tuile « + » sous ses phases : en ajouter une, en parallèle. */
+  add?: ViewAction
+}
+
+/** Où en est une phase : faite, en cours, à venir, sans objet. */
+export type JourneyProgress = 'done' | 'current' | 'todo' | 'skipped'
+
+/** Une phase, en tuile. */
+export interface JourneyPhase {
+  id: string
+  label: string
+  icon: IconName
+  color: TileColor
+  /** Au-dessus du libellé : sa sorte (« Analyse d'AO »). */
+  caption?: string
+  detail?: string
+  /** Son état, en pastille (« En cours », « J-5 »). */
+  status?: Badge
+  progress?: JourneyProgress
+  /** Un clic sur la tuile. */
+  open?: ViewAction
+  /** De petits boutons sous la tuile (modifier, déplacer, retirer…). */
+  tools?: ViewAction[]
+}
+
 export interface FlowNode {
   id: string
   /** `start` : ce qui déclenche ; `decision` : une question ; `step` : une étape ; `end` : la fin. */

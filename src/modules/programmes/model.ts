@@ -1,0 +1,304 @@
+// Copyright © 2026 Black Room Technologies. Tous droits réservés.
+// Logiciel propriétaire — voir le fichier LICENSE.
+
+/**
+ * **Programmes, projets, affaires** — et les **types de projet** qui donnent ses phases à un
+ * projet.
+ *
+ * - Un **programme** regroupe des projets (un dossier, sa note).
+ * - Un **projet** suit les **phases** de son type, rangées en **étapes** : les phases d'une
+ *   même étape vont en parallèle, les étapes se suivent. Une phase a une **sorte** : libre,
+ *   ou celle d'un module (l'analyse d'un appel d'offres, par le module AO).
+ * - Une **affaire** appartient à un projet ; souvent, un projet est une affaire, mais pas
+ *   toujours (il peut en avoir plusieurs, ou aucune).
+ *
+ * Les phases d'un projet sont **copiées** de son type à sa création : changer le type ensuite
+ * ne change pas les projets déjà lancés.
+ */
+
+import type { IconName, JourneyProgress, TileColor } from '../../core/views'
+
+export const PROGRAMME_TYPE = 'programme'
+export const PROJECT_TYPE = 'projet'
+export const AFFAIRE_TYPE = 'affaire'
+
+/** Le dossier des affaires, dans celui d'un projet. */
+export const AFFAIRES_FOLDER = 'Affaires'
+
+export const TILE_COLORS: readonly TileColor[] = ['indigo', 'blue', 'teal', 'green', 'orange', 'rose', 'violet', 'slate']
+
+/** Les icônes qu'on peut donner à une phase, à un type de projet, à un programme. */
+export const PHASE_ICONS: readonly IconName[] = ['flow', 'search', 'file', 'list', 'chat', 'calendar', 'clock', 'check', 'star', 'spark', 'building', 'book', 'upload', 'edit', 'chart', 'folder', 'tag', 'eye', 'play', 'lock']
+
+/** La sorte d'une phase sans module : on la mène soi-même. */
+export const FREE_KIND = 'libre'
+
+/** Une phase d'un type de projet. */
+export interface PhaseSpec {
+  id: string
+  name: string
+  /** `libre`, ou une sorte déclarée par un module (`ao.analyse`). */
+  kind: string
+  icon: IconName
+  color: TileColor
+  description?: string
+}
+
+/** Un **type de projet** : ses phases, en étapes (les phases d'une étape vont en parallèle). */
+export interface ProjectType {
+  id: string
+  name: string
+  icon: IconName
+  color: TileColor
+  description?: string
+  stages: PhaseSpec[][]
+}
+
+/** Où en est une phase d'un projet. */
+export type PhaseStatus = 'a-venir' | 'en-cours' | 'terminee' | 'sans-objet'
+export const PHASE_STATUSES: readonly PhaseStatus[] = ['a-venir', 'en-cours', 'terminee', 'sans-objet']
+
+/** Une phase d'un projet : celle de son type, et où il en est. */
+export interface ProjectPhase extends PhaseSpec {
+  /** Son étape, à partir de 1. */
+  stage: number
+  status: PhaseStatus
+  start?: string
+  end?: string
+  /** Ce qui la porte : une note (l'analyse de l'appel d'offres, son chemin). */
+  link?: string
+}
+
+export interface Programme {
+  /** Sa note. */
+  path: string
+  folder: string
+  name: string
+  code: string
+  color: TileColor
+  icon: IconName
+  description: string
+  created: string
+}
+
+export interface Project {
+  path: string
+  folder: string
+  name: string
+  /** La note de son programme. */
+  programme: string
+  typeId: string
+  typeName: string
+  color: TileColor
+  icon: IconName
+  description: string
+  created: string
+  phases: ProjectPhase[]
+}
+
+export type AffaireStatus = 'en-cours' | 'gagnee' | 'perdue' | 'abandonnee'
+export const AFFAIRE_STATUSES: readonly AffaireStatus[] = ['en-cours', 'gagnee', 'perdue', 'abandonnee']
+
+export interface Affaire {
+  path: string
+  name: string
+  /** La note de son projet. */
+  project: string
+  client: string
+  reference: string
+  status: AffaireStatus
+  created: string
+}
+
+/** L'avancement d'une phase, pour la dessiner. */
+export function progressOf(status: PhaseStatus): JourneyProgress {
+  return status === 'terminee' ? 'done' : status === 'en-cours' ? 'current' : status === 'sans-objet' ? 'skipped' : 'todo'
+}
+
+/** Un nom de fichier sûr (un programme, un projet, une affaire). */
+export function safeName(name: string): string {
+  return name
+    .replace(/[\\/:*?"<>|#^[\]]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Un identifiant tiré d'un nom : « Analyse de l'AO » → `analyse-de-l-ao`. */
+export function slug(name: string): string {
+  return (
+    name
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'phase'
+  )
+}
+
+/** Un identifiant libre parmi `taken` : `nom`, sinon `nom-2`, `nom-3`… */
+export function freeId(base: string, taken: Iterable<string>): string {
+  const used = new Set(taken)
+  if (!used.has(base)) return base
+  let at = 2
+  while (used.has(`${base}-${at}`)) at++
+  return `${base}-${at}`
+}
+
+const asColor = (value: unknown, fallback: TileColor): TileColor => (TILE_COLORS.includes(value as TileColor) ? (value as TileColor) : fallback)
+const asIcon = (value: unknown, fallback: IconName): IconName => (typeof value === 'string' && value ? (value as IconName) : fallback)
+const plain = (value: unknown): string => (typeof value === 'string' ? value.trim() : typeof value === 'number' ? String(value) : '')
+
+/** Un type de projet relu des réglages ; `null` s'il n'en est pas un. */
+export function readProjectType(value: unknown): ProjectType | null {
+  if (!value || typeof value !== 'object') return null
+  const data = value as Record<string, unknown>
+  const id = plain(data.id)
+  const name = plain(data.name)
+  if (!id || !name) return null
+  const stages = Array.isArray(data.stages)
+    ? data.stages
+        .map((stage) => (Array.isArray(stage) ? stage.map(readPhaseSpec).filter((phase): phase is PhaseSpec => phase !== null) : []))
+        .filter((stage) => stage.length)
+    : []
+  return { id, name, icon: asIcon(data.icon, 'flow'), color: asColor(data.color, 'indigo'), ...(plain(data.description) ? { description: plain(data.description) } : {}), stages }
+}
+
+function readPhaseSpec(value: unknown): PhaseSpec | null {
+  if (!value || typeof value !== 'object') return null
+  const data = value as Record<string, unknown>
+  const id = plain(data.id)
+  const name = plain(data.name)
+  if (!id || !name) return null
+  return { id, name, kind: plain(data.kind) || FREE_KIND, icon: asIcon(data.icon, 'flow'), color: asColor(data.color, 'indigo'), ...(plain(data.description) ? { description: plain(data.description) } : {}) }
+}
+
+/** Le lien wiki d'une note : `[[Programmes/X/X.md]]`. */
+export const link = (path: string): string => `[[${path}]]`
+/** Le chemin d'un lien wiki (ou le texte tel quel). */
+export const unlink = (value: unknown): string => (typeof value === 'string' ? value.replace(/^\[\[|\]\]$/g, '').split('|')[0]!.trim() : '')
+
+export const folderOf = (path: string): string => path.slice(0, path.lastIndexOf('/'))
+export const baseName = (path: string): string => path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, '')
+
+/** Un programme relu de sa note. */
+export function readProgramme(path: string, data: Record<string, unknown>): Programme {
+  return {
+    path,
+    folder: folderOf(path),
+    name: baseName(path),
+    code: plain(data.code),
+    color: asColor(data.couleur, 'indigo'),
+    icon: asIcon(data.icone, 'folder'),
+    description: plain(data.description),
+    created: plain(data.creeLe)
+  }
+}
+
+export function programmeData(programme: Pick<Programme, 'code' | 'color' | 'icon' | 'description' | 'created'>): Record<string, unknown> {
+  return {
+    'bp-type': PROGRAMME_TYPE,
+    ...(programme.code ? { code: programme.code } : {}),
+    couleur: programme.color,
+    icone: programme.icon,
+    ...(programme.description ? { description: programme.description } : {}),
+    creeLe: programme.created
+  }
+}
+
+/** Un projet relu de sa note. */
+export function readProject(path: string, data: Record<string, unknown>): Project {
+  const phases = Array.isArray(data.phases)
+    ? data.phases
+        .map((value): ProjectPhase | null => {
+          const spec = readPhaseSpec({ ...(value as Record<string, unknown>), name: (value as Record<string, unknown>)?.nom, kind: (value as Record<string, unknown>)?.sorte, icon: (value as Record<string, unknown>)?.icone, color: (value as Record<string, unknown>)?.couleur })
+          if (!spec) return null
+          const raw = value as Record<string, unknown>
+          const status = PHASE_STATUSES.includes(raw.statut as PhaseStatus) ? (raw.statut as PhaseStatus) : 'a-venir'
+          return {
+            ...spec,
+            stage: Math.max(1, Number(raw.etape) || 1),
+            status,
+            ...(plain(raw.debut) ? { start: plain(raw.debut) } : {}),
+            ...(plain(raw.fin) ? { end: plain(raw.fin) } : {}),
+            ...(unlink(raw.lien) ? { link: unlink(raw.lien) } : {})
+          }
+        })
+        .filter((phase): phase is ProjectPhase => phase !== null)
+    : []
+  return {
+    path,
+    folder: folderOf(path),
+    name: baseName(path),
+    programme: unlink(data.programme),
+    typeId: plain(data.type),
+    typeName: plain(data.typeNom),
+    color: asColor(data.couleur, 'indigo'),
+    icon: asIcon(data.icone, 'flow'),
+    description: plain(data.description),
+    created: plain(data.creeLe),
+    phases
+  }
+}
+
+export function projectData(project: Omit<Project, 'path' | 'folder' | 'name'>): Record<string, unknown> {
+  return {
+    'bp-type': PROJECT_TYPE,
+    programme: link(project.programme),
+    type: project.typeId,
+    typeNom: project.typeName,
+    couleur: project.color,
+    icone: project.icon,
+    ...(project.description ? { description: project.description } : {}),
+    creeLe: project.created,
+    phases: project.phases.map((phase) => ({
+      id: phase.id,
+      nom: phase.name,
+      sorte: phase.kind,
+      icone: phase.icon,
+      couleur: phase.color,
+      etape: phase.stage,
+      statut: phase.status,
+      ...(phase.start ? { debut: phase.start } : {}),
+      ...(phase.end ? { fin: phase.end } : {}),
+      ...(phase.link ? { lien: link(phase.link) } : {}),
+      ...(phase.description ? { description: phase.description } : {})
+    }))
+  }
+}
+
+/** Les phases d'un projet, par étape (la première d'abord). */
+export function stagesOf(phases: readonly ProjectPhase[]): ProjectPhase[][] {
+  const stages = new Map<number, ProjectPhase[]>()
+  for (const phase of phases) stages.set(phase.stage, [...(stages.get(phase.stage) ?? []), phase])
+  return [...stages.entries()].sort(([a], [b]) => a - b).map(([, list]) => list)
+}
+
+/** Les phases d'un type, copiées pour un nouveau projet : toutes à venir. */
+export function phasesFromType(type: ProjectType): ProjectPhase[] {
+  return type.stages.flatMap((stage, at) => stage.map((phase) => ({ ...phase, stage: at + 1, status: 'a-venir' as PhaseStatus })))
+}
+
+/** Une affaire relue de sa note. */
+export function readAffaire(path: string, data: Record<string, unknown>): Affaire {
+  return {
+    path,
+    name: baseName(path),
+    project: unlink(data.projet),
+    client: plain(data.client),
+    reference: plain(data.reference),
+    status: AFFAIRE_STATUSES.includes(data.statut as AffaireStatus) ? (data.statut as AffaireStatus) : 'en-cours',
+    created: plain(data.creeLe)
+  }
+}
+
+export function affaireData(affaire: Omit<Affaire, 'path' | 'name'> & { programme: string }): Record<string, unknown> {
+  return {
+    'bp-type': AFFAIRE_TYPE,
+    projet: link(affaire.project),
+    programme: link(affaire.programme),
+    ...(affaire.client ? { client: affaire.client } : {}),
+    ...(affaire.reference ? { reference: affaire.reference } : {}),
+    statut: affaire.status,
+    creeLe: affaire.created
+  }
+}

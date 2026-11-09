@@ -9,7 +9,7 @@
 
 import { createContext, type ComponentChildren } from 'preact'
 import { useContext, useState } from 'preact/hooks'
-import type { Badge as BadgeView, Breadcrumb, Card as CardView, Deadline, FlowNode, HomeBlock, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
+import type { Badge as BadgeView, Breadcrumb, Card as CardView, Deadline, FlowNode, HomeBlock, JourneyPhase, ListItem, PageLayout, Stat as StatView, Tone, ViewAction } from '../core/views'
 import type { Translate } from './host'
 import { useFileDrop, type DropState } from './drop'
 import { Markdown } from './markdown'
@@ -98,7 +98,7 @@ export function CardView({ card, t, now, locale }: { card: CardView; t: Translat
     <article class={`bp-card${dropClass(drop)}`} aria-labelledby={titleId} title={drop.over ? card.drop?.label : undefined} {...drop.props}>
       <div class="bp-card-head">
         {card.icon && (
-          <span class="bp-card-icon">
+          <span class={`bp-card-icon${card.color ? ` is-tile bp-tile-${card.color}` : ''}`}>
             <Icon name={card.icon} />
           </span>
         )}
@@ -214,7 +214,7 @@ function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: 
   return (
     <li class={`bp-cardrow${dropClass(drop)}`} aria-labelledby={titleId} {...drop.props}>
       {card.icon && (
-        <span class="bp-card-icon bp-cardrow-icon">
+        <span class={`bp-card-icon bp-cardrow-icon${card.color ? ` is-tile bp-tile-${card.color}` : ''}`}>
           <Icon name={card.icon} />
         </span>
       )}
@@ -416,6 +416,101 @@ function Flowchart({ block }: { block: Extract<HomeBlock, { kind: 'flowchart' }>
   )
 }
 
+/**
+ * Un parcours : ses étapes de gauche à droite, reliées par des flèches ; dans chacune, ses
+ * phases en tuiles (comme l'accueil), l'une sous l'autre quand elles vont en parallèle.
+ */
+function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) {
+  const compact = block.compact === true
+  const phase = (item: JourneyPhase) => {
+    const inner = (
+      <>
+        <span class={`bp-journey-icon bp-tile-${item.color}`} aria-hidden="true">
+          <Icon name={item.icon} />
+          {item.progress === 'done' && (
+            <span class="bp-journey-done">
+              <Icon name="check" />
+            </span>
+          )}
+        </span>
+        {!compact && (
+          <>
+            {item.caption && <span class="bp-journey-caption">{item.caption}</span>}
+            <span class="bp-journey-label">{item.label}</span>
+            {item.detail && <span class="bp-journey-detail">{item.detail}</span>}
+            {item.status && <Badge badge={item.status} />}
+          </>
+        )}
+      </>
+    )
+    const title = compact ? [item.label, item.status?.label].filter(Boolean).join(' — ') : item.open?.tooltip
+    return (
+      <li key={item.id} class="bp-journey-phase" data-progress={item.progress ?? 'todo'}>
+        {item.open ? (
+          <button type="button" class="bp-journey-tile" onClick={() => void item.open!.run()} title={title} aria-label={compact ? title : undefined}>
+            {inner}
+          </button>
+        ) : (
+          <div class="bp-journey-tile" title={title}>
+            {inner}
+          </div>
+        )}
+        {!compact && item.tools && item.tools.length > 0 && (
+          <span class="bp-journey-tools">
+            {item.tools.map((tool) => (
+              <ActionButton key={tool.id} action={tool} compact />
+            ))}
+          </span>
+        )}
+      </li>
+    )
+  }
+  const adder = (action: ViewAction, wide = false) => (
+    <button type="button" class={`bp-journey-add${wide ? ' is-stage' : ''}`} onClick={() => void action.run()} title={action.tooltip ?? action.label} aria-label={action.label}>
+      <Icon name="plus" />
+      {!compact && <span>{action.label}</span>}
+    </button>
+  )
+  return (
+    <figure class={`bp-journey${compact ? ' is-compact' : ''}`} aria-label={block.label}>
+      {(block.title || block.subtitle) && (
+        <figcaption class="bp-journey-head">
+          {block.title &&
+            (block.open ? (
+              <button type="button" class="bp-journey-title" onClick={() => void block.open!.run()} title={block.open.tooltip ?? block.open.label}>
+                {block.title}
+                <Icon name="chevron" />
+              </button>
+            ) : (
+              <span class="bp-journey-title">{block.title}</span>
+            ))}
+          {block.badge && <Badge badge={block.badge} />}
+          {block.subtitle && <span class="bp-journey-subtitle">{block.subtitle}</span>}
+        </figcaption>
+      )}
+      <ol class="bp-journey-stages">
+        {block.stages.map((stage, index) => (
+          <li key={stage.id} class="bp-journey-stage">
+            {index > 0 && <span class="bp-journey-arrow" aria-hidden="true" />}
+            <div class="bp-journey-column">
+              {!compact && stage.caption && <span class="bp-journey-stage-caption">{stage.caption}</span>}
+              <ul class="bp-journey-phases">{stage.phases.map(phase)}</ul>
+              {!compact && stage.add && adder(stage.add)}
+            </div>
+          </li>
+        ))}
+        {!compact && block.add && (
+          <li class="bp-journey-stage">
+            {block.stages.length > 0 && <span class="bp-journey-arrow is-dashed" aria-hidden="true" />}
+            <div class="bp-journey-column">{adder(block.add, true)}</div>
+          </li>
+        )}
+      </ol>
+      {block.legend && <p class="bp-journey-legend">{block.legend}</p>}
+    </figure>
+  )
+}
+
 /** Ce que l'utilisateur a fait des sections repliables (repliée ou non), le temps de la session. */
 const folded = new Map<string, boolean>()
 
@@ -454,6 +549,8 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
   switch (block.kind) {
     case 'flowchart':
       return <Flowchart block={block} />
+    case 'journey':
+      return <Journey block={block} />
     case 'section':
       return <FoldSection block={block} t={t} now={now} locale={locale} {...(narrowed ? { narrowed } : {})} />
     case 'actions':
