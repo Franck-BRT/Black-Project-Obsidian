@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.10.0 (Black Projects 0.82.0) |
+| Version | 0.11.0 (Black Projects 0.83.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -305,7 +305,12 @@ fichier resté à sa place n'est pas touché ; les liens de version vers elle so
   Nouvelle version de…, Ouvrir sa note, Retirer de la bibliothèque (confirmé) ; les
   messages (version probable, remplacé, fichier introuvable) ; chiffres ; Identification,
   Le fichier, D'où il vient (un clic : `showNote`, la page du module quand il en a une),
-  Versions (précédentes, suivantes).
+  Versions (précédentes, suivantes). Depuis la v0.11.0, ces quatre-là (et « Montré aussi
+  ailleurs ») sont des **sections repliables, repliées d'origine** (`fold` :
+  `bibliotheque.document.identite`, `.fichier`, `.origines`, `.fantomes`, `.versions`) ;
+  leur en-tête en dit l'essentiel — catégorie, référence, version et langue ; le nom du
+  fichier (ou « introuvable ») ; la première origine ; combien d'autres versions.
+  L'interface se souvient de ce qu'on en déplie, le temps de la session.
 - Commandes : *Bibliothèque de documents*, *Verser des documents dans la bibliothèque*.
 
 ## Réglages

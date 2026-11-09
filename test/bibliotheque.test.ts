@@ -22,6 +22,12 @@ import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { typagePiecesModule } from '../src/modules/typage-pieces'
 import { workflowsModule } from '../src/modules/workflows'
 
+/** La liste d'une section repliable de la fiche, par son intitulé. */
+const sectionList = (blocks: readonly HomeBlock[], title: string | ((title: string) => boolean)): HomeBlock | undefined => {
+  const section = blocks.find((block) => block.kind === 'section' && (typeof title === 'string' ? block.title === title : title(block.title)))
+  return section?.kind === 'section' ? section.blocks.find((block) => block.kind === 'list') : undefined
+}
+
 const MODULES = [lectureFichiersModule, typagePiecesModule, bibliothequeModule, exigencesModule, iaModule, workflowsModule, aoModule]
 const enc = (text: string) => new TextEncoder().encode(text)
 
@@ -113,7 +119,7 @@ describe('les versions', () => {
     expect(message).toMatchObject({ text: 'Ce document ressemble à une nouvelle version de « CCTP ind A » (même nom, autre contenu).' })
     await (message as { actions: { id: string; run(): unknown }[] }).actions.find((action) => action.id === 'relate')!.run()
     const after = await page('bibliotheque.document').load(encodeURIComponent(second.record))
-    const versions = after.blocks.find((block) => block.kind === 'list' && block.title === 'Versions')
+    const versions = sectionList(after.blocks, 'Versions')
     expect(versions?.kind === 'list' && versions.items.map((item) => item.title)).toEqual(['CCTP ind A'])
     const library = await page('bibliotheque.documents').load()
     const older = cardsOf(library).find((card) => card.id === first.record)!
@@ -171,7 +177,14 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(fiche.title).toBe('Courrier acheteur')
     expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'language', 'version', 'move', 'note', 'aside'])
-    const origins = fiche.blocks.find((block) => block.kind === 'list' && block.title?.startsWith('D’où il vient'))
+    // Identification, le fichier, d'où il vient, les versions : des sections repliables, repliées d'origine, leur en-tête en dit l'essentiel.
+    expect(fiche.blocks.flatMap((block) => (block.kind === 'section' ? [[block.id, block.title, block.subtitle ?? '', block.collapsed]] : []))).toEqual([
+      ['bibliotheque.document.identite', 'Identification', 'Courrier', true],
+      ['bibliotheque.document.fichier', 'Le fichier', 'Courrier acheteur.pdf', true],
+      ['bibliotheque.document.origines', 'D’où il vient (1)', "Analyse d'appels d'offres — Station sol", true],
+      ['bibliotheque.document.versions', 'Versions', 'Aucune autre version reliée.', true]
+    ])
+    const origins = sectionList(fiche.blocks, (title) => title.startsWith('D’où il vient'))
     expect(origins?.kind === 'list' && origins.items.map((item) => `${item.title}:${item.detail}`)).toEqual(["Analyse d'appels d'offres:Station sol"])
     await (origins?.kind === 'list' ? origins.items[0]!.open!.run() : null)
     expect(noted).toEqual(["Appels d'offres/Station sol/Station sol.md"])
@@ -179,7 +192,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     await fiche.actions!.find((action) => action.id === 'classify')!.run()
     const after = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(after.title).toBe('Courrier de l’acheteur')
-    const identity = after.blocks.find((block) => block.kind === 'list' && block.title === 'Identification')
+    const identity = sectionList(after.blocks, 'Identification')
     expect(identity?.kind === 'list' && identity.items.map((item) => item.detail)).toEqual(['Courrier de l’acheteur', 'À la racine', 'Langue à confirmer', 'CR-12', '1', 'A', 'Courrier', 'Agence', 'achat, urgent'])
     await after.actions!.find((action) => action.id === 'aside')!.run()
     expect(platform.confirmed.at(-1)?.title).toBe('Retirer de la bibliothèque ?')

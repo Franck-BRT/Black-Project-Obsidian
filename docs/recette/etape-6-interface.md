@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'un document : des sections repliées (v0.83.0)
+
+- [ ] Ouvrir la fiche d'un document : sous les chiffres, **Identification**, **Le
+      fichier**, **D'où il vient**, **Versions** (et « Montré aussi ailleurs » s'il a des
+      fantômes) sont repliées ; à droite de chaque en-tête, l'essentiel (la catégorie, le
+      nom du fichier, la première origine, « Aucune autre version reliée. »)
+- [ ] Un clic (ou Entrée) déplie une section, un autre la replie ; ouvrir une autre fiche :
+      ce qui a été déplié l'est encore (le temps de la session)
+- [ ] Un fichier introuvable : l'en-tête *Le fichier* le dit
+
 ## La langue des documents (v0.82.0)
 
 - [ ] Verser (ou glisser-déposer) un long texte en français : badge *Français* ; un en

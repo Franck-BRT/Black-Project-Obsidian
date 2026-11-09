@@ -8,7 +8,7 @@
  * **fiche** d'un document : son identité, son fichier, d'où il vient, ses versions.
  */
 
-import { pageWith, type Badge, type Card, type HomeBlock, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Badge, type Card, type HomeBlock, type IconName, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type LibraryDoc } from './model'
 import { HUB_PAGE } from './entriesHome'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
@@ -238,6 +238,17 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
   }
 }
 
+/** Une section repliable de la fiche, repliée d'origine (l'interface se souvient ensuite de ce qu'on en a fait, le temps de la session). */
+const fold = (id: string, title: string, subtitle: string, icon: IconName, list: HomeBlock): HomeBlock => ({
+  kind: 'section',
+  id: `bibliotheque.document.${id}`,
+  title,
+  ...(subtitle ? { subtitle } : {}),
+  icon,
+  collapsed: true,
+  blocks: [list]
+})
+
 /** La fiche d'un document. */
 export async function docPage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
   const { t } = deps
@@ -345,26 +356,24 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         : []),
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
       { kind: 'stats', stats },
-      {
+      // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
+      fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
-        title: t('bibliotheque.section.identity'),
         items: [field('title', doc.title), field('place', placeLabel(deps.places, doc)), field('language', doc.language ? t(`bibliotheque.lang.${doc.language}`) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
-      },
-      {
+      }),
+      fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',
-        title: t('bibliotheque.section.file'),
         items: [
           { ...field('file', doc.file), ...(present ? { open: { id: 'open', label: t('bibliotheque.doc.file'), run: () => deps.openFile(doc.file) } } : { tone: 'danger' as const }) },
           field('stored', t(doc.copied ? 'bibliotheque.stored.copied' : 'bibliotheque.stored.inPlace')),
           field('hash', doc.hash.slice(0, 16))
         ]
-      },
-      { kind: 'list', title: t('bibliotheque.section.origins', { count: origins.length }), items: origins, empty: t('bibliotheque.origins.none') },
+      }),
+      fold('origines', t('bibliotheque.section.origins', { count: origins.length }), originText(t, doc), 'upload', { kind: 'list', items: origins, empty: t('bibliotheque.origins.none') }),
       ...(ghosts.length
         ? [
-            {
-              kind: 'list' as const,
-              title: t('bibliotheque.section.ghosts', { count: ghosts.length }),
+            fold('fantomes', t('bibliotheque.section.ghosts', { count: ghosts.length }), ghosts.map(({ ghost }) => placeLabel(deps.places, ghost)).join(' · '), 'copy', {
+              kind: 'list',
               intro: [t('bibliotheque.ghost.hint')],
               items: ghosts.map(({ ghost }) => ({
                 id: ghost.path,
@@ -372,15 +381,14 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                 detail: ghost.path,
                 open: { id: 'open', label: t('bibliotheque.place.open'), run: () => deps.showPage?.(placePageOf(LIBRARY_PAGE, { shelf: ghost.shelf ?? '', directory: ghost.directory ?? '' })) }
               }))
-            }
+            })
           ]
         : []),
-      {
+      fold('versions', t('bibliotheque.section.versions'), older.length + newer.length ? t('bibliotheque.section.versions.sub', { count: older.length + newer.length }) : t('bibliotheque.versions.none'), 'flow', {
         kind: 'list',
-        title: t('bibliotheque.section.versions'),
         items: [...newer.reverse().map((each) => versionItem(each, 'apres')), ...older.map((each) => versionItem(each, 'avant'))],
         empty: t('bibliotheque.versions.none')
-      }
+      })
     ]
   }
 }

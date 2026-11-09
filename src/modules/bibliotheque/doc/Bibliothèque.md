@@ -30,6 +30,10 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
 - **d'où il vient** : chaque origine — l'analyse, l'import —, un clic y mène ;
 - **ses versions** : les précédentes et les suivantes, reliées.
 
+Ces quatre parties sont **repliées** d'origine : leur en-tête en dit l'essentiel (la
+catégorie et la version, le nom du fichier, d'où il vient, combien d'autres versions) ; un
+clic les déplie. Ce que vous dépliez le reste, le temps de la session.
+
 ## 3. Les versions
 
 Un document dont le nom ne diffère d'un autre que par une marque de version (« ind B »,

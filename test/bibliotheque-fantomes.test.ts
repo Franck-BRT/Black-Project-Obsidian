@@ -19,6 +19,12 @@ import { bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
+/** La liste d'une section repliable de la fiche, par son intitulé. */
+const sectionList = (blocks: readonly HomeBlock[], title: string | ((title: string) => boolean)): HomeBlock | undefined => {
+  const section = blocks.find((block) => block.kind === 'section' && (typeof title === 'string' ? block.title === title : title(block.title)))
+  return section?.kind === 'section' ? section.blocks.find((block) => block.kind === 'list') : undefined
+}
+
 const ALL = [lectureFichiersModule, bibliothequeModule, workflowsModule]
 const bytes = (text: string) => new TextEncoder().encode(text)
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
@@ -124,7 +130,7 @@ describe('les fantômes de la bibliothèque', () => {
     expect(shown.at(-1)).toBe(`bibliotheque.documents?${at('Normes')}`)
     // Sa fiche dit où il est montré aussi.
     const fiche = await page('bibliotheque.document').load(encodeURIComponent('Bibliothèque/Normes/ECSS-E-ST-10C.md'))
-    expect(fiche.blocks.find((block) => block.kind === 'list' && block.title?.startsWith('Montré aussi ailleurs'))).toMatchObject({ items: [{ title: 'À la racine', detail: 'Bibliothèque/ECSS-E-ST-10C.md' }] })
+    expect(sectionList(fiche.blocks, (title) => title.startsWith('Montré aussi ailleurs'))).toMatchObject({ items: [{ title: 'À la racine', detail: 'Bibliothèque/ECSS-E-ST-10C.md' }] })
     // Retirer le fantôme : mis de côté, le document reste.
     await ghost!.actions!.find((action) => action.id === 'remove-ghost')!.run()
     expect(platform.notices.at(-1)).toBe('Fantôme retiré : le document reste dans la bibliothèque.')

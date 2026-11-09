@@ -17,6 +17,12 @@ import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryP
 import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
 import { bibliothequeModule, libraryEntries, pourIntoLibrary } from '../src/modules/bibliotheque'
 
+/** La liste d'une section repliable de la fiche, par son intitulé. */
+const sectionList = (blocks: readonly HomeBlock[], title: string | ((title: string) => boolean)): HomeBlock | undefined => {
+  const section = blocks.find((block) => block.kind === 'section' && (typeof title === 'string' ? block.title === title : title(block.title)))
+  return section?.kind === 'section' ? section.blocks.find((block) => block.kind === 'list') : undefined
+}
+
 const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
 /** Les cartes des documents ou des entrées (pas celles des répertoires). */
 const itemsOf = (view: PageView): Card[] => cardsIn(view.blocks).filter((card) => !card.id.startsWith('dir:'))
@@ -163,7 +169,7 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     expect(view.blocks.flatMap((block) => (block.kind === 'section' ? [block.title] : []))).toEqual(['Ici', 'Normes', 'Normes › ECSS'])
     expect(itemsOf(view)).toHaveLength(3)
     const fiche = await page('bibliotheque.document').load(encodeURIComponent('Bibliothèque/Normes/ECSS/Profonde.md'))
-    const identity = fiche.blocks.find((block) => block.kind === 'list' && block.title === 'Identification')
+    const identity = sectionList(fiche.blocks, 'Identification')
     expect(identity?.kind === 'list' && identity.items.find((item) => item.id === 'place')?.detail).toBe('Normes › ECSS')
     // Revenir au regroupement d'origine, pour les autres tests.
     await view.grouping!.options.find((option) => option.id === 'origine')!.run()
@@ -187,7 +193,7 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     expect(await platform.fs.exists(first.record)).toBe(false)
     expect(await platform.fs.exists(first.file)).toBe(true)
     const v2 = await page('bibliotheque.document').load(encodeURIComponent(second.record))
-    const versions = v2.blocks.find((block) => block.kind === 'list' && block.title === 'Versions')
+    const versions = sectionList(v2.blocks, 'Versions')
     expect(versions?.kind === 'list' && versions.items.map((item) => item.id)).toEqual([`avant-Bibliothèque/Archives/CCTP v1.md`])
   })
 

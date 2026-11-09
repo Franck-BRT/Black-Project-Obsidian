@@ -522,6 +522,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.82.0 : **modules Bibliothèque et Lecture de fichiers** : la **langue** de chaque
   document, détectée à son entrée d'après son texte ; pas assez sûre : pas de langue, *à
   confirmer* (la plus probable proposée)
+- v0.83.0 : **module Bibliothèque** : la fiche d'un document — Identification, Le fichier,
+  D'où il vient, Versions — en sections repliables, repliées d'origine
 
 ### Étape 7 — Livrables
 

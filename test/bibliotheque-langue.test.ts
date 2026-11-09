@@ -17,6 +17,12 @@ import { bibliothequeModule, detectLanguage, pourIntoLibrary } from '../src/modu
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
+/** La liste d'une section repliable de la fiche, par son intitulé. */
+const sectionList = (blocks: readonly HomeBlock[], title: string | ((title: string) => boolean)): HomeBlock | undefined => {
+  const section = blocks.find((block) => block.kind === 'section' && (typeof title === 'string' ? block.title === title : title(block.title)))
+  return section?.kind === 'section' ? section.blocks.find((block) => block.kind === 'list') : undefined
+}
+
 const ALL = [lectureFichiersModule, bibliothequeModule, workflowsModule]
 const bytes = (text: string) => new TextEncoder().encode(text)
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
@@ -88,7 +94,7 @@ describe('la langue des documents de la bibliothèque', () => {
     const grouped = await page('bibliotheque.documents').load()
     expect(grouped.blocks.flatMap((block) => (block.kind === 'section' ? [block.title] : []))).toEqual(['Français', 'Anglais'])
     await grouped.grouping!.options.find((option) => option.id === 'origine')!.run()
-    const identity = (await fiche(page, doc.record)).blocks.find((block) => block.kind === 'list' && block.title === 'Identification')
+    const identity = sectionList((await fiche(page, doc.record)).blocks, 'Identification')
     expect(identity?.kind === 'list' && identity.items.find((item) => item.id === 'language')?.detail).toBe('Français')
   })
 
