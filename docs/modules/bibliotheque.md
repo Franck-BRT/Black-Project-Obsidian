@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.18.0 (Black Projects 0.90.0) |
+| Version | 0.19.0 (Black Projects 0.91.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,29 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## La date des documents (v0.19.0, Black Projects 0.91.0)
+
+Un nouveau champ : la **date du document** (celle de son édition, de sa publication, de sa
+signature — pas celle de son entrée dans la bibliothèque), `dateDocument` en `AAAA-MM-JJ`, ou
+`AAAA-MM` quand seul le mois est dit. Sur la fiche, en mots (« 12 février 2026 ») ;
+**Classer…** l'accepte écrite comme on veut (« 12/02/2026 », « 12 février 2026 »,
+« 2026-02-12 », « février 2026 ») — illisible, celle d'avant reste et c'est dit. En deux
+passes, comme l'émetteur.
+
+1. **Sans IA**, à l'entrée (`guessDocDate`) : **sûre** quand le document la dit avec son mot
+   (« Date : », « Date d'édition : », « Émis le », « Issue date: », « Toulouse, le 1er mars
+   2026 »), ou quand le nom du fichier (« CCTP_2026-02-14 », « PV_20260312 ») et le texte
+   disent la même. Sinon `dateAConfirmer: true`, et `dateProbable` : la première date du
+   début du texte — sauf celles qui suivent, sur leur ligne, une date limite, une remise,
+   une échéance — ou celle du nom du fichier. Écrites en chiffres (jour/mois/année ; à
+   l'anglaise quand le jour dépasse 12) ou en mots (français, anglais).
+2. **Avec l'IA** : le workflow système du [module IA](ia.md) « Identifier avec l'IA la date
+   d'un document… » (actif, `{dateaconfirmer}` pas vide) ; `dateFoundIn` ne la garde que si
+   le document la dit (`setDateByAi`, `dateIdentifieePar: ia`).
+
+Sur la fiche : **Prendre « … »**, **Pas de date** (ou **C'est juste**), **Classer…** ; le
+filtre *Date à confirmer* ; `{date}` et `{dateaconfirmer}` au *document versé*.
 
 ## Les étiquettes des documents (v0.18.0, Black Projects 0.90.0)
 

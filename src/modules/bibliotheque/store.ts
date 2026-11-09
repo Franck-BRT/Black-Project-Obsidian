@@ -17,7 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
-import { guessDocCategory, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
+import { guessDocCategory, guessDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
@@ -193,11 +193,15 @@ export class LibraryStore {
     // Les étiquettes : dites par le document, données ; sinon à confirmer (avec celles que le texte suggère).
     const tagged = guessTags(text ?? '')
     const tags: Partial<LibraryDoc> = tagged.sure ? { tags: tagged.tags } : { tagsToConfirm: true, ...(tagged.tags.length ? { tagsProbable: tagged.tags } : {}) }
+    // La date : dite par le document (ou le nom et le texte d'accord), donnée ; sinon à confirmer (avec celle lue).
+    const dated = guessDocDate(text ?? '', name)
+    const date: Partial<LibraryDoc> = dated.sure ? { date: dated.date } : { dateToConfirm: true, ...(dated.date ? { dateProbable: dated.date } : {}) }
     return {
       ...title,
       ...issuer,
       ...category,
       ...tags,
+      ...date,
       ...this.languageOfText(text),
       ...(identity.reference ? { reference: identity.reference } : {}),
       ...(identity.edition ? { edition: identity.edition } : {}),
@@ -251,6 +255,23 @@ export class LibraryStore {
     delete next.titleProbable
     delete next.titleByAi
     if (byAi) next.titleByAi = true
+    await this.save(next)
+    return next
+  }
+
+  /** Sa date, donnée (par l'IA, ou confirmée ; vide : aucune) : plus à confirmer. `null` : celle qu'il a est confirmée. */
+  async setDate(record: string, date: string | null, byAi = false): Promise<LibraryDoc | null> {
+    const doc = await this.load(record)
+    if (!doc) return null
+    const next: LibraryDoc = { ...doc }
+    if (date !== null) {
+      if (date) next.date = date
+      else delete next.date
+    }
+    delete next.dateToConfirm
+    delete next.dateProbable
+    delete next.dateByAi
+    if (byAi) next.dateByAi = true
     await this.save(next)
     return next
   }

@@ -39,7 +39,8 @@ export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
-export { categoryFromText, guessDocCategory, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess } from './identity'
+import { docDateLabel, parseDocDate } from './identity'
+export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess } from './identity'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -62,6 +63,8 @@ let active: {
   /** Un lieu de la bibliothèque, en mots (« Normes › ECSS »), d'après son dossier. */
   placeOfFolder(folder: string): string
   offerGhost(record: string, folder: string, ask: boolean, ui: Ui): Promise<string | null>
+  /** La langue des dates écrites en mots (« fr-FR », « en-GB »). */
+  locale: string
 } | null = null
 
 /** Les prompts, ou les personas, de la bibliothèque (favoris d'abord) ; aucun sans le module actif. */
@@ -283,6 +286,14 @@ export async function libraryCategories(): Promise<string[]> {
   return [...seen.values()]
 }
 
+/** Pour l'IA : la date qu'elle a identifiée (vide : aucune) — plus à confirmer, et on sait qui l'a dit. */
+export async function setDateByAi(record: string, date: string): Promise<LibraryDoc | null> {
+  return active ? active.store.setDate(record, date, true) : null
+}
+
+/** Une date de document en mots, dans la langue de l'application (« 12 mars 2026 »). */
+export const libraryDateLabel = (value: string): string => docDateLabel(value, active?.locale)
+
 /** Pour l'IA : les étiquettes qu'elle a données — plus à confirmer, et on sait qui l'a dit. */
 export async function setTagsByAi(record: string, tags: readonly string[]): Promise<LibraryDoc | null> {
   return active ? active.store.setTags(record, tags, true) : null
@@ -336,6 +347,8 @@ async function emitPoured(doc: LibraryDoc): Promise<void> {
       categorieaconfirmer: doc.categoryToConfirm ? t('bibliotheque.read.yes') : '',
       emetteur: doc.issuer,
       emetteuraconfirmer: doc.issuerToConfirm ? t('bibliotheque.read.yes') : '',
+      date: doc.date ?? '',
+      dateaconfirmer: doc.dateToConfirm ? t('bibliotheque.read.yes') : '',
       etiquettes: doc.tags.join(', '),
       etiquettesaconfirmer: doc.tagsToConfirm ? t('bibliotheque.read.yes') : '',
       fiche: doc.record
@@ -395,7 +408,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.18.0',
+  version: '0.19.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -456,7 +469,7 @@ export const bibliothequeModule: BlackModule = {
       if (ghost) platform.notifier.notify(t('bibliotheque.ghost.done', { title: doc.title, ici }), 6000)
       return ghost
     }
-    active = { store, t, entries, ui: platform.ui, placeOfFolder, offerGhost }
+    active = { store, t, entries, ui: platform.ui, placeOfFolder, offerGhost, locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR' }
     // Les listes des champs Prompt, Persona, Skill des étapes de workflow qui demandent l'IA.
     for (const kind of ENTRY_KINDS)
       registerFieldSource(`bibliotheque.${kind}`, async () =>
@@ -469,7 +482,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'date', 'dateaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,
@@ -625,6 +638,7 @@ export const bibliothequeModule: BlackModule = {
           { kind: 'text', key: 'edition', label: t('bibliotheque.field.edition'), value: doc.edition, placeholder: '2' },
           { kind: 'text', key: 'revision', label: t('bibliotheque.field.revision'), value: doc.revision, placeholder: 'B' },
           { kind: 'text', key: 'issuer', label: t('bibliotheque.field.issuer'), value: doc.issuer },
+          { kind: 'text', key: 'date', label: t('bibliotheque.field.date'), value: doc.date ?? '', placeholder: '2026-03-12', description: t('bibliotheque.classify.date') },
           {
             kind: 'choice',
             key: 'language',
@@ -649,9 +663,16 @@ export const bibliothequeModule: BlackModule = {
         : doc.language
           ? { language: undefined }
           : {}
+      // La date : écrite comme on veut (« 12/03/2026 », « 12 mars 2026 ») ; illisible, celle qu'il avait reste.
+      const typedDate = (values.date ?? '').trim()
+      const date = typedDate ? parseDocDate(typedDate) || doc.date : undefined
       await store.save({
         ...doc,
         ...languageFields,
+        date,
+        dateToConfirm: undefined,
+        dateProbable: undefined,
+        dateByAi: undefined,
         // Classé à la main : le titre, la référence et la version sont confirmés.
         identityToConfirm: undefined,
         identityByAi: undefined,
@@ -675,7 +696,10 @@ export const bibliothequeModule: BlackModule = {
         issuer: (values.issuer ?? '').trim(),
         tags
       })
-      platform.notifier.notify(t('bibliotheque.classify.done', { title: (values.title ?? '').trim() || doc.title }), 5000)
+      platform.notifier.notify(
+        [t('bibliotheque.classify.done', { title: (values.title ?? '').trim() || doc.title }), ...(typedDate && !parseDocDate(typedDate) ? [t('bibliotheque.date.unreadable', { value: typedDate })] : [])].join(' '),
+        5000
+      )
     }
 
     /** La langue d'un document : une des langues, la détecter de nouveau, ou aucune. */
@@ -763,6 +787,10 @@ export const bibliothequeModule: BlackModule = {
       confirmCategory: async (record, category) => {
         const doc = await store.setCategory(record, category)
         if (doc) platform.notifier.notify(doc.category ? t('bibliotheque.category.confirmed', { category: doc.category }) : t('bibliotheque.category.confirmed.none', { title: doc.title }), 5000)
+      },
+      confirmDate: async (record, date) => {
+        const doc = await store.setDate(record, date)
+        if (doc) platform.notifier.notify(doc.date ? t('bibliotheque.date.confirmed', { date: docDateLabel(doc.date, active?.locale) }) : t('bibliotheque.date.confirmed.none', { title: doc.title }), 5000)
       },
       confirmTags: async (record, tags) => {
         const doc = await store.setTags(record, tags)

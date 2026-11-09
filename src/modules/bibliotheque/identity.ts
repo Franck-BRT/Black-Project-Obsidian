@@ -311,3 +311,128 @@ export function tagsFoundIn(tags: readonly string[], text: string, known: readon
   const usual = new Set(known.map(fold))
   return [...new Set(tags.map((tag) => tag.trim()).filter((tag) => tag.length >= 2 && tag.length <= 40 && tag.split(/\s+/).length <= 4))].filter((tag) => usual.has(fold(tag)) || hay.includes(fold(tag)))
 }
+
+/**
+ * La **date** d'un document (celle de son édition, de sa publication, de sa signature), en
+ * `AAAA-MM-JJ` — ou `AAAA-MM` quand seul le mois est dit. **Sûre** quand le document la dit
+ * avec son mot (« Date : », « Date d'édition : », « Émis le », « Toulouse, le 12 mars
+ * 2026 »), ou quand le nom du fichier et le texte disent la même ; sinon, à confirmer — avec
+ * la première date du début du texte (hors dates limites, échéances), ou celle du nom.
+ */
+export interface DateGuess {
+  date: string
+  sure: boolean
+}
+
+const MONTHS: Readonly<Record<string, number>> = {
+  janvier: 1, janv: 1, january: 1, jan: 1,
+  fevrier: 2, fevr: 2, fev: 2, february: 2, feb: 2,
+  mars: 3, march: 3,
+  avril: 4, avr: 4, april: 4, apr: 4,
+  mai: 5, may: 5,
+  juin: 6, june: 6,
+  juillet: 7, juil: 7, july: 7,
+  aout: 8, august: 8, aug: 8,
+  septembre: 9, sept: 9, september: 9, sep: 9,
+  octobre: 10, october: 10, oct: 10,
+  novembre: 11, november: 11, nov: 11,
+  decembre: 12, december: 12, dec: 12
+}
+const MONTH = `(${Object.keys(MONTHS).sort((a, b) => b.length - a.length).join('|')})\\b\\.?`
+const DATE_PATTERNS: readonly { re: RegExp; read: (m: RegExpExecArray) => [number, number, number] }[] = [
+  { re: /(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)/g, read: (m) => [+m[1]!, +m[2]!, +m[3]!] },
+  { re: /(?<![\d/.-])(\d{1,2})[/.-](\d{1,2})[/.-](\d{4}|\d{2})(?![\d/.-]*\d)/g, read: (m) => [m[3]!.length === 2 ? 2000 + +m[3]! : +m[3]!, +m[2]!, +m[1]!] },
+  { re: new RegExp(`(?<!\\d)(\\d{1,2})(?:er|st|nd|rd|th)?\\s+${MONTH}\\s+(\\d{4})(?!\\d)`, 'g'), read: (m) => [+m[3]!, MONTHS[m[2]!]!, +m[1]!] },
+  { re: new RegExp(`(?<![\\p{L}])${MONTH}\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})(?!\\d)`, 'gu'), read: (m) => [+m[3]!, MONTHS[m[1]!]!, +m[2]!] },
+  { re: new RegExp(`(?<![\\p{L}])${MONTH}\\s+(\\d{4})(?!\\d)`, 'gu'), read: (m) => [+m[2]!, MONTHS[m[1]!]!, 0] }
+]
+
+const foldDate = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+const pad = (value: number) => String(value).padStart(2, '0')
+
+/** Une date plausible (1950 à 2100, un jour qui existe), en `AAAA-MM-JJ` (`AAAA-MM` sans jour) ; sinon vide. */
+function isoDate(year: number, month: number, day: number): string {
+  if (year < 1950 || year > 2100 || month < 1 || month > 12) return ''
+  if (!day) return `${year}-${pad(month)}`
+  if (day > new Date(Date.UTC(year, month, 0)).getUTCDate()) return ''
+  return `${year}-${pad(month)}-${pad(day)}`
+}
+
+interface FoundDate {
+  value: string
+  index: number
+  end: number
+}
+
+/** Les dates d'un texte, dans l'ordre ; à un même endroit, la plus complète (« 12 mars 2026 », pas « mars 2026 »). */
+function datesIn(text: string): FoundDate[] {
+  const folded = foldDate(text)
+  const found: FoundDate[] = []
+  for (const pattern of DATE_PATTERNS) {
+    pattern.re.lastIndex = 0
+    for (let m = pattern.re.exec(folded); m; m = pattern.re.exec(folded)) {
+      const [year, first, second] = pattern.read(m)
+      // 03/25/2026 : écrite mois/jour.
+      const swap = pattern === DATE_PATTERNS[1] && first > 12 && second <= 12
+      const value = isoDate(year, swap ? second : first, swap ? first : second)
+      if (value) found.push({ value, index: m.index, end: m.index + m[0].length })
+    }
+  }
+  found.sort((a, b) => a.index - b.index || b.end - a.end)
+  return found.filter((each, at) => !found.slice(0, at).some((other) => other.index <= each.index && other.end >= each.end))
+}
+
+/** La date écrite dans une valeur (« 12/03/2026 », « 12 mars 2026 », « 2026-03 ») ; vide sinon. */
+export function parseDocDate(value: string): string {
+  return datesIn(value)[0]?.value ?? ''
+}
+
+/** La date d'un nom de fichier : « 2026-03-12 », « 20260312 », « 12-03-2026 ». */
+function dateOfName(fileName: string): string {
+  const name = fileName.replace(/\.[^.]+$/, '').replace(/_/g, ' ')
+  const compact = /(?<!\d)((?:19|20)\d{2})(\d{2})(\d{2})(?!\d)/.exec(name)
+  return parseDocDate(name) || (compact ? isoDate(+compact[1]!, +compact[2]!, +compact[3]!) : '')
+}
+
+const DATE_HEAD = 6000
+const LABELLED_DATE =
+  /^\s*(?:date(?:\s+(?:d\s*['’]\s*|de\s+(?:la\s+|l\s*['’]\s*)?)?(?:emission|edition|publication|diffusion|redaction|signature|version|revision|mise a jour|mise en application|application))?|issue date|date of issue|publication date|release date|emise? le|publiee? le|redigee? le|signee? le|fait a [^,\n]{1,40},?\s*le|[\p{L}][\p{L}' -]{1,40},\s*le)\s*[:：]?\s*/u
+/** Une date limite, une échéance : pas celle du document. */
+const DEADLINE = /limite|remise|echeance|deadline|avant le|au plus tard|jusqu|due date|expir|validite/
+
+export function guessDocDate(text: string, fileName = ''): DateGuess {
+  const head = text.slice(0, DATE_HEAD)
+  for (const line of head.split('\n')) {
+    const folded = foldDate(line)
+    const label = LABELLED_DATE.exec(folded)
+    if (!label || DEADLINE.test(folded)) continue
+    const first = datesIn(line)[0]
+    // La date suit son mot : au début de ce qui reste de la ligne.
+    if (first && first.index <= label[0].length + 2) return { date: first.value, sure: true }
+  }
+  const named = dateOfName(fileName)
+  // Les dates du texte, sauf celles qui suivent, sur leur ligne, une date limite ou une échéance.
+  const inText = head
+    .split('\n')
+    .flatMap((line) => {
+      const deadline = DEADLINE.exec(foldDate(line))?.index ?? Infinity
+      return datesIn(line).filter((each) => each.index < deadline)
+    })
+    .map((each) => each.value)
+  if (named && inText.includes(named)) return { date: named, sure: true }
+  return { date: inText[0] ?? named, sure: false }
+}
+
+/** La date donnée par l'IA : gardée si le document la dit (le mois seul : une de ses dates de ce mois). */
+export function dateFoundIn(value: string, text: string): boolean {
+  if (!value) return false
+  return datesIn(text).some((each) => each.value === value || (value.length === 7 && each.value.startsWith(value)))
+}
+
+/** Une date du document, en mots : « 12 mars 2026 », « mars 2026 ». */
+export function docDateLabel(value: string, locale = 'fr-FR'): string {
+  const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(value)
+  if (!m) return value
+  const date = new Date(Date.UTC(+m[1]!, +m[2]! - 1, m[3] ? +m[3] : 1))
+  return date.toLocaleDateString(locale, m[3] ? { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' } : { month: 'long', year: 'numeric', timeZone: 'UTC' })
+}

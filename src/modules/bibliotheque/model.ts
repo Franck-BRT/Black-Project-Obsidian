@@ -172,6 +172,13 @@ export interface LibraryDoc {
   categoryProbable?: string
   /** Sa catégorie a été identifiée par l'IA. */
   categoryByAi?: boolean
+  /** Sa date (édition, publication, signature) : `AAAA-MM-JJ`, ou `AAAA-MM` ; absente : pas connue. */
+  date?: string
+  /** Sa date n'a pas été lue sûrement : à confirmer, avec celle que le texte suggère. */
+  dateToConfirm?: boolean
+  dateProbable?: string
+  /** Sa date a été identifiée par l'IA. */
+  dateByAi?: boolean
   /** Ses étiquettes n'ont pas été lues sûrement : à confirmer, avec celles que le texte suggère. */
   tagsToConfirm?: boolean
   tagsProbable?: string[]
@@ -223,6 +230,10 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.categoryToConfirm ? { categorieAConfirmer: true } : {}),
     ...(doc.categoryToConfirm && doc.categoryProbable ? { categorieProbable: doc.categoryProbable } : {}),
     ...(doc.categoryByAi ? { categorieIdentifieePar: 'ia' } : {}),
+    ...(doc.date ? { dateDocument: doc.date } : {}),
+    ...(doc.dateToConfirm ? { dateAConfirmer: true } : {}),
+    ...(doc.dateToConfirm && doc.dateProbable ? { dateProbable: doc.dateProbable } : {}),
+    ...(doc.dateByAi ? { dateIdentifieePar: 'ia' } : {}),
     ...(doc.tagsToConfirm ? { etiquettesAConfirmer: true } : {}),
     ...(doc.tagsToConfirm && doc.tagsProbable?.length ? { etiquettesProbables: doc.tagsProbable } : {}),
     ...(doc.tagsByAi ? { etiquettesIdentifieesPar: 'ia' } : {})
@@ -280,6 +291,10 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(data.categorieAConfirmer === true ? { categoryToConfirm: true } : {}),
     ...(data.categorieAConfirmer === true && typeof data.categorieProbable === 'string' && data.categorieProbable.trim() ? { categoryProbable: data.categorieProbable.trim() } : {}),
     ...(data.categorieIdentifieePar === 'ia' ? { categoryByAi: true } : {}),
+    ...(text(data.dateDocument) ? { date: text(data.dateDocument) } : {}),
+    ...(data.dateAConfirmer === true ? { dateToConfirm: true } : {}),
+    ...(data.dateAConfirmer === true && text(data.dateProbable) ? { dateProbable: text(data.dateProbable) } : {}),
+    ...(data.dateIdentifieePar === 'ia' ? { dateByAi: true } : {}),
     ...(data.etiquettesAConfirmer === true ? { tagsToConfirm: true } : {}),
     ...(data.etiquettesAConfirmer === true && Array.isArray(data.etiquettesProbables) && data.etiquettesProbables.length ? { tagsProbable: data.etiquettesProbables.map(text).filter(Boolean) } : {}),
     ...(data.etiquettesIdentifieesPar === 'ia' ? { tagsByAi: true } : {})

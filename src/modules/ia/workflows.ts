@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, libraryCategories, libraryDoc, libraryDocText, libraryTags, setCategoryByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, dateFoundIn, libraryCategories, libraryDateLabel, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -136,6 +136,24 @@ export function readCategoryAnswer(answer: unknown, categories: readonly string[
   return categories.find((category) => category.toLowerCase() === wanted) ?? null
 }
 
+const DATE_SCHEMA = {
+  name: 'date_document',
+  schema: { type: 'object', properties: { date: { type: 'string' }, certain: { type: 'boolean' } }, required: ['date', 'certain'], additionalProperties: false }
+}
+
+/**
+ * La date que l'IA a dite : pas certaine, `null` ; certaine et vide : aucune (`''`) ; sinon
+ * la date lue (`AAAA-MM-JJ`, `AAAA-MM`), si le document la dit — rien d'inventé.
+ */
+export function readDateAnswer(answer: unknown, text: string): string | null {
+  if (typeof answer !== 'object' || answer === null) return null
+  const reply = answer as { date?: unknown; certain?: unknown }
+  if (reply.certain !== true || typeof reply.date !== 'string') return null
+  if (!reply.date.trim()) return ''
+  const date = parseDocDate(reply.date)
+  return date && dateFoundIn(date, text) ? date : null
+}
+
 const TAGS_SCHEMA = {
   name: 'etiquettes_document',
   schema: {
@@ -166,6 +184,52 @@ export function readTagsAnswer(answer: unknown, text: string, known: readonly st
 }
 
 export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string): void {
+  /**
+   * La date d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas lue
+   * sûrement : le début de son texte demandé à l'IA. Certaine, et le document la dit : donnée
+   * (« identifiée par l'IA » ; vide : aucune) ; sinon, elle reste à confirmer, sans erreur.
+   */
+  registerAction({
+    id: 'ia.date-document',
+    labelKey: 'ia.wf.action.date',
+    descKey: 'ia.wf.action.date.desc',
+    needsAi: true,
+    fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
+    results: ['text'],
+    async run({ fields, guidance }) {
+      const say = (key: string, vars?: Record<string, string | number>) => {
+        const text = t(key, vars)
+        return { lines: [text], results: { text } }
+      }
+      const record = (fields.fiche ?? '').trim()
+      const doc = record ? await libraryDoc(record) : null
+      if (!doc) return say('ia.wf.language.noDoc', { record })
+      if (!doc.dateToConfirm) return say('ia.wf.date.already', { title: doc.title })
+      const ai = client()?.withInstructions(guidance)
+      if (!ai) return say('ia.wf.date.noAi', { title: doc.title })
+      const text = ((await libraryDocText(record)) ?? '').trim()
+      if (!text) return say('ia.wf.date.noText', { title: doc.title })
+      const fileName = doc.file.slice(doc.file.lastIndexOf('/') + 1)
+      let answer: unknown
+      try {
+        answer = await ai.chatJson<unknown>({
+          messages: [
+            { role: 'system', content: t('ia.wf.date.system') },
+            { role: 'user', content: `${t('ia.wf.identity.file', { name: fileName })}\n\n${text.slice(0, IDENTITY_HEAD)}` }
+          ],
+          temperature: 0,
+          schema: DATE_SCHEMA
+        })
+      } catch (error) {
+        throw new Error(describe(error))
+      }
+      const date = readDateAnswer(answer, text.slice(0, IDENTITY_HEAD))
+      if (date === null) return say('ia.wf.date.unsure', { title: doc.title })
+      await setDateByAi(record, date)
+      return say(date ? 'ia.wf.date.found' : 'ia.wf.date.nothing', { title: doc.title, date: libraryDateLabel(date) })
+    }
+  })
+
   /**
    * Les étiquettes d'un document de la bibliothèque, quand la première passe sans IA ne les a
    * pas lues sûrement : le début de son texte, et les étiquettes déjà en usage, demandés à

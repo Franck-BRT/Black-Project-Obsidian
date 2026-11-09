@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.16.0 (Black Projects 0.90.0) |
+| Version | 0.17.0 (Black Projects 0.91.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,14 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## La date d'un document, avec l'IA (v0.17.0, Black Projects 0.91.0)
+
+`sys.ia.date-documents` (actif ; *document versé*, si `{dateaconfirmer}` n'est pas vide),
+action `ia.date-document` : le nom du fichier et le début du texte, réponse JSON imposée
+(`date`, `certain`) ; la consigne écarte les dates limites et les échéances. `readDateAnswer` :
+pas certaine, rien ; certaine et vide : aucune ; sinon la date lue (`AAAA-MM-JJ`,
+`AAAA-MM`), si le document la dit — rien d'inventé.
 
 ## Les étiquettes d'un document, avec l'IA (v0.16.0, Black Projects 0.90.0)
 

@@ -15,6 +15,7 @@ import { grouped, groupingOf, groupingSelector, type Group } from '../../core/gr
 import type { GhostEntry, LibraryStore } from './store'
 import type { LibraryGhost } from './ghosts'
 import { LANGUAGES, type LanguageCode } from './language'
+import { docDateLabel } from './identity'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -49,6 +50,8 @@ export interface LibraryHomeDeps {
   chooseLanguage(record: string): Promise<void>
   /** Confirmer la catégorie : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
   confirmCategory(record: string, category: string | null): Promise<void>
+  /** Confirmer la date : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
+  confirmDate(record: string, date: string | null): Promise<void>
   /** Confirmer les étiquettes : celles données (les probables, ajoutées ; vide : aucune), ou `null` — celles qu'il a. */
   confirmTags(record: string, tags: readonly string[] | null): Promise<void>
   /** Confirmer l'émetteur : celui donné (le probable ; vide : aucun), ou `null` — celui qu'il a. */
@@ -124,7 +127,8 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
       ...(doc.titleToConfirm ? ['titre-a-confirmer'] : []),
       ...(doc.issuerToConfirm ? ['emetteur-a-confirmer'] : []),
       ...(doc.categoryToConfirm ? ['categorie-a-confirmer'] : []),
-      ...(doc.tagsToConfirm ? ['etiquettes-a-confirmer'] : [])
+      ...(doc.tagsToConfirm ? ['etiquettes-a-confirmer'] : []),
+      ...(doc.dateToConfirm ? ['date-a-confirmer'] : [])
     ]
   }
 }
@@ -244,6 +248,7 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
       ...(docs.some((doc) => doc.issuerToConfirm) ? [{ id: 'emetteur-a-confirmer', label: t('bibliotheque.issuer.toConfirm') }] : []),
       ...(docs.some((doc) => doc.categoryToConfirm) ? [{ id: 'categorie-a-confirmer', label: t('bibliotheque.category.toConfirm') }] : []),
       ...(docs.some((doc) => doc.tagsToConfirm) ? [{ id: 'etiquettes-a-confirmer', label: t('bibliotheque.tags.toConfirm') }] : []),
+      ...(docs.some((doc) => doc.dateToConfirm) ? [{ id: 'date-a-confirmer', label: t('bibliotheque.date.toConfirm') }] : []),
       ...modules.map((module) => ({ id: `de-${module}`, label: t('bibliotheque.filter.from', { module: t(`${module}.name`) }) })),
       { id: 'a-jour', label: t('bibliotheque.filter.latest') },
       ...(likely ? [{ id: 'a-relier', label: t('bibliotheque.filter.likely') }] : []),
@@ -388,6 +393,23 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
           }
         ]
       : []),
+    // Sa date n'a pas été lue sûrement : celle lue au début du document (probable), aucune, ou une autre.
+    ...(doc.dateToConfirm
+      ? [
+          {
+            kind: 'message' as const,
+            tone: 'warning' as const,
+            text: doc.dateProbable ? t('bibliotheque.date.confirm.probable', { probable: docDateLabel(doc.dateProbable, deps.locale) }) : t('bibliotheque.date.confirm.none'),
+            actions: [
+              ...(doc.dateProbable
+                ? [{ id: 'use-date', label: t('bibliotheque.issuer.use', { issuer: docDateLabel(doc.dateProbable, deps.locale) }), icon: 'check' as const, primary: true, run: () => deps.confirmDate(doc.record, doc.dateProbable!) }]
+                : []),
+              { id: 'keep-date', label: t(doc.date ? 'bibliotheque.identity.confirm' : 'bibliotheque.date.none'), icon: 'cross' as const, run: () => deps.confirmDate(doc.record, null) },
+              { id: 'classify-date', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.dateProbable ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+            ]
+          }
+        ]
+      : []),
     // Sa référence et sa version n'ont pas été lues sûrement : à confirmer (telles quelles, ou « Classer… »).
     ...(doc.identityToConfirm
       ? [
@@ -412,8 +434,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     doc.languageToConfirm ? t('bibliotheque.field.language') : '',
     doc.titleToConfirm ? t('bibliotheque.field.title') : '',
     doc.categoryToConfirm ? t('bibliotheque.field.category') : '',
-    doc.issuerToConfirm ? t('bibliotheque.field.issuer') : '',
     doc.tagsToConfirm ? t('bibliotheque.field.tags') : '',
+    doc.issuerToConfirm ? t('bibliotheque.field.issuer') : '',
+    doc.dateToConfirm ? t('bibliotheque.field.date') : '',
     doc.identityToConfirm ? t('bibliotheque.field.identity') : ''
   ].filter(Boolean)
   const confirmBlocks: HomeBlock[] =
@@ -503,7 +526,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
-        items: [{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision),
+        items: [{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), { ...field('date', doc.date ? docDateLabel(doc.date, deps.locale) : ''), ...(doc.dateToConfirm ? { detail: t('bibliotheque.date.detail.toConfirm', { date: doc.date ? docDateLabel(doc.date, deps.locale) : '—' }) } : doc.dateByAi && doc.date ? { detail: t('bibliotheque.date.detail.byAi', { date: docDateLabel(doc.date, deps.locale) }) } : {}) },
           ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category), ...(doc.categoryToConfirm ? { detail: t('bibliotheque.category.detail.toConfirm', { category: doc.category || '—' }) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category || '—' }) } : {}) }, { ...field('issuer', doc.issuer), ...(doc.issuerToConfirm ? { detail: t('bibliotheque.issuer.detail.toConfirm', { issuer: doc.issuer || '—' }) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: doc.issuer || '—' }) } : {}) }, { ...field('tags', doc.tags.join(', ')), ...(doc.tagsToConfirm ? { detail: t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') || '—' }) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {}) }]
       }),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {

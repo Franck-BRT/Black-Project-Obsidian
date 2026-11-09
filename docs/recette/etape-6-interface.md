@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La date des documents (v0.91.0)
+
+- [ ] Verser un courrier qui commence par « Toulouse, le 1er mars 2026 » : date du document
+      « 1 mars 2026 », rien à confirmer
+- [ ] Verser `Réunion de suivi.txt` (« La réunion du 12/02/2026 a fixé la suite ; la date
+      limite de remise est le 30/04/2026. ») : « Date à confirmer : … « 12 février 2026 » »
+      (pas la date limite) — **Prendre « 12 février 2026 »**, **Pas de date**, **Classer…** ;
+      le filtre *Date à confirmer*
+- [ ] **Classer…** : « Date du document » accepte « 3 mars 2026 » ; « bientôt » est refusé,
+      la date d'avant reste et c'est dit
+- [ ] L'IA réglée : le workflow système « Identifier avec l'IA la date d'un document… »
+      (actif) la donne (« identifiée par l'IA » sur la fiche)
+
 ## Les étiquettes des documents (v0.90.0)
 
 - [ ] Verser un texte qui dit « Mots-clés : antenne, station sol » : ces étiquettes, rien à

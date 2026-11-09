@@ -164,6 +164,14 @@ plus au début du texte (**Prendre ces étiquettes**), **Pas d'étiquettes**, ou
 l'IA, si elle est réglée, en donne d'abord de 3 à 6, en reprenant celles déjà employées dans
 la bibliothèque. Filtre *Étiquettes à confirmer*.
 
+**La date du document** aussi (celle de son édition, de sa publication ou de sa signature) :
+dite par le document (« Date : », « Émis le », « Toulouse, le 1er mars 2026 »), ou le nom du
+fichier et le texte d'accord, elle est donnée. Sinon elle est **à confirmer** : la fiche
+propose la première date du texte — jamais une date limite ou une échéance — (**Prendre
+« 12 février 2026 »**), **Pas de date**, ou **Classer…**, où on l'écrit comme on veut
+(« 12/02/2026 », « 12 février 2026 ») ; l'IA, si elle est réglée, la cherche d'abord.
+Filtre *Date à confirmer*.
+
 **L'émetteur** aussi : dit par le document (« Émetteur : », « Émis par », « Pouvoir
 adjudicateur : »…), il est donné. Sinon il est **à confirmer** : la fiche propose
 l'organisme lu au début du document (**Prendre « … »**), **Pas d'émetteur**, ou

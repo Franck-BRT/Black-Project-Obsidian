@@ -551,6 +551,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   passes — sans IA (« Mots-clés : » : sûres ; sinon les mots qui reviennent le plus,
   proposés, à confirmer) ; pas sûres, l'IA (de 3 à 6, celles en usage d'abord ; dites par
   le document ou déjà employées)
+- v0.91.0 : **modules Bibliothèque et IA** : la **date** des documents (un nouveau champ), en
+  deux passes — sans IA (« Date : », « Émis le », « Toulouse, le … », ou le nom du fichier et
+  le texte d'accord : sûre ; sinon la première date du texte, hors dates limites, à
+  confirmer) ; pas sûre, l'IA (elle doit figurer dans le document)
 
 ### Étape 7 — Livrables
 
