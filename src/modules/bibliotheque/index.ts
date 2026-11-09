@@ -310,6 +310,15 @@ export function setPieceTyper(typer: PieceTyper | null): void {
 /** Les types de pièce à choisir : un code, un libellé. */
 export const libraryPieceTypes = (): readonly { code: string; label: string }[] => (pieceTyper ?? CATEGORY_TYPER).types()
 
+/** Créer un type de pièce (sa fenêtre : code, libellé) ; `null` si l'on renonce, ou sans le module Typage des pièces. */
+let pieceTypeMaker: (() => Promise<{ code: string; label: string } | null>) | null = null
+
+/** Pour les autres modules : peut-on créer un type de pièce (le module Typage des pièces actif) ? */
+export const canCreatePieceType = (): boolean => !!pieceTyper?.add && pieceTypeMaker !== null
+
+/** Pour les autres modules : créer un type de pièce, par sa fenêtre (code, libellé) ; rend le type créé. */
+export const createPieceType = (): Promise<{ code: string; label: string } | null> => pieceTypeMaker?.() ?? Promise.resolve(null)
+
 /** Un type de pièce en mots : « CCTP — Cahier des clauses techniques particulières » ; un code hors de la liste, tel quel. */
 export function pieceTypeText(code: string): string {
   const type = libraryPieceTypes().find((each) => each.code === code)
@@ -554,7 +563,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.36.0',
+  version: '0.36.1',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -978,6 +987,29 @@ export const bibliothequeModule: BlackModule = {
         6000
       )
       return added.code
+    }
+
+    pieceTypeMaker = async () => {
+      const typer = pieceTyper
+      if (!typer?.add) return null
+      const values = await platform.ui.askForm({
+        title: t('bibliotheque.category.add.new'),
+        intro: t('bibliotheque.category.add.intro'),
+        fields: [
+          { kind: 'text', key: 'code', label: t('bibliotheque.category.add.code'), required: true, description: t('bibliotheque.category.add.code.desc') },
+          { kind: 'text', key: 'label', label: t('bibliotheque.category.add.label'), required: true }
+        ],
+        submit: t('bibliotheque.category.add.submit'),
+        validate: (typed) => typer.check?.(typed.code ?? '', typed.label ?? '') ?? null
+      })
+      if (!values) return null
+      const added = await typer.add(values.code ?? '', values.label ?? '')
+      if ('error' in added) {
+        platform.notifier.notify(added.error, 8000)
+        return null
+      }
+      platform.notifier.notify(t('bibliotheque.category.created', { category: pieceTypeText(added.code) }), 6000)
+      return { code: added.code, label: libraryPieceTypes().find((type) => type.code === added.code)?.label ?? (values.label ?? '').trim() }
     }
 
     const classify = async (record: string): Promise<void> => {
@@ -1540,6 +1572,7 @@ export const bibliothequeModule: BlackModule = {
     context.commands.register({ id: 'verser', nameKey: 'bibliotheque.command.pour', run: async () => void (await pour()) })
   },
   deactivate() {
+    pieceTypeMaker = null
     active = null
   }
 }

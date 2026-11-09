@@ -70,6 +70,12 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Un nouveau type de document, depuis les documents attendus (v0.111.1)
+
+- [ ] La fenêtre « Les documents attendus par … » : **Nouveau type de document** — sa fenêtre (code,
+      libellé) par-dessus ; validée, le type est en tête de la liste, coché ; il est ensuite dans
+      les types de pièce (Typage des pièces, Bibliothèque)
+
 ## Le planning ; les documents attendus (v0.111.0)
 
 - [ ] Un projet : **Démarrer le projet** (une date) — la notice dit la fin prévue ; chaque tuile

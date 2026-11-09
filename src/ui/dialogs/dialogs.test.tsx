@@ -55,6 +55,13 @@ describe('les fenêtres du port Ui', () => {
     expect(html).toContain('>Créer</button>')
   })
 
+  it('un choix multiple qui permet d’en créer un : son bouton sous la recherche ; sans, rien', () => {
+    const view = { title: 'Documents', choices: [{ value: 'RC', label: 'RC' }], selected: [], submit: 'Enregistrer' }
+    const html = renderToString(<PickManyDialog view={{ ...view, create: { label: 'Nouveau type de document', run: async () => null } }} t={t} onDone={noop} />)
+    expect(html).toMatch(/<button type="button" class="bp-button bp-pick-many-create"><svg[^>]*class="bp-icon[\s\S]*?<span>Nouveau type de document<\/span><\/button>/)
+    expect(renderToString(<PickManyDialog view={view} t={t} onDone={noop} />)).not.toContain('bp-pick-many-create')
+  })
+
   it('une liste de couleurs ou d’icônes : chaque choix son aperçu à gauche de son nom ; une liste sans aperçu, celle du navigateur', () => {
     const html = renderToString(
       <FormDialog

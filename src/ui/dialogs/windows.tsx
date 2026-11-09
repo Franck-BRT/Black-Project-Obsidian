@@ -406,7 +406,17 @@ export function ConfirmDialog({ view, t, onDone }: { view: ConfirmView; t: Trans
 export function PickManyDialog({ view, t, onDone }: { view: PickManyView; t: Translate; onDone: (values: string[] | null) => void }) {
   const [chosen, setChosen] = useState(() => new Set(view.selected ?? view.choices.map((choice) => choice.value)))
   const [query, setQuery] = useState('')
-  const shown = view.choices.filter((choice) => matches(`${choice.label} ${choice.description ?? ''}`, query))
+  // Les choix : ceux donnés, et ceux créés ici (cochés).
+  const [choices, setChoices] = useState<readonly Choice[]>(view.choices)
+  const shown = choices.filter((choice) => matches(`${choice.label} ${choice.description ?? ''}`, query))
+  const create = async () => {
+    const made = await view.create?.run()
+    if (!made) return
+    // En tête de la liste : on le voit, coché, sans le chercher.
+    setChoices((current) => (current.some((choice) => choice.value === made.value) ? current : [made, ...current]))
+    setChosen((current) => new Set([...current, made.value]))
+    setQuery('')
+  }
   const toggle = (value: string, on: boolean) => {
     const next = new Set(chosen)
     if (on) next.add(value)
@@ -423,12 +433,12 @@ export function PickManyDialog({ view, t, onDone }: { view: PickManyView; t: Tra
       footer={
         <>
           <span class="bp-count" style={{ marginRight: 'auto', alignSelf: 'center' }} aria-live="polite">
-            {t('ui.pickMany.count', { count: chosen.size, total: view.choices.length })}
+            {t('ui.pickMany.count', { count: chosen.size, total: choices.length })}
           </span>
           <button type="button" class="bp-button" onClick={() => onDone(null)}>
             {t('ui.cancel')}
           </button>
-          <button type="button" class="bp-button bp-button-primary" onClick={() => onDone(view.choices.map((choice) => choice.value).filter((value) => chosen.has(value)))}>
+          <button type="button" class="bp-button bp-button-primary" onClick={() => onDone(choices.map((choice) => choice.value).filter((value) => chosen.has(value)))}>
             {view.submit}
           </button>
         </>
@@ -436,16 +446,22 @@ export function PickManyDialog({ view, t, onDone }: { view: PickManyView; t: Tra
     >
       {view.intro && <p class="bp-intro">{view.intro}</p>}
       <div class="bp-toolbar">
-        {view.choices.length > 8 && (
+        {choices.length > 8 && (
           <input class="bp-input" type="search" placeholder={t('ui.search')} aria-label={t('ui.search')} value={query} onInput={(event) => setQuery((event.target as HTMLInputElement).value)} />
         )}
-        <button type="button" class="bp-button" onClick={() => setChosen(new Set(view.choices.map((choice) => choice.value)))}>
+        <button type="button" class="bp-button" onClick={() => setChosen(new Set(choices.map((choice) => choice.value)))}>
           {t('ui.all')}
         </button>
         <button type="button" class="bp-button" onClick={() => setChosen(new Set())}>
           {t('ui.none')}
         </button>
       </div>
+      {view.create && (
+        <button type="button" class="bp-button bp-pick-many-create" onClick={() => void create()}>
+          <Icon name="plus" />
+          <span>{view.create.label}</span>
+        </button>
+      )}
       <fieldset class="bp-fieldset">
         <legend class="bp-sr">{view.title}</legend>
         <div class="bp-checks">

@@ -255,7 +255,9 @@ le parcours est une grille dont les colonnes sont ses étapes et ses flèches. U
 peut porter une couleur (`Card.color`) : son icône sur cette couleur. Un choix d'une liste
 (`Choice.preview`) peut montrer une couleur de tuile ou une icône : les fenêtres de formulaire
 montrent, à la place de la liste du navigateur, un bouton qui ouvre une liste où chaque choix a
-son aperçu à gauche (flèches, Entrée, Échap).
+son aperçu à gauche (flèches, Entrée, Échap). Un choix multiple (`PickManyView.create`) peut avoir
+un bouton pour créer un choix : sa fenêtre s'ouvre par-dessus, le choix créé s'ajoute en tête,
+coché.
 
 Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
 forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :

@@ -10,7 +10,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { ModuleContext } from '../src/core/modules/module'
-import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
+import { CREATE_IN_PICK, memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type HomeBlock, type PageView } from '../src/core/views'
 import { MODULES } from '../src/modules'
 import { aoModule } from '../src/modules/ao'
@@ -306,6 +306,25 @@ describe('les documents attendus', () => {
     platform.forms.push({ name: 'Recette', kind: 'libre', icon: 'check', color: 'orange', duration: '10', documents: 'false', description: '' })
     await (await drawn()).stages[2]!.phases[0]!.open!.run()
     expect((settings.programmes!.typesProjet as ProjectType[]).find((type) => type.id === 'projet-simple')!.stages[2]![0]!.documents).toBeUndefined()
+  })
+
+  it('un type de document qui manque : « Nouveau type de document » dans la fenêtre — créé (Typage des pièces), coché, attendu', async () => {
+    const platform = memoryPlatform()
+    const { load } = await start(platform)
+    const editor = () => load('programmes.type?projet-simple')
+    const drawn = async () => (await editor()).blocks.find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
+    platform.forms.push({ name: 'Recette', kind: 'libre', icon: 'check', color: 'orange', duration: '10', documents: 'true', description: '' }, { code: 'PV', label: 'Procès-verbal de recette' })
+    platform.manyAnswers.push(['CCTP', CREATE_IN_PICK])
+    await (await drawn()).stages[2]!.phases[0]!.open!.run()
+    expect(platform.manyAsked.at(-1)!.create!.label).toBe('Nouveau type de document')
+    expect(platform.notices).toContain('« PV — Procès-verbal de recette » ajouté aux types de pièce.')
+    const recette = (await drawn()).stages[2]!.phases[0]!
+    expect(recette.detail).toBe('10 j · 2 document(s) attendu(s)')
+    // Le nouveau type est dans la liste des types de pièce : proposé la fois suivante.
+    platform.forms.push({ name: 'Recette', kind: 'libre', icon: 'check', color: 'orange', duration: '10', documents: 'true', description: '' })
+    platform.manyAnswers.push(['CCTP', 'PV'])
+    await recette.open!.run()
+    expect(platform.manyAsked.at(-1)!.choices.map((choice) => choice.label)).toContain('PV — Procès-verbal de recette')
   })
 
   it('le projet : la phase les liste (attendus, reçus) ; « Reçu », « Relier le fichier », « Documents attendus » pour en ajouter', async () => {

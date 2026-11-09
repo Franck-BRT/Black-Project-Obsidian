@@ -9,7 +9,7 @@
  */
 
 import { localToday } from '../../core/dates'
-import { libraryPieceTypes, pieceTypeText } from '../bibliotheque'
+import { canCreatePieceType, createPieceType, libraryPieceTypes, pieceTypeText } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
 import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
@@ -53,7 +53,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.3.0',
+  version: '0.3.1',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -247,7 +247,19 @@ export const programmesModule: BlackModule = {
         intro: t('programmes.docs.pick.intro'),
         choices: [...types.map((type) => ({ value: type.code, label: pieceTypeText(type.code) })), ...chosen.filter((code) => !known.has(code)).map((code) => ({ value: code, label: code }))],
         selected: chosen,
-        submit: t('programmes.docs.pick.submit')
+        submit: t('programmes.docs.pick.submit'),
+        // Un type de document qui manque : le créer d'ici (le module Typage des pièces), coché.
+        ...(canCreatePieceType()
+          ? {
+              create: {
+                label: t('programmes.docs.pick.create'),
+                run: async () => {
+                  const made = await createPieceType()
+                  return made ? { value: made.code, label: pieceTypeText(made.code) } : null
+                }
+              }
+            }
+          : {})
       })
     }
 

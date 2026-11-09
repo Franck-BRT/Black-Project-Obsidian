@@ -625,6 +625,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.111.0 : le **planning** des projets (durées des phases dans les types, date de démarrage,
   dates prévues qui en découlent, retard) ; les **documents attendus** par phase (plusieurs,
   par type de pièce ; reçus, reliés)
+- v0.111.1 : **Nouveau type de document** depuis la fenêtre des documents attendus
+  (`PickManyView.create`, `createPieceType`)
 
 ### Étape 7 — Livrables
 

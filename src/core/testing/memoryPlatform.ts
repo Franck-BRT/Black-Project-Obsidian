@@ -24,6 +24,9 @@ import type {
   TextView
 } from '../ports'
 
+/** Dans une réponse à `pickMany` (tests) : cliquer le bouton de création de la fenêtre. */
+export const CREATE_IN_PICK = '+'
+
 export interface MemoryPlatform extends Platform {
   files: Map<string, Uint8Array>
   notices: string[]
@@ -175,7 +178,20 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
       },
       pickMany: async (view) => {
         platform.manyAsked.push(view)
-        if (platform.manyAnswers.length > 0) return platform.manyAnswers.shift()!
+        if (platform.manyAnswers.length > 0) {
+          const answer = platform.manyAnswers.shift()!
+          if (!answer) return answer
+          // « + » dans la réponse : le bouton de création, cliqué ; le choix créé à sa place.
+          const out: string[] = []
+          for (const value of answer) {
+            if (value !== CREATE_IN_PICK) out.push(value)
+            else {
+              const made = await view.create?.run()
+              if (made) out.push(made.value)
+            }
+          }
+          return out
+        }
         return view.selected ? [...view.selected] : view.choices.map((choice) => choice.value)
       },
       inform: async (view) => {

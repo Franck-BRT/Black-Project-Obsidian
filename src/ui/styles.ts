@@ -174,6 +174,7 @@ button.bp-flow-shape:focus-visible { outline: 3px solid var(--bp-focus); outline
 .bp-flow-node.is-step .bp-flow-shape { background: var(--bp-surface-2); }
 .bp-flow-node.is-step[data-ai="true"] .bp-flow-shape { background: color-mix(in srgb, #0d9488 16%, var(--bp-surface)); border-color: color-mix(in srgb, #0d9488 60%, var(--bp-border)); }
 .bp-pick { position: relative; }
+.bp-pick-many-create { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 10px; }
 .bp-select.bp-choice-button { appearance: none; -webkit-appearance: none; display: flex; align-items: center; gap: 10px; width: 100%; padding: 5px 12px 5px 6px; text-align: left; cursor: pointer; box-shadow: none; border: 1px solid var(--bp-border); background: var(--bp-bg); }
 .bp-choice-button::after { content: ""; margin-left: auto; border: 5px solid transparent; border-top: 6px solid currentColor; border-bottom: 0; opacity: 0.7; }
 .bp-choice-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

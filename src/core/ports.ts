@@ -253,6 +253,8 @@ export interface PickManyView {
   /** Les choix cochés au départ ; tous si absent. */
   selected?: readonly string[]
   submit: string
+  /** Un bouton pour en créer un (un nouveau type de document) : le choix créé s'ajoute, coché. */
+  create?: { label: string; run(): Promise<Choice | null> }
 }
 
 export interface ConfirmView {

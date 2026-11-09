@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.36.0 (Black Projects 0.108.0) |
+| Version | 0.36.1 (Black Projects 0.111.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,12 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Créer un type de pièce, pour les autres modules (v0.36.1, Black Projects 0.111.1)
+
+`createPieceType()` : la fenêtre « Nouveau type de pièce » (code, libellé), le type ajouté par le
+module Typage des pièces ; rend `{ code, label }` ou `null`. `canCreatePieceType()` : le module
+Typage des pièces actif. Le module Programmes s'en sert dans la fenêtre des documents attendus.
 
 ## La lecture par l'IA en cours, la file d'attente (v0.36.0, Black Projects 0.108.0)
 

@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.3.0 (Black Projects 0.111.0) |
+| Version | 0.3.1 (Black Projects 0.111.1) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Un nouveau type de document, depuis les documents attendus (v0.3.1, Black Projects 0.111.1)
+
+La fenêtre des documents attendus a un bouton **Nouveau type de document** (le module Typage des
+pièces actif) : sa fenêtre (code, libellé) s'ouvre par-dessus ; le type créé rejoint la liste
+des types de pièce (`createPieceType` de la bibliothèque), en tête de la fenêtre, coché. Le port
+`Ui` : `PickManyView.create` (`{ label, run() }` — le choix créé s'ajoute, coché).
 
 ## Le planning ; les documents attendus (v0.3.0, Black Projects 0.111.0)
 
