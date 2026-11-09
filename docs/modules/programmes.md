@@ -5,13 +5,21 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.1.0 (Black Projects 0.109.0) |
+| Version | 0.1.1 (Black Projects 0.109.1) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les couleurs et les icônes se voient ; plus d'« Analyses » au menu (v0.1.1, Black Projects 0.109.1)
+
+- Dans ses fenêtres, les listes **Couleur** et **Icône** montrent à côté celle choisie (la
+  couleur en tuile, l'icône) : `Choice.preview` (`{ color?, icon? }`), dessiné par les fenêtres
+  du port `Ui`.
+- Le menu n'a plus « Analyses » (le module AO ne déclare plus d'entrée) : les analyses sont des
+  phases des projets ; leur page reste ouverte par sa tuile, sa commande, et les phases.
 
 ## Ce qu'il fait (v0.1.0, Black Projects 0.109.0)
 

@@ -193,13 +193,28 @@ export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; 
           </div>
         )}
         {spec.kind === 'choice' ? (
-          <select class="bp-select" {...common} value={values[spec.key]} onChange={(event) => set(spec.key, (event.target as HTMLSelectElement).value)} data-autofocus={index === 0 ? true : undefined}>
-            {spec.options.map((option) => (
-              <option key={option.value} value={option.value} title={option.description}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          (() => {
+            const select = (
+              <select class="bp-select" {...common} value={values[spec.key]} onChange={(event) => set(spec.key, (event.target as HTMLSelectElement).value)} data-autofocus={index === 0 ? true : undefined}>
+                {spec.options.map((option) => (
+                  <option key={option.value} value={option.value} title={option.description}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            )
+            // Des choix qui se voient (une couleur, une icône) : celui choisi, montré à côté.
+            if (!spec.options.some((option) => option.preview)) return select
+            const preview = spec.options.find((option) => option.value === values[spec.key])?.preview
+            return (
+              <div class="bp-input-row">
+                {select}
+                <span class={`bp-choice-preview${preview?.color ? ` bp-tile-${preview.color}` : ''}`} aria-hidden="true" data-preview={spec.key}>
+                  {preview?.icon && <Icon name={preview.icon} />}
+                </span>
+              </div>
+            )
+          })()
         ) : spec.kind === 'textarea' ? (
           <textarea
             class="bp-textarea"

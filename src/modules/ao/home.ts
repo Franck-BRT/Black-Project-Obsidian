@@ -1471,7 +1471,7 @@ export function registerAoHome(views: ViewsRegistrar | undefined, deps: HomeDeps
   views.page({ id: QUESTION_PAGE, title: t('ao.question.title'), icon: 'chat', parent: ANALYSES_PAGE, load: (param) => questionPage(deps, param) })
   views.page({ id: PRODUCED_PAGE, title: t('ao.note.page.title'), icon: 'file', parent: ANALYSES_PAGE, load: (param) => producedPage(deps, param) })
   views.page({ id: CANDIDATE_PAGE, title: t('ao.candidat.title'), icon: 'folder', parent: ANALYSES_PAGE, load: (param) => candidatePage(deps, param) })
-  views.nav({ id: 'ao.analyses', label: t('ao.home.nav'), icon: 'folder', order: 10, ...(deps.showPage ? { page: ANALYSES_PAGE } : {}), run: () => openAnalyses(deps) })
+  // Plus d'entrée du menu : les analyses sont des phases des projets (menu Programmes) ; leur page reste, par sa tuile.
 }
 
 /**

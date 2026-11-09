@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.37.0 (Black Projects 0.109.0) |
+| Version | 0.37.1 (Black Projects 0.109.1) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,12 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## Plus d'entrée « Analyses » au menu (v0.37.1, Black Projects 0.109.1)
+
+Les analyses sont des phases des projets (menu **Programmes**) : le module ne déclare plus
+d'entrée de menu. La page « Analyses » reste ouverte par sa tuile, sa commande, et la phase
+d'un projet.
 
 ## L'analyse, phase d'un projet (v0.37.0, Black Projects 0.109.0)
 

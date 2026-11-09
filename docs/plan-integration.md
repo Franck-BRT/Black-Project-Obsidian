@@ -617,6 +617,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   un projet suit les **phases** de son **type** (étapes, phases en parallèle) ; **types de
   projet** dessinés dans un éditeur graphique (bloc `journey` : tuiles et flèches) ; l'**analyse
   d'un appel d'offres est une phase** d'un projet (sorte `ao.analyse`, module AO)
+- v0.109.1 : plus d'« Analyses » au menu ; les couleurs et les icônes **se voient** à côté de
+  leur liste (`Choice.preview`)
 
 ### Étape 7 — Livrables
 

@@ -51,7 +51,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.1.0',
+  version: '0.1.1',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -74,8 +74,8 @@ export const programmesModule: BlackModule = {
     const saveTypes = (next: ProjectType[]) => settings.save({ ...settings.get(), [TYPES_KEY]: next })
     const changed = () => views?.changed?.()
 
-    const colorChoices: Choice[] = TILE_COLORS.map((color) => ({ value: color, label: t(`programmes.color.${color}`) }))
-    const iconChoices: Choice[] = PHASE_ICONS.map((icon) => ({ value: icon, label: t(`programmes.icon.${icon}`) }))
+    const colorChoices: Choice[] = TILE_COLORS.map((color) => ({ value: color, label: t(`programmes.color.${color}`), preview: { color } }))
+    const iconChoices: Choice[] = PHASE_ICONS.map((icon) => ({ value: icon, label: t(`programmes.icon.${icon}`), preview: { icon } }))
     const kindChoices = (): Choice[] => [
       { value: FREE_KIND, label: t('programmes.kind.libre'), description: t('programmes.kind.libre.desc') },
       ...phaseKinds().map((kind) => ({ value: kind.id, label: kind.label, ...(kind.description ? { description: kind.description } : {}) }))

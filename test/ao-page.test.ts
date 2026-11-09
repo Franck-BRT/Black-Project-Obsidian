@@ -69,19 +69,17 @@ afterEach(async () => {
 })
 
 describe('la page Analyses', () => {
-  it('le menu, la tuile et la commande ouvrent la page, plus de fenêtre de choix', async () => {
+  it('la tuile et la commande ouvrent la page, plus de fenêtre de choix ; plus d’entrée du menu (les analyses sont des phases des projets)', async () => {
     const platform = memoryPlatform()
     const asked: string[] = []
     platform.ui.pickOption = async () => void asked.push('fenêtre') as unknown as null
     const { views, shown, run } = await start(platform, true)
-    const nav = views.navEntries().find((entry) => entry.id === 'ao.analyses')!
+    expect(views.navEntries().find((entry) => entry.id === 'ao.analyses')).toBeUndefined()
     const tile = views.allTiles().find((each) => each.id === 'ao.analyses')!
-    expect(nav.page).toBe('ao.analyses')
     expect(tile.page).toBe('ao.analyses')
-    await nav.run()
     await tile.run()
     await run('ao-analyses')
-    expect(shown).toEqual(['ao.analyses', 'ao.analyses', 'ao.analyses'])
+    expect(shown).toEqual(['ao.analyses', 'ao.analyses'])
     expect(asked).toEqual([])
     // Le tableau de bord mène aussi à la page.
     const section = await views.homeSections().find((each) => each.id === 'ao.analyses')!.load()
@@ -112,9 +110,8 @@ describe('la page Analyses', () => {
       return null
     }
     const { views } = await start(platform, false)
-    const nav = views.navEntries().find((entry) => entry.id === 'ao.analyses')!
-    expect(nav.page).toBeUndefined()
-    await nav.run()
+    const tile = views.allTiles().find((each) => each.id === 'ao.analyses')!
+    await tile.run()
     expect(asked.sort()).toEqual(['Maintenance antennes', 'Station sol'])
   })
 })

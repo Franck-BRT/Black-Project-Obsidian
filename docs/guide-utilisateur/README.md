@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.109.0)
+## Aujourd'hui (version 0.109.1)
 
 - **Les programmes** (menu **Programmes**) : vos programmes, leurs projets et leurs affaires.
   Un projet suit les phases de son **type**, dessinées en tuiles reliées par des flèches ; un
@@ -23,7 +23,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
   date, et vos **tuiles** — des raccourcis vers les modules, avec des pastilles (« J-5 »
   pour la prochaine remise, exigences faibles, échecs de workflows, IA pas réglée).
-  **Analyses**, **Exigences**, **Workflows** et **IA** (menu ou tuile) ouvrent chacune
+  **Programmes**, **Exigences**, **Workflows** et **IA** (menu ou tuile) ouvrent chacune
   leur page — toutes les analyses, toute la bibliothèque d'exigences, tous les workflows, la
   connexion à l'IA (le dernier test, les modèles du serveur — « Tester la connexion » y
   mène) et un modèle par usage — avec une recherche et des filtres ; un clic sur

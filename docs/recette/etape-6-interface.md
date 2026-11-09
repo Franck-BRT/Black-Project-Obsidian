@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les couleurs et les icônes se voient ; plus d'« Analyses » au menu (v0.109.1)
+
+- [ ] Le menu : « Programmes », plus d'« Analyses » ; la page des analyses s'ouvre encore par sa
+      tuile (Modifier l'accueil) et par la phase d'un projet
+- [ ] « Nouveau programme », « Modifier » un type ou une phase : à côté des listes Couleur et
+      Icône, la couleur (en tuile) et l'icône choisies, qui changent avec la liste
+
 ## Programmes, projets, affaires ; les types de projet (v0.109.0)
 
 - [ ] Le menu : **Programmes** (avant Analyses) ; la page : « Nouveau programme » (nom, code,

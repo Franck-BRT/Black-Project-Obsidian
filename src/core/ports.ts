@@ -11,6 +11,7 @@
  */
 
 import type { YamlReader } from './yaml'
+import type { IconName, TileColor } from './views'
 
 /** Un chemin relatif à la racine du coffre, avec des « / », sans « / » initial. */
 export type VaultPath = string
@@ -90,6 +91,8 @@ export interface Choice {
   label: string
   /** Une précision sous le libellé. */
   description?: string
+  /** Ce qu'il montre, à côté de la liste quand il est choisi : une couleur (de tuile), une icône. */
+  preview?: { icon?: IconName; color?: TileColor }
 }
 
 /** Un fichier pris sur l'ordinateur, hors du coffre. */

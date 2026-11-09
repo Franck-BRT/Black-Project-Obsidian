@@ -250,7 +250,9 @@ flèches, et dans chacune ses **phases** en tuiles (`JourneyPhase` : icône sur 
 `progress` — `done` (coche), `current` (anneau), `todo` (pâle), `skipped` (grisée) —, `open`,
 `tools`). Une étape peut avoir une tuile « + » (`add`), le parcours aussi (après la dernière
 étape) ; son titre peut ouvrir ce qu'il dessine (`open`) ; `compact` : en miniature. Une carte
-peut porter une couleur (`Card.color`) : son icône sur cette couleur.
+peut porter une couleur (`Card.color`) : son icône sur cette couleur. Un choix d'une liste
+(`Choice.preview`) peut montrer une couleur de tuile ou une icône : les fenêtres de formulaire
+montrent celle choisie à côté de la liste.
 
 Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
 forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :

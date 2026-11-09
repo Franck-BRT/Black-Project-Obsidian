@@ -55,6 +55,27 @@ describe('les fenêtres du port Ui', () => {
     expect(html).toContain('>Créer</button>')
   })
 
+  it('une liste de couleurs ou d’icônes : celle choisie montrée à côté ; une liste sans aperçu, seule', () => {
+    const html = renderToString(
+      <FormDialog
+        form={{
+          title: 'Programme',
+          fields: [
+            { kind: 'choice', key: 'color', label: 'Couleur', value: 'violet', options: [{ value: 'indigo', label: 'Indigo', preview: { color: 'indigo' } }, { value: 'violet', label: 'Violet', preview: { color: 'violet' } }] },
+            { kind: 'choice', key: 'icon', label: 'Icône', value: 'star', options: [{ value: 'folder', label: 'Dossier', preview: { icon: 'folder' } }, { value: 'star', label: 'Étoile', preview: { icon: 'star' } }] },
+            { kind: 'choice', key: 'plain', label: 'Sorte', options: [{ value: 'a', label: 'A' }] }
+          ],
+          submit: 'Créer'
+        }}
+        t={t}
+        onDone={noop}
+      />
+    )
+    expect(html).toMatch(/<div class="bp-input-row"><select class="bp-select" id="bp-field-color"[\s\S]*?<\/select><span class="bp-choice-preview bp-tile-violet" aria-hidden="true" data-preview="color"><\/span><\/div>/)
+    expect(html).toMatch(/<span class="bp-choice-preview" aria-hidden="true" data-preview="icon"><svg[^>]*class="bp-icon/)
+    expect(html).not.toContain('data-preview="plain"')
+  })
+
   it('un champ de date : le calendrier à côté (la date écrite AAAA-MM-JJ y est montrée) ; sans calendrier, le champ seul', () => {
     const html = renderToString(
       <FormDialog
