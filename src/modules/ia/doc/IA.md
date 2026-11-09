@@ -73,7 +73,9 @@ et que sa langue n'a pas pu être détectée sûrement, le début de son texte e
 une réponse nette donne la langue (« identifiée par l'IA ») ; sinon elle reste à confirmer.
 
 De même pour le **titre** (« Identifier avec l'IA le titre d'un document… », activé) : le
-titre de la page de garde, fait des mots du document. Et **« Identifier avec l'IA la
+titre de la page de garde, fait des mots du document ; et pour l'**émetteur**
+(« Identifier avec l'IA l'émetteur d'un document… », activé) : l'organisme qui a écrit le
+document, qui doit y figurer. Et **« Identifier avec l'IA la
 référence et la version d'un document, quand la première passe n'est pas sûre »** (activé) : quand le document ne les dit pas clairement
 (référence lue seulement dans le nom du fichier, version absente…), l'IA les cherche au
 début de son texte ; ce qu'elle trouve doit y figurer — elle n'invente rien.

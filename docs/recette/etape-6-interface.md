@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## L'émetteur des documents (v0.88.0)
+
+- [ ] Verser un texte qui commence par « Émetteur : Centre national d'études spatiales » :
+      émetteur donné, rien à confirmer
+- [ ] Verser un texte qui commence par « Agence spatiale européenne » puis le titre :
+      « Émetteur à confirmer » — **Prendre « Agence spatiale européenne »**, **Pas
+      d'émetteur**, **Classer… » ; le titre probable est la ligne suivante, pas l'organisme
+- [ ] Un texte sans organisme : « Pas d'émetteur » le confirme vide ; filtre *Émetteur à
+      confirmer*
+- [ ] IA réglée : l'IA le donne (« identifié par l'IA ») s'il figure dans le document ;
+      « Classer… » enregistré : confirmé
+- [ ] Workflows, filtre Système : « Identifier avec l'IA l'émetteur d'un document… »
+      (actif, fond turquoise)
+
 ## Le titre des documents (v0.87.0)
 
 - [ ] Verser `pmp_v2.txt` qui commence par « Titre : Plan de management de projet » : sa

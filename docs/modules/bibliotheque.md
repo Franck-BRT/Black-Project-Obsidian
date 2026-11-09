@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.15.0 (Black Projects 0.87.0) |
+| Version | 0.16.0 (Black Projects 0.88.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,26 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## L'émetteur des documents (v0.16.0, Black Projects 0.88.0)
+
+En deux passes, comme le titre.
+
+1. **Sans IA**, à l'entrée (`guessIssuer`, 3 000 caractères) : dit avec son mot —
+   « Émetteur : », « Émis par », « Rédigé par », « Établi par », « Auteur : », « Société : »,
+   « Organisme : », « Acheteur : », « Pouvoir adjudicateur : », « Maître d'ouvrage : »,
+   « Issued by », « Prepared by », « Author: » — : **sûr**, il est donné. Sinon : pas
+   d'émetteur, `emetteurAConfirmer: true`, et `emetteurProbable` : la première ligne qui a
+   l'air d'un nom d'organisme (« … SAS », « … GmbH », « Agence … », « Centre … »,
+   « Ministère … »). Une telle ligne n'est plus prise pour un **titre** probable.
+2. **Avec l'IA** : le workflow système du [module IA](ia.md) « Identifier avec l'IA
+   l'émetteur d'un document… » (actif, `{emetteuraconfirmer}` pas vide) ; certaine : donné
+   s'il figure dans le document (`issuerFoundIn` : tel quel, ou 70 % de ses mots), vide
+   s'il n'y en a pas (`setIssuerByAi`, `emetteurIdentifiePar: ia`).
+
+Sur la fiche : **Prendre « … »**, **Pas d'émetteur** (ou **C'est juste** s'il en a un),
+**Classer…** ; Identification : « … — à confirmer », « … — identifié par l'IA » ; le filtre
+*Émetteur à confirmer* ; `{emetteur}`, `{emetteuraconfirmer}` au *document versé*.
 
 ## Le titre des documents (v0.15.0, Black Projects 0.87.0)
 

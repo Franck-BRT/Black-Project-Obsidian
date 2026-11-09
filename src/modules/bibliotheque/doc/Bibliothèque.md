@@ -151,6 +151,11 @@ celui du nom du fichier, **à confirmer** : la fiche propose le titre lu au déb
 document (**Prendre « … »**), **Garder le titre actuel**, ou **Classer…** ; l'IA, si elle
 est réglée, le cherche d'abord. Filtre *Titre à confirmer*.
 
+**L'émetteur** aussi : dit par le document (« Émetteur : », « Émis par », « Pouvoir
+adjudicateur : »…), il est donné. Sinon il est **à confirmer** : la fiche propose
+l'organisme lu au début du document (**Prendre « … »**), **Pas d'émetteur**, ou
+**Classer…** ; l'IA, si elle est réglée, le cherche d'abord. Filtre *Émetteur à confirmer*.
+
 **La référence et la version** (édition, révision) sont aussi lues à l'entrée : au début du
 document (« Réf. : … », « Édition 2 », « Indice B », « Version 2.1 »), sinon dans le nom du
 fichier. Lues clairement dans le document : données. Sinon, elles sont **à confirmer** —

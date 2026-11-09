@@ -162,6 +162,11 @@ export interface LibraryDoc {
   titleProbable?: string
   /** Son titre a été identifié par l'IA. */
   titleByAi?: boolean
+  /** Son émetteur n'a pas été lu sûrement dans le document : à confirmer, avec l'émetteur probable lu, s'il y en a un. */
+  issuerToConfirm?: boolean
+  issuerProbable?: string
+  /** Son émetteur a été identifié par l'IA. */
+  issuerByAi?: boolean
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -201,7 +206,10 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.identityByAi ? { identiteIdentifieePar: 'ia' } : {}),
     ...(doc.titleToConfirm ? { titreAConfirmer: true } : {}),
     ...(doc.titleToConfirm && doc.titleProbable ? { titreProbable: doc.titleProbable } : {}),
-    ...(doc.titleByAi ? { titreIdentifiePar: 'ia' } : {})
+    ...(doc.titleByAi ? { titreIdentifiePar: 'ia' } : {}),
+    ...(doc.issuerToConfirm ? { emetteurAConfirmer: true } : {}),
+    ...(doc.issuerToConfirm && doc.issuerProbable ? { emetteurProbable: doc.issuerProbable } : {}),
+    ...(doc.issuerByAi ? { emetteurIdentifiePar: 'ia' } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -249,7 +257,10 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(data.identiteIdentifieePar === 'ia' ? { identityByAi: true } : {}),
     ...(data.titreAConfirmer === true ? { titleToConfirm: true } : {}),
     ...(data.titreAConfirmer === true && typeof data.titreProbable === 'string' && data.titreProbable.trim() ? { titleProbable: data.titreProbable.trim() } : {}),
-    ...(data.titreIdentifiePar === 'ia' ? { titleByAi: true } : {})
+    ...(data.titreIdentifiePar === 'ia' ? { titleByAi: true } : {}),
+    ...(data.emetteurAConfirmer === true ? { issuerToConfirm: true } : {}),
+    ...(data.emetteurAConfirmer === true && typeof data.emetteurProbable === 'string' && data.emetteurProbable.trim() ? { issuerProbable: data.emetteurProbable.trim() } : {}),
+    ...(data.emetteurIdentifiePar === 'ia' ? { issuerByAi: true } : {})
   }
 }
 

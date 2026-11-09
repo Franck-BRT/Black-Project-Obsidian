@@ -26,7 +26,7 @@ import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor,
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
-export { readIdentityAnswer, readLanguageAnswer, readTitleAnswer } from './workflows'
+export { readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTitleAnswer } from './workflows'
 export {
   buildChatBody,
   cosine,
@@ -277,7 +277,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.13.0',
+  version: '0.14.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -398,6 +398,19 @@ export const iaModule: BlackModule = {
         trigger: { kind: 'bibliotheque.document-verse' },
         conditions: [{ field: 'titreaconfirmer', op: 'not-empty', value: '' }],
         actions: [{ kind: 'ia.titre-document', fields: { fiche: '{fiche}' } }]
+      })
+    })
+    // L'émetteur d'un document versé, quand la première passe sans IA ne l'a pas lu sûrement (actif).
+    registerSystemWorkflow({
+      id: 'sys.ia.emetteur-documents',
+      moduleKey: 'ia.name',
+      enabledByDefault: true,
+      make: (tr) => ({
+        name: tr('ia.sys.emetteur-documents'),
+        mode: 'auto',
+        trigger: { kind: 'bibliotheque.document-verse' },
+        conditions: [{ field: 'emetteuraconfirmer', op: 'not-empty', value: '' }],
+        actions: [{ kind: 'ia.emetteur-document', fields: { fiche: '{fiche}' } }]
       })
     })
     registerSystemWorkflow({

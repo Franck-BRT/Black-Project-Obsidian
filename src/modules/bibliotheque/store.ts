@@ -17,7 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
-import { guessIdentity, guessTitle, type DocIdentity } from './identity'
+import { guessIdentity, guessIssuer, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
@@ -182,8 +182,12 @@ export class LibraryStore {
     const title: Partial<LibraryDoc> = titled.sure
       ? { title: titled.title }
       : { titleToConfirm: true, ...(titled.title && titled.title.toLowerCase() !== fromName.toLowerCase() ? { titleProbable: titled.title } : {}) }
+    // L'émetteur : dit sûrement par le document, il est donné ; sinon, à confirmer (avec le probable lu).
+    const issued = guessIssuer(text ?? '')
+    const issuer: Partial<LibraryDoc> = issued.sure ? { issuer: issued.issuer } : { issuerToConfirm: true, ...(issued.issuer ? { issuerProbable: issued.issuer } : {}) }
     return {
       ...title,
+      ...issuer,
       ...this.languageOfText(text),
       ...(identity.reference ? { reference: identity.reference } : {}),
       ...(identity.edition ? { edition: identity.edition } : {}),
@@ -237,6 +241,19 @@ export class LibraryStore {
     delete next.titleProbable
     delete next.titleByAi
     if (byAi) next.titleByAi = true
+    await this.save(next)
+    return next
+  }
+
+  /** Son émetteur, donné (par l'IA, ou confirmé ; vide : aucun) : plus à confirmer. `null` : celui qu'il a est confirmé. */
+  async setIssuer(record: string, issuer: string | null, byAi = false): Promise<LibraryDoc | null> {
+    const doc = await this.load(record)
+    if (!doc) return null
+    const next: LibraryDoc = { ...doc, ...(issuer === null ? {} : { issuer: issuer.trim() }) }
+    delete next.issuerToConfirm
+    delete next.issuerProbable
+    delete next.issuerByAi
+    if (byAi) next.issuerByAi = true
     await this.save(next)
     return next
   }

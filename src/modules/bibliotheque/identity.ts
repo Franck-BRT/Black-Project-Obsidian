@@ -146,7 +146,8 @@ export function guessTitle(text: string): TitleGuess {
     const clean = cleanTitle(line)
     const letters = (clean.match(/\p{L}/gu) ?? []).length
     if (clean.length < 6 || clean.length > 120 || clean.split(/\s+/).length < 2) continue
-    if (letters / clean.length < 0.6 || NOT_TITLE.test(clean) || clean.endsWith(':')) continue
+    // Un nom d'organisme (« Agence spatiale européenne », « Durand SAS ») est un émetteur, pas un titre.
+    if (letters / clean.length < 0.6 || NOT_TITLE.test(clean) || ORGANISATION.test(clean) || clean.endsWith(':')) continue
     return { title: clean, sure: false }
   }
   return { title: '', sure: false }
@@ -159,4 +160,52 @@ export function titleFoundIn(title: string, text: string, fileName: string): boo
   if (!words.length) return false
   const hay = fold(`${text} ${fileName}`)
   return words.filter((word) => hay.includes(word)).length / words.length >= 0.7
+}
+
+/**
+ * L'**émetteur** d'un document — qui l'a écrit ou publié : une entreprise, un organisme,
+ * l'acheteur —, tel qu'il le dit au début de son texte. **Sûr** quand il le dit avec son mot
+ * (« Émetteur : », « Émis par », « Rédigé par », « Auteur : », « Société : », « Pouvoir
+ * adjudicateur : », « Issued by », « Prepared by »…) ; sinon, une ligne qui a l'air d'un nom
+ * d'organisme (« … SAS », « Agence … », « Centre national … ») est **probable** — à
+ * confirmer, ou à trancher par l'IA. Rien : pas d'émetteur, à confirmer.
+ */
+export interface IssuerGuess {
+  issuer: string
+  sure: boolean
+}
+
+const ISSUER_HEAD = 3000
+const LABELLED_ISSUER =
+  /^\s*(?:[ée]metteur|[ée]mis\s+par|r[ée]dig[ée]\s+par|[ée]tabli\s+par|auteur|soci[ée]t[ée]|organisme|entreprise|acheteur|pouvoir\s+adjudicateur|ma[îi]tre\s+d['’]ouvrage|issued\s+by|prepared\s+by|author|issuer|company|organisation|organization)\s*[:：]?\s+(?!:)(.{2,80}?)\s*$/imu
+const ORGANISATION =
+  /(?:\b(?:S\.?A\.?S\.?U?|S\.?A\.?|SARL|SNC|EURL|SCOP|GIE|GmbH|AG|Ltd|LLC|Inc\.?|PLC|S\.p\.A\.?|B\.V\.?|N\.V\.?)$|^(?:agence|centre|minist[èe]re|direction|soci[ée]t[ée]|groupe|group|laboratoire|universit[ée]|commune|d[ée]partement|r[ée]gion|conseil|office|institut|[ée]tablissement|syndicat|agency|ministry|department|university|council|institute)\b)/iu
+
+const cleanIssuer = (raw: string): string =>
+  raw
+    .replace(/\s+/g, ' ')
+    .replace(/^[-–—•*:\s]+|[-–—:;,.\s]+$/g, '')
+    .trim()
+
+export function guessIssuer(text: string): IssuerGuess {
+  const head = text.slice(0, ISSUER_HEAD)
+  const labelled = LABELLED_ISSUER.exec(head)?.[1]
+  if (labelled && cleanIssuer(labelled).length >= 2) return { issuer: cleanIssuer(labelled), sure: true }
+  const lines = head
+    .split(/\r?\n/)
+    .map((line) => cleanIssuer(line))
+    .filter(Boolean)
+    .slice(0, 25)
+  const found = lines.find((line) => line.length >= 3 && line.length <= 80 && ORGANISATION.test(line))
+  return { issuer: found ?? '', sure: false }
+}
+
+/** Un émetteur donné par l'IA, gardé seulement si le document le dit (tel quel, ou l'essentiel de ses mots) : elle n'invente pas. */
+export function issuerFoundIn(issuer: string, text: string, fileName: string): boolean {
+  const fold = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+  const hay = fold(`${text} ${fileName}`)
+  const squash = (value: string) => value.replace(/[^\p{L}\p{N}]+/gu, '')
+  if (squash(fold(issuer)).length >= 2 && squash(hay).includes(squash(fold(issuer)))) return true
+  const words = fold(issuer).match(/\p{L}{3,}/gu) ?? []
+  return !!words.length && words.filter((word) => hay.includes(word)).length / words.length >= 0.7
 }

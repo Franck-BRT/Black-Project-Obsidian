@@ -540,6 +540,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   sans IA à l'entrée (« Titre : », « Objet : », « # … » : sûr ; sinon, le nom du fichier et
   un titre probable, à confirmer) ; pas sûr, l'IA (workflow système actif ; ses mots doivent
   être ceux du document)
+- v0.88.0 : **modules Bibliothèque et IA** : l'**émetteur** des documents, en deux passes —
+  sans IA (« Émetteur : », « Émis par »… : sûr ; sinon un organisme probable, à
+  confirmer) ; pas sûr, l'IA (workflow système actif ; il doit figurer dans le document)
 
 ### Étape 7 — Livrables
 

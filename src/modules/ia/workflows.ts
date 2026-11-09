@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, libraryDoc, libraryDocText, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setLanguageByAi, setTitleByAi, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, libraryDoc, libraryDocText, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -100,7 +100,72 @@ export function readTitleAnswer(answer: unknown, text: string, fileName: string)
   return title.length >= 3 && title.length <= 150 && titleFoundIn(title, text, fileName) ? title : ''
 }
 
+const ISSUER_SCHEMA = {
+  name: 'emetteur_document',
+  schema: { type: 'object', properties: { issuer: { type: 'string' }, certain: { type: 'boolean' } }, required: ['issuer', 'certain'], additionalProperties: false }
+}
+
+/**
+ * L'émetteur que l'IA a dit : pas certaine, `null` ; certaine et vide : aucun émetteur (`''`) ;
+ * sinon, gardé s'il n'est pas trop long et que le document le dit (elle n'invente pas).
+ */
+export function readIssuerAnswer(answer: unknown, text: string, fileName: string): string | null {
+  if (typeof answer !== 'object' || answer === null) return null
+  const reply = answer as { issuer?: unknown; certain?: unknown }
+  if (reply.certain !== true || typeof reply.issuer !== 'string') return null
+  const issuer = reply.issuer.replace(/\s+/g, ' ').replace(/^["«“\s]+|["»”\s.]+$/g, '').trim()
+  if (!issuer) return ''
+  return issuer.length <= 80 && issuerFoundIn(issuer, text, fileName) ? issuer : null
+}
+
 export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string): void {
+  /**
+   * L'émetteur d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas
+   * lu sûrement : le début de son texte demandé à l'IA. Certaine : l'émetteur est donné
+   * (« identifié par l'IA » ; vide : aucun), s'il figure dans le document ; sinon, il reste à
+   * confirmer, sans erreur.
+   */
+  registerAction({
+    id: 'ia.emetteur-document',
+    labelKey: 'ia.wf.action.issuer',
+    descKey: 'ia.wf.action.issuer.desc',
+    needsAi: true,
+    fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
+    results: ['text'],
+    async run({ fields, guidance }) {
+      const say = (key: string, vars?: Record<string, string | number>) => {
+        const text = t(key, vars)
+        return { lines: [text], results: { text } }
+      }
+      const record = (fields.fiche ?? '').trim()
+      const doc = record ? await libraryDoc(record) : null
+      if (!doc) return say('ia.wf.language.noDoc', { record })
+      if (!doc.issuerToConfirm) return say('ia.wf.issuer.already', { title: doc.title })
+      const ai = client()?.withInstructions(guidance)
+      if (!ai) return say('ia.wf.issuer.noAi', { title: doc.title })
+      const text = ((await libraryDocText(record)) ?? '').trim()
+      if (!text) return say('ia.wf.issuer.noText', { title: doc.title })
+      const fileName = doc.file.slice(doc.file.lastIndexOf('/') + 1)
+      let answer: unknown
+      try {
+        answer = await ai.chatJson<unknown>({
+          messages: [
+            { role: 'system', content: t('ia.wf.issuer.system') },
+            { role: 'user', content: `${t('ia.wf.identity.file', { name: fileName })}\n\n${text.slice(0, IDENTITY_HEAD)}` }
+          ],
+          temperature: 0,
+          schema: ISSUER_SCHEMA
+        })
+      } catch (error) {
+        throw new Error(describe(error))
+      }
+      const issuer = readIssuerAnswer(answer, text, fileName)
+      if (issuer === null) return say('ia.wf.issuer.unsure', { title: doc.title })
+      await setIssuerByAi(record, issuer)
+      return say(issuer ? 'ia.wf.issuer.found' : 'ia.wf.issuer.nobody', { title: doc.title, issuer })
+    }
+  })
+
   /**
    * Le titre d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas lu
    * sûrement : le début de son texte (et le nom de son fichier, le titre probable lu) demandés

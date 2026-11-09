@@ -67,6 +67,8 @@ describe('la première passe, sans IA', () => {
     // Une page, une date, une référence ne sont pas des titres.
     expect(guessTitle('Page 1/12\n12/03/2026\nRéf. : ABC-12-X\nRapport de recette des antennes')).toEqual({ title: 'Rapport de recette des antennes', sure: false })
     expect(guessTitle('')).toEqual({ title: '', sure: false })
+    // Le nom de l'organisme, en tête de page de garde, est l'émetteur : pas le titre.
+    expect(guessTitle('Agence spatiale européenne\nSpécification de la station sol')).toEqual({ title: 'Spécification de la station sol', sure: false })
   })
 })
 
