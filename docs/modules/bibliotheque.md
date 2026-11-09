@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.14.0 (Black Projects 0.86.0) |
+| Version | 0.15.0 (Black Projects 0.87.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,26 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Le titre des documents (v0.15.0, Black Projects 0.87.0)
+
+En deux passes, comme la référence et la langue.
+
+1. **Sans IA**, à l'entrée (`guessTitle`, au début du texte, 3 000 caractères) : dit avec
+   son mot — « Titre : », « Objet : », « Intitulé : », « Title: » — ou en titre de note
+   (« # … ») : **sûr**, il remplace le titre tiré du nom du fichier (la fiche, elle, garde le
+   nom du fichier). Sinon, le titre reste celui du nom du fichier, `titreAConfirmer: true`,
+   et `titreProbable` : la première ligne qui a l'air d'un titre (des mots, ni une page, ni
+   une date, ni une référence, ni une mention de confidentialité). Une image : rien.
+2. **Avec l'IA**, quand ce n'est pas sûr : le workflow système du [module IA](ia.md)
+   « Identifier avec l'IA le titre d'un document… » (actif, *document versé* dont
+   `{titreaconfirmer}` n'est pas vide) ; certaine, et ses mots sont ceux du document
+   (`titleFoundIn`, 70 %) : le titre est donné (`setTitleByAi`, `titreIdentifiePar: ia`).
+
+Sur la fiche, à confirmer : un message — **Prendre « … »** (le probable), **Garder le titre
+actuel** (ou **C'est juste** sans probable), **Classer…** ; Identification : « … — à
+confirmer », « … — identifié par l'IA » ; le filtre *Titre à confirmer*. « Classer… »
+enregistré : confirmé. Les workflows : `{titreaconfirmer}` au *document versé*.
 
 ## La bibliothèque de skills (v0.14.0, Black Projects 0.86.0)
 

@@ -145,6 +145,12 @@ Quand la détection sans IA n'est pas sûre et que l'{{link:Modules/IA|IA}} est 
 document… ») : une réponse nette donne la langue, notée « identifiée par l'IA » ; sinon elle
 reste à confirmer.
 
+**Le titre** est lu à l'entrée lui aussi : dit par le document (« Titre : … », « Objet :
+… », un titre de note « # … »), il remplace celui tiré du nom du fichier. Sinon il reste
+celui du nom du fichier, **à confirmer** : la fiche propose le titre lu au début du
+document (**Prendre « … »**), **Garder le titre actuel**, ou **Classer…** ; l'IA, si elle
+est réglée, le cherche d'abord. Filtre *Titre à confirmer*.
+
 **La référence et la version** (édition, révision) sont aussi lues à l'entrée : au début du
 document (« Réf. : … », « Édition 2 », « Indice B », « Version 2.1 »), sinon dans le nom du
 fichier. Lues clairement dans le document : données. Sinon, elles sont **à confirmer** —

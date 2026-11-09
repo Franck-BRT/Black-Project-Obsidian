@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le titre des documents (v0.87.0)
+
+- [ ] Verser `pmp_v2.txt` qui commence par « Titre : Plan de management de projet » : sa
+      carte s'intitule « Plan de management de projet » ; rien à confirmer
+- [ ] Verser `CCTP_v3.txt` qui commence par « Cahier des clauses techniques particulières
+      de la station sol » (sans « Titre : ») : titre « CCTP v3 », « Titre à confirmer » ; sur
+      la fiche, **Prendre « Cahier des clauses… »** le donne ; **Garder le titre actuel** ;
+      filtre *Titre à confirmer*
+- [ ] IA réglée : le même document, l'IA donne le titre (« identifié par l'IA ») ; un
+      titre qui n'est pas fait des mots du document n'est jamais gardé
+- [ ] « Classer… » enregistré : plus rien à confirmer
+- [ ] Workflows, filtre Système : « Identifier avec l'IA le titre d'un document… » (actif),
+      étape sur fond turquoise ; Prompt, Persona, Skill s'y choisissent aussi
+
 ## Les étapes d'IA : couleur, prompt, persona, skill ; la bibliothèque de skills (v0.86.0)
 
 - [ ] Bibliothèque : quatre cartes — Documents, Prompts, Personas, **Skills** ; Skills ›

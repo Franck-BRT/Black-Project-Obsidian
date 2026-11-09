@@ -39,7 +39,7 @@ export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
-export { guessIdentity, IDENTITY_HEAD, plausibleReference, referenceFoundIn, type DocIdentity, type IdentityGuess } from './identity'
+export { guessIdentity, guessTitle, IDENTITY_HEAD, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type IdentityGuess, type TitleGuess } from './identity'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -270,6 +270,11 @@ export async function setLanguageByAi(record: string, language: LanguageCode): P
   return active ? active.store.setLanguage(record, language, true) : null
 }
 
+/** Pour l'IA : le titre qu'elle a identifié — plus à confirmer, et on sait qui l'a dit. */
+export async function setTitleByAi(record: string, title: string): Promise<LibraryDoc | null> {
+  return active ? active.store.setTitle(record, title, true) : null
+}
+
 /** Pour l'IA : la référence et la version qu'elle a identifiées — plus à confirmer, et on sait qui l'a dit. */
 export async function setIdentityByAi(record: string, identity: { reference: string; edition: string; revision: string }): Promise<LibraryDoc | null> {
   return active ? active.store.setIdentity(record, identity, true) : null
@@ -294,6 +299,7 @@ async function emitPoured(doc: LibraryDoc): Promise<void> {
       revision: doc.revision,
       // Vide quand elles sont sûres : une condition « n'est pas vide » vaut quelle que soit la langue.
       identiteaconfirmer: doc.identityToConfirm ? t('bibliotheque.read.yes') : '',
+      titreaconfirmer: doc.titleToConfirm ? t('bibliotheque.read.yes') : '',
       fiche: doc.record
     }
   })
@@ -351,7 +357,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.14.0',
+  version: '0.15.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -425,7 +431,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,
@@ -608,9 +614,12 @@ export const bibliothequeModule: BlackModule = {
       await store.save({
         ...doc,
         ...languageFields,
-        // Classé à la main : la référence et la version sont confirmées.
+        // Classé à la main : le titre, la référence et la version sont confirmés.
         identityToConfirm: undefined,
         identityByAi: undefined,
+        titleToConfirm: undefined,
+        titleProbable: undefined,
+        titleByAi: undefined,
         title: (values.title ?? '').trim() || doc.title,
         category: (values.category ?? '').trim(),
         reference: (values.reference ?? '').trim(),
@@ -704,6 +713,10 @@ export const bibliothequeModule: BlackModule = {
       classify,
       newVersionOf,
       chooseLanguage,
+      confirmTitle: async (record, title) => {
+        const doc = await store.setTitle(record, title)
+        if (doc) platform.notifier.notify(t('bibliotheque.title.confirmed', { title: doc.title }), 5000)
+      },
       confirmIdentity: async (record) => {
         const doc = await store.setIdentity(record, null)
         if (doc) platform.notifier.notify(t('bibliotheque.identity.confirmed', { title: doc.title }), 5000)

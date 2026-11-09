@@ -17,7 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
-import { guessIdentity, type DocIdentity } from './identity'
+import { guessIdentity, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
@@ -176,7 +176,14 @@ export class LibraryStore {
     if (family === 'image') return {}
     const text = await this.readText(name, bytes)
     const identity = guessIdentity(text ?? '', name)
+    // Le titre : dit sûrement par le document, il remplace celui du nom du fichier ; sinon, à confirmer (avec le probable lu).
+    const titled = guessTitle(text ?? '')
+    const fromName = titleFromName(name)
+    const title: Partial<LibraryDoc> = titled.sure
+      ? { title: titled.title }
+      : { titleToConfirm: true, ...(titled.title && titled.title.toLowerCase() !== fromName.toLowerCase() ? { titleProbable: titled.title } : {}) }
     return {
+      ...title,
       ...this.languageOfText(text),
       ...(identity.reference ? { reference: identity.reference } : {}),
       ...(identity.edition ? { edition: identity.edition } : {}),
@@ -217,6 +224,19 @@ export class LibraryStore {
     delete next.identityToConfirm
     delete next.identityByAi
     if (byAi) next.identityByAi = true
+    await this.save(next)
+    return next
+  }
+
+  /** Son titre, donné (par l'IA, ou confirmé) : plus à confirmer. Rien de donné (`null`) : celui qu'il a est confirmé. */
+  async setTitle(record: string, title: string | null, byAi = false): Promise<LibraryDoc | null> {
+    const doc = await this.load(record)
+    if (!doc) return null
+    const next: LibraryDoc = { ...doc, ...(title?.trim() ? { title: title.trim() } : {}) }
+    delete next.titleToConfirm
+    delete next.titleProbable
+    delete next.titleByAi
+    if (byAi) next.titleByAi = true
     await this.save(next)
     return next
   }

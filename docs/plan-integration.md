@@ -536,6 +536,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   logigramme (légende) ; ouvertes, des champs **Prompt**, **Persona**, **Skill** choisis
   dans les bibliothèques, dont les consignes sont données à l'IA ; une **bibliothèque de
   skills** (savoir-faire donnés à l'IA)
+- v0.87.0 : **modules Bibliothèque et IA** : le **titre** des documents, en deux passes —
+  sans IA à l'entrée (« Titre : », « Objet : », « # … » : sûr ; sinon, le nom du fichier et
+  un titre probable, à confirmer) ; pas sûr, l'IA (workflow système actif ; ses mots doivent
+  être ceux du document)
 
 ### Étape 7 — Livrables
 

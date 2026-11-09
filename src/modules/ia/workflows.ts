@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, libraryDoc, libraryDocText, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setLanguageByAi, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, libraryDoc, libraryDocText, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setLanguageByAi, setTitleByAi, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -86,7 +86,68 @@ export function libraryGuidance(t: Translate): (chosen: Readonly<Record<string, 
   }
 }
 
+const TITLE_SCHEMA = {
+  name: 'titre_document',
+  schema: { type: 'object', properties: { title: { type: 'string' }, certain: { type: 'boolean' } }, required: ['title', 'certain'], additionalProperties: false }
+}
+
+/** Le titre que l'IA a dit : certaine, pas trop long, et fait des mots du document (elle n'invente pas) ; sinon rien. */
+export function readTitleAnswer(answer: unknown, text: string, fileName: string): string {
+  if (typeof answer !== 'object' || answer === null) return ''
+  const reply = answer as { title?: unknown; certain?: unknown }
+  if (reply.certain !== true || typeof reply.title !== 'string') return ''
+  const title = reply.title.replace(/\s+/g, ' ').replace(/^["«“\s]+|["»”\s.]+$/g, '').trim()
+  return title.length >= 3 && title.length <= 150 && titleFoundIn(title, text, fileName) ? title : ''
+}
+
 export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string): void {
+  /**
+   * Le titre d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas lu
+   * sûrement : le début de son texte (et le nom de son fichier, le titre probable lu) demandés
+   * à l'IA. Certaine, et ses mots sont ceux du document : le titre est donné (« identifié par
+   * l'IA ») ; sinon, il reste à confirmer, sans erreur.
+   */
+  registerAction({
+    id: 'ia.titre-document',
+    labelKey: 'ia.wf.action.title',
+    descKey: 'ia.wf.action.title.desc',
+    needsAi: true,
+    fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
+    results: ['text'],
+    async run({ fields, guidance }) {
+      const say = (key: string, vars?: Record<string, string | number>) => {
+        const text = t(key, vars)
+        return { lines: [text], results: { text } }
+      }
+      const record = (fields.fiche ?? '').trim()
+      const doc = record ? await libraryDoc(record) : null
+      if (!doc) return say('ia.wf.language.noDoc', { record })
+      if (!doc.titleToConfirm) return say('ia.wf.title.already', { title: doc.title })
+      const ai = client()?.withInstructions(guidance)
+      if (!ai) return say('ia.wf.title.noAi', { title: doc.title })
+      const text = ((await libraryDocText(record)) ?? '').trim()
+      if (!text) return say('ia.wf.title.noText', { title: doc.title })
+      const fileName = doc.file.slice(doc.file.lastIndexOf('/') + 1)
+      let answer: unknown
+      try {
+        answer = await ai.chatJson<unknown>({
+          messages: [
+            { role: 'system', content: t('ia.wf.title.system') },
+            { role: 'user', content: `${t('ia.wf.identity.file', { name: fileName })}\n\n${text.slice(0, IDENTITY_HEAD)}` }
+          ],
+          temperature: 0,
+          schema: TITLE_SCHEMA
+        })
+      } catch (error) {
+        throw new Error(describe(error))
+      }
+      const title = readTitleAnswer(answer, text, fileName)
+      if (!title) return say('ia.wf.title.unsure', { title: doc.title })
+      await setTitleByAi(record, title)
+      return say('ia.wf.title.found', { title })
+    }
+  })
+
   /**
    * La référence et la version d'un document de la bibliothèque, quand la première passe sans
    * IA ne les a pas lues sûrement : le début de son texte (et le nom de son fichier) demandés

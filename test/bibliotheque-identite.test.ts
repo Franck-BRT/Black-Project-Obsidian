@@ -89,7 +89,7 @@ describe('à l’entrée dans la bibliothèque', () => {
     expect(doc.identityToConfirm).toBeUndefined()
     // La langue de ce texte court n'est pas sûre : l'IA est demandée pour elle seule.
     const asked = platform.requests.slice(before).map((request) => (JSON.parse(request.body!) as { messages: { content: string }[] }).messages[0]!.content)
-    expect(asked.some((content) => content.startsWith('Tu lis le début d’un document'))).toBe(false)
+    expect(asked.some((content) => content.startsWith('Tu lis le début d’un document pour trouver comment il s’identifie'))).toBe(false)
     expect(identityOf(await page('bibliotheque.document').load(encodeURIComponent(doc.record)))).toMatchObject({ reference: 'DLA-NM-0000000-01-PSP', edition: '2', revision: '15' })
   })
 
@@ -145,7 +145,7 @@ describe('la seconde passe, avec l’IA', () => {
     const before = platform.requests.length
     const doc = await pour('Spécification.txt', LOOSE)
     const sent = platform.requests.slice(before).map((request) => JSON.parse(request.body!) as { messages: { role: string; content: string }[]; temperature: number })
-    const identity = sent.find((request) => request.messages[0]!.content.startsWith('Tu lis le début d’un document'))!
+    const identity = sent.find((request) => request.messages[0]!.content.startsWith('Tu lis le début d’un document pour trouver comment il s’identifie'))!
     expect(identity.messages[1]!.content).toBe(`Nom du fichier : Spécification.txt\n\n${LOOSE}`)
     expect(identity.temperature).toBe(0)
     expect(read(platform, doc.record)).toMatch(/\nreference: DLA-NM-0000000-01-PSP\nedition: "?2"?\nrevision: "?15"?\n/)

@@ -152,7 +152,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const view = await page('bibliotheque.documents').load()
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}:${stat.value}`)).toEqual(['Documents:2', 'Taille:2 o', 'Ajoutés cette semaine:2', 'Versions à relier:0'])
-    expect(view.filters?.map((filter) => filter.id)).toEqual(['famille-sheet', 'famille-image', 'langue-a-confirmer', 'identite-a-confirmer', 'de-bibliotheque', 'a-jour'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['famille-sheet', 'famille-image', 'langue-a-confirmer', 'identite-a-confirmer', 'titre-a-confirmer', 'de-bibliotheque', 'a-jour'])
     const card = cardsOf(view).find((each) => each.title === 'Devis 2026')!
     expect(card.badges?.map((badge) => badge.label)).toEqual(['Tableurs', 'Devis', 'Langue à confirmer'])
     expect(card.text).toBe('Bibliothèque de documents — Versé à la main')

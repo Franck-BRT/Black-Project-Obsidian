@@ -106,3 +106,57 @@ export function referenceFoundIn(reference: string, text: string, fileName: stri
   const wanted = squash(reference)
   return !!wanted && (squash(text).includes(wanted) || squash(fileName).includes(wanted))
 }
+
+/**
+ * Le **titre** d'un document, tel qu'il le dit au début de son texte. **Sûr** quand il le
+ * dit avec son mot (« Titre : … », « Objet : … », « Title: … ») ou en titre de note
+ * (« # … ») ; sinon, la première ligne qui a l'air d'un titre (des mots, ni une référence,
+ * ni une date, ni un en-tête de page) est **probable** — à confirmer, ou à trancher par l'IA.
+ */
+export interface TitleGuess {
+  title: string
+  sure: boolean
+}
+
+const TITLE_HEAD = 3000
+const LABELLED_TITLE = /^\s*(?:titre|title|intitul[ée]|objet)(?:\s+du\s+document)?\s*[:：.]\s*(.{4,150}?)\s*$/imu
+const NOTE_TITLE = /^#\s+(.{2,150}?)\s*#*\s*$/mu
+/** Ce qui n'est pas un titre : une page, une date, une mention de confidentialité, un en-tête technique. */
+const NOT_TITLE = /^(?:page\s*\d|\d+\s*\/\s*\d+$|confidentiel|diffusion|copyright|©|tous droits|r[ée]f(?:[ée]rence)?\s*[.:]|[ée]dition\s|r[ée]vision\s|version\s|date\s*[:.]|\d{1,2}[./-]\d{1,2}[./-]\d{2,4})/iu
+
+const cleanTitle = (raw: string): string =>
+  raw
+    .replace(/\s+/g, ' ')
+    .replace(/^[-–—•*\s]+|[-–—:;,\s]+$/g, '')
+    .trim()
+
+export function guessTitle(text: string): TitleGuess {
+  const head = text.slice(0, TITLE_HEAD)
+  const labelled = LABELLED_TITLE.exec(head)?.[1]
+  if (labelled && cleanTitle(labelled).length >= 4) return { title: cleanTitle(labelled), sure: true }
+  const note = NOTE_TITLE.exec(head)?.[1]
+  if (note && cleanTitle(note).length >= 2) return { title: cleanTitle(note), sure: true }
+  // La première ligne qui a l'air d'un titre, dans les premières lignes.
+  const lines = head
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 25)
+  for (const line of lines) {
+    const clean = cleanTitle(line)
+    const letters = (clean.match(/\p{L}/gu) ?? []).length
+    if (clean.length < 6 || clean.length > 120 || clean.split(/\s+/).length < 2) continue
+    if (letters / clean.length < 0.6 || NOT_TITLE.test(clean) || clean.endsWith(':')) continue
+    return { title: clean, sure: false }
+  }
+  return { title: '', sure: false }
+}
+
+/** Un titre donné par l'IA, gardé seulement si ses mots sont ceux du document (texte ou nom du fichier) : elle n'invente pas. */
+export function titleFoundIn(title: string, text: string, fileName: string): boolean {
+  const fold = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+  const words = fold(title).match(/\p{L}{4,}/gu) ?? []
+  if (!words.length) return false
+  const hay = fold(`${text} ${fileName}`)
+  return words.filter((word) => hay.includes(word)).length / words.length >= 0.7
+}

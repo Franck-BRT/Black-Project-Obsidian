@@ -157,6 +157,11 @@ export interface LibraryDoc {
   identityToConfirm?: boolean
   /** Sa référence et sa version ont été identifiées par l'IA. */
   identityByAi?: boolean
+  /** Son titre n'a pas été lu sûrement dans le document (il vient du nom du fichier) : à confirmer, avec le titre probable lu, s'il y en a un. */
+  titleToConfirm?: boolean
+  titleProbable?: string
+  /** Son titre a été identifié par l'IA. */
+  titleByAi?: boolean
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -193,7 +198,10 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.languageToConfirm ? { langueAConfirmer: true } : {}),
     ...(doc.languageToConfirm && doc.languageProbable ? { langueProbable: doc.languageProbable } : {}),
     ...(doc.identityToConfirm ? { identiteAConfirmer: true } : {}),
-    ...(doc.identityByAi ? { identiteIdentifieePar: 'ia' } : {})
+    ...(doc.identityByAi ? { identiteIdentifieePar: 'ia' } : {}),
+    ...(doc.titleToConfirm ? { titreAConfirmer: true } : {}),
+    ...(doc.titleToConfirm && doc.titleProbable ? { titreProbable: doc.titleProbable } : {}),
+    ...(doc.titleByAi ? { titreIdentifiePar: 'ia' } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -238,7 +246,10 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(data.langueAConfirmer === true ? { languageToConfirm: true } : {}),
     ...(data.langueAConfirmer === true && isLanguage(data.langueProbable) ? { languageProbable: data.langueProbable } : {}),
     ...(data.identiteAConfirmer === true ? { identityToConfirm: true } : {}),
-    ...(data.identiteIdentifieePar === 'ia' ? { identityByAi: true } : {})
+    ...(data.identiteIdentifieePar === 'ia' ? { identityByAi: true } : {}),
+    ...(data.titreAConfirmer === true ? { titleToConfirm: true } : {}),
+    ...(data.titreAConfirmer === true && typeof data.titreProbable === 'string' && data.titreProbable.trim() ? { titleProbable: data.titreProbable.trim() } : {}),
+    ...(data.titreIdentifiePar === 'ia' ? { titleByAi: true } : {})
   }
 }
 

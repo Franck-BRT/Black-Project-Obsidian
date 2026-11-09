@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.12.0 (Black Projects 0.86.0) |
+| Version | 0.13.0 (Black Projects 0.87.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,17 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## Le titre d'un document, avec l'IA (v0.13.0, Black Projects 0.87.0)
+
+Le workflow système **« Identifier avec l'IA le titre d'un document, quand la première
+passe n'est pas sûre »** (`sys.ia.titre-documents`, actif ; *document versé*, si
+`{titreaconfirmer}` n'est pas vide), action `ia.titre-document` : le nom du fichier et le
+début du texte au modèle d'analyse, température 0, réponse JSON imposée (`title`,
+`certain`) — le titre de la page de garde, pas le nom de l'entreprise, une référence ou un
+chapitre. `readTitleAnswer` : pas certaine, rien ; guillemets ôtés ; 3 à 150 caractères ;
+au moins 70 % de ses mots (4 lettres ou plus) dans le document ou le nom du fichier — elle
+n'invente pas. Sinon, à confirmer, sans erreur.
 
 ## Les consignes de la bibliothèque, à chaque étape d'IA (v0.12.0, Black Projects 0.86.0)
 
