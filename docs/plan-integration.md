@@ -571,6 +571,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.96.0 : **modules Bibliothèque et IA** : la liste des **émetteurs** — une bibliothèque de
   plus (un code, un nom, d'autres noms) ; l'émetteur d'un document y est reconnu, s'y choisit
   (ou s'y ajoute depuis la fiche), dit « ESA — Agence spatiale européenne » ; l'IA y choisit
+- v0.96.1 : **correctif** — relancer la recherche d'un champ ne change que lui (la révision
+  relancée ne remet plus la référence ; l'IA, qui rend la référence et la version ensemble,
+  non plus)
 
 ### Étape 7 — Livrables
 

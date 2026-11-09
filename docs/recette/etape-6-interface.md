@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Correctif : relancer un champ ne change que lui (v0.96.1)
+
+- [ ] Un document « Réf. : PMP-01 / Édition 2 / Révision B » : changer la **référence** au
+      crayon (« X-9 »), puis relancer la recherche de la **révision** : la référence reste
+      « X-9 » ; l'édition, « 2 »
+- [ ] L'IA réglée, sur un document dont la version n'est pas sûre : relancer la révision ne
+      change que la révision
+- [ ] La ligne « Référence et version » relance les trois ensemble
+
 ## La liste des émetteurs (v0.96.0)
 
 - [ ] Bibliothèque : une carte **Émetteurs** ; **Nouvel émetteur** : Code « ESA », Nom

@@ -31,6 +31,8 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   alors confirmé ; le crayon de *Rangé* ouvre *Déplacer…*, celui de *Langue*, *Langue…*) ;
   le bouton à côté du crayon **relance la recherche** de ce champ dans le document — sans
   IA d'abord, puis avec l'IA si ce n'est pas sûr (son workflow système, pour ce document) ;
+  il ne change que ce champ (la révision relancée laisse la référence ; « Référence et
+  version » relance les trois) ;
   la date se choisit aussi dans un **calendrier** (le bouton à côté du champ) ;
 - **le fichier** : où il est, s'il a été copié ou laissé à sa place, son empreinte ; le
   crayon devant *Fichier* le **renomme** (dans son dossier, son extension gardée) — les liens
