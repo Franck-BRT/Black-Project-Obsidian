@@ -17,13 +17,12 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
-import { guessDocCategory, guessDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
+import { CATEGORY_TYPER, guessDocCategory, guessDocDate, type PieceTyper, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
   baseName,
   familyOf,
-  guessCategory,
   readRecord,
   recordContent,
   titleFromName,
@@ -57,6 +56,8 @@ export interface StoreDeps {
    * lu, illisible) ; absent, rien n'est lu. Pour deviner sa langue.
    */
   textOf?(name: string, bytes: Uint8Array): Promise<string | null>
+  /** Les types de pièce (le module Typage des pièces) ; absent : les catégories de la bibliothèque. */
+  typer?(): PieceTyper
   /** La ligne de la note d'un fantôme, dans la langue : où est le document (`link`), dans quel lieu (`where`). */
   ghostLine?(link: string, where: string): string
 }
@@ -179,7 +180,7 @@ export class LibraryStore {
     if (family === 'image') return {}
     const text = await this.readText(name, bytes)
     // La catégorie : donnée par celui qui dépose, dite par le document, ou le nom et le texte d'accord : sûre ; sinon à confirmer.
-    const sorted = guessDocCategory(text ?? '', name, given)
+    const sorted = guessDocCategory(text ?? '', name, given, this.deps.typer?.())
     const category: Partial<LibraryDoc> = sorted.sure
       ? { category: sorted.category }
       : { category: sorted.category, categoryToConfirm: true, ...(sorted.probable ? { categoryProbable: sorted.probable } : {}) }
@@ -434,7 +435,7 @@ export class LibraryStore {
       if (found.sure) next.date = found.date
       else Object.assign(next, { dateToConfirm: true }, found.date && found.date !== doc.date ? { dateProbable: found.date } : {})
     } else if (field === 'category') {
-      const found = guessDocCategory(text ?? '', name)
+      const found = guessDocCategory(text ?? '', name, '', this.deps.typer?.())
       delete next.categoryToConfirm
       delete next.categoryProbable
       delete next.categoryByAi
@@ -651,7 +652,7 @@ export class LibraryStore {
         size: bytes.byteLength,
         hash,
         added: this.deps.today(),
-        category: item.category || options.category || guessCategory(item.name),
+        category: item.category || options.category || (this.deps.typer?.() ?? CATEGORY_TYPER).ofName(item.name),
         reference: '',
         edition: '',
         revision: '',

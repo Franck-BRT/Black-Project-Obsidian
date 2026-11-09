@@ -13,7 +13,7 @@
  * `pnpm check:modules` le vérifie. Voir README.md pour la maintenance.
  */
 
-import { pourIntoLibrary } from '../bibliotheque'
+import { pourIntoLibrary, setPieceTyper } from '../bibliotheque'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import { modulePageOf } from '../../core/settingsPage'
@@ -60,6 +60,7 @@ import {
   allTypes as allTypesWith,
   classifyPiece as classifyWith,
   isDisabled as isDisabledWith,
+  OTHER as OTHER_TYPE,
   typeLabel as typeLabelWith,
   type CustomKeywords
 } from './types'
@@ -370,7 +371,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.7.0',
+  version: '0.8.0',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),
@@ -404,12 +405,26 @@ export const typagePiecesModule: BlackModule = {
       })
     }
     unsubscribe = context.settings.onChange((values) => configureTyping(values))
+    // La bibliothèque de documents : le « type de pièce » de chaque document, dans cette liste (vos types compris, sans les désactivés).
+    const label = (key: string, vars?: Record<string, string>) => context.i18n.t(key, vars)
+    setPieceTyper({
+      types: () => activeTypes().map((type) => ({ code: type.code, label: typeLabel(type.code, label) })),
+      ofName: (fileName) => {
+        const code = classifyPiece(fileName, '')
+        return code === OTHER_TYPE ? '' : code
+      },
+      ofText: (text) => {
+        const code = classifyPiece('', text)
+        return code === OTHER_TYPE ? '' : code
+      }
+    })
     // Le workflow système : signaler les pièces sans type reconnu, à l'import.
     registerTypingWorkflows((key, vars) => context.i18n.t(key, vars))
     context.commands.register({ id: 'exporter-types', nameKey: 'typage-pieces.command.export', run: () => exportCommand(context) })
     context.commands.register({ id: 'importer-types', nameKey: 'typage-pieces.command.import', run: () => importCommand(context) })
   },
   deactivate() {
+    setPieceTyper(null)
     unsubscribe?.()
     unsubscribe = null
     configureTyping({})

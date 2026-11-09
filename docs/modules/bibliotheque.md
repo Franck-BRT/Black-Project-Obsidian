@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.22.0 (Black Projects 0.94.0) |
+| Version | 0.23.0 (Black Projects 0.95.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,28 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## Le type de pièce, à la place de la catégorie (v0.23.0, Black Projects 0.95.0)
+
+La **catégorie** d'un document devient son **type de pièce**, et sa liste celle du [module
+Typage des pièces](typage-pieces.md) : ses types (AVIS, RC, AE, CCAP, CCAG, CCTP, CCTG, BPU,
+DPGF, DQE, MEMOIRE, FORMULAIRE, QR, PLANNING, ANNEXE, AUTRE), ceux que l'utilisateur a
+ajoutés, sans ceux qu'il a désactivés — la même que pour les pièces d'une analyse.
+
+- **La liste et ce qui la reconnaît** (`PieceTyper` : `types()`, `ofName`, `ofText`) : le
+  module Typage des pièces la donne à son activation (`setPieceTyper`) — ses mots-clés du nom
+  du fichier, puis ceux du titre, les siens et ceux de l'utilisateur ; sans lui, les
+  anciennes catégories de la bibliothèque en tiennent lieu (`CATEGORY_TYPER`).
+- **Les deux passes** ne changent pas : donné par celui qui dépose (le type d'une pièce
+  d'analyse), dit par le document (« Type de document : CCTP » ou son libellé), ou le nom du
+  fichier et le texte d'accord : sûr ; sinon à confirmer, celui que le texte suggère proposé ;
+  l'IA choisit dans la liste — par son code ou son libellé, rendu par son code.
+- **Sur la fiche** : « Type de pièce », dit avec son libellé (« CCTP — Cahier des clauses
+  techniques particulières ») ; le crayon et **Classer…** ouvrent une **liste** : « — Aucun — »,
+  les types, et celui qu'il a s'il n'y est pas (« Devis (hors de la liste des types) »,
+  gardé tel quel).
+- **Rien ne change dans les notes** : la clé `categorie` garde le code du type (une ancienne
+  catégorie y reste) ; les variables de workflow `{categorie}`, `{categorieaconfirmer}` aussi.
 
 ## Renommer le fichier (v0.22.0, Black Projects 0.94.0)
 

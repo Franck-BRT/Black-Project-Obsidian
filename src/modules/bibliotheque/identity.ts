@@ -246,13 +246,42 @@ export function categoryFromText(text: string): string {
   return best.hits >= 1 && best.hits > next.hits ? best.name : ''
 }
 
-export function guessDocCategory(text: string, fileName: string, given = ''): CategoryGuess {
+/**
+ * Les **types de pièce** d'un document : leur liste (un code, un libellé) et ce qui les
+ * reconnaît — au nom du fichier, au début du texte. Le module Typage des pièces les donne (ses
+ * types, ceux de l'utilisateur, sans les désactivés) ; sans lui, les catégories de la
+ * bibliothèque en tiennent lieu.
+ */
+export interface PieceTyper {
+  types(): readonly { code: string; label: string }[]
+  /** Le type que dit le nom du fichier ; vide si aucun. */
+  ofName(fileName: string): string
+  /** Le type que dit le début du texte ; vide si aucun. */
+  ofText(text: string): string
+}
+
+/** Sans le module Typage des pièces : les catégories de la bibliothèque. */
+export const CATEGORY_TYPER: PieceTyper = {
+  types: () => CATEGORIES.map((category) => ({ code: category.name, label: category.name })),
+  ofName: (fileName) => guessCategory(fileName),
+  ofText: (text) => categoryFromText(text)
+}
+
+/** Le code d'un type écrit par son code ou son libellé (à la casse et aux accents près) ; vide s'il n'en est pas un. */
+export function pieceTypeCode(value: string, typer: PieceTyper = CATEGORY_TYPER): string {
+  const wanted = foldText(value).trim()
+  if (!wanted) return ''
+  return typer.types().find((type) => foldText(type.code).trim() === wanted || foldText(type.label).trim() === wanted)?.code ?? ''
+}
+
+export function guessDocCategory(text: string, fileName: string, given = '', typer: PieceTyper = CATEGORY_TYPER): CategoryGuess {
   if (given.trim()) return { category: given.trim(), sure: true, probable: '' }
+  // « Type de document : CCTP » : un type de la liste (son code, son libellé, ou ses mots-clés).
   const labelled = LABELLED_CATEGORY.exec(text.slice(0, CATEGORY_HEAD))?.[1]
-  const said = labelled ? guessCategory(labelled) || labelled.trim() : ''
+  const said = labelled ? pieceTypeCode(labelled, typer) || typer.ofName(labelled) : ''
   if (said) return { category: said, sure: true, probable: '' }
-  const fromName = guessCategory(fileName)
-  const fromText = categoryFromText(text)
+  const fromName = typer.ofName(fileName)
+  const fromText = typer.ofText(text)
   if (fromName && fromName === fromText) return { category: fromName, sure: true, probable: '' }
   return { category: fromName, sure: false, probable: fromText && fromText !== fromName ? fromText : '' }
 }

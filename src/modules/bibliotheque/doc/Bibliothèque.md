@@ -23,8 +23,9 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
 ## 2. La fiche d'un document
 
 - son **titre** (tiré du nom du fichier), sa **famille** (PDF, textes, tableurs,
-  présentations, images, messages, notes, autres), sa **catégorie** — devinée au nom du
-  fichier (CCTP, RC, Plan, Devis, Compte rendu…), ou le type de pièce donné par l'analyse —,
+  présentations, images, messages, notes, autres), son **type de pièce** — reconnu au nom du
+  fichier et au début du texte (CCTP, RC, BPU… : la liste du module *Typage des pièces*, vos
+  types compris), ou donné par l'analyse —,
   sa référence, son édition, sa révision, sa date, son émetteur, ses étiquettes : **Classer…**
   pour tout reprendre, ou le **crayon** à gauche d'un champ pour ne modifier que lui (il est
   alors confirmé ; le crayon de *Rangé* ouvre *Déplacer…*, celui de *Langue*, *Langue…*) ;
@@ -37,8 +38,8 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
 - **d'où il vient** : chaque origine — l'analyse, l'import —, un clic y mène ;
 - **ses versions** : les précédentes et les suivantes, reliées.
 
-Ces quatre parties sont **repliées** d'origine : leur en-tête en dit l'essentiel (la
-catégorie et la version, le nom du fichier, d'où il vient, combien d'autres versions) ; un
+Ces quatre parties sont **repliées** d'origine : leur en-tête en dit l'essentiel (le
+type de pièce et la version, le nom du fichier, d'où il vient, combien d'autres versions) ; un
 clic les déplie. Ce que vous dépliez le reste, le temps de la session.
 
 ## 3. Les versions
@@ -53,7 +54,7 @@ plus récent ; le filtre **Dernières versions** les cache.
 
 Menu **Bibliothèque** (ou sa tuile, ou le tableau de bord) : les chiffres (documents,
 taille, ajoutés cette semaine, versions à relier), une carte par document, le plus récent
-d'abord ; une recherche (titre, fichier, catégorie, référence, origine) et des filtres :
+d'abord ; une recherche (titre, fichier, type de pièce, référence, origine) et des filtres :
 par famille, par origine, dernières versions, versions à relier, fichiers introuvables.
 
 **Retirer de la bibliothèque** met la fiche de côté (dossier `_retirés`), avec le fichier
@@ -61,7 +62,7 @@ s'il avait été copié ; rien n'est effacé, et une pièce d'analyse n'est pas 
 
 **Affichage et regroupement** : sur la page des documents, en **cartes**, en **liste**
 ou en **tableau** (taille, date d'ajout, version), regroupés par **origine** (l'analyse,
-l'import), **famille**, **catégorie** ou **mois d'ajout** — chaque groupe est une section
+l'import), **famille**, **type de pièce** ou **mois d'ajout** — chaque groupe est une section
 qu'un clic replie. Les prompts et les personas se regroupent par catégorie ou par
 favoris, en cartes ou en liste.
 
@@ -83,7 +84,7 @@ l'original (« Rétablir l'original ») ; pas les supprimer.
 l'ouverture d'Obsidian et chaque jour à 8 h, rangés dans `_fichiers` ; un fichier déjà
 dans la bibliothèque est mis de côté dans `_retirés`. Deux rappels, désactivés d'origine,
 chaque lundi : les **versions à confirmer** et les **documents à classer** (sans
-catégorie).
+type de pièce).
 
 | Workflow système | Quand | D'origine |
 | --- | --- | --- |
@@ -104,8 +105,8 @@ Les déclencheurs, pour vos propres workflows :
   `workflows` —, ce qu'il en dit, les fichiers, combien, leurs **extensions** et les
   fichiers **non lisibles** par l'application) ;
 - **Bibliothèque : documents versés** : une fois par versement (combien, les titres) ;
-- **Bibliothèque : document versé** : un par document (titre, famille, catégorie,
-  fichier, module d'origine, son **extension** — `pdf` —, **lisible** — `oui` ou `non` — et
+- **Bibliothèque : document versé** : un par document (titre, famille, type de pièce
+  — `{categorie}` —, fichier, module d'origine, son **extension** — `pdf` —, **lisible** — `oui` ou `non` — et
   comment l'application le lit — « texte lu », « image : montrée, son texte n'est pas lu »,
   « format non lu »…). Par exemple : Si *Lisible par l'application* est `non`, Prévenir
   « {fichier} (.{extension}) n'est pas lu : {lecture} ».
@@ -158,11 +159,12 @@ celui du nom du fichier, **à confirmer** : la fiche propose le titre lu au déb
 document (**Prendre « … »**), **Garder le titre actuel**, ou **Classer…** ; l'IA, si elle
 est réglée, le cherche d'abord. Filtre *Titre à confirmer*.
 
-**La catégorie** aussi : donnée par l'analyse (le type d'une pièce), dite par le document
-(« Type de document : »), ou le nom du fichier et le texte d'accord : elle est sûre. Sinon
-celle du nom du fichier reste, **à confirmer** : la fiche propose celle que le texte suggère
-(**Prendre « CCTP »**), **Garder la catégorie actuelle**, ou **Classer…** ; l'IA, si elle
-est réglée, choisit d'abord dans la liste des catégories. Plusieurs choses à confirmer : un
+**Le type de pièce** aussi (l'ancienne « catégorie ») — dans la liste du module *Typage des
+pièces*, vos types compris : donné par l'analyse (le type d'une pièce), dit par le document
+(« Type de document : »), ou le nom du fichier et le texte d'accord : il est sûr. Sinon
+celui du nom du fichier reste, **à confirmer** : la fiche propose celui que le texte suggère
+(**Prendre « CCTP »**), **Garder le type actuel**, ou **Classer…** ; l'IA, si elle
+est réglée, choisit d'abord dans la liste des types. Le crayon du champ ouvre la liste. Plusieurs choses à confirmer : un
 seul encadré « À confirmer (n) » les rassemble sur la fiche.
 
 **Les étiquettes** aussi : dites par le document (« Mots-clés : », « Étiquettes : »), elles

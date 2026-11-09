@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.94.0)
+## Aujourd'hui (version 0.95.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -139,7 +139,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   Skill), et le logigramme la montre sur fond turquoise —, avec **Ajouter les exemples** pour démarrer. « Interroger le dossier »
   propose vos prompts et un persona ; « Relire l'exigence » aussi un persona ; l'action de
   workflow « Demander à l'IA » les prend par leur nom. Chaque bibliothèque se regroupe en
-  sections repliables (documents : par origine, famille, catégorie, mois d'ajout ; prompts
+  sections repliables (documents : par origine, famille, type de pièce, mois d'ajout ; prompts
   et personas : par catégorie ou favoris), en cartes, en liste ou en tableau. **Nouvelle
   bibliothèque** en ajoute une autre de la même sorte (des normes, des modèles, un
   client…), dans son propre dossier ; l'une est **par défaut** : ce qui arrive sans lieu
@@ -163,9 +163,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   l'essentiel) : un clic les déplie. Quand la détection de la langue n'est pas sûre et que
   l'IA est réglée, l'IA l'identifie (« identifiée par l'IA ») ; sinon elle reste à confirmer.
   De même pour le **titre** (« Titre : … » au début du document ; sinon celui du nom du
-  fichier, à confirmer — « Prendre « … » » sur la fiche), pour la **catégorie** (donnée par
-  l'analyse, ou le nom du fichier et le texte d'accord ; sinon à confirmer, l'IA choisissant
-  dans la liste), pour les **étiquettes** (« Mots-clés : … » ; sinon les mots qui reviennent
+  fichier, à confirmer — « Prendre « … » » sur la fiche), pour le **type de pièce** (l'ancienne
+  catégorie, choisi dans la liste du module *Typage des pièces*, vos types compris : donné
+  par l'analyse, ou le nom du fichier et le texte d'accord ; sinon à confirmer, l'IA
+  choisissant dans la liste), pour les **étiquettes** (« Mots-clés : … » ; sinon les mots qui reviennent
   le plus, proposés — l'IA en donne de 3 à 6, celles déjà en usage d'abord), pour la **date** du document (« Date : … », « Toulouse, le … » ;
   sinon la première date du texte, hors dates limites, proposée), pour l'**émetteur** (« Émetteur :
   … », « Émis par… » ; sinon l'organisme lu en tête, à confirmer) et pour la **référence** et la

@@ -18,7 +18,7 @@
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
-import type { Ui } from '../../core/ports'
+import type { Choice, Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
 import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, runSystemWorkflow, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
@@ -39,8 +39,8 @@ export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport, ResearchField } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
-import { docDateLabel, parseDocDate } from './identity'
-export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess } from './identity'
+import { CATEGORY_TYPER, docDateLabel, parseDocDate, type PieceTyper } from './identity'
+export { categoryFromText, dateFoundIn, docDateLabel, guessDocCategory, guessDocDate, parseDocDate, guessIdentity, guessIssuer, guessTags, guessTitle, IDENTITY_HEAD, issuerFoundIn, tagsFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type DateGuess, type IdentityGuess, type IssuerGuess, type TagsGuess, type TitleGuess, type PieceTyper, pieceTypeCode } from './identity'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -278,12 +278,29 @@ export async function setCategoryByAi(record: string, category: string): Promise
   return active ? active.store.setCategory(record, category, true) : null
 }
 
-/** Pour l'IA : les catégories à choisir — celles que la bibliothèque connaît, et celles déjà en usage. */
+/**
+ * Les types de pièce d'un document (le module Typage des pièces les donne ; sans lui, les
+ * catégories de la bibliothèque) : leur liste, et ce qui les reconnaît.
+ */
+let pieceTyper: PieceTyper | null = null
+
+/** Pour le module Typage des pièces : ses types (`null` : plus aucun, les catégories de la bibliothèque reprennent). */
+export function setPieceTyper(typer: PieceTyper | null): void {
+  pieceTyper = typer
+}
+
+/** Les types de pièce à choisir : un code, un libellé. */
+export const libraryPieceTypes = (): readonly { code: string; label: string }[] => (pieceTyper ?? CATEGORY_TYPER).types()
+
+/** Un type de pièce en mots : « CCTP — Cahier des clauses techniques particulières » ; un code hors de la liste, tel quel. */
+export function pieceTypeText(code: string): string {
+  const type = libraryPieceTypes().find((each) => each.code === code)
+  return type && type.label && type.label !== type.code ? `${type.code} — ${type.label}` : code
+}
+
+/** Pour l'IA : les types de pièce à choisir (leurs codes). */
 export async function libraryCategories(): Promise<string[]> {
-  const used = active ? (await active.store.all()).map((doc) => doc.category).filter(Boolean) : []
-  const seen = new Map<string, string>()
-  for (const name of [...CATEGORIES.map((category) => category.name), ...used]) if (!seen.has(name.toLowerCase())) seen.set(name.toLowerCase(), name)
-  return [...seen.values()]
+  return libraryPieceTypes().map((type) => type.code)
 }
 
 /** Pour l'IA : la date qu'elle a identifiée (vide : aucune) — plus à confirmer, et on sait qui l'a dit. */
@@ -425,7 +442,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.22.0',
+  version: '0.23.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -449,6 +466,7 @@ export const bibliothequeModule: BlackModule = {
       notesHeading: () => t('bibliotheque.notes'),
       ghostLine: (link, where) => t('bibliotheque.ghost.line', { link, where }),
       textOf: async (name, bytes) => (textReader ? textReader(name, bytes) : null),
+      typer: () => pieceTyper ?? CATEGORY_TYPER,
       // Les prompts et les personas, rangés sous la bibliothèque (ou ailleurs) : pas des documents.
       skip: () => [...shelves('prompt'), ...shelves('persona'), ...shelves('skill')].map((shelf) => shelf.folder),
       shelves: () => shelves('document'),
@@ -642,6 +660,16 @@ export const bibliothequeModule: BlackModule = {
       return report
     }
 
+    /** Les types de pièce à choisir : « Aucun », ceux de la liste, et celui qu'il a s'il n'y est pas (gardé, dit). */
+    const typeOptions = (current: string): Choice[] => {
+      const types = libraryPieceTypes()
+      return [
+        { value: '', label: t('bibliotheque.category.unset') },
+        ...types.map((type) => ({ value: type.code, label: pieceTypeText(type.code) })),
+        ...(current && !types.some((type) => type.code === current) ? [{ value: current, label: t('bibliotheque.category.outside', { category: current }) }] : [])
+      ]
+    }
+
     const classify = async (record: string): Promise<void> => {
       const doc = await store.load(record)
       if (!doc) return
@@ -650,7 +678,7 @@ export const bibliothequeModule: BlackModule = {
         intro: t('bibliotheque.classify.intro'),
         fields: [
           { kind: 'text', key: 'title', label: t('bibliotheque.field.title'), value: doc.title, required: true },
-          { kind: 'text', key: 'category', label: t('bibliotheque.field.category'), value: doc.category, description: t('bibliotheque.classify.categories', { list: CATEGORIES.map((each) => each.name).join(', ') }) },
+          { kind: 'choice', key: 'category', label: t('bibliotheque.field.category'), value: doc.category, description: t('bibliotheque.classify.categories'), options: typeOptions(doc.category) },
           { kind: 'text', key: 'reference', label: t('bibliotheque.field.reference'), value: doc.reference, placeholder: 'CCTP-2026-118' },
           { kind: 'text', key: 'edition', label: t('bibliotheque.field.edition'), value: doc.edition, placeholder: '2' },
           { kind: 'text', key: 'revision', label: t('bibliotheque.field.revision'), value: doc.revision, placeholder: 'B' },
@@ -796,7 +824,11 @@ export const bibliothequeModule: BlackModule = {
       }
       const values = await platform.ui.askForm({
         title: t('bibliotheque.edit.title', { field: label, title: doc.title }),
-        fields: [{ kind: 'text', key: 'value', label, value: current, ...(key === 'title' ? { required: true } : {}), ...(help[key] ? { description: help[key] } : {}), ...(key === 'date' ? { calendar: true, placeholder: '2026-03-12' } : {}) }],
+        fields: [
+          key === 'category'
+            ? { kind: 'choice', key: 'value', label, value: current, description: t('bibliotheque.classify.categories'), options: typeOptions(current) }
+            : { kind: 'text', key: 'value', label, value: current, ...(key === 'title' ? { required: true } : {}), ...(help[key] ? { description: help[key] } : {}), ...(key === 'date' ? { calendar: true, placeholder: '2026-03-12' } : {}) }
+        ],
         submit: t('bibliotheque.edit.submit')
       })
       if (!values) return
@@ -815,7 +847,10 @@ export const bibliothequeModule: BlackModule = {
         }
         await store.setDate(record, date)
         shown = date ? docDateLabel(date, active?.locale) : ''
-      } else if (key === 'category') await store.setCategory(record, value)
+      } else if (key === 'category') {
+        await store.setCategory(record, value)
+        shown = value ? pieceTypeText(value) : ''
+      }
       else if (key === 'issuer') await store.setIssuer(record, value)
       else {
         const tags = [...new Set(value.split(',').map((each) => each.trim()).filter(Boolean))]
@@ -912,6 +947,7 @@ export const bibliothequeModule: BlackModule = {
         if (doc) platform.notifier.notify(doc.category ? t('bibliotheque.category.confirmed', { category: doc.category }) : t('bibliotheque.category.confirmed.none', { title: doc.title }), 5000)
       },
       editField,
+      typeText: pieceTypeText,
       researchField,
       renameFile,
       confirmDate: async (record, date) => {

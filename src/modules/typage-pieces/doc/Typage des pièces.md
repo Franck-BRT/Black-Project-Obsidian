@@ -25,6 +25,10 @@ trouve « Annexes »). Vos mots-clés passent avant ceux du module.
 
 *(ajouté)* : un type ou un mot-clé à vous ; *(désactivé)* : un type désactivé.
 
+Ces types servent aussi à la **bibliothèque de documents** : le champ « Type de pièce » de
+chaque document y est reconnu et s'y choisit, vos types compris (un type désactivé n'y est
+plus proposé).
+
 ## Vos types
 
 « Types de pièces personnalisés » ajoute un type avec un code court et un libellé

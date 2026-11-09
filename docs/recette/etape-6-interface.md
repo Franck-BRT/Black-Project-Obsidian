@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le type de pièce (v0.95.0)
+
+- [ ] Fiche d'un document : le champ « Type de pièce » (et non plus « Catégorie »), dit avec
+      son libellé (« CCTP — Cahier des clauses techniques particulières »)
+- [ ] Verser `Devis antenne.txt` qui commence par « Cahier des clauses techniques
+      particulières… » : « Type de pièce à confirmer : le texte du document suggère
+      « CCTP » » — **Prendre « CCTP »**, **Pas de type de pièce**, **Classer…**
+- [ ] Le crayon de « Type de pièce » (et **Classer…**) : une liste — « — Aucun — », les types
+      du module Typage des pièces (AVIS… AUTRE) ; un type ajouté dans *Typage des pièces* y
+      apparaît, un type désactivé non
+- [ ] Un document à une ancienne catégorie (« Devis ») : elle reste, montrée « Devis (hors
+      de la liste des types) » dans la liste
+- [ ] « Regrouper par › Type de pièce » ; le filtre « Type de pièce à confirmer »
+
 ## Renommer le fichier (v0.94.0)
 
 - [ ] Fiche d'un document, *Le fichier* dépliée : un bouton crayon devant *Fichier*

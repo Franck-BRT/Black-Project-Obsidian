@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `typage-pieces` |
-| Version | 0.7.0 (Black Projects 0.64.0) |
+| Version | 0.8.0 (Black Projects 0.95.0) |
 | Emplacement | `src/modules/typage-pieces/` |
 | Interface publique | `src/modules/typage-pieces/index.ts` |
 | Guide de maintenance | [`src/modules/typage-pieces/README.md`](../../src/modules/typage-pieces/README.md) |
@@ -115,6 +115,14 @@ onTypingChange((state) => …)             // suivre les renommages, par exemple
 
 L'analyse d'appels d'offres suit `onTypingChange` : quand un code de type est renommé,
 elle retype aussitôt les pièces de toutes ses analyses.
+
+## Le type de pièce des documents de la bibliothèque (v0.8.0, Black Projects 0.95.0)
+
+À son activation, le module donne à la [bibliothèque](bibliotheque.md) sa liste de types
+(`setPieceTyper` : les types actifs, leurs libellés, vos types compris) et ce qui les
+reconnaît (`classifyPiece` sur le nom du fichier, puis sur le début du texte ; « autre
+pièce » n'est pas une reconnaissance). Le champ « Type de pièce » de chaque document s'y
+choisit ; désactivé, le module retire sa liste.
 
 ## Réglages (`modules['typage-pieces']`)
 

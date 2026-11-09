@@ -99,7 +99,7 @@ describe('verser dans la bibliothèque', () => {
     await start(platform)
     await platform.fs.writeText('Dossiers/Note de calcul.md', '# Calcul')
     const report = await pourIntoLibrary([{ name: 'Note de calcul.md', path: 'Dossiers/Note de calcul.md' }], { module: 'bibliotheque', label: 'Versé à la main' })
-    expect(report?.added[0]).toMatchObject({ file: 'Dossiers/Note de calcul.md', copied: false, family: 'note', category: 'Note de calcul' })
+    expect(report?.added[0]).toMatchObject({ file: 'Dossiers/Note de calcul.md', copied: false, family: 'note', category: '' })
     expect([...platform.files.keys()].some((path) => path.startsWith('Bibliothèque/_fichiers/'))).toBe(false)
   })
 
@@ -157,7 +157,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}:${stat.value}`)).toEqual(['Documents:2', 'Taille:2 o', 'Ajoutés cette semaine:2', 'Versions à relier:0'])
     expect(view.filters?.map((filter) => filter.id)).toEqual(['famille-sheet', 'famille-image', 'langue-a-confirmer', 'identite-a-confirmer', 'titre-a-confirmer', 'emetteur-a-confirmer', 'categorie-a-confirmer', 'etiquettes-a-confirmer', 'date-a-confirmer', 'de-bibliotheque', 'a-jour'])
     const card = cardsOf(view).find((each) => each.title === 'Devis 2026')!
-    expect(card.badges?.map((badge) => badge.label)).toEqual(['Tableurs', 'Devis', 'Langue à confirmer'])
+    expect(card.badges?.map((badge) => badge.label)).toEqual(['Tableurs', 'Langue à confirmer'])
     expect(card.text).toBe('Bibliothèque de documents — Versé à la main')
     const section = await views.homeSections().find((each) => each.id === 'bibliotheque.home')!.load()
     expect(section?.subtitle).toBe('2 document(s)')
@@ -188,7 +188,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     })
     expect(fiche.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')).not.toHaveProperty('collapsed')
     expect(fiche.blocks.flatMap((block) => (block.kind === 'section' && block.id !== 'bibliotheque.document.a-confirmer' ? [[block.id, block.title, block.subtitle ?? '', block.collapsed]] : []))).toEqual([
-      ['bibliotheque.document.identite', 'Identification', 'Courrier', true],
+      ['bibliotheque.document.identite', 'Identification', '', true],
       ['bibliotheque.document.fichier', 'Le fichier', 'Courrier acheteur.pdf', true],
       ['bibliotheque.document.origines', 'D’où il vient (1)', "Analyse d'appels d'offres — Station sol", true],
       ['bibliotheque.document.versions', 'Versions', 'Aucune autre version reliée.', true]
@@ -243,7 +243,7 @@ describe('ce que les modules versent', () => {
 })
 
 describe('la page des documents : vues et regroupements', () => {
-  it('regrouper par origine (d’origine), famille, catégorie, mois d’ajout, ou aucun ; une section par groupe', async () => {
+  it('regrouper par origine (d’origine), famille, type de pièce, mois d’ajout, ou aucun ; une section par groupe', async () => {
     const platform = memoryPlatform()
     const { page } = await start(platform)
     await pourIntoLibrary([{ name: 'Devis 2026.xlsx', bytes: enc('x') }, { name: 'CCTP lot 2.pdf', bytes: enc('y') }], { module: 'bibliotheque', label: 'Versé à la main' })
@@ -252,7 +252,7 @@ describe('la page des documents : vues et regroupements', () => {
     let view = await page('bibliotheque.documents').load()
     expect(view.layouts).toEqual(['cards', 'list', 'table'])
     expect(view.grouping).toMatchObject({ label: 'Regrouper par', current: 'origine' })
-    expect(view.grouping!.options.map((option) => option.label)).toEqual(['Origine', 'Famille', 'Catégorie', 'Langue', 'Mois d’ajout', 'Répertoire', 'Aucun'])
+    expect(view.grouping!.options.map((option) => option.label)).toEqual(['Origine', 'Famille', 'Type de pièce', 'Langue', 'Mois d’ajout', 'Répertoire', 'Aucun'])
     expect(sections(view)).toEqual(['Bibliothèque de documents — Versé à la main (2 document(s))', 'Exigences — Import d’exigences (Plan.pdf) (1 document(s))'])
     const regroup = async (id: string) => {
       await view.grouping!.options.find((option) => option.id === id)!.run()
@@ -261,7 +261,8 @@ describe('la page des documents : vues et regroupements', () => {
     await regroup('famille')
     expect(sections(view)).toEqual(['PDF (2 document(s))', 'Tableurs (1 document(s))'])
     await regroup('categorie')
-    expect(sections(view)).toEqual(['CCTP (1 document(s))', 'Devis (1 document(s))', 'Plan (1 document(s))'])
+    // Les types de pièce (le module Typage des pièces) : « Devis », « Plan » n'en sont pas.
+    expect(sections(view)).toEqual(['CCTP (1 document(s))', 'Sans type de pièce (2 document(s))'])
     await regroup('mois')
     expect(sections(view)).toHaveLength(1)
     await regroup('aucun')

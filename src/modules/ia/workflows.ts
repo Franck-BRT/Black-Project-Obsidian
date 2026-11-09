@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, dateFoundIn, libraryCategories, libraryDateLabel, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, dateFoundIn, libraryDateLabel, libraryPieceTypes, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -124,16 +124,21 @@ const CATEGORY_SCHEMA = {
 }
 
 /**
- * La catégorie que l'IA a dite : pas certaine, `null` ; certaine et vide : aucune (`''`) ;
- * sinon, une des catégories proposées (à la casse près), écrite comme elle — rien d'autre.
+ * Le type de pièce que l'IA a dit : pas certaine, `null` ; certaine et vide : aucun (`''`) ;
+ * sinon, un des types proposés — par son code ou son libellé (à la casse près, « CCTP
+ * (Cahier…) » aussi) —, rendu par son code ; rien d'autre.
  */
-export function readCategoryAnswer(answer: unknown, categories: readonly string[]): string | null {
+export function readCategoryAnswer(answer: unknown, types: readonly (string | { code: string; label: string })[]): string | null {
   if (typeof answer !== 'object' || answer === null) return null
   const reply = answer as { category?: unknown; certain?: unknown }
   if (reply.certain !== true || typeof reply.category !== 'string') return null
-  const wanted = reply.category.replace(/^["«“\s]+|["»”\s.]+$/g, '').trim().toLowerCase()
+  const clean = (value: string) => value.replace(/^["«“\s]+|["»”\s.]+$/g, '').trim().toLowerCase()
+  const wanted = clean(reply.category)
   if (!wanted) return ''
-  return categories.find((category) => category.toLowerCase() === wanted) ?? null
+  const listed = types.map((type) => (typeof type === 'string' ? { code: type, label: type } : type))
+  const found = (value: string) => listed.find((type) => clean(type.code) === value || clean(type.label) === value)
+  // « CCTP (Cahier…) », « CCTP — Cahier… » : le code, devant.
+  return (found(wanted) ?? found(clean(wanted.split(/\s+[(—–-]\s*/)[0] ?? '')))?.code ?? null
 }
 
 const DATE_SCHEMA = {
@@ -305,12 +310,12 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       const text = ((await libraryDocText(record)) ?? '').trim()
       if (!text) return say('ia.wf.category.noText', { title: doc.title })
       const fileName = doc.file.slice(doc.file.lastIndexOf('/') + 1)
-      const categories = await libraryCategories()
+      const categories = libraryPieceTypes()
       let answer: unknown
       try {
         answer = await ai.chatJson<unknown>({
           messages: [
-            { role: 'system', content: t('ia.wf.category.system', { list: categories.join(', ') }) },
+            { role: 'system', content: t('ia.wf.category.system', { list: categories.map((type) => (type.label && type.label !== type.code ? `${type.code} (${type.label})` : type.code)).join(', ') }) },
             { role: 'user', content: `${t('ia.wf.identity.file', { name: fileName })}\n\n${text.slice(0, IDENTITY_HEAD)}` }
           ],
           temperature: 0,

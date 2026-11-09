@@ -565,6 +565,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.94.0 : **module Bibliothèque** : **renommer le fichier** d'un document depuis sa fiche
   (dans son dossier, l'extension gardée) ; les liens vers lui suivent dans tout le coffre —
   sa fiche, la note de sa pièce, celle de l'analyse… (`FileSystem.allFiles`)
+- v0.95.0 : **modules Bibliothèque, Typage des pièces, IA** : la **catégorie** des documents
+  devient leur **type de pièce**, dans la liste du module Typage des pièces (vos types
+  compris) ; une liste à choisir sur la fiche ; l'IA y choisit
 
 ### Étape 7 — Livrables
 

@@ -72,7 +72,7 @@ describe('modifier un champ de la fiche', () => {
       ['revision', 'edit:Modifier : Révision', `refresh:${R}Révision`],
       ['date', 'edit:Modifier : Date du document', `refresh:${R}Date du document`],
       ['identity', 'edit:Modifier : Référence et version', `refresh:${R}Référence et version`],
-      ['category', 'edit:Modifier : Catégorie', `refresh:${R}Catégorie`],
+      ['category', 'edit:Modifier : Type de pièce', `refresh:${R}Type de pièce`],
       ['issuer', 'edit:Modifier : Émetteur', `refresh:${R}Émetteur`],
       ['tags', 'edit:Modifier : Étiquettes', `refresh:${R}Étiquettes`]
     ])
