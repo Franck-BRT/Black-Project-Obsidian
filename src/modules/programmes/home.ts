@@ -206,7 +206,6 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
   const { done, total, current } = advance(project)
   const next = project.phases.find((phase) => phase.status === 'a-venir')
   const stats: Stat[] = [
-    { label: t('programmes.project.type'), value: project.typeName || '—', icon: 'grid' },
     { label: t('programmes.project.advanceLabel'), value: t('programmes.project.advance', { done, total }), icon: 'check', ...(done === total && total ? { tone: 'success' as const } : {}) },
     { label: t('programmes.project.currentLabel'), value: current.map((phase) => phase.name).join(', ') || (next ? t('programmes.project.next', { name: next.name }) : '—'), icon: 'play' },
     { label: t('programmes.fact.affaires'), value: String(affaires.length), icon: 'building' }
@@ -304,7 +303,6 @@ function typeStages(deps: HomeDeps, type: ProjectType, editing: boolean): Journe
         color: phase.color,
         ...(phase.kind !== FREE_KIND ? { caption: kindLabel(t, phase.kind) } : {}),
         ...(phase.description ? { detail: phase.description } : {}),
-        progress: 'current',
         ...(editing ? { open: { id: 'edit', label: t('programmes.type.phase.edit'), tooltip: t('programmes.type.phase.edit'), run: () => deps.editTypePhase(type.id, phase.id) }, tools } : {})
       }
     }),

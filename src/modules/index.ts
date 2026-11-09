@@ -14,5 +14,6 @@ import { iaModule } from './ia'
 import { workflowsModule } from './workflows'
 import { lectureFichiersModule } from './lecture-fichiers'
 import { typagePiecesModule } from './typage-pieces'
+import { programmesModule } from './programmes'
 
-export const MODULES: readonly BlackModule[] = [lectureFichiersModule, typagePiecesModule, bibliothequeModule, exigencesModule, iaModule, workflowsModule, aoModule]
+export const MODULES: readonly BlackModule[] = [lectureFichiersModule, typagePiecesModule, bibliothequeModule, exigencesModule, iaModule, workflowsModule, programmesModule, aoModule]

@@ -32,6 +32,7 @@ describe('documentation des modules', () => {
       'Modules/Exigences.md',
       'Modules/IA.md',
       'Modules/Workflows.md',
+      'Modules/Programmes.md',
       "Modules/Analyse d'appels d'offres.md"
     ])
     for (const page of pages) {
@@ -62,7 +63,7 @@ describe('documentation des modules', () => {
   it('s’écrit dans le coffre', async () => {
     const platform = memoryPlatform()
     const report = await writeDocumentation(platform.fs, 'Black Projects/Documentation', build())
-    expect(report.created).toHaveLength(9)
+    expect(report.created).toHaveLength(10)
     expect(await platform.fs.exists('Black Projects/Documentation/Modules/Lecture de fichiers.md')).toBe(true)
   })
 })

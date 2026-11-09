@@ -1,0 +1,409 @@
+// Copyright © 2026 Black Room Technologies. Tous droits réservés.
+// Logiciel propriétaire — voir le fichier LICENSE.
+
+/**
+ * Module **Programmes** : des **programmes**, leurs **projets**, leurs **affaires**. Un projet
+ * suit les **phases** de son **type** (que l'utilisateur dessine : des étapes qui se suivent,
+ * des phases en parallèle) ; une phase peut être celle d'un module — l'analyse d'un appel
+ * d'offres est une phase d'un projet, que le module AO mène.
+ */
+
+import { localToday } from '../../core/dates'
+import { fillTemplate } from '../../core/docs'
+import page from './doc/Programmes.md'
+import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
+import type { Choice, FormField } from '../../core/ports'
+import { phaseKinds, type PhaseContext } from './kinds'
+import { AFFAIRE_STATUSES, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType } from './model'
+import { programmePageOf, projectPageOf, registerProgrammesHome, typePageOf, TYPES_PAGE } from './home'
+import { AlreadyThere, ProgrammeStore } from './store'
+import { addParallel, addStage, copyType, movePhase, newPhase, newType, readTypes, removePhase, TYPES_KEY, updatePhase } from './types'
+import { programmesEn, programmesFr } from './i18n'
+
+// ── Interface publique ──────────────────────────────────────────────────────────────
+export { registerPhaseKind, phaseKinds, type PhaseContext, type PhaseKind } from './kinds'
+export { addParallel, addStage, AO_KIND, movePhase, removePhase, starterTypes } from './types'
+export { PROGRAMMES_PAGE, PROJECT_PAGE, phasePageOf, projectPageOf, programmePageOf } from './home'
+export type { Affaire, PhaseStatus, Programme, Project, ProjectPhase, ProjectType } from './model'
+
+export const PROGRAMMES = 'programmes'
+
+/** Le dossier des programmes, dans le coffre. */
+const FOLDER_KEY = 'dossier'
+const DEFAULT_FOLDER = 'Programmes'
+
+const folderField: TextField = {
+  kind: 'text',
+  key: FOLDER_KEY,
+  nameKey: 'programmes.setting.folder',
+  descKey: 'programmes.setting.folder.desc',
+  tooltipKey: 'programmes.setting.folder.tip',
+  defaultValue: DEFAULT_FOLDER,
+  normalize: (input) => input.trim().replace(/^\/+|\/+$/g, '')
+}
+
+let active: { store: ProgrammeStore } | null = null
+
+/** Les programmes, pour les autres modules ; `null` sans le module. */
+export const programmesStore = (): ProgrammeStore | null => active?.store ?? null
+
+export const programmesModule: BlackModule = {
+  id: PROGRAMMES,
+  nameKey: 'programmes.name',
+  descriptionKey: 'programmes.description',
+  version: '0.1.0',
+  requires: [],
+  texts: { fr: programmesFr, en: programmesEn },
+  settingsFields: [folderField],
+  docs: ({ folder }) => [{ path: 'Modules/Programmes.md', content: fillTemplate(page, folder) }],
+  activate(context: ModuleContext) {
+    const { platform, settings, i18n, views } = context
+    const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
+    const ui = platform.ui
+    const notify = (message: string, ms = 6000) => platform.notifier.notify(message, ms)
+    const store = new ProgrammeStore({
+      fs: platform.fs,
+      yaml: platform.yaml,
+      root: () => (typeof settings.get()[FOLDER_KEY] === 'string' && (settings.get()[FOLDER_KEY] as string).trim()) || DEFAULT_FOLDER,
+      today: localToday,
+      notesHeading: () => t('programmes.notes')
+    })
+    active = { store }
+    const show = (page: string) => context.showPage?.(page)
+    const types = () => readTypes(settings.get(), t)
+    const saveTypes = (next: ProjectType[]) => settings.save({ ...settings.get(), [TYPES_KEY]: next })
+    const changed = () => views?.changed?.()
+
+    const colorChoices: Choice[] = TILE_COLORS.map((color) => ({ value: color, label: t(`programmes.color.${color}`) }))
+    const iconChoices: Choice[] = PHASE_ICONS.map((icon) => ({ value: icon, label: t(`programmes.icon.${icon}`) }))
+    const kindChoices = (): Choice[] => [
+      { value: FREE_KIND, label: t('programmes.kind.libre'), description: t('programmes.kind.libre.desc') },
+      ...phaseKinds().map((kind) => ({ value: kind.id, label: kind.label, ...(kind.description ? { description: kind.description } : {}) }))
+    ]
+    const nameField = (key: string, label: string, value = ''): FormField => ({ kind: 'text', key, label, required: true, value })
+
+    // ── Programmes ──────────────────────────────────────────────────────────────
+    const newProgramme = async (): Promise<string | null> => {
+      const values = await ui.askForm({
+        title: t('programmes.programme.new'),
+        intro: t('programmes.programme.new.intro', { folder: store.root }),
+        fields: [
+          nameField('name', t('programmes.field.name')),
+          { kind: 'text', key: 'code', label: t('programmes.field.code'), placeholder: t('programmes.field.code.placeholder') },
+          { kind: 'textarea', key: 'description', label: t('programmes.field.description') },
+          { kind: 'choice', key: 'color', label: t('programmes.field.color'), options: colorChoices, value: 'indigo' },
+          { kind: 'choice', key: 'icon', label: t('programmes.field.icon'), options: iconChoices, value: 'folder' }
+        ],
+        submit: t('programmes.programme.create'),
+        validate: (entered) => (safeName(entered.name ?? '') ? null : t('programmes.field.name.invalid'))
+      })
+      if (!values) return null
+      const name = safeName(values.name ?? '')
+      try {
+        const programme = await store.createProgramme(name, {
+          code: (values.code ?? '').trim(),
+          description: (values.description ?? '').trim(),
+          color: TILE_COLORS.includes(values.color as never) ? (values.color as ProjectType['color']) : 'indigo',
+          icon: PHASE_ICONS.includes(values.icon as never) ? (values.icon as ProjectType['icon']) : 'folder'
+        })
+        notify(t('programmes.programme.created', { name }))
+        show(programmePageOf(programme.path))
+        return programme.path
+      } catch (error) {
+        if (error instanceof AlreadyThere) {
+          notify(t('programmes.exists', { name }), 8000)
+          return null
+        }
+        throw error
+      }
+    }
+
+    const editProgramme = async (path: string): Promise<void> => {
+      const programme = await store.programme(path)
+      if (!programme) return
+      const values = await ui.askForm({
+        title: t('programmes.programme.edit.title', { name: programme.name }),
+        fields: [
+          { kind: 'text', key: 'code', label: t('programmes.field.code'), value: programme.code },
+          { kind: 'textarea', key: 'description', label: t('programmes.field.description'), value: programme.description },
+          { kind: 'choice', key: 'color', label: t('programmes.field.color'), options: colorChoices, value: programme.color },
+          { kind: 'choice', key: 'icon', label: t('programmes.field.icon'), options: iconChoices, value: programme.icon }
+        ],
+        submit: t('programmes.save')
+      })
+      if (!values) return
+      await store.updateProgramme(path, {
+        code: (values.code ?? '').trim(),
+        description: (values.description ?? '').trim(),
+        ...(TILE_COLORS.includes(values.color as never) ? { color: values.color as ProjectType['color'] } : {}),
+        ...(PHASE_ICONS.includes(values.icon as never) ? { icon: values.icon as ProjectType['icon'] } : {})
+      })
+    }
+
+    // ── Projets, affaires ───────────────────────────────────────────────────────
+    const newProject = async (programmePath?: string, typeId?: string): Promise<void> => {
+      let programmes = await store.programmes()
+      // Aucun programme : le premier d'abord.
+      if (!programmes.length) {
+        notify(t('programmes.project.needProgramme'), 8000)
+        if (!(await newProgramme())) return
+        programmes = await store.programmes()
+      }
+      const all = types()
+      if (!all.length) {
+        notify(t('programmes.project.needType'), 8000)
+        show(TYPES_PAGE)
+        return
+      }
+      const values = await ui.askForm({
+        title: t('programmes.project.new'),
+        intro: t('programmes.project.new.intro'),
+        fields: [
+          nameField('name', t('programmes.field.name')),
+          { kind: 'choice', key: 'programme', label: t('programmes.field.programme'), options: programmes.map((each) => ({ value: each.path, label: each.name })), value: programmePath ?? programmes[0]!.path },
+          { kind: 'choice', key: 'type', label: t('programmes.field.type'), tooltip: t('programmes.field.type.tip'), options: all.map((each) => ({ value: each.id, label: each.name, ...(each.description ? { description: each.description } : {}) })), value: typeId ?? all[0]!.id },
+          { kind: 'textarea', key: 'description', label: t('programmes.field.description') },
+          { kind: 'toggle', key: 'affaire', label: t('programmes.field.withAffaire'), description: t('programmes.field.withAffaire.desc'), value: true },
+          { kind: 'text', key: 'client', label: t('programmes.field.client') },
+          { kind: 'text', key: 'reference', label: t('programmes.field.reference') }
+        ],
+        submit: t('programmes.project.create'),
+        validate: (entered) => (safeName(entered.name ?? '') ? null : t('programmes.field.name.invalid'))
+      })
+      if (!values) return
+      const name = safeName(values.name ?? '')
+      const programme = programmes.find((each) => each.path === values.programme) ?? programmes[0]!
+      const type = all.find((each) => each.id === values.type) ?? all[0]!
+      try {
+        const project = await store.createProject(programme, name, type, (values.description ?? '').trim())
+        // Souvent, un projet est une affaire : la sienne, du même nom.
+        if (values.affaire === 'true') await store.createAffaire(project, name, { client: (values.client ?? '').trim(), reference: (values.reference ?? '').trim() })
+        notify(t('programmes.project.created', { name, type: type.name }))
+        show(projectPageOf(project.path))
+      } catch (error) {
+        if (error instanceof AlreadyThere) return notify(t('programmes.exists', { name }), 8000)
+        throw error
+      }
+    }
+
+    const newAffaire = async (projectPath: string): Promise<void> => {
+      const project = await store.project(projectPath)
+      if (!project) return
+      const values = await ui.askForm({
+        title: t('programmes.affaire.new.title', { project: project.name }),
+        fields: [nameField('name', t('programmes.field.name'), (await store.affaires(project)).length ? '' : project.name), { kind: 'text', key: 'client', label: t('programmes.field.client') }, { kind: 'text', key: 'reference', label: t('programmes.field.reference') }],
+        submit: t('programmes.affaire.create'),
+        validate: (entered) => (safeName(entered.name ?? '') ? null : t('programmes.field.name.invalid'))
+      })
+      if (!values) return
+      const name = safeName(values.name ?? '')
+      try {
+        await store.createAffaire(project, name, { client: (values.client ?? '').trim(), reference: (values.reference ?? '').trim() })
+        notify(t('programmes.affaire.created', { name }))
+      } catch (error) {
+        if (error instanceof AlreadyThere) return notify(t('programmes.exists', { name }), 8000)
+        throw error
+      }
+    }
+
+    const chooseAffaireStatus = async (path: string): Promise<void> => {
+      const chosen = await ui.pickOption(
+        AFFAIRE_STATUSES.map((status) => ({ value: status, label: t(`programmes.affaire.status.${status}`) })),
+        t('programmes.affaire.setStatus')
+      )
+      if (chosen) await store.setAffaireStatus(path, chosen as (typeof AFFAIRE_STATUSES)[number])
+    }
+
+    // ── Phases d'un projet ──────────────────────────────────────────────────────
+    const setPhaseStatus = async (projectPath: string, id: string, status: PhaseStatus): Promise<void> => {
+      const project = await store.project(projectPath)
+      const phase = project?.phases.find((each) => each.id === id)
+      if (!project || !phase) return
+      const today = localToday()
+      // En cours : commencée aujourd'hui (si rien n'est dit) ; terminée : finie aujourd'hui.
+      await store.setPhase(projectPath, id, {
+        status,
+        ...(status === 'en-cours' && !phase.start ? { start: today } : {}),
+        ...(status === 'terminee' && !phase.end ? { end: today } : {})
+      })
+      notify(t('programmes.status.changed', { name: phase.name, status: t(`programmes.status.${status}`) }), 4000)
+      changed()
+    }
+
+    const editPhaseDates = async (projectPath: string, id: string): Promise<void> => {
+      const project = await store.project(projectPath)
+      const phase = project?.phases.find((each) => each.id === id)
+      if (!project || !phase) return
+      const values = await ui.askForm({
+        title: t('programmes.phase.dates.title', { name: phase.name }),
+        fields: [
+          { kind: 'text', key: 'start', label: t('programmes.field.start'), placeholder: 'AAAA-MM-JJ', calendar: true, value: phase.start ?? '' },
+          { kind: 'text', key: 'end', label: t('programmes.field.end'), placeholder: 'AAAA-MM-JJ', calendar: true, value: phase.end ?? '' }
+        ],
+        submit: t('programmes.save'),
+        validate: (entered) => (['start', 'end'].every((key) => !(entered[key] ?? '').trim() || /^\d{4}-\d{2}-\d{2}$/.test((entered[key] ?? '').trim())) ? null : t('programmes.field.date.invalid'))
+      })
+      if (!values) return
+      await store.setPhase(projectPath, id, { start: (values.start ?? '').trim(), end: (values.end ?? '').trim() })
+    }
+
+    const phaseContext = (project: Project, phase: ProjectPhase): PhaseContext => ({
+      project,
+      phase,
+      link: async (path) => {
+        await store.setPhase(project.path, phase.id, { link: path ?? '' })
+        changed()
+      },
+      setStatus: (status) => setPhaseStatus(project.path, phase.id, status)
+    })
+
+    // ── Types de projet ─────────────────────────────────────────────────────────
+    const withType = async (id: string, change: (type: ProjectType) => ProjectType | null): Promise<void> => {
+      const all = types()
+      const type = all.find((each) => each.id === id)
+      if (!type) return
+      const next = change(type)
+      if (next) await saveTypes(all.map((each) => (each.id === id ? next : each)))
+    }
+
+    const phaseForm = async (title: string, phase?: PhaseSpec): Promise<Omit<PhaseSpec, 'id'> | null> => {
+      const values = await ui.askForm({
+        title,
+        fields: [
+          nameField('name', t('programmes.field.name'), phase?.name ?? ''),
+          { kind: 'choice', key: 'kind', label: t('programmes.field.kind'), tooltip: t('programmes.field.kind.tip'), options: kindChoices(), value: phase?.kind ?? FREE_KIND },
+          { kind: 'choice', key: 'icon', label: t('programmes.field.icon'), options: iconChoices, value: phase?.icon ?? 'flow' },
+          { kind: 'choice', key: 'color', label: t('programmes.field.color'), options: colorChoices, value: phase?.color ?? 'indigo' },
+          { kind: 'textarea', key: 'description', label: t('programmes.field.phaseDescription'), value: phase?.description ?? '' }
+        ],
+        submit: t('programmes.save'),
+        validate: (entered) => ((entered.name ?? '').trim() ? null : t('programmes.field.name.invalid'))
+      })
+      if (!values) return null
+      // Une sorte d'un module : son icône et sa couleur d'abord, si l'on n'en a pas choisi d'autres.
+      const kind = values.kind || FREE_KIND
+      const declared = phaseKinds().find((each) => each.id === kind)
+      const untouched = !phase && values.icon === 'flow' && values.color === 'indigo'
+      return {
+        name: (values.name ?? '').trim(),
+        kind,
+        icon: untouched && declared ? declared.icon : PHASE_ICONS.includes(values.icon as never) ? (values.icon as PhaseSpec['icon']) : 'flow',
+        color: untouched && declared ? declared.color : TILE_COLORS.includes(values.color as never) ? (values.color as PhaseSpec['color']) : 'indigo',
+        ...((values.description ?? '').trim() ? { description: (values.description ?? '').trim() } : {})
+      }
+    }
+
+    const typeName = async (title: string, value = ''): Promise<{ name: string; description: string } | null> => {
+      const values = await ui.askForm({
+        title,
+        fields: [nameField('name', t('programmes.field.name'), value), { kind: 'textarea', key: 'description', label: t('programmes.field.description') }],
+        submit: t('programmes.save'),
+        validate: (entered) => ((entered.name ?? '').trim() ? (types().some((each) => each.name === (entered.name ?? '').trim()) ? t('programmes.type.exists') : null) : t('programmes.field.name.invalid'))
+      })
+      return values ? { name: (values.name ?? '').trim(), description: (values.description ?? '').trim() } : null
+    }
+
+    registerProgrammesHome(views ?? { home: () => undefined, nav: () => undefined, tile: () => undefined, page: () => undefined }, {
+      t,
+      store,
+      types,
+      ...(context.showPage ? { showPage: (page: string) => context.showPage?.(page) } : {}),
+      openNote: (path) => (context.showNote ? context.showNote(path) : ui.openNote(path)),
+      newProgramme: async () => void (await newProgramme()),
+      editProgramme,
+      newProject,
+      newAffaire,
+      chooseAffaireStatus,
+      setPhaseStatus,
+      editPhaseDates,
+      phaseContext,
+      newType: async () => {
+        const named = await typeName(t('programmes.type.new'))
+        if (!named) return
+        const all = types()
+        const type = { ...newType(all, named.name, t), ...(named.description ? { description: named.description } : {}) }
+        await saveTypes([...all, type])
+        show(typePageOf(type.id))
+      },
+      editType: async (id) => {
+        const type = types().find((each) => each.id === id)
+        if (!type) return
+        const values = await ui.askForm({
+          title: t('programmes.type.edit.title', { name: type.name }),
+          fields: [
+            nameField('name', t('programmes.field.name'), type.name),
+            { kind: 'textarea', key: 'description', label: t('programmes.field.description'), value: type.description ?? '' },
+            { kind: 'choice', key: 'icon', label: t('programmes.field.icon'), options: iconChoices, value: type.icon },
+            { kind: 'choice', key: 'color', label: t('programmes.field.color'), options: colorChoices, value: type.color }
+          ],
+          submit: t('programmes.save'),
+          validate: (entered) => ((entered.name ?? '').trim() ? null : t('programmes.field.name.invalid'))
+        })
+        if (!values) return
+        await withType(id, (current) => {
+          const next: ProjectType = {
+            ...current,
+            name: (values.name ?? '').trim(),
+            icon: PHASE_ICONS.includes(values.icon as never) ? (values.icon as ProjectType['icon']) : current.icon,
+            color: TILE_COLORS.includes(values.color as never) ? (values.color as ProjectType['color']) : current.color
+          }
+          if ((values.description ?? '').trim()) next.description = (values.description ?? '').trim()
+          else delete next.description
+          return next
+        })
+      },
+      copyType: async (id) => {
+        const all = types()
+        const type = all.find((each) => each.id === id)
+        if (!type) return
+        const named = await typeName(t('programmes.type.copy'), t('programmes.type.copyName', { name: type.name }))
+        if (!named) return
+        const copy = { ...copyType(all, type, named.name), ...(named.description ? { description: named.description } : {}) }
+        await saveTypes([...all, copy])
+        show(typePageOf(copy.id))
+      },
+      deleteType: async (id) => {
+        const type = types().find((each) => each.id === id)
+        if (!type) return
+        const sure = await ui.confirm({ title: t('programmes.type.delete.title', { name: type.name }), message: t('programmes.type.delete.message'), confirm: t('programmes.type.delete'), cancel: t('programmes.cancel'), danger: true })
+        if (!sure) return
+        await saveTypes(types().filter((each) => each.id !== id))
+        show(TYPES_PAGE)
+      },
+      editTypePhase: async (typeId, phaseId) => {
+        const phase = types()
+          .find((each) => each.id === typeId)
+          ?.stages.flat()
+          .find((each) => each.id === phaseId)
+        if (!phase) return
+        const fields = await phaseForm(t('programmes.type.phase.edit.title', { name: phase.name }), phase)
+        if (fields) await withType(typeId, (type) => updatePhase(type, phaseId, fields))
+      },
+      addTypePhase: async (typeId, stage) => {
+        const fields = await phaseForm(stage === 'new' ? t('programmes.type.addStage') : t('programmes.type.addParallel'))
+        if (!fields) return
+        await withType(typeId, (type) => {
+          const phase = newPhase(type, fields)
+          return stage === 'new' ? addStage(type, phase) : addParallel(type, stage, phase)
+        })
+      },
+      moveTypePhase: (typeId, phaseId, direction) => withType(typeId, (type) => movePhase(type, phaseId, direction)),
+      removeTypePhase: async (typeId, phaseId) => {
+        const phase = types()
+          .find((each) => each.id === typeId)
+          ?.stages.flat()
+          .find((each) => each.id === phaseId)
+        if (!phase) return
+        const sure = await ui.confirm({ title: t('programmes.type.phase.remove.title', { name: phase.name }), message: t('programmes.type.phase.remove.message'), confirm: t('programmes.type.phase.remove'), cancel: t('programmes.cancel'), danger: true })
+        if (sure) await withType(typeId, (type) => removePhase(type, phaseId))
+      }
+    })
+
+    context.commands.register({ id: 'nouveau-programme', nameKey: 'programmes.command.newProgramme', run: async () => void (await newProgramme()) })
+    context.commands.register({ id: 'nouveau-projet', nameKey: 'programmes.command.newProject', run: () => newProject() })
+    context.commands.register({ id: 'types', nameKey: 'programmes.command.types', run: () => show(TYPES_PAGE) })
+  },
+  deactivate() {
+    active = null
+  }
+}

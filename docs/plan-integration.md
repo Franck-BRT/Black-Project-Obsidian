@@ -613,6 +613,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.108.1 : **IA** (correctif) : les images comme le module de gestion de projet — modèle
   d'OCR, de vision, sinon d'analyse ; un seul message sans système ; 4 096 jetons ; une page
   redemandée ; un refus du serveur dit une fois, puis plus d'images à ce modèle
+- v0.109.0 : nouveau **module Programmes** : programmes → projets → affaires (notes du coffre) ;
+  un projet suit les **phases** de son **type** (étapes, phases en parallèle) ; **types de
+  projet** dessinés dans un éditeur graphique (bloc `journey` : tuiles et flèches) ; l'**analyse
+  d'un appel d'offres est une phase** d'un projet (sorte `ao.analyse`, module AO)
 
 ### Étape 7 — Livrables
 

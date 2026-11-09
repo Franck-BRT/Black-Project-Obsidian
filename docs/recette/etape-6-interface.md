@@ -70,6 +70,25 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Programmes, projets, affaires ; les types de projet (v0.109.0)
+
+- [ ] Le menu : **Programmes** (avant Analyses) ; la page : « Nouveau programme » (nom, code,
+      couleur, icône) — sa note dans `Programmes/<Programme>/`
+- [ ] **Nouveau projet** : programme, type (« Réponse à un appel d'offres »), « Créer l'affaire du
+      même nom » coché — le projet et son affaire dans le coffre ; sa page : le parcours de ses
+      phases (étapes reliées par des flèches, rédaction et chiffrage côte à côte), ses affaires
+- [ ] Un clic sur « Veille » : **La commencer**, puis **La terminer** — coche verte sur sa tuile,
+      ses dates écrites ; **Ses dates** les change
+- [ ] La phase « Analyse de l'appel d'offres » : **Créer l'analyse** (le nom du projet proposé) —
+      l'analyse créée, reliée, la phase en cours ; sa tuile dit « analyse « … » » ; **Ouvrir
+      l'analyse**, **Relier une autre analyse**, **Délier**
+- [ ] **Types de projet** : les deux types dessinés ; l'éditeur d'un type — modifier une phase
+      (nom, sorte, icône, couleur), la déplacer (flèches), la retirer, « + Phase en parallèle »,
+      « + Étape » ; **Nouveau type**, **Dupliquer**, **Supprimer** ; un projet déjà créé garde
+      ses phases
+- [ ] L'accueil des programmes : les programmes en cartes colorées, tous les projets en parcours
+      miniatures (leur titre ouvre le projet)
+
 ## Correctif : les images comme le module de gestion de projet (v0.108.1)
 
 - [ ] Sans modèle de vision ni d'OCR, avec un modèle d'analyse qui voit : un scan versé est lu

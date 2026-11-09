@@ -12,8 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.108.1)
+## Aujourd'hui (version 0.109.0)
 
+- **Les programmes** (menu **Programmes**) : vos programmes, leurs projets et leurs affaires.
+  Un projet suit les phases de son **type**, dessinées en tuiles reliées par des flèches ; un
+  clic sur une phase la mène (la commencer, la terminer, ses dates). L'**analyse d'un appel
+  d'offres** est une phase : « Créer l'analyse » depuis le projet. Les **types de projet** se
+  dessinent dans un éditeur graphique (phases, étapes, phases en parallèle).
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
   date, et vos **tuiles** — des raccourcis vers les modules, avec des pastilles (« J-5 »

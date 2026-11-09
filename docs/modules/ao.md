@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.36.0 (Black Projects 0.86.0) |
+| Version | 0.37.0 (Black Projects 0.109.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,15 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## L'analyse, phase d'un projet (v0.37.0, Black Projects 0.109.0)
+
+Le module déclare au module [Programmes](programmes.md) la sorte de phase `ao.analyse`
+(`registerPhaseKind`) : sur la page d'une telle phase, **Créer l'analyse** (la fenêtre de
+création, `newAnalysis`, le nom du projet proposé ; l'analyse est reliée à la phase, qui
+commence), **Relier une analyse existante**, **Ouvrir l'analyse**, **Délier** ; la tuile de la
+phase dit l'analyse reliée ; la page montre sa carte (ses pièces). Les analyses restent rangées
+dans le dossier des appels d'offres.
 
 ## Ce que fait le module (étape 2)
 

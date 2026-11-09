@@ -244,6 +244,14 @@ paragraphe (`diffParagraphs`, `src/core/diff.ts`) : les gardés en retrait, les 
 (`<del>`), les ajoutés surlignés (`<ins>`), chaque retiré suivi de celui qui le remplace ; les
 lecteurs d'écran entendent « Retiré : … », « Ajouté : … ».
 
+Un bloc `journey` (un **parcours**) dessine des **étapes** de gauche à droite, reliées par des
+flèches, et dans chacune ses **phases** en tuiles (`JourneyPhase` : icône sur sa couleur
+`TileColor`, comme les tuiles de l'accueil ; `caption`, `detail`, `status` en pastille,
+`progress` — `done` (coche), `current` (anneau), `todo` (pâle), `skipped` (grisée) —, `open`,
+`tools`). Une étape peut avoir une tuile « + » (`add`), le parcours aussi (après la dernière
+étape) ; son titre peut ouvrir ce qu'il dessine (`open`) ; `compact` : en miniature. Une carte
+peut porter une couleur (`Card.color`) : son icône sur cette couleur.
+
 Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
 forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :
 réduit et sûr (le texte devient des éléments, jamais du HTML injecté ; un lien, son texte). Le

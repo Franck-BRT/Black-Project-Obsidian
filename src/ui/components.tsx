@@ -422,6 +422,15 @@ function Flowchart({ block }: { block: Extract<HomeBlock, { kind: 'flowchart' }>
  */
 function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) {
   const compact = block.compact === true
+  // Une action finie (une phase ajoutée, modifiée) : la page se redessine.
+  const after = useContext(AfterAction)
+  const run = async (action: ViewAction) => {
+    try {
+      await action.run()
+    } finally {
+      after()
+    }
+  }
   const phase = (item: JourneyPhase) => {
     const inner = (
       <>
@@ -445,9 +454,9 @@ function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) 
     )
     const title = compact ? [item.label, item.status?.label].filter(Boolean).join(' — ') : item.open?.tooltip
     return (
-      <li key={item.id} class="bp-journey-phase" data-progress={item.progress ?? 'todo'}>
+      <li key={item.id} class="bp-journey-phase" data-progress={item.progress ?? 'plain'}>
         {item.open ? (
-          <button type="button" class="bp-journey-tile" onClick={() => void item.open!.run()} title={title} aria-label={compact ? title : undefined}>
+          <button type="button" class="bp-journey-tile" onClick={() => void run(item.open!)} title={title} aria-label={compact ? title : undefined}>
             {inner}
           </button>
         ) : (
@@ -466,7 +475,7 @@ function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) 
     )
   }
   const adder = (action: ViewAction, wide = false) => (
-    <button type="button" class={`bp-journey-add${wide ? ' is-stage' : ''}`} onClick={() => void action.run()} title={action.tooltip ?? action.label} aria-label={action.label}>
+    <button type="button" class={`bp-journey-add${wide ? ' is-stage' : ''}`} onClick={() => void run(action)} title={action.tooltip ?? action.label} aria-label={action.label}>
       <Icon name="plus" />
       {!compact && <span>{action.label}</span>}
     </button>

@@ -94,6 +94,8 @@ import { reviewAnalysisRequirements } from './review'
 import { emitCreated, emitExtracted, emitImported, registerAoWorkflows } from './workflows'
 import { analysisPageOf, openAnalyses, qualityPageOf, questionPageOf, registerAoHome, type HomeDeps } from './home'
 import { requirementsAt } from '../exigences'
+import { AO_KIND, registerPhaseKind } from '../programmes'
+import type { ViewAction } from '../../core/views'
 import { requirementsFolder } from './requirements'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -437,7 +439,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.36.0',
+  version: '0.37.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],
@@ -524,71 +526,7 @@ export const aoModule: BlackModule = {
     commands.register({
       id: 'nouvelle-analyse',
       nameKey: 'ao.command.create',
-      async run() {
-        const services = servicesFor(context)
-        const values = await platform.ui.askForm({
-          title: t('ao.form.title'),
-          intro: t('ao.form.intro', { folder: services.root }),
-          fields: [
-            {
-              kind: 'text',
-              key: 'name',
-              label: t('ao.form.name'),
-              placeholder: t('ao.form.name.placeholder'),
-              tooltip: t('ao.form.name.tip'),
-              required: true
-            },
-            {
-              kind: 'choice',
-              key: 'position',
-              label: t('ao.form.position'),
-              tooltip: t('ao.form.position.tip'),
-              options: POSITIONS.map((position) => ({ value: position, label: t(`ao.position.${position}`) }))
-            },
-            { kind: 'text', key: 'buyer', label: t('ao.form.buyer'), placeholder: t('ao.form.buyer.placeholder') },
-            { kind: 'text', key: 'reference', label: t('ao.form.reference'), placeholder: t('ao.form.reference.placeholder') }
-          ],
-          submit: t('ao.form.submit'),
-          submitTooltip: t('ao.form.submit.tip'),
-          validate: (entered) => (safeName(entered.name ?? '') ? null : t('ao.form.name.invalid'))
-        })
-        if (!values) return
-        const name = safeName(values.name ?? '')
-        let analysis: Analysis
-        try {
-          analysis = await createAnalysis(services, name, {
-            position: (POSITIONS.includes(values.position as Position) ? values.position : 'candidat') as Position,
-            buyer: (values.buyer ?? '').trim(),
-            reference: (values.reference ?? '').trim()
-          })
-        } catch (error) {
-          if (error instanceof AnalysisExists) {
-            platform.notifier.notify(t('ao.exists', { name, folder: services.root }), 8000)
-            return
-          }
-          throw error
-        }
-        // Depuis l'interface : la fiche de l'analyse, dans l'onglet ; l'import qui suit y revient.
-        const show = targeted.stay && context.showPage ? (created: Analysis) => context.showPage?.(analysisPageOf(created)) : undefined
-        if (show) show(analysis)
-        else await platform.ui.openNote(analysis.note)
-        await emitCreated(services, analysis)
-        const next = await platform.ui.pickOption(
-          [
-            { value: 'import', label: t('ao.next.import'), description: t('ao.next.import.desc') },
-            {
-              value: 'drop',
-              label: t('ao.next.drop'),
-              description: t('ao.next.drop.desc', { folder: placeOriginals(analysis, { place: 'appel-d-offres' }) })
-            },
-            { value: 'later', label: t('ao.next.later'), description: t('ao.next.later.desc') }
-          ],
-          t('ao.next.placeholder')
-        )
-        if (next === 'import') await importInto(context, services, analysis, show)
-        else if (next === 'drop')
-          platform.notifier.notify(t('ao.next.drop.notice', { folder: placeOriginals(analysis, { place: 'appel-d-offres' }) }), 12000)
-      }
+      run: async () => void (await newAnalysis(context))
     })
 
     commands.register({
@@ -893,6 +831,82 @@ export const aoModule: BlackModule = {
       }
     }
     registerAoHome(context.views, homeDeps)
+    // L'analyse d'un appel d'offres, phase d'un projet (module Programmes) : la créer, en relier une, l'ouvrir.
+    cleanups.push(
+      registerPhaseKind({
+        id: AO_KIND,
+        label: t('ao.phase.label'),
+        description: t('ao.phase.desc'),
+        icon: 'file',
+        color: 'indigo',
+        detail: async (phase) => {
+          if (!phase.link) return t('ao.phase.none')
+          const analysis = await analysisOf(servicesFor(context), phase.link)
+          return analysis ? t('ao.phase.linked', { name: analysis.name }) : t('ao.phase.gone')
+        },
+        actions: (phaseContext) => {
+          const services = servicesFor(context)
+          const linkTo = async (analysis: Analysis) => {
+            await phaseContext.link(analysis.note)
+            // Relier l'analyse la commence, si la phase était à venir.
+            if (phaseContext.phase.status === 'a-venir') await phaseContext.setStatus('en-cours')
+          }
+          const create: ViewAction = {
+            id: 'ao.create',
+            label: t('ao.phase.create'),
+            tooltip: t('ao.phase.create.tip'),
+            icon: 'plus',
+            primary: !phaseContext.phase.link,
+            run: async () => void (await newAnalysis(context, { name: phaseContext.project.name }, { stay: true, created: linkTo }))
+          }
+          const pick: ViewAction = {
+            id: 'ao.pick',
+            label: t(phaseContext.phase.link ? 'ao.phase.pickOther' : 'ao.phase.pick'),
+            icon: 'folder',
+            run: async () => {
+              const analyses = await listAnalyses(services)
+              if (!analyses.length) return platform.notifier.notify(t('ao.none', { folder: services.root }), 8000)
+              const chosen = await platform.ui.pickOption(analyses.map((each) => ({ value: each.note, label: each.name, description: each.folder })), t('ao.pick.analysis'))
+              const analysis = analyses.find((each) => each.note === chosen)
+              if (analysis) await linkTo(analysis)
+            }
+          }
+          if (!phaseContext.phase.link) return [create, pick]
+          return [
+            { id: 'ao.open', label: t('ao.phase.open'), icon: 'file', primary: true, run: async () => {
+              const analysis = await analysisOf(services, phaseContext.phase.link ?? null)
+              if (!analysis) return platform.notifier.notify(t('ao.phase.gone'), 8000)
+              if (context.showPage) context.showPage(analysisPageOf(analysis))
+              else await platform.ui.openNote(analysis.note)
+            } },
+            pick,
+            { id: 'ao.unlink', label: t('ao.phase.unlink'), icon: 'cross', run: () => phaseContext.link(null) }
+          ]
+        },
+        blocks: async (phaseContext) => {
+          const services = servicesFor(context)
+          const analysis = phaseContext.phase.link ? await analysisOf(services, phaseContext.phase.link) : null
+          if (!analysis) return [{ kind: 'message', tone: 'info', text: t(phaseContext.phase.link ? 'ao.phase.gone' : 'ao.phase.explain') }]
+          const pieces = await listPieces(services, analysis)
+          return [
+            {
+              kind: 'cards',
+              cards: [
+                {
+                  id: analysis.note,
+                  title: analysis.name,
+                  subtitle: t('ao.phase.card'),
+                  icon: 'file',
+                  color: 'indigo',
+                  facts: [{ label: t('ao.phase.pieces'), value: String(pieces.length) }],
+                  ...(context.showPage ? { open: { id: 'open', label: t('ao.phase.open'), run: () => context.showPage?.(analysisPageOf(analysis)) } } : {})
+                }
+              ]
+            }
+          ]
+        }
+      })
+    )
     commands.register({ id: 'analyses', nameKey: 'ao.command.analyses', run: () => openAnalyses(homeDeps) })
 
     commands.register({
@@ -1043,4 +1057,84 @@ export const aoModule: BlackModule = {
     for (const cleanup of cleanups) cleanup()
     cleanups = []
   }
+}
+
+/**
+ * Créer une analyse (sa fenêtre, puis l'import des pièces s'il le veut) ; rend l'analyse
+ * créée, ou `null`. `preset` : ce qu'on sait déjà (le nom du projet dont elle est une phase).
+ */
+async function newAnalysis(
+  context: ModuleContext,
+  preset: { name?: string; buyer?: string; reference?: string } = {},
+  /** Depuis une page (la phase d'un projet) : la fiche de l'analyse s'y ouvre ; et ce qu'on fait d'elle, aussitôt créée. */
+  from: { stay?: boolean; created?: (analysis: Analysis) => Promise<void> } = {}
+): Promise<Analysis | null> {
+  const { platform } = context
+  const t = (key: string, vars?: Record<string, string | number>) => context.i18n.t(key, vars)
+  const services = servicesFor(context)
+  const values = await platform.ui.askForm({
+    title: t('ao.form.title'),
+    intro: t('ao.form.intro', { folder: services.root }),
+    fields: [
+      {
+        kind: 'text',
+        key: 'name',
+        label: t('ao.form.name'),
+        placeholder: t('ao.form.name.placeholder'),
+        tooltip: t('ao.form.name.tip'),
+        required: true,
+        ...(preset.name ? { value: preset.name } : {})
+      },
+      {
+        kind: 'choice',
+        key: 'position',
+        label: t('ao.form.position'),
+        tooltip: t('ao.form.position.tip'),
+        options: POSITIONS.map((position) => ({ value: position, label: t(`ao.position.${position}`) }))
+      },
+      { kind: 'text', key: 'buyer', label: t('ao.form.buyer'), placeholder: t('ao.form.buyer.placeholder'), ...(preset.buyer ? { value: preset.buyer } : {}) },
+      { kind: 'text', key: 'reference', label: t('ao.form.reference'), placeholder: t('ao.form.reference.placeholder'), ...(preset.reference ? { value: preset.reference } : {}) }
+    ],
+    submit: t('ao.form.submit'),
+    submitTooltip: t('ao.form.submit.tip'),
+    validate: (entered) => (safeName(entered.name ?? '') ? null : t('ao.form.name.invalid'))
+  })
+  if (!values) return null
+  const name = safeName(values.name ?? '')
+  let analysis: Analysis
+  try {
+    analysis = await createAnalysis(services, name, {
+      position: (POSITIONS.includes(values.position as Position) ? values.position : 'candidat') as Position,
+      buyer: (values.buyer ?? '').trim(),
+      reference: (values.reference ?? '').trim()
+    })
+  } catch (error) {
+    if (error instanceof AnalysisExists) {
+      platform.notifier.notify(t('ao.exists', { name, folder: services.root }), 8000)
+      return null
+    }
+    throw error
+  }
+  // Depuis l'interface : la fiche de l'analyse, dans l'onglet ; l'import qui suit y revient.
+  await from.created?.(analysis)
+  const show = (targeted.stay || from.stay) && context.showPage ? (created: Analysis) => context.showPage?.(analysisPageOf(created)) : undefined
+  if (show) show(analysis)
+  else await platform.ui.openNote(analysis.note)
+  await emitCreated(services, analysis)
+  const next = await platform.ui.pickOption(
+    [
+      { value: 'import', label: t('ao.next.import'), description: t('ao.next.import.desc') },
+      {
+        value: 'drop',
+        label: t('ao.next.drop'),
+        description: t('ao.next.drop.desc', { folder: placeOriginals(analysis, { place: 'appel-d-offres' }) })
+      },
+      { value: 'later', label: t('ao.next.later'), description: t('ao.next.later.desc') }
+    ],
+    t('ao.next.placeholder')
+  )
+  if (next === 'import') await importInto(context, services, analysis, show)
+  else if (next === 'drop')
+    platform.notifier.notify(t('ao.next.drop.notice', { folder: placeOriginals(analysis, { place: 'appel-d-offres' }) }), 12000)
+  return analysis
 }
