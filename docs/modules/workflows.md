@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.16.0 (Black Projects 0.76.0) |
+| Version | 0.17.0 (Black Projects 0.84.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -224,7 +224,7 @@ système), qu'un workflow ne peut pas piloter. Il gagne trois workflows système
 
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Signaler les workflows cassés, à l'ouverture (`sys.workflows.casses`) | à l'ouverture d'Obsidian | `workflows.verifier` : les workflows actifs (et utilisables) dont le déclencheur ou une action n'est déclaré par aucun module actif (`brokenParts`) ; aucun : rien n'est dit | actif |
+| Signaler les workflows cassés, à l'ouverture (`sys.workflows.casses`) | à l'ouverture d'Obsidian | `workflows.verifier` : les workflows actifs (et utilisables) dont le déclencheur ou une action n'est déclaré par aucun module actif (`brokenParts`) ; aucun : rien n'est dit. Depuis la v0.17.0, un workflow **système** dont le déclencheur vient d'un module inactif n'est pas dit cassé : il dort, et se réveille avec le module | actif |
 | Bilan des workflows, chaque lundi (`sys.workflows.bilan-hebdo`) | lundi à 8 h | `workflows.bilan` (champ « jours », `7`) : d'après le journal (`journalRuns`), combien d'exécutions, d'échecs, et lesquels | désactivé |
 | Archiver le journal des workflows, chaque mois (`sys.workflows.archiver-journal`) | le 1er du mois à 8 h | `workflows.archiver` (champ « jours », `30`) : les lignes plus anciennes quittent le journal pour `Journal des workflows — archive AAAA-MM.md` (`bp-type: workflows-journal-archive`), la plus récente en tête | désactivé |
 

@@ -192,3 +192,9 @@ export function placeLabel(places: Pick<ShelfPlacesDeps, 't' | 'shelves'>, item:
   const parts = [...(shelves.length > 1 && shelf ? [shelf.name] : []), ...(item.directory ?? '').split('/').filter(Boolean)]
   return parts.length ? parts.join(' › ') : places.t('bibliotheque.place.root')
 }
+
+/** Le nom d'un lieu, pour un « Retour » : son répertoire, sinon sa bibliothèque. */
+export function placeName(shelves: readonly Shelf[], shelf: string | undefined, directory: string | undefined): string {
+  const dir = (directory ?? '').split('/').filter(Boolean).at(-1)
+  return dir ?? shelves.find((each) => each.id === shelf)?.name ?? ''
+}

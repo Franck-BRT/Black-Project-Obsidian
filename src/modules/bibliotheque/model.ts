@@ -151,6 +151,8 @@ export interface LibraryDoc {
   /** La détection n'a pas été assez sûre : la langue est à confirmer (avec la plus probable, s'il y en a une). */
   languageToConfirm?: boolean
   languageProbable?: LanguageCode
+  /** Sa langue a été identifiée par l'IA (la détection sans IA n'était pas sûre). */
+  languageByAi?: boolean
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -183,6 +185,7 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.previous ? { precedent: link(doc.previous) } : {}),
     ...(doc.likelyPrevious ? { precedentProbable: link(doc.likelyPrevious) } : {}),
     ...(doc.language ? { langue: doc.language } : {}),
+    ...(doc.language && doc.languageByAi ? { langueIdentifieePar: 'ia' } : {}),
     ...(doc.languageToConfirm ? { langueAConfirmer: true } : {}),
     ...(doc.languageToConfirm && doc.languageProbable ? { langueProbable: doc.languageProbable } : {})
   }
@@ -225,6 +228,7 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(likelyPrevious ? { likelyPrevious } : {}),
     copied: data.copie === true,
     ...(isLanguage(data.langue) ? { language: data.langue } : {}),
+    ...(isLanguage(data.langue) && data.langueIdentifieePar === 'ia' ? { languageByAi: true } : {}),
     ...(data.langueAConfirmer === true ? { languageToConfirm: true } : {}),
     ...(data.langueAConfirmer === true && isLanguage(data.langueProbable) ? { languageProbable: data.langueProbable } : {})
   }

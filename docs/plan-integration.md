@@ -524,6 +524,11 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   confirmer* (la plus probable proposée)
 - v0.83.0 : **module Bibliothèque** : la fiche d'un document — Identification, Le fichier,
   D'où il vient, Versions — en sections repliables, repliées d'origine
+- v0.84.0 : **interface** : « Retour » remonte au niveau supérieur (fil d'Ariane, lien de la
+  page, page parente, accueil ; Alt + ↑) — la page précédente reste à Alt + ← ; **module
+  IA** : la langue d'un document, quand la détection sans IA n'est pas sûre, identifiée par
+  l'IA (workflow système actif) ; **Workflows** : un workflow système qui dort (son module
+  inactif) n'est plus dit cassé
 
 ### Étape 7 — Livrables
 

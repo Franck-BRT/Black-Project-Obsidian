@@ -30,7 +30,7 @@ import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, type DocOrigin, type LibraryDoc } from './model'
 import { LibraryStore, type PourItem, type PourOptions, type PourReport } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
-import { isLanguage, LANGUAGES } from './language'
+import { isLanguage, LANGUAGES, type LanguageCode } from './language'
 import { defaultShelfOf, folderName, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
@@ -252,6 +252,21 @@ export function readingOf(name: string, t: (key: string) => string): FileReading
 
 const readingVars = ({ extension, lisible, lecture }: FileReading) => ({ extension, lisible, lecture })
 
+/** Pour l'IA : un document de la bibliothèque, par sa fiche ; `null` sans le module, ou s'il n'y est plus. */
+export async function libraryDoc(record: string): Promise<LibraryDoc | null> {
+  return active ? active.store.load(record) : null
+}
+
+/** Pour l'IA : le texte du fichier d'un document (lu par la lecture de fichiers) ; `null` s'il n'est pas lu. */
+export async function libraryDocText(record: string): Promise<string | null> {
+  return active ? active.store.textOfRecord(record) : null
+}
+
+/** Pour l'IA : la langue qu'elle a identifiée — le document n'est plus à confirmer, et on sait qui l'a dit. */
+export async function setLanguageByAi(record: string, language: LanguageCode): Promise<LibraryDoc | null> {
+  return active ? active.store.setLanguage(record, language, true) : null
+}
+
 /** Le module est-il actif (les autres modules le disent à l'utilisateur, au besoin) ? */
 export const libraryActive = (): boolean => active !== null
 
@@ -265,7 +280,8 @@ async function emitPoured(doc: LibraryDoc): Promise<void> {
     vars: { titre: doc.title, famille: doc.family, categorie: doc.category, fichier: doc.file, origine: doc.origins[0]?.module ?? '',
       ...readingVars(readingOf(doc.file, t)),
       langue: doc.language ? t(`bibliotheque.lang.${doc.language}`) : '',
-      langueaconfirmer: t(doc.languageToConfirm ? 'bibliotheque.read.yes' : 'bibliotheque.read.no')
+      langueaconfirmer: t(doc.languageToConfirm ? 'bibliotheque.read.yes' : 'bibliotheque.read.no'),
+      fiche: doc.record
     }
   })
 }
@@ -322,7 +338,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.11.0',
+  version: '0.12.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -390,7 +406,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,

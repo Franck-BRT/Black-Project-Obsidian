@@ -113,6 +113,14 @@ describe('une page de module dans l’onglet', () => {
     expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Analyses<\/button>/)
   })
 
+  it('« Retour » mène au niveau supérieur — la page parente, sinon l’accueil —, pas à la page vue juste avant', () => {
+    const fiche = renderToString(<App host={host()} generation={0} page="ao.fiche?42" />)
+    expect(fiche).toMatch(/<button type="button" class="bp-back" aria-label="Remonter au niveau supérieur : Analyses d’appels d’offres \(Alt \+ ↑\)\. La page précédente : Alt \+ ←"[^>]*><svg[^>]*>.*?<\/svg>Retour : Analyses d’appels d’offres<\/button>/)
+    const top = renderToString(<App host={host()} generation={0} page="ao.analyses" />)
+    expect(top).toContain('Retour : Accueil</button>')
+    expect(renderToString(<App host={host()} generation={0} page="home" />)).not.toContain('class="bp-back"')
+  })
+
   it('une page inconnue (module désactivé) : l’accueil', () => {
     const html = renderToString(<App host={host()} generation={0} page="disparu.page" />)
     expect(html).toContain('Modifier l’accueil')

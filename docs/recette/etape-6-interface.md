@@ -70,6 +70,23 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## « Retour » remonte au niveau supérieur ; la langue avec l'IA (v0.84.0)
+
+- [ ] Bibliothèque › Documents › Normes › ECSS : « Retour : Normes », puis « Retour :
+      Documents », puis « Retour : Bibliothèque », puis « Retour : Accueil »
+- [ ] Ouvrir la fiche d'un document depuis le tableau de bord : « Retour : <son répertoire> »
+      (pas « Tableau de bord ») ; **Alt + ←** ramène au tableau de bord ; **Alt + ↑** remonte
+- [ ] Une analyse, la fiche d'une pièce : « Retour : L'analyse « … » » ; une fiche
+      d'exigence : « Retour : Toute la bibliothèque » ; un workflow : « Retour : Tous les
+      workflows »
+- [ ] IA réglée, verser un texte court (« Rapport de visite du site… ») : la langue est
+      identifiée par l'IA — fiche : « Français (identifiée par l'IA) », plus « à
+      confirmer » ; le journal des workflows le dit
+- [ ] L'IA répond « ? » (texte ambigu) ou n'est pas réglée : la langue reste à confirmer,
+      sans erreur ; une détection sûre (un long texte) ne demande rien à l'IA
+- [ ] Workflows, filtre Système : « Identifier avec l'IA la langue d'un document… »
+      (actif), désactivable ; Bibliothèque désactivée : « workflows cassés » ne le cite pas
+
 ## La fiche d'un document : des sections repliées (v0.83.0)
 
 - [ ] Ouvrir la fiche d'un document : sous les chiffres, **Identification**, **Le

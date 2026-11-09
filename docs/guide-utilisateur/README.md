@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.83.0)
+## Aujourd'hui (version 0.84.0)
 
 - **L'accueil** : l'onglet « Black Projects » s'ouvre au démarrage (ou par l'icône de la
   barre latérale, ou la commande « Ouvrir l'accueil de Black Projects ») : le bonjour, la
@@ -28,8 +28,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   non, « Reposer la question »), et au questionnaire (une carte par thème, « Remplir le
   questionnaire », « Reposer » un thème), et à la qualité des exigences (calculée à
   l'ouverture, une carte par exigence, « Écrire le rapport »), et à leur vérification
-  (extraction, oubliées, cohérence, couverture, « Tout vérifier ») —, et **« ← Retour »** (ou Alt + ←) ramène à la page d'où l'on
-  vient. **Modifier l'accueil** pour en ajouter, en retirer ou les déplacer. Le **Tableau de
+  (extraction, oubliées, cohérence, couverture, « Tout vérifier ») —, et **« ← Retour »** (ou Alt + ↑) remonte au niveau
+  supérieur (la page d'où l'on vient : Alt + ←). **Modifier l'accueil** pour en ajouter, en retirer ou les déplacer. Le **Tableau de
   bord** (navigation, tuile, ou commande) donne les informations : une carte par analyse
   avec sa date limite de remise, l'état de l'IA, la bibliothèque d'exigences, les derniers
   workflows. **Modifier le tableau de bord** pour masquer une section, la déplacer
@@ -158,7 +158,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   assez sûre, il n'y a pas de langue et elle est **à confirmer** (sur sa fiche :
   « Confirmer : Français », ou « Langue… »). Sur la fiche d'un document, Identification,
   Le fichier, D'où il vient et Versions sont repliées d'origine (leur en-tête en dit
-  l'essentiel) : un clic les déplie.
+  l'essentiel) : un clic les déplie. Quand la détection de la langue n'est pas sûre et que
+  l'IA est réglée, l'IA l'identifie (« identifiée par l'IA ») ; sinon elle reste à confirmer.
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une
   fois, avec sa fiche — les pièces importées dans une analyse (laissées à leur place), le
   fichier d'un import d'exigences, les échanges de types et de workflows, et ce que vous

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.9.0 (Black Projects 0.70.0) |
+| Version | 0.10.0 (Black Projects 0.84.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -104,6 +104,20 @@ le même client, qui met les consignes d'un persona de la [bibliothèque](biblio
 tête du message système de chaque demande (`chat`, et donc `chatJson`). L'action
 « Demander à l'IA » (`ia.demander`) prend aussi un *Prompt de la bibliothèque* (sa
 question, quand la consigne est vide) et un *Persona de la bibliothèque*, par leur nom.
+
+## La langue d'un document, avec l'IA (v0.10.0, Black Projects 0.84.0)
+
+Quand la détection **sans IA** de la [bibliothèque](bibliotheque.md) n'a pas été sûre, une
+étape avec l'IA : le workflow système **« Identifier avec l'IA la langue d'un document,
+quand la détection n'est pas sûre »** (`sys.ia.langue-documents`, actif) — au déclencheur
+*Bibliothèque : document versé*, si `{langue}` est vide —, action `ia.langue-document`
+(champ `fiche`, `{fiche}` d'origine) : le début du texte du document (4 000 caractères,
+`libraryDocText`) est donné au modèle d'analyse, température 0, avec la consigne de ne
+répondre qu'un code (fr, en, de, es, it, pt, nl) ou « ? » s'il n'est pas sûr
+(`readLanguageAnswer` : le premier mot, exactement un des codes). Un code : la langue est
+donnée (`setLanguageByAi` : `langue`, `langueIdentifieePar: ia` ; plus à confirmer). Sinon
+— « ? », une phrase, l'IA pas réglée, pas de texte lu, une image —, la langue reste à
+confirmer, sans erreur ; le journal le dit. Une détection sûre ne demande rien à l'IA.
 
 ## Interface publique
 

@@ -58,8 +58,10 @@ l'analyse, le calendrier, la fiche d'une exigence — quand elle en a une), d'o�
 la fiche du workflow. **IA** ouvre la page de l'IA : la connexion, un modèle par
 usage (« Choisir le modèle »), et ce qui se sert de l'IA.
 
-**Retour** : « ← Retour : … », sous le titre, ramène à la page d'où vous venez — comme
-dans un navigateur (aussi **Alt + ←**, ou le bouton « précédent » de la souris).
+**Retour** : « ← Retour : … », sous le titre, remonte au **niveau supérieur** — du
+répertoire à celui qui le contient, de la fiche à sa liste (aussi **Alt + ↑**). La page
+d'où vous venez, comme dans un navigateur : **Alt + ←**, ou le bouton « précédent » de la
+souris.
 
 **La barre de gauche** se range aussi : **Accueil** reste toujours en premier et
 **Paramètres** toujours en bas — ni l'un ni l'autre ne se déplace ni ne se masque. Entre

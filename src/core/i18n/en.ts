@@ -36,7 +36,7 @@ export const en: Record<string, string> = {
   'ui.nav.dashboard': 'Dashboard',
   'ui.dashboard.title': 'Dashboard',
   'ui.back': 'Back: {title}',
-  'ui.back.label': 'Go back to the previous page: {title} (Alt + ←)',
+  'ui.back.label': 'Go up one level: {title} (Alt + ↑). The previous page: Alt + ←',
   'ui.page.filters': 'Filters',
   'ui.page.all': 'All',
   'ui.page.group': 'Group by',

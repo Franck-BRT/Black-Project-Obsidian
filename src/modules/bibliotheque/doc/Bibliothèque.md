@@ -137,6 +137,11 @@ plus probable ; **Langue…** en choisit une, la détecte de nouveau, ou dit « 
 « Classer… » permet aussi de la choisir. Filtres par langue, et « Regrouper par ›
 Langue ». Une image n'a pas de langue à confirmer.
 
+Quand la détection sans IA n'est pas sûre et que l'{{link:Modules/IA|IA}} est réglée, une
+**étape avec l'IA** l'identifie (workflow système « Identifier avec l'IA la langue d'un
+document… ») : une réponse nette donne la langue, notée « identifiée par l'IA » ; sinon elle
+reste à confirmer.
+
 ## 8. Les fantômes
 
 Un document n'est gardé qu'une fois. Si vous déposez dans un répertoire (en le versant ou

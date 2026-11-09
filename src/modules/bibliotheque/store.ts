@@ -166,17 +166,30 @@ export class LibraryStore {
     return { languageToConfirm: true, ...(guess.probable ? { languageProbable: guess.probable } : {}) }
   }
 
-  /** Donner sa langue à un document (confirmée par l'utilisateur) ; vide : sans langue, plus à confirmer. */
-  async setLanguage(record: string, language: LanguageCode | ''): Promise<LibraryDoc | null> {
+  /** Donner sa langue à un document (confirmée par l'utilisateur, ou identifiée par l'IA) ; vide : sans langue, plus à confirmer. */
+  async setLanguage(record: string, language: LanguageCode | '', byAi = false): Promise<LibraryDoc | null> {
     const doc = await this.load(record)
     if (!doc) return null
     const next: LibraryDoc = { ...doc }
     delete next.language
     delete next.languageToConfirm
     delete next.languageProbable
+    delete next.languageByAi
     if (language) next.language = language
+    if (language && byAi) next.languageByAi = true
     await this.save(next)
     return next
+  }
+
+  /** Le texte du fichier d'un document (la lecture de fichiers) ; `null` s'il n'est pas lu. */
+  async textOfRecord(record: string): Promise<string | null> {
+    const doc = await this.load(record)
+    if (!doc || !(await this.deps.fs.exists(doc.file))) return null
+    try {
+      return (await this.deps.textOf?.(doc.file, new Uint8Array(await this.deps.fs.readBinary(doc.file)))) ?? null
+    } catch {
+      return null
+    }
   }
 
   /** Détecter de nouveau la langue d'un document, de son fichier ; rend la fiche, ou `null`. */
@@ -188,6 +201,7 @@ export class LibraryStore {
     delete next.language
     delete next.languageToConfirm
     delete next.languageProbable
+    delete next.languageByAi
     await this.save({ ...next, ...found })
     return { ...next, ...found }
   }

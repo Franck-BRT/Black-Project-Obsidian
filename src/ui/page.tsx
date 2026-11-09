@@ -99,7 +99,9 @@ function storeLayout(page: string, layout: PageLayout): void {
 }
 
 /**
- * `hasHistory` : l'interface a un vrai « Retour » (la page précédente) ; le lien de la page
+ * `onBack` : l'interface dessine elle-même le « Retour » vers le niveau supérieur (le lien de la
+ * page, ou sa page parente) ; la page ne le dessine plus. `hasHistory` : l'interface a un vrai
+ * « Retour » ; le lien de la page
  * (« ← Toutes les analyses ») ne sert alors plus — il ne reste que quand on arrive tout
  * droit sur la page (une commande, l'ouverture de l'onglet).
  *
@@ -113,6 +115,7 @@ export function ModulePage({
   generation,
   onTitle,
   onCrumbs,
+  onBack,
   hasHistory
 }: {
   spec: PageSpec
@@ -121,6 +124,8 @@ export function ModulePage({
   generation: number
   onTitle?: (title: string | undefined) => void
   onCrumbs?: (crumbs: Breadcrumb | undefined) => void
+  /** L'interface dessine elle-même le « Retour » vers le niveau supérieur : la page lui dit le sien. */
+  onBack?: (back: ViewAction | undefined) => void
   hasHistory?: boolean
 }) {
   const { t } = host
@@ -139,6 +144,7 @@ export function ModulePage({
         setState({ status: 'ready', view })
         onTitle?.(view.title)
         onCrumbs?.(view.breadcrumb)
+        onBack?.(view.back)
       })
       .catch((error: unknown) => alive && setState({ status: 'failed', reason: error instanceof Error ? error.message : String(error) }))
     return () => {
@@ -152,6 +158,7 @@ export function ModulePage({
     setState({ status: 'loading' })
     onTitle?.(undefined)
     onCrumbs?.(undefined)
+    onBack?.(undefined)
   }, [spec.id, param])
 
   if (state.status === 'loading') return <div class="bp-skeleton" aria-busy="true" aria-label={t('ui.loading')} />
@@ -166,7 +173,7 @@ export function ModulePage({
     storeLayout(spec.id, next)
     setChosen(next)
   }
-  return <PageBody {...{ view, spec, t, host, query, setQuery, filter, setFilter, layouts, layout, choose, searchId, narrowed, blocks, hits, total, onCrumbs, hasHistory }} />
+  return <PageBody {...{ view, spec, t, host, query, setQuery, filter, setFilter, layouts, layout, choose, searchId, narrowed, blocks, hits, total, onCrumbs, onBack, hasHistory }} />
 }
 
 interface PageBodyProps {
@@ -187,11 +194,12 @@ interface PageBodyProps {
   hits: number
   total: number
   onCrumbs?: ((crumbs: Breadcrumb | undefined) => void) | undefined
+  onBack?: ((back: ViewAction | undefined) => void) | undefined
   hasHistory?: boolean | undefined
 }
 
 /** Le corps d'une page prête ; une cible de glisser-déposer quand la page prend des fichiers. */
-function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, layouts, layout, choose, searchId, narrowed, blocks, hits, total, onCrumbs, hasHistory }: PageBodyProps) {
+function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, layouts, layout, choose, searchId, narrowed, blocks, hits, total, onCrumbs, onBack, hasHistory }: PageBodyProps) {
   const drop = useFileDrop(view.drop)
   // Une carte survolée (un répertoire) dit son propre « Déposer pour verser dans… ».
   const [inner, setInner] = useState<string | null>(null)
@@ -204,7 +212,7 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
         </div>
       )}
       {view.breadcrumb && !onCrumbs && <BreadcrumbNav crumbs={view.breadcrumb} />}
-      {view.back && !hasHistory && (
+      {view.back && !onBack && !hasHistory && (
         <button type="button" class="bp-back" onClick={() => void view.back!.run()}>
           <Icon name="back" />
           {view.back.label}

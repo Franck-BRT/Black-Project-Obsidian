@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.11.0 (Black Projects 0.83.0) |
+| Version | 0.12.0 (Black Projects 0.84.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -228,6 +228,13 @@ l'identification ; à confirmer, un message — **Confirmer : Français** (la pr
 `detectLanguageOf`. Les workflows : `{langue}` et `{langueaconfirmer}` au *document
 versé* ; le workflow système « Langues à confirmer, chaque lundi » (désactivé). Les
 documents entrés avant la v0.10.0 n'ont pas de langue (*Détecter de nouveau*).
+
+**L'étape avec l'IA** (v0.12.0, Black Projects 0.84.0) : pas sûre sans IA, la langue est
+demandée à l'IA par un workflow système du [module IA](ia.md) (« Identifier avec l'IA la
+langue d'un document… », actif) ; une réponse nette la donne, avec `langueIdentifieePar:
+ia` (la fiche : « Français (identifiée par l'IA) »). Pour lui, l'interface publique :
+`libraryDoc`, `libraryDocText`, `setLanguageByAi` ; le déclencheur *document versé* donne
+aussi `{fiche}`. Les fiches : le « Retour » nomme le lieu où le document est rangé.
 
 ## Les fantômes (v0.9.0, Black Projects 0.81.0)
 

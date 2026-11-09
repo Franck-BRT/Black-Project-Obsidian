@@ -67,6 +67,11 @@ si un modèle que vous avez choisi n'y est plus. Sans adresse réglée, il ne fa
 le désactivez ou le modifiez sur la page {{link:Modules/Workflows|Workflows}} (filtre
 « Système »).
 
+Un autre, **« Identifier avec l'IA la langue d'un document, quand la détection n'est pas
+sûre »** (activé) : quand un document entre dans la {{link:Modules/Bibliothèque|bibliothèque}}
+et que sa langue n'a pas pu être détectée sûrement, le début de son texte est donné à l'IA ;
+une réponse nette donne la langue (« identifiée par l'IA ») ; sinon elle reste à confirmer.
+
 Deux autres workflows système le suivent :
 
 | Workflow système | Ce qu'il fait | D'origine |

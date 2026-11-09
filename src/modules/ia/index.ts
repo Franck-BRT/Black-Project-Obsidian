@@ -26,6 +26,7 @@ import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor,
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
+export { readLanguageAnswer } from './workflows'
 export {
   buildChatBody,
   cosine,
@@ -276,7 +277,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.9.0',
+  version: '0.10.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -357,6 +358,19 @@ export const iaModule: BlackModule = {
       moduleKey: 'ia.name',
       enabledByDefault: true,
       make: (tr) => ({ name: tr('ia.sys.nouveaux-modeles'), mode: 'auto', trigger: { kind: OPENING }, conditions: [], actions: [{ kind: 'ia.nouveaux-modeles', fields: {} }] })
+    })
+    // La langue d'un document versé, quand la détection sans IA n'a pas été sûre : l'IA la dit (actif).
+    registerSystemWorkflow({
+      id: 'sys.ia.langue-documents',
+      moduleKey: 'ia.name',
+      enabledByDefault: true,
+      make: (tr) => ({
+        name: tr('ia.sys.langue-documents'),
+        mode: 'auto',
+        trigger: { kind: 'bibliotheque.document-verse' },
+        conditions: [{ field: 'langue', op: 'empty', value: '' }],
+        actions: [{ kind: 'ia.langue-document', fields: { fiche: '{fiche}' } }]
+      })
     })
     registerSystemWorkflow({
       id: 'sys.ia.temps-reponse',

@@ -62,7 +62,9 @@ export function registerUpkeep(deps: UpkeepDeps): void {
     async run({ notifier }) {
       const broken = deps
         .load()
-        .filter((workflow) => workflow.enabled && usable(workflow))
+        // Un workflow système dont le déclencheur vient d'un module inactif n'est pas cassé : il dort (« Identifier la langue
+        // avec l'IA » sans la bibliothèque) ; il se réveille avec le module.
+        .filter((workflow) => workflow.enabled && usable(workflow) && !(workflow.system && !triggerSpec(workflow.trigger.kind)))
         .flatMap((workflow) => {
           const parts = brokenParts(workflow)
           if (!parts.trigger && !parts.actions.length) return []

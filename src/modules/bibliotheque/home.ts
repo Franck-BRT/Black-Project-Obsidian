@@ -15,7 +15,7 @@ import { grouped, groupingOf, groupingSelector, type Group } from '../../core/gr
 import type { GhostEntry, LibraryStore } from './store'
 import type { LibraryGhost } from './ghosts'
 import { LANGUAGES, type LanguageCode } from './language'
-import { directoryGroupOf, isHere, isUnder, placeLabel, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
+import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
 export const DOC_PAGE = 'bibliotheque.document'
@@ -257,7 +257,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   const doc = all.find((each) => each.record === record)
   // Retour : là où il est rangé.
   const home = doc?.shelf ? placePageOf(LIBRARY_PAGE, { shelf: doc.shelf, directory: doc.directory ?? '' }) : LIBRARY_PAGE
-  const back: ViewAction = { id: 'back', label: t('bibliotheque.back'), run: () => deps.showPage?.(home) }
+  const back: ViewAction = { id: 'back', label: (doc && placeName(deps.places.shelves(), doc.shelf, doc.directory)) || t('bibliotheque.back'), run: () => deps.showPage?.(home) }
   if (!doc) return { title: t('bibliotheque.doc.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.doc.missing') }] }
   const present = await deps.exists(doc.file)
   const ghosts = await deps.store.ghostsOf(doc)
@@ -359,7 +359,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
-        items: [field('title', doc.title), field('place', placeLabel(deps.places, doc)), field('language', doc.language ? t(`bibliotheque.lang.${doc.language}`) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
+        items: [field('title', doc.title), field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), field('category', doc.category), field('issuer', doc.issuer), field('tags', doc.tags.join(', '))]
       }),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',

@@ -22,7 +22,7 @@ import { greetingKey } from './logic'
 import { SideMenu } from './sidemenu'
 import { Springboard } from './springboard'
 import { back as backFrom, leave, type Visit } from './history'
-import type { Breadcrumb, TileSpec } from '../core/views'
+import type { Breadcrumb, TileSpec, ViewAction } from '../core/views'
 
 /** L'accueil, le tableau de bord, ou la page d'un module (son identifiant : « ao.analyses »). */
 export type Page = string
@@ -38,6 +38,8 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
   const [pageTitle, setPageTitle] = useState<string | undefined>(undefined)
   // Le fil d'Ariane de la page montrée : tout en haut, au-dessus du « Retour ».
   const [crumbs, setCrumbs] = useState<Breadcrumb | undefined>(undefined)
+  // Le lien de la page vers son niveau supérieur, quand elle en donne un (« Toutes les analyses »).
+  const [pageBack, setPageBack] = useState<ViewAction | undefined>(undefined)
   const [page, setPageState] = useState<Page>(wanted)
   useEffect(() => setPageState(wanted), [wanted, request])
   // L'historique : chaque page quittée, avec son titre ; « Retour » ramène à la dernière.
@@ -89,6 +91,28 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
     shownVisit.current = { page, title }
   })
   const previous = trail.at(-1)
+  /**
+   * « Retour » mène au **niveau supérieur**, pas à la page vue juste avant : l'étape d'avant
+   * du fil d'Ariane, sinon le lien que la page donne (« Toutes les analyses »), sinon sa page
+   * parente, sinon l'accueil ; les fonctions d'un module ramènent aux paramètres. La page
+   * précédente reste à Alt + ← (et au bouton « précédent » de la souris).
+   */
+  const parentSpec = modulePage?.parent ? host.pages().find((each) => each.id === modulePage.parent) : undefined
+  const crumbUp = crumbs && crumbs.items.length > 1 ? crumbs.items.at(-2) : undefined
+  const settingsSpec = host.settingsPage ? host.pages().find((each) => each.id === host.settingsPage) : undefined
+  const up: { title: string; go: () => void | Promise<void> } | null = functions
+    ? settingsSpec
+      ? { title: settingsSpec.title, go: () => setPage(settingsSpec.id) }
+      : null
+    : modulePage
+      ? crumbUp?.run
+        ? { title: crumbUp.label, go: crumbUp.run }
+        : pageBack
+          ? { title: pageBack.label, go: () => pageBack.run() }
+          : parentSpec
+            ? { title: parentSpec.title, go: () => setPage(parentSpec.id) }
+            : { title: t('ui.nav.home'), go: () => setPage('home') }
+      : null
   const goBack = () => {
     const step = backFrom(trail)
     if (!step) return
@@ -114,6 +138,11 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
           if (event.altKey && event.key === 'ArrowLeft' && !event.defaultPrevented && previous) {
             event.preventDefault()
             goBack()
+          }
+          // Alt + ↑ : le niveau supérieur, comme le bouton « Retour ».
+          if (event.altKey && event.key === 'ArrowUp' && !event.defaultPrevented && up) {
+            event.preventDefault()
+            void up.go()
           }
         }}
         onMouseUp={(event) => {
@@ -184,16 +213,16 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
                 {panel && <AppearancePanel appearance={appearance} change={change} close={() => setPanel(false)} t={t} />}
               </div>
             </header>
-            {previous && (
-              <button type="button" class="bp-back" aria-label={t('ui.back.label', { title: previous.title })} title={t('ui.back.label', { title: previous.title })} onClick={goBack}>
+            {up && (
+              <button type="button" class="bp-back" aria-label={t('ui.back.label', { title: up.title })} title={t('ui.back.label', { title: up.title })} onClick={() => void up.go()}>
                 <Icon name="back" />
-                {t('ui.back', { title: previous.title })}
+                {t('ui.back', { title: up.title })}
               </button>
             )}
             {functions ? (
               <ModuleFunctionsPage key={page} host={functions} />
             ) : modulePage ? (
-              <ModulePage spec={modulePage} param={param} host={host} generation={generation + local} onTitle={setPageTitle} onCrumbs={setCrumbs} hasHistory={!!previous} />
+              <ModulePage spec={modulePage} param={param} host={host} generation={generation + local} onTitle={setPageTitle} onCrumbs={setCrumbs} onBack={setPageBack} hasHistory={!!previous} />
             ) : shown === 'home' ? (
               <Springboard host={host} generation={generation + local} tiles={tiles} />
             ) : (

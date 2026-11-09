@@ -36,7 +36,7 @@ export const fr: Record<string, string> = {
   'ui.nav.dashboard': 'Tableau de bord',
   'ui.dashboard.title': 'Tableau de bord',
   'ui.back': 'Retour : {title}',
-  'ui.back.label': 'Revenir à la page précédente : {title} (Alt + ←)',
+  'ui.back.label': 'Remonter au niveau supérieur : {title} (Alt + ↑). La page précédente : Alt + ←',
   'ui.page.filters': 'Filtres',
   'ui.page.all': 'Tout',
   'ui.page.group': 'Regrouper par',

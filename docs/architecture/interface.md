@@ -257,6 +257,16 @@ Les **faits** d'une carte (`Card.facts`) sont des cases courtes (un chiffre et c
 compte) ; une valeur longue — une phrase, comme la note de l'IA sur une traduction —
 prend toute la largeur de la carte, en texte courant (`bp-fact is-long`, v0.44.0).
 
+## « Retour » : le niveau supérieur (Black Projects 0.84.0)
+
+**« ← Retour : … »** mène au **niveau supérieur**, plus à la page vue juste avant : l'étape
+d'avant du fil d'Ariane (`PageView.breadcrumb`), sinon le lien que la page donne
+(`PageView.back`, « Toutes les analyses » — la page le remet à la coquille par `onBack`
+et ne le dessine plus), sinon sa page parente (`PageSpec.parent`), sinon l'accueil ; les
+fonctions d'un module ramènent aux paramètres. Aussi **Alt + ↑**. L'historique (ci-dessous)
+reste à **Alt + ←** et au bouton « précédent » de la souris : la page d'avant, comme dans
+un navigateur.
+
 ## Le retour à la page précédente (v0.22.0)
 
 L'onglet garde un **historique** (`history.ts`, testé seul) : chaque page quittée y entre

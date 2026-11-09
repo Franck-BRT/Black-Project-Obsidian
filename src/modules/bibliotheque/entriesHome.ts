@@ -11,7 +11,7 @@
 import { pageWith, type Card, type HomeBlock, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
-import { directoryGroupOf, isHere, isUnder, placeLabel, placePageOf, placeView, resolvePlace, shelfCards, type ShelfPlacesDeps } from './places'
+import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, shelfCards, type ShelfPlacesDeps } from './places'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -162,7 +162,7 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
   // Relue parmi toutes : elle sait où elle est rangée (retour : là).
   const entry = path ? ((await deps.stores[kind].all()).find((each) => each.path === path) ?? (await deps.stores[kind].load(path))) : null
   const home = entry?.shelf ? placePageOf(ENTRIES_PAGE[kind], { shelf: entry.shelf, directory: entry.directory ?? '' }) : ENTRIES_PAGE[kind]
-  const back: ViewAction = { id: 'back', label: t(`bibliotheque.${kind}.back`), run: () => deps.showPage?.(home) }
+  const back: ViewAction = { id: 'back', label: (entry && placeName(deps.places[kind].shelves(), entry.shelf, entry.directory)) || t(`bibliotheque.${kind}.title`), run: () => deps.showPage?.(home) }
   if (!entry) return { title: t(`bibliotheque.${kind}.missing.title`), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.entry.missing') }] }
   return {
     title: entry.name,
