@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.17.0 (Black Projects 0.84.0) |
+| Version | 0.18.0 (Black Projects 0.86.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -249,6 +249,25 @@ mis à la suite **sans être attendu** — l'attendre de l'intérieur bloquait l
 **La bibliothèque de documents (v0.11.0, Black Projects 0.61.0)** : le fichier d'un import
 de workflows réussi est versé dans la [bibliothèque](bibliotheque.md) (catégorie
 « Échange »). Nouveau déclencheur d'un autre module : *Bibliothèque : document versé*.
+
+## Les étapes qui demandent l'IA (v0.18.0, Black Projects 0.86.0)
+
+Toute action déclarée `needsAi` reçoit, à sa déclaration (`registerAction`), trois champs :
+**Prompt**, **Persona**, **Skill** (`AI_FIELD_KEYS`) — ceux qu'elle n'a pas déjà
+(`aiAdded`) ; les siens (« Demander à l'IA », « Interroger le dossier » ont déjà prompt et
+persona) gardent leur sens. Leurs listes viennent de la bibliothèque : un champ a une
+`source` (`bibliotheque.prompt`, `.persona`, `.skill`), déclarée par
+`registerFieldSource` ; la fenêtre de l'étape en fait une liste, « — Aucun — » d'abord, un
+nom disparu gardé (« (pas dans la bibliothèque) »). À l'exécution, le moteur demande au
+module IA (`registerAiGuidance`) les consignes des noms choisis (`guidanceFor`) : le
+persona (le rôle, en tête), le skill (« Applique ce savoir-faire… »), le prompt (« Consigne
+supplémentaire… ») ; l'action les reçoit (`ActionRun.guidance`) et les donne à l'IA
+(`AiClient.withInstructions`, après le rôle). Un nom absent de la bibliothèque : l'étape
+échoue, le journal le dit.
+
+Le **logigramme** : une étape d'IA est `ai` — fond turquoise, « Étape n · IA », l'icône
+étincelle, et ce qu'on a choisi (« Persona : … · Skill : … ») ; une légende le dit dès
+qu'il y en a une. Les étapes sans IA : fond gris.
 
 ## Le moteur (`engine.ts`)
 

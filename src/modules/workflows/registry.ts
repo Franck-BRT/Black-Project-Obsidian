@@ -38,6 +38,12 @@ export interface ActionField {
   tooltipKey?: string
   required?: boolean
   options?: readonly { value: string; labelKey: string }[]
+  /**
+   * Ses choix viennent d'une liste déclarée par un module (`registerFieldSource`) : les
+   * prompts, les personas, les skills de la bibliothèque. Montré comme une liste, avec
+   * « Aucun » ; vide : rien de choisi.
+   */
+  source?: string
 }
 
 /** Ce qu'une action reçoit pour s'exécuter. */
@@ -50,6 +56,12 @@ export interface ActionRun {
   t: Translate
   ui: Ui
   notifier: Notifier
+  /**
+   * Pour une action qui demande l'IA : les consignes tirées de la bibliothèque — le persona,
+   * le skill, le prompt choisis dans l'étape (ceux que l'action ne lit pas elle-même) —, à
+   * donner à l'IA avant sa demande. Vide : aucune.
+   */
+  guidance?: string
 }
 
 /** Ce qu'une action a fait. */
@@ -70,8 +82,10 @@ export interface ActionSpec {
   fields: readonly ActionField[]
   /** Les résultats qu'elle donne aux étapes suivantes : `path`, `link`, `text`… */
   results: readonly string[]
-  /** Elle demande l'IA : signalé dans l'éditeur. */
+  /** Elle demande l'IA : signalé dans l'éditeur, en couleur dans le logigramme, et ses champs Prompt, Persona, Skill ajoutés. */
   needsAi?: boolean
+  /** Posé à la déclaration : les champs de l'IA ajoutés (que l'action ne lit pas elle-même ; ils passent par `guidance`). */
+  aiAdded?: readonly string[]
   run(run: ActionRun): Promise<ActionOutcome>
 }
 
@@ -111,8 +125,53 @@ export function registerTrigger(spec: TriggerSpec): void {
   triggers.set(spec.id, spec)
 }
 
+/**
+ * Les champs de toute action qui demande l'IA : un **prompt**, un **persona**, un **skill**
+ * de la bibliothèque, choisis par leur nom. Ceux qu'elle n'a pas déjà sont ajoutés ; leurs
+ * consignes lui arrivent par `guidance`.
+ */
+export const AI_FIELD_KEYS = ['prompt', 'persona', 'skill'] as const
+const aiField = (key: (typeof AI_FIELD_KEYS)[number]): ActionField => ({
+  key,
+  labelKey: `workflows.ai.field.${key}`,
+  kind: 'text',
+  tooltipKey: `workflows.ai.field.${key}.tip`,
+  source: `bibliotheque.${key}`
+})
+
 export function registerAction(spec: ActionSpec): void {
-  actions.set(spec.id, spec)
+  if (!spec.needsAi) {
+    actions.set(spec.id, spec)
+    return
+  }
+  // Ses propres champs prompt, persona : leur liste vient aussi de la bibliothèque.
+  const own = spec.fields.map((field) => ((AI_FIELD_KEYS as readonly string[]).includes(field.key) && !field.source ? { ...field, source: `bibliotheque.${field.key}` } : field))
+  const added = AI_FIELD_KEYS.filter((key) => !spec.fields.some((field) => field.key === key))
+  actions.set(spec.id, { ...spec, fields: [...own, ...added.map(aiField)], aiAdded: added })
+}
+
+/** Les listes de choix des champs (`ActionField.source`) : les prompts, personas, skills de la bibliothèque. */
+export interface SourceOption {
+  value: string
+  label: string
+  description?: string
+}
+const sources = new Map<string, () => Promise<SourceOption[]>>()
+export function registerFieldSource(id: string, list: () => Promise<SourceOption[]>): void {
+  sources.set(id, list)
+}
+export async function fieldSourceOptions(id: string): Promise<SourceOption[] | null> {
+  const list = sources.get(id)
+  return list ? list() : null
+}
+
+/** Les consignes de l'IA tirées des noms choisis (le module IA, qui lit la bibliothèque) ; `null` : personne pour les lire. */
+let aiGuidance: ((chosen: Readonly<Record<string, string>>) => Promise<string>) | null = null
+export function registerAiGuidance(resolve: ((chosen: Readonly<Record<string, string>>) => Promise<string>) | null): void {
+  aiGuidance = resolve
+}
+export async function guidanceFor(chosen: Readonly<Record<string, string>>): Promise<string> {
+  return aiGuidance && Object.values(chosen).some((value) => value.trim()) ? aiGuidance(chosen) : ''
 }
 
 export function registerTemplate(spec: TemplateSpec): void {

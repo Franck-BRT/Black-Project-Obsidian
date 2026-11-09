@@ -532,6 +532,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.85.0 : **modules Bibliothèque et IA** : la **référence** et la **version** (édition,
   révision) des documents, en deux passes — sans IA à l'entrée (le texte, puis le nom du
   fichier) ; pas sûres, l'IA (workflow système actif ; elle n'invente pas de référence)
+- v0.86.0 : **workflows, IA, bibliothèque** : les étapes d'IA ont un fond turquoise dans le
+  logigramme (légende) ; ouvertes, des champs **Prompt**, **Persona**, **Skill** choisis
+  dans les bibliothèques, dont les consignes sont données à l'IA ; une **bibliothèque de
+  skills** (savoir-faire donnés à l'IA)
 
 ### Étape 7 — Livrables
 

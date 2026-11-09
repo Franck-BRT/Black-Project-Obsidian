@@ -70,6 +70,24 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les étapes d'IA : couleur, prompt, persona, skill ; la bibliothèque de skills (v0.86.0)
+
+- [ ] Bibliothèque : quatre cartes — Documents, Prompts, Personas, **Skills** ; Skills ›
+      **Ajouter les exemples** : Lire un CCTP, Repérer les pénalités, Vérifier une exigence,
+      Répondre en tableau (notes dans `Bibliothèque/Skills`)
+- [ ] Workflows › « Questionnaire (IA)… » : dans le logigramme, l'étape « Étape 1 · IA » a un
+      **fond turquoise** ; la légende « Fond turquoise : une étape qui demande l'IA ; fond
+      gris : sans IA » ; un workflow sans IA (« Relever le calendrier… ») : étapes grises,
+      pas de légende
+- [ ] Un clic sur l'étape d'IA : la fenêtre a **Prompt (bibliothèque)**, **Persona
+      (bibliothèque)**, **Skill (bibliothèque)** — des listes, « — Aucun — » d'abord ;
+      choisir un persona et un skill, enregistrer : le logigramme les affiche
+      (« Persona : … · Skill : … »)
+- [ ] IA réglée, exécuter : la réponse suit le rôle et la méthode choisis ; un skill retiré
+      de la bibliothèque : l'étape échoue, le journal dit lequel
+- [ ] Thème sombre, couleurs pour daltonismes : le fond turquoise reste distinct, « IA » est
+      écrit
+
 ## La référence et la version des documents (v0.85.0)
 
 - [ ] Verser un texte qui commence par « Réf. : CCTP-2026-118 » et « Édition 3 » : sa carte

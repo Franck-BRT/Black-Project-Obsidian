@@ -249,8 +249,8 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
       }
     ],
     results: ['path', 'link', 'text'],
-    async run({ fields }) {
-      const client = needAi()
+    async run({ fields, guidance }) {
+      const client = needAi().withInstructions(guidance)
       const analysis = await find(fields.analyse!)
       const sources = await pieceSources(services(), analysis)
       if (!sources.length) throw new Error(t('ao.ask.noPiece'))
@@ -277,8 +277,8 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
     needsAi: true,
     fields: [ANALYSIS_FIELD],
     results: ['path', 'link', 'text'],
-    async run({ fields }) {
-      const client = needAi()
+    async run({ fields, guidance }) {
+      const client = needAi().withInstructions(guidance)
       const analysis = await find(fields.analyse!)
       const sources = await pieceSources(services(), analysis)
       if (!sources.length) throw new Error(t('ao.ask.noPiece'))

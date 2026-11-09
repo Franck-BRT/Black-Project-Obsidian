@@ -94,12 +94,20 @@ export class AiClient {
     private readonly http: Http,
     readonly connection: AiConnection,
     /** Le persona dans lequel le modèle répond (ses consignes) ; vide : aucun. */
-    readonly persona = ''
+    readonly persona = '',
+    /** D'autres consignes, données après le rôle (un skill, un prompt de la bibliothèque) ; vide : aucune. */
+    readonly instructions = ''
   ) {}
 
-  /** Le même client, qui répond dans le rôle d'un persona (ses consignes, avant les autres). */
+  /** Le même client, qui répond dans le rôle d'un persona (ses consignes, avant les autres) ; les autres consignes restent. */
   withPersona(instructions: string): AiClient {
-    return new AiClient(this.http, this.connection, instructions.trim())
+    return new AiClient(this.http, this.connection, instructions.trim(), this.instructions)
+  }
+
+  /** Le même client, avec d'autres consignes encore (un skill, un prompt de la bibliothèque) ; vide : le même. */
+  withInstructions(instructions: string | undefined): AiClient {
+    const extra = (instructions ?? '').trim()
+    return extra ? new AiClient(this.http, this.connection, this.persona, [this.instructions, extra].filter(Boolean).join('\n\n')) : this
   }
 
   get configured(): boolean {
@@ -148,7 +156,9 @@ export class AiClient {
 
   /** La réponse du modèle, en texte. */
   async chat(request: Omit<ChatRequest, 'model'> & { model?: string }): Promise<string> {
-    const asked = this.persona ? { ...request, messages: withRole(request.messages, this.persona) } : request
+    // Le rôle, puis les autres consignes, en tête du message système.
+    const preamble = [this.persona, this.instructions].filter((part) => part.trim()).join('\n\n')
+    const asked = preamble ? { ...request, messages: withRole(request.messages, preamble) } : request
     return readChatContent(await this.send('chat/completions', 'POST', buildChatBody(this.withDefaults(asked))))
   }
 

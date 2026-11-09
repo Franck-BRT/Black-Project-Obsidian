@@ -142,7 +142,7 @@ export type HomeBlock =
    * Chaque forme peut ouvrir quelque chose (`open` : modifier l'étape…). `label` le résume
    * pour les lecteurs d'écran ; les formes sont aussi une liste ordonnée.
    */
-  | { kind: 'flowchart'; title?: string; label: string; nodes: FlowNode[] }
+  | { kind: 'flowchart'; title?: string; label: string; nodes: FlowNode[]; /** Ce que disent les couleurs, sous le logigramme. */ legend?: string }
   /**
    * Une **section repliable** : un intitulé (un clic la replie ou la déplie) et ses blocs —
    * d'autres sections comprises (des sous-sections). Repliée d'origine si `collapsed` ;
@@ -179,6 +179,8 @@ export interface FlowNode {
   yes?: string
   no?: string
   open?: ViewAction
+  /** Une étape qui demande l'IA : un autre fond (et « IA » écrit, pas seulement la couleur). */
+  ai?: boolean
 }
 
 /** Une section de l'accueil, telle qu'elle est à cet instant. */

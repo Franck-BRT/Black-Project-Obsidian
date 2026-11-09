@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.85.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+**Version 0.86.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
 l'accueil et l'interface.** L'accueil est une grille de tuiles que chacun compose (avec
 leurs pastilles : prochaine remise, exigences faibles…) ; les informations sont dans un
 tableau de bord et une barre de gauche que chacun range aussi (Accueil toujours en haut,
@@ -25,8 +25,9 @@ sans type reconnu, les exigences de celles qu'un import fait entrer faibles, l'a
 d'appels d'offres rappelle la date limite des questions et la visite, les workflows
 signalent ceux d'entre eux qui sont cassés, l'IA les nouveaux modèles de son serveur, et la bibliothèque verse
 seule ce qui est posé dans son dossier « À verser ». La bibliothèque tient aussi vos
-**prompts** et vos **personas** (le rôle dans lequel l'IA répond), repris pour
-interroger un dossier, relire une exigence ou dans un workflow ; chacune peut être
+**prompts**, vos **personas** (le rôle dans lequel l'IA répond) et vos **skills** (un
+savoir-faire donné à l'IA), repris pour interroger un dossier, relire une exigence ou dans
+toute étape de workflow qui demande l'IA ; chacune peut être
 **plusieurs bibliothèques** (l'une par défaut), rangées en **répertoires** et
 sous-répertoires, où l'on verse aussi par **glisser-déposer** ; un document déjà là,
 déposé ailleurs, peut y laisser un **fantôme** plutôt qu'une copie ; la **langue** de

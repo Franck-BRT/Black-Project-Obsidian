@@ -59,8 +59,13 @@ import { restoreSystem, seedSystem, systemOrigin, systemState, usable } from './
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export {
+  actionSpec,
+  AI_FIELD_KEYS,
+  fieldSourceOptions,
   forgetDeclarations,
   registerAction,
+  registerAiGuidance,
+  registerFieldSource,
   registerSystemWorkflow,
   registerTemplate,
   registerTrigger,
@@ -68,6 +73,7 @@ export {
   type ActionOutcome,
   type ActionRun,
   type ActionSpec,
+  type SourceOption,
   type SystemWorkflowSpec,
   type TemplateSpec,
   type TriggerSpec
@@ -176,7 +182,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.17.0',
+  version: '0.18.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),

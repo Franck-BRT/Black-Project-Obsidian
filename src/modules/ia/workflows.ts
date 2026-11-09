@@ -65,6 +65,27 @@ export function readIdentityAnswer(answer: unknown, text: string, fileName: stri
   }
 }
 
+/**
+ * Les consignes d'une étape d'IA, tirées de la bibliothèque : le **persona** (le rôle, en
+ * tête), le **skill** (la méthode), le **prompt** (une consigne de plus) choisis par leur
+ * nom. Un nom qui n'y est plus (ou vide) : une erreur qui le dit — l'étape échoue, le journal
+ * l'écrit.
+ */
+export function libraryGuidance(t: Translate): (chosen: Readonly<Record<string, string>>) => Promise<string> {
+  return async (chosen) => {
+    const persona = await namedEntry('persona', chosen.persona)
+    const skill = await namedEntry('skill', chosen.skill)
+    const prompt = await namedEntry('prompt', chosen.prompt)
+    return [
+      persona ? personaInstructions(persona) : '',
+      skill ? `${t('ia.guidance.skill', { name: skill.name })}\n\n${skill.text.trim()}` : '',
+      prompt ? `${t('ia.guidance.prompt', { name: prompt.name })}\n\n${prompt.text.trim()}` : ''
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+  }
+}
+
 export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string): void {
   /**
    * La référence et la version d'un document de la bibliothèque, quand la première passe sans
@@ -80,7 +101,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     needsAi: true,
     fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
     results: ['text'],
-    async run({ fields }) {
+    async run({ fields, guidance }) {
       const say = (key: string, vars?: Record<string, string | number>) => {
         const text = t(key, vars)
         return { lines: [text], results: { text } }
@@ -89,7 +110,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       const doc = record ? await libraryDoc(record) : null
       if (!doc) return say('ia.wf.language.noDoc', { record })
       if (!doc.identityToConfirm) return say('ia.wf.identity.already', { title: doc.title })
-      const ai = client()
+      const ai = client()?.withInstructions(guidance)
       if (!ai) return say('ia.wf.identity.noAi', { title: doc.title })
       const text = ((await libraryDocText(record)) ?? '').trim()
       if (!text) return say('ia.wf.identity.noText', { title: doc.title })
@@ -130,7 +151,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     needsAi: true,
     fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
     results: ['text'],
-    async run({ fields }) {
+    async run({ fields, guidance }) {
       const say = (key: string, vars?: Record<string, string | number>) => {
         const text = t(key, vars)
         return { lines: [text], results: { text } }
@@ -139,7 +160,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       const doc = record ? await libraryDoc(record) : null
       if (!doc) return say('ia.wf.language.noDoc', { record })
       if (!doc.languageToConfirm) return say('ia.wf.language.already', { title: doc.title })
-      const ai = client()
+      const ai = client()?.withInstructions(guidance)
       if (!ai) return say('ia.wf.language.noAi', { title: doc.title })
       const text = ((await libraryDocText(record)) ?? '').trim()
       if (!text) return say('ia.wf.language.noText', { title: doc.title })
@@ -176,8 +197,8 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       { key: 'note', labelKey: 'ia.wf.field.note', kind: 'text', tooltipKey: 'ia.wf.field.note.tip' }
     ],
     results: ['text', 'path', 'link'],
-    async run({ fields }) {
-      const ai = client()
+    async run({ fields, guidance }) {
+      const ai = client()?.withInstructions(guidance)
       if (!ai) throw new Error(t('ia.unavailable'))
       // La consigne : écrite, sinon celle d'un prompt de la bibliothèque ; un persona, si on en nomme un.
       const prompt = await namedEntry('prompt', fields.prompt)

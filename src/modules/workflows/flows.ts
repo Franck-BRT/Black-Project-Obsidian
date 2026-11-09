@@ -30,7 +30,7 @@ import {
   type WorkflowCondition,
   type WorkflowTrigger
 } from './model'
-import { actionSpec, allActions, allTemplates, allTriggers, triggerSpec, type ActionSpec, type Translate } from './registry'
+import { actionSpec, allActions, allTemplates, allTriggers, fieldSourceOptions, triggerSpec, type ActionSpec, type SourceOption, type Translate } from './registry'
 import { exportWorkflows, importWorkflows } from './share'
 
 export interface Session {
@@ -516,15 +516,33 @@ export function availableVariables(workflow: Workflow, before: number): string[]
 
 async function askActionFields(session: Session, spec: ActionSpec, workflow: Workflow, at: number, current?: WorkflowAction): Promise<WorkflowAction | null> {
   const { ui, t } = session
+  // Les listes de la bibliothèque (prompts, personas, skills), lues avant d'ouvrir la fenêtre.
+  const lists = new Map<string, SourceOption[] | null>()
+  for (const field of spec.fields) if (field.source && !lists.has(field.source)) lists.set(field.source, await fieldSourceOptions(field.source))
   const values = await ui.askForm({
     title: t(spec.labelKey),
-    intro: [t(spec.descKey), t('workflows.actions.variables', { variables: availableVariables(workflow, at).join(' ') })].join('\n\n'),
+    intro: [t(spec.descKey), ...(spec.needsAi ? [t('workflows.ai.intro')] : []), t('workflows.actions.variables', { variables: availableVariables(workflow, at).join(' ') })].join('\n\n'),
     fields: spec.fields.map((field): FormField => {
       const value = current?.fields[field.key] ?? field.defaultValue ?? ''
       const common = {
         key: field.key,
         label: t(field.labelKey),
         ...(field.tooltipKey ? { tooltip: t(field.tooltipKey) } : {})
+      }
+      const listed = field.source ? lists.get(field.source) : null
+      if (listed) {
+        // Un nom qui n'est plus dans la bibliothèque (ou une {variable}) reste proposé, tel quel.
+        const known = listed.some((option) => option.value === value)
+        return {
+          kind: 'choice',
+          ...common,
+          value,
+          options: [
+            { value: '', label: t('workflows.ai.none') },
+            ...listed,
+            ...(value && !known ? [{ value, label: t('workflows.ai.unknown', { name: value }) }] : [])
+          ]
+        }
       }
       if (field.kind === 'choice') {
         return { kind: 'choice', ...common, value, options: (field.options ?? []).map((option) => ({ value: option.value, label: t(option.labelKey) })) }

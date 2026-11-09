@@ -171,6 +171,10 @@ button.bp-flow-shape:focus-visible { outline: 3px solid var(--bp-focus); outline
 .bp-flow-node.is-decision .bp-flow-shape { padding: 14px 40px; border: 0; background: var(--bp-border); clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%); position: relative; }
 .bp-flow-node.is-decision .bp-flow-shape::before { content: ""; position: absolute; inset: 2px; background: var(--bp-surface-2); clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%); z-index: 0; }
 .bp-flow-node.is-decision .bp-flow-shape > * { position: relative; z-index: 1; }
+.bp-flow-node.is-step .bp-flow-shape { background: var(--bp-surface-2); }
+.bp-flow-node.is-step[data-ai="true"] .bp-flow-shape { background: color-mix(in srgb, #0d9488 16%, var(--bp-surface)); border-color: color-mix(in srgb, #0d9488 60%, var(--bp-border)); }
+.bp-flow-legend { margin: 12px 0 0; text-align: center; color: var(--bp-text-muted); font-size: 0.88em; }
+.bp-flow-legend::before { content: ""; display: inline-block; width: 0.9em; height: 0.9em; margin-right: 6px; vertical-align: -0.1em; border-radius: 3px; border: 2px solid color-mix(in srgb, #0d9488 60%, var(--bp-border)); background: color-mix(in srgb, #0d9488 16%, var(--bp-surface)); }
 .bp-flow-node[data-tone="warning"] .bp-flow-shape { border-color: var(--bp-warning, var(--bp-border)); }
 .bp-flow-node[data-tone="danger"] .bp-flow-shape { border-color: var(--bp-danger, var(--bp-border)); }
 .bp-flow-node[data-tone="neutral"] .bp-flow-shape { opacity: 0.75; }

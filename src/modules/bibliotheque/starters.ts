@@ -2,7 +2,7 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Les exemples des bibliothèques de prompts et de personas, pour l'analyse d'un appel
+ * Les exemples des bibliothèques de prompts, de personas et de skills, pour l'analyse d'un appel
  * d'offres : écrits dans le coffre seulement à la demande (« Ajouter les exemples »), dans
  * la langue de l'utilisateur. Ce sont des notes comme les autres : à modifier, à retirer.
  */
@@ -118,8 +118,63 @@ const PERSONAS: Record<Language, EntryDraft[]> = {
   ]
 }
 
+const SKILLS: Record<Language, EntryDraft[]> = {
+  fr: [
+    entry(
+      'Lire un CCTP',
+      'Analyse',
+      'Les points à relever dans un cahier des clauses techniques',
+      'Pour lire un CCTP : 1. l’objet et le périmètre (ce qui est dans le marché, ce qui n’y est pas) ; 2. les exigences de performance, chiffrées, avec leur méthode de vérification ; 3. les normes et documents applicables, avec leur édition ; 4. les livrables et leurs échéances ; 5. les conditions de recette. Cite chaque fois l’article. Signale ce qui manque : une exigence sans critère, une norme sans édition, un livrable sans date.'
+    ),
+    entry(
+      'Repérer les pénalités',
+      'Contrat',
+      'Trouver et chiffrer les pénalités d’un dossier',
+      'Cherche toutes les pénalités, où qu’elles soient (CCAP, CCTP, annexes) : retard, non-conformité, indisponibilité, défaut de documentation. Pour chacune : le fait déclencheur, la formule, l’assiette, le plafond, l’exonération éventuelle. Calcule un exemple pour un retard de 10 jours sur un montant de 100 000 €. Signale les pénalités sans plafond.'
+    ),
+    entry(
+      'Vérifier une exigence',
+      'Technique',
+      'Contrôler qu’une exigence est bien écrite (ISO/IEC/IEEE 29148)',
+      'Pour chaque exigence, vérifie qu’elle est : nécessaire, non ambiguë (pas de « environ », « si possible », « adapté »), vérifiable (un critère chiffré et une méthode : inspection, analyse, démonstration, essai), singulière (une seule chose demandée), faisable et cohérente avec les autres. Réponds par défaut constaté, puis une reformulation en « Le système doit… ».'
+    ),
+    entry(
+      'Répondre en tableau',
+      'Rédaction',
+      'Une réponse courte, en tableau, sources citées',
+      'Réponds par un tableau Markdown, une ligne par point, avec une colonne « Source » (la pièce et l’article, ou la page). Pas d’introduction ni de conclusion. Si une information manque dans le dossier, écris « Non précisé » plutôt que de supposer.'
+    )
+  ],
+  en: [
+    entry(
+      'Read a statement of work',
+      'Analysis',
+      'The points to note in a technical specification',
+      'To read a statement of work: 1. the object and scope (what is in the contract, what is not); 2. the performance requirements, quantified, with their verification method; 3. the applicable standards and documents, with their edition; 4. the deliverables and their due dates; 5. the acceptance conditions. Quote the clause each time. Flag what is missing: a requirement without criterion, a standard without edition, a deliverable without date.'
+    ),
+    entry(
+      'Spot the penalties',
+      'Contract',
+      'Find and quantify the penalties of a tender',
+      'Look for every penalty, wherever it is (contract, specification, annexes): delay, non-compliance, unavailability, missing documentation. For each: the trigger, the formula, the base, the cap, any exemption. Compute an example for a 10-day delay on a 100,000 € amount. Flag penalties without a cap.'
+    ),
+    entry(
+      'Check a requirement',
+      'Technical',
+      'Check that a requirement is well written (ISO/IEC/IEEE 29148)',
+      'For each requirement, check that it is: necessary, unambiguous (no “about”, “if possible”, “suitable”), verifiable (a quantified criterion and a method: inspection, analysis, demonstration, test), singular (one thing asked), feasible and consistent with the others. Answer with the defect found, then a rewording as “The system shall…”.'
+    ),
+    entry(
+      'Answer in a table',
+      'Writing',
+      'A short answer, as a table, sources quoted',
+      'Answer with a Markdown table, one line per point, with a “Source” column (the document and clause, or the page). No introduction nor conclusion. If a piece of information is missing from the tender, write “Not stated” rather than assume.'
+    )
+  ]
+}
+
 /** Les exemples d'une bibliothèque, dans la langue de l'utilisateur. */
 export function startersFor(kind: EntryKind, language: string): EntryDraft[] {
   const lang: Language = language === 'en' ? 'en' : 'fr'
-  return (kind === 'prompt' ? PROMPTS : PERSONAS)[lang]
+  return (kind === 'prompt' ? PROMPTS : kind === 'persona' ? PERSONAS : SKILLS)[lang]
 }

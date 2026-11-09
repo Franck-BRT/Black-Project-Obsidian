@@ -26,7 +26,7 @@ import {
   type Workflow,
   type WorkflowEvent
 } from './model'
-import { actionSpec, triggerSpec, type Translate } from './registry'
+import { actionSpec, guidanceFor, triggerSpec, type Translate } from './registry'
 import { usable } from './system'
 
 export type Outcome = 'done' | 'failed' | 'declined' | 'stopped'
@@ -190,7 +190,9 @@ export class WorkflowEngine {
         return this.failed(workflow, entry('failed', lines, paths))
       }
       try {
-        const outcome = await spec.run({ fields, subject, vars, t, ui, notifier })
+        // Les consignes de la bibliothèque (prompt, persona, skill choisis dans l'étape), pour l'IA.
+        const guidance = spec.aiAdded?.length ? await guidanceFor(Object.fromEntries(spec.aiAdded.map((key) => [key, fields[key] ?? '']))) : ''
+        const outcome = await spec.run({ fields, subject, vars, t, ui, notifier, ...(guidance ? { guidance } : {}) })
         lines.push(`${step}. ${t(spec.labelKey)} : ${outcome.lines.join(' ') || t('workflows.step.done')}`)
         paths.push(...(outcome.paths ?? []))
         for (const [name, value] of Object.entries(outcome.results ?? {})) vars[stepVariable(step, name)] = value

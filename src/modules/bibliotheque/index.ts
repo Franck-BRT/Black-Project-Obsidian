@@ -20,9 +20,9 @@ import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import type { Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
-import { emitWorkflowEvent, NO_SUBJECT, registerTrigger, systemWorkflowManages, workflowRunning } from '../workflows'
+import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, systemWorkflowManages, workflowRunning } from '../workflows'
 import page from './doc/Bibliothèque.md'
-import { EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
+import { ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
 import { entryPageOf, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome } from './home'
 import { startersFor } from './starters'
@@ -46,8 +46,10 @@ export const FOLDER_KEY = 'dossier'
 export const DEFAULT_FOLDER = 'Bibliothèque'
 export const PROMPTS_FOLDER_KEY = 'dossierPrompts'
 export const PERSONAS_FOLDER_KEY = 'dossierPersonas'
+export const SKILLS_FOLDER_KEY = 'dossierSkills'
 export const DEFAULT_PROMPTS_FOLDER = 'Bibliothèque/Prompts'
 export const DEFAULT_PERSONAS_FOLDER = 'Bibliothèque/Personas'
+export const DEFAULT_SKILLS_FOLDER = 'Bibliothèque/Skills'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
 export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
@@ -309,11 +311,11 @@ const folderField: TextField = {
 
 const entriesFolderField = (kind: EntryKind): TextField => ({
   kind: 'text',
-  key: kind === 'prompt' ? PROMPTS_FOLDER_KEY : PERSONAS_FOLDER_KEY,
+  key: kind === 'prompt' ? PROMPTS_FOLDER_KEY : kind === 'persona' ? PERSONAS_FOLDER_KEY : SKILLS_FOLDER_KEY,
   nameKey: `bibliotheque.setting.${kind}.folder`,
   descKey: `bibliotheque.setting.${kind}.folder.desc`,
   tooltipKey: `bibliotheque.setting.${kind}.folder.tip`,
-  defaultValue: kind === 'prompt' ? DEFAULT_PROMPTS_FOLDER : DEFAULT_PERSONAS_FOLDER,
+  defaultValue: kind === 'prompt' ? DEFAULT_PROMPTS_FOLDER : kind === 'persona' ? DEFAULT_PERSONAS_FOLDER : DEFAULT_SKILLS_FOLDER,
   normalize: cleanFolder
 })
 
@@ -334,7 +336,7 @@ export function bibliothequeFeatures(): ModuleDetails {
         features: [feature('everything', 'available'), feature('dedup', 'available'), feature('versions', 'available'), feature('classify', 'available'), feature('language', 'available'), feature('origins', 'available')]
       },
       { titleKey: 'bibliotheque.feature.section.places', features: [feature('shelves', 'available'), feature('directories', 'available'), feature('move', 'available')] },
-      { titleKey: 'bibliotheque.feature.section.ai', features: [feature('prompts', 'available'), feature('personas', 'available'), feature('starters', 'available')] },
+      { titleKey: 'bibliotheque.feature.section.ai', features: [feature('prompts', 'available'), feature('personas', 'available'), feature('skills', 'available'), feature('starters', 'available')] },
       { titleKey: 'bibliotheque.feature.section.next', features: [feature('text', 'planned', 7), feature('delivery', 'planned', 7)] }
     ]
   }
@@ -349,19 +351,20 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.13.0',
+  version: '0.14.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona')],
+  settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
     const promptsFolder = () => folderOf(settings.get(), PROMPTS_FOLDER_KEY, DEFAULT_PROMPTS_FOLDER)
     const personasFolder = () => folderOf(settings.get(), PERSONAS_FOLDER_KEY, DEFAULT_PERSONAS_FOLDER)
+    const skillsFolder = () => folderOf(settings.get(), SKILLS_FOLDER_KEY, DEFAULT_SKILLS_FOLDER)
     // Les bibliothèques de chaque sorte : la principale (le dossier des réglages), puis celles ajoutées.
-    const mainFolder: Record<ShelfKind, () => string> = { document: () => folderOf(settings.get()), prompt: promptsFolder, persona: personasFolder }
+    const mainFolder: Record<ShelfKind, () => string> = { document: () => folderOf(settings.get()), prompt: promptsFolder, persona: personasFolder, skill: skillsFolder }
     const shelves = (kind: ShelfKind): Shelf[] => shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`))
     const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
     const store = new LibraryStore({
@@ -373,13 +376,13 @@ export const bibliothequeModule: BlackModule = {
       ghostLine: (link, where) => t('bibliotheque.ghost.line', { link, where }),
       textOf: async (name, bytes) => (textReader ? textReader(name, bytes) : null),
       // Les prompts et les personas, rangés sous la bibliothèque (ou ailleurs) : pas des documents.
-      skip: () => [...shelves('prompt'), ...shelves('persona')].map((shelf) => shelf.folder),
+      skip: () => [...shelves('prompt'), ...shelves('persona'), ...shelves('skill')].map((shelf) => shelf.folder),
       shelves: () => shelves('document'),
       target: () => defaultShelf('document').folder
     })
     const entryStore = (kind: EntryKind) =>
       new EntryStore(kind, { fs: platform.fs, yaml: platform.yaml, folder: mainFolder[kind], shelves: () => shelves(kind), target: () => defaultShelf(kind).folder })
-    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona') }
+    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona'), skill: entryStore('skill') }
     const subdirectories = (kind: ShelfKind) => (folder: string) => (kind === 'document' ? store.subdirectories(folder) : entries[kind].subdirectories(folder))
     /** Un dossier d'une bibliothèque de documents, en mots : « Normes › ECSS » (son nom d'abord quand il y en a plusieurs). */
     const placeOfFolder = (folder: string): string => {
@@ -410,6 +413,11 @@ export const bibliothequeModule: BlackModule = {
       return ghost
     }
     active = { store, t, entries, ui: platform.ui, placeOfFolder, offerGhost }
+    // Les listes des champs Prompt, Persona, Skill des étapes de workflow qui demandent l'IA.
+    for (const kind of ENTRY_KINDS)
+      registerFieldSource(`bibliotheque.${kind}`, async () =>
+        (await libraryEntries(kind)).map((entry) => ({ value: entry.name, label: entry.name, ...(entry.category || entry.description ? { description: [entry.category, entry.description].filter(Boolean).join(' · ') } : {}) }))
+      )
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined
     const showNote = (path: string) => (context.showNote ? context.showNote(path) : platform.ui.openNote(path))
 
@@ -434,9 +442,9 @@ export const bibliothequeModule: BlackModule = {
     })
 
     // ── Les bibliothèques et leurs répertoires ──
-    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas' }
-    const SHELF_ROOT: Record<ShelfKind, string> = { document: 'Bibliothèques/Documents', prompt: 'Bibliothèques/Prompts', persona: 'Bibliothèques/Personas' }
-    const allShelfFolders = () => (['document', 'prompt', 'persona'] as const).flatMap((kind) => shelves(kind).map((shelf) => shelf.folder))
+    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills' }
+    const SHELF_ROOT: Record<ShelfKind, string> = { document: 'Bibliothèques/Documents', prompt: 'Bibliothèques/Prompts', persona: 'Bibliothèques/Personas', skill: 'Bibliothèques/Skills' }
+    const allShelfFolders = () => (['document', 'prompt', 'persona', 'skill'] as const).flatMap((kind) => shelves(kind).map((shelf) => shelf.folder))
     /** Une nouvelle bibliothèque : son nom, son dossier (proposé d'après le nom), par défaut ou non. */
     const newShelf = async (kind: ShelfKind): Promise<Shelf | null> => {
       const values = await platform.ui.askForm({
@@ -513,7 +521,7 @@ export const bibliothequeModule: BlackModule = {
       setDefault,
       removeShelf
     })
-    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona') }
+    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill') }
     /** Choisir où ranger : chaque bibliothèque de la sorte, chacun de ses répertoires (sauf là où c'est déjà). */
     const pickPlace = async (kind: ShelfKind, current: string, title: string): Promise<string | null> => {
       const options = (await allPlaces(shelves(kind), subdirectories(kind)))
@@ -806,7 +814,7 @@ export const bibliothequeModule: BlackModule = {
         platform.notifier.notify(added.length ? t(`bibliotheque.${kind}.starters.done`, { count: added.length, names: added.join(', ') }) : t('bibliotheque.entry.starters.none'), 8000)
       }
     })
-    for (const kind of ['prompt', 'persona'] as const) {
+    for (const kind of ['prompt', 'persona', 'skill'] as const) {
       context.commands.register({
         id: `${kind}s`,
         nameKey: `bibliotheque.command.${kind}s`,

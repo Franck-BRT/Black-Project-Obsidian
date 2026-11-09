@@ -386,7 +386,7 @@ function Flowchart({ block }: { block: Extract<HomeBlock, { kind: 'flowchart' }>
       {block.title && <figcaption class="bp-block-title">{block.title}</figcaption>}
       <ol class="bp-flow-list">
         {block.nodes.map((node, index) => (
-          <li key={node.id} class={`bp-flow-node is-${node.kind}`} data-tone={node.tone}>
+          <li key={node.id} class={`bp-flow-node is-${node.kind}`} data-tone={node.tone} data-ai={node.ai ? 'true' : undefined}>
             {shape(node)}
             {node.kind === 'decision' && node.no && (
               <span class="bp-flow-no">
@@ -402,6 +402,7 @@ function Flowchart({ block }: { block: Extract<HomeBlock, { kind: 'flowchart' }>
           </li>
         ))}
       </ol>
+      {block.legend && <p class="bp-flow-legend">{block.legend}</p>}
     </figure>
   )
 }

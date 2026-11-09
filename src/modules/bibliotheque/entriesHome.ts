@@ -16,11 +16,11 @@ import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 export const HUB_PAGE = 'bibliotheque.accueil'
-export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas' }
-export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona' }
+export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills' }
+export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill' }
 export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(ENTRY_PAGE[kind], encodeURIComponent(path))
 
-const ICON: Readonly<Record<EntryKind, 'chat' | 'spark'>> = { prompt: 'chat', persona: 'spark' }
+const ICON: Readonly<Record<EntryKind, 'chat' | 'spark' | 'list'>> = { prompt: 'chat', persona: 'spark', skill: 'list' }
 
 export interface EntriesHomeDeps {
   t: Translate
@@ -215,12 +215,13 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const documents = await deps.documents()
   const prompts = await deps.stores.prompt.all()
   const personas = await deps.stores.persona.all()
+  const skills = await deps.stores.skill.all()
   const go = (page: string): ViewAction => ({ id: 'open', label: t('bibliotheque.hub.open'), run: () => deps.showPage?.(page) })
   // Plusieurs bibliothèques d'une sorte : une section par sorte, une carte par bibliothèque.
-  const several = (['document', 'prompt', 'persona'] as const).some((kind) => deps.places[kind].shelves().length > 1)
+  const several = (['document', 'prompt', 'persona', 'skill'] as const).some((kind) => deps.places[kind].shelves().length > 1)
   if (several) {
     const placed = await deps.placedDocuments()
-    const section = (kind: 'document' | EntryKind, icon: 'book' | 'chat' | 'spark', items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
+    const section = (kind: 'document' | EntryKind, icon: 'book' | 'chat' | 'spark' | 'list', items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
       kind: 'section',
       id: `bibliotheque.hub.${kind}`,
       title: t(`bibliotheque.hub.${kind}s`),
@@ -242,17 +243,19 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
           stats: [
             { label: t('bibliotheque.hub.documents'), value: String(documents.count), icon: 'book' },
             { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
-            { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' }
+            { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
+            { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' }
           ]
         },
         ...(documents.likely ? [{ kind: 'message' as const, tone: 'warning' as const, text: t('bibliotheque.home.likely', { count: documents.likely }) }] : []),
         section('document', 'book', placed),
         section('prompt', 'chat', prompts),
-        section('persona', 'spark', personas)
+        section('persona', 'spark', personas),
+        section('skill', 'list', skills)
       ]
     }
   }
-  const card = (id: string, icon: 'book' | 'chat' | 'spark', count: number, page: string, extra = ''): Card => ({
+  const card = (id: string, icon: 'book' | 'chat' | 'spark' | 'list', count: number, page: string, extra = ''): Card => ({
     id,
     title: t(`bibliotheque.hub.${id}`),
     subtitle: t(`bibliotheque.hub.${id}.count`, { count }),
@@ -269,7 +272,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         stats: [
           { label: t('bibliotheque.hub.documents'), value: String(documents.count), icon: 'book' },
           { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
-          { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' }
+          { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
+          { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' }
         ]
       },
       {
@@ -277,7 +281,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         cards: [
           card('documents', 'book', documents.count, deps.documentsPage, documents.likely ? t('bibliotheque.home.likely', { count: documents.likely }) : ''),
           card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt),
-          card('personas', 'spark', personas.length, ENTRIES_PAGE.persona)
+          card('personas', 'spark', personas.length, ENTRIES_PAGE.persona),
+          card('skills', 'list', skills.length, ENTRIES_PAGE.skill)
         ]
       }
     ]
@@ -289,7 +294,7 @@ export function registerEntriesHome(views: ViewsRegistrar | undefined, deps: Ent
   const { t } = deps
   const show = deps.showPage
   views.page({ id: HUB_PAGE, title: t('bibliotheque.hub.title'), icon: 'book', load: () => hubPage(deps) })
-  for (const kind of ['prompt', 'persona'] as const) {
+  for (const kind of ['prompt', 'persona', 'skill'] as const) {
     views.page({ id: ENTRIES_PAGE[kind], title: t(`bibliotheque.${kind}.title`), icon: ICON[kind], parent: HUB_PAGE, load: (param) => entriesPage(deps, kind, param) })
     views.page({ id: ENTRY_PAGE[kind], title: t(`bibliotheque.${kind}.one`), icon: ICON[kind], parent: ENTRIES_PAGE[kind], load: (param) => entryPage(deps, kind, param) })
     views.tile({
@@ -298,7 +303,7 @@ export function registerEntriesHome(views: ViewsRegistrar | undefined, deps: Ent
       icon: ICON[kind],
       color: 'teal',
       group: t('bibliotheque.name'),
-      order: kind === 'prompt' ? 28 : 29,
+      order: kind === 'prompt' ? 28 : kind === 'persona' ? 29 : 30,
       description: t(`bibliotheque.${kind}.tile`),
       page: ENTRIES_PAGE[kind],
       run: () => show(ENTRIES_PAGE[kind])

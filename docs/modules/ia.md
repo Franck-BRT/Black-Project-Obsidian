@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.11.0 (Black Projects 0.85.0) |
+| Version | 0.12.0 (Black Projects 0.86.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,16 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## Les consignes de la bibliothèque, à chaque étape d'IA (v0.12.0, Black Projects 0.86.0)
+
+`libraryGuidance` (déclaré au module Workflows par `registerAiGuidance`) : les noms choisis
+dans une étape — persona, skill, prompt — deviennent des consignes (`personaInstructions`,
+« Applique ce savoir-faire (« … ») : », « Consigne supplémentaire (« … ») : ») ;
+`AiClient.withInstructions` les ajoute après le rôle, dans le message système
+(`withPersona` les garde). Les sept actions d'IA (Demander à l'IA, la langue, la référence
+et la version, Interroger le dossier, Questionnaire, Relire, Traduire l'exigence) les
+appliquent.
 
 ## Interface publique
 

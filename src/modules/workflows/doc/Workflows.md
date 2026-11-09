@@ -151,6 +151,12 @@ en bas : **Quand** (son déclencheur), **Si** (ses conditions — sinon, rien ne
 **fin** (le journal garde l'exécution). Un clic sur une forme la modifie : le début
 (nom, mode, déclencheur), une étape (son action).
 
+Une étape qui **demande l'IA** a un **fond turquoise** (et « IA » dans son intitulé) ; les
+autres, un fond gris. Ouverte, elle a trois champs de plus : **Prompt**, **Persona** et
+**Skill**, à choisir dans les bibliothèques de prompts, de personas et de skills ({{link:Modules/Bibliothèque|Bibliothèque}}).
+L'IA reçoit alors le rôle du persona, la méthode du skill et la consigne du prompt avec la
+demande de l'étape ; ce que vous avez choisi s'affiche sur le logigramme.
+
 ## 4. Les garde-fous
 
 - Une étape qui échoue arrête le workflow ; le message et le journal disent laquelle et

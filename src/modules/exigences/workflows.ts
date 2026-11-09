@@ -191,8 +191,8 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
       { key: 'persona', labelKey: 'bibliotheque.wf.field.persona', kind: 'text', tooltipKey: 'bibliotheque.wf.field.persona.tip' }
     ],
     results: ['path', 'link'],
-    async run({ fields, ui, notifier }) {
-      const client = aiClient()
+    async run({ fields, ui, notifier, guidance }) {
+      const client = aiClient()?.withInstructions(guidance)
       if (!client) throw new Error(t('ia.unavailable'))
       const current = session()
       const persona = await namedEntry('persona', fields.persona)
@@ -219,8 +219,8 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
     needsAi: true,
     fields: [{ key: 'exigence', labelKey: 'exigences.wf.field.requirement', kind: 'text', required: true, defaultValue: '{chemin}', tooltipKey: 'exigences.wf.field.requirement.tip' }],
     results: ['path', 'link'],
-    async run({ fields, ui, notifier }) {
-      const client = aiClient()
+    async run({ fields, ui, notifier, guidance }) {
+      const client = aiClient()?.withInstructions(guidance)
       if (!client) throw new Error(t('ia.unavailable'))
       const current = session()
       let path = fields.exigence!

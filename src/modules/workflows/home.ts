@@ -12,7 +12,7 @@ import type { FileSystem } from '../../core/ports'
 import { pageWith, type Badge, type Card, type FlowNode, type HomeBlock, type HomeSectionView, type ListItem, type PageView, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { journalPath } from './engine'
 import { MANUAL, OPENING, SCHEDULE, type Workflow } from './model'
-import type { Translate } from './registry'
+import { actionSpec, AI_FIELD_KEYS, type Translate } from './registry'
 
 /** La page des workflows. */
 export const WORKFLOWS_PAGE = 'workflows.liste'
@@ -538,21 +538,30 @@ export function workflowFlowchart(deps: { t: Translate; page: WorkflowsPageDeps 
       : []),
     ...(workflow.mode === 'ask' ? [{ id: 'accord', kind: 'decision' as const, caption: t('workflows.flow.ask.caption'), label: t('workflows.flow.ask'), yes: t('workflows.flow.yes'), no: t('workflows.flow.no.ask') }] : []),
     ...(steps.length
-      ? steps.map((label, index) => ({
-          id: `etape-${index}`,
-          kind: 'step' as const,
-          caption: t('workflows.flow.step', { step: index + 1 }),
-          label,
-          icon: 'play' as const,
-          open: { id: 'edit', label: t('workflows.actions.edit'), run: () => fiche.editAction(workflow.id, index) }
-        }))
+      ? steps.map((label, index) => {
+          // Une étape avec l'IA : un autre fond, « IA » dans son intitulé, et ce qu'on a choisi dans la bibliothèque.
+          const action = workflow.actions[index]
+          const ai = !!(action && actionSpec(action.kind)?.needsAi)
+          const chosen = ai && action ? AI_FIELD_KEYS.filter((key) => action.fields[key]?.trim()).map((key) => t(`workflows.flow.ai.${key}`, { name: action.fields[key]!.trim() })) : []
+          return {
+            id: `etape-${index}`,
+            kind: 'step' as const,
+            caption: t(ai ? 'workflows.flow.step.ai' : 'workflows.flow.step', { step: index + 1 }),
+            label,
+            icon: ai ? ('spark' as const) : ('play' as const),
+            ...(ai ? { ai: true } : {}),
+            ...(chosen.length ? { detail: chosen.join(' · ') } : {}),
+            open: { id: 'edit', label: t('workflows.actions.edit'), run: () => fiche.editAction(workflow.id, index) }
+          }
+        })
       : [{ id: 'etape-aucune', kind: 'step' as const, label: t('workflows.edit.actions.none'), tone: 'warning' as const, open: { id: 'add', label: t('workflows.actions.add'), run: () => fiche.addAction(workflow.id) } }]),
     { id: 'fin', kind: 'end', caption: t('workflows.flow.end.caption'), label: t('workflows.flow.end') }
   ]
   return {
     kind: 'flowchart',
     label: t('workflows.flow.label', { name: workflow.name, steps: steps.length }),
-    nodes
+    nodes,
+    ...(nodes.some((node) => node.ai) ? { legend: t('workflows.flow.legend') } : {})
   }
 }
 

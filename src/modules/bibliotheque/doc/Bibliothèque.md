@@ -105,10 +105,10 @@ Les déclencheurs, pour vos propres workflows :
 
 Voir {{link:Modules/Workflows|Workflows}}.
 
-## 6. Les prompts et les personas
+## 6. Les prompts, les personas et les skills
 
-La bibliothèque en tient trois : vos **documents**, vos **prompts** et vos **personas** —
-séparées, chacune sa page, depuis le menu **Bibliothèque**.
+La bibliothèque en tient quatre : vos **documents**, vos **prompts**, vos **personas** et vos
+**skills** — séparées, chacune sa page, depuis le menu **Bibliothèque**.
 
 - Un **prompt** : une question ou une consigne pour l'IA, écrite une fois (« Quelles
   pénalités le dossier prévoit-il ? »). « Interroger le dossier » d'une analyse vous le
@@ -117,12 +117,15 @@ séparées, chacune sa page, depuis le menu **Bibliothèque**.
   contrôleur technique, un responsable qualité. Vous le choisissez pour interroger le
   dossier et pour relire une exigence (ou toutes celles du dossier) ; la note de la
   réponse dit en tant que qui l'IA a répondu.
-- Dans les **workflows** : l'action « Demander à l'IA » prend un prompt et un persona par
-  leur nom ; « Interroger le dossier » et « Relire l'exigence » aussi.
+- Un **skill** : un savoir-faire donné à l'IA — une méthode, des points à vérifier, la forme
+  de la réponse (« Lire un CCTP », « Répondre en tableau »).
+- Dans les **workflows** : toute étape qui demande l'IA a trois champs, **Prompt**,
+  **Persona** et **Skill**, à choisir dans ces bibliothèques ; l'IA reçoit le rôle, la
+  méthode et la consigne avec la demande de l'étape.
 
-Chaque entrée est une note (dans `Bibliothèque/Prompts` et `Bibliothèque/Personas`) :
-**Nouveau prompt**, **Nouveau persona**, ou **Ajouter les exemples** — des prompts et des
-personas prêts pour les appels d'offres, à modifier. Sur la fiche : **Modifier**,
+Chaque entrée est une note (dans `Bibliothèque/Prompts`, `Bibliothèque/Personas`,
+`Bibliothèque/Skills`) : **Nouveau prompt**, **Nouveau persona**, **Nouveau skill**, ou
+**Ajouter les exemples** — prêts pour les appels d'offres, à modifier. Sur la fiche : **Modifier**,
 **Mettre en favori** (les favoris viennent en tête des listes), **Retirer** (mis de côté,
 rien n'est effacé).
 

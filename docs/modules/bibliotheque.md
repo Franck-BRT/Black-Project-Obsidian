@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.13.0 (Black Projects 0.85.0) |
+| Version | 0.14.0 (Black Projects 0.86.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,17 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## La bibliothèque de skills (v0.14.0, Black Projects 0.86.0)
+
+Une troisième sorte d'entrées, à côté des prompts et des personas : le **skill**, un
+savoir-faire donné à l'IA — une méthode, des points à vérifier, la forme d'une réponse
+(`bp-type: bibliotheque-skill`, réglage `dossierSkills`, par défaut `Bibliothèque/Skills`).
+Comme les autres : plusieurs bibliothèques, des répertoires, ses pages et fiches, quatre
+exemples (*Lire un CCTP*, *Repérer les pénalités*, *Vérifier une exigence*, *Répondre en
+tableau*), une carte et un chiffre sur l'accueil de la bibliothèque. Les listes des champs
+Prompt, Persona, Skill des étapes d'IA des workflows viennent des trois bibliothèques
+(`registerFieldSource`).
 
 ## La référence et la version des documents (v0.13.0, Black Projects 0.85.0)
 

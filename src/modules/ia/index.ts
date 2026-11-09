@@ -12,7 +12,7 @@
  * tout le reste de Black Projects fonctionne : seules ces fonctions le disent.
  */
 
-import { OPENING, registerAction, registerSystemWorkflow } from '../workflows'
+import { OPENING, registerAction, registerAiGuidance, registerSystemWorkflow } from '../workflows'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import type { ActionsField, BlackModule, ModuleContext, ModuleDetails, ModuleFeature, SecretField, TextField } from '../../core/modules/module'
@@ -21,7 +21,7 @@ import { AiClient, type AiConnection } from './client'
 import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
 import { registerIaHome, USE_FIELD, type ConnectionTest } from './home'
-import { registerIaWorkflows } from './workflows'
+import { libraryGuidance, registerIaWorkflows } from './workflows'
 import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, usesOf, type ModelUse } from './models'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -277,7 +277,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.11.0',
+  version: '0.12.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -310,6 +310,8 @@ export const iaModule: BlackModule = {
       ...(context.showPage ? { showPage: (id: string) => context.showPage?.(id) } : {}),
       features: () => iaFeatures()
     })
+    // Les consignes de la bibliothèque (prompt, persona, skill) d'une étape de workflow qui demande l'IA.
+    registerAiGuidance(libraryGuidance((key, vars) => context.i18n.t(key, vars)))
     registerIaWorkflows(() => aiClient(), () => context.platform.fs, (key, vars) => context.i18n.t(key, vars), (error) => describeAiError(error, (key, vars) => context.i18n.t(key, vars)))
     // Vérifier la connexion à l'ouverture : une action, et son workflow système (actif d'origine).
     registerAction({
@@ -402,5 +404,6 @@ export const iaModule: BlackModule = {
   deactivate() {
     active = null
     lastTest = null
+    registerAiGuidance(null)
   }
 }

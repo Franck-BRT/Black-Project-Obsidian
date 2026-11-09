@@ -19,9 +19,9 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, toYaml, type YamlReader } from '../../core/yaml'
 import { MAIN_SHELF, type Shelf } from './shelves'
 
-export type EntryKind = 'prompt' | 'persona'
-export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona']
-export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque-prompt', persona: 'bibliotheque-persona' }
+export type EntryKind = 'prompt' | 'persona' | 'skill'
+export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill']
+export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque-prompt', persona: 'bibliotheque-persona', skill: 'bibliotheque-skill' }
 
 export interface LibraryEntry {
   kind: EntryKind

@@ -183,6 +183,8 @@ que la recherche lit aussi. Il la déclare par
   pointillée), reliées par des flèches ; une forme qui a `open` est un bouton ; `tone`
   (`data-tone`) colore son bord. HTML et CSS (pas de SVG) : le texte se coupe, les thèmes
   s'appliquent, et c'est une liste ordonnée pour les lecteurs d'écran (`label` la résume) ;
+  Une forme `ai` (0.86.0) — une étape qui demande l'IA — a un fond turquoise
+  (`data-ai`) ; `legend` dit les couleurs sous le logigramme ;
 - un **fil d'Ariane** facultatif (Black Projects 0.77.0 ; 0.78.0 : un champ de la page,
   plus un bloc) : `breadcrumb` — `{ label, items }`, où l'on est (« Bibliothèque ›
   Documents › Normes »), dessiné **tout en haut de la page**, au-dessus du titre (la coquille
