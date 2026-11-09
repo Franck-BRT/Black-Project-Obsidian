@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.14.0 (Black Projects 0.88.0) |
+| Version | 0.15.0 (Black Projects 0.89.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -130,6 +130,14 @@ n'est pas vide), action `ia.identite-document` : le nom du fichier et le début 
 (`reference`, `edition`, `revision`, `certain`). `readIdentityAnswer` : pas certaine, rien ;
 une référence absente du document, écartée ; « Édition 02 » → « 2 », « rev. b » → « B ». Pas
 certaine, pas réglée, pas de texte : à confirmer, sans erreur ; le journal le dit.
+
+## La catégorie d'un document, avec l'IA (v0.15.0, Black Projects 0.89.0)
+
+`sys.ia.categorie-documents` (actif ; *document versé*, si `{categorieaconfirmer}` n'est pas
+vide), action `ia.categorie-document` : la liste des catégories (`libraryCategories`) dans
+la consigne, réponse JSON imposée (`category`, `certain`). `readCategoryAnswer` : pas
+certaine, rien ; certaine et vide : aucune ; sinon une catégorie de la liste, à la casse
+près, écrite comme elle — rien d'autre.
 
 ## L'émetteur d'un document, avec l'IA (v0.14.0, Black Projects 0.88.0)
 

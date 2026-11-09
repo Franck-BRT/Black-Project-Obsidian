@@ -15,6 +15,8 @@
  * seconde passe, avec l'IA, peut trancher.
  */
 
+import { CATEGORIES, guessCategory } from './model'
+
 export interface DocIdentity {
   reference: string
   edition: string
@@ -208,4 +210,49 @@ export function issuerFoundIn(issuer: string, text: string, fileName: string): b
   if (squash(fold(issuer)).length >= 2 && squash(hay).includes(squash(fold(issuer)))) return true
   const words = fold(issuer).match(/\p{L}{3,}/gu) ?? []
   return !!words.length && words.filter((word) => hay.includes(word)).length / words.length >= 0.7
+}
+
+/**
+ * La **catégorie** d'un document (CCTP, RC, Devis, Plan…). **Sûre** quand celui qui le
+ * dépose la donne (le type d'une pièce d'analyse), quand le document la dit avec son mot
+ * (« Type de document : CCTP »), ou quand son nom de fichier et son texte disent la même.
+ * Sinon, à confirmer : la catégorie du nom du fichier reste, et celle que le texte suggère
+ * est **probable** — l'IA peut trancher.
+ */
+export interface CategoryGuess {
+  category: string
+  sure: boolean
+  /** Celle que le texte suggère, quand elle n'est pas celle retenue. */
+  probable: string
+}
+
+const CATEGORY_HEAD = 3000
+const LABELLED_CATEGORY = /^\s*(?:type|nature|cat[ée]gorie)\s+(?:de\s+|du\s+)?(?:document|pi[èe]ce)\s*[:：]\s*(.{2,60}?)\s*$/imu
+const foldText = (value: string) =>
+  ` ${value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')} `
+
+/** La catégorie que le début du texte suggère : ses mots-clés longs (« clauses techniques »), pas les sigles courts, trop fréquents. */
+export function categoryFromText(text: string): string {
+  const head = foldText(text.slice(0, CATEGORY_HEAD))
+  const scores = CATEGORIES.map((category) => ({
+    name: category.name,
+    hits: category.words.filter((word) => word.length >= 6 || word.includes(' ')).reduce((sum, word) => sum + (head.split(` ${word} `).length - 1), 0)
+  })).sort((a, b) => b.hits - a.hits)
+  const [best, next] = [scores[0]!, scores[1]!]
+  return best.hits >= 1 && best.hits > next.hits ? best.name : ''
+}
+
+export function guessDocCategory(text: string, fileName: string, given = ''): CategoryGuess {
+  if (given.trim()) return { category: given.trim(), sure: true, probable: '' }
+  const labelled = LABELLED_CATEGORY.exec(text.slice(0, CATEGORY_HEAD))?.[1]
+  const said = labelled ? guessCategory(labelled) || labelled.trim() : ''
+  if (said) return { category: said, sure: true, probable: '' }
+  const fromName = guessCategory(fileName)
+  const fromText = categoryFromText(text)
+  if (fromName && fromName === fromText) return { category: fromName, sure: true, probable: '' }
+  return { category: fromName, sure: false, probable: fromText && fromText !== fromName ? fromText : '' }
 }

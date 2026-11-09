@@ -82,6 +82,7 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
       'sys.exigences.relire-nouvelles:false',
       'sys.exigences.traductions-hebdo:false',
       'sys.exigences.traduire-nouvelles:false',
+      'sys.ia.categorie-documents:true',
       'sys.ia.emetteur-documents:true',
       'sys.ia.identite-documents:true',
       'sys.ia.langue-documents:true',

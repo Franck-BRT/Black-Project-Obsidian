@@ -17,7 +17,7 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, type YamlReader } from '../../core/yaml'
 import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
-import { guessIdentity, guessIssuer, guessTitle, type DocIdentity } from './identity'
+import { guessDocCategory, guessIdentity, guessIssuer, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import {
@@ -172,9 +172,14 @@ export class LibraryStore {
    * **référence**, son **édition**, sa **révision** (première passe, sans IA). Pas sûres :
    * à confirmer — une seconde passe, avec l'IA, peut trancher. Une image : rien.
    */
-  private async readIdentity(name: string, family: DocFamily, bytes: Uint8Array): Promise<Partial<LibraryDoc>> {
+  private async readIdentity(name: string, family: DocFamily, bytes: Uint8Array, given = ''): Promise<Partial<LibraryDoc>> {
     if (family === 'image') return {}
     const text = await this.readText(name, bytes)
+    // La catégorie : donnée par celui qui dépose, dite par le document, ou le nom et le texte d'accord : sûre ; sinon à confirmer.
+    const sorted = guessDocCategory(text ?? '', name, given)
+    const category: Partial<LibraryDoc> = sorted.sure
+      ? { category: sorted.category }
+      : { category: sorted.category, categoryToConfirm: true, ...(sorted.probable ? { categoryProbable: sorted.probable } : {}) }
     const identity = guessIdentity(text ?? '', name)
     // Le titre : dit sûrement par le document, il remplace celui du nom du fichier ; sinon, à confirmer (avec le probable lu).
     const titled = guessTitle(text ?? '')
@@ -188,6 +193,7 @@ export class LibraryStore {
     return {
       ...title,
       ...issuer,
+      ...category,
       ...this.languageOfText(text),
       ...(identity.reference ? { reference: identity.reference } : {}),
       ...(identity.edition ? { edition: identity.edition } : {}),
@@ -241,6 +247,19 @@ export class LibraryStore {
     delete next.titleProbable
     delete next.titleByAi
     if (byAi) next.titleByAi = true
+    await this.save(next)
+    return next
+  }
+
+  /** Sa catégorie, donnée (par l'IA, ou confirmée ; vide : aucune) : plus à confirmer. `null` : celle qu'il a est confirmée. */
+  async setCategory(record: string, category: string | null, byAi = false): Promise<LibraryDoc | null> {
+    const doc = await this.load(record)
+    if (!doc) return null
+    const next: LibraryDoc = { ...doc, ...(category === null ? {} : { category: category.trim() }) }
+    delete next.categoryToConfirm
+    delete next.categoryProbable
+    delete next.categoryByAi
+    if (byAi) next.categoryByAi = true
     await this.save(next)
     return next
   }
@@ -464,7 +483,7 @@ export class LibraryStore {
         origins: [origin],
         ...(previous ? { likelyPrevious: previous.record } : {}),
         copied: !item.path || item.owned === true,
-        ...(await this.readIdentity(item.name, family, bytes))
+        ...(await this.readIdentity(item.name, family, bytes, item.category || options.category || ''))
       }
       await this.save(doc)
       known.push(doc)

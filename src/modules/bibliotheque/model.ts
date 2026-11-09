@@ -167,6 +167,11 @@ export interface LibraryDoc {
   issuerProbable?: string
   /** Son émetteur a été identifié par l'IA. */
   issuerByAi?: boolean
+  /** Sa catégorie n'a pas été établie sûrement (le nom du fichier seul, ou rien) : à confirmer, avec celle que le texte suggère. */
+  categoryToConfirm?: boolean
+  categoryProbable?: string
+  /** Sa catégorie a été identifiée par l'IA. */
+  categoryByAi?: boolean
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -209,7 +214,10 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.titleByAi ? { titreIdentifiePar: 'ia' } : {}),
     ...(doc.issuerToConfirm ? { emetteurAConfirmer: true } : {}),
     ...(doc.issuerToConfirm && doc.issuerProbable ? { emetteurProbable: doc.issuerProbable } : {}),
-    ...(doc.issuerByAi ? { emetteurIdentifiePar: 'ia' } : {})
+    ...(doc.issuerByAi ? { emetteurIdentifiePar: 'ia' } : {}),
+    ...(doc.categoryToConfirm ? { categorieAConfirmer: true } : {}),
+    ...(doc.categoryToConfirm && doc.categoryProbable ? { categorieProbable: doc.categoryProbable } : {}),
+    ...(doc.categoryByAi ? { categorieIdentifieePar: 'ia' } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -260,7 +268,10 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(data.titreIdentifiePar === 'ia' ? { titleByAi: true } : {}),
     ...(data.emetteurAConfirmer === true ? { issuerToConfirm: true } : {}),
     ...(data.emetteurAConfirmer === true && typeof data.emetteurProbable === 'string' && data.emetteurProbable.trim() ? { issuerProbable: data.emetteurProbable.trim() } : {}),
-    ...(data.emetteurIdentifiePar === 'ia' ? { issuerByAi: true } : {})
+    ...(data.emetteurIdentifiePar === 'ia' ? { issuerByAi: true } : {}),
+    ...(data.categorieAConfirmer === true ? { categoryToConfirm: true } : {}),
+    ...(data.categorieAConfirmer === true && typeof data.categorieProbable === 'string' && data.categorieProbable.trim() ? { categoryProbable: data.categorieProbable.trim() } : {}),
+    ...(data.categorieIdentifieePar === 'ia' ? { categoryByAi: true } : {})
   }
 }
 

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.16.0 (Black Projects 0.88.0) |
+| Version | 0.17.0 (Black Projects 0.89.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
@@ -203,6 +203,31 @@ par › **Répertoire** » : tout ce qui est dessous, une section par répertoir
 ont **Déplacer…** (chaque bibliothèque et répertoire de la sorte, sauf là où c'est) et
 disent où c'est rangé. L'accueil, dès qu'une sorte a plusieurs bibliothèques : une
 section par sorte, une carte par bibliothèque (combien, « Par défaut »).
+
+## La catégorie des documents (v0.17.0, Black Projects 0.89.0)
+
+En deux passes, comme l'émetteur.
+
+1. **Sans IA**, à l'entrée (`guessDocCategory`) : **sûre** quand celui qui dépose la donne
+   (le type d'une pièce d'analyse, `PourItem.category`), quand le document la dit avec son
+   mot (« Type de document : », « Nature du document : »), ou quand le nom du fichier et le
+   texte disent la même (`categoryFromText` : les mots-clés longs des catégories —
+   « clauses techniques », « bordereau des prix » — au début du texte ; pas les sigles
+   courts, trop fréquents). Sinon : la catégorie du nom du fichier reste (comme avant),
+   `categorieAConfirmer: true`, et `categorieProbable` : celle que le texte suggère.
+2. **Avec l'IA** : le workflow système du [module IA](ia.md) « Identifier avec l'IA la
+   catégorie d'un document… » (actif, `{categorieaconfirmer}` pas vide) ; elle choisit dans
+   la liste des catégories (`libraryCategories` : celles de la bibliothèque, et celles en
+   usage) ; une catégorie hors de la liste n'est pas gardée (`setCategoryByAi`,
+   `categorieIdentifieePar: ia`).
+
+Sur la fiche : **Prendre « … »**, **Garder la catégorie actuelle** (ou **C'est juste**, ou
+**Pas de catégorie**), **Classer…** ; le filtre *Catégorie à confirmer* ;
+`{categorieaconfirmer}` au *document versé*.
+
+**Ce qui reste à confirmer, ensemble** : la langue, le titre, la catégorie, l'émetteur, la
+référence — plusieurs, leurs messages sont regroupés dans une section « À confirmer (n) »
+(`bibliotheque.document.a-confirmer`), dépliée, dont l'en-tête les nomme.
 
 ## L'émetteur des documents (v0.16.0, Black Projects 0.88.0)
 

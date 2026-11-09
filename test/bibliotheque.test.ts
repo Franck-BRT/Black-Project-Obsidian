@@ -22,6 +22,9 @@ import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { typagePiecesModule } from '../src/modules/typage-pieces'
 import { workflowsModule } from '../src/modules/workflows'
 
+/** Les blocs d'une page, ceux de ses sections compris (les messages « à confirmer » y sont regroupés). */
+const unfold = (block: HomeBlock): HomeBlock[] => (block.kind === 'section' ? [block, ...block.blocks] : [block])
+
 /** La liste d'une section repliable de la fiche, par son intitulé. */
 const sectionList = (blocks: readonly HomeBlock[], title: string | ((title: string) => boolean)): HomeBlock | undefined => {
   const section = blocks.find((block) => block.kind === 'section' && (typeof title === 'string' ? block.title === title : title(block.title)))
@@ -115,7 +118,7 @@ describe('les versions', () => {
     const second = (await pourIntoLibrary([{ name: 'CCTP ind B.pdf', bytes: enc('B') }], { module: 'bibliotheque', label: 'Versé à la main' }))!.added[0]!
     expect(second.likelyPrevious).toBe(first.record)
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(second.record))
-    const message = fiche.blocks.find((block) => block.kind === 'message' && block.tone === 'warning')
+    const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.tone === 'warning')
     expect(message).toMatchObject({ text: 'Ce document ressemble à une nouvelle version de « CCTP ind A » (même nom, autre contenu).' })
     await (message as { actions: { id: string; run(): unknown }[] }).actions.find((action) => action.id === 'relate')!.run()
     const after = await page('bibliotheque.document').load(encodeURIComponent(second.record))
@@ -152,7 +155,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const view = await page('bibliotheque.documents').load()
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}:${stat.value}`)).toEqual(['Documents:2', 'Taille:2 o', 'Ajoutés cette semaine:2', 'Versions à relier:0'])
-    expect(view.filters?.map((filter) => filter.id)).toEqual(['famille-sheet', 'famille-image', 'langue-a-confirmer', 'identite-a-confirmer', 'titre-a-confirmer', 'emetteur-a-confirmer', 'de-bibliotheque', 'a-jour'])
+    expect(view.filters?.map((filter) => filter.id)).toEqual(['famille-sheet', 'famille-image', 'langue-a-confirmer', 'identite-a-confirmer', 'titre-a-confirmer', 'emetteur-a-confirmer', 'categorie-a-confirmer', 'de-bibliotheque', 'a-jour'])
     const card = cardsOf(view).find((each) => each.title === 'Devis 2026')!
     expect(card.badges?.map((badge) => badge.label)).toEqual(['Tableurs', 'Devis', 'Langue à confirmer'])
     expect(card.text).toBe('Bibliothèque de documents — Versé à la main')
@@ -178,7 +181,13 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     expect(fiche.title).toBe('Courrier acheteur')
     expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'language', 'version', 'move', 'note', 'aside'])
     // Identification, le fichier, d'où il vient, les versions : des sections repliables, repliées d'origine, leur en-tête en dit l'essentiel.
-    expect(fiche.blocks.flatMap((block) => (block.kind === 'section' ? [[block.id, block.title, block.subtitle ?? '', block.collapsed]] : []))).toEqual([
+    // Ce qui reste à confirmer : ensemble, dans une section dépliée, que l'en-tête résume.
+    expect(fiche.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')).toMatchObject({
+      title: expect.stringMatching(/^À confirmer \(\d\)$/),
+      subtitle: expect.stringContaining('Langue')
+    })
+    expect(fiche.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')).not.toHaveProperty('collapsed')
+    expect(fiche.blocks.flatMap((block) => (block.kind === 'section' && block.id !== 'bibliotheque.document.a-confirmer' ? [[block.id, block.title, block.subtitle ?? '', block.collapsed]] : []))).toEqual([
       ['bibliotheque.document.identite', 'Identification', 'Courrier', true],
       ['bibliotheque.document.fichier', 'Le fichier', 'Courrier acheteur.pdf', true],
       ['bibliotheque.document.origines', 'D’où il vient (1)', "Analyse d'appels d'offres — Station sol", true],

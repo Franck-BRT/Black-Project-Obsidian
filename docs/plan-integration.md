@@ -543,6 +543,10 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.88.0 : **modules Bibliothèque et IA** : l'**émetteur** des documents, en deux passes —
   sans IA (« Émetteur : », « Émis par »… : sûr ; sinon un organisme probable, à
   confirmer) ; pas sûr, l'IA (workflow système actif ; il doit figurer dans le document)
+- v0.89.0 : **modules Bibliothèque et IA** : la **catégorie** des documents, en deux passes
+  — sans IA (donnée par l'analyse, dite par le document, ou le nom du fichier et le texte
+  d'accord : sûre ; sinon, à confirmer) ; pas sûre, l'IA (dans la liste des catégories) ;
+  sur la fiche, ce qui reste à confirmer regroupé dans « À confirmer (n) »
 
 ### Étape 7 — Livrables
 

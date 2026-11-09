@@ -13,11 +13,14 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry } from '../src/core/views'
+import { ViewsRegistry, type HomeBlock } from '../src/core/views'
 import { bibliothequeModule, guessTitle, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { iaModule, readTitleAnswer } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule, type Workflow } from '../src/modules/workflows'
+
+/** Les blocs d'une page, ceux de ses sections compris (les messages « à confirmer » y sont regroupés). */
+const unfold = (block: HomeBlock): HomeBlock[] => (block.kind === 'section' ? [block, ...block.blocks] : [block])
 
 const ALL = [lectureFichiersModule, bibliothequeModule, workflowsModule, iaModule]
 const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' }
@@ -90,7 +93,7 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(doc).toMatchObject({ title: 'CCTP v3', titleToConfirm: true, titleProbable: 'Cahier des clauses techniques particulières de la station sol' })
     expect(read(platform, doc.record)).toMatch(/\ntitreAConfirmer: true\ntitreProbable: Cahier des clauses/)
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    const message = fiche.blocks.find((block) => block.kind === 'message' && block.text.startsWith('Titre à confirmer'))
+    const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Titre à confirmer'))
     expect(message).toMatchObject({ tone: 'warning', text: expect.stringContaining('« Cahier des clauses techniques particulières de la station sol » (lu sans certitude)') })
     expect(message?.kind === 'message' && message.actions!.map((action) => action.id)).toEqual(['use-title', 'keep-title', 'classify-title'])
     expect((await page('bibliotheque.documents').load()).filters?.map((filter) => filter.id)).toContain('titre-a-confirmer')
@@ -101,7 +104,7 @@ describe('à l’entrée, et sur la fiche', () => {
     // Sans titre probable : « C'est juste » garde celui du nom du fichier.
     const other = await pour('Maquette.dwg', 'binaire')
     const view = await page('bibliotheque.document').load(encodeURIComponent(other.record))
-    const keep = view.blocks.find((block) => block.kind === 'message' && block.text.startsWith('Titre à confirmer'))
+    const keep = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Titre à confirmer'))
     expect(keep?.kind === 'message' && keep.actions!.map((action) => action.label)).toEqual(['C’est juste', 'Classer…'])
     await (keep?.kind === 'message' ? keep.actions![0]!.run() : null)
     expect(read(platform, other.record)).not.toMatch(/titreAConfirmer/)
@@ -150,6 +153,6 @@ describe('la seconde passe, avec l’IA', () => {
     expect(read(platform, doc.record)).toMatch(/\ntitreIdentifiePar: ia\n/)
     expect(journal()).toContain('Titre identifié par l’IA : « Cahier des clauses techniques particulières de la station sol ».')
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    expect(fiche.blocks.some((block) => block.kind === 'message' && block.text.startsWith('Titre à confirmer'))).toBe(false)
+    expect(fiche.blocks.flatMap(unfold).some((block) => block.kind === 'message' && block.text.startsWith('Titre à confirmer'))).toBe(false)
   })
 })

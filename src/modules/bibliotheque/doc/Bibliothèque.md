@@ -151,6 +151,13 @@ celui du nom du fichier, **à confirmer** : la fiche propose le titre lu au déb
 document (**Prendre « … »**), **Garder le titre actuel**, ou **Classer…** ; l'IA, si elle
 est réglée, le cherche d'abord. Filtre *Titre à confirmer*.
 
+**La catégorie** aussi : donnée par l'analyse (le type d'une pièce), dite par le document
+(« Type de document : »), ou le nom du fichier et le texte d'accord : elle est sûre. Sinon
+celle du nom du fichier reste, **à confirmer** : la fiche propose celle que le texte suggère
+(**Prendre « CCTP »**), **Garder la catégorie actuelle**, ou **Classer…** ; l'IA, si elle
+est réglée, choisit d'abord dans la liste des catégories. Plusieurs choses à confirmer : un
+seul encadré « À confirmer (n) » les rassemble sur la fiche.
+
 **L'émetteur** aussi : dit par le document (« Émetteur : », « Émis par », « Pouvoir
 adjudicateur : »…), il est donné. Sinon il est **à confirmer** : la fiche propose
 l'organisme lu au début du document (**Prendre « … »**), **Pas d'émetteur**, ou

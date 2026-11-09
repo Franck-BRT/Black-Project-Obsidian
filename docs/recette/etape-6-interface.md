@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La catégorie des documents (v0.89.0)
+
+- [ ] Verser `CCTP station sol.txt` qui commence par « Cahier des clauses techniques
+      particulières… » : catégorie CCTP, rien à confirmer (le nom et le texte d'accord)
+- [ ] Verser `Devis antenne.txt` au même début : catégorie « Devis » (du nom), « Catégorie à
+      confirmer » — **Prendre « CCTP »**, **Garder la catégorie actuelle**, **Classer… »
+- [ ] Les pièces d'une analyse (typées) : leur catégorie est sûre, rien à confirmer
+- [ ] IA réglée : l'IA choisit dans la liste (« identifiée par l'IA ») ; une catégorie hors
+      de la liste n'est jamais gardée ; filtre *Catégorie à confirmer*
+- [ ] Une fiche avec plusieurs choses à confirmer : une section « À confirmer (n) »,
+      dépliée, son en-tête les nomme (« Langue · Titre · Catégorie… »), repliable
+
 ## L'émetteur des documents (v0.88.0)
 
 - [ ] Verser un texte qui commence par « Émetteur : Centre national d'études spatiales » :

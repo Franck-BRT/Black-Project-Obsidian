@@ -17,6 +17,9 @@ import { bibliothequeModule, detectLanguage, pourIntoLibrary } from '../src/modu
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
+/** Les blocs d'une page, ceux de ses sections compris (les messages « à confirmer » y sont regroupés). */
+const unfold = (block: HomeBlock): HomeBlock[] => (block.kind === 'section' ? [block, ...block.blocks] : [block])
+
 /** La liste d'une section repliable de la fiche, par son intitulé. */
 const sectionList = (blocks: readonly HomeBlock[], title: string | ((title: string) => boolean)): HomeBlock | undefined => {
   const section = blocks.find((block) => block.kind === 'section' && (typeof title === 'string' ? block.title === title : title(block.title)))
@@ -106,13 +109,13 @@ describe('la langue des documents de la bibliothèque', () => {
     expect(doc.language).toBeUndefined()
     expect(read(platform, doc.record)).toMatch(/\nlangueAConfirmer: true\nlangueProbable: fr\n/)
     const view = await fiche(page, doc.record)
-    const message = view.blocks.find((block) => block.kind === 'message' && block.text.startsWith('Langue à confirmer'))
+    const message = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Langue à confirmer'))
     expect(message).toMatchObject({ tone: 'warning', text: 'Langue à confirmer : la détection n’a pas été assez sûre. Peut-être : Français.' })
     await (message?.kind === 'message' ? message.actions!.find((action) => action.id === 'confirm-language')!.run() : null)
     expect(platform.notices.at(-1)).toBe('« Note » : Français.')
     expect(read(platform, doc.record)).toMatch(/\nlangue: fr\n/)
     expect(read(platform, doc.record)).not.toMatch(/langueAConfirmer/)
-    expect((await fiche(page, doc.record)).blocks.some((block) => block.kind === 'message' && block.text.startsWith('Langue à confirmer'))).toBe(false)
+    expect((await fiche(page, doc.record)).blocks.flatMap(unfold).some((block) => block.kind === 'message' && block.text.startsWith('Langue à confirmer'))).toBe(false)
   })
 
   it('un fichier dont le texte n’est pas lu : à confirmer, sans langue probable ; « Langue… » la donne, ou la détecte de nouveau', async () => {
@@ -122,7 +125,7 @@ describe('la langue des documents de la bibliothèque', () => {
     expect(doc).toMatchObject({ languageToConfirm: true })
     expect(doc.languageProbable).toBeUndefined()
     const view = await fiche(page, doc.record)
-    expect(view.blocks.find((block) => block.kind === 'message' && block.text.startsWith('Langue à confirmer'))).toMatchObject({
+    expect(view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Langue à confirmer'))).toMatchObject({
       text: 'Langue à confirmer : la détection n’a pas pu trancher (texte trop court, illisible, ou partagé entre plusieurs langues).'
     })
     platform.choices.push('en')

@@ -39,7 +39,7 @@ export type { DocOrigin, LibraryDoc } from './model'
 export type { PourItem, PourOptions, PourReport } from './store'
 export type { EntryKind, LibraryEntry } from './entries'
 export { detectLanguage, LANGUAGES, type LanguageCode, type LanguageGuess } from './language'
-export { guessIdentity, guessIssuer, guessTitle, IDENTITY_HEAD, issuerFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type IdentityGuess, type IssuerGuess, type TitleGuess } from './identity'
+export { categoryFromText, guessDocCategory, guessIdentity, guessIssuer, guessTitle, IDENTITY_HEAD, issuerFoundIn, plausibleReference, referenceFoundIn, titleFoundIn, type DocIdentity, type CategoryGuess, type IdentityGuess, type IssuerGuess, type TitleGuess } from './identity'
 
 export const BIBLIOTHEQUE = 'bibliotheque'
 export const FOLDER_KEY = 'dossier'
@@ -270,6 +270,19 @@ export async function setLanguageByAi(record: string, language: LanguageCode): P
   return active ? active.store.setLanguage(record, language, true) : null
 }
 
+/** Pour l'IA : la catégorie qu'elle a identifiée (vide : aucune) — plus à confirmer, et on sait qui l'a dit. */
+export async function setCategoryByAi(record: string, category: string): Promise<LibraryDoc | null> {
+  return active ? active.store.setCategory(record, category, true) : null
+}
+
+/** Pour l'IA : les catégories à choisir — celles que la bibliothèque connaît, et celles déjà en usage. */
+export async function libraryCategories(): Promise<string[]> {
+  const used = active ? (await active.store.all()).map((doc) => doc.category).filter(Boolean) : []
+  const seen = new Map<string, string>()
+  for (const name of [...CATEGORIES.map((category) => category.name), ...used]) if (!seen.has(name.toLowerCase())) seen.set(name.toLowerCase(), name)
+  return [...seen.values()]
+}
+
 /** Pour l'IA : l'émetteur qu'elle a identifié (vide : aucun) — plus à confirmer, et on sait qui l'a dit. */
 export async function setIssuerByAi(record: string, issuer: string): Promise<LibraryDoc | null> {
   return active ? active.store.setIssuer(record, issuer, true) : null
@@ -305,6 +318,7 @@ async function emitPoured(doc: LibraryDoc): Promise<void> {
       // Vide quand elles sont sûres : une condition « n'est pas vide » vaut quelle que soit la langue.
       identiteaconfirmer: doc.identityToConfirm ? t('bibliotheque.read.yes') : '',
       titreaconfirmer: doc.titleToConfirm ? t('bibliotheque.read.yes') : '',
+      categorieaconfirmer: doc.categoryToConfirm ? t('bibliotheque.read.yes') : '',
       emetteur: doc.issuer,
       emetteuraconfirmer: doc.issuerToConfirm ? t('bibliotheque.read.yes') : '',
       fiche: doc.record
@@ -364,7 +378,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.16.0',
+  version: '0.17.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -438,7 +452,7 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteuraconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteuraconfirmer', 'categorieaconfirmer', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,
@@ -630,6 +644,9 @@ export const bibliothequeModule: BlackModule = {
         issuerToConfirm: undefined,
         issuerProbable: undefined,
         issuerByAi: undefined,
+        categoryToConfirm: undefined,
+        categoryProbable: undefined,
+        categoryByAi: undefined,
         title: (values.title ?? '').trim() || doc.title,
         category: (values.category ?? '').trim(),
         reference: (values.reference ?? '').trim(),
@@ -723,6 +740,10 @@ export const bibliothequeModule: BlackModule = {
       classify,
       newVersionOf,
       chooseLanguage,
+      confirmCategory: async (record, category) => {
+        const doc = await store.setCategory(record, category)
+        if (doc) platform.notifier.notify(doc.category ? t('bibliotheque.category.confirmed', { category: doc.category }) : t('bibliotheque.category.confirmed.none', { title: doc.title }), 5000)
+      },
       confirmIssuer: async (record, issuer) => {
         const doc = await store.setIssuer(record, issuer)
         if (doc) platform.notifier.notify(doc.issuer ? t('bibliotheque.issuer.confirmed', { issuer: doc.issuer }) : t('bibliotheque.issuer.confirmed.none', { title: doc.title }), 5000)

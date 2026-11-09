@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, libraryDoc, libraryDocText, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, libraryCategories, libraryDoc, libraryDocText, setCategoryByAi, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 
@@ -118,7 +118,73 @@ export function readIssuerAnswer(answer: unknown, text: string, fileName: string
   return issuer.length <= 80 && issuerFoundIn(issuer, text, fileName) ? issuer : null
 }
 
+const CATEGORY_SCHEMA = {
+  name: 'categorie_document',
+  schema: { type: 'object', properties: { category: { type: 'string' }, certain: { type: 'boolean' } }, required: ['category', 'certain'], additionalProperties: false }
+}
+
+/**
+ * La catégorie que l'IA a dite : pas certaine, `null` ; certaine et vide : aucune (`''`) ;
+ * sinon, une des catégories proposées (à la casse près), écrite comme elle — rien d'autre.
+ */
+export function readCategoryAnswer(answer: unknown, categories: readonly string[]): string | null {
+  if (typeof answer !== 'object' || answer === null) return null
+  const reply = answer as { category?: unknown; certain?: unknown }
+  if (reply.certain !== true || typeof reply.category !== 'string') return null
+  const wanted = reply.category.replace(/^["«“\s]+|["»”\s.]+$/g, '').trim().toLowerCase()
+  if (!wanted) return ''
+  return categories.find((category) => category.toLowerCase() === wanted) ?? null
+}
+
 export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string): void {
+  /**
+   * La catégorie d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas
+   * établie sûrement : le début de son texte et la liste des catégories connues demandés à
+   * l'IA. Certaine, et c'en est une de la liste : donnée (« identifiée par l'IA ») ; sinon,
+   * elle reste à confirmer, sans erreur.
+   */
+  registerAction({
+    id: 'ia.categorie-document',
+    labelKey: 'ia.wf.action.category',
+    descKey: 'ia.wf.action.category.desc',
+    needsAi: true,
+    fields: [{ key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' }],
+    results: ['text'],
+    async run({ fields, guidance }) {
+      const say = (key: string, vars?: Record<string, string | number>) => {
+        const text = t(key, vars)
+        return { lines: [text], results: { text } }
+      }
+      const record = (fields.fiche ?? '').trim()
+      const doc = record ? await libraryDoc(record) : null
+      if (!doc) return say('ia.wf.language.noDoc', { record })
+      if (!doc.categoryToConfirm) return say('ia.wf.category.already', { title: doc.title })
+      const ai = client()?.withInstructions(guidance)
+      if (!ai) return say('ia.wf.category.noAi', { title: doc.title })
+      const text = ((await libraryDocText(record)) ?? '').trim()
+      if (!text) return say('ia.wf.category.noText', { title: doc.title })
+      const fileName = doc.file.slice(doc.file.lastIndexOf('/') + 1)
+      const categories = await libraryCategories()
+      let answer: unknown
+      try {
+        answer = await ai.chatJson<unknown>({
+          messages: [
+            { role: 'system', content: t('ia.wf.category.system', { list: categories.join(', ') }) },
+            { role: 'user', content: `${t('ia.wf.identity.file', { name: fileName })}\n\n${text.slice(0, IDENTITY_HEAD)}` }
+          ],
+          temperature: 0,
+          schema: CATEGORY_SCHEMA
+        })
+      } catch (error) {
+        throw new Error(describe(error))
+      }
+      const category = readCategoryAnswer(answer, categories)
+      if (category === null) return say('ia.wf.category.unsure', { title: doc.title })
+      await setCategoryByAi(record, category)
+      return say(category ? 'ia.wf.category.found' : 'ia.wf.category.nothing', { title: doc.title, category })
+    }
+  })
+
   /**
    * L'émetteur d'un document de la bibliothèque, quand la première passe sans IA ne l'a pas
    * lu sûrement : le début de son texte demandé à l'IA. Certaine : l'émetteur est donné

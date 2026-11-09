@@ -19,6 +19,9 @@ import { iaModule, readIdentityAnswer } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
+/** Les blocs d'une page, ceux de ses sections compris (les messages « à confirmer » y sont regroupés). */
+const unfold = (block: HomeBlock): HomeBlock[] => (block.kind === 'section' ? [block, ...block.blocks] : [block])
+
 const ALL = [lectureFichiersModule, bibliothequeModule, workflowsModule, iaModule]
 const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' }
 const bytes = (text: string) => new TextEncoder().encode(text)
@@ -100,14 +103,14 @@ describe('à l’entrée dans la bibliothèque', () => {
     expect(doc).toMatchObject({ reference: 'ECSS-E-ST-10C', edition: '2', revision: '15', identityToConfirm: true })
     expect(read(platform, doc.record)).toMatch(/\nidentiteAConfirmer: true\n/)
     let view = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    const message = view.blocks.find((block) => block.kind === 'message' && block.text.startsWith('Référence et version à confirmer'))
+    const message = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Référence et version à confirmer'))
     expect(message).toMatchObject({ tone: 'warning', text: expect.stringContaining('(ECSS-E-ST-10C, version 2-15)') })
     expect(identityOf(view).identity).toBe('Référence et version à confirmer')
     expect((await page('bibliotheque.documents').load()).filters?.map((filter) => filter.id)).toContain('identite-a-confirmer')
     await (message?.kind === 'message' ? message.actions!.find((action) => action.id === 'confirm-identity')!.run() : null)
     expect(platform.notices.at(-1)).toBe('« ECSS-E-ST-10C ed2 rev15 » : référence et version confirmées.')
     view = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    expect(view.blocks.some((block) => block.kind === 'message' && block.text.startsWith('Référence et version à confirmer'))).toBe(false)
+    expect(view.blocks.flatMap(unfold).some((block) => block.kind === 'message' && block.text.startsWith('Référence et version à confirmer'))).toBe(false)
     expect(read(platform, doc.record)).toMatch(/\nreference: ECSS-E-ST-10C\n/)
     // Classer… : confirmé.
     const other = await pour('Note.txt', 'Rien à dire.')

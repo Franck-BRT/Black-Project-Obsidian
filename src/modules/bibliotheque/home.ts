@@ -47,6 +47,8 @@ export interface LibraryHomeDeps {
   newVersionOf(record: string): Promise<void>
   /** Choisir sa langue (ou la détecter de nouveau, ou aucune). */
   chooseLanguage(record: string): Promise<void>
+  /** Confirmer la catégorie : celle donnée (la probable ; vide : aucune), ou `null` — celle qu'il a. */
+  confirmCategory(record: string, category: string | null): Promise<void>
   /** Confirmer l'émetteur : celui donné (le probable ; vide : aucun), ou `null` — celui qu'il a. */
   confirmIssuer(record: string, issuer: string | null): Promise<void>
   /** Confirmer le titre : celui donné (le probable), ou `null` — celui qu'il a. */
@@ -118,7 +120,8 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
       ...(doc.language ? [`langue-${doc.language}`] : doc.languageToConfirm ? ['langue-a-confirmer'] : []),
       ...(doc.identityToConfirm ? ['identite-a-confirmer'] : []),
       ...(doc.titleToConfirm ? ['titre-a-confirmer'] : []),
-      ...(doc.issuerToConfirm ? ['emetteur-a-confirmer'] : [])
+      ...(doc.issuerToConfirm ? ['emetteur-a-confirmer'] : []),
+      ...(doc.categoryToConfirm ? ['categorie-a-confirmer'] : [])
     ]
   }
 }
@@ -236,6 +239,7 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
       ...(docs.some((doc) => doc.identityToConfirm) ? [{ id: 'identite-a-confirmer', label: t('bibliotheque.identity.toConfirm') }] : []),
       ...(docs.some((doc) => doc.titleToConfirm) ? [{ id: 'titre-a-confirmer', label: t('bibliotheque.title.toConfirm') }] : []),
       ...(docs.some((doc) => doc.issuerToConfirm) ? [{ id: 'emetteur-a-confirmer', label: t('bibliotheque.issuer.toConfirm') }] : []),
+      ...(docs.some((doc) => doc.categoryToConfirm) ? [{ id: 'categorie-a-confirmer', label: t('bibliotheque.category.toConfirm') }] : []),
       ...modules.map((module) => ({ id: `de-${module}`, label: t('bibliotheque.filter.from', { module: t(`${module}.name`) }) })),
       { id: 'a-jour', label: t('bibliotheque.filter.latest') },
       ...(likely ? [{ id: 'a-relier', label: t('bibliotheque.filter.likely') }] : []),
@@ -273,6 +277,119 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   if (!doc) return { title: t('bibliotheque.doc.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.doc.missing') }] }
   const present = await deps.exists(doc.file)
   const ghosts = await deps.store.ghostsOf(doc)
+  // Ce qui reste à confirmer (la langue, le titre, la catégorie, l'émetteur, la référence) : un message chacun —
+  // plusieurs, ensemble dans une section, dépliée, que l'en-tête résume.
+  const confirming: HomeBlock[] = [
+    // Sa langue n'a pas été détectée sûrement : à confirmer — la probable d'un clic, ou une autre.
+    ...(doc.languageToConfirm
+      ? [
+          {
+            kind: 'message' as const,
+            tone: 'warning' as const,
+            text: doc.languageProbable ? t('bibliotheque.lang.confirm.probable', { language: t(`bibliotheque.lang.${doc.languageProbable}`) }) : t('bibliotheque.lang.confirm.none'),
+            actions: [
+              ...(doc.languageProbable
+                ? [{ id: 'confirm-language', label: t('bibliotheque.lang.confirm', { language: t(`bibliotheque.lang.${doc.languageProbable}`) }), icon: 'check' as const, primary: true, run: () => deps.setLanguage(doc.record, doc.languageProbable!) }]
+                : []),
+              { id: 'choose-language', label: t('bibliotheque.lang.choose'), icon: 'chat' as const, ...(doc.languageProbable ? {} : { primary: true }), run: () => deps.chooseLanguage(doc.record) }
+            ]
+          }
+        ]
+      : []),
+    // Son titre n'a pas été lu sûrement : celui lu dans le document (probable), celui du nom du fichier, ou un autre.
+    ...(doc.titleToConfirm
+      ? [
+          {
+            kind: 'message' as const,
+            tone: 'warning' as const,
+            text: doc.titleProbable ? t('bibliotheque.title.confirm.probable', { probable: doc.titleProbable, title: doc.title }) : t('bibliotheque.title.confirm.name', { title: doc.title }),
+            actions: [
+              ...(doc.titleProbable
+                ? [{ id: 'use-title', label: t('bibliotheque.title.use', { title: doc.titleProbable }), icon: 'check' as const, primary: true, run: () => deps.confirmTitle(doc.record, doc.titleProbable!) }]
+                : []),
+              { id: 'keep-title', label: t(doc.titleProbable ? 'bibliotheque.title.keep' : 'bibliotheque.identity.confirm'), icon: doc.titleProbable ? ('cross' as const) : ('check' as const), ...(doc.titleProbable ? {} : { primary: true }), run: () => deps.confirmTitle(doc.record, null) },
+              { id: 'classify-title', label: t('bibliotheque.classify'), icon: 'edit' as const, run: () => deps.classify(doc.record) }
+            ]
+          }
+        ]
+      : []),
+    // Sa catégorie n'a pas été établie sûrement : celle que le texte suggère (probable), celle du nom du fichier, aucune, ou une autre.
+    ...(doc.categoryToConfirm
+      ? [
+          {
+            kind: 'message' as const,
+            tone: 'warning' as const,
+            text: doc.categoryProbable
+              ? doc.category
+                ? t('bibliotheque.category.confirm.both', { probable: doc.categoryProbable, category: doc.category })
+                : t('bibliotheque.category.confirm.text', { probable: doc.categoryProbable })
+              : doc.category
+                ? t('bibliotheque.category.confirm.name', { category: doc.category })
+                : t('bibliotheque.category.confirm.none'),
+            actions: [
+              ...(doc.categoryProbable
+                ? [{ id: 'use-category', label: t('bibliotheque.issuer.use', { issuer: doc.categoryProbable }), icon: 'check' as const, primary: true, run: () => deps.confirmCategory(doc.record, doc.categoryProbable!) }]
+                : []),
+              {
+                id: 'keep-category',
+                label: t(doc.category ? (doc.categoryProbable ? 'bibliotheque.category.keep' : 'bibliotheque.identity.confirm') : 'bibliotheque.category.none'),
+                icon: doc.category ? ('check' as const) : ('cross' as const),
+                ...(doc.category && !doc.categoryProbable ? { primary: true } : {}),
+                run: () => deps.confirmCategory(doc.record, null)
+              },
+              { id: 'classify-category', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.category || doc.categoryProbable ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+            ]
+          }
+        ]
+      : []),
+    // Son émetteur n'a pas été lu sûrement : celui lu au début du document (probable), aucun, ou un autre.
+    ...(doc.issuerToConfirm
+      ? [
+          {
+            kind: 'message' as const,
+            tone: 'warning' as const,
+            text: doc.issuerProbable ? t('bibliotheque.issuer.confirm.probable', { probable: doc.issuerProbable }) : t('bibliotheque.issuer.confirm.none'),
+            actions: [
+              ...(doc.issuerProbable
+                ? [{ id: 'use-issuer', label: t('bibliotheque.issuer.use', { issuer: doc.issuerProbable }), icon: 'check' as const, primary: true, run: () => deps.confirmIssuer(doc.record, doc.issuerProbable!) }]
+                : []),
+              { id: 'keep-issuer', label: t(doc.issuer ? 'bibliotheque.identity.confirm' : 'bibliotheque.issuer.none'), icon: 'cross' as const, run: () => deps.confirmIssuer(doc.record, null) },
+              { id: 'classify-issuer', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.issuerProbable ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+            ]
+          }
+        ]
+      : []),
+    // Sa référence et sa version n'ont pas été lues sûrement : à confirmer (telles quelles, ou « Classer… »).
+    ...(doc.identityToConfirm
+      ? [
+          {
+            kind: 'message' as const,
+            tone: 'warning' as const,
+            text:
+              doc.reference || versionLabel(doc)
+                ? t('bibliotheque.identity.confirm.found', { found: [doc.reference, versionLabel(doc) ? t('bibliotheque.identity.version', { version: versionLabel(doc) }) : ''].filter(Boolean).join(', ') })
+                : t('bibliotheque.identity.confirm.none'),
+            actions: [
+              ...(doc.reference || versionLabel(doc)
+                ? [{ id: 'confirm-identity', label: t('bibliotheque.identity.confirm'), icon: 'check' as const, primary: true, run: () => deps.confirmIdentity(doc.record) }]
+                : []),
+              { id: 'classify-identity', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.reference || versionLabel(doc) ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+            ]
+          }
+        ]
+      : []),
+  ]
+  const confirmNames = [
+    doc.languageToConfirm ? t('bibliotheque.field.language') : '',
+    doc.titleToConfirm ? t('bibliotheque.field.title') : '',
+    doc.categoryToConfirm ? t('bibliotheque.field.category') : '',
+    doc.issuerToConfirm ? t('bibliotheque.field.issuer') : '',
+    doc.identityToConfirm ? t('bibliotheque.field.identity') : ''
+  ].filter(Boolean)
+  const confirmBlocks: HomeBlock[] =
+    confirming.length > 1
+      ? [{ kind: 'section', id: 'bibliotheque.document.a-confirmer', title: t('bibliotheque.toConfirm.section', { count: confirming.length }), subtitle: confirmNames.join(' · '), icon: 'alert', blocks: confirming }]
+      : confirming
   const byRecord = new Map(all.map((each) => [each.record, each]))
   const open = (other: LibraryDoc): ViewAction => ({ id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showPage?.(docPageOf(other.record)) })
 
@@ -350,82 +467,14 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             }
           ]
         : []),
-      // Sa langue n'a pas été détectée sûrement : à confirmer — la probable d'un clic, ou une autre.
-      ...(doc.languageToConfirm
-        ? [
-            {
-              kind: 'message' as const,
-              tone: 'warning' as const,
-              text: doc.languageProbable ? t('bibliotheque.lang.confirm.probable', { language: t(`bibliotheque.lang.${doc.languageProbable}`) }) : t('bibliotheque.lang.confirm.none'),
-              actions: [
-                ...(doc.languageProbable
-                  ? [{ id: 'confirm-language', label: t('bibliotheque.lang.confirm', { language: t(`bibliotheque.lang.${doc.languageProbable}`) }), icon: 'check' as const, primary: true, run: () => deps.setLanguage(doc.record, doc.languageProbable!) }]
-                  : []),
-                { id: 'choose-language', label: t('bibliotheque.lang.choose'), icon: 'chat' as const, ...(doc.languageProbable ? {} : { primary: true }), run: () => deps.chooseLanguage(doc.record) }
-              ]
-            }
-          ]
-        : []),
-      // Son titre n'a pas été lu sûrement : celui lu dans le document (probable), celui du nom du fichier, ou un autre.
-      ...(doc.titleToConfirm
-        ? [
-            {
-              kind: 'message' as const,
-              tone: 'warning' as const,
-              text: doc.titleProbable ? t('bibliotheque.title.confirm.probable', { probable: doc.titleProbable, title: doc.title }) : t('bibliotheque.title.confirm.name', { title: doc.title }),
-              actions: [
-                ...(doc.titleProbable
-                  ? [{ id: 'use-title', label: t('bibliotheque.title.use', { title: doc.titleProbable }), icon: 'check' as const, primary: true, run: () => deps.confirmTitle(doc.record, doc.titleProbable!) }]
-                  : []),
-                { id: 'keep-title', label: t(doc.titleProbable ? 'bibliotheque.title.keep' : 'bibliotheque.identity.confirm'), icon: doc.titleProbable ? ('cross' as const) : ('check' as const), ...(doc.titleProbable ? {} : { primary: true }), run: () => deps.confirmTitle(doc.record, null) },
-                { id: 'classify-title', label: t('bibliotheque.classify'), icon: 'edit' as const, run: () => deps.classify(doc.record) }
-              ]
-            }
-          ]
-        : []),
-      // Son émetteur n'a pas été lu sûrement : celui lu au début du document (probable), aucun, ou un autre.
-      ...(doc.issuerToConfirm
-        ? [
-            {
-              kind: 'message' as const,
-              tone: 'warning' as const,
-              text: doc.issuerProbable ? t('bibliotheque.issuer.confirm.probable', { probable: doc.issuerProbable }) : t('bibliotheque.issuer.confirm.none'),
-              actions: [
-                ...(doc.issuerProbable
-                  ? [{ id: 'use-issuer', label: t('bibliotheque.issuer.use', { issuer: doc.issuerProbable }), icon: 'check' as const, primary: true, run: () => deps.confirmIssuer(doc.record, doc.issuerProbable!) }]
-                  : []),
-                { id: 'keep-issuer', label: t(doc.issuer ? 'bibliotheque.identity.confirm' : 'bibliotheque.issuer.none'), icon: 'cross' as const, run: () => deps.confirmIssuer(doc.record, null) },
-                { id: 'classify-issuer', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.issuerProbable ? {} : { primary: true }), run: () => deps.classify(doc.record) }
-              ]
-            }
-          ]
-        : []),
-      // Sa référence et sa version n'ont pas été lues sûrement : à confirmer (telles quelles, ou « Classer… »).
-      ...(doc.identityToConfirm
-        ? [
-            {
-              kind: 'message' as const,
-              tone: 'warning' as const,
-              text:
-                doc.reference || versionLabel(doc)
-                  ? t('bibliotheque.identity.confirm.found', { found: [doc.reference, versionLabel(doc) ? t('bibliotheque.identity.version', { version: versionLabel(doc) }) : ''].filter(Boolean).join(', ') })
-                  : t('bibliotheque.identity.confirm.none'),
-              actions: [
-                ...(doc.reference || versionLabel(doc)
-                  ? [{ id: 'confirm-identity', label: t('bibliotheque.identity.confirm'), icon: 'check' as const, primary: true, run: () => deps.confirmIdentity(doc.record) }]
-                  : []),
-                { id: 'classify-identity', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.reference || versionLabel(doc) ? {} : { primary: true }), run: () => deps.classify(doc.record) }
-              ]
-            }
-          ]
-        : []),
+      ...confirmBlocks,
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
       { kind: 'stats', stats },
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
         items: [{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision),
-          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), field('category', doc.category), { ...field('issuer', doc.issuer), ...(doc.issuerToConfirm ? { detail: t('bibliotheque.issuer.detail.toConfirm', { issuer: doc.issuer || '—' }) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: doc.issuer || '—' }) } : {}) }, field('tags', doc.tags.join(', '))]
+          ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category), ...(doc.categoryToConfirm ? { detail: t('bibliotheque.category.detail.toConfirm', { category: doc.category || '—' }) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category || '—' }) } : {}) }, { ...field('issuer', doc.issuer), ...(doc.issuerToConfirm ? { detail: t('bibliotheque.issuer.detail.toConfirm', { issuer: doc.issuer || '—' }) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: doc.issuer || '—' }) } : {}) }, field('tags', doc.tags.join(', '))]
       }),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',
