@@ -1,6 +1,7 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
+import type { TableMerge } from '../../../core/tables'
 import { unzip } from '../formats/unzip'
 import { childLocal, childrenLocal, parseXml, type XmlNode } from '../formats/xmlParse'
 
@@ -24,6 +25,8 @@ export interface XlsxReadSheet {
   name: string
   /** Rows as they are in the sheet, cells by column, every value as text. Empty rows dropped. */
   rows: string[][]
+  /** Its merged cells (`mergeCells`), counted in `rows` — the empty rows dropped. */
+  merges?: TableMerge[]
 }
 
 /** `_x000A_` and friends: how OOXML escapes a character XML itself cannot carry. */
@@ -151,10 +154,15 @@ function cellValue(cell: XmlNode, shared: string[], styles: DateStyles): string 
   return value
 }
 
-function sheetRows(source: string, shared: string[], styles: DateStyles): string[][] {
-  const data = childLocal(parseXml(source), 'sheetData')
+function sheetRows(source: string, shared: string[], styles: DateStyles): { rows: string[][]; merges: TableMerge[] } {
+  const sheet = parseXml(source)
+  const data = childLocal(sheet, 'sheetData')
   const rows: string[][] = []
+  // The sheet's row number of each row kept (1, 2, 5…): a merge is said in the sheet's numbers.
+  const numbers: number[] = []
+  let number = 0
   for (const row of childrenLocal(data, 'row')) {
+    number = Number(row.attrs.r) || number + 1
     const cells: string[] = []
     let next = 0
     for (const cell of childrenLocal(row, 'c')) {
@@ -166,9 +174,26 @@ function sheetRows(source: string, shared: string[], styles: DateStyles): string
       while (cells.length < at) cells.push('')
       cells[at] = value
     }
-    if (cells.some((value) => value.trim() !== '')) rows.push(cells)
+    if (cells.some((value) => value.trim() !== '')) {
+      rows.push(cells)
+      numbers.push(number)
+    }
   }
-  return rows
+  const merges: TableMerge[] = []
+  for (const merge of childrenLocal(childLocal(sheet, 'mergeCells'), 'mergeCell')) {
+    const [from, to] = (merge.attrs.ref ?? '').split(':')
+    if (!from || !to) continue
+    const top = Number(/\d+/.exec(from)?.[0])
+    const bottom = Number(/\d+/.exec(to)?.[0])
+    const row = numbers.indexOf(top)
+    // A merge whose first row is empty (so dropped) says nothing.
+    if (row < 0 || !(bottom >= top)) continue
+    const column = columnIndex(from)
+    const columns = Math.min(200, columnIndex(to) - column + 1)
+    const down = numbers.filter((each) => each >= top && each <= bottom).length
+    if (columns >= 1 && down * columns > 1) merges.push({ row, column, rows: down, columns })
+  }
+  return { rows, merges }
 }
 
 /** Every sheet of the workbook, in the order its tabs are in. */
@@ -200,7 +225,8 @@ export async function readXlsx(bytes: Uint8Array): Promise<XlsxReadSheet[]> {
     const target = rels.get(id)?.target
     const source = target ? parts.get(target) : undefined
     if (!source) continue
-    sheets.push({ name: sheet.attrs.name ?? '', rows: sheetRows(source, shared, styles) })
+    const { rows, merges } = sheetRows(source, shared, styles)
+    sheets.push({ name: sheet.attrs.name ?? '', rows, ...(merges.length ? { merges } : {}) })
   }
   return sheets
 }

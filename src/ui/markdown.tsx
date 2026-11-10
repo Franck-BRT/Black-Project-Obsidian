@@ -31,8 +31,18 @@ export type MarkdownNode =
   | { kind: 'quote'; children: MarkdownNode[] }
   | { kind: 'code'; text: string }
   | { kind: 'table'; head: string[]; rows: string[][] }
+  /** Un tableau HTML : ses cellules, fusionnées s'il le faut (`columns`, `rows`). */
+  | { kind: 'grid'; head: number; rows: GridCell[][] }
   | { kind: 'rule' }
   | { kind: 'math'; text: string }
+
+/** Une cellule d'un tableau HTML ; `header` : une cellule d'en-tête (`<th>`). */
+export interface GridCell {
+  text: string
+  header?: boolean
+  columns?: number
+  rows?: number
+}
 
 const HEADING = /^(#{1,6})\s+(.*?)\s*#*\s*$/
 const BULLET = /^(\s*)(?:[-*+•▪◦‣]|\d{1,3}[.)])\s+(.*)$/
@@ -121,20 +131,30 @@ function entities(text: string): string {
 /** Du texte, tel qu'on le lit : ses symboles et ses entités en caractères. */
 const plain = (text: string): string => entities(symbols(text))
 
-/** Un tableau HTML (`<table>…</table>`) : ses lignes et leurs cellules (une fusionnée : répétée vide). */
-function htmlTable(source: string): string[][] {
-  const rows: string[][] = []
+/**
+ * Un tableau HTML (`<table>…</table>`) : ses lignes, leurs cellules, et leurs fusions
+ * (`colspan`, `rowspan`) ; `head` : combien de lignes, en tête, ne sont que des en-têtes.
+ */
+function htmlTable(source: string): { head: number; rows: GridCell[][] } {
+  const rows: GridCell[][] = []
   for (const row of source.matchAll(/<tr\b[^>]*>([\s\S]*?)(?=<tr\b|<\/table>|$)/gi)) {
-    const cells: string[] = []
+    const cells: GridCell[] = []
     for (const cell of row[1]!.matchAll(/<t([dh])\b([^>]*)>([\s\S]*?)(?=<t[dh]\b|<\/tr>|$)/gi)) {
       const text = cell[3]!.replace(/<\/t[dh]>\s*$/i, '').replace(/\s*\n\s*/g, ' ').trim()
-      cells.push(text)
-      const span = Number(/colspan\s*=\s*["']?(\d+)/i.exec(cell[2]!)?.[1] ?? 1)
-      for (let more = 1; more < Math.min(span, 50); more++) cells.push('')
+      const span = (name: string) => Math.min(50, Math.max(1, Number(new RegExp(`${name}\\s*=\\s*["']?(\\d+)`, 'i').exec(cell[2]!)?.[1] ?? 1)))
+      const columns = span('colspan')
+      const spanned = span('rowspan')
+      cells.push({ text, ...(cell[1]!.toLowerCase() === 'h' ? { header: true } : {}), ...(columns > 1 ? { columns } : {}), ...(spanned > 1 ? { rows: spanned } : {}) })
     }
     if (cells.length) rows.push(cells)
   }
-  return rows
+  // Les lignes d'en-tête : celles du début qui n'ont que des <th> (au moins la première, s'il n'y en a pas).
+  let head = 0
+  while (head < rows.length && rows[head]!.every((cell) => cell.header)) head++
+  head = Math.max(head, rows.length > 1 ? 1 : 0)
+  // Une cellule d'en-tête qui descend sur les lignes suivantes (rowspan) les garde dans l'en-tête.
+  for (let at = 0; at < head; at++) for (const cell of rows[at]!) head = Math.min(rows.length, Math.max(head, at + (cell.rows ?? 1)))
+  return { head, rows }
 }
 
 /** Le retrait d'une ligne (une tabulation : deux espaces). */
@@ -222,8 +242,8 @@ export function parseMarkdown(source: string): MarkdownNode[] {
         body.push(lines[at]!)
         if (/<\/table>/i.test(lines[at++]!)) break
       }
-      const [head, ...rows] = htmlTable(body.join('\n'))
-      if (head?.length) nodes.push({ kind: 'table', head, rows })
+      const { head, rows } = htmlTable(body.join('\n'))
+      if (rows.length) nodes.push({ kind: 'grid', head, rows })
       continue
     }
     // Une citation : ses lignes, sans leur « > », lues comme un texte à part.
@@ -417,6 +437,28 @@ function render(nodes: readonly MarkdownNode[]): JSX.Element[] {
             </table>
           </div>
         )
+      case 'grid': {
+        const row = (cells: GridCell[], at: number, header: boolean) => (
+          <tr key={at}>
+            {cells.map((cell, column) => {
+              const Tag = header || cell.header ? 'th' : 'td'
+              return (
+                <Tag key={column} {...(cell.columns ? { colSpan: cell.columns } : {})} {...(cell.rows ? { rowSpan: cell.rows } : {})}>
+                  {inline(cell.text)}
+                </Tag>
+              )
+            })}
+          </tr>
+        )
+        return (
+          <div key={index} class="bp-md-table">
+            <table>
+              {node.head > 0 && <thead>{node.rows.slice(0, node.head).map((cells, at) => row(cells, at, true))}</thead>}
+              <tbody>{node.rows.slice(node.head).map((cells, at) => row(cells, at, false))}</tbody>
+            </table>
+          </div>
+        )
+      }
       case 'rule':
         return <hr key={index} />
       case 'math': {

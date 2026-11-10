@@ -1,6 +1,7 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
+import type { TableMerge } from '../../../core/tables'
 import type { DocxReadBlock, DocxReadParagraph } from './docxRead'
 
 /**
@@ -384,26 +385,39 @@ function wholeItalic(node: HtmlNode): boolean {
   return content.length === 1 && typeof content[0] !== 'string' && ['em', 'i'].includes(content[0].name)
 }
 
-function tableRows(table: HtmlNode): string[][] {
+function tableRows(table: HtmlNode): { rows: string[][]; merges: TableMerge[] } {
   const rows: string[][] = []
+  const merges: TableMerge[] = []
+  // The places a cell from a row above still fills (rowspan): "row:column".
+  const taken = new Set<string>()
   const collect = (node: HtmlNode): void => {
     for (const child of node.children) {
       if (typeof child === 'string') continue
       if (child.name === 'tr') {
-        rows.push(
-          child.children
-            .filter((cell): cell is HtmlNode => typeof cell !== 'string' && (cell.name === 'td' || cell.name === 'th'))
-            .flatMap((cell) => {
-              // A cell spanning columns is written once and stands for the others, empty.
-              const span = Math.min(20, Math.max(1, Number(cell.attrs.colspan) || 1))
-              return [textOf(cell), ...Array<string>(span - 1).fill('')]
-            })
-        )
+        const row = rows.length
+        const cells: string[] = []
+        const skip = () => {
+          while (taken.has(`${row}:${cells.length}`)) cells.push('')
+        }
+        for (const cell of child.children.filter((cell): cell is HtmlNode => typeof cell !== 'string' && (cell.name === 'td' || cell.name === 'th'))) {
+          skip()
+          // A cell spanning columns (or rows) is written once and stands for the others, empty.
+          const columns = Math.min(20, Math.max(1, Number(cell.attrs.colspan) || 1))
+          const down = Math.min(100, Math.max(1, Number(cell.attrs.rowspan) || 1))
+          const column = cells.length
+          cells.push(textOf(cell), ...Array<string>(columns - 1).fill(''))
+          for (let below = 1; below < down; below++) for (let at = 0; at < columns; at++) taken.add(`${row + below}:${column + at}`)
+          if (columns > 1 || down > 1) merges.push({ row, column, rows: down, columns })
+        }
+        skip()
+        rows.push(cells)
       } else if (child.name !== 'table') collect(child)
     }
   }
   collect(table)
-  return rows
+  // A rowspan reaching past the last row ends with the table.
+  for (const merge of merges) merge.rows = Math.min(merge.rows, rows.length - merge.row)
+  return { rows, merges: merges.filter((merge) => merge.rows * merge.columns > 1) }
 }
 
 const HANDLED = new Set(['p', 'blockquote', 'pre', 'ul', 'ol', 'table', 'dl', 'li', 'hr'])
@@ -481,8 +495,8 @@ export function readHtml(source: string): DocxReadBlock[] {
           deeper({ ...item, name: 'div', children: item.children.filter(nested) })
         }
       } else if (name === 'table') {
-        const rows = tableRows(child)
-        if (rows.length) blocks.push({ kind: 'table', rows })
+        const { rows, merges } = tableRows(child)
+        if (rows.length) blocks.push({ kind: 'table', rows, ...(merges.length ? { merges } : {}) })
       } else if (name === 'dl') {
         for (const item of child.children) {
           if (typeof item !== 'string') paragraph('normal', item)

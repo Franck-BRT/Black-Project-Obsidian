@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.25.1 (Black Projects 0.108.1) |
+| Version | 0.25.2 (Black Projects 0.115.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,12 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Les tableaux fusionnés et les cases à cocher dans les consignes (v0.25.2, Black Projects 0.115.0)
+
+La relecture d'un texte extrait et la lecture par la vision demandent un tableau aux cellules
+fusionnées **en HTML** (`<table>`, `colspan`, `rowspan` — la relecture le garde tel quel), et
+les cases à cocher en ☐ et ☒.
 
 ## Ce qu'il fait
 

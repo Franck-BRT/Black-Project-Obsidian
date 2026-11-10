@@ -59,13 +59,33 @@ describe('le Markdown mis en forme', () => {
     expect(out).toContain('<span class="bp-math"><code>x^2</code></span>')
   })
 
-  it('les cases d’une liste : ☐ / ☒ ; un tableau HTML : un tableau (une cellule fusionnée, répétée vide)', () => {
+  it('les cases d’une liste : ☐ / ☒ ; un tableau HTML : un tableau, ses cellules fusionnées (colspan, rowspan)', () => {
     const out = html('- [ ] à faire\n- [x] fait\n\n<table><tr><th>Lot</th><th>Prix</th><th>Note</th></tr>\n<tr><td colspan="2">Tout<br>compris</td><td>&nbsp;ok</td></tr></table>\nAprès.')
     expect(out).toContain('<li>☐ à faire</li><li>☒ fait</li>')
-    expect(parseMarkdown('<table>\n<tr><td>A</td><td>B</td></tr>\n<tr><td colspan=2>C</td></tr>\n</table>')).toEqual([{ kind: 'table', head: ['A', 'B'], rows: [['C', '']] }])
-    expect(out).toContain('<th>Lot</th><th>Prix</th><th>Note</th>')
-    expect(out).toContain('<td>Tout<br/>compris</td><td></td><td>\u00a0ok</td>')
+    expect(out).toContain('<thead><tr><th>Lot</th><th>Prix</th><th>Note</th></tr></thead>')
+    expect(out).toContain('<tbody><tr><td colspan="2">Tout<br/>compris</td><td>\u00a0ok</td></tr></tbody>')
     expect(out).toContain('<p>Après.</p>')
+    expect(parseMarkdown('<table>\n<tr><td>A</td><td>B</td></tr>\n<tr><td colspan=2>C</td></tr>\n</table>')).toEqual([
+      { kind: 'grid', head: 1, rows: [[{ text: 'A' }, { text: 'B' }], [{ text: 'C', columns: 2 }]] }
+    ])
+  })
+
+  it('un tableau HTML : deux lignes d’en-tête (une cellule sur deux lignes, une sur deux colonnes), une cellule sur deux lignes dans le corps', () => {
+    const source = [
+      '<table>',
+      '<tr><th rowspan="2">Lot</th><th colspan="2">Prix</th></tr>',
+      '<tr><th>HT</th><th>TTC</th></tr>',
+      '<tr><td rowspan="2">1</td><td>10</td><td>12</td></tr>',
+      '<tr><td>20</td><td>24</td></tr>',
+      '</table>'
+    ].join('\n')
+    const [grid] = parseMarkdown(source)
+    expect(grid).toMatchObject({ kind: 'grid', head: 2 })
+    const out = html(source)
+    expect(out).toContain('<thead><tr><th rowspan="2">Lot</th><th colspan="2">Prix</th></tr><tr><th>HT</th><th>TTC</th></tr></thead>')
+    expect(out).toContain('<tbody><tr><td rowspan="2">1</td><td>10</td><td>12</td></tr><tr><td>20</td><td>24</td></tr></tbody>')
+    // Une première ligne en <td> dont une cellule descend : l'en-tête la suit.
+    expect(parseMarkdown('<table><tr><td rowspan="3">A</td><td>B</td></tr><tr><td>C</td></tr><tr><td>D</td></tr><tr><td>E</td><td>F</td></tr></table>')[0]).toMatchObject({ kind: 'grid', head: 3 })
   })
 
   it('le bloc « markdown » d’une page : mis en forme ; vide, il le dit', () => {

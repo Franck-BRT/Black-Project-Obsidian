@@ -275,8 +275,9 @@ et 20 $ » reste du texte. Une formule qui n'est qu'un symbole (`$\square$`), et
 LaTeX écrits hors formule (`\boxtimes`, `\leq`, `\alpha`…), deviennent leur caractère (☒, ≤, α) ;
 `\text{…}`, son texte. Le **HTML** qu'une lecture (l'IA, la vision) écrit est compris, en
 éléments créés — jamais injecté : `<br>` (retour à la ligne, aussi dans une cellule), `<sup>`,
-`<sub>`, `<b>`, `<i>`, `<u>`, `<s>`, `<mark>`, les tableaux `<table>` (une cellule fusionnée :
-suivie de cellules vides), les entités (`&nbsp;`, `&amp;`, `&#9744;`) ; les balises de mise en
+`<sub>`, `<b>`, `<i>`, `<u>`, `<s>`, `<mark>`, les tableaux `<table>` — leurs **cellules
+fusionnées** gardées (`colspan`, `rowspan` ; le nœud `grid`, l'en-tête étendu aux lignes qu'une
+de ses cellules couvre) —, les entités (`&nbsp;`, `&amp;`, `&#9744;`) ; les balises de mise en
 page (`<span>`, `<div>`, `<p>`…) et les commentaires sont retirés, leur texte gardé ; une balise
 inconnue (`<script>`) reste du texte. Les échappements Markdown (`\*`, `\%`) donnent leur
 caractère ; les cases d'une liste (`- [ ]`, `- [x]`), ☐ / ☒. Une liste « aérée » (des lignes vides entre ses éléments) reste une liste ; une liste coupe la

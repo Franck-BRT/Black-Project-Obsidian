@@ -1,6 +1,7 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
+import type { TableMerge } from '../../../core/tables'
 import { unzip } from '../formats/unzip'
 import { unescapeOoxml } from './xlsxRead'
 import { childLocal, childrenLocal, localName, parseXml, type XmlNode } from '../formats/xmlParse'
@@ -44,6 +45,8 @@ export interface PptxReadTable {
   y?: number
   x?: number
   rows: string[][]
+  /** Its merged cells (`gridSpan`, `rowSpan`), where there are some. */
+  merges?: TableMerge[]
 }
 
 export type PptxReadShape = PptxReadText | PptxReadTable
@@ -88,9 +91,19 @@ function paragraphsOf(body: XmlNode | null): PptxReadParagraph[] {
 function tableOf(frame: XmlNode): PptxReadTable | null {
   const table = childLocal(childLocal(childLocal(frame, 'graphic'), 'graphicData'), 'tbl')
   if (!table) return null
+  const merges: TableMerge[] = []
+  childrenLocal(table, 'tr').forEach((row, at) =>
+    childrenLocal(row, 'tc').forEach((cell, column) => {
+      // The first cell of a merge says how far it goes; the ones it covers are still there, empty.
+      const columns = Math.min(64, Math.max(1, Number(cell.attrs.gridSpan) || 1))
+      const rows = Math.min(200, Math.max(1, Number(cell.attrs.rowSpan) || 1))
+      if (columns * rows > 1 && cell.attrs.hMerge !== '1' && cell.attrs.vMerge !== '1') merges.push({ row: at, column, rows, columns })
+    })
+  )
   return {
     kind: 'table',
     ...position(frame),
+    ...(merges.length ? { merges } : {}),
     rows: childrenLocal(table, 'tr').map((row) =>
       childrenLocal(row, 'tc').map((cell) =>
         // A cell merged into its neighbour holds nothing of its own.

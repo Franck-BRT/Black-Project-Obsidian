@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les cellules fusionnées (v0.115.0)
+
+- [ ] Déposer un document Word (ou Excel, PowerPoint, une page web) dont un tableau a des
+      cellules fusionnées (un en-tête « Prix » sur « HT » et « TTC », un lot sur deux lignes) : la
+      section **Texte extrait** de sa fiche montre le tableau fusionné, comme dans le document ;
+      ouverte dans Obsidian, sa note aussi
+- [ ] Une page lue par la vision dont le tableau a des cellules fusionnées : de même
+- [ ] Un tableau sans fusion : un tableau Markdown, comme avant
+
 ## Le texte extrait sur toute la largeur (v0.114.1)
 
 - [ ] La section **Texte extrait** d'une fiche : le texte va jusqu'au bord droit de la page ;

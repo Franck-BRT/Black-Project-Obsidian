@@ -1,6 +1,7 @@
 // Copyright © 2026 Black Room Technologies. Tous droits réservés.
 // Logiciel propriétaire — voir le fichier LICENSE.
 
+import type { TableMerge } from '../../../core/tables'
 import { CfbError, isCfb, readCfb } from '../formats/cfb'
 import { DATE_FORMAT_IDS, isDateFormat, readXlsx, serialDate, type XlsxReadSheet } from './xlsxRead'
 import { decipherWorkbook } from './xlsCrypt'
@@ -43,6 +44,7 @@ const XF = 0x00e0
 const DATEMODE = 0x0022
 const CODEPAGE = 0x0042
 const FILEPASS = 0x002f
+const MERGEDCELLS = 0x00e5
 
 interface BiffRecord {
   type: number
@@ -249,6 +251,8 @@ export async function readXls(bytes: Uint8Array, password?: string): Promise<Xls
       while (line.length < col) line.push('')
       line[col] = value
     }
+    // Merged cells: first row, last row, first column, last column, as the sheet numbers them.
+    const merged: [number, number, number, number][] = []
     // A formula whose result is text: the text comes in the record after it.
     let awaiting: [number, number] | null = null
     for (const { type, data } of records(stream, at)) {
@@ -275,9 +279,21 @@ export async function readXls(bytes: Uint8Array, password?: string): Promise<Xls
         put(awaiting[0], awaiting[1], biffString(data, 0, 2, biff8, decoder))
         awaiting = null
       } else if (type === BOOLERR && data[7] === 0) put(u16(data, 0), u16(data, 2), data[6] ? 'TRUE' : 'FALSE')
+      else if (type === MERGEDCELLS && data.length >= 2) {
+        for (let at = 0, pos = 2; at < u16(data, 0) && pos + 8 <= data.length; at++, pos += 8) merged.push([u16(data, pos), u16(data, pos + 2), u16(data, pos + 4), u16(data, pos + 6)])
+      }
     }
-    const rows = grid.filter((line): line is string[] => !!line && line.some((value) => value.trim() !== ''))
-    return { name, rows }
+    // The empty rows dropped; a merge counted in the rows kept.
+    const kept = grid.flatMap((line, row) => (line && line.some((value) => value.trim() !== '') ? [row] : []))
+    const rows = kept.map((row) => grid[row]!)
+    const merges: TableMerge[] = []
+    for (const [top, bottom, left, right] of merged) {
+      const row = kept.indexOf(top)
+      const down = kept.filter((each) => each >= top && each <= bottom).length
+      const columns = Math.min(200, right - left + 1)
+      if (row >= 0 && columns >= 1 && down * columns > 1) merges.push({ row, column: left, rows: down, columns })
+    }
+    return { name, rows, ...(merges.length ? { merges } : {}) }
   })
 }
 

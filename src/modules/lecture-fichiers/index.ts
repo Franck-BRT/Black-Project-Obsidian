@@ -118,7 +118,7 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.13.0',
+  version: '0.14.0',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings), display),

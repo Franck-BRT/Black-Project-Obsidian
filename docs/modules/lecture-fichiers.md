@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.13.0 (Black Projects 0.106.0) |
+| Version | 0.14.0 (Black Projects 0.115.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -16,6 +16,18 @@
 
 Le module transforme un document en texte que l'outil, puis l'IA, peuvent lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
 colonnes** — c'est là que sont souvent les exigences et les prix.
+
+## Les cellules fusionnées (v0.14.0, Black Projects 0.115.0)
+
+Les lecteurs disent les **fusions** d'un tableau (`merges?: TableMerge[]` — ligne, colonne,
+nombre de lignes, de colonnes — à côté de `rows`, où les cellules couvertes restent, vides) :
+Word (`gridSpan`, `vMerge`), page web (`colspan`, `rowspan` ; une cellule sur plusieurs lignes
+ne décale plus les colonnes des suivantes), PowerPoint (`gridSpan`, `rowSpan`), Excel `.xlsx`
+(`mergeCells`) et `.xls` (enregistrement `MERGEDCELLS`), comptées dans les lignes gardées (les
+lignes vides retirées). Le texte extrait écrit un tableau qui en a en **HTML** (`writtenTable`,
+`mergedTable` de `src/core/tables.ts` : `colspan`, `rowspan`, la première ligne en `<th>`, le
+texte échappé, ses sauts de ligne en `<br>`) ; sans fusion, en Markdown comme avant. Ceux qui
+lisent `rows` (l'import d'exigences) ne changent pas.
 
 ## Les équations de Word en LaTeX ; le texte page par page (v0.13.0, Black Projects 0.106.0)
 

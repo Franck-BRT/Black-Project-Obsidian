@@ -3,6 +3,7 @@
 
 import { unzip } from '../formats/unzip'
 import { childLocal, childrenLocal, localName, parseXml, type XmlNode } from '../formats/xmlParse'
+import type { TableMerge } from '../../../core/tables'
 import { equationText } from './omml'
 
 /**
@@ -41,6 +42,8 @@ export interface DocxReadTable {
   kind: 'table'
   /** Rows of cells, each cell's paragraphs joined by line breaks. */
   rows: string[][]
+  /** Its merged cells (across columns, down rows), where there are some. */
+  merges?: TableMerge[]
 }
 
 export type DocxReadBlock = DocxReadParagraph | DocxReadTable
@@ -187,20 +190,43 @@ function cellText(cell: XmlNode): string {
 }
 
 function tableOf(node: XmlNode): DocxReadTable {
-  return {
-    kind: 'table',
-    rows: childrenLocal(node, 'tr').map((row) =>
-      // A content control can wrap a cell; what it holds is the cell.
-      row.children
-        .flatMap((part) => (localName(part) === 'sdt' ? childrenLocal(childLocal(part, 'sdtContent'), 'tc') : [part]))
-        .filter((part) => localName(part) === 'tc')
-        // A cell spread over several columns: its text, then empty cells, so the columns stay in line.
-        .flatMap((cell) => {
-          const span = Number(childLocal(childLocal(cell, 'tcPr'), 'gridSpan')?.attrs['w:val'] ?? 1)
-          return [cellText(cell), ...Array<string>(Number.isInteger(span) && span > 1 ? Math.min(span, 64) - 1 : 0).fill('')]
-        })
-    )
+  const rows: string[][] = []
+  const merges: TableMerge[] = []
+  // A cell merged down: `vMerge` "restart" opens it, a bare `vMerge` (or "continue") goes on with it.
+  const open = new Map<number, TableMerge>()
+  for (const row of childrenLocal(node, 'tr')) {
+    const cells: string[] = []
+    const seen = new Set<number>()
+    // A content control can wrap a cell; what it holds is the cell.
+    for (const cell of row.children.flatMap((part) => (localName(part) === 'sdt' ? childrenLocal(childLocal(part, 'sdtContent'), 'tc') : [part])).filter((part) => localName(part) === 'tc')) {
+      const properties = childLocal(cell, 'tcPr')
+      const value = Number(childLocal(properties, 'gridSpan')?.attrs['w:val'] ?? 1)
+      const span = Number.isInteger(value) && value > 1 ? Math.min(value, 64) : 1
+      const column = cells.length
+      const vertical = childLocal(properties, 'vMerge')
+      const continues = vertical && (vertical.attrs['w:val'] ?? 'continue') === 'continue'
+      const above = open.get(column)
+      if (continues && above && above.columns === span) {
+        above.rows++
+        seen.add(column)
+        cells.push(...Array<string>(span).fill(''))
+        continue
+      }
+      // A cell spread over several columns: its text, then empty cells, so the columns stay in line.
+      cells.push(cellText(cell), ...Array<string>(span - 1).fill(''))
+      const merge: TableMerge = { row: rows.length, column, rows: 1, columns: span }
+      if (vertical) {
+        open.set(column, merge)
+        seen.add(column)
+      }
+      if (span > 1 || vertical) merges.push(merge)
+    }
+    // A column no cell went on with closes what was merged down it.
+    for (const column of [...open.keys()]) if (!seen.has(column)) open.delete(column)
+    rows.push(cells)
   }
+  const merged = merges.filter((merge) => merge.rows * merge.columns > 1)
+  return { kind: 'table', rows, ...(merged.length ? { merges: merged } : {}) }
 }
 
 function blocksOf(node: XmlNode | null, styles: Map<string, StyleInfo>, out: DocxReadBlock[], numbering: Numbering = new Map()): void {

@@ -11,7 +11,7 @@ import { pdfBlocks } from './pdfText'
 import { readPptx } from './pptxRead'
 import { readSpreadsheet } from './xlsRead'
 import { completeLists, listItem } from '../../../core/lists'
-import { completeTables, markdownTable } from '../../../core/tables'
+import { completeTables, writtenTable, type TableMerge } from '../../../core/tables'
 
 /**
  * A file, as text a model can read — the one door every reader is reached through.
@@ -140,8 +140,9 @@ export class FileReadError extends Error {
 /**
  * Rows of cells as a Markdown table a model reads, and Obsidian shows as a table: the first
  * row its header, then the separator line, then the rows — empty rows and columns left out.
+ * With merged cells, an HTML table (`colspan`, `rowspan`), which Markdown has no way to say.
  */
-const rowsText = (rows: string[][]): string => markdownTable(rows)
+const rowsText = (rows: string[][], merges?: TableMerge[]): string => writtenTable(rows, merges)
 
 /**
  * Paragraphs and tables, as Markdown: a heading keeps its level, a list item its bullet (or
@@ -153,7 +154,7 @@ export function blocksText(blocks: DocxReadBlock[]): string {
   let inList = false
   for (const block of blocks) {
     if (block.kind === 'table') {
-      const table = rowsText(block.rows)
+      const table = rowsText(block.rows, block.merges)
       if (table) out.push(table)
       inList = false
       continue
@@ -205,7 +206,7 @@ export async function fileText(extension: string, bytes: Uint8Array): Promise<st
     else if (ext === 'xlsx' || ext === 'xlsm' || ext === 'xls') {
       text = (await readSpreadsheet(bytes))
         .filter((sheet) => sheet.rows.length)
-        .map((sheet) => `## ${sheet.name}\n\n${rowsText(sheet.rows)}`)
+        .map((sheet) => `## ${sheet.name}\n\n${rowsText(sheet.rows, sheet.merges)}`)
         .join('\n\n')
     } else if (ext === 'pptx') {
       text = (await readPptx(bytes))
@@ -213,7 +214,7 @@ export async function fileText(extension: string, bytes: Uint8Array): Promise<st
           const shapes = [...slide.shapes].sort((a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0))
           const parts = shapes.map((shape) =>
             shape.kind === 'table'
-              ? rowsText(shape.rows)
+              ? rowsText(shape.rows, shape.merges)
               : shape.paragraphs
                   .map((paragraph) => (paragraph.bullet ? listItem(paragraph.text, paragraph.level ?? 0, paragraph.ordered ?? false) : paragraph.text))
                   .filter((line) => line.trim())

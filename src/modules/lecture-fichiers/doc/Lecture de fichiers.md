@@ -12,8 +12,10 @@ extérieur et n'utilise pas le réseau.
 Du texte structuré : les titres avec leur niveau, les paragraphes, les listes, et **les
 tableaux gardés en lignes et en colonnes** — c'est souvent là que sont les exigences et
 les prix. Les tableaux s'écrivent en vrais tableaux Markdown (une ligne d'en-tête, sa ligne
-de séparation), qu'Obsidian montre en tableaux ; les colonnes vides (cases fusionnées) en
-sont retirées. Les listes gardent leurs niveaux et leurs numéros, leurs éléments l'un sous
+de séparation), qu'Obsidian montre en tableaux ; les colonnes vides en sont retirées. Un
+tableau aux **cellules fusionnées** (Word, Excel, PowerPoint, page web) s'écrit en tableau
+HTML — Markdown ne sait pas fusionner — : ses cellules restent fusionnées, dans la fiche comme
+dans Obsidian. Les listes gardent leurs niveaux et leurs numéros, leurs éléments l'un sous
 l'autre ; les puces tapées (« • ») deviennent de vraies puces. Les équations d'un document Word
 s'écrivent en LaTeX ($…$), qu'Obsidian dessine.
 
