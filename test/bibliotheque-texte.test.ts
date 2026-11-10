@@ -90,7 +90,7 @@ describe('le texte extrait, dans la fiche', () => {
     const { pour } = await start(platform)
     const image = await pour('Photo.png', new Uint8Array([137, 80, 78, 71]))
     expect(read(platform, image.record)).toMatch(/\nlecture: image\ncaracteres: 0\n/)
-    expect(read(platform, image.record)).toContain('> [!warning] Image\n> Une image sera lue par le modèle de vision du serveur d’IA (étape 7).\n\n*Pas de texte extrait.*')
+    expect(read(platform, image.record)).toContain('> [!warning] Image\n> Une image : son texte se lit avec la vision (« Lire avec la vision (IA) »).\n\n*Pas de texte extrait.*')
     const plan = await pour('Maquette.dwg', 'binaire')
     expect(read(platform, plan.record)).toContain('> [!warning] Format non lu')
     for (const module of [...ALL].reverse()) await module.deactivate?.()

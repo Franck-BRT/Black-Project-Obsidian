@@ -643,6 +643,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.118.0 : le dossier `Bibliothèque/Émetteurs` renommé `Bibliothèque/Entreprises` (à l'ouverture)
 - v0.119.0 : la **lecture complète par l'IA** (texte du fichier, OCR, vision continuée, contrôle,
   vérification et correction, nettoyage, images décrites) et la **qualité** du texte (★ et %)
+- v0.119.1 : la **lecture en cours sur la fiche** (étape, page, %, texte lu jusqu'ici ; l'extraction)
 
 ### Étape 7 — Livrables
 

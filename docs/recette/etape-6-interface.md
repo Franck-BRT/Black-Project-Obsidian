@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La lecture en cours, sur la fiche (v0.119.1)
+
+- [ ] Déposer un PDF de plusieurs pages, l'IA réglée, puis ouvrir sa fiche : la section *Texte
+      extrait* est ouverte, son titre dit l'étape, la page et le pourcentage
+- [ ] Le texte lu jusqu'ici s'affiche, page après page, dit provisoire ; le texte d'avant dessous
+- [ ] Un scan : plus d'alerte orange pendant la lecture
+- [ ] **Extraire de nouveau** : « Extraction du texte en cours… » le temps qu'elle dure
+
 ## La lecture complète par l'IA ; la qualité du texte (v0.119.0)
 
 - [ ] Déposer un PDF avec du texte (l'IA réglée, un modèle de vision) : il est lu avec la vision

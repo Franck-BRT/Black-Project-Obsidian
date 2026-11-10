@@ -5,13 +5,23 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.40.0 (Black Projects 0.119.0) |
+| Version | 0.40.1 (Black Projects 0.119.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La lecture en cours, sur la fiche (v0.40.1, Black Projects 0.119.1)
+
+Pendant que l'IA lit un document, la section *Texte extrait* de sa fiche **s'ouvre** et le dit
+dans son sous-titre (« L'IA lit ce document — vérification — page 3 sur 12 (25 %) ») ; en file
+d'attente, sa position ; pendant **Extraire de nouveau**, « Extraction du texte en cours… »
+(`extractingNow`). Le **texte lu jusqu'ici** s'y affiche au fil des pages, dit provisoire
+(`aiReadingPartial(record, texte, faites, total)`, que le module IA appelle après chaque page ou
+partie, et dès qu'une page est lue, avant sa vérification) ; le texte d'avant reste dessous,
+titré, jusqu'à la fin. Un scan en cours de lecture n'a plus d'alerte orange.
 
 ## La qualité du texte (v0.40.0, Black Projects 0.119.0)
 

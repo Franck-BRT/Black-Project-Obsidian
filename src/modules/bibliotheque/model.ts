@@ -142,6 +142,10 @@ export interface AiReading {
   record: string
   title: string
   detail: string
+  /** Le texte lu jusqu'ici (provisoire), et combien de pages (ou parties) sur combien. */
+  partial?: string
+  done?: number
+  total?: number
 }
 
 export interface TextVersion {

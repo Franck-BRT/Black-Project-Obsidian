@@ -443,9 +443,22 @@ let pagesChanged: () => void = () => undefined
 export function aiReadingProgress(record: string, title: string, detail = ''): void {
   const queued = aiQueue.findIndex((each) => each.record === record)
   if (queued >= 0) aiQueue.splice(queued, 1)
-  aiRunning = { record, title, detail }
+  // Le texte lu jusqu'ici reste : il ne change qu'à la page suivante.
+  const kept = aiRunning?.record === record ? { ...(aiRunning.partial !== undefined ? { partial: aiRunning.partial } : {}), ...(aiRunning.done !== undefined ? { done: aiRunning.done } : {}), ...(aiRunning.total !== undefined ? { total: aiRunning.total } : {}) } : {}
+  aiRunning = { record, title, detail, ...kept }
   pagesChanged()
 }
+
+/** Pour le module IA : le texte lu jusqu'ici (provisoire), après `done` pages (ou parties) sur `total`. */
+export function aiReadingPartial(record: string, partial: string, done: number, total: number): void {
+  if (aiRunning?.record !== record) return
+  aiRunning = { ...aiRunning, partial, done, total }
+  pagesChanged()
+}
+
+/** Les documents dont le texte est en train d'être extrait du fichier (« Extraire de nouveau »). */
+const extracting = new Set<string>()
+export const extractingNow = (record: string): boolean => extracting.has(record)
 
 /** Pour le module IA : la lecture de ce document est finie (réussie ou non). */
 export function aiReadingEnded(record: string): void {
@@ -595,7 +608,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.40.0',
+  version: '0.40.1',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1382,7 +1395,16 @@ export const bibliothequeModule: BlackModule = {
         )
       },
       transcribe: async (record) => {
-        const done = await store.transcribe(record)
+        // Dit sur la fiche pendant qu'il se fait : un gros PDF prend du temps.
+        extracting.add(record)
+        pagesChanged()
+        let done: Awaited<ReturnType<typeof store.transcribe>>
+        try {
+          done = await store.transcribe(record)
+        } finally {
+          extracting.delete(record)
+          pagesChanged()
+        }
         if (!done) return platform.notifier.notify(t('bibliotheque.text.unavailable'), 8000)
         const state = t(`bibliotheque.text.state.${done.transcript.state}`)
         platform.notifier.notify(
@@ -1395,6 +1417,7 @@ export const bibliothequeModule: BlackModule = {
         if (done.transcript.state === 'lue' && aiProofread) await runSystemWorkflow(aiProofread, TRIGGER_POURED, pouredSubject(done.doc, await knownIssuers()))
       },
       aiReading: aiReadingNow,
+      extracting: extractingNow,
       proofreading: (doc) => ({ text: aiProofread !== null && doc.reading === 'lue', vision: aiProofread !== null && !!aiVision?.(doc.file) }),
       proofread: async (record) => {
         const doc = await store.load(record)

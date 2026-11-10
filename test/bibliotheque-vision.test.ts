@@ -14,7 +14,7 @@ import { createI18n } from '../src/core/i18n'
 import type { ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type HomeBlock, type ListItem, type ViewAction } from '../src/core/views'
-import { bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
+import { aiReadingNow, bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { forgetImageRefusals, iaModule, readVisionPage, repetitionLoop } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule, type Workflow } from '../src/modules/workflows'
@@ -56,6 +56,8 @@ let verdictOf: ((reading: string, image: string) => { score: number; problems: s
 let verified: string[] = []
 /** La suite d'une page coupée ; les débuts continués. */
 let continueWith: string | null = null
+/** Attendu avant de rendre une lecture de page : ce que la fiche montre pendant la lecture. */
+let visionGate: ((one: Seen) => Promise<void>) | null = null
 let continued: string[] = []
 /** Ce que répond la relecture du texte (sinon : le texte tel quel) ; `system` : sa consigne. */
 let proofreadReply: ((text: string, system: string) => string | { text: string; finish: string }) | null = null
@@ -105,6 +107,7 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string | { t
       expect(one.text).toMatch(/Voici la page \d+ sur \d+ d’un document/)
       if (refuses(body.model)) return { status: 400, text: JSON.stringify({ error: { message: `litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': {'error': {'message': '${body.model} is not a multimodal model'}}}` } }) }
       seen.push(one)
+      await visionGate?.(one)
       const answer = see(one)
       return typeof answer === 'string' ? chat(answer) : chat(answer.text, answer.finish)
     }
@@ -135,7 +138,7 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string | { t
     const list = versions?.blocks.find((block) => block.kind === 'list' && block.title === 'Versions du texte')
     return list?.kind === 'list' ? list.items : []
   }
-  return { pour, seen, proofread, workflows, textActions, textVersions }
+  return { pour, seen, proofread, workflows, textActions, textVersions, page }
 }
 
 afterEach(async () => {
@@ -144,6 +147,7 @@ afterEach(async () => {
   verdictOf = null
   verified = []
   continueWith = null
+  visionGate = null
   continued = []
   for (const module of [...ALL].reverse()) await module.deactivate?.()
 })
@@ -261,6 +265,39 @@ describe('la lecture d’un document par l’IA, de bout en bout', () => {
     proofreadReply = (text) => `${text}\n\nRelu.`
     const doc = await pour('Plan.pdf', textPdf([['Plan qualite', 'Le pre- sent plan']]))
     expect((await textVersions(doc.record))[0]!.detail).toContain('qualité ★★★★★ 92 %')
+  })
+})
+
+describe('pendant la lecture', () => {
+  it('la section « Texte extrait » s’ouvre et dit où en est l’IA (étape, page, %) ; le texte lu jusqu’ici s’y affiche, provisoire ; à la fin, le texte lu', async () => {
+    const platform = memoryPlatform()
+    const shown: { subtitle?: string; collapsed?: boolean; texts: string[]; titles: string[] }[] = []
+    const { pour, page } = await start(platform, (one) => (one.text.includes('page 1 sur') ? '# Procès-verbal\n\nPage un lue.' : 'Page deux lue.'))
+    visionGate = async (one) => {
+      if (!one.text.includes('page 2 sur')) return
+      // La page 2 en cours : la fiche, à cet instant.
+      const fiche = await page('bibliotheque.document').load(encodeURIComponent(aiReadingNow().running!.record))
+      const section = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.texte')!
+      shown.push({
+        ...(section.subtitle !== undefined ? { subtitle: section.subtitle } : {}),
+        ...(section.collapsed !== undefined ? { collapsed: section.collapsed } : {}),
+        texts: section.blocks.map((block) => (block.kind === 'message' ? block.text : block.kind === 'markdown' ? block.text : '')),
+        titles: section.blocks.map((block) => (block.kind === 'markdown' ? (block.title ?? '') : ''))
+      })
+    }
+    const doc = await pour('Scan.pdf', textPdf([[], []]))
+    expect(shown).toHaveLength(1)
+    expect(shown[0]!.subtitle).toBe('L’IA lit ce document — lecture par la vision — page 2 sur 2 (50 %)')
+    expect(shown[0]!.collapsed).toBe(false)
+    expect(shown[0]!.texts.some((text) => text.startsWith('L’IA lit ce document — lecture par la vision — page 2 sur 2. 1 sur 2 lu(s) (50 %).'))).toBe(true)
+    expect(shown[0]!.titles).toContain('Lu jusqu’ici (1 sur 2) — provisoire : il sera nettoyé et vérifié à la fin')
+    expect(shown[0]!.texts).toContain('# Procès-verbal\n\nPage un lue.')
+    // Fini : plus d'état de lecture ; le texte lu, la section repliée.
+    const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
+    const section = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.texte')!
+    expect(section.collapsed).toBe(true)
+    expect(section.subtitle).toMatch(/^Texte 1 — lu par l’IA avec la vision/)
+    expect(aiReadingNow().running).toBeNull()
   })
 })
 

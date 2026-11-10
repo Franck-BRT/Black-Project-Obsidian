@@ -44,7 +44,8 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   *Versions* › « Versions du texte » : **Comparer**, **Le montrer sur la fiche**, **Supprimer
   cette version** — sa note va à la corbeille ; l'extraite
   est gardée, l'édition et la révision ne changent pas) ; des notices disent la relecture en
-  cours, puis ce qu'elle a donné. **Extraire de nouveau** relit le fichier (vos notes ne bougent
+  cours, puis ce qu'elle a donné ; la section *Texte extrait*, ouverte, dit où elle en est (étape,
+  page, pourcentage) et montre le texte lu jusqu'ici, provisoire. **Extraire de nouveau** relit le fichier (vos notes ne bougent
   pas), puis l'IA relit ce texte ; **Relire avec l'IA** relance la relecture seule — avec un
   **modèle simple** (le texte) ou un **modèle avec la vision** (les pages d'un PDF ou une image
   regardées, comparées au texte) ; un document **sans texte** (un scan, une image) est lu avec la

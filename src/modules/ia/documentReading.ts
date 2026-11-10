@@ -65,6 +65,8 @@ export interface ReadingContext {
   describe(error: unknown): string
   /** Les consignes de l'étape (prompt, persona, skill), en tête de chaque demande de vision. */
   guidance?: string
+  /** Le texte lu jusqu'ici (provisoire), après chaque page (ou partie) : la fiche le montre. */
+  partial?(text: string, done: number, total: number): void
 }
 
 /** Les pages d'un document en images, et le texte que le fichier porte pour chacune. */
@@ -174,9 +176,16 @@ export async function readWithVision(client: AiClient, source: PageSource, model
   const { t, title } = context
   const count = source.pages
   const pages: string[] = []
+  // Chaque page lue, dite aussitôt (le texte jusqu'ici, provisoire).
+  const push = (text: string) => {
+    pages.push(text)
+    context.partial?.(tidy(pages.join('\n\n')), pages.length, count)
+  }
   const scores: { score: number; weight: number }[] = []
   const result = { kept: 0, looped: 0, salvaged: 0, failed: 0, ocr: 0, supplemented: 0, corrected: 0 }
   const lead = (lines: string[]) => [context.guidance?.trim(), ...lines].filter(Boolean).join('\n\n')
+  // D'entrée : zéro page sur N (la fiche dit le pourcentage).
+  context.partial?.('', 0, count)
   try {
     for (let index = 0; index < count; index++) {
       const page = index + 1
@@ -234,23 +243,25 @@ export async function readWithVision(client: AiClient, source: PageSource, model
           const said = letterCount(first.text.slice(0, loop.start)) >= 10
           const before = said ? readVisionPage(first.text.slice(0, loop.keep), layer) : null
           if (before) result.salvaged++
-          pages.push(before ? `${before}\n\n*${t('ia.wf.vision.pageLooped', { page })}*` : reference || `*${t('ia.wf.vision.pageLoopedNothing', { page })}*`)
+          push(before ? `${before}\n\n*${t('ia.wf.vision.pageLooped', { page })}*` : reference || `*${t('ia.wf.vision.pageLoopedNothing', { page })}*`)
           continue
         }
         const read = readVisionPage(first.text, layer)
         if (read === null) {
           // Bien plus courte que le texte du fichier : elle en a perdu — celui-ci reste.
           result.kept++
-          pages.push(layer)
+          push(layer)
           continue
         }
         reading = read
       } catch (error) {
         if (error instanceof ImagesRefused) throw error
         result.failed++
-        pages.push(reference || `*${t('ia.wf.vision.pageFailed', { page, reason: context.describe(error) })}*`)
+        push(reference || `*${t('ia.wf.vision.pageFailed', { page, reason: context.describe(error) })}*`)
         continue
       }
+      // Lue : montrée tout de suite, avant son contrôle et sa vérification (qui prennent du temps).
+      context.partial?.(tidy([...pages, reading].join('\n\n')), index + 1, count)
       // 4. Le contrôle : une lecture qui a perdu des lettres du texte du fichier, relue avec insistance ; encore courte, complétée.
       if (layer && !readsWhole(reading, layer)) {
         step('ia.reading.step.check')
@@ -289,7 +300,7 @@ export async function readWithVision(client: AiClient, source: PageSource, model
       const kept = layer ? coverage(layer, reading) : null
       if (verdict) scores.push({ score: blendQuality(verdict.score, kept), weight: letterCount(reading) })
       else if (kept !== null) scores.push({ score: Math.round(kept * 100), weight: letterCount(reading) })
-      pages.push(reading)
+      push(reading)
     }
   } catch (error) {
     if (error instanceof ImagesRefused) throw new VisionRefused(model, context.describe(error.cause))
@@ -331,6 +342,10 @@ export async function proofreadDocument(ai: AiClient, judge: AiClient, source: s
   const chunks = proofreadChunks(cleaned)
   context.notify(t('ia.wf.proofread.start', { title, parts: chunks.length }), 8000)
   const out: string[] = []
+  const push = (text: string) => {
+    out.push(text)
+    context.partial?.(tidy(out.join('\n\n')), out.length, chunks.length)
+  }
   const scores: { score: number; weight: number }[] = []
   let kept = 0
   let looped = 0
@@ -359,14 +374,14 @@ export async function proofreadDocument(ai: AiClient, judge: AiClient, source: s
       if (repetitionLoop(reply.text, reply.finish === 'length')) {
         looped++
         kept++
-        out.push(chunk)
+        push(chunk)
         continue
       }
     }
     let read = readProofread(reply.text, chunk)
     if (read === null) {
       kept++
-      out.push(chunk)
+      push(chunk)
       scores.push({ score: KEPT_SCORE, weight: letterCount(chunk) })
       continue
     }
@@ -396,7 +411,7 @@ export async function proofreadDocument(ai: AiClient, judge: AiClient, source: s
     const share = coverage(chunk, read)
     if (verdict) scores.push({ score: blendQuality(verdict.score, share), weight: letterCount(read) })
     else if (share !== null) scores.push({ score: Math.round(share * 100), weight: letterCount(read) })
-    out.push(read)
+    push(read)
   }
   if (looped && looped === chunks.length) throw new Error(t('ia.wf.proofread.allLooped', { title, model: ai.connection.model }))
   return { text: tidy(out.join('\n\n')), parts: chunks.length, kept, looped, redone, removed: keys.size, quality: qualityPercent(scores) }

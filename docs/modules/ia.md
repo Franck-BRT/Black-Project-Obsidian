@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.27.0 (Black Projects 0.119.0) |
+| Version | 0.27.1 (Black Projects 0.119.1) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,12 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Le texte lu, montré au fil de la lecture (v0.27.1, Black Projects 0.119.1)
+
+`ReadingContext.partial(texte, faites, total)` : la lecture dit le texte lu jusqu'ici après
+chaque page (dès qu'elle est lue, puis une fois vérifiée) ou partie ; la fiche du document le
+montre (`aiReadingPartial`).
 
 ## La lecture complète d'un document (v0.27.0, Black Projects 0.119.0)
 

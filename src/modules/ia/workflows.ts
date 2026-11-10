@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem, PageImages } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
@@ -269,6 +269,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
             title: doc.title,
             notify: (message, ms) => notifier.notify(message, ms),
             progress: (detail) => aiReadingProgress(record, doc.title, detail),
+            partial: (read, done, total) => aiReadingPartial(record, read, done, total),
             describe,
             ...(guidance?.trim() ? { guidance } : {})
           }

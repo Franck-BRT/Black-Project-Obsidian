@@ -63,6 +63,8 @@ export interface LibraryHomeDeps {
   aiReading(): { running: AiReading | null; queue: readonly AiReading[] }
   /** Ce que l'IA peut faire de son texte : le relire (il y en a un), le regarder avec la vision (une image, un PDF). */
   proofreading(doc: LibraryDoc): { text: boolean; vision: boolean }
+  /** Le texte de ce document est-il en train d'être extrait du fichier (« Extraire de nouveau ») ? */
+  extracting?(record: string): boolean
   /** Relire son texte extrait avec l'IA (le modèle choisi), ou, sans texte, le lire avec la vision : une nouvelle version du texte. */
   proofread(record: string): Promise<void>
   /** Ses étiquettes hors de la liste : les y ajouter. */
@@ -596,6 +598,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   const readingHere = running?.record === doc.record
   const queuedAt = queue.findIndex((each) => each.record === doc.record) + 1
   const busyElsewhere = running !== null && !readingHere
+  const extractingHere = deps.extracting?.(doc.record) ?? false
+  // Où en est la lecture : « page 3 sur 12 (25 %) ».
+  const share = readingHere && running.total ? Math.round(((running.done ?? 0) / running.total) * 100) : null
   /** Le bouton qui fait lire (relire) son texte par l'IA, selon ce qu'elle fait en ce moment. */
   const aiButton = (id: string, label: string, tooltip: string, primary: boolean): ViewAction =>
     readingHere
@@ -622,8 +627,18 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     { id: 'text-note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) }
   ]
   // Où en est l'IA : sur ce document, ou sur un autre (ce document passera après).
-  const aiStatus: HomeBlock[] = readingHere
-    ? [{ kind: 'message', tone: 'info', text: t('bibliotheque.ai.status.here', { detail: running.detail || t('bibliotheque.ai.status.starting') }) }]
+  const aiStatus: HomeBlock[] = extractingHere
+    ? [{ kind: 'message', tone: 'info', text: t('bibliotheque.text.extracting.here') }]
+    : readingHere
+    ? [
+        {
+          kind: 'message',
+          tone: 'info',
+          text: [t('bibliotheque.ai.status.here', { detail: running.detail || t('bibliotheque.ai.status.starting') }), share !== null ? t('bibliotheque.ai.status.done', { done: running.done ?? 0, total: running.total ?? 0, share }) : '', doc.reading === 'lue' ? t('bibliotheque.ai.status.keep') : ''].filter(Boolean).join(' ')
+        },
+        // Le texte lu jusqu'ici, au fil des pages : provisoire (il sera nettoyé et vérifié à la fin).
+        ...(running.partial?.trim() ? [{ kind: 'markdown' as const, title: t('bibliotheque.ai.partial', { done: running.done ?? 0, total: running.total ?? 0 }), text: running.partial }] : [])
+      ]
     : queuedAt
       ? [{ kind: 'message', tone: 'info', text: t('bibliotheque.ai.status.queued', { position: queuedAt, title: running?.title ?? '' }) }]
       : busyElsewhere
@@ -633,15 +648,22 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     kind: 'section',
     id: 'bibliotheque.document.texte',
     title: t('bibliotheque.section.text'),
-    subtitle: !doc.reading
+    subtitle: extractingHere
+      ? t('bibliotheque.section.text.extracting')
+      : readingHere
+      ? t('bibliotheque.section.text.reading', { detail: running.detail || t('bibliotheque.ai.status.starting') }) + (share !== null ? ` (${share} %)` : '')
+      : queuedAt
+      ? t('bibliotheque.section.text.queued', { position: queuedAt })
+      : !doc.reading
       ? t('bibliotheque.section.text.never')
       : shownText
         ? [textVersionLabel(t, shownText), t('bibliotheque.section.text.characters', { characters }), shownText.quality !== undefined ? qualityText(shownText.quality) : ''].filter(Boolean).join(' · ')
         : doc.reading === 'lue'
           ? t('bibliotheque.section.text.read', { characters })
           : t(`bibliotheque.text.state.${doc.reading}`),
-    icon: 'file',
-    collapsed: true,
+    icon: readingHere || extractingHere ? 'clock' : 'file',
+    // Ouverte pendant une lecture : on la voit avancer.
+    collapsed: !(readingHere || extractingHere),
     blocks: [
       !doc.reading
         ? { kind: 'message', tone: 'info', text: t('bibliotheque.text.never'), actions: textActions }
@@ -654,13 +676,16 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                 : t('bibliotheque.text.read', { characters }),
               actions: textActions
             }
-          : { kind: 'message', tone: 'warning', text: `${t(`bibliotheque.text.state.${doc.reading}`)} — ${t(`bibliotheque.text.state.${doc.reading}.help`)}`, actions: textActions },
+          : // Sans texte encore (un scan, une image) et l'IA qui le lit : pas d'alerte, ce qu'elle fait suffit.
+            { kind: 'message', tone: readingHere || queuedAt ? 'neutral' : 'warning', text: `${t(`bibliotheque.text.state.${doc.reading}`)} — ${t(readingHere || queuedAt ? 'bibliotheque.text.state.beingRead' : `bibliotheque.text.state.${doc.reading}.help`)}`, actions: textActions },
       ...aiStatus,
       ...(doc.reading === 'lue'
         ? [
             {
               // Mis en forme : ses titres, ses listes, ses tableaux (le Markdown de la lecture de fichiers).
               kind: 'markdown' as const,
+              // Pendant une lecture, le texte d'avant, dit tel : il reste jusqu'à la fin.
+              ...(readingHere && running.partial?.trim() ? { title: t('bibliotheque.ai.current') } : {}),
               // En entier.
               text: transcript,
               empty: t('bibliotheque.text.none')
