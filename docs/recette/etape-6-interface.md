@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le texte extrait sans balises (v0.114.0)
+
+- [ ] Un texte extrait (relu par la vision) qui contient `<br>`, `\square`, `\boxtimes`,
+      `$\boxtimes$`, `&nbsp;`, un tableau `<table>` : la section **Texte extrait** de la fiche
+      montre des retours à la ligne, ☐, ☒, des espaces, un vrai tableau — plus aucune balise
+- [ ] `m<sup>2</sup>`, `H<sub>2</sub>O` : en exposant, en indice ; `- [ ]` / `- [x]` : ☐ / ☒
+- [ ] Une vraie formule (`$\frac{F}{S}$`) : dessinée par MathJax, même sans avoir ouvert de note
+      à formule avant
+
 ## Plus d'icônes (v0.113.0)
 
 - [ ] L'icône d'une phase (éditeur d'un type de projet), d'un type, d'un programme : 61 choix,

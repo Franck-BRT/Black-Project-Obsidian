@@ -6,7 +6,7 @@
  * vérifie les droits, active ce qui peut l'être et branche les commandes.
  */
 
-import { debounce, finishRenderMath, Plugin, renderMath, TFile } from 'obsidian'
+import { debounce, finishRenderMath, loadMathJax, Plugin, renderMath, TFile } from 'obsidian'
 import { createI18n, type I18n } from '../core/i18n'
 import { describeEntitlements, EVALUATION, type Entitlements } from '../core/licence'
 import type { BlackModule, ModuleCommand, ModuleContext, ModuleDescriptor } from '../core/modules/module'
@@ -52,6 +52,9 @@ export default class BlackProjectsPlugin extends Plugin {
       void finishRenderMath()
       return element
     })
+    // MathJax n'est chargé par Obsidian qu'à la première note qui a une formule : on le charge
+    // nous-mêmes, sans quoi une formule du texte extrait resterait son LaTeX.
+    this.app.workspace.onLayoutReady(() => void loadMathJax().catch(() => undefined))
     // La visionneuse des fichiers qu'Obsidian n'ouvre pas, quand l'utilisateur choisit de les afficher.
     this.registerView(FILE_VIEW, (leaf) => new BlackFileView(leaf, this))
     // L'accueil : l'interface de Black Projects (src/ui), montée dans un onglet.

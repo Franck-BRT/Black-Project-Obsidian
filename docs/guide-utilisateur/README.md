@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.113.0)
+## Aujourd'hui (version 0.114.0)
 
 - **Les programmes** (menu **Programmes**) : vos programmes, leurs projets et leurs affaires.
   Un projet suit les phases de son **type**, dessinées en tuiles reliées par des flèches ; un
@@ -195,7 +195,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 - **Le texte extrait** : à son entrée dans la bibliothèque, le texte de chaque fichier est
   transcrit dans sa fiche, comme celui d'une pièce d'analyse (un encadré dit la lecture) ; la
   fiche a une section « Texte extrait » — le texte en entier, mis en forme (titres, listes,
-  tableaux) — et « Extraire de nouveau ». L'IA réglée, elle **relit ce texte** (cohérence,
+  tableaux, formules ; les cases ☐ ☒, les symboles et le HTML qu'une lecture écrit — plus de
+  `<br>` ni de `\square` à l'écran) — et « Extraire de nouveau ». L'IA réglée, elle **relit ce texte** (cohérence,
   mise en forme, corrections, avec le prompt, le persona, le skill de l'étape) : une nouvelle
   version du texte, l'extraite gardée — *Versions* › « Comparer », « Le montrer sur la fiche ».
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une

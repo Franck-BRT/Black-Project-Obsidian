@@ -33,11 +33,39 @@ describe('le Markdown mis en forme', () => {
     expect(out).not.toContain('href')
   })
 
-  it('rien n’est injecté : une balise reste du texte', () => {
-    const out = html('<script>alert(1)</script>\n\n<b>gras</b> et **vrai gras**')
+  it('rien n’est injecté : une balise inconnue reste du texte ; celles d’une mise en forme deviennent des éléments', () => {
+    const out = html('<script>alert(1)</script>\n\n<b>gras</b> et **vrai gras** <img src=x onerror=alert(1)>')
     expect(out).not.toContain('<script>')
     expect(out).toContain('&lt;script>')
+    expect(out).toContain('<strong>gras</strong>')
     expect(out).toContain('<strong>vrai gras</strong>')
+    expect(out).not.toContain('<img')
+  })
+
+  it('le HTML d’une lecture : <br> (aussi dans un tableau), <sup>, <sub>, <u>, les balises de mise en page retirées, les entités', () => {
+    const out = html('Ligne un<br>ligne deux<br/>trois<BR />\n\n| Lot | Détail |\n|---|---|\n| 1 | a<br>b |\n\nm<sup>2</sup>, H<sub>2</sub>O, <u>souligné</u>, <span style="color:red">rouge</span>, <p>para</p> <!-- note -->\n\nA&nbsp;&amp;&nbsp;B &lt;tag&gt; &#9744; &#x2612; &inconnu;')
+    expect(out).toContain('<p>Ligne un<br/>ligne deux<br/>trois<br/></p>')
+    expect(out).toContain('<td>a<br/>b</td>')
+    expect(out).toContain('m<sup>2</sup>, H<sub>2</sub>O, <u>souligné</u>, rouge, para ')
+    expect(out).not.toContain('span')
+    expect(out).not.toContain('note')
+    expect(out).toContain('A\u00a0&amp;\u00a0B &lt;tag> ☐ ☒ &amp;inconnu;')
+  })
+
+  it('les symboles LaTeX : hors formule, et une formule qui n’est qu’un symbole — leur caractère ; une vraie formule reste une formule', () => {
+    const out = html('\\square Oui \\boxtimes Non ; $\\square$ A $\\boxtimes$ B ; \\(\\checkmark\\) fait ; 20 \\% \\times 3 \\leq 5 ; \\inconnu ; $\\text{Oui}\\ \\square$\n\n$$\\square$$\n\n$x^2$')
+    expect(out).toContain('☐ Oui ☒ Non ; ☐ A ☒ B ; ✓ fait ; 20 % × 3 ≤ 5 ; \\inconnu ; Oui ☐')
+    expect(out).toContain('<p>☐</p>')
+    expect(out).toContain('<span class="bp-math"><code>x^2</code></span>')
+  })
+
+  it('les cases d’une liste : ☐ / ☒ ; un tableau HTML : un tableau (une cellule fusionnée, répétée vide)', () => {
+    const out = html('- [ ] à faire\n- [x] fait\n\n<table><tr><th>Lot</th><th>Prix</th><th>Note</th></tr>\n<tr><td colspan="2">Tout<br>compris</td><td>&nbsp;ok</td></tr></table>\nAprès.')
+    expect(out).toContain('<li>☐ à faire</li><li>☒ fait</li>')
+    expect(parseMarkdown('<table>\n<tr><td>A</td><td>B</td></tr>\n<tr><td colspan=2>C</td></tr>\n</table>')).toEqual([{ kind: 'table', head: ['A', 'B'], rows: [['C', '']] }])
+    expect(out).toContain('<th>Lot</th><th>Prix</th><th>Note</th>')
+    expect(out).toContain('<td>Tout<br/>compris</td><td></td><td>\u00a0ok</td>')
+    expect(out).toContain('<p>Après.</p>')
   })
 
   it('le bloc « markdown » d’une page : mis en forme ; vide, il le dit', () => {

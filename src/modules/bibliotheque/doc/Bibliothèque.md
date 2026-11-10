@@ -38,7 +38,8 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   dans la fiche (sa note), après vos notes, entre deux marques — « ## Texte extrait », un
   encadré qui dit la lecture (lu, scan, image, format non lu, illisible), puis le texte ; la
   section « Texte extrait » de la fiche le montre en entier, mis en forme (titres, listes,
-  tableaux, citations) — et, l'IA réglée, **relu par l'IA** : une nouvelle version du texte
+  tableaux, citations, formules ; les cases à cocher ☐ ☒ et les symboles, les retours à la
+  ligne et les tableaux qu'une lecture écrit en HTML) — et, l'IA réglée, **relu par l'IA** : une nouvelle version du texte
   (*Versions* › « Versions du texte » : **Comparer**, **Le montrer sur la fiche**, **Supprimer
   cette version** — sa note va à la corbeille ; l'extraite
   est gardée, l'édition et la révision ne changent pas) ; des notices disent la relecture en

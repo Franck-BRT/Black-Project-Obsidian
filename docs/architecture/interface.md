@@ -269,7 +269,16 @@ l'hôte).
 
 Les **formules mathématiques** en LaTeX — `$…$` (ou `\(…\)`) dans une phrase, `$$…$$` (ou `\[…\]`)
 seules — sont dessinées par la plateforme (`setMathRenderer` : dans Obsidian, `renderMath`, son
-MathJax) ; sans elle, leur LaTeX est montré à part. « 10 $ et 20 $ » reste du texte. Une liste « aérée » (des lignes vides entre ses éléments) reste une liste ; une liste coupe la
+MathJax, chargé au démarrage — `loadMathJax`) ; sans elle, leur LaTeX est montré à part. « 10 $
+et 20 $ » reste du texte. Une formule qui n'est qu'un symbole (`$\square$`), et les symboles
+LaTeX écrits hors formule (`\boxtimes`, `\leq`, `\alpha`…), deviennent leur caractère (☒, ≤, α) ;
+`\text{…}`, son texte. Le **HTML** qu'une lecture (l'IA, la vision) écrit est compris, en
+éléments créés — jamais injecté : `<br>` (retour à la ligne, aussi dans une cellule), `<sup>`,
+`<sub>`, `<b>`, `<i>`, `<u>`, `<s>`, `<mark>`, les tableaux `<table>` (une cellule fusionnée :
+suivie de cellules vides), les entités (`&nbsp;`, `&amp;`, `&#9744;`) ; les balises de mise en
+page (`<span>`, `<div>`, `<p>`…) et les commentaires sont retirés, leur texte gardé ; une balise
+inconnue (`<script>`) reste du texte. Les échappements Markdown (`\*`, `\%`) donnent leur
+caractère ; les cases d'une liste (`- [ ]`, `- [x]`), ☐ / ☒. Une liste « aérée » (des lignes vides entre ses éléments) reste une liste ; une liste coupe la
 phrase qu'elle suit (comme dans Obsidian) ; une liste numérotée garde son premier numéro. Des
 lignes `| … |` sans ligne de séparation y sont aussi un tableau
 (la première en en-tête) ; les colonnes vides de bout en bout en sont retirées (`src/core/tables.ts`).
