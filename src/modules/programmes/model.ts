@@ -28,7 +28,7 @@ export const AFFAIRES_FOLDER = 'Affaires'
 export const TILE_COLORS: readonly TileColor[] = ['indigo', 'blue', 'teal', 'green', 'orange', 'rose', 'violet', 'slate']
 
 /** Les icônes qu'on peut donner à une phase, à un type de projet, à un programme. */
-export const PHASE_ICONS: readonly IconName[] = ['flow', 'search', 'file', 'list', 'chat', 'calendar', 'clock', 'check', 'star', 'spark', 'building', 'book', 'upload', 'edit', 'chart', 'folder', 'tag', 'eye', 'play', 'lock']
+export const PHASE_ICONS: readonly IconName[] = ['flow', 'search', 'file', 'list', 'chat', 'calendar', 'clock', 'check', 'star', 'spark', 'building', 'book', 'upload', 'edit', 'chart', 'folder', 'tag', 'eye', 'play', 'lock', 'users', 'user', 'briefcase', 'euro', 'receipt', 'cart', 'truck', 'package', 'archive', 'pen', 'scale', 'shield', 'award', 'flag', 'target', 'bulb', 'presentation', 'megaphone', 'mail', 'phone', 'bell', 'link', 'key', 'graduation', 'wrench', 'ruler', 'layers', 'flask', 'gauge', 'bolt', 'factory', 'chip', 'code', 'database', 'server', 'cloud', 'globe', 'pin', 'rocket', 'satellite', 'leaf']
 
 /** La sorte d'une phase sans module : on la mène soi-même. */
 export const FREE_KIND = 'libre'

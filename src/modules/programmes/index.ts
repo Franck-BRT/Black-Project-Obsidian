@@ -24,7 +24,7 @@ import { programmesEn, programmesFr } from './i18n'
 // ── Interface publique ──────────────────────────────────────────────────────────────
 export { registerPhaseKind, phaseKinds, type PhaseContext, type PhaseKind } from './kinds'
 export { addParallel, addSpan, addStage, AO_KIND, movePhase, remapSpans, removePhase, starterTypes } from './types'
-export { addDays, daysBetween, isLate, planPhases, replanPhases, slipOf } from './model'
+export { addDays, daysBetween, isLate, PHASE_ICONS, planPhases, replanPhases, slipOf } from './model'
 export { shortDay } from './home'
 export { PROGRAMMES_PAGE, PROJECT_PAGE, phasePageOf, projectPageOf, programmePageOf } from './home'
 export type { Affaire, PhaseStatus, Programme, Project, ProjectPhase, ProjectType } from './model'
@@ -54,7 +54,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.4.0',
+  version: '0.5.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -78,7 +78,8 @@ export const programmesModule: BlackModule = {
     const changed = () => views?.changed?.()
 
     const colorChoices: Choice[] = TILE_COLORS.map((color) => ({ value: color, label: t(`programmes.color.${color}`), preview: { color } }))
-    const iconChoices: Choice[] = PHASE_ICONS.map((icon) => ({ value: icon, label: t(`programmes.icon.${icon}`), preview: { icon } }))
+    // Rangées par leur nom : une soixantaine, on s'y retrouve (et la frappe au clavier y mène).
+    const iconChoices: Choice[] = PHASE_ICONS.map((icon) => ({ value: icon, label: t(`programmes.icon.${icon}`), preview: { icon } })).sort((a, b) => a.label.localeCompare(b.label))
     const kindChoices = (): Choice[] => [
       { value: FREE_KIND, label: t('programmes.kind.libre'), description: t('programmes.kind.libre.desc') },
       ...phaseKinds().map((kind) => ({ value: kind.id, label: kind.label, ...(kind.description ? { description: kind.description } : {}) }))

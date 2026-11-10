@@ -68,8 +68,9 @@ chiffrage en parallèle, remise, négociation, exécution, clôture) et **Projet
 Sur **Types de projet**, chaque type est dessiné ; un clic sur son titre ouvre son **éditeur** :
 
 - un clic sur une phase la **modifie** : son nom, sa **phase technique** (phase libre, ou
-  celle d'un module — l'analyse d'un appel d'offres), son icône, sa couleur, sa **durée prévue**, si des **documents
-  sont attendus** (l'interrupteur, puis leurs types de pièce, plusieurs au besoin — un type qui
+  celle d'un module — l'analyse d'un appel d'offres), son icône (une soixantaine, rangées par
+  nom — taper les premières lettres dans la liste y mène), sa couleur, sa **durée prévue**, si
+  des **documents sont attendus** (l'interrupteur, puis leurs types de pièce, plusieurs au besoin — un type qui
   manque se crée d'ici : **Nouveau type de document**), ce qu'on y fait ;
 - ses boutons la **déplacent** (vers l'étape d'avant ou d'après, plus haut ou plus bas dans son
   étape) ou la **retirent** ;

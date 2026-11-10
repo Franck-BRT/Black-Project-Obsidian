@@ -13,6 +13,9 @@ import type { Translate } from '../host'
 import { Icon } from '../icons'
 import { Dialog, openDialog, type DialogHost } from './frame'
 
+/** Sans accents ni majuscules : « é » se trouve en tapant « e ». */
+const fold = (text: string): string => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
 const words = (query: string) => query.toLowerCase().split(/\s+/).filter(Boolean)
 const matches = (text: string, query: string) => words(query).every((word) => text.toLowerCase().includes(word))
 
@@ -147,12 +150,14 @@ function PreviewChoice(props: { id: string; describedBy: string | undefined; tit
   const [active, setActive] = useState(at)
   const button = useRef<HTMLButtonElement>(null)
   const list = useRef<HTMLUListElement>(null)
+  const typed = useRef({ text: '', at: 0 })
   const chosen = options[at]
   // Au clavier, le choix en cours reste visible dans la liste.
   useEffect(() => {
     if (open) list.current?.querySelector('.is-active')?.scrollIntoView?.({ block: 'nearest' })
   }, [open, active])
   const show = () => {
+    typed.current = { text: '', at: 0 }
     setActive(at)
     setOpen(true)
     // La liste prend le clavier dès qu'elle est là.
@@ -183,6 +188,15 @@ function PreviewChoice(props: { id: string; describedBy: string | undefined; tit
       event.stopPropagation()
       close()
     } else if (event.key === 'Tab') close(false)
+    else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      // Taper les premières lettres d'un choix y mène (« fu » : Fusée).
+      event.preventDefault()
+      const now = Date.now()
+      typed.current = { text: (now - typed.current.at < 800 ? typed.current.text : '') + event.key.toLowerCase(), at: now }
+      const from = typed.current.text.length === 1 ? active + 1 : active
+      const found = [...options.slice(from), ...options.slice(0, from)].find((option) => fold(option.label).startsWith(fold(typed.current.text)))
+      if (found) setActive(options.indexOf(found))
+    }
   }
   return (
     <div class="bp-pick">

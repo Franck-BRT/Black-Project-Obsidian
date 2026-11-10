@@ -5,13 +5,25 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.4.0 (Black Projects 0.112.0) |
+| Version | 0.5.0 (Black Projects 0.113.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Plus d'icônes (v0.5.0, Black Projects 0.113.0)
+
+Les programmes, les types de projet et les phases ont **61 icônes** au choix (20 avant) :
+équipe, personne, affaire, budget, facture, achats, livraison, colis, archives, signature,
+juridique, qualité, récompense, jalon, objectif, idée, présentation, communication, courrier,
+téléphone, alerte, lien, accès, formation, maintenance, conception, intégration, essais,
+performance, énergie, production, électronique, logiciel, données, serveur, cloud,
+international, site, fusée, satellite, environnement. Elles sont dessinées pour Black Projects
+(`src/ui/icons.tsx`, `IconName` dans `src/core/views.ts`) ; la liste est **rangée par nom**, et
+dans la liste ouverte, **taper les premières lettres** d'un choix y mène (« fu » : Fusée ;
+toute liste à aperçus de l'interface).
 
 ## Le recalage des dates prévues ; « Phase technique » (v0.4.0, Black Projects 0.112.0)
 

@@ -181,7 +181,7 @@ button.bp-flow-shape:focus-visible { outline: 3px solid var(--bp-focus); outline
 .bp-choice-swatch { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--bp-accent-soft); color: var(--bp-accent); }
 .bp-choice-swatch[class*="bp-tile-"] { color: #ffffff; box-shadow: 0 2px 6px rgba(20, 24, 40, 0.16); background-image: linear-gradient(160deg, rgba(255,255,255,0.18), rgba(0,0,0,0.12)); }
 .bp-choice-swatch svg.bp-icon { width: 16px; height: 16px; }
-.bp-choice-list { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); max-height: 280px; overflow-y: auto; margin: 0; padding: 4px; list-style: none; background: var(--bp-bg); border: 1px solid var(--bp-border); border-radius: var(--bp-radius-small); box-shadow: 0 12px 28px rgba(20, 24, 40, 0.18); }
+.bp-choice-list { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); max-height: 340px; overflow-y: auto; margin: 0; padding: 4px; list-style: none; background: var(--bp-bg); border: 1px solid var(--bp-border); border-radius: var(--bp-radius-small); box-shadow: 0 12px 28px rgba(20, 24, 40, 0.18); }
 .bp-choice-list:focus { outline: none; }
 .bp-choice-option { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
 .bp-choice-option.is-active { background: var(--bp-accent-soft); }

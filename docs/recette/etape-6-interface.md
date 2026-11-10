@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Plus d'icônes (v0.113.0)
+
+- [ ] L'icône d'une phase (éditeur d'un type de projet), d'un type, d'un programme : 61 choix,
+      rangés par nom, chacun avec son dessin (Équipe, Budget, Fusée, Satellite, Qualité…)
+- [ ] La liste ouverte : taper « fu » mène à **Fusée** ; « s » de nouveau, au choix suivant en S ;
+      Entrée le choisit ; la tuile de la phase prend la nouvelle icône
+
 ## Le recalage des dates prévues ; « Phase technique » (v0.112.0)
 
 - [ ] Un projet démarré il y a un mois, rien commencé : ses phases à venir commencent

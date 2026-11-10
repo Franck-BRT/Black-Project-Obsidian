@@ -629,6 +629,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   (`PickManyView.create`, `createPieceType`)
 - v0.112.0 : le **recalage automatique** des dates prévues (phases finies, en retard, à venir ;
   le planning initial gardé, le décalage affiché) ; « Sorte » devient **Phase technique**
+- v0.113.0 : **plus d'icônes** (61, rangées par nom) ; la frappe au clavier dans les listes à aperçus
 
 ### Étape 7 — Livrables
 

@@ -14,7 +14,7 @@ import { CREATE_IN_PICK, memoryPlatform, type MemoryPlatform } from '../src/core
 import { ViewsRegistry, type HomeBlock, type PageView } from '../src/core/views'
 import { MODULES } from '../src/modules'
 import { aoModule } from '../src/modules/ao'
-import { addDays, addParallel, addSpan, addStage, movePhase, planPhases, programmesModule, remapSpans, removePhase, replanPhases, shortDay, starterTypes, type ProjectPhase, type ProjectType } from '../src/modules/programmes'
+import { addDays, addParallel, addSpan, addStage, movePhase, PHASE_ICONS, planPhases, programmesModule, remapSpans, removePhase, replanPhases, shortDay, starterTypes, type ProjectPhase, type ProjectType } from '../src/modules/programmes'
 import { localToday } from '../src/core/dates'
 
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
@@ -55,6 +55,18 @@ async function start(platform: MemoryPlatform, modules = MODULES) {
 
 afterEach(async () => {
   for (const module of [...MODULES].reverse()) await module.deactivate?.()
+})
+
+describe('les icônes', () => {
+  it('une soixantaine d’icônes, chacune nommée en français et en anglais, sans doublon', () => {
+    expect(PHASE_ICONS.length).toBeGreaterThanOrEqual(60)
+    expect(new Set(PHASE_ICONS).size).toBe(PHASE_ICONS.length)
+    for (const texts of [programmesModule.texts.fr, programmesModule.texts.en]) {
+      const labels = PHASE_ICONS.map((icon) => texts[`programmes.icon.${icon}`])
+      expect(labels.every((label) => !!label)).toBe(true)
+      expect(new Set(labels).size).toBe(labels.length)
+    }
+  })
 })
 
 describe('les types de projet, dessinés', () => {
