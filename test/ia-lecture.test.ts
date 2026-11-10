@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { blendQuality, cleanPages, coverage, needsOcr, qualityLabel, qualityPercent, qualityStars, readsWhole, readVerdict, rejoinLines, stripFurniture, stripPageNumbers } from '../src/modules/ia'
+import { blendQuality, cleanPages, coverage, joinPages, needsOcr, qualityLabel, qualityPercent, qualityStars, readsWhole, readVerdict, rejoinLines, stripFurniture, stripLayout, stripPageNumbers, tidyContents } from '../src/modules/ia'
 
 const page = (number: number, body: string) => [`Société X — Cahier des charges techniques`, `Réf. CCT-2026-014 — édition 2`, '', body, '', `Confidentiel — reproduction interdite`, `Page ${number} sur 3`].join('\n')
 
@@ -36,6 +36,52 @@ describe('la lecture d’un document, sans IA', () => {
     // Une ligne de texte qui revient (« Une ligne de plus. ») au milieu des pages, deux fois sur trois : gardée.
     expect(cleaned[1]).toContain('Une ligne de plus.')
     expect(stripFurniture(['# Seul\n\nUne page.'])).toEqual({ pages: ['# Seul\n\nUne page.'], removed: [] })
+  })
+
+  it('un pied de page dont le numéro change et dont l’ordre s’inverse d’une page à l’autre, coupé ou en gras : reconnu, retiré', () => {
+    // Tel que la vision l'a écrit, page après page (un article de Techniques de l'Ingénieur).
+    const pages = [
+      '#### 1. Considérations générales\n\nLe placement fait partie du problème.\n\n© Techniques de l’Ingénieur, traité Informatique industrielle S 7 212 - 1',
+      'La fabrication d’un objet est souvent conduite.\n\n***\n\nS 7 212 - 2 © Techniques de l’Ingénieur, traité Informatique industrielle\n\n***\n\n#### 1.2 Résolution',
+      'Nous proposons trois méthodes.\n\n© Techniques de l’Ingénieur, traité Informatique industrielle\n\nS 7212 - 3\n\n[Image : Schéma]',
+      'Optimisant un critère.\n\nS 7 212 - 4 © Techniques de l’Ingénieur, traité Informatique industrielle',
+      'Le placement est une combinaison.\n\n© Techniques de l’Ingénieur, traité Informatique industrielle S 7 212 - 5\n\nS 7 212 - 5',
+      'Un état terminal.\n\n**Colonne de droite**\n\n© Techniques de l’Ingénieur, traité Informatique industrielle **S 7 212 - 9**'
+    ]
+    const { text, removed } = cleanPages(pages)
+    expect(text).not.toMatch(/Techniques de l’Ingénieur|S 7 ?212|Colonne de droite|\*\*\*/)
+    expect(text).toContain('#### 1.2 Résolution')
+    expect(text).toContain('[Image : Schéma]')
+    expect(removed.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('ce que la vision ajoute de mise en page, retiré ; une phrase coupée par le changement de page, recollée', () => {
+    expect(stripLayout('<div style="column-count: 2;">\n\n<!-- Colonne de droite -->\n\nsoit encore :\n\n### Colonne de gauche\n\nTexte.\n\n</div>\n\n***')).toBe('soit encore :\n\nTexte.')
+    expect(joinPages(['L’exploration respecte des critères systé-', 'matiques permettant de choisir.'])).toBe('L’exploration respecte des critères systé-\nmatiques permettant de choisir.')
+    expect(rejoinLines(joinPages(['L’exploration respecte des critères systé-', 'matiques permettant de choisir.']))).toBe('L’exploration respecte des critères systématiques permettant de choisir.')
+    expect(joinPages(['Une phrase finie.', 'une autre page'])).toBe('Une phrase finie.\n\nune autre page')
+  })
+
+  it('un sommaire, lu en tableau (points de conduite, tirets qui répètent la page) ou en lignes : une liste, les sous-parties en retrait', () => {
+    const table = [
+      '| 1. Considérations générales........................................................... | S 7 212 – 2 |',
+      '| --- | --- |',
+      '',
+      '| 1.1 Problème de placement.............................................................................. | — | 2 |',
+      '| --- | --- | --- |',
+      '| 1.2 Résolution .................................................................................................... | — | 3 |',
+      '| 2. Description des formes irrégulières........................................... | — | 3 |',
+      '| 2.2.1 Peignes de contour.......................................... | — | 4 |',
+      '| Références bibliographiques......................................................................... | — | 17 |'
+    ].join('\n')
+    expect(tidyContents(table)).toBe(['- 1. Considérations générales — S 7 212 – 2', '', '  - 1.1 Problème de placement — 2', '  - 1.2 Résolution — 3', '- 2. Description des formes irrégulières — 3', '    - 2.2.1 Peignes de contour — 4', '- Références bibliographiques — 17'].join('\n'))
+    // Sans points de conduite, des numéros de partie et le tiret qui répète la page : un sommaire aussi.
+    expect(tidyContents('| **1.** **Élaboration du modèle** | S 7 572 – 3 |\n| --- | --- |\n| 1.1 Rôle des éléments | — | 3 |\n| 1.1.1 Exemple d’application | — | 3 |')).toBe('- 1. Élaboration du modèle — S 7 572 – 3\n  - 1.1 Rôle des éléments — 3\n    - 1.1.1 Exemple d’application — 3')
+    // En lignes : les points de conduite ôtés.
+    expect(tidyContents('1.1 Rôle des éléments de la structure de contrôle .................. — 3')).toBe('1.1 Rôle des éléments de la structure de contrôle — 3')
+    // Un tableau ordinaire (des lots, des prix) ne bouge pas.
+    const lots = '| Lot | Désignation | Prix |\n| --- | --- | --- |\n| 1 | Terrassement | 10 000 |\n| 2 | Fondations | 20 000 |'
+    expect(tidyContents(lots)).toBe(lots)
   })
 
   it('un numéro de page seul, en haut ou en bas, retiré ; un nombre dans le texte, non', () => {

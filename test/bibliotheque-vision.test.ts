@@ -437,12 +437,12 @@ describe('un document sans texte : la vision seule', () => {
     drawnPages = 45
     closed = 0
     try {
-      const { pour, seen, textVersions } = await start(platform, (one) => `Lu sur ${/page \d+ sur \d+/.exec(one.text)![0]}`)
+      const { pour, seen, textVersions } = await start(platform, (one) => `Texte propre à la ${/page (\d+) sur \d+/.exec(one.text)![1]}${'e'.repeat(Number(/page (\d+) sur/.exec(one.text)![1]))}`)
       const doc = await pour('Gros scan.pdf', textPdf([[]]))
       expect(seen).toHaveLength(45)
       expect(seen.at(-1)!.text).toContain('la page 45 sur 45 d’un document')
       expect((await textVersions(doc.record))[0]!.detail).toContain('45 page(s) regardée(s)')
-      expect(read(platform, doc.record)).toContain('Lu sur page 45 sur 45')
+      expect(read(platform, doc.record)).toContain(`Texte propre à la 45${'e'.repeat(45)}`)
       expect(closed).toBe(1)
     } finally {
       drawnPages = 2

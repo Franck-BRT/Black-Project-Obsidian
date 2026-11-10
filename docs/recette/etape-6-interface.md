@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Pieds de page et sommaires (v0.119.2)
+
+- [ ] Un article dont le pied de page porte le numéro de page (« © Éditeur… S 7 212 – 3 », de
+      l'autre côté une page sur deux) : plus aucun pied de page dans le texte lu
+- [ ] Son sommaire : une liste « 1.1 Titre — 3 », les sous-parties en retrait, sans points de
+      conduite ; plus de « Colonne de droite », de `***` ni de balises
+
 ## La lecture en cours, sur la fiche (v0.119.1)
 
 - [ ] Déposer un PDF de plusieurs pages, l'IA réglée, puis ouvrir sa fiche : la section *Texte

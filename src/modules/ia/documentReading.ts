@@ -50,6 +50,7 @@ import {
   rejoinLines,
   repetitionLoop,
   tidy,
+  tidyContents,
   withoutFurniture,
   type Verdict
 } from './reading'
@@ -338,7 +339,7 @@ export async function proofreadDocument(ai: AiClient, judge: AiClient, source: s
   const { t, title } = context
   // D'abord sans IA : les lignes que les pages répètent, les lignes coupées, les lignes vides en trop.
   const keys = pageTexts && pageTexts.length > 1 ? furnitureKeys(pageTexts) : new Set<string>()
-  const cleaned = rejoinLines(withoutFurniture(source, keys))
+  const cleaned = tidyContents(rejoinLines(withoutFurniture(source, keys)))
   const chunks = proofreadChunks(cleaned)
   context.notify(t('ia.wf.proofread.start', { title, parts: chunks.length }), 8000)
   const out: string[] = []

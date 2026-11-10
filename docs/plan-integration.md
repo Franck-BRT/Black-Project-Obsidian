@@ -644,6 +644,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.119.0 : la **lecture complète par l'IA** (texte du fichier, OCR, vision continuée, contrôle,
   vérification et correction, nettoyage, images décrites) et la **qualité** du texte (★ et %)
 - v0.119.1 : la **lecture en cours sur la fiche** (étape, page, %, texte lu jusqu'ici ; l'extraction)
+- v0.119.2 : les **pieds de page** qui varient reconnus ; les **sommaires** toujours en liste
 
 ### Étape 7 — Livrables
 

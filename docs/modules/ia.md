@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.27.1 (Black Projects 0.119.1) |
+| Version | 0.27.2 (Black Projects 0.119.2) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,23 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Pieds de page et sommaires (v0.27.2, Black Projects 0.119.2)
+
+- **Les pieds de page qui varient** : une ligne de trois mots ou plus se reconnaît d'une page à
+  l'autre par ses mots, **sans ses nombres ni leur ordre** (« © Éditeur, collection S 7 212 – 1 »
+  en page impaire, « S 7 212 – 2 © Éditeur, collection » en page paire) ; un numéro de page seul
+  (« S 7212 – 3 », « 12 ») est retiré dès qu'il revient sur deux pages, où qu'il soit.
+- **Ce que la vision ajoute de mise en page** (`stripLayout`) : « Colonne de droite », `<div>`,
+  commentaires HTML, filets `***` retirés ; une phrase coupée par le changement de page recollée
+  (`joinPages`).
+- **Les sommaires** (`tidyContents`) : toujours une liste, une entrée par ligne (« 1.1 Titre — 3 »),
+  les sous-parties en retrait selon leur numérotation, sans points de conduite ni tirets qui
+  répètent la page — qu'ils soient lus en tableau (des points de conduite, ou des numéros de
+  partie et ce tiret) ou en lignes ; aussi pour le texte extrait relu sans images.
+- Les consignes de la vision : chaque en-tête et pied de page sur sa ligne, d'un seul tenant ; une
+  lettrine fait partie du premier mot ; ni étiquettes de colonnes, ni séparateurs, ni balises ;
+  un sommaire en liste. La relecture du texte : un sommaire en liste.
 
 ## Le texte lu, montré au fil de la lecture (v0.27.1, Black Projects 0.119.1)
 

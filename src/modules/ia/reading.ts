@@ -65,10 +65,14 @@ function furnitureKey(line: string): string | null {
     .trim()
   if (!bare || /^[|$!<[]/.test(bare)) return null
   const letters = letterCount(bare)
-  const numbered = bare.length <= 40 && /\d/.test(bare)
+  const numbered = /\d/.test(bare)
   if (letters < 3 && !numbered) return null
-  const pageLike = numbered && (letters < 3 || /^\W*(?:page|p\.)\s*\d+(?:\s*(?:\/|sur|of|de)\s*\d+)?\W*$/i.test(bare))
-  return pageLike ? fold(bare).replace(/\d+/g, '#') : fold(bare)
+  // Un numéro de page (« 12 », « S 7 212 – 4 », « Page 3 sur 19 ») : reconnu sans ses nombres.
+  if (numbered && (letters < 3 || /^\W*(?:page|p\.)\s*\d+(?:\s*(?:\/|sur|of|de)\s*\d+)?\W*$/i.test(bare))) return `#${fold(bare).replace(/[^\p{L}]/gu, '')}`
+  // Une ligne de trois mots ou plus : reconnue par ses mots, sans ses nombres ni leur ordre —
+  // « © Éditeur, collection S 7 212 – 1 » (page impaire) et « S 7 212 – 2 © Éditeur, collection » (paire).
+  const words = [...new Set(fold(bare).match(/\p{L}{2,}/gu) ?? [])]
+  return words.length >= 3 ? words.sort().join(' ') : fold(bare)
 }
 
 /**
@@ -96,7 +100,8 @@ export function stripFurniture(pages: readonly string[]): { pages: string[]; rem
     for (const key of zone) inZone.set(key, (inZone.get(key) ?? 0) + 1)
   }
   const often = Math.max(3, Math.ceil(pages.length * 0.4))
-  const isFurniture = (key: string) => (inZone.get(key) ?? 0) >= 2 || (onPages.get(key) ?? 0) >= often
+  // Un numéro de page (« S 7 212 – 4 », « 12 ») : dès deux pages, où qu'il soit (la vision le met parfois au milieu).
+  const isFurniture = (key: string) => (inZone.get(key) ?? 0) >= 2 || (onPages.get(key) ?? 0) >= (key.startsWith('#') ? 2 : often)
   const removed = new Map<string, string>()
   const keptTitle = new Set<string>()
   const cleaned = pages.map((page) =>
@@ -208,8 +213,96 @@ export function tidy(text: string): string {
  * page, les lignes coupées, les lignes vides en trop ; les pages mises bout à bout.
  */
 export function cleanPages(pages: readonly string[]): { text: string; removed: string[] } {
-  const { pages: stripped, removed } = stripFurniture(pages)
-  return { text: rejoinLines(stripped.map(stripPageNumbers).filter(Boolean).join('\n\n')), removed }
+  const { pages: stripped, removed } = stripFurniture(pages.map(stripLayout))
+  return { text: tidyContents(rejoinLines(joinPages(stripped.map(stripPageNumbers).filter(Boolean)))), removed }
+}
+
+/** Ce que la vision ajoute de mise en page : « Colonne de droite », `<div …>`, un commentaire HTML. */
+const LAYOUT_NOISE = /^\s*(?:\*\*|#{1,6}\s*)?(?:colonne (?:de )?(?:gauche|droite)|left column|right column)\s*:?\s*(?:\*\*)?\s*$|^\s*<\/?div\b[^>]*>\s*$|^\s*<!--(?!\s*bp:)[\s\S]*?-->\s*$/i
+/** Un filet seul sur sa ligne (`***`, `---`, `___`) : la séparation que la vision met entre les colonnes, autour d'un pied de page. */
+const RULE_LINE = /^\s*(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$/
+
+/** Une page sans ce que la vision y ajoute de mise en page (étiquettes de colonnes, balises, filets). */
+export function stripLayout(page: string): string {
+  return tidy(
+    page
+      .split('\n')
+      .filter((line) => !LAYOUT_NOISE.test(line) && !RULE_LINE.test(line))
+      .join('\n')
+  )
+}
+
+/**
+ * Des pages mises bout à bout ; une phrase coupée par le changement de page (« systé- » en bas
+ * d'une page, « matiques permettant… » en haut de la suivante) recollée.
+ */
+export function joinPages(pages: readonly string[]): string {
+  let text = ''
+  for (const page of pages) {
+    if (!text) {
+      text = page
+      continue
+    }
+    const last = text.trimEnd().split('\n').at(-1) ?? ''
+    const first = page.trimStart().split('\n')[0] ?? ''
+    const cut = last.trim() && first.trim() && !shaped(last) && !shaped(first) && !/[.!?:;…»"”)\]]\s*$/.test(last) && /^\s*\p{Ll}/u.test(first)
+    text = `${text.trimEnd()}${cut ? '\n' : '\n\n'}${page.trimStart()}`
+  }
+  return text
+}
+
+/** Des points de conduite (« Titre ........ 3 », « Titre … 3 ») ; des tirets qui répètent la page d'au-dessus. */
+const LEADERS = /\s*(?:\.\s?){4,}\s*|\s*…{2,}\s*/g
+/** Une page de sommaire : un nombre, « S 7 212 – 2 », « Doc. S 7 573 », ou le tiret qui la répète. */
+const PAGE_REF = /^(?:[A-Z]{1,4}\.?\s*)?[\d\s.–—−-]*\d[\d\s.–—−-]*$|^—$|^Doc\.\s.+$/
+
+/** Une entrée de sommaire en élément de liste : en retrait selon sa numérotation (« 1.2.3 » : trois niveaux), sa page après un tiret. */
+function contentsItem(cells: readonly string[]): string {
+  const kept = cells.map((cell) => cell.replace(LEADERS, ' ').replace(/\s+/g, ' ').trim()).filter((cell) => cell && cell !== '—')
+  if (!kept.length) return ''
+  const title = kept[0]!.replace(/\*\*/g, '').trim()
+  const page = kept.length > 1 && PAGE_REF.test(kept.at(-1)!) ? kept.at(-1)! : ''
+  const middle = kept.slice(1, page ? -1 : undefined).join(' ')
+  const depth = Math.max(1, (/^(\d+(?:\.\d+)*)\.?\s/.exec(title.replace(/\*\*/g, ''))?.[1] ?? '').split('.').filter(Boolean).length)
+  return `${'  '.repeat(depth - 1)}- ${[title, middle].filter(Boolean).join(' ')}${page ? ` — ${page}` : ''}`
+}
+
+/**
+ * **Un sommaire**, toujours de même forme : une liste, une entrée par ligne — « 1.1 Titre — 3 » —,
+ * les sous-parties en retrait, sans points de conduite ni tirets répétés. Un tableau dont la
+ * plupart des lignes ont des points de conduite (ou des numéros de partie et de page, et le tiret
+ * qui répète la page) en devient
+ * une ; une ligne à points de conduite hors tableau perd ses points.
+ */
+export function tidyContents(text: string): string {
+  const lines = text.split('\n')
+  const out: string[] = []
+  for (let at = 0; at < lines.length; ) {
+    if (!/^\s*\|/.test(lines[at]!)) {
+      const line = lines[at++]!
+      out.push(LEADERS.test(line) ? line.replace(LEADERS, ' — ').replace(/(?:\s*—){2,}/g, ' —').replace(/\s+—\s*$/, '') : line)
+      LEADERS.lastIndex = 0
+      continue
+    }
+    const block: string[] = []
+    while (at < lines.length && /^\s*\|/.test(lines[at]!)) block.push(lines[at++]!)
+    const rows = block
+      .filter((line) => !/^\s*\|?\s*:?-{2,}/.test(line))
+      .map((line) =>
+        line
+          .trim()
+          .replace(/^\||\|$/g, '')
+          .split('|')
+          .map((cell) => cell.trim())
+      )
+    const led = rows.filter((row) => row.some((cell) => /(?:\.\s?){4,}|…{2,}/.test(cell))).length
+    const numbered = rows.filter((row) => /^\d+(?:\.\d+)*\.?\s/.test((row[0] ?? '').replace(/\*\*/g, '')) && PAGE_REF.test(row.at(-1) ?? '')).length
+    // Des numéros de partie et de page ne suffisent pas (un tableau de lots en a) : il faut aussi le tiret qui répète la page.
+    const ditto = rows.some((row) => row.includes('—'))
+    const contents = rows.length > 0 && (led >= rows.length * 0.6 || (rows.length >= 2 && ditto && numbered >= rows.length * 0.8))
+    out.push(...(contents ? rows.map(contentsItem).filter(Boolean) : block))
+  }
+  return tidy(out.join('\n'))
 }
 
 /**

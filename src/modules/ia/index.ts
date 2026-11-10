@@ -29,7 +29,7 @@ import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor,
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
 export { forgetImageRefusals } from './reading'
-export { blendQuality, cleanPages, coverage, letterCount, needsOcr, qualityLabel, qualityPercent, qualityStars, readsWhole, readVerdict, rejoinLines, stripFurniture, stripPageNumbers, tidy, type Verdict } from './reading'
+export { blendQuality, cleanPages, coverage, joinPages, letterCount, stripLayout, tidyContents, needsOcr, qualityLabel, qualityPercent, qualityStars, readsWhole, readVerdict, rejoinLines, stripFurniture, stripPageNumbers, tidy, type Verdict } from './reading'
 export { readCategoryAnswer, readDateAnswer, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer } from './workflows'
 export { proofreadChunks, readProofread, readVisionPage, repetitionLoop, type RepetitionLoop } from './reading'
 export {
@@ -302,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.27.1',
+  version: '0.27.2',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),

@@ -108,7 +108,8 @@ PDF, une image) — sinon le texte extrait —, page par page :
    ce qui ne va pas ; sous 85, la transcription est **corrigée** d'après l'image, puis
    revérifiée, la meilleure gardée.
 
-Puis le **nettoyage** — en-têtes et pieds de page répétés de page en page, numéros de page,
+Puis le **nettoyage** — en-têtes et pieds de page répétés de page en page (même quand leur numéro
+change, ou leur ordre une page sur deux), numéros de page, sommaire remis en liste,
 lignes coupées au milieu d'une phrase recollées, lignes vides en trop — et la **qualité** de la
 transcription : **en étoiles sur cinq et en pourcentage** (« ★★★★☆ 88 % »), sur la version du
 texte, la fiche (section *Texte extrait*) et la note du document. Sans images, le texte extrait
