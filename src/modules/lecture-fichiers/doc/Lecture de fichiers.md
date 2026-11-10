@@ -18,6 +18,8 @@ HTML — Markdown ne sait pas fusionner — : ses cellules restent fusionnées, 
 dans Obsidian. Les listes gardent leurs niveaux et leurs numéros, leurs éléments l'un sous
 l'autre ; les puces tapées (« • ») deviennent de vraies puces. Les équations d'un document Word
 s'écrivent en LaTeX ($…$), qu'Obsidian dessine.
+Un cadre de la taille de la page, tracé plusieurs fois par certains PDF, n'est pas pris pour
+un tableau : la page se lit en paragraphes.
 
 ## Où il sert
 

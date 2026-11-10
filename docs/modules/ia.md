@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.27.2 (Black Projects 0.119.2) |
+| Version | 0.28.0 (Black Projects 0.120.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,26 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Les pieds de page restants, le sommaire de la vision (v0.28.0, Black Projects 0.120.0)
+
+- **Le texte du fichier, sans ses en-têtes ni pieds de page** : `readWithVision` les repère d'abord
+  sur les pages du fichier (`stripFurniture(source.texts)`) ; chaque page est donnée à la vision
+  ainsi nettoyée, et c'est elle qui reste quand la lecture d'une page est écartée ou échoue.
+  À la fin, ces lignes sont retirées des pages lues (`cleanPages(pages, known)`), même vues une
+  seule fois.
+- **Leurs variantes** : une ligne de cinq mots (de quatre lettres et plus) au moins, presque tous
+  ceux des en-têtes et pieds de page connus (deux pieds mis bout à bout par la vision, « Toute
+  reproduction … – © Editions T.I. Parution : avril 2013 »), est retirée ; une ligne
+  **fourre-tout** (une page entière dans une cellule de tableau, un très long paragraphe) qui en
+  contient un en entier aussi, avec le filet de son tableau.
+- **Une référence et une page** (« AG 1 100v2 – 5 », « Doc. AG 1 100v2 – 2 ») se reconnaissent
+  comme un numéro de page : retirées dès deux pages ; « Article 1.2.3 » reste du texte.
+- **Le sommaire écrit par la vision en liste numérotée**, les sous-parties en retrait sans puce
+  (« 1. Titre — AG 1 100v2 - 2 », « ␣␣␣␣1.1 Titre — 2 ») : une liste à puces imbriquée, la
+  référence du document ôtée devant la page ; aussi pour le numéro dans sa propre cellule d'un
+  sommaire lu en tableau. `furnitureKeys` devient `furnitureLines` ; `withoutFurniture` prend ces
+  lignes.
 
 ## Pieds de page et sommaires (v0.27.2, Black Projects 0.119.2)
 

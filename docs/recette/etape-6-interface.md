@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Pieds de page restants, sommaire, retours à la ligne (v0.120.0)
+
+- [ ] Un article de Techniques de l'Ingénieur (AG 1 100v2) lu avec la vision : plus de page
+      entière dans une seule cellule de tableau (« AG1100v2.fm Page 8 … »)
+- [ ] Plus de « AG 1 100v2 – 5 », « Doc. AG 1 100v2 – 2 », « Toute reproduction … Parution :
+      avril 2013 », « Parution : avril 2013 - Ce document a ete delivre … »
+- [ ] Son sommaire : une liste à puces, « 1. Méthodologie de la GGR — 2 », les « 1.1 … » en
+      retrait dessous, « Pour en savoir plus — Doc. AG 1 100v2 » en dernier — pareil dans l'app et
+      dans Obsidian
+- [ ] Dans l'app, un retour à la ligne simple (une adresse sur trois lignes) s'affiche comme dans
+      Obsidian
+
 ## Pieds de page et sommaires (v0.119.2)
 
 - [ ] Un article dont le pied de page porte le numéro de page (« © Éditeur… S 7 212 – 3 », de

@@ -35,7 +35,7 @@ import {
   blendQuality,
   cleanPages,
   coverage,
-  furnitureKeys,
+  furnitureLines,
   ImagesRefused,
   letterCount,
   needsOcr,
@@ -49,6 +49,7 @@ import {
   refusesImages,
   rejoinLines,
   repetitionLoop,
+  stripFurniture,
   tidy,
   tidyContents,
   withoutFurniture,
@@ -185,6 +186,9 @@ export async function readWithVision(client: AiClient, source: PageSource, model
   const scores: { score: number; weight: number }[] = []
   const result = { kept: 0, looped: 0, salvaged: 0, failed: 0, ocr: 0, supplemented: 0, corrected: 0 }
   const lead = (lines: string[]) => [context.guidance?.trim(), ...lines].filter(Boolean).join('\n\n')
+  // Les en-têtes et pieds de page du texte du fichier : retirés de ce qu'on donne au modèle, de ce
+  // qu'on garde quand sa lecture échoue, et à la fin de ses pages et de leurs variantes.
+  const furniture = source.texts && source.texts.length > 1 ? stripFurniture(source.texts) : null
   // D'entrée : zéro page sur N (la fiche dit le pourcentage).
   context.partial?.('', 0, count)
   try {
@@ -195,7 +199,7 @@ export async function readWithVision(client: AiClient, source: PageSource, model
       step('ia.reading.step.copy')
       const image = await source.image(index)
       // 1. Ce que le fichier porte pour la page (« copier-coller »).
-      const layer = (source.texts?.[index] ?? '').trim()
+      const layer = (furniture?.pages[index] ?? source.texts?.[index] ?? '').trim()
       let reference = layer
       // 2. Presque rien : un scan — son texte brut lu par le modèle d'OCR, s'il y en a un à part.
       if (needsOcr(layer) && ocrModel && ocrModel !== model) {
@@ -311,7 +315,7 @@ export async function readWithVision(client: AiClient, source: PageSource, model
   if (result.failed === count) throw new Error(t('ia.wf.vision.allFailed', { title, model }))
   if (result.looped && result.looped + result.failed === count && !result.salvaged) throw new Error(t('ia.wf.vision.allLooped', { title, model }))
   context.progress(t('ia.reading.step.only', { step: t('ia.reading.step.clean') }))
-  const { text, removed } = cleanPages(pages)
+  const { text, removed } = cleanPages(pages, furniture?.removed)
   // Les pages qu'on n'a pas pu juger (échouées, bouclées) comptent pour rien : elles ne sont pas lues.
   for (let lost = 0; lost < result.failed + result.looped; lost++) scores.push({ score: 0, weight: 1500 })
   return { text, pages: count, removed, quality: qualityPercent(scores), ...result }
@@ -338,8 +342,8 @@ export interface TextReading {
 export async function proofreadDocument(ai: AiClient, judge: AiClient, source: string, pageTexts: readonly string[] | undefined, context: ReadingContext): Promise<TextReading> {
   const { t, title } = context
   // D'abord sans IA : les lignes que les pages répètent, les lignes coupées, les lignes vides en trop.
-  const keys = pageTexts && pageTexts.length > 1 ? furnitureKeys(pageTexts) : new Set<string>()
-  const cleaned = tidyContents(rejoinLines(withoutFurniture(source, keys)))
+  const furniture = furnitureLines(pageTexts ?? [])
+  const cleaned = tidyContents(rejoinLines(withoutFurniture(source, furniture)))
   const chunks = proofreadChunks(cleaned)
   context.notify(t('ia.wf.proofread.start', { title, parts: chunks.length }), 8000)
   const out: string[] = []
@@ -415,5 +419,5 @@ export async function proofreadDocument(ai: AiClient, judge: AiClient, source: s
     push(read)
   }
   if (looped && looped === chunks.length) throw new Error(t('ia.wf.proofread.allLooped', { title, model: ai.connection.model }))
-  return { text: tidy(out.join('\n\n')), parts: chunks.length, kept, looped, redone, removed: keys.size, quality: qualityPercent(scores) }
+  return { text: tidy(out.join('\n\n')), parts: chunks.length, kept, looped, redone, removed: furniture.length, quality: qualityPercent(scores) }
 }

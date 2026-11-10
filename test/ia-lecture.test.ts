@@ -84,6 +84,70 @@ describe('la lecture d’un document, sans IA', () => {
     expect(tidyContents(lots)).toBe(lots)
   })
 
+  it('un sommaire écrit par la vision en liste numérotée, les sous-parties en retrait sans puce : une liste à puces imbriquée', () => {
+    // Tel que la vision l'a écrit (un article de Techniques de l'Ingénieur, AG 1 100v2).
+    const lines = [
+      'Gérant ARISKAN',
+      '',
+      '1. Méthodologie de la GGR — AG 1 100v2 - 2',
+      '    1.1 Notion de risque — 2',
+      '    1.2 Concept fondamental de la GGR — 3',
+      '2. Risques des principaux processus — 12',
+      '    2.10 Autres fonctions — 20',
+      'Pour en savoir plus — Doc. AG 1 100v2',
+      '',
+      'Gérer et agir, c’est prendre des risques — 2 fois plus qu’ailleurs.'
+    ].join('\n')
+    expect(tidyContents(lines)).toBe(
+      [
+        'Gérant ARISKAN',
+        '',
+        '- 1. Méthodologie de la GGR — 2',
+        '  - 1.1 Notion de risque — 2',
+        '  - 1.2 Concept fondamental de la GGR — 3',
+        '- 2. Risques des principaux processus — 12',
+        '  - 2.10 Autres fonctions — 20',
+        '- Pour en savoir plus — Doc. AG 1 100v2',
+        '',
+        'Gérer et agir, c’est prendre des risques — 2 fois plus qu’ailleurs.'
+      ].join('\n')
+    )
+    // Lu dans le fichier, en tableau : le numéro dans sa cellule, la référence du document avant la première page.
+    const table = '| 1. | Méthodologie de la GGR........................ | AG 1 100v2 | - 2 |\n| --- | --- | --- | --- |\n| 1.1 | Notion de risque.............................. | — | 2 |\n| 2.10 | Autres fonctions .............................. | — | 20 |'
+    expect(tidyContents(table)).toBe('- 1. Méthodologie de la GGR — 2\n  - 1.1 Notion de risque — 2\n  - 2.10 Autres fonctions — 20')
+    // Deux lignes de texte avec un tiret et un nombre ne font pas un sommaire.
+    const text = 'Le budget — 12\nLe délai — 3'
+    expect(tidyContents(text)).toBe(text)
+  })
+
+  it('les pieds de page d’un article (AG 1 100v2) : référence et page, variantes mises bout à bout, page entière en une cellule — retirés', () => {
+    // Ceux que le texte du fichier a fait connaître.
+    const known = [
+      'Ce document a ete delivre pour le compte de 7200105995 - c.n.e.s. centre spatial de toulouse',
+      'Toute reproduction sans autorisation du Centre français d’exploitation du droit de copie',
+      'est strictement interdite. – © Editions T.I. AG 1 100v2 – 1',
+      'Parution : avril 2013 - Ce document a ete delivre pour le compte de 7200105995'
+    ]
+    const pages = [
+      'La GGR se définit comme une démarche transversale.\n\nAG 1 100v2 – 5\n\nUn exemple simple illustre cette définition.',
+      'Les risques se mesurent.\n\nToute reproduction sans autorisation du Centre français d’exploitation du droit de copie est strictement interdite. – © Editions T.I. Parution : avril 2013\n\nAG 1 100v2 – 6',
+      `| AG1100v2.fm Page 8 Lundi, 8. avril 2013 10:31 Ce document a ete delivre pour le compte de 7200105995 - c.n.e.s. centre spatial de toulouse ${'Probabilité Intolérable Gérable '.repeat(12)}|\n| --- |\n\nLa cartographie des risques.`,
+      'Doc. AG 1 100v2 – 1\n\nPour en savoir plus.',
+      'Les ouvrages de référence.\n\nDoc. AG 1 100v2 – 2'
+    ]
+    const { text } = cleanPages(pages, known)
+    expect(text).not.toMatch(/AG 1 100v2|reproduction|Parution|AG1100v2\.fm|\| --- \|/)
+    expect(text).toContain('La GGR se définit comme une démarche transversale.')
+    expect(text).toContain('Les risques se mesurent.')
+    expect(text).toContain('La cartographie des risques.')
+    expect(text).toContain('Pour en savoir plus.')
+    expect(text).toContain('Les ouvrages de référence.')
+    // Une phrase du texte qui reprend quelques-uns de leurs mots reste.
+    expect(cleanPages(['La reproduction du centre de copie est autorisée ici.', 'Autre page.'], known).text).toContain('La reproduction du centre de copie est autorisée ici.')
+    // « Article 1.2.3 », sur deux pages : du texte, pas un numéro de page.
+    expect(cleanPages(['Article 1.2.3\n\nTexte un.', 'Article 4.5.6\n\nTexte deux.']).text).toContain('Article 4.5.6')
+  })
+
   it('un numéro de page seul, en haut ou en bas, retiré ; un nombre dans le texte, non', () => {
     expect(stripPageNumbers('- 12 -\n\nLe lot 12 comprend 3 postes.\n\n12\n\n3/19')).toBe('Le lot 12 comprend 3 postes.\n\n12')
     expect(stripPageNumbers('Total\n\n12\n\nau lieu de 14\n\nFin du texte de la page.\n\nVoilà.')).toContain('12')

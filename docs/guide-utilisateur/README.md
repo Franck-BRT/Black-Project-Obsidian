@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.119.2)
+## Aujourd'hui (version 0.120.0)
+
+- **Le texte lu par l'IA, plus propre** : plus de page entière tassée dans une case de tableau,
+  plus de pieds de page qui traînent (« AG 1 100v2 – 5 », « Toute reproduction… ») ; le sommaire
+  s'affiche en liste, les sous-parties en retrait, pareil dans l'app et dans Obsidian, où un
+  retour à la ligne se voit désormais aussi dans l'app.
 
 - **Le répertoire des personnes** (Bibliothèque › **Personnes**) : les personnes avec qui vous
   travaillez — leur entreprise (dans la liste des entreprises), leur fonction, leur adresse, leur

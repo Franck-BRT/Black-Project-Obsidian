@@ -172,6 +172,11 @@ function tablesOf(rects: PdfRectItem[], page: number): Table[] {
   const rows: { top: number; bottom: number; cells: PdfRectItem[] }[] = []
   for (const box of [...boxes].sort((a, b) => b.y + b.height - (a.y + a.height) || a.x - b.x)) {
     const row = rows.find((each) => near(each.top, box.y + box.height) && near(each.bottom, box.y))
+    // Le même cadre tracé plusieurs fois (fond de page, masque de découpe, double trait)
+    // n'est pas une colonne de plus : deux cellules d'une ligne ne se recouvrent pas.
+    const overlaps = (cell: PdfRectItem): boolean =>
+      Math.min(cell.x + cell.width, box.x + box.width) - Math.max(cell.x, box.x) > Math.min(cell.width, box.width) / 2
+    if (row && row.cells.some(overlaps)) continue
     if (row) row.cells.push(box)
     else rows.push({ top: box.y + box.height, bottom: box.y, cells: [box] })
   }

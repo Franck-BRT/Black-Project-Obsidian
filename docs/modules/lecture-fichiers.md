@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.14.0 (Black Projects 0.115.0) |
+| Version | 0.14.1 (Black Projects 0.120.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -16,6 +16,14 @@
 
 Le module transforme un document en texte que l'outil, puis l'IA, peuvent lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
 colonnes** — c'est là que sont souvent les exigences et les prix.
+
+## Un cadre de page n'est pas un tableau (v0.14.1, Black Projects 0.120.0)
+
+Certains PDF (ceux de FrameMaker) tracent le **même cadre de la taille de la page** plusieurs
+fois — fond, masque de découpe. Deux cadres qui se recouvrent sur une même ligne étaient lus
+comme deux colonnes : la page entière devenait une seule cellule de tableau, ses en-têtes et
+pieds de page avec. Deux cellules d'une ligne ne se recouvrent plus : un cadre en double est
+ignoré, la page se lit en paragraphes, et les vrais tableaux (cellules côte à côte) restent.
 
 ## Les cellules fusionnées (v0.14.0, Black Projects 0.115.0)
 

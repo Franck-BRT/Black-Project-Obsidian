@@ -207,6 +207,28 @@ describe('la lecture d’un document par l’IA, de bout en bout', () => {
     }
   })
 
+  it('le texte du fichier sans ses en-têtes ni pieds de page : donné ainsi à la vision, gardé ainsi quand sa lecture est écartée', async () => {
+    const platform = memoryPlatform()
+    drawnPages = 3
+    try {
+      const { pour, seen } = await start(platform, (one) => {
+        const page = Number(/page (\d) sur/.exec(one.text)![1])
+        // La page 2 : une réponse bien trop courte — écartée, le texte du fichier reste.
+        return page === 2 ? 'Rien.' : `## Partie ${page}\n\nLa partie ${page} est lue par la vision, de bout en bout.`
+      })
+      const layer = (body: string): string[] => ['Societe X - CCTP station sol - edition 2', '', '', '', body, 'Le titulaire fournit les plans et les notes de calcul.', '', '', '', 'Confidentiel - reproduction interdite - Societe X']
+      const doc = await pour('CCTP.pdf', textPdf([layer('Premiere page du cahier.'), layer('Deuxieme page du cahier, gardee telle quelle.'), layer('Troisieme page du cahier.')]))
+      expect(seen).toHaveLength(3)
+      expect(seen[1]!.text).toContain('Deuxieme page du cahier')
+      expect(seen[1]!.text).not.toMatch(/Confidentiel|Societe X - CCTP/)
+      const text = read(platform, doc.record)
+      expect(text).toContain('Deuxieme page du cahier, gardee telle quelle.')
+      expect(text).not.toMatch(/Confidentiel|Societe X - CCTP/)
+    } finally {
+      drawnPages = 2
+    }
+  })
+
   it('une page vérifiée sous 85 : corrigée d’après l’image (ce qui n’allait pas dit au modèle), revérifiée — la meilleure gardée, sa note comptée', async () => {
     const platform = memoryPlatform()
     drawnPages = 1

@@ -196,3 +196,32 @@ describe('pdfBlocks, on a tagged PDF', () => {
     ])
   })
 })
+
+describe('pdfBlocks, cadres et tableaux', () => {
+  const line = (y: number, text: string, x = 60) => ({ page: 1, x, y, size: 10, width: text.length * 5, text, bold: false, italic: false })
+  const page = { page: 1, x: 0, y: 0, width: 600, height: 800 }
+
+  it('le même cadre de page tracé plusieurs fois (fond, masque) n’est pas un tableau : la page reste des paragraphes', () => {
+    const content = {
+      pages: 1,
+      problems: [],
+      items: [line(760, 'AG1100v2.fm  Page 8  Lundi, 8. avril 2013'), line(700, 'Le texte de la page.'), line(40, 'AG 1 100v2 – 8')],
+      rects: [page, { ...page }, { ...page }, { ...page, width: 600.2 }]
+    }
+    const blocks = pdfBlocks(content)
+    expect(blocks.some((block) => block.kind === 'table')).toBe(false)
+    expect(blocks.map((block) => (block.kind === 'p' ? block.text : '')).join('\n')).toContain('AG 1 100v2 – 8')
+  })
+
+  it('un vrai tableau (des cellules côte à côte) le reste, même dans un cadre de page', () => {
+    const cell = (x: number, y: number, width: number) => ({ page: 1, x, y, width, height: 14 })
+    const content = {
+      pages: 1,
+      problems: [],
+      items: [line(705, '1.1', 52), line(705, 'Notion de risque', 82), line(691, '1.2', 52), line(691, 'Concept', 82)],
+      rects: [page, { ...page }, cell(50, 700, 30), cell(80, 700, 300), cell(50, 686, 30), cell(80, 686, 300)]
+    }
+    const blocks = pdfBlocks(content)
+    expect(blocks).toEqual([{ kind: 'table', rows: [['1.1', 'Notion de risque'], ['1.2', 'Concept']] }])
+  })
+})

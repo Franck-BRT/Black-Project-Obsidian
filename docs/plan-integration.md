@@ -645,6 +645,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   vérification et correction, nettoyage, images décrites) et la **qualité** du texte (★ et %)
 - v0.119.1 : la **lecture en cours sur la fiche** (étape, page, %, texte lu jusqu'ici ; l'extraction)
 - v0.119.2 : les **pieds de page** qui varient reconnus ; les **sommaires** toujours en liste
+- v0.120.0 : un **cadre de page** n'est plus un tableau (PDF) ; les pieds de page restants (référence et page, variantes, lignes fourre-tout) ; le **sommaire de la vision** en liste imbriquée ; les retours à la ligne affichés comme dans Obsidian
 
 ### Étape 7 — Livrables
 

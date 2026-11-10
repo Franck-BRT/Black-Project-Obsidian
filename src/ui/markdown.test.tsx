@@ -15,7 +15,7 @@ describe('le Markdown mis en forme', () => {
   it('les blocs : titres, paragraphes, listes (imbriquées, numérotées), citations, code, filets, tableaux', () => {
     expect(parseMarkdown('### Titre\n\nUne ligne\nqui continue.\n\n- un\n  - un bis\n- deux\n\n1. premier\n2) second\n\n> cité\n\n```\ncode\n```\n\n---\n\n| A | B |\n| --- | --- |\n| 1 | 2 |')).toEqual([
       { kind: 'heading', level: 3, text: 'Titre' },
-      { kind: 'paragraph', text: 'Une ligne qui continue.' },
+      { kind: 'paragraph', text: 'Une ligne<br>qui continue.' },
       { kind: 'list', ordered: false, items: [{ text: 'un', children: [{ kind: 'list', ordered: false, items: [{ text: 'un bis', children: [] }] }] }, { text: 'deux', children: [] }] },
       { kind: 'list', ordered: true, items: [{ text: 'premier', children: [] }, { text: 'second', children: [] }] },
       { kind: 'quote', children: [{ kind: 'paragraph', text: 'cité' }] },
@@ -138,7 +138,7 @@ describe('une liste juste après une phrase', () => {
     expect(parseMarkdown('Les revues :\n- Conception\n- Recette\nEn 2025, puis\n2026. Fin')).toEqual([
       { kind: 'paragraph', text: 'Les revues :' },
       { kind: 'list', ordered: false, items: [{ text: 'Conception', children: [] }, { text: 'Recette', children: [] }] },
-      { kind: 'paragraph', text: 'En 2025, puis 2026. Fin' }
+      { kind: 'paragraph', text: 'En 2025, puis<br>2026. Fin' }
     ])
   })
 })
@@ -163,3 +163,11 @@ describe('les formules mathématiques', () => {
   })
 })
 
+
+describe('les retours à la ligne, comme dans Obsidian', () => {
+  it('un retour à la ligne dans un paragraphe en est un ; les lignes en retrait sous un élément de liste aussi', () => {
+    const html = renderToString(<Markdown text={'1. Méthodologie — 2\n    1.1 Notion de risque — 2\n    1.2 Concept — 3\n2. Risques — 12'} />)
+    expect(html).toContain('1.1 Notion de risque — 2<br/>1.2 Concept — 3')
+    expect(parseMarkdown('Ligne un\nligne deux')).toEqual([{ kind: 'paragraph', text: 'Ligne un<br>ligne deux' }])
+  })
+})

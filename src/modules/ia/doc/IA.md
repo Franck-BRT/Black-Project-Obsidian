@@ -109,7 +109,9 @@ PDF, une image) — sinon le texte extrait —, page par page :
    revérifiée, la meilleure gardée.
 
 Puis le **nettoyage** — en-têtes et pieds de page répétés de page en page (même quand leur numéro
-change, ou leur ordre une page sur deux), numéros de page, sommaire remis en liste,
+change, ou leur ordre une page sur deux ; repérés d'abord dans le texte du fichier, puis leurs
+variantes et les lignes qui en sont faites), numéros de page (« AG 1 100v2 – 5 » aussi), sommaire
+remis en liste à puces, ses sous-parties en retrait,
 lignes coupées au milieu d'une phrase recollées, lignes vides en trop — et la **qualité** de la
 transcription : **en étoiles sur cinq et en pourcentage** (« ★★★★☆ 88 % »), sur la version du
 texte, la fiche (section *Texte extrait*) et la note du document. Sans images, le texte extrait

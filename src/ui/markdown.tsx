@@ -299,7 +299,8 @@ export function parseMarkdown(source: string): MarkdownNode[] {
     )
       body.push(lines[at++]!.trim())
     if (!body.length) body.push(lines[at++]!.trim())
-    nodes.push({ kind: 'paragraph', text: body.join(' ') })
+    // Un retour à la ligne dans un paragraphe en est un, comme dans Obsidian (sans « sauts de ligne stricts »).
+    nodes.push({ kind: 'paragraph', text: body.join('<br>') })
   }
   return nodes
 }
