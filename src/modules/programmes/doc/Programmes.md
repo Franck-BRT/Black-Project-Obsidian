@@ -84,3 +84,16 @@ Sur un projet, chaque phase englobante dit où elle en est (« 1/6 phases ») : 
 toutes ses phases le sont, en cours dès que l'une est commencée.
 
 Les projets déjà créés **gardent leurs phases** : changer un type ne les change pas.
+
+## 5. Les documents de référence
+
+Un programme, comme un projet, a sa section **Documents de référence** : les normes,
+procédures et guides qu'il **appelle**, rangés dans la bibliothèque des documents de
+référence. **Choisir les documents de référence…** les coche (ou décoche) ; **Verser un
+document de référence…**, dans la même fenêtre, en ajoute un nouveau à la bibliothèque.
+Chacun s'ouvre (sa fiche) ou se retire (**Ne plus l'appeler** : il reste dans la bibliothèque).
+Ils sont écrits en liens dans la note (`references:`), qu'Obsidian suit.
+
+Un projet n'hérite pas de ceux de son programme : chacun a sa liste. La fiche d'un document dit
+qui l'appelle ; un document déplacé dans la bibliothèque, les liens suivent ; retiré, la section
+le dit.

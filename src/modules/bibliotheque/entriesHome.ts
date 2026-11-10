@@ -13,6 +13,7 @@ import { startersFor } from './starters'
 import { ENTRY_KINDS, entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, shelfCards, type ShelfPlacesDeps } from './places'
+import { REFERENCE_SHELF, severalShelves } from './shelves'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -28,7 +29,7 @@ export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = {
 export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag', person: 'bibliotheque.person' }
 export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(ENTRY_PAGE[kind], encodeURIComponent(path))
 
-type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user'
+type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star'
 const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user' }
 
 export interface EntriesHomeDeps {
@@ -295,7 +296,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const persons = await deps.stores.person.all()
   const go = (page: string): ViewAction => ({ id: 'open', label: t('bibliotheque.hub.open'), run: () => deps.showPage?.(page) })
   // Plusieurs bibliothèques d'une sorte : une section par sorte, une carte par bibliothèque.
-  const several = (['document', 'prompt', 'persona', 'skill', 'issuer', 'person', 'tag'] as const).some((kind) => deps.places[kind].shelves().length > 1)
+  // (La bibliothèque des documents de référence, toujours là, ne compte pas.)
+  const several = (['document', 'prompt', 'persona', 'skill', 'issuer', 'person', 'tag'] as const).some((kind) => severalShelves(deps.places[kind].shelves()))
   if (several) {
     const placed = await deps.placedDocuments()
     const section = (kind: 'document' | EntryKind, icon: KindIcon, items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
@@ -347,6 +349,9 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
     open: go(page),
     actions: [{ ...go(page), id: 'see', icon: 'chevron' }]
   })
+  // Les documents de référence : leur carte, à côté de celle des documents.
+  const referenceShelf = deps.places.document.shelves().find((shelf) => shelf.reference)
+  const references = referenceShelf ? (await deps.placedDocuments()).filter((item) => item.shelf === REFERENCE_SHELF).length : 0
   return {
     subtitle: t('bibliotheque.hub.subtitle'),
     blocks: [
@@ -365,7 +370,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
       {
         kind: 'cards',
         cards: [
-          card('documents', 'book', documents.count, deps.documentsPage, documents.likely ? t('bibliotheque.home.likely', { count: documents.likely }) : ''),
+          card('documents', 'book', documents.count - references, deps.documentsPage, documents.likely ? t('bibliotheque.home.likely', { count: documents.likely }) : ''),
+          ...(referenceShelf ? [card('references', 'star', references, placePageOf(deps.documentsPage, { shelf: REFERENCE_SHELF, directory: '' }))] : []),
           card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt),
           card('personas', 'spark', personas.length, ENTRIES_PAGE.persona),
           card('skills', 'list', skills.length, ENTRIES_PAGE.skill),

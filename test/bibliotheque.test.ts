@@ -179,7 +179,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const doc = (await pourIntoLibrary([{ name: 'Courrier acheteur.pdf', bytes: enc('c') }], { module: 'ao', label: 'Station sol', link: "Appels d'offres/Station sol/Station sol.md" }))!.added[0]!
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(fiche.title).toBe('Courrier acheteur')
-    expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'language', 'version', 'move', 'note', 'aside'])
+    expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'language', 'version', 'move', 'to-references', 'note', 'aside'])
     // Identification, le fichier, d'où il vient, les versions : des sections repliables, repliées d'origine, leur en-tête en dit l'essentiel.
     // Ce qui reste à confirmer : ensemble, dans une section dépliée, que l'en-tête résume.
     expect(fiche.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')).toMatchObject({

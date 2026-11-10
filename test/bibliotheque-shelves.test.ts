@@ -187,8 +187,8 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     await (await page('bibliotheque.document').load(encodeURIComponent(second.record))).actions!.find((each) => each.id === 'version')!.run()
     platform.choices.push('Bibliothèque/Archives')
     await (await page('bibliotheque.document').load(encodeURIComponent(first.record))).actions!.find((each) => each.id === 'move')!.run()
-    // Les lieux offerts : la racine n'y est pas (il y est déjà).
-    expect(platform.offered.at(-1)!.map((each) => each.label)).toEqual(['Documents › Archives'])
+    // Les lieux offerts : la racine n'y est pas (il y est déjà) ; les documents de référence, si.
+    expect(platform.offered.at(-1)!.map((each) => each.label)).toEqual(['Documents › Archives', 'Documents de référence'])
     expect(shown.at(-1)).toBe(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Archives/CCTP v1.md')}`)
     expect(await platform.fs.exists(first.record)).toBe(false)
     expect(await platform.fs.exists(first.file)).toBe(true)

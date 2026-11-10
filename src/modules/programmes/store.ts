@@ -198,6 +198,41 @@ export class ProgrammeStore {
     return this.saveProject({ ...project, phases }, 'duration' in patch)
   }
 
+  // ── Documents de référence ────────────────────────────────────────────────────
+
+  /** Les documents de référence qu'appelle un programme ou un projet (sa note) : remplacés par ceux-ci. */
+  async setReferences(path: string, references: readonly string[]): Promise<Programme | Project | null> {
+    const unique = [...new Set(references)]
+    const programme = await this.programme(path)
+    if (programme) {
+      await this.write(path, programmeData({ ...programme, references: unique }), programme.name)
+      return this.programme(path)
+    }
+    const project = await this.project(path)
+    if (!project) return null
+    return this.saveProject({ ...project, references: unique })
+  }
+
+  /** Les programmes et les projets qui appellent un document de référence (sa fiche). */
+  async callersOf(record: string): Promise<(Programme | Project)[]> {
+    const out: (Programme | Project)[] = []
+    for (const programme of await this.programmes()) {
+      if (programme.references.includes(record)) out.push(programme)
+      for (const project of await this.projects(programme)) if (project.references.includes(record)) out.push(project)
+    }
+    return out
+  }
+
+  /** Une fiche de la bibliothèque déplacée : les programmes et les projets qui l'appelaient suivent. */
+  async referenceMoved(from: string, to: string): Promise<number> {
+    let changed = 0
+    for (const caller of await this.callersOf(from)) {
+      await this.setReferences(caller.path, caller.references.map((record) => (record === from ? to : record)))
+      changed++
+    }
+    return changed
+  }
+
   // ── Affaires ──────────────────────────────────────────────────────────────────
 
   async affaires(project: Project): Promise<Affaire[]> {

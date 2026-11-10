@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les documents de référence (v0.121.0)
+
+- [ ] Bibliothèque : la carte **Documents de référence** à côté de Documents ; sa page, son
+      dossier `Bibliothèque/Références` ; pas de « Retirer la bibliothèque »
+- [ ] Y glisser une norme : sa fiche dit « ★ Document de référence », et « Appelé par (0) »
+- [ ] Un programme, puis un projet : **Choisir les documents de référence…**, cocher la norme ;
+      la section la montre ; la note a `references:` avec le lien
+- [ ] Dans la fenêtre, **Verser un document de référence…** : versé dans les références, coché
+- [ ] La fiche de la norme : **Appelé par** le programme et le projet ; un clic y mène
+- [ ] **Ne plus l'appeler** : retiré de la note ; le document reste
+- [ ] Déplacer la norme dans un répertoire des références : les notes suivent
+- [ ] Un document rangé dans « Normes », déposé dans « Lots » : fantôme, puis « Un document de
+      référence ? » → rangé dans les références, un fantôme dans « Normes »
+- [ ] **Ranger dans les références** sur la fiche d'un autre document
+
 ## Pieds de page restants, sommaire, retours à la ligne (v0.120.0)
 
 - [ ] Un article de Techniques de l'Ingénieur (AG 1 100v2) lu avec la vision : plus de page

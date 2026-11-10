@@ -33,7 +33,7 @@ import { baseName, CATEGORIES, nestHeadings, versionLabel, type AiReading, type 
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, type ShelfPlacesDeps } from './places'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
-import { defaultShelfOf, folderName, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
+import { defaultShelfOf, folderName, REFERENCE_SHELF, severalShelves, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -61,6 +61,9 @@ export const TAGS_FOLDER_KEY = 'dossierEtiquettes'
 export const DEFAULT_TAGS_FOLDER = 'Bibliothèque/Étiquettes'
 export const PERSONS_FOLDER_KEY = 'dossierPersonnes'
 export const DEFAULT_PERSONS_FOLDER = 'Bibliothèque/Personnes'
+/** Le dossier de la bibliothèque des documents de référence (réglage), et son dossier d'origine. */
+export const REFERENCES_FOLDER_KEY = 'dossierReferences'
+export const DEFAULT_REFERENCES_FOLDER = 'Bibliothèque/Références'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
 export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
@@ -79,7 +82,126 @@ let active: {
   issuers(): Promise<KnownIssuer[]>
   /** Les étiquettes de la liste. */
   tagList(): Promise<KnownTag[]>
+  /** Le dossier des documents de référence. */
+  referencesFolder(): string
+  /** Verser des documents choisis (l'ordinateur, le coffre) dans un dossier. */
+  pour(folder?: string): Promise<PourReport | null>
+  /** Ranger un document dans les documents de référence (un fantôme à son ancienne place) ; rend sa nouvelle fiche. */
+  toReferences(record: string): Promise<string | null>
 } | null = null
+
+// ── Les documents de référence, appelés par les programmes et les projets ──────────
+
+export { REFERENCE_SHELF } from './shelves'
+
+/** Un document de la bibliothèque, tel qu'un autre module le montre : sa fiche, son titre, ce qui le dit. */
+export interface LibraryDocRef {
+  record: string
+  title: string
+  /** Sa référence, son édition, sa catégorie. */
+  detail: string
+  /** Est-il rangé dans les documents de référence ? */
+  reference: boolean
+}
+
+/** Qui appelle un document : un programme, un projet (sa note, sa page). */
+export interface ReferenceCaller {
+  title: string
+  detail?: string
+  /** Sa page dans l'app ; sinon sa note s'ouvre. */
+  page?: string
+  note: string
+}
+
+/** Ce qu'un module qui appelle des documents de référence dit à la bibliothèque. */
+export interface ReferenceCallers {
+  /** Ceux qui appellent ce document (sa fiche). */
+  callers(record: string): Promise<ReferenceCaller[]>
+  /** Une fiche déplacée (rangée ailleurs) : ses appels suivent. */
+  moved(from: string, to: string): Promise<void>
+}
+
+const referenceCallers = new Set<ReferenceCallers>()
+
+/** Déclarer qui appelle des documents (le module Programmes) ; rend de quoi l'oublier. */
+export function registerReferenceCallers(callers: ReferenceCallers): () => void {
+  referenceCallers.add(callers)
+  return () => void referenceCallers.delete(callers)
+}
+
+/** Ceux qui appellent un document, de tous les modules. */
+async function callersOf(record: string): Promise<ReferenceCaller[]> {
+  const all: ReferenceCaller[] = []
+  for (const each of referenceCallers) all.push(...(await each.callers(record).catch(() => [])))
+  return all
+}
+
+/** Une fiche déplacée : les appels suivent. */
+async function recordMoved(from: string, to: string): Promise<void> {
+  if (from === to) return
+  for (const each of referenceCallers) await each.moved(from, to).catch((error: unknown) => console.error('[Black Projects] bibliothèque', error))
+}
+
+const docRef = (doc: LibraryDoc): LibraryDocRef => ({
+  record: doc.record,
+  title: doc.title,
+  detail: [doc.reference, [doc.edition, doc.revision].filter(Boolean).join(' '), doc.category ? pieceTypeText(doc.category) : ''].filter(Boolean).join(' · '),
+  reference: doc.shelf === REFERENCE_SHELF
+})
+
+/** Les documents de référence (par titre) ; aucun sans le module. */
+export async function referenceDocuments(): Promise<LibraryDocRef[]> {
+  if (!active) return []
+  return (await active.store.all())
+    .filter((doc) => doc.shelf === REFERENCE_SHELF)
+    .map(docRef)
+    .sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+}
+
+/** Un document de la bibliothèque par sa fiche (où qu'il soit rangé) ; `null` s'il n'y est plus. */
+export async function libraryDocument(record: string): Promise<LibraryDocRef | null> {
+  if (!active) return null
+  const doc = (await active.store.all()).find((each) => each.record === record)
+  return doc ? docRef(doc) : null
+}
+
+/** La page d'un document de la bibliothèque (sa fiche). */
+export const libraryDocPage = (record: string): string => docPageOf(record)
+
+/**
+ * Choisir des documents de référence (cochés : ceux déjà appelés) ; on peut aussi en verser
+ * un nouveau. Rend les fiches cochées, ou `null` (abandon). Un document appelé mais rangé
+ * ailleurs (sorti des références) reste dans la liste, coché.
+ */
+export async function chooseReferenceDocuments(title: string, current: readonly string[]): Promise<string[] | null> {
+  if (!active) return null
+  const { t, ui } = active
+  const all = await active.store.all()
+  const refs = all.filter((doc) => doc.shelf === REFERENCE_SHELF).map(docRef)
+  const others = current.flatMap((record) => {
+    if (refs.some((doc) => doc.record === record)) return []
+    const doc = all.find((each) => each.record === record)
+    return [doc ? docRef(doc) : { record, title: record.slice(record.lastIndexOf('/') + 1).replace(/\.md$/, ''), detail: t('bibliotheque.references.gone'), reference: false }]
+  })
+  const choice = (doc: LibraryDocRef) => ({ value: doc.record, label: doc.title, ...(doc.detail || !doc.reference ? { description: [doc.detail, doc.reference ? '' : t('bibliotheque.references.outside')].filter(Boolean).join(' · ') } : {}) })
+  const pour = active.pour
+  const folder = active.referencesFolder()
+  return ui.pickMany({
+    title,
+    intro: refs.length ? t('bibliotheque.references.choose.intro') : t('bibliotheque.references.choose.empty'),
+    choices: [...refs.sort((a, b) => a.title.localeCompare(b.title, 'fr')), ...others].map(choice),
+    selected: [...current],
+    submit: t('bibliotheque.edit.submit'),
+    create: {
+      label: t('bibliotheque.references.pour'),
+      run: async () => {
+        const report = await pour(folder)
+        const doc = report?.added[0] ?? report?.already[0]
+        return doc ? choice(docRef(doc)) : null
+      }
+    }
+  })
+}
 
 /** Les prompts, ou les personas, de la bibliothèque (favoris d'abord) ; aucun sans le module actif. */
 export async function libraryEntries(kind: EntryKind): Promise<LibraryEntry[]> {
@@ -528,6 +650,16 @@ const folderField: TextField = {
   normalize: cleanFolder
 }
 
+const referencesFolderField: TextField = {
+  kind: 'text',
+  key: REFERENCES_FOLDER_KEY,
+  nameKey: 'bibliotheque.setting.references.folder',
+  descKey: 'bibliotheque.setting.references.folder.desc',
+  tooltipKey: 'bibliotheque.setting.references.folder.tip',
+  defaultValue: DEFAULT_REFERENCES_FOLDER,
+  normalize: cleanFolder
+}
+
 /** Le réglage du dossier de chaque sorte d'entrées, et son dossier d'origine. */
 const FOLDER_KEYS: Readonly<Record<EntryKind, readonly [string, string]>> = {
   prompt: [PROMPTS_FOLDER_KEY, DEFAULT_PROMPTS_FOLDER],
@@ -564,7 +696,7 @@ export function bibliothequeFeatures(): ModuleDetails {
         titleKey: 'bibliotheque.feature.section.store',
         features: [feature('everything', 'available'), feature('dedup', 'available'), feature('versions', 'available'), feature('classify', 'available'), feature('language', 'available'), feature('origins', 'available')]
       },
-      { titleKey: 'bibliotheque.feature.section.places', features: [feature('shelves', 'available'), feature('directories', 'available'), feature('move', 'available')] },
+      { titleKey: 'bibliotheque.feature.section.places', features: [feature('shelves', 'available'), feature('references', 'available'), feature('directories', 'available'), feature('move', 'available')] },
       { titleKey: 'bibliotheque.feature.section.ai', features: [feature('prompts', 'available'), feature('personas', 'available'), feature('skills', 'available'), feature('starters', 'available')] },
       { titleKey: 'bibliotheque.feature.section.issuers', features: [feature('issuers', 'available'), feature('persons', 'available'), feature('tagList', 'available')] },
       { titleKey: 'bibliotheque.feature.section.next', features: [feature('text', 'planned', 7), feature('delivery', 'planned', 7)] }
@@ -608,11 +740,11 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.40.1',
+  version: '0.41.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
+  settingsFields: [folderField, referencesFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   async activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
@@ -633,7 +765,8 @@ export const bibliothequeModule: BlackModule = {
       tag: tagsFolder,
       person: () => folderOf(settings.get(), PERSONS_FOLDER_KEY, DEFAULT_PERSONS_FOLDER)
     }
-    const shelves = (kind: ShelfKind): Shelf[] => shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`))
+    const referencesFolder = () => folderOf(settings.get(), REFERENCES_FOLDER_KEY, DEFAULT_REFERENCES_FOLDER)
+    const shelves = (kind: ShelfKind): Shelf[] => shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`), { folder: referencesFolder(), name: t('bibliotheque.shelf.references') })
     const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
     const store = new LibraryStore({
       fs: platform.fs,
@@ -681,14 +814,48 @@ export const bibliothequeModule: BlackModule = {
       if (!shelf) return folder
       const parts = folder.slice(shelf.folder.length).split('/').filter(Boolean)
       // Une seule bibliothèque : son nom n'apprend rien, sauf à sa racine.
-      return (all.length > 1 || !parts.length ? [shelf.name, ...parts] : parts).join(' › ')
+      return (severalShelves(all) || shelf.reference || !parts.length ? [shelf.name, ...parts] : parts).join(' › ')
     }
-    /** Proposer — ou placer d'office — un fantôme d'un document ici. */
+    /** Un dossier des documents de référence (ou de l'un de ses répertoires) ? */
+    const inReferences = (folder: string): boolean => folder === referencesFolder() || folder.startsWith(`${referencesFolder()}/`)
+    /**
+     * Ranger un document dans les documents de référence (`folder` : l'un de leurs répertoires,
+     * sinon leur racine) : sa fiche y va, un fantôme reste à son ancienne place, ses appels suivent.
+     */
+    const toReferences = async (record: string, folder = referencesFolder()): Promise<string | null> => {
+      const doc = await store.load(record)
+      if (!doc) return null
+      const from = record.slice(0, record.lastIndexOf('/'))
+      if (inReferences(from)) return record
+      const moved = await store.move(record, folder)
+      if (!moved) return null
+      await recordMoved(record, moved)
+      const placed = await store.load(moved)
+      if (placed) await store.addGhost(placed, from, placeOfFolder(folder))
+      platform.notifier.notify(t('bibliotheque.references.moved', { title: doc.title, references: placeOfFolder(folder) }), 7000)
+      return moved
+    }
+    /**
+     * Proposer — ou placer d'office — un fantôme d'un document ici. Un document déjà rangé
+     * ailleurs que dans les références : le ranger dans les références est proposé (versé dans
+     * les références même, c'est ce qui est proposé d'abord).
+     */
     const offerGhost = async (record: string, folder: string, ask: boolean, ui: Ui): Promise<string | null> => {
       const doc = await store.load(record)
       if (!doc || !folder) return null
       const range = placeOfFolder(record.slice(0, record.lastIndexOf('/')))
       const ici = placeOfFolder(folder)
+      const outside = !inReferences(record.slice(0, record.lastIndexOf('/')))
+      // Versé dans les références, un document rangé ailleurs : l'y ranger (un fantôme à son ancienne place) ?
+      if (outside && inReferences(folder)) {
+        const sure = await ui.confirm({
+          title: t('bibliotheque.references.ask.title'),
+          message: t('bibliotheque.references.askHere', { title: doc.title, where: range, references: ici }),
+          confirm: t('bibliotheque.references.move', { references: ici }),
+          cancel: t('bibliotheque.references.keep')
+        })
+        if (sure) return toReferences(record, folder)
+      }
       if (ask) {
         const sure = await ui.confirm({
           title: t('bibliotheque.ghost.ask.title'),
@@ -700,11 +867,35 @@ export const bibliothequeModule: BlackModule = {
       }
       const ghost = await store.addGhost(doc, folder, range)
       if (ghost) platform.notifier.notify(t('bibliotheque.ghost.done', { title: doc.title, ici }), 6000)
+      // Un document montré dans deux dossiers : commun, il a sa place dans les références (demandé, sauf « sans demander »).
+      if (ask && ghost && outside && !inReferences(folder)) {
+        const references = placeOfFolder(referencesFolder())
+        const sure = await ui.confirm({
+          title: t('bibliotheque.references.ask.title'),
+          message: t('bibliotheque.references.ask', { title: doc.title, where: range, ici, references }),
+          confirm: t('bibliotheque.references.move', { references }),
+          cancel: t('bibliotheque.references.keep')
+        })
+        if (sure) await toReferences(record)
+      }
       return ghost
     }
     // Une lecture par l'IA qui commence, avance, finit : les pages ouvertes se redessinent.
     pagesChanged = () => context.views?.changed?.()
-    active = { store, t, entries, ui: platform.ui, placeOfFolder, offerGhost, locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR', issuers: () => knownIssuers(), tagList: () => knownTags() }
+    active = {
+      store,
+      t,
+      entries,
+      ui: platform.ui,
+      placeOfFolder,
+      offerGhost,
+      locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR',
+      issuers: () => knownIssuers(),
+      tagList: () => knownTags(),
+      referencesFolder,
+      pour: (folder) => pour(folder),
+      toReferences: (record) => toReferences(record)
+    }
     // Les listes des champs Prompt, Persona, Skill des étapes de workflow qui demandent l'IA.
     for (const kind of AI_ENTRY_KINDS)
       registerFieldSource(`bibliotheque.${kind}`, async () =>
@@ -795,7 +986,7 @@ export const bibliothequeModule: BlackModule = {
     }
     const removeShelf = async (kind: ShelfKind, id: string): Promise<boolean> => {
       const shelf = shelves(kind).find((each) => each.id === id)
-      if (!shelf || shelf.main) return false
+      if (!shelf || shelf.main || shelf.reference) return false
       const sure = await platform.ui.confirm({
         title: t('bibliotheque.shelf.remove.title', { name: shelf.name }),
         message: t('bibliotheque.shelf.remove.message', { name: shelf.name, folder: shelf.folder }),
@@ -1342,6 +1533,8 @@ export const bibliothequeModule: BlackModule = {
       removeGhost: async (path) => {
         if (await store.removeGhost(path)) platform.notifier.notify(t('bibliotheque.ghost.removed'), 5000)
       },
+      callers: (record) => callersOf(record),
+      toReferences: (record) => toReferences(record),
       places: { ...places.document, dropInto: (folder, where) => ({ label: t('bibliotheque.drop.label', { where }), run: async (files) => void (await pourItems(files, folder)) }) },
       move: async (record) => {
         const doc = await store.load(record)
@@ -1349,7 +1542,10 @@ export const bibliothequeModule: BlackModule = {
         const folder = await pickPlace('document', record.slice(0, record.lastIndexOf('/')), t('bibliotheque.move.pick', { name: doc.title }))
         if (!folder) return null
         const moved = await store.move(record, folder)
-        if (moved) platform.notifier.notify(t('bibliotheque.move.done', { name: doc.title, folder }), 5000)
+        if (moved) {
+          await recordMoved(record, moved)
+          platform.notifier.notify(t('bibliotheque.move.done', { name: doc.title, folder }), 5000)
+        }
         return moved
       },
       pour: async (folder) => {

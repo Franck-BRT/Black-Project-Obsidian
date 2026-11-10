@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.120.0)
+## Aujourd'hui (version 0.121.0)
+
+- **Les documents de référence** (Bibliothèque › **Documents de référence**) : les normes,
+  procédures et guides communs à vos programmes et projets, rangés à part. Un programme ou un
+  projet les **appelle** (sa section « Documents de référence » : cocher, verser un nouveau,
+  ouvrir, retirer) ; la fiche d'un document dit qui l'appelle. Déposé une seconde fois ailleurs,
+  un document vous est proposé pour les références.
 
 - **Le texte lu par l'IA, plus propre** : plus de page entière tassée dans une case de tableau,
   plus de pieds de page qui traînent (« AG 1 100v2 – 5 », « Toute reproduction… ») ; le sommaire

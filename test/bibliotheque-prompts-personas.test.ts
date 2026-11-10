@@ -93,8 +93,8 @@ describe('les bibliothèques de prompts et de personas', () => {
     const stats = hub.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Documents=1', 'Prompts=0', 'Personas=0', 'Skills=0', 'Entreprises=0', 'Personnes=0', 'Étiquettes=0'])
     const cards = cardsOf(hub)
-    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Prompts', 'Personas', 'Skills', 'Entreprises', 'Personnes', 'Étiquettes'])
-    await cards[2]!.open!.run()
+    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Prompts', 'Personas', 'Skills', 'Entreprises', 'Personnes', 'Étiquettes'])
+    await cards[3]!.open!.run()
     expect(shown.at(-1)).toBe('bibliotheque.personas')
     expect(views.allTiles().map((tile) => tile.id)).toEqual(expect.arrayContaining(['bibliotheque.prompts', 'bibliotheque.personas']))
     // Le dossier des prompts et des personas n'est pas parcouru comme des documents.

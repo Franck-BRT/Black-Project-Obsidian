@@ -19,7 +19,7 @@ import { fingerprintOf } from './hash'
 import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghosts'
 import { CATEGORY_TYPER, guessDocCategory, guessDocDate, type KnownIssuer, type KnownTag, type PieceTyper, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
-import { MAIN_SHELF, type Shelf } from './shelves'
+import { MAIN_SHELF, shelfOfPath, type Shelf } from './shelves'
 import {
   baseName,
   familyOf,
@@ -643,7 +643,7 @@ export class LibraryStore {
   async removeGhost(path: string): Promise<boolean> {
     const { fs } = this.deps
     if (!(await fs.exists(path))) return false
-    const shelf = this.shelves().find((each) => path.startsWith(`${each.folder}/`)) ?? this.shelves()[0]!
+    const shelf = (shelfOfPath(this.shelves(), path) ?? this.shelves()[0]!)
     const aside = `${shelf.folder}/${SET_ASIDE_FOLDER}`
     await fs.ensureFolder(aside)
     await fs.rename(path, await this.free(`${aside}/${baseName(path)}`))
@@ -765,7 +765,7 @@ export class LibraryStore {
     if (!doc || !removed) return null
     if (fs.trash) await fs.trash(removed.path)
     else {
-      const shelf = this.shelves().find((each) => record.startsWith(`${each.folder}/`)) ?? this.shelves()[0]!
+      const shelf = (shelfOfPath(this.shelves(), record) ?? this.shelves()[0]!)
       const aside = `${shelf.folder}/${SET_ASIDE_FOLDER}`
       await fs.ensureFolder(aside)
       await fs.rename(removed.path, await this.free(`${aside}/${baseName(removed.path)}`))
@@ -1024,7 +1024,7 @@ export class LibraryStore {
     const doc = await this.load(record)
     if (!doc) return false
     // Mis de côté dans les retirés de sa bibliothèque.
-    const shelf = this.shelves().find((each) => record.startsWith(`${each.folder}/`)) ?? this.shelves()[0]!
+    const shelf = (shelfOfPath(this.shelves(), record) ?? this.shelves()[0]!)
     const aside = `${shelf.folder}/${SET_ASIDE_FOLDER}`
     // Ses fantômes n'ont plus rien à montrer.
     for (const { ghost } of await this.ghostsOf(doc)) await this.removeGhost(ghost.path)

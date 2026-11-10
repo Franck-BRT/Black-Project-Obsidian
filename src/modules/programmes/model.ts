@@ -121,6 +121,8 @@ export interface Programme {
   icon: IconName
   description: string
   created: string
+  /** Les documents de référence qu'il appelle (les fiches de la bibliothèque). */
+  references: string[]
 }
 
 export interface Project {
@@ -140,6 +142,8 @@ export interface Project {
   phases: ProjectPhase[]
   /** Ses phases englobantes (leurs étapes à partir de 1). */
   spans: SpanSpec[]
+  /** Les documents de référence qu'il appelle (les fiches de la bibliothèque). */
+  references: string[]
 }
 
 export type AffaireStatus = 'en-cours' | 'gagnee' | 'perdue' | 'abandonnee'
@@ -273,6 +277,21 @@ export const unlink = (value: unknown): string => (typeof value === 'string' ? v
 export const folderOf = (path: string): string => path.slice(0, path.lastIndexOf('/'))
 export const baseName = (path: string): string => path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, '')
 
+/** Des documents de référence relus d'une note : leurs liens, en chemins de fiches (une fois chacun). */
+export function readReferences(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  const out: string[] = []
+  for (const each of value) {
+    const path = unlink(each)
+    const record = path && !path.endsWith('.md') ? `${path}.md` : path
+    if (record && !out.includes(record)) out.push(record)
+  }
+  return out
+}
+
+/** Des documents de référence écrits dans une note : des liens, qu'Obsidian suit. */
+const referencesData = (references: readonly string[] | undefined): Record<string, unknown> => (references?.length ? { references: references.map(link) } : {})
+
 /** Un programme relu de sa note. */
 export function readProgramme(path: string, data: Record<string, unknown>): Programme {
   return {
@@ -283,18 +302,20 @@ export function readProgramme(path: string, data: Record<string, unknown>): Prog
     color: asColor(data.couleur, 'indigo'),
     icon: asIcon(data.icone, 'folder'),
     description: plain(data.description),
-    created: plain(data.creeLe)
+    created: plain(data.creeLe),
+    references: readReferences(data.references)
   }
 }
 
-export function programmeData(programme: Pick<Programme, 'code' | 'color' | 'icon' | 'description' | 'created'>): Record<string, unknown> {
+export function programmeData(programme: Pick<Programme, 'code' | 'color' | 'icon' | 'description' | 'created'> & Partial<Pick<Programme, 'references'>>): Record<string, unknown> {
   return {
     'bp-type': PROGRAMME_TYPE,
     ...(programme.code ? { code: programme.code } : {}),
     couleur: programme.color,
     icone: programme.icon,
     ...(programme.description ? { description: programme.description } : {}),
-    creeLe: programme.created
+    creeLe: programme.created,
+    ...referencesData(programme.references)
   }
 }
 
@@ -338,11 +359,12 @@ export function readProject(path: string, data: Record<string, unknown>): Projec
     created: plain(data.creeLe),
     ...(plain(data.demarrage) ? { start: plain(data.demarrage) } : {}),
     phases,
-    spans
+    spans,
+    references: readReferences(data.references)
   }
 }
 
-export function projectData(project: Omit<Project, 'path' | 'folder' | 'name'>): Record<string, unknown> {
+export function projectData(project: Omit<Project, 'path' | 'folder' | 'name' | 'references'> & Partial<Pick<Project, 'references'>>): Record<string, unknown> {
   return {
     'bp-type': PROJECT_TYPE,
     programme: link(project.programme),
@@ -372,7 +394,8 @@ export function projectData(project: Omit<Project, 'path' | 'folder' | 'name'>):
       ...(phase.documents?.length ? { documents: phase.documents.map((doc) => ({ type: doc.type, ...(doc.label ? { nom: doc.label } : {}), ...(doc.received ? { recu: true } : {}), ...(doc.link ? { lien: link(doc.link) } : {}), ...(doc.on ? { le: doc.on } : {}) })) } : {}),
       ...(phase.description ? { description: phase.description } : {})
     })),
-    ...(project.spans.length ? { englobantes: project.spans.map((span) => ({ id: span.id, nom: span.name, couleur: span.color, de: span.from, a: span.to, ...(span.description ? { description: span.description } : {}) })) } : {})
+    ...(project.spans.length ? { englobantes: project.spans.map((span) => ({ id: span.id, nom: span.name, couleur: span.color, de: span.from, a: span.to, ...(span.description ? { description: span.description } : {}) })) } : {}),
+    ...referencesData(project.references)
   }
 }
 

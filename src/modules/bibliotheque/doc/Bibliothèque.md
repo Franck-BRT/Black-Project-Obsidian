@@ -287,8 +287,28 @@ répertoire, dans ce répertoire. Comme « Verser des documents » : copiés dan
 bibliothèque, une seule fois chacun. Un prompt ou un persona se retrouve par son nom où qu'il soit
 rangé.
 
-## 10. Réglages
+## 10. Les documents de référence
 
-**Dossier de la bibliothèque** (par défaut `Bibliothèque`), **dossier des prompts** (par
+Une bibliothèque à part, toujours là, garde les **documents de référence** : les normes, les
+procédures, les guides communs à plusieurs programmes et projets. Sa carte, **Documents de
+référence**, est sur l'accueil de la bibliothèque ; on y verse comme ailleurs (glisser-déposer,
+**Verser des documents**), on y crée des répertoires (Normes, Procédures…). Elle ne se retire
+pas ; son dossier se règle (`Bibliothèque/Références` d'origine).
+
+- La fiche d'un document de référence porte l'étoile **★ Document de référence**, et une
+  section **Appelé par** : les programmes et les projets qui l'appellent (un clic y mène).
+- **Ranger dans les références**, sur la fiche d'un autre document, l'y range : un fantôme
+  reste à son ancienne place.
+- Un document **déjà rangé**, déposé de nouveau ailleurs : après le fantôme, une fenêtre propose
+  de le **ranger dans les documents de référence** (un fantôme restera à son ancienne place) ou
+  de le **laisser où il est**. Déposé dans les documents de référence même, c'est ce qui est
+  proposé d'abord.
+- Les programmes et les projets **appellent** ces documents : voir {{link:Programmes|Programmes}}.
+  Une fiche déplacée, ses appels suivent.
+
+## 11. Réglages
+
+**Dossier de la bibliothèque** (par défaut `Bibliothèque`), **dossier des documents de
+référence** (par défaut `Bibliothèque/Références`), **dossier des prompts** (par
 défaut `Bibliothèque/Prompts`) et **dossier des personas** (par défaut
 `Bibliothèque/Personas`). Voir {{link:Accueil|l'accueil}}.

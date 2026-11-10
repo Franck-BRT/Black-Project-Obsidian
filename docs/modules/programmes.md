@@ -5,13 +5,24 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.5.0 (Black Projects 0.113.0) |
+| Version | 0.6.0 (Black Projects 0.121.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les documents de référence (v0.6.0, Black Projects 0.121.0)
+
+- `Programme.references` et `Project.references` : les fiches des documents appelés, écrites en
+  liens (`references: ["[[…]]"]`) dans l'en-tête de la note (`readReferences`).
+- Le magasin : `setReferences(path, records)` (programme ou projet), `callersOf(record)`,
+  `referenceMoved(from, to)`.
+- Les pages programme et projet : la section **Documents de référence** (choisir — par
+  `chooseReferenceDocuments` de la bibliothèque —, ouvrir la fiche, ne plus l'appeler). Pas
+  d'héritage : un projet n'a que les siens.
+- Déclaré à la bibliothèque par `registerReferenceCallers` (oublié à la désactivation).
 
 ## Plus d'icônes (v0.5.0, Black Projects 0.113.0)
 

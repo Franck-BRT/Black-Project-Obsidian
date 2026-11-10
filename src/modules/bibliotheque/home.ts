@@ -18,6 +18,7 @@ import { LANGUAGES, type LanguageCode } from './language'
 import { docDateLabel, type KnownIssuer, type KnownTag } from './identity'
 import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
+import { REFERENCE_SHELF, severalShelves } from './shelves'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
 export const DOC_PAGE = 'bibliotheque.document'
@@ -43,6 +44,10 @@ export interface LibraryHomeDeps {
   pour(folder?: string): Promise<void>
   /** Les bibliothèques de documents, leurs répertoires, et ce qu'on en fait. */
   places: ShelfPlacesDeps
+  /** Ceux qui appellent un document de référence (des programmes, des projets). */
+  callers?(record: string): Promise<{ title: string; detail?: string; page?: string; note: string }[]>
+  /** Ranger un document dans les documents de référence ; rend sa nouvelle fiche. */
+  toReferences?(record: string): Promise<string | null>
   /** Retirer un fantôme (sa note mise de côté ; le document reste). */
   removeGhost(path: string): Promise<void>
   /** Déplacer un document (le choix du lieu) ; rend le nouveau chemin de sa fiche, ou null. */
@@ -269,7 +274,7 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
   const groupOf = docGrouping === 'repertoire' ? directoryGroupOf(t, place.directory) : docGroupOf(deps, docGrouping)
   return {
     breadcrumb: top.breadcrumb,
-    title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : deps.places.shelves().length > 1 ? place.shelf.name : t('bibliotheque.page.title'),
+    title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : severalShelves(deps.places.shelves()) || place.shelf.reference ? place.shelf.name : t('bibliotheque.page.title'),
     ...(param ? { back: { id: 'back', label: t('bibliotheque.back.up'), run: () => deps.showPage?.(place.directory ? placePageOf(LIBRARY_PAGE, { shelf: place.shelf.id, directory: place.directory.split('/').slice(0, -1).join('/') }) : HUB_PAGE) } } : {}),
     subtitle: t('bibliotheque.page.subtitle', { folder: top.folder }) + top.note,
     // Des fichiers glissés-déposés sur la page : versés là où l'on est.
@@ -386,6 +391,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   if (!doc) return { title: t('bibliotheque.doc.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.doc.missing') }] }
   const present = await deps.exists(doc.file)
   const ghosts = await deps.store.ghostsOf(doc)
+  // Un document de référence : qui l'appelle (programmes, projets).
+  const isReference = doc.shelf === REFERENCE_SHELF
+  const callers = (await deps.callers?.(doc.record)) ?? []
   // Un émetteur de la liste : son code et son nom.
   const issuers = await deps.issuers()
   const outsideType = deps.pieceTypeOutside(doc.category)
@@ -774,7 +782,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   return {
     title: doc.title,
     back,
-    subtitle: [t(`bibliotheque.family.${doc.family}`), doc.category].filter(Boolean).join(' · '),
+    subtitle: [isReference ? `★ ${t('bibliotheque.references.star')}` : '', t(`bibliotheque.family.${doc.family}`), doc.category].filter(Boolean).join(' · '),
     actions: [
       ...(present ? [{ id: 'file', label: t('bibliotheque.doc.file'), icon: 'file' as const, primary: true, run: () => deps.openFile(doc.file) }] : []),
       { id: 'classify', label: t('bibliotheque.classify'), icon: 'edit', run: () => deps.classify(doc.record) },
@@ -787,6 +795,20 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         icon: 'folder',
         run: moveDoc
       },
+      ...(!isReference && deps.toReferences
+        ? [
+            {
+              id: 'to-references',
+              label: t('bibliotheque.references.toReferences'),
+              tooltip: t('bibliotheque.references.toReferences.tip'),
+              icon: 'star' as const,
+              run: async () => {
+                const moved = await deps.toReferences!(doc.record)
+                if (moved && moved !== doc.record) deps.showPage?.(docPageOf(moved))
+              }
+            }
+          ]
+        : []),
       { id: 'note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) },
       {
         id: 'aside',
@@ -852,6 +874,22 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         ]
       }),
       fold('origines', t('bibliotheque.section.origins', { count: origins.length }), originText(t, doc), 'upload', { kind: 'list', items: origins, empty: t('bibliotheque.origins.none') }),
+      // Qui l'appelle : toujours pour un document de référence ; pour un autre, s'il est appelé.
+      ...(isReference || callers.length
+        ? [
+            fold('appels', t('bibliotheque.section.callers', { count: callers.length }), callers.map((each) => each.title).join(' · ') || t('bibliotheque.callers.none'), 'link', {
+              kind: 'list',
+              intro: [t('bibliotheque.callers.hint')],
+              items: callers.map((caller) => ({
+                id: caller.note,
+                title: caller.title,
+                ...(caller.detail ? { detail: caller.detail } : {}),
+                open: { id: 'open', label: t('bibliotheque.callers.open'), run: () => (caller.page && deps.showPage ? deps.showPage(caller.page) : deps.showNote(caller.note)) }
+              })),
+              empty: t('bibliotheque.callers.none')
+            })
+          ]
+        : []),
       ...(ghosts.length
         ? [
             fold('fantomes', t('bibliotheque.section.ghosts', { count: ghosts.length }), ghosts.map(({ ghost }) => placeLabel(deps.places, ghost)).join(' · '), 'copy', {

@@ -99,7 +99,8 @@ describe('les fantômes de la bibliothèque', () => {
       cancel: 'Ne rien faire'
     })
     expect(await platform.fs.exists('Bibliothèque/ECSS-E-ST-10C.md')).toBe(false)
-    // Placer un fantôme ici.
+    // Placer un fantôme ici (puis le laisser où il est, pas dans les références).
+    platform.confirmations.push(true, false)
     await dropAgain()
     expect(read(platform, 'Bibliothèque/ECSS-E-ST-10C.md')).toMatch(
       /^---\nbp-type: bibliotheque-fantome\nde: "\[\[Bibliothèque\/Normes\/ECSS-E-ST-10C\.md\]\]"\ntitre: ECSS-E-ST-10C\nempreinte: "[0-9a-f]{64}"\n---\n\nFantôme : le document \[\[Bibliothèque\/Normes\/ECSS-E-ST-10C\.md\|ECSS-E-ST-10C\]\] est rangé dans « Normes » de la bibliothèque\.\n$/
@@ -118,6 +119,7 @@ describe('les fantômes de la bibliothèque', () => {
     const platform = memoryPlatform()
     const { page, shown, dropAgain } = await start(platform)
     await filedInNormes(platform, page)
+    platform.confirmations.push(true, false)
     await dropAgain()
     const root = await page('bibliotheque.documents').load()
     expect(root.blocks.find((block) => block.kind === 'cards' && block.title?.startsWith('Aussi ici'))).toMatchObject({ title: 'Aussi ici, rangés ailleurs (1 fantôme(s))' })
@@ -145,6 +147,7 @@ describe('les fantômes de la bibliothèque', () => {
     const { page, dropAgain } = await start(platform)
     await filedInNormes(platform, page)
     await platform.fs.ensureFolder('Bibliothèque/Archives')
+    platform.confirmations.push(true, false)
     await dropAgain()
     const fiche = async () => page('bibliotheque.document').load(encodeURIComponent((await platform.fs.exists('Bibliothèque/Normes/ECSS-E-ST-10C.md')) ? 'Bibliothèque/Normes/ECSS-E-ST-10C.md' : 'Bibliothèque/Archives/ECSS-E-ST-10C.md'))
     platform.choices.push('Bibliothèque/Archives')
@@ -158,6 +161,7 @@ describe('les fantômes de la bibliothèque', () => {
     expect(read(platform, 'Bibliothèque/ECSS-E-ST-10C.md')).toMatch(/^---\nbp-type: bibliotheque-document\n/)
     expect(await platform.fs.exists('Bibliothèque/_retirés/ECSS-E-ST-10C.md')).toBe(true)
     // Un nouveau fantôme dans « Normes », puis le document retiré : le fantôme part avec lui.
+    platform.confirmations.push(true, false)
     await dropAgain('Normes')
     expect(await platform.fs.exists('Bibliothèque/Normes/ECSS-E-ST-10C.md')).toBe(true)
     const doc = await page('bibliotheque.document').load(encodeURIComponent('Bibliothèque/ECSS-E-ST-10C.md'))
@@ -183,8 +187,9 @@ describe('les fantômes de la bibliothèque', () => {
     const platform = memoryPlatform()
     const { page, dropAgain } = await start(platform, [lectureFichiersModule, bibliothequeModule])
     await filedInNormes(platform, page)
+    platform.confirmations.push(true, false)
     await dropAgain()
-    expect(platform.confirmed.at(-1)?.title).toBe('Déjà dans la bibliothèque')
+    expect(platform.confirmed.at(-2)?.title).toBe('Déjà dans la bibliothèque')
     expect(await platform.fs.exists('Bibliothèque/ECSS-E-ST-10C.md')).toBe(true)
   })
 

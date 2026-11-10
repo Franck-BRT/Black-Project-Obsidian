@@ -65,6 +65,16 @@ export interface HomeDeps {
   linkDocument(project: string, phase: string, index: number): Promise<void>
   editTypeSpan(type: string, span: string): Promise<void>
   removeTypeSpan(type: string, span: string): Promise<void>
+  /** La bibliothèque est-elle là (sans elle, pas de documents de référence) ? */
+  referencesAvailable?(): boolean
+  /** Un document de la bibliothèque, par sa fiche ; `null` s'il n'y est plus (ou sans la bibliothèque). */
+  referenceDoc?(record: string): Promise<{ title: string; detail: string; reference: boolean } | null>
+  /** Choisir les documents de référence d'un programme ou d'un projet (sa note). */
+  chooseReferences?(path: string): Promise<void>
+  /** Ne plus appeler un document de référence. */
+  removeReference?(path: string, record: string): Promise<void>
+  /** Ouvrir la fiche d'un document de la bibliothèque. */
+  showReference?(record: string): void
 }
 
 /** Le nom d'une sorte de phase. */
@@ -265,9 +275,47 @@ async function programmePage(deps: HomeDeps, param?: string): Promise<PageView> 
     ],
     blocks: [
       { kind: 'stats', stats },
-      ...(journeys.length ? journeys : [{ kind: 'message' as const, tone: 'info' as const, text: t('programmes.programme.empty'), actions: [{ id: 'first', label: t('programmes.project.new'), icon: 'plus' as const, primary: true, run: () => deps.newProject(programme.path) }] }])
+      ...(journeys.length ? journeys : [{ kind: 'message' as const, tone: 'info' as const, text: t('programmes.programme.empty'), actions: [{ id: 'first', label: t('programmes.project.new'), icon: 'plus' as const, primary: true, run: () => deps.newProject(programme.path) }] }]),
+      ...(await referencesSection(deps, programme, 'programme'))
     ]
   }
+}
+
+/**
+ * Les **documents de référence** d'un programme ou d'un projet : ceux qu'il appelle, rangés
+ * dans la bibliothèque des documents de référence ; les choisir, en retirer un, ouvrir sa fiche.
+ * Rien sans la bibliothèque.
+ */
+async function referencesSection(deps: HomeDeps, owner: { path: string; references: readonly string[] }, kind: 'programme' | 'projet'): Promise<HomeBlock[]> {
+  const { t } = deps
+  if (!deps.referenceDoc || !deps.chooseReferences || deps.referencesAvailable?.() === false) return []
+  const items: ListItem[] = []
+  for (const record of owner.references) {
+    const doc = await deps.referenceDoc(record)
+    const name = record.slice(record.lastIndexOf('/') + 1).replace(/\.md$/, '')
+    items.push({
+      id: record,
+      title: doc?.title ?? name,
+      detail: doc ? [doc.detail, doc.reference ? '' : t('programmes.refs.outside')].filter(Boolean).join(' · ') || t('programmes.refs.noDetail') : t('programmes.refs.gone'),
+      ...(doc ? {} : { tone: 'warning' as const }),
+      ...(doc && deps.showReference ? { open: { id: 'open', label: t('programmes.refs.open'), run: () => deps.showReference!(record) } } : {}),
+      ...(deps.removeReference ? { tools: [{ id: `remove-${record}`, label: t('programmes.refs.remove'), icon: 'cross' as const, run: () => deps.removeReference!(owner.path, record) }] } : {})
+    })
+  }
+  const choose: ViewAction = { id: 'choose-references', label: t('programmes.refs.choose'), tooltip: t(`programmes.refs.choose.${kind}.tip`), icon: 'star', run: () => deps.chooseReferences!(owner.path) }
+  return [
+    {
+      kind: 'section',
+      id: `programmes.${kind}.references`,
+      title: t('programmes.refs.title'),
+      subtitle: t('programmes.refs.count', { count: items.length }),
+      icon: 'star',
+      blocks: [
+        { kind: 'message', tone: 'info', text: t(items.length ? `programmes.refs.intro.${kind}` : `programmes.refs.none.${kind}`), actions: [{ ...choose, ...(items.length ? {} : { primary: true }) }] },
+        ...(items.length ? [{ kind: 'list' as const, items }] : [])
+      ]
+    }
+  ]
 }
 
 // ── Un projet ───────────────────────────────────────────────────────────────────────
@@ -332,7 +380,8 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
         subtitle: t('programmes.project.affaires', { count: affaires.length }),
         icon: 'building',
         blocks: affaireCards.length ? [{ kind: 'cards', cards: affaireCards }] : [{ kind: 'message', tone: 'info', text: t('programmes.affaire.none'), actions: [{ id: 'first', label: t('programmes.affaire.new'), icon: 'plus', run: () => deps.newAffaire(project.path) }] }]
-      }
+      },
+      ...(await referencesSection(deps, project, 'projet'))
     ]
   }
 }

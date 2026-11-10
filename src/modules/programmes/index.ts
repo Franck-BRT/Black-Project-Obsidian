@@ -9,7 +9,7 @@
  */
 
 import { localToday } from '../../core/dates'
-import { canCreatePieceType, createPieceType, libraryPieceTypes, pieceTypeText } from '../bibliotheque'
+import { canCreatePieceType, chooseReferenceDocuments, createPieceType, libraryActive, libraryDocPage, libraryDocument, libraryPieceTypes, pieceTypeText, registerReferenceCallers } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
 import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
@@ -46,6 +46,8 @@ const folderField: TextField = {
 }
 
 let active: { store: ProgrammeStore } | null = null
+/** Ce qui oublie les appels de documents de référence déclarés à la bibliothèque. */
+let stopCallers: (() => void) | null = null
 
 /** Les programmes, pour les autres modules ; `null` sans le module. */
 export const programmesStore = (): ProgrammeStore | null => active?.store ?? null
@@ -54,7 +56,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.5.0',
+  version: '0.6.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -403,10 +405,42 @@ export const programmesModule: BlackModule = {
       return values ? { name: (values.name ?? '').trim(), description: (values.description ?? '').trim() } : null
     }
 
+    // Les documents de référence : choisis dans la bibliothèque, écrits dans la note ; la fiche d'un document dit qui l'appelle.
+    const chooseReferences = async (path: string): Promise<void> => {
+      const owner = (await store.programme(path)) ?? (await store.project(path))
+      if (!owner) return
+      const chosen = await chooseReferenceDocuments(t('programmes.refs.choose.title', { name: owner.name }), owner.references)
+      if (!chosen) return
+      await store.setReferences(path, chosen)
+      notify(t('programmes.refs.saved', { name: owner.name, count: chosen.length }), 5000)
+      changed()
+    }
+    const removeReference = async (path: string, record: string): Promise<void> => {
+      const owner = (await store.programme(path)) ?? (await store.project(path))
+      if (!owner) return
+      await store.setReferences(path, owner.references.filter((each) => each !== record))
+      notify(t('programmes.refs.removed', { name: owner.name }), 5000)
+      changed()
+    }
+    stopCallers?.()
+    stopCallers = registerReferenceCallers({
+      callers: async (record) =>
+        (await store.callersOf(record)).map((owner) =>
+          'phases' in owner
+            ? { title: owner.name, detail: t('programmes.refs.caller.project', { type: owner.typeName }), page: projectPageOf(owner.path), note: owner.path }
+            : { title: owner.name, detail: t('programmes.refs.caller.programme'), page: programmePageOf(owner.path), note: owner.path }
+        ),
+      moved: async (from, to) => void (await store.referenceMoved(from, to))
+    })
     registerProgrammesHome(views ?? { home: () => undefined, nav: () => undefined, tile: () => undefined, page: () => undefined }, {
       t,
       store,
       types,
+      referencesAvailable: () => libraryActive(),
+      referenceDoc: (record) => libraryDocument(record),
+      chooseReferences,
+      removeReference,
+      ...(context.showPage ? { showReference: (record: string) => context.showPage?.(libraryDocPage(record)) } : {}),
       ...(context.showPage ? { showPage: (page: string) => context.showPage?.(page) } : {}),
       openNote: (path) => (context.showNote ? context.showNote(path) : ui.openNote(path)),
       newProgramme: async () => void (await newProgramme()),
@@ -550,5 +584,7 @@ export const programmesModule: BlackModule = {
   },
   deactivate() {
     active = null
+    stopCallers?.()
+    stopCallers = null
   }
 }

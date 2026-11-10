@@ -5,13 +5,30 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.40.1 (Black Projects 0.119.1) |
+| Version | 0.41.0 (Black Projects 0.121.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les documents de référence (v0.41.0, Black Projects 0.121.0)
+
+- **Une bibliothèque de documents à part, toujours là** : `REFERENCE_SHELF` (`references`),
+  son dossier réglé par `dossierReferences` (`Bibliothèque/Références` d'origine), donnée par
+  `shelvesOf` après la principale (`Shelf.reference`). Elle ne se retire pas, n'est pas « par
+  défaut », et ne compte pas pour dire qu'il y a plusieurs bibliothèques (`severalShelves`) :
+  avec la seule principale, les lieux se disent toujours sans son nom. Dans le dossier de la
+  principale, elle n'en est pas parcourue (la bibliothèque d'un chemin : la plus profonde,
+  `shelfOfPath`). Sa carte sur l'accueil de la bibliothèque ; ★ et `Appelé par` sur la fiche.
+- **Ranger dans les références** (fiche) : `store.move`, puis un fantôme à l'ancienne place.
+- **Doublon** : dans `offerGhost`, après le fantôme placé (en mode « demander »), « Un document de
+  référence ? » ; versé dans les références même, la proposition vient d'abord (sans fantôme).
+- **Interface publique** : `referenceDocuments()`, `libraryDocument(record)`, `libraryDocPage`,
+  `chooseReferenceDocuments(title, current)` (cocher ; verser un nouveau d'ici),
+  `registerReferenceCallers({ callers, moved })` — par lequel le module Programmes dit qui appelle
+  un document, et suit une fiche déplacée (`recordMoved`, à chaque déplacement).
 
 ## La lecture en cours, sur la fiche (v0.40.1, Black Projects 0.119.1)
 
