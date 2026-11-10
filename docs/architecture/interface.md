@@ -262,7 +262,8 @@ coché.
 Un bloc `markdown` (`{ kind: 'markdown', text, title?, empty? }`) montre du Markdown **mis en
 forme** — titres, listes, tableaux, citations, code ; gras, italique — par `src/ui/markdown.tsx` :
 réduit et sûr (le texte devient des éléments, jamais du HTML injecté ; un lien, son texte). Le
-texte extrait d'un document s'y lit. Un bouton (`ViewAction`) peut être **grisé** (`disabled`, son infobulle dit pourquoi). Un module
+texte extrait d'un document s'y lit, sur **toute la largeur de la page** (elle suit celle de la
+fenêtre ; la comparaison de deux versions aussi). Un bouton (`ViewAction`) peut être **grisé** (`disabled`, son infobulle dit pourquoi). Un module
 dont les pages changent sans que le coffre bouge (une lecture par l'IA qui avance) le dit par
 `views.changed()` : les pages ouvertes se redessinent (`ViewsRegistry.onChanged`, écouté par
 l'hôte).

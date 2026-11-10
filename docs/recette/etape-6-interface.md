@@ -70,6 +70,11 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le texte extrait sur toute la largeur (v0.114.1)
+
+- [ ] La section **Texte extrait** d'une fiche : le texte va jusqu'au bord droit de la page ;
+      élargir ou rétrécir l'onglet, il suit ; **Comparer** deux versions, de même
+
 ## Le texte extrait sans balises (v0.114.0)
 
 - [ ] Un texte extrait (relu par la vision) qui contient `<br>`, `\square`, `\boxtimes`,

@@ -396,12 +396,13 @@ button.bp-journey-tile:focus-visible { outline: 3px solid var(--bp-focus); outli
 .bp-message-body { color: var(--bp-text); flex: 1; }
 .bp-message-body .bp-actions { margin-top: 10px; }
 .bp-empty { color: var(--bp-text-muted); padding: 8px 0; margin: 0; }
-.bp-diff { display: flex; flex-direction: column; gap: 6px; max-width: 90ch; }
+.bp-diff { display: flex; flex-direction: column; gap: 6px; }
 .bp-diff > * { display: block; margin: 0; padding: 6px 10px; border-radius: var(--bp-radius-small); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; text-decoration: none; }
 .bp-diff-same { color: var(--bp-text-muted); }
 .bp-diff-removed { background: var(--bp-danger-soft); border-left: 3px solid var(--bp-danger); text-decoration: line-through; }
 .bp-diff-added { background: var(--bp-success-soft); border-left: 3px solid var(--bp-success); }
-.bp-md { max-width: 80ch; line-height: 1.6; overflow-wrap: anywhere; }
+/* Le texte extrait prend toute la largeur de la page (il suit celle de la fenêtre). */
+.bp-md { line-height: 1.6; overflow-wrap: anywhere; }
 .bp-md > :first-child { margin-top: 0; }
 .bp-md h1, .bp-md h2, .bp-md h3, .bp-md h4, .bp-md h5, .bp-md h6 { margin: 1.1em 0 0.4em; line-height: 1.3; }
 .bp-md h1 { font-size: 1.4em; }

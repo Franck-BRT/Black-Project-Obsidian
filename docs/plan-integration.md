@@ -632,6 +632,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.113.0 : **plus d'icônes** (61, rangées par nom) ; la frappe au clavier dans les listes à aperçus
 - v0.114.0 : le **texte extrait sans balises** : le HTML d'une lecture (`<br>`, `<table>`, entités…) et
   les symboles LaTeX (`\square`, `\boxtimes`…) mis en forme ; MathJax chargé au démarrage
+- v0.114.1 : le texte extrait (et la comparaison des versions) sur **toute la largeur** de la page
 
 ### Étape 7 — Livrables
 
