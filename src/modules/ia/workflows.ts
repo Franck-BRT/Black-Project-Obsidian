@@ -12,7 +12,8 @@ import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReading
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
-import { LlmError } from './protocol'
+import { proofreadDocument, readWithVision, VisionRefused, type ReadingContext, type VisionReading } from './documentReading'
+import { markImagesRefused, qualityLabel, visionModelOf } from './reading'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -198,156 +199,6 @@ export function readTagsAnswer(answer: unknown, text: string, known: readonly st
   return kept.length ? [...new Set(kept)].slice(0, MAX_AI_TAGS) : null
 }
 
-/** La taille d'un morceau de texte relu à la fois (en caractères) : qu'il tienne, avec sa réponse, dans le modèle. */
-export const PROOFREAD_CHUNK = 6000
-
-/** Le texte en morceaux, coupés entre deux paragraphes (un paragraphe trop long : seul). */
-export function proofreadChunks(text: string, size = PROOFREAD_CHUNK): string[] {
-  const chunks: string[] = []
-  let current = ''
-  for (const paragraph of text.split(/\n{2,}/)) {
-    if (current && current.length + paragraph.length + 2 > size) {
-      chunks.push(current)
-      current = ''
-    }
-    current = current ? `${current}\n\n${paragraph}` : paragraph
-  }
-  if (current.trim()) chunks.push(current)
-  return chunks
-}
-
-/**
- * Un morceau relu par l'IA, gardé s'il reste le même texte : ni résumé ni allongé (sa longueur,
- * sans les blancs, entre 60 % et 160 % de l'original) ; sinon `null` — l'original reste. Les
- * clôtures de code dont elle l'entoure parfois sont ôtées.
- */
-export function readProofread(answer: string, original: string): string | null {
-  const text = answer
-    .trim()
-    .replace(/^```(?:markdown|md)?\s*\n/i, '')
-    .replace(/\n```\s*$/, '')
-    .trim()
-  const weight = (value: string) => value.replace(/\s+/g, '').length
-  if (!text || !weight(original)) return null
-  const ratio = weight(text) / weight(original)
-  return ratio >= 0.6 && ratio <= 1.6 ? text : null
-}
-
-/**
- * Le modèle qui regarde les images, **réglé exprès** : pour lire un scan, celui d'OCR sinon celui
- * de vision ; pour relire avec la vision, celui de vision sinon celui d'OCR. Jamais celui
- * d'analyse : il ne voit pas, souvent, et le serveur refuse les images. Vide : aucun.
- */
-export function visionModelOf(client: AiClient, use: 'vision' | 'ocr'): string {
-  const vision = client.connection.visionModel.trim()
-  const ocr = client.connection.ocrModel.trim()
-  // Sinon celui d'analyse, comme le module de gestion de projet : bien des modèles récents voient.
-  const text = client.connection.model.trim()
-  return use === 'ocr' ? ocr || vision || text : vision || ocr || text
-}
-
-/**
- * Les modèles dont le serveur a refusé les images (« … is not a multimodal model ») : on ne
- * les leur montre plus, jusqu'au prochain démarrage — un scan versé n'échoue pas à chaque fois.
- */
-const imagesRefusedBy = new Set<string>()
-
-/** Le serveur a-t-il refusé les images pour ce modèle ? */
-export const imagesRefused = (model: string): boolean => imagesRefusedBy.has(model)
-
-/** Pour les tests : oublier les refus. */
-export const forgetImageRefusals = (): void => imagesRefusedBy.clear()
-
-/** Une erreur qui dit que le modèle ne prend pas d'images (une requête refusée, 400, qui parle d'image ou de multimodal). */
-export function refusesImages(error: unknown): boolean {
-  if (!(error instanceof LlmError) || error.kind !== 'http' || (error.status ?? 0) >= 500) return false
-  return /multi-?modal|image|vision|does not support (image|vision)/i.test(error.message)
-}
-
-/** Le serveur refuse les images de ce modèle : la lecture s'arrête là. */
-class ImagesRefused extends Error {
-  constructor(override readonly cause: unknown) {
-    super('images refused')
-  }
-}
-
-const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
-
-/** Les fichiers qu'un modèle de vision peut regarder : les images, et les PDF quand la plateforme sait dessiner leurs pages. */
-export function visionReadable(file: string, canDrawPdf: boolean): boolean {
-  const extension = file.slice(file.lastIndexOf('.') + 1).toLowerCase()
-  return isImage(extension) || (extension === 'pdf' && canDrawPdf)
-}
-
-/**
- * Ce qu'un modèle de vision a lu d'une page : sans les clôtures de code ; s'il y avait un texte
- * extrait de la page, une réponse bien plus courte (moins de la moitié) le garde — elle en a
- * perdu. Vide : `null`.
- */
-export function readVisionPage(answer: string, pageText: string): string | null {
-  const text = answer
-    .trim()
-    .replace(/^```(?:markdown|md)?\s*\n/i, '')
-    .replace(/\n```\s*$/, '')
-    .trim()
-  if (!text) return null
-  const weight = (value: string) => value.replace(/\s+/g, '').length
-  return pageText && weight(text) < weight(pageText) * 0.5 ? null : text
-}
-
-/** Où une réponse **boucle** : là où la répétition commence, et jusqu'où garder (une fois le motif). */
-export interface RepetitionLoop {
-  /** L'index, dans la réponse, où la répétition commence. */
-  start: number
-  /** Ce qui se garde : ce qui précède, et le motif une fois (`text.slice(0, keep)`). */
-  keep: number
-  /** Le motif répété, et combien de fois. */
-  unit: string
-  times: number
-}
-
-/**
- * Une réponse qui **boucle** : le modèle répète le même passage, encore et encore, jusqu'à la
- * limite de longueur (« ≤ 100 Ω des prises de courant ≤ 100 Ω des prises de courant… »). Le
- * même motif — de 4 à 400 caractères, au moins 4 lettres ou chiffres (des « | | | » ou des
- * points de conduite n'en sont pas) —, répété jusqu'à la fin, les espaces comptés comme un
- * seul : 8 fois et 600 caractères ; dans une réponse coupée par la limite (`cut`), 4 fois et
- * 200. `null` : elle ne boucle pas.
- */
-export function repetitionLoop(text: string, cut = false): RepetitionLoop | null {
-  // Les espaces (sauts de ligne compris) comptés comme un seul ; `at` : d'où vient chaque caractère.
-  let flat = ''
-  const at: number[] = []
-  for (let index = 0; index < text.length; index++) {
-    const char = text[index]!
-    if (/\s/.test(char)) {
-      if (flat.endsWith(' ')) continue
-      flat += ' '
-    } else flat += char
-    at.push(index)
-  }
-  while (flat.endsWith(' ')) {
-    flat = flat.slice(0, -1)
-    at.pop()
-  }
-  const length = flat.length
-  const least = cut ? { times: 4, covered: 200 } : { times: 8, covered: 600 }
-  if (length < least.covered) return null
-  const floor = Math.max(0, length - 40_000)
-  for (let period = 4; period <= 400 && period * least.times <= length - floor; period++) {
-    // Depuis la fin, tant que chaque caractère est celui d'un motif plus tôt : la boucle.
-    let index = length - 1
-    while (index - period >= floor && flat[index] === flat[index - period]) index--
-    const start = index + 1 - period
-    const covered = length - start
-    if (covered < least.covered || covered / period < least.times) continue
-    const unit = flat.slice(start, start + period)
-    if ((unit.match(/[\p{L}\p{N}]/gu) ?? []).length < 4) continue
-    return { start: at[start]!, keep: (at[start + period - 1] ?? text.length - 1) + 1, unit: unit.trim(), times: Math.floor(covered / period) }
-  }
-  return null
-}
-
 export function registerIaWorkflows(client: () => AiClient | null, fs: () => FileSystem, t: Translate, describe: (error: unknown) => string, pages: () => PageImages | undefined = () => undefined): void {
   /**
    * **Relire le texte extrait** d'un document avec l'IA : vérifier sa cohérence, le remettre
@@ -368,8 +219,9 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
         labelKey: 'ia.wf.field.proofreadMode',
         tooltipKey: 'ia.wf.field.proofreadMode.tip',
         kind: 'choice',
-        defaultValue: 'texte',
+        defaultValue: 'auto',
         options: [
+          { value: 'auto', labelKey: 'ia.wf.proofreadMode.auto' },
           { value: 'texte', labelKey: 'ia.wf.proofreadMode.texte' },
           { value: 'vision', labelKey: 'ia.wf.proofreadMode.vision' }
         ]
@@ -405,167 +257,73 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
             ...(fields.persona?.trim() ? { persona: fields.persona.trim() } : {}),
             ...(fields.skill?.trim() ? { skill: fields.skill.trim() } : {})
           }
-          // Le mode : celui choisi sur la fiche (« Relire avec l'IA »), sinon celui de l'étape ; un
-          // document sans texte (un scan, une image) ne se lit qu'avec la vision.
+          // Le mode : celui choisi sur la fiche (« Relire avec l'IA »), sinon celui de l'étape ; d'origine,
+          // la vision quand le fichier se montre en images (un PDF dessiné, une image), le texte sinon ;
+          // un document sans texte (un scan, une image) ne se lit qu'avec la vision.
           const text = doc.reading === 'lue' ? ((await libraryTranscript(record)) ?? '').trim() : ''
-          const mode = !text ? 'vision' : (vars.relecture || fields.mode || 'texte').trim() === 'vision' ? 'vision' : 'texte'
+          const asked = (vars.relecture || fields.mode || 'auto').trim()
+          const seen = asked === 'texte' && text ? null : await pageImages(doc.file)
+          const mode = !text || asked === 'vision' || (asked !== 'texte' && seen?.pages) ? 'vision' : 'texte'
+          const context: ReadingContext = {
+            t,
+            title: doc.title,
+            notify: (message, ms) => notifier.notify(message, ms),
+            progress: (detail) => aiReadingProgress(record, doc.title, detail),
+            describe,
+            ...(guidance?.trim() ? { guidance } : {})
+          }
+          const quality = (value: number | null) => (value === null ? '' : t('ia.wf.read.quality', { quality: qualityLabel(value) }))
+          const done = (key: string, values: Record<string, string | number>, extra: string[]) => {
+            const lines = [t(key, values), ...extra].filter(Boolean)
+            for (const line of lines) notifier.notify(line, 12000)
+            return { lines, results: { text: lines.join(' ') } }
+          }
           if (mode === 'vision') {
-            const seen = await pageImages(doc.file)
             if (!seen) return text ? say('ia.wf.vision.cannotProofread', { title: doc.title }) : say('ia.wf.vision.cannot', { title: doc.title })
             try {
               if (!seen.pages) return say('ia.wf.vision.noPage', { title: doc.title })
               // Un modèle qui voit, réglé exprès : celui d'analyse, souvent, ne lit pas les images (le serveur refuse).
-              const model = visionModelOf(base, text ? 'vision' : 'ocr')
+              const model = visionModelOf(base, 'vision')
               if (!model) return say('ia.wf.vision.noModel', { title: doc.title })
-              const count = seen.pages
-              notifier.notify(t(text ? 'ia.wf.vision.startProofread' : 'ia.wf.vision.start', { title: doc.title, pages: count, model }), 8000)
-              const out: string[] = []
-              let kept = 0
-              let failed = 0
-              // Les pages où le modèle a bouclé deux fois ; celles dont on a gardé le début.
-              let looped = 0
-              let salvaged = 0
-              for (let index = 0; index < count; index++) {
-                const image = await seen.image(index)
-                if (index > 0) notifier.notify(t('ia.wf.vision.progress', { title: doc.title, page: index + 1, pages: count }), 5000)
-                aiReadingProgress(record, doc.title, t('ia.reading.page', { page: index + 1, pages: count }))
-                const pageText = text ? (seen.texts?.[index] ?? '') : ''
-                const ask = [t('ia.wf.vision.page', { page: index + 1, pages: seen.pages }), pageText ? `${t('ia.wf.vision.pageText')}\n\n${pageText}` : t(text ? 'ia.wf.vision.pageNoText' : 'ia.wf.vision.pageRead')].join('\n\n')
-                // Un seul message, la consigne puis l'image, sans message système : la forme que
-                // tous les modèles qui voient acceptent (certains refusent un message système à
-                // côté d'une image). La place d'une page entière écrite : 4 096 jetons au moins.
-                const asking = (again: boolean) => ({
-                  model,
-                  messages: [{ role: 'user' as const, content: [{ type: 'text' as const, text: [guidance?.trim(), t('ia.wf.vision.system'), again ? t('ia.wf.loop.again') : '', ask].filter(Boolean).join('\n\n') }, { type: 'image_url' as const, image_url: { url: image } }] }],
-                  // Relancée après une boucle : un peu de hasard, pour qu'elle ne reprenne pas le même chemin.
-                  temperature: again ? 0.3 : 0,
-                  maxTokens: Math.max(base.connection.maxTokens, 4096)
-                })
-                const readOnce = async (again: boolean): Promise<{ text: string; finish: string } | { error: unknown }> => {
-                  let last: unknown = null
-                  // Une page qui échoue est redemandée, deux fois, un moment après — sauf un refus du serveur (4xx), qui ne changera pas.
-                  for (let attempt = 0; attempt < 3; attempt++) {
-                    if (attempt) await pause(attempt * 2000)
-                    try {
-                      return await base.reply(asking(again))
-                    } catch (error) {
-                      last = error
-                      if (refusesImages(error)) throw new ImagesRefused(error)
-                      if (error instanceof LlmError && error.kind === 'http' && (error.status ?? 500) < 500) break
-                    }
-                  }
-                  return { error: last }
-                }
-                let first: Awaited<ReturnType<typeof readOnce>>
-                try {
-                  first = await readOnce(false)
-                } catch (error) {
-                  if (!(error instanceof ImagesRefused)) throw error
-                  imagesRefusedBy.add(model)
-                  return say('ia.wf.vision.refused', { title: doc.title, model, reason: describe(error.cause) })
-                }
-                if ('error' in first) {
-                  failed++
-                  // Une page non lue : son texte extrait garde sa place (ou la page est dite), la lecture continue.
-                  out.push(pageText || `*${t('ia.wf.vision.pageFailed', { page: index + 1, reason: describe(first.error) })}*`)
-                  continue
-                }
-                let answer = first.text
-                let loop = repetitionLoop(answer, first.finish === 'length')
-                if (loop) {
-                  // Le modèle a bouclé : la page relue une deuxième fois, autrement.
-                  notifier.notify(t('ia.wf.vision.loopRetry', { title: doc.title, page: index + 1 }), 6000)
-                  const second = await readOnce(true).catch(() => ({ error: null }))
-                  if (!('error' in second)) {
-                    const again = repetitionLoop(second.text, second.finish === 'length')
-                    // Relue sans boucle : elle ; bouclée encore, celle qui en garde le plus.
-                    if (!again || again.keep > loop.keep) {
-                      answer = second.text
-                      loop = again
-                    }
-                  }
-                }
-                if (loop) {
-                  looped++
-                  // Bouclée deux fois : ce qui précède la boucle, s'il dit assez ; sinon le texte extrait
-                  // de la page ; sinon, la page dite mal lue — le texte le montre, à sa place.
-                  // Une réponse qui n'est que la boucle (rien d'autre avant elle) n'a rien à garder.
-                  const said = (answer.slice(0, loop.start).match(/[\p{L}\p{N}]/gu) ?? []).length >= 10
-                  const before = said ? readVisionPage(answer.slice(0, loop.keep), pageText) : null
-                  if (before) salvaged++
-                  out.push(before ? `${before}\n\n*${t('ia.wf.vision.pageLooped', { page: index + 1 })}*` : pageText || `*${t('ia.wf.vision.pageLoopedNothing', { page: index + 1 })}*`)
-                  continue
-                }
-                const read = readVisionPage(answer, pageText)
-                if (read === null) kept++
-                out.push(read ?? pageText)
+              notifier.notify(t(text ? 'ia.wf.vision.startProofread' : 'ia.wf.vision.start', { title: doc.title, pages: seen.pages, model }), 8000)
+              let read: VisionReading
+              try {
+                read = await readWithVision(base, seen, model, base.connection.ocrModel.trim(), context)
+              } catch (error) {
+                if (!(error instanceof VisionRefused)) throw error
+                markImagesRefused(model)
+                return say('ia.wf.vision.refused', { title: doc.title, model, reason: error.reason })
               }
-              // Aucune page lue : l'erreur du serveur, telle quelle.
-              if (failed === count) throw new Error(t('ia.wf.vision.allFailed', { title: doc.title, model }))
-              // Rien de lu que des boucles : une erreur, et le texte d'avant reste celui de la fiche.
-              if (looped && looped + failed === count && !salvaged) throw new Error(t('ia.wf.vision.allLooped', { title: doc.title, model }))
-              const loopedSays = looped ? t('ia.wf.vision.looped', { title: doc.title, count: looped, pages: count, model }) : ''
-              if (loopedSays) notifier.notify(loopedSays, 20000)
-              const seenText = out.filter((part) => part.trim()).join('\n\n').trim()
-              if (!seenText) return say('ia.wf.vision.nothingRead', { title: doc.title })
-              if (text && seenText.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
-              const version = await addTextVersionByAi(record, seenText, { model, ...guided, vision: count, ...(kept ? { kept } : {}) })
+              if (!read.text) return say('ia.wf.vision.nothingRead', { title: doc.title })
+              if (text && read.text.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
+              const version = await addTextVersionByAi(record, read.text, { model, ...guided, vision: read.pages, ...(read.kept ? { kept: read.kept } : {}), ...(read.quality !== null ? { quality: read.quality } : {}) })
               if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
-              const done = say(text ? 'ia.wf.vision.doneProofread' : 'ia.wf.vision.done', { title: doc.title, number: version.number, pages: count })
-              return loopedSays ? { lines: [...done.lines, loopedSays], results: { text: `${done.results.text} ${loopedSays}` } } : done
+              return done(text ? 'ia.wf.vision.doneProofread' : 'ia.wf.vision.done', { title: doc.title, number: version.number, pages: read.pages }, [
+                quality(read.quality),
+                // Ce que la lecture a dû faire de plus, quand elle l'a fait.
+                ((said) => (said.length ? t('ia.wf.read.steps', { steps: said.join(' ; ') }) : ''))(
+                  [
+                    read.ocr ? t('ia.wf.read.step.ocr', { count: read.ocr }) : '',
+                    read.supplemented ? t('ia.wf.read.step.supplemented', { count: read.supplemented }) : '',
+                    read.corrected ? t('ia.wf.read.step.corrected', { count: read.corrected }) : '',
+                    read.removed.length ? t('ia.wf.read.step.removed', { count: read.removed.length }) : ''
+                  ].filter(Boolean)
+                ),
+                read.looped ? t('ia.wf.vision.looped', { title: doc.title, count: read.looped, pages: read.pages, model }) : ''
+              ])
             } finally {
               await seen.close()
             }
           }
-          const chunks = proofreadChunks(text)
-          notifier.notify(t('ia.wf.proofread.start', { title: doc.title, parts: chunks.length }), 8000)
-          const out: string[] = []
-          let kept = 0
-          // Les parties où le modèle a bouclé deux fois (gardées telles quelles).
-          let looped = 0
-          for (const [index, chunk] of chunks.entries()) {
-            if (index > 0) notifier.notify(t('ia.wf.proofread.progress', { title: doc.title, part: index + 1, parts: chunks.length }), 5000)
-            aiReadingProgress(record, doc.title, t('ia.reading.part', { part: index + 1, parts: chunks.length }))
-            const relire = async (again: boolean) => {
-              try {
-                return await ai.reply({
-                  messages: [
-                    { role: 'system', content: again ? `${t('ia.wf.proofread.system')}\n\n${t('ia.wf.loop.again')}` : t('ia.wf.proofread.system') },
-                    { role: 'user', content: chunks.length > 1 ? `${t('ia.wf.proofread.part', { part: index + 1, parts: chunks.length })}\n\n${chunk}` : chunk }
-                  ],
-                  temperature: again ? 0.3 : 0
-                })
-              } catch (error) {
-                throw new Error(describe(error))
-              }
-            }
-            let reply = await relire(false)
-            if (repetitionLoop(reply.text, reply.finish === 'length')) {
-              // Le modèle a bouclé : la partie relue une deuxième fois, autrement ; bouclée encore,
-              // elle reste telle quelle.
-              notifier.notify(t('ia.wf.proofread.loopRetry', { title: doc.title, part: index + 1 }), 6000)
-              reply = await relire(true)
-              if (repetitionLoop(reply.text, reply.finish === 'length')) {
-                looped++
-                kept++
-                out.push(chunk)
-                continue
-              }
-            }
-            const answer = reply.text
-            const read = readProofread(answer, chunk)
-            if (read === null) kept++
-            out.push(read ?? chunk)
-          }
-          const proofread = out.join('\n\n').trim()
-          if (looped) notifier.notify(t('ia.wf.proofread.looped', { title: doc.title, count: looped, parts: chunks.length }), 20000)
-          // Rien que des boucles : une erreur, le texte reste celui d'avant.
-          if (looped === chunks.length) throw new Error(t('ia.wf.proofread.allLooped', { title: doc.title, model: base.connection.model }))
-          if (kept === chunks.length) return say('ia.wf.proofread.allKept', { title: doc.title })
-          if (proofread.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
-          const version = await addTextVersionByAi(record, proofread, { model: base.connection.model, ...guided, ...(kept ? { kept } : {}) })
+          // Sans images : le texte extrait, nettoyé, remis en forme et vérifié partie par partie.
+          const pageTexts = doc.file.toLowerCase().endsWith('.pdf') ? await pdfPageTexts(new Uint8Array(await fs().readBinary(doc.file))).catch(() => undefined) : undefined
+          const read = await proofreadDocument(ai, base, text, pageTexts, context)
+          if (read.looped) notifier.notify(t('ia.wf.proofread.looped', { title: doc.title, count: read.looped, parts: read.parts }), 20000)
+          if (read.kept === read.parts && !read.removed) return say('ia.wf.proofread.allKept', { title: doc.title })
+          if (read.text.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
+          const version = await addTextVersionByAi(record, read.text, { model: base.connection.model, ...guided, ...(read.kept ? { kept: read.kept } : {}), ...(read.quality !== null ? { quality: read.quality } : {}) })
           if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
-          return say(kept ? 'ia.wf.proofread.doneKept' : 'ia.wf.proofread.done', { title: doc.title, number: version.number, parts: chunks.length, kept })
+          return done(read.kept ? 'ia.wf.proofread.doneKept' : 'ia.wf.proofread.done', { title: doc.title, number: version.number, parts: read.parts, kept: read.kept }, [quality(read.quality)])
       }
     }
   })
@@ -590,7 +348,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     const drawn = await draw.open(bytes)
     const texts = await pdfPageTexts(bytes).catch(() => undefined)
     // Chaque page dessinée quand vient son tour : toutes, sans limite, jamais toutes en mémoire.
-    return { pages: drawn.pages, image: (index) => drawn.page(index + 1, 1400), close: () => drawn.close(), ...(texts ? { texts } : {}) }
+    return { pages: drawn.pages, image: (index) => drawn.page(index + 1, 2000), close: () => drawn.close(), ...(texts ? { texts } : {}) }
   }
 
   /**

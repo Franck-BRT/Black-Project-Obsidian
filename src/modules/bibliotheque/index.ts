@@ -348,7 +348,7 @@ export async function libraryTranscript(record: string): Promise<string | null> 
 }
 
 /** Pour l'IA : son texte relu — une nouvelle version du texte du document (celle d'avant est gardée). */
-export async function addTextVersionByAi(record: string, text: string, about: { model?: string; prompt?: string; persona?: string; skill?: string; kept?: number; vision?: number }): Promise<TextVersion | null> {
+export async function addTextVersionByAi(record: string, text: string, about: { model?: string; prompt?: string; persona?: string; skill?: string; kept?: number; vision?: number; quality?: number }): Promise<TextVersion | null> {
   return active ? active.store.addTextVersion(record, text, { origin: 'ia', ...about }) : null
 }
 
@@ -595,7 +595,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.39.0',
+  version: '0.40.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),

@@ -40,7 +40,8 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   section « Texte extrait » de la fiche le montre en entier, mis en forme (titres, listes,
   tableaux, citations, formules ; les cases à cocher ☐ ☒ et les symboles, les retours à la
   ligne et les tableaux qu'une lecture écrit en HTML), sur toute la largeur de la page — et, l'IA réglée, **relu par l'IA** : une nouvelle version du texte
-  (*Versions* › « Versions du texte » : **Comparer**, **Le montrer sur la fiche**, **Supprimer
+  (sa **qualité**, vérifiée par l'IA, en étoiles et en pourcentage : « ★★★★☆ 88 % » ;
+  *Versions* › « Versions du texte » : **Comparer**, **Le montrer sur la fiche**, **Supprimer
   cette version** — sa note va à la corbeille ; l'extraite
   est gardée, l'édition et la révision ne changent pas) ; des notices disent la relecture en
   cours, puis ce qu'elle a donné. **Extraire de nouveau** relit le fichier (vos notes ne bougent

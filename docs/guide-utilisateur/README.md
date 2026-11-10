@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.118.0)
+## Aujourd'hui (version 0.119.0)
 
 - **Le répertoire des personnes** (Bibliothèque › **Personnes**) : les personnes avec qui vous
   travaillez — leur entreprise (dans la liste des entreprises), leur fonction, leur adresse, leur
@@ -203,6 +203,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   la largeur de la page — et « Extraire de nouveau ». L'IA réglée, elle **relit ce texte** (cohérence,
   mise en forme, corrections, avec le prompt, le persona, le skill de l'étape) : une nouvelle
   version du texte, l'extraite gardée — *Versions* › « Comparer », « Le montrer sur la fiche ».
+  Un PDF ou une image est **lu en entier par l'IA** : son texte, l'OCR si besoin, la vision page
+  par page (les images décrites), un contrôle, une **vérification** par l'IA (et une correction),
+  le nettoyage (en-têtes, pieds et numéros de page, lignes coupées) ; la **qualité** du texte est
+  notée en étoiles et en pourcentage (« ★★★★☆ 88 % »).
 - **Bibliothèque de documents** : tout fichier déposé dans l'application y est rangé, une
   fois, avec sa fiche — les pièces importées dans une analyse (laissées à leur place), le
   fichier d'un import d'exigences, les échanges de types et de workflows, et ce que vous

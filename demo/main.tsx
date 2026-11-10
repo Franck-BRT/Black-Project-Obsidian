@@ -132,11 +132,20 @@ platform.http = {
       return lines.join('\n')
     }
     // Lire une page avec la vision : sans IA réelle, le texte extrait de la page corrigé, ou un texte de démonstration (un scan).
-    const seeing = (sent.messages?.[0]?.content ?? '').includes('Tu lis une page d’un document')
-    const pageText = (sent.messages?.at(-1)?.content ?? '').split('à vérifier d’après l’image :\n\n')[1]
+    const opening = sent.messages?.[0]?.content ?? ''
+    // La vérification d'une page (ou d'une partie relue) : une note de démonstration, en JSON comme un vrai modèle.
+    const verifying = opening.includes('Tu vérifies la transcription') || opening.startsWith('Tu compares un texte extrait')
+    // L'OCR d'une page scannée : son texte brut, de démonstration.
+    const ocr = opening.includes('Lis-en TOUT le texte')
+    const seeing = !verifying && !ocr && opening.includes('Voici la page')
+    const pageText = (sent.messages?.at(-1)?.content ?? '').split('d’après l’image :\n\n')[1]
     // Une page regardée prend un peu de temps, comme avec un vrai modèle : on voit la lecture avancer.
     if (seeing) await new Promise((resolve) => setTimeout(resolve, 250))
-    const content = seeing
+    const content = verifying
+      ? JSON.stringify({ score: 92, problems: [] })
+      : ocr
+      ? 'PROCES-VERBAL DE RECEPTION\nLecture de demonstration par l OCR, sans IA reelle.'
+      : seeing
       ? pageText
         ? proofread(pageText)
         : '# Procès-verbal de réception\n\nLecture de démonstration par la vision, sans IA réelle : le texte de la page aurait été lu dans l’image.\n\n| Lot | Réserves |\n| --- | --- |\n| Lot 1 | Aucune |'

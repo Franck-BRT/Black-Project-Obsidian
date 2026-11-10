@@ -322,8 +322,8 @@ export interface PageImages {
 /** Un PDF ouvert : son nombre de pages, et chacune dessinée à la demande. */
 export interface DrawnPdf {
   pages: number
-  /** La page `number` (à partir de 1) en image : une data URL JPEG de `width` pixels de large. */
-  page(number: number, width?: number): Promise<string>
+  /** La page `number` (à partir de 1) en image : une data URL JPEG, son plus grand côté à `size` pixels (deux mille d'origine). */
+  page(number: number, size?: number): Promise<string>
   close(): Promise<void>
 }
 

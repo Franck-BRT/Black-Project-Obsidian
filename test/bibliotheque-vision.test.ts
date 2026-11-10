@@ -50,6 +50,13 @@ interface Seen {
 }
 
 let drawnPages = 2
+/** Ce que rend la vérification d'une page (sinon : 95, rien à redire) ; `reading` : la transcription vérifiée. */
+let verdictOf: ((reading: string, image: string) => { score: number; problems: string[] }) | null = null
+/** Les vérifications demandées (la transcription vérifiée, chaque fois). */
+let verified: string[] = []
+/** La suite d'une page coupée ; les débuts continués. */
+let continueWith: string | null = null
+let continued: string[] = []
 /** Ce que répond la relecture du texte (sinon : le texte tel quel) ; `system` : sa consigne. */
 let proofreadReply: ((text: string, system: string) => string | { text: string; finish: string }) | null = null
 let closed = 0
@@ -81,9 +88,21 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string | { t
     const first = body.messages[0]!.content
     // Une image : un seul message (la consigne, puis l'image), sans message système.
     if (typeof first !== 'string') {
+      // La suite d'une page coupée par la limite de longueur : la demande, la réponse, « Continue ».
+      if (body.messages.length === 3) {
+        expect(body.messages[2]!.content).toBe('Continue la transcription exactement là où elle s’est arrêtée, sans rien répéter ni commenter.')
+        continued.push(body.messages[1]!.content as string)
+        return chat(continueWith ?? '')
+      }
       expect(body.messages).toHaveLength(1)
       const one: Seen = { model: body.model, text: first.find((part) => part.type === 'text')!.text!, image: first.find((part) => part.type === 'image_url')!.image_url!.url }
-      expect(one.text).toContain('Tu lis une page d’un document')
+      // La vérification d'une page : la page en image, sa transcription ; une note en JSON.
+      if (one.text.includes('Tu vérifies la transcription')) {
+        const reading = one.text.slice(one.text.indexOf('La transcription :') + 'La transcription :'.length).trim()
+        verified.push(reading)
+        return chat(verdictOf?.(reading, one.image) ?? { score: 95, problems: [] })
+      }
+      expect(one.text).toMatch(/Voici la page \d+ sur \d+ d’un document/)
       if (refuses(body.model)) return { status: 400, text: JSON.stringify({ error: { message: `litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': {'error': {'message': '${body.model} is not a multimodal model'}}}` } }) }
       seen.push(one)
       const answer = see(one)
@@ -91,6 +110,7 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string | { t
     }
     const system = first
     if (system.startsWith('Tu identifies la langue')) return chat('fr')
+    if (system.startsWith('Tu compares un texte extrait')) return chat({ score: 92, problems: [] })
     if (system.includes('Tu relis un texte extrait automatiquement')) {
       proofread.push(body.model)
       await gate()
@@ -121,6 +141,10 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string | { t
 afterEach(async () => {
   forgetImageRefusals()
   proofreadReply = null
+  verdictOf = null
+  verified = []
+  continueWith = null
+  continued = []
   for (const module of [...ALL].reverse()) await module.deactivate?.()
 })
 
@@ -135,6 +159,110 @@ describe('ce que lit la vision', () => {
 
 /** La sortie de l'exemple : une ligne lue, puis la même phrase, en boucle, jusqu'à la limite. */
 const LOOP = `## Mesures\n\nRésistance de terre ≤ 100 Ω des prises de courant ${'≤ 100 Ω des prises de courant '.repeat(300)}≤ 100 Ω des pri`
+
+describe('la lecture d’un document par l’IA, de bout en bout', () => {
+  /** Une page de cahier des charges : un en-tête et un pied répétés, du texte entre les deux. */
+  const sheet = (number: number, lines: string[]) => ['Societe X - CCTP station sol', ...lines, 'Confidentiel - reproduction interdite', `Page ${number} sur 3`]
+
+  it('au dépôt, un PDF avec du texte : la vision d’origine (« automatique ») — le texte de chaque page donné à vérifier, la page vérifiée, la qualité notée (★ et %) sur la version et la fiche', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, proofread, textVersions } = await start(platform, (one) => (one.text.includes('page 1 sur') ? '# Plan qualité\n\nLe présent plan décrit l’organisation.' : '## Revue\n\nRevue de conception.'))
+    const doc = await pour('Plan.pdf', textPdf([['Plan qualite', 'Le pre- sent plan decrit l organisation.'], ['Revue de con- ception.']]))
+    expect(proofread).toEqual([])
+    expect(seen).toHaveLength(2)
+    expect(seen[0]!.text).toContain('À la place de chaque image, photo, schéma, graphique ou logo, écris une courte description entre crochets')
+    expect(seen[0]!.text).toContain('Le texte que le fichier porte pour cette page (copié tel quel')
+    expect(verified).toEqual(['# Plan qualité\n\nLe présent plan décrit l’organisation.', '## Revue\n\nRevue de conception.'])
+    const [version] = await textVersions(doc.record)
+    expect(version!.title).toBe('Texte 2 — lu par l’IA avec la vision')
+    expect(version!.detail).toContain('qualité ★★★★★ 95 %')
+    const note = read(platform, doc.record)
+    expect(note).toContain('Qualité de la transcription : ★★★★★ 95 %.')
+    expect(platform.notices).toContain('Qualité de la transcription : ★★★★★ 95 %.')
+  })
+
+  it('une page coupée par la limite de longueur : continuée là où elle s’arrête ; les en-têtes, pieds de page et numéros de page retirés ; les lignes coupées recollées', async () => {
+    const platform = memoryPlatform()
+    drawnPages = 3
+    try {
+      continueWith = 'nue en usine.\n\nConfidentiel - reproduction interdite\nPage 2 sur 3'
+      const { pour, textVersions } = await start(platform, (one) => {
+        const page = Number(/page (\d) sur/.exec(one.text)![1])
+        if (page === 2) return { text: sheet(2, ['## 2. Exigences', '', 'La station est mainte']).join('\n').replace(/\nConfidentiel[\s\S]*$/, ''), finish: 'length' }
+        return sheet(page, [page === 1 ? '# CCTP' : '## 3. Essais', '', page === 1 ? 'Le présent document décrit la station' : 'Les essais se font', page === 1 ? 'sol et ses moyens.' : 'sur site.']).join('\n')
+      })
+      const doc = await pour('CCTP.pdf', textPdf([[], [], []]))
+      expect(continued).toEqual(['Societe X - CCTP station sol\n## 2. Exigences\n\nLa station est mainte'])
+      const text = (await textVersions(doc.record)).length ? read(platform, doc.record) : ''
+      expect(text).toContain('La station est maintenue en usine.')
+      expect(text).toContain('Le présent document décrit la station sol et ses moyens.')
+      expect(text).toContain('Les essais se font sur site.')
+      expect(text).not.toMatch(/Confidentiel|Page \d sur 3|Societe X/)
+    } finally {
+      drawnPages = 2
+    }
+  })
+
+  it('une page vérifiée sous 85 : corrigée d’après l’image (ce qui n’allait pas dit au modèle), revérifiée — la meilleure gardée, sa note comptée', async () => {
+    const platform = memoryPlatform()
+    drawnPages = 1
+    try {
+      verdictOf = (reading) => (reading.includes('2025') ? { score: 60, problems: ['« 2025 » : l’image dit 2026'] } : { score: 90, problems: [] })
+      const { pour, seen, textVersions } = await start(platform, (one) => (one.text.includes('une vérification a trouvé ces problèmes') ? 'Réception le 12 mars 2026.' : 'Réception le 12 mars 2025.'))
+      const doc = await pour('PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
+      expect(seen).toHaveLength(2)
+      expect(seen[1]!.text).toContain('- « 2025 » : l’image dit 2026')
+      expect(seen[1]!.text).toContain('La transcription :\n\nRéception le 12 mars 2025.')
+      expect(read(platform, doc.record)).toContain('Réception le 12 mars 2026.')
+      expect((await textVersions(doc.record))[0]!.detail).toContain('qualité ★★★★★ 90 %')
+    } finally {
+      drawnPages = 2
+    }
+  })
+
+  it('une lecture qui a perdu plus de 30 % du texte du fichier : relue avec insistance ; encore courte, complétée du texte du fichier, dit tel', async () => {
+    const platform = memoryPlatform()
+    drawnPages = 1
+    try {
+      const line = 'Le titulaire fournit le dossier des ouvrages executes avec les plans'
+      const layer = [line, line.replace('plans', 'notes de calcul'), line.replace('plans', 'proces verbaux'), line.replace('plans', 'fiches techniques'), line.replace('plans', 'certificats')]
+      const short = layer.slice(0, 3).join(' ')
+      const { pour, seen } = await start(platform, () => short)
+      const doc = await pour('Clauses.pdf', textPdf([layer]))
+      expect(seen).toHaveLength(2)
+      expect(seen[1]!.text).toContain('Une première transcription de cette page était incomplète')
+      const note = read(platform, doc.record)
+      expect(note).toContain('[Page 1 : la lecture semblait incomplète ; voici le texte que porte le fichier lui-même pour cette page.]')
+      expect(note).toContain('certificats')
+    } finally {
+      drawnPages = 2
+    }
+  })
+
+  it('un scan, un modèle d’OCR réglé à part : la page lue d’abord par l’OCR, son texte donné à la vision pour vérification', async () => {
+    const platform = memoryPlatform()
+    drawnPages = 1
+    try {
+      const { pour, seen } = await start(platform, (one) => (one.model === 'ocr-1' ? 'PROCES VERBAL DE RECEPTION\nReception prononcee le 12 mars 2026 sans reserve par le maitre d ouvrage.' : '# Procès-verbal de réception\n\nRéception prononcée le 12 mars 2026, sans réserve.'), true, { ...SERVEUR, modeleOcr: 'ocr-1' })
+      const doc = await pour('Scan.pdf', textPdf([[]]))
+      expect(seen.map((one) => one.model)).toEqual(['ocr-1', 'pixtral-12b'])
+      expect(seen[0]!.text).toContain('Lis-en TOUT le texte, tel quel')
+      expect(seen[1]!.text).toContain('Le texte que l’OCR a lu sur cette page')
+      expect(seen[1]!.text).toContain('PROCES VERBAL DE RECEPTION')
+      expect(read(platform, doc.record)).toContain('Réception prononcée le 12 mars 2026, sans réserve.')
+    } finally {
+      drawnPages = 2
+    }
+  })
+
+  it('sans images : le texte relu partie par partie, chaque partie vérifiée contre l’original ; la qualité notée', async () => {
+    const platform = memoryPlatform()
+    const { pour, textVersions } = await start(platform, () => 'x', false)
+    proofreadReply = (text) => `${text}\n\nRelu.`
+    const doc = await pour('Plan.pdf', textPdf([['Plan qualite', 'Le pre- sent plan']]))
+    expect((await textVersions(doc.record))[0]!.detail).toContain('qualité ★★★★★ 92 %')
+  })
+})
 
 describe('une lecture qui boucle', () => {
   it('repérée : le même passage répété jusqu’à la fin — où elle commence, ce qui se garde ; une réponse saine, des tableaux, des points de conduite, non', () => {
@@ -201,7 +329,8 @@ describe('une relecture du texte qui boucle', () => {
       asked.push(system)
       return system.includes('une première lecture a bouclé') ? `${text}\n\nRelu.` : { text: `${text} ${'≤ 100 Ω des prises de courant '.repeat(200)}`, finish: 'length' }
     }
-    const { pour, textVersions, textActions } = await start(platform, () => 'x')
+    // Une plateforme qui ne dessine pas les PDF : la relecture du texte, sans images.
+    const { pour, textVersions, textActions } = await start(platform, () => 'x', false)
     const doc = await pour('Plan.pdf', textPdf([['Plan qualite', 'Le pre- sent plan'], ['Revue de con- ception']]))
     expect(asked).toHaveLength(2)
     expect(platform.notices).toContain('« Plan » : la relecture de la partie 1 a bouclé (le modèle répétait le même passage) — relancée une deuxième fois.')
@@ -231,7 +360,7 @@ describe('un document sans texte : la vision seule', () => {
     expect(seen).toHaveLength(1)
     expect(seen[0]!.model).toBe('pixtral-12b')
     expect(seen[0]!.image).toMatch(/^data:image\/png;base64,/)
-    expect(seen[0]!.text).toContain('Le document n’a pas de texte lisible')
+    expect(seen[0]!.text).toContain('Le fichier ne porte pas de texte pour cette page : lis-le sur l’image.')
     expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 1 — lu par l’IA avec la vision'])
     const note = read(platform, doc.record)
     expect(note).toMatch(/\nlecture: lue\n/)
@@ -271,12 +400,12 @@ describe('un document sans texte : la vision seule', () => {
     drawnPages = 45
     closed = 0
     try {
-      const { pour, seen, textVersions } = await start(platform, (one) => `Lu sur ${/Page \d+ sur \d+/.exec(one.text)![0]}`)
+      const { pour, seen, textVersions } = await start(platform, (one) => `Lu sur ${/page \d+ sur \d+/.exec(one.text)![0]}`)
       const doc = await pour('Gros scan.pdf', textPdf([[]]))
       expect(seen).toHaveLength(45)
-      expect(seen.at(-1)!.text).toContain('Page 45 sur 45.')
+      expect(seen.at(-1)!.text).toContain('la page 45 sur 45 d’un document')
       expect((await textVersions(doc.record))[0]!.detail).toContain('45 page(s) regardée(s)')
-      expect(read(platform, doc.record)).toContain('Lu sur Page 45 sur 45')
+      expect(read(platform, doc.record)).toContain('Lu sur page 45 sur 45')
       expect(closed).toBe(1)
     } finally {
       drawnPages = 2
@@ -304,7 +433,9 @@ describe('un PDF avec du texte : le modèle à choisir', () => {
 
   it('« Relire avec l’IA » demande le modèle : avec la vision, chaque page en image et son texte extrait ; une nouvelle version', async () => {
     const platform = memoryPlatform()
-    const { pour, seen, proofread, textActions, textVersions, workflows } = await start(platform, (one) => (one.text.includes('Page 1') ? '# Plan qualité\n\nLe présent plan' : 'Revue de conception'))
+    const { pour, seen, proofread, textActions, textVersions, workflows } = await start(platform, (one) => (one.text.includes('page 1 sur') ? '# Plan qualité\n\nLe présent plan' : 'Revue de conception'))
+    // L'étape du dépôt réglée sur le modèle simple (d'origine : automatique — la vision pour un PDF).
+    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.actions[0]!.fields.mode = 'texte'
     const doc = await pour('Plan.pdf', PDF)
     // Au dépôt : la relecture de l'étape, avec le modèle simple.
     expect(seen).toHaveLength(0)
@@ -315,8 +446,8 @@ describe('un PDF avec du texte : le modèle à choisir', () => {
     await (await textActions(doc.record)).find((action) => action.id === 'proofread')!.run()
     expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Modèle simple', 'Modèle avec la vision'])
     expect(seen.map((one) => one.image)).toEqual(['data:image/jpeg;base64,UDE=', 'data:image/jpeg;base64,UDI='])
-    expect(seen[0]!.text).toContain('Page 1 sur 2.')
-    expect(seen[0]!.text).toContain('Le texte extrait automatiquement de cette page, à vérifier d’après l’image :\n\nPlan qualite\nLe pre- sent plan')
+    expect(seen[0]!.text).toContain('Voici la page 1 sur 2 d’un document')
+    expect(seen[0]!.text).toContain('et corrige-le d’après l’image :\n\nPlan qualite\nLe pre- sent plan')
     expect(seen[1]!.text).toContain('Revue de con- ception')
     const items = await textVersions(doc.record)
     // Le texte extrait gardé (texte 1) ; le relu par la vision, texte 2 (la relecture simple du dépôt n'avait rien changé).
@@ -328,7 +459,8 @@ describe('un PDF avec du texte : le modèle à choisir', () => {
 
   it('le modèle simple choisi : la relecture du texte, sans image', async () => {
     const platform = memoryPlatform()
-    const { pour, seen, proofread, textActions } = await start(platform, () => 'x')
+    const { pour, seen, proofread, textActions, workflows } = await start(platform, () => 'x')
+    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.actions[0]!.fields.mode = 'texte'
     const doc = await pour('Plan.pdf', PDF)
     platform.choices.push('texte')
     await (await textActions(doc.record)).find((action) => action.id === 'proofread')!.run()

@@ -727,7 +727,7 @@ export class LibraryStore {
    * le texte que montrait la fiche est d'abord gardé (« Texte 1 », extrait du fichier). La fiche
    * montre la nouvelle ; l'édition et la révision du document ne changent pas.
    */
-  async addTextVersion(record: string, text: string, about: Pick<TextVersion, 'origin'> & Partial<Pick<TextVersion, 'model' | 'prompt' | 'persona' | 'skill' | 'kept' | 'vision'>>): Promise<TextVersion | null> {
+  async addTextVersion(record: string, text: string, about: Pick<TextVersion, 'origin'> & Partial<Pick<TextVersion, 'model' | 'prompt' | 'persona' | 'skill' | 'kept' | 'vision' | 'quality'>>): Promise<TextVersion | null> {
     const { fs } = this.deps
     const doc = await this.load(record)
     if (!doc) return null

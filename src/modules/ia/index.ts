@@ -22,13 +22,16 @@ import { AiClient, type AiConnection } from './client'
 import { iaEn, iaFr } from './i18n'
 import { LlmError } from './protocol'
 import { registerIaHome, USE_FIELD, type ConnectionTest } from './home'
-import { imagesRefused, libraryGuidance, registerIaWorkflows, visionModelOf, visionReadable } from './workflows'
+import { libraryGuidance, registerIaWorkflows } from './workflows'
+import { imagesRefused, visionModelOf, visionReadable } from './reading'
 import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor, usesOf, type ModelUse } from './models'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
-export { forgetImageRefusals } from './workflows'
-export { proofreadChunks, readCategoryAnswer, readDateAnswer, readProofread, readVisionPage, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer, repetitionLoop, type RepetitionLoop } from './workflows'
+export { forgetImageRefusals } from './reading'
+export { blendQuality, cleanPages, coverage, letterCount, needsOcr, qualityLabel, qualityPercent, qualityStars, readsWhole, readVerdict, rejoinLines, stripFurniture, stripPageNumbers, tidy, type Verdict } from './reading'
+export { readCategoryAnswer, readDateAnswer, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer } from './workflows'
+export { proofreadChunks, readProofread, readVisionPage, repetitionLoop, type RepetitionLoop } from './reading'
 export {
   buildChatBody,
   cosine,
@@ -299,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.26.0',
+  version: '0.27.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),

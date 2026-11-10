@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.26.0 (Black Projects 0.116.0) |
+| Version | 0.27.0 (Black Projects 0.119.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,42 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## La lecture complète d'un document (v0.27.0, Black Projects 0.119.0)
+
+La lecture par l'IA reprend, en mieux, celle du premier module de gestion de projet (consigne de
+vision détaillée, suite d'une page coupée, contrôle contre le texte du fichier, en-têtes et
+pieds de page retirés, pages dessinées à 2 000 px sur leur grand côté) et y ajoute la
+vérification. `documentReading.ts` :
+
+- **`readWithVision(client, source, model, ocrModel, context)`**, page par page : le texte du
+  fichier (`PageSource.texts`) ; l'**OCR** quand la page n'en porte presque pas (`needsOcr` :
+  moins de 80 lettres) et qu'un modèle d'OCR est réglé à part (`ia.wf.read.ocr`) ; la **vision**
+  (`ia.wf.read.vision` : tout le texte, l'ordre de lecture, la mise en forme Markdown, les
+  tableaux — fusionnés en HTML —, chaque image décrite « [Image : …] »), **continuée** quand la
+  réponse est coupée (`finish_reason: length`, jusqu'à quatre fois, `ia.wf.read.more`) ; le
+  **contrôle** (`readsWhole` : 70 % des lettres du texte du fichier, sinon relue avec
+  `ia.wf.read.insist`, puis complétée de ce texte, `ia.wf.read.layer`) ; la **vérification**
+  (`ia.wf.read.verify` : l'image et la transcription, un verdict JSON `{score, problems}`) et,
+  sous 85, la **correction** (`ia.wf.read.correct`) revérifiée, la meilleure gardée. Les
+  boucles : comme en v0.26.0. Puis `cleanPages` : `stripFurniture` (une ligne en haut ou en bas
+  de deux pages, ou sur deux pages sur cinq, trois au moins ; un numéro de page reconnu sans ses
+  nombres), `stripPageNumbers`, `rejoinLines` (une ligne qui ne finit pas une phrase, suivie d'une
+  minuscule ; un mot coupé d'un tiret reformé), `tidy`.
+- **`proofreadDocument(ai, judge, text, pageTexts, context)`**, sans images : les lignes que les
+  pages d'un PDF répètent retirées (`furnitureKeys`, `withoutFurniture`), `rejoinLines`, puis la
+  relecture partie par partie (consigne enrichie : en-têtes, pieds, numéros retirés, structure
+  d'origine), chaque partie **vérifiée** contre l'original (`ia.wf.read.verifyText`) et, sous 70,
+  relue avec ce qui n'allait pas (`ia.wf.read.redo`).
+- **La qualité** (`reading.ts`) : chaque page (partie) notée par l'IA, tempérée par la part des
+  mots du texte du fichier retrouvés (`coverage`, `blendQuality` : trois quarts, un quart), pesée
+  par sa longueur (`qualityPercent`) ; une page échouée ou bouclée compte zéro. En étoiles
+  (`qualityStars`, sur cinq) et en pourcentage (`qualityLabel`) — la version du texte la garde
+  (`qualite`).
+- L'étape « Relire le texte extrait » a un mode **Automatique** (d'origine) : la vision quand le
+  document se montre en images. Les briques de lecture (`repetitionLoop`, `readVisionPage`,
+  `proofreadChunks`…) vivent dans `reading.ts`. `PageImages.page(n, size)` : `size` est le grand
+  côté de la page.
 
 ## Le contrôle des lectures qui bouclent (v0.26.0, Black Projects 0.116.0)
 

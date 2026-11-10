@@ -358,8 +358,19 @@ export const textVersionLabel = (t: (key: string, vars?: Record<string, string |
   t(version.origin !== 'ia' ? 'bibliotheque.textVersion.extraction' : version.vision ? 'bibliotheque.textVersion.vision' : 'bibliotheque.textVersion.ia', { number: version.number })
 
 /** Ce que dit l'encadré du texte extrait d'une version : « Texte 2, relu par l'IA : 1 234 caractères. » */
-export const textVersionInfo = (t: (key: string, vars?: Record<string, string | number>) => string, version: Pick<TextVersion, 'origin' | 'number' | 'vision'>, characters: string): string =>
-  t(version.origin !== 'ia' ? 'bibliotheque.text.versionExtraction' : version.vision ? 'bibliotheque.text.versionVision' : 'bibliotheque.text.versionIa', { number: version.number, characters, pages: version.vision ?? 0 })
+export const textVersionInfo = (t: (key: string, vars?: Record<string, string | number>) => string, version: Pick<TextVersion, 'origin' | 'number' | 'vision' | 'quality'>, characters: string): string =>
+  [
+    t(version.origin !== 'ia' ? 'bibliotheque.text.versionExtraction' : version.vision ? 'bibliotheque.text.versionVision' : 'bibliotheque.text.versionIa', { number: version.number, characters, pages: version.vision ?? 0 }),
+    version.quality !== undefined ? t('bibliotheque.text.quality', { quality: qualityText(version.quality) }) : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+/** La qualité d'une transcription, dite : en étoiles sur cinq, et en pourcentage (« ★★★★☆ 87 % »). */
+export function qualityText(percent: number): string {
+  const stars = Math.min(5, Math.max(0, Math.round(percent / 20)))
+  return `${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} ${percent} %`
+}
 
 /** La fiche d'un document. */
 export async function docPage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
@@ -625,7 +636,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     subtitle: !doc.reading
       ? t('bibliotheque.section.text.never')
       : shownText
-        ? `${textVersionLabel(t, shownText)} · ${t('bibliotheque.section.text.characters', { characters })}`
+        ? [textVersionLabel(t, shownText), t('bibliotheque.section.text.characters', { characters }), shownText.quality !== undefined ? qualityText(shownText.quality) : ''].filter(Boolean).join(' · ')
         : doc.reading === 'lue'
           ? t('bibliotheque.section.text.read', { characters })
           : t(`bibliotheque.text.state.${doc.reading}`),
@@ -703,6 +714,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       version.prompt ? t('bibliotheque.textVersion.prompt', { name: version.prompt }) : '',
       version.kept ? t('bibliotheque.textVersion.kept', { count: version.kept }) : '',
       version.vision ? t('bibliotheque.textVersion.pages', { count: version.vision }) : '',
+      version.quality !== undefined ? t('bibliotheque.textVersion.quality', { quality: qualityText(version.quality) }) : '',
       version.number === shownVersion ? t('bibliotheque.textVersion.shown') : ''
     ]
       .filter(Boolean)

@@ -91,14 +91,39 @@ est une nouvelle version du texte du document : l'extraite est gardée, on les c
 Des notices disent la relecture en cours (et ses morceaux), puis ce qu'elle a donné. Elle se
 relance quand on **extrait de nouveau** le texte d'un document, ou par **Relire avec l'IA**
 (section *Texte extrait* de sa fiche).
+
+**La lecture complète d'un document**, d'origine dès que le document se montre en images (un
+PDF, une image) — sinon le texte extrait —, page par page :
+
+1. **le texte du fichier** (« copier-coller ») : ce que la page porte déjà ;
+2. **l'OCR**, si la page n'en porte presque pas (un scan) et qu'un modèle d'OCR est réglé à
+   part : son texte brut ;
+3. **la vision** : la page en image (deux mille pixels sur son grand côté), et ce texte à
+   vérifier, transcrite fidèlement — sa mise en forme (titres, listes, tableaux), **chaque image
+   décrite à sa place** (« [Image : …] ») ; une page coupée par la limite de longueur est
+   **continuée** là où elle s'arrête ;
+4. **le contrôle** : une lecture qui a perdu plus de 30 % du texte du fichier est relue avec
+   insistance ; encore courte, le texte du fichier la complète, dit tel ;
+5. **la vérification par l'IA** : la page et sa transcription comparées — une note sur 100 et
+   ce qui ne va pas ; sous 85, la transcription est **corrigée** d'après l'image, puis
+   revérifiée, la meilleure gardée.
+
+Puis le **nettoyage** — en-têtes et pieds de page répétés de page en page, numéros de page,
+lignes coupées au milieu d'une phrase recollées, lignes vides en trop — et la **qualité** de la
+transcription : **en étoiles sur cinq et en pourcentage** (« ★★★★☆ 88 % »), sur la version du
+texte, la fiche (section *Texte extrait*) et la note du document. Sans images, le texte extrait
+est nettoyé, remis en forme par l'IA partie par partie, et chaque partie vérifiée contre
+l'original (relue une seconde fois sous 70).
+
 **Une lecture qui boucle** — le modèle répète le même passage encore et encore, jusqu'à sa limite
 de longueur — est repérée : la page (ou la partie) est **relue une deuxième fois**, autrement.
 Bouclée encore : ce qui précède la boucle est gardé, et la page est marquée dans le texte
 (« la lecture par l'IA a bouclé deux fois… ») ; une notice le dit. Rien que des boucles : un
 message d'erreur, et le texte de la fiche ne change pas — essayez un autre modèle de vision.
 Sur la fiche, **Relire avec l'IA** fait choisir le modèle : **simple** (le texte extrait) ou **avec
-la vision** (chaque page d'un PDF, ou l'image, regardée et comparée au texte extrait — plus sûr,
-plus lent) ; l'étape du workflow a le même choix (champ *Modèle*). Un document sans texte (un
+la vision** (la lecture complète ci-dessus — plus sûr, plus lent) ; l'étape du workflow a le même
+choix (champ *Modèle* : **Automatique** d'origine, la vision quand le document se montre en
+images). Un document sans texte (un
 scan, une image) est **lu avec la vision dès son dépôt** — le workflow système « Lire avec la
 vision un document versé sans texte… » (activé), par le modèle d'OCR, sinon celui de vision ;
 désactivé, la fiche propose **Lire avec la vision (IA)**. Le modèle : celui d'OCR, sinon de vision, sinon celui d'analyse

@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La lecture complète par l'IA ; la qualité du texte (v0.119.0)
+
+- [ ] Déposer un PDF avec du texte (l'IA réglée, un modèle de vision) : il est lu avec la vision
+      d'origine (champ *Modèle* de l'étape : Automatique) ; la fiche montre l'avancement (texte du
+      fichier, lecture par la vision, contrôle, vérification, correction — page n sur N)
+- [ ] Le texte lu : la mise en forme du document (titres, listes, tableaux), chaque image décrite
+      « [Image : …] », sans les en-têtes, pieds de page et numéros de page, sans lignes coupées
+- [ ] La qualité : « ★★★★☆ 88 % » sur la version (*Versions*), la section *Texte extrait* et la
+      note du document ; une notice la dit
+- [ ] Un scan avec un modèle d'OCR réglé à part : l'OCR d'abord, puis la vision
+- [ ] **Relire avec l'IA** › Modèle simple : le texte relu partie par partie, vérifié, noté
+
 ## Le dossier « Entreprises » (v0.118.0)
 
 - [ ] Un coffre qui a `Bibliothèque/Émetteurs` : à l'ouverture, il devient `Bibliothèque/Entreprises`

@@ -140,10 +140,11 @@ export const obsidianPages: PageImages = {
     const document = await pdfjs.getDocument({ data: bytes.slice() }).promise
     return {
       pages: document.numPages,
-      async page(number, width = 1400) {
+      async page(number, size = 2000) {
         const page = await document.getPage(number)
         const natural = page.getViewport({ scale: 1 })
-        const viewport = page.getViewport({ scale: width / natural.width })
+        // Son plus grand côté à `size` pixels (deux mille : les petits caractères d'un tableau se lisent), au plus quatre fois sa taille.
+        const viewport = page.getViewport({ scale: Math.min(4, size / Math.max(natural.width, natural.height)) })
         const canvas = activeDocument.createElement('canvas')
         canvas.width = Math.round(viewport.width)
         canvas.height = Math.round(viewport.height)

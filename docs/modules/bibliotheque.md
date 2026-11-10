@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.39.0 (Black Projects 0.118.0) |
+| Version | 0.40.0 (Black Projects 0.119.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La qualité du texte (v0.40.0, Black Projects 0.119.0)
+
+Une version du texte lue ou relue par l'IA garde la **qualité** de la transcription
+(`TextVersion.quality`, `qualite` dans sa note, de 0 à 100) : la liste des versions la dit
+(« qualité ★★★★☆ 88 % »), la section *Texte extrait* de la fiche aussi (son sous-titre et son
+message), et la note du document, dans l'encadré au-dessus du texte (`qualityText`).
 
 ## Le dossier « Entreprises » (v0.39.0, Black Projects 0.118.0)
 

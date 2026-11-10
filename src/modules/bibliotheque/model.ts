@@ -160,6 +160,8 @@ export interface TextVersion {
   kept?: number
   /** Lu par l'IA avec la vision : les pages du document regardées en images (leur nombre). */
   vision?: number
+  /** Lu ou relu par l'IA : la qualité de la transcription, en pourcentage (vérifiée par l'IA). */
+  quality?: number
   text: string
 }
 
@@ -180,7 +182,8 @@ export function textVersionContent(version: Omit<TextVersion, 'path'>, record: s
     ...(version.persona ? { persona: version.persona } : {}),
     ...(version.skill ? { skill: version.skill } : {}),
     ...(version.kept ? { gardes: version.kept } : {}),
-    ...(version.vision ? { vision: version.vision } : {})
+    ...(version.vision ? { vision: version.vision } : {}),
+    ...(version.quality !== undefined ? { qualite: version.quality } : {})
   }
   return `---\n${toYaml(data)}\n---\n\n${version.text.trim()}\n`
 }
@@ -200,6 +203,7 @@ export function readTextVersion(path: string, data: Record<string, unknown> | nu
     ...(plain(data.skill) ? { skill: plain(data.skill) } : {}),
     ...(Number(data.gardes) ? { kept: Number(data.gardes) } : {}),
     ...(Number(data.vision) ? { vision: Number(data.vision) } : {}),
+    ...(data.qualite !== undefined && data.qualite !== null && data.qualite !== '' && Number.isFinite(Number(data.qualite)) ? { quality: Math.min(100, Math.max(0, Math.round(Number(data.qualite)))) } : {}),
     text: body.trim()
   }
 }
