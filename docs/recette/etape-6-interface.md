@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le répertoire des personnes (v0.117.0)
+
+- [ ] Bibliothèque › **Personnes** : **Nouvelle personne** — nom, entreprise (la liste des
+      entreprises ; « ＋ Ajouter une entreprise à la liste… » ouvre sa fenêtre), fonction, adresse,
+      téléphone, catégorie, notes ; une note dans `Bibliothèque/Personnes`
+- [ ] Sa carte : sa fonction et son entreprise, ses coordonnées ; la recherche la trouve par son
+      entreprise, sa fonction, son adresse
+- [ ] Sa fiche : **Coordonnées** ; un clic sur son entreprise ouvre celle-ci, qui montre **Ses
+      personnes** ; un clic y ramène
+- [ ] Une adresse mal écrite (« jean.dupont ») : refusée, c'est dit
+
 ## Les lectures qui bouclent ; « Entreprises » (v0.116.0)
 
 - [ ] Une lecture par la vision dont le modèle boucle (le même passage répété) : une notice

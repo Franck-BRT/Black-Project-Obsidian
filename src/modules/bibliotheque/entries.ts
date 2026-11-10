@@ -19,8 +19,8 @@ import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, toYaml, type YamlReader } from '../../core/yaml'
 import { MAIN_SHELF, type Shelf } from './shelves'
 
-export type EntryKind = 'prompt' | 'persona' | 'skill' | 'issuer' | 'tag'
-export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill', 'issuer', 'tag']
+export type EntryKind = 'prompt' | 'persona' | 'skill' | 'issuer' | 'tag' | 'person'
+export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill', 'issuer', 'tag', 'person']
 /** Celles qui servent à l'IA (les champs Prompt, Persona, Skill des étapes de workflow). */
 export const AI_ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill']
 export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = {
@@ -28,7 +28,8 @@ export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = {
   persona: 'bibliotheque-persona',
   skill: 'bibliotheque-skill',
   issuer: 'bibliotheque-emetteur',
-  tag: 'bibliotheque-etiquette'
+  tag: 'bibliotheque-etiquette',
+  person: 'bibliotheque-personne'
 }
 
 export interface LibraryEntry {
@@ -41,8 +42,15 @@ export interface LibraryEntry {
   category: string
   description: string
   favorite: boolean
-  /** Un **émetteur** : son code court (« ESA », « DGA ») ; son nom est `name`. */
+  /** Une **entreprise** (un émetteur) : son code court (« ESA », « DGA ») ; son nom est `name`. */
   code?: string
+  /**
+   * Une **personne** : son entreprise (le code d'une entreprise de la liste, ou son nom), son
+   * adresse électronique, son téléphone ; sa fonction est `description`, ses notes `text`.
+   */
+  company?: string
+  email?: string
+  phone?: string
   /** Où est sa note (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -78,6 +86,9 @@ export function entryContent(kind: EntryKind, draft: EntryDraft): string {
     'bp-type': ENTRY_TYPE[kind],
     nom: draft.name.trim(),
     ...(draft.code?.trim() ? { code: draft.code.trim() } : {}),
+    ...(draft.company?.trim() ? { entreprise: draft.company.trim() } : {}),
+    ...(draft.email?.trim() ? { email: draft.email.trim() } : {}),
+    ...(draft.phone?.trim() ? { telephone: draft.phone.trim() } : {}),
     ...(draft.category.trim() ? { categorie: draft.category.trim() } : {}),
     ...(draft.description.trim() ? { description: draft.description.trim() } : {}),
     ...(draft.favorite ? { favori: true } : {})
@@ -98,14 +109,17 @@ export function readEntry(kind: EntryKind, path: string, data: Record<string, un
     category: plain(data.categorie ?? data['catégorie'] ?? data.category),
     description: plain(data.description),
     favorite: data.favori === true || data.favorite === true,
-    ...(plain(data.code) ? { code: plain(data.code) } : {})
+    ...(plain(data.code) ? { code: plain(data.code) } : {}),
+    ...(plain(data.entreprise) ? { company: plain(data.entreprise) } : {}),
+    ...(plain(data.email ?? data.courriel) ? { email: plain(data.email ?? data.courriel) } : {}),
+    ...(plain(data.telephone ?? data['téléphone'] ?? data.tel) ? { phone: plain(data.telephone ?? data['téléphone'] ?? data.tel) } : {})
   }
 }
 
 /** Toutes les entrées contiennent-elles chaque mot cherché (nom, catégorie, description, texte) ? */
 export function matchesEntry(entry: LibraryEntry, query: string): boolean {
   const words = fold(query).split(/\s+/).filter(Boolean)
-  const hay = fold([entry.code ?? '', entry.name, entry.category, entry.description, entry.text].join('\n'))
+  const hay = fold([entry.code ?? '', entry.name, entry.category, entry.description, entry.company ?? '', entry.email ?? '', entry.phone ?? '', entry.text].join('\n'))
   return words.every((word) => hay.includes(word))
 }
 

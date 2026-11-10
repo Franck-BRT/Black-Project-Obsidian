@@ -5,13 +5,26 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.37.0 (Black Projects 0.116.0) |
+| Version | 0.38.0 (Black Projects 0.117.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le répertoire des personnes (v0.38.0, Black Projects 0.117.0)
+
+Une sorte d'entrées de plus, `person` (`bp-type: bibliotheque-personne`, dossier
+`Bibliothèque/Personnes` — réglage `dossierPersonnes` —, ses bibliothèques et répertoires comme
+les autres) : `name` (nom), `company` (`entreprise` : le code d'une entreprise de la liste, ou un
+nom écrit), `description` (la fonction), `email`, `phone` (`telephone`), `category`, `favorite`,
+`text` (les notes). Sa fenêtre (`personForm`) propose les entreprises de la liste et « ＋ Ajouter
+une entreprise… » ; une adresse mal écrite est refusée. Pages `bibliotheque.persons` et
+`bibliotheque.person` (les coordonnées ; l'entreprise, de la liste, s'ouvre — `companyOf`,
+`companyLabel`) ; la fiche d'une entreprise liste ses personnes. La recherche lit aussi
+l'entreprise, l'adresse, le téléphone ; l'accueil de la bibliothèque, une carte et un chiffre de
+plus ; une tuile ; deux commandes (« Répertoire des personnes », « Nouvelle personne »).
 
 ## « Entreprises », plus « Émetteurs » (v0.37.0, Black Projects 0.116.0)
 

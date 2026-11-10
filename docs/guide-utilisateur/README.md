@@ -12,8 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.116.0)
+## Aujourd'hui (version 0.117.0)
 
+- **Le répertoire des personnes** (Bibliothèque › **Personnes**) : les personnes avec qui vous
+  travaillez — leur entreprise (dans la liste des entreprises), leur fonction, leur adresse, leur
+  téléphone ; la fiche d'une entreprise montre ses personnes.
 - **Les programmes** (menu **Programmes**) : vos programmes, leurs projets et leurs affaires.
   Un projet suit les phases de son **type**, dessinées en tuiles reliées par des flèches ; un
   clic sur une phase la mène (la commencer, la terminer, ses dates). L'**analyse d'un appel

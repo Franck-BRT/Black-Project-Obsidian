@@ -57,6 +57,8 @@ export const ISSUERS_FOLDER_KEY = 'dossierEmetteurs'
 export const DEFAULT_ISSUERS_FOLDER = 'Bibliothèque/Émetteurs'
 export const TAGS_FOLDER_KEY = 'dossierEtiquettes'
 export const DEFAULT_TAGS_FOLDER = 'Bibliothèque/Étiquettes'
+export const PERSONS_FOLDER_KEY = 'dossierPersonnes'
+export const DEFAULT_PERSONS_FOLDER = 'Bibliothèque/Personnes'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
 export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
@@ -517,7 +519,8 @@ const FOLDER_KEYS: Readonly<Record<EntryKind, readonly [string, string]>> = {
   persona: [PERSONAS_FOLDER_KEY, DEFAULT_PERSONAS_FOLDER],
   skill: [SKILLS_FOLDER_KEY, DEFAULT_SKILLS_FOLDER],
   issuer: [ISSUERS_FOLDER_KEY, DEFAULT_ISSUERS_FOLDER],
-  tag: [TAGS_FOLDER_KEY, DEFAULT_TAGS_FOLDER]
+  tag: [TAGS_FOLDER_KEY, DEFAULT_TAGS_FOLDER],
+  person: [PERSONS_FOLDER_KEY, DEFAULT_PERSONS_FOLDER]
 }
 
 const entriesFolderField = (kind: EntryKind): TextField => ({
@@ -548,7 +551,7 @@ export function bibliothequeFeatures(): ModuleDetails {
       },
       { titleKey: 'bibliotheque.feature.section.places', features: [feature('shelves', 'available'), feature('directories', 'available'), feature('move', 'available')] },
       { titleKey: 'bibliotheque.feature.section.ai', features: [feature('prompts', 'available'), feature('personas', 'available'), feature('skills', 'available'), feature('starters', 'available')] },
-      { titleKey: 'bibliotheque.feature.section.issuers', features: [feature('issuers', 'available'), feature('tagList', 'available')] },
+      { titleKey: 'bibliotheque.feature.section.issuers', features: [feature('issuers', 'available'), feature('persons', 'available'), feature('tagList', 'available')] },
       { titleKey: 'bibliotheque.feature.section.next', features: [feature('text', 'planned', 7), feature('delivery', 'planned', 7)] }
     ]
   }
@@ -563,11 +566,11 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.37.0',
+  version: '0.38.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('tag')],
+  settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
@@ -584,7 +587,8 @@ export const bibliothequeModule: BlackModule = {
       persona: personasFolder,
       skill: skillsFolder,
       issuer: issuersFolder,
-      tag: tagsFolder
+      tag: tagsFolder,
+      person: () => folderOf(settings.get(), PERSONS_FOLDER_KEY, DEFAULT_PERSONS_FOLDER)
     }
     const shelves = (kind: ShelfKind): Shelf[] => shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`))
     const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
@@ -625,7 +629,7 @@ export const bibliothequeModule: BlackModule = {
     })
     const entryStore = (kind: EntryKind) =>
       new EntryStore(kind, { fs: platform.fs, yaml: platform.yaml, folder: mainFolder[kind], shelves: () => shelves(kind), target: () => defaultShelf(kind).folder })
-    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona'), skill: entryStore('skill'), issuer: entryStore('issuer'), tag: entryStore('tag') }
+    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona'), skill: entryStore('skill'), issuer: entryStore('issuer'), tag: entryStore('tag'), person: entryStore('person') }
     const subdirectories = (kind: ShelfKind) => (folder: string) => (kind === 'document' ? store.subdirectories(folder) : entries[kind].subdirectories(folder))
     /** Un dossier d'une bibliothèque de documents, en mots : « Normes › ECSS » (son nom d'abord quand il y en a plusieurs). */
     const placeOfFolder = (folder: string): string => {
@@ -687,14 +691,15 @@ export const bibliothequeModule: BlackModule = {
     })
 
     // ── Les bibliothèques et leurs répertoires ──
-    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills', issuer: 'bibliotheque.issuers', tag: 'bibliotheque.tags' }
+    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills', issuer: 'bibliotheque.issuers', tag: 'bibliotheque.tags', person: 'bibliotheque.persons' }
     const SHELF_ROOT: Record<ShelfKind, string> = {
       document: 'Bibliothèques/Documents',
       prompt: 'Bibliothèques/Prompts',
       persona: 'Bibliothèques/Personas',
       skill: 'Bibliothèques/Skills',
       issuer: 'Bibliothèques/Émetteurs',
-      tag: 'Bibliothèques/Étiquettes'
+      tag: 'Bibliothèques/Étiquettes',
+      person: 'Bibliothèques/Personnes'
     }
     const allShelfFolders = () => SHELF_KINDS.flatMap((kind) => shelves(kind).map((shelf) => shelf.folder))
     /** Une nouvelle bibliothèque : son nom, son dossier (proposé d'après le nom), par défaut ou non. */
@@ -773,7 +778,7 @@ export const bibliothequeModule: BlackModule = {
       setDefault,
       removeShelf
     })
-    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill'), issuer: placesOf('issuer'), tag: placesOf('tag') }
+    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill'), issuer: placesOf('issuer'), tag: placesOf('tag'), person: placesOf('person') }
     /** Choisir où ranger : chaque bibliothèque de la sorte, chacun de ses répertoires (sauf là où c'est déjà). */
     const pickPlace = async (kind: ShelfKind, current: string, title: string): Promise<string | null> => {
       const options = (await allPlaces(shelves(kind), subdirectories(kind)))
@@ -1457,6 +1462,7 @@ export const bibliothequeModule: BlackModule = {
     // ── Les prompts et les personas ──
     /** La fenêtre d'une entrée : nom, catégorie, description, favori, texte. */
     const entryForm = async (kind: EntryKind, current?: LibraryEntry, preset: Partial<EntryDraft> = {}): Promise<EntryDraft | null> => {
+      if (kind === 'person') return personForm(current, preset)
       const categories = [...new Set((await entries[kind].all()).map((each) => each.category).filter(Boolean))]
       const values = await platform.ui.askForm({
         title: current ? t('bibliotheque.entry.edit.title', { name: current.name }) : t(`bibliotheque.${kind}.new`),
@@ -1479,6 +1485,68 @@ export const bibliothequeModule: BlackModule = {
       const code = (values?.code ?? '').trim().replace(/\s+/g, ' ')
       if (!values || !name || (!text && kind !== 'issuer' && kind !== 'tag') || (kind === 'issuer' && !code)) return null
       return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true', ...(kind === 'issuer' ? { code } : {}) }
+    }
+    /**
+     * La fenêtre d'une personne : son nom, son entreprise (dans la liste des entreprises, ou
+     * « ＋ Ajouter une entreprise à la liste… »), sa fonction, son adresse, son téléphone, sa
+     * catégorie, favorite ou non, des notes.
+     */
+    const personForm = async (current?: LibraryEntry, preset: Partial<EntryDraft> = {}): Promise<EntryDraft | null> => {
+      const categories = [...new Set((await entries.person.all()).map((each) => each.category).filter(Boolean))]
+      const known = await knownIssuers()
+      const company = current?.company ?? preset.company ?? ''
+      // Une entreprise écrite qui n'est pas (ou plus) dans la liste : gardée, dite telle.
+      const listed = known.find((each) => each.code === company || each.name.toLowerCase() === company.toLowerCase())?.code
+      const values = await platform.ui.askForm({
+        title: current ? t('bibliotheque.entry.edit.title', { name: current.name }) : t('bibliotheque.person.new'),
+        intro: t('bibliotheque.person.form.intro'),
+        fields: [
+          { kind: 'text', key: 'name', label: t('bibliotheque.person.field.name'), required: true, value: current?.name ?? preset.name ?? '', placeholder: t('bibliotheque.person.field.name.placeholder') },
+          {
+            kind: 'choice',
+            key: 'company',
+            label: t('bibliotheque.person.field.company'),
+            value: listed ?? company,
+            description: t('bibliotheque.person.field.company.desc'),
+            options: [
+              { value: '', label: t('bibliotheque.issuer.unset') },
+              ...[...known].sort((a, b) => a.code.localeCompare(b.code, 'fr')).map((each) => ({ value: each.code, label: issuerLabelIn(each.code, known) })),
+              ...(company && !listed ? [{ value: company, label: t('bibliotheque.issuer.outside', { issuer: company }) }] : []),
+              { value: NEW_ISSUER, label: t('bibliotheque.issuer.add') }
+            ]
+          },
+          { kind: 'text', key: 'description', label: t('bibliotheque.person.field.role'), value: current?.description ?? preset.description ?? '', placeholder: t('bibliotheque.person.field.role.placeholder') },
+          { kind: 'text', key: 'email', label: t('bibliotheque.person.field.email'), value: current?.email ?? preset.email ?? '', placeholder: t('bibliotheque.person.field.email.placeholder') },
+          { kind: 'text', key: 'phone', label: t('bibliotheque.person.field.phone'), value: current?.phone ?? preset.phone ?? '', placeholder: t('bibliotheque.person.field.phone.placeholder') },
+          { kind: 'text', key: 'category', label: t('bibliotheque.entry.field.category'), value: current?.category ?? '', placeholder: t('bibliotheque.person.field.category.placeholder'), ...(categories.length ? { description: t('bibliotheque.entry.field.category.known', { list: categories.join(', ') }) } : {}) },
+          { kind: 'textarea', key: 'text', label: t('bibliotheque.person.text'), value: current?.text ?? '', placeholder: t('bibliotheque.person.field.text.placeholder') },
+          { kind: 'toggle', key: 'favorite', label: t('bibliotheque.entry.favorite'), value: current?.favorite ?? false, tooltip: t('bibliotheque.person.field.favorite.tip') }
+        ],
+        submit: current ? t('bibliotheque.entry.save') : t('bibliotheque.entry.create')
+      })
+      const name = values?.name?.trim()
+      if (!values || !name) return null
+      const email = (values.email ?? '').trim()
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        platform.notifier.notify(t('bibliotheque.person.badEmail', { email }), 8000)
+        return null
+      }
+      // Une entreprise à ajouter : sa fenêtre, puis elle est celle de la personne.
+      let chosen = (values.company ?? '').trim()
+      if (chosen === NEW_ISSUER) {
+        const draft = await newIssuer('')
+        chosen = draft?.code ?? company
+      }
+      return {
+        name,
+        text: (values.text ?? '').trim(),
+        category: (values.category ?? '').trim(),
+        description: (values.description ?? '').trim(),
+        favorite: values.favorite === 'true',
+        ...(chosen ? { company: chosen } : {}),
+        ...(email ? { email } : {}),
+        ...((values.phone ?? '').trim() ? { phone: (values.phone ?? '').trim() } : {})
+      }
     }
     const createEntry = async (kind: EntryKind, folder?: string): Promise<string | null> => {
       const draft = await entryForm(kind)

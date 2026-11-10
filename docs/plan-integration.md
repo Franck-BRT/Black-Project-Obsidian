@@ -638,6 +638,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.116.0 : le **contrôle des lectures IA qui bouclent** (repérées, relancées une fois, sinon
   gardées jusqu'à la boucle et dites ; une erreur si rien n'est lu) ; « Émetteurs » devient
   **Entreprises**
+- v0.117.0 : le **répertoire des personnes** dans la Bibliothèque (entreprise, fonction,
+  coordonnées ; la fiche d'une entreprise montre ses personnes)
 
 ### Étape 7 — Livrables
 

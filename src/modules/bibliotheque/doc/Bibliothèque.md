@@ -221,6 +221,16 @@ la liste… », son nom proposé) et se lit « ESA — Agence spatiale européen
 nom et un code proposés — « TAS » pour Thales Alenia Space) : elle devient l'entreprise du
 document, et des autres documents qui portaient ce nom.
 
+**Le répertoire des personnes** (Bibliothèque › **Personnes**) : les personnes avec qui vous
+travaillez, une note par personne (dans `Bibliothèque/Personnes`). **Nouvelle personne** : son
+nom et prénom, son **entreprise** (choisie dans la liste des entreprises — ou « ＋ Ajouter une
+entreprise à la liste… », sa fenêtre s'ouvre), sa **fonction**, son **adresse électronique**
+(vérifiée), son **téléphone**, une catégorie (client, fournisseur, interne…), des notes ;
+favorite ou non. Sa carte dit sa fonction, son entreprise et ses coordonnées ; la recherche la
+trouve par chacun. Sur sa fiche, un clic sur son entreprise ouvre celle-ci ; la fiche d'une
+entreprise montre **ses personnes**. Comme les autres listes : des répertoires, d'autres
+bibliothèques, **Déplacer…**, **Retirer**.
+
 **L'entreprise** aussi : dite par le document (« Émetteur : », « Émis par », « Pouvoir
 adjudicateur : »…), elle est donnée. Sinon elle est **à confirmer** : la fiche propose
 l'organisme lu au début du document (**Prendre « … »**), **Pas d'entreprise**, ou

@@ -22,13 +22,14 @@ export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = {
   persona: 'bibliotheque.personas',
   skill: 'bibliotheque.skills',
   issuer: 'bibliotheque.issuers',
-  tag: 'bibliotheque.tags'
+  tag: 'bibliotheque.tags',
+  person: 'bibliotheque.persons'
 }
-export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag' }
+export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag', person: 'bibliotheque.person' }
 export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(ENTRY_PAGE[kind], encodeURIComponent(path))
 
-type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag'
-const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag' }
+type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user'
+const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user' }
 
 export interface EntriesHomeDeps {
   t: Translate
@@ -71,16 +72,34 @@ const excerpt = (text: string, size = 220): string => {
 /** Le nom d'une entrée tel qu'on le montre : un émetteur, son code devant (« ESA — Agence spatiale européenne »). */
 export const entryTitle = (entry: Pick<LibraryEntry, 'name' | 'code'>): string => (entry.code ? `${entry.code} — ${entry.name}` : entry.name)
 
-function entryCard(deps: EntriesHomeDeps, entry: LibraryEntry): Card {
+/** Une personne en une ligne : sa fonction, son entreprise (« Responsable qualité · ESA — Agence spatiale européenne »). */
+const personLine = (entry: LibraryEntry, companies: readonly LibraryEntry[]): string => [entry.description, entry.company ? companyLabel(entry.company, companies) : ''].filter(Boolean).join(' · ')
+
+/** L'entreprise d'une personne telle qu'on la montre : celle de la liste (« ESA — … »), sinon ce qui est écrit. */
+export const companyLabel = (value: string, companies: readonly LibraryEntry[]): string => {
+  const found = companyOf(value, companies)
+  return found ? entryTitle(found) : value
+}
+
+/** L'entreprise de la liste qu'une personne nomme : par son code, sinon par son nom. */
+export const companyOf = (value: string, companies: readonly LibraryEntry[]): LibraryEntry | undefined => {
+  const wanted = value.trim().toLowerCase()
+  return wanted ? (companies.find((each) => each.code?.toLowerCase() === wanted) ?? companies.find((each) => each.name.toLowerCase() === wanted)) : undefined
+}
+
+function entryCard(deps: EntriesHomeDeps, entry: LibraryEntry, companies: readonly LibraryEntry[] = []): Card {
   const { t } = deps
   const show = deps.showPage
+  const person = entry.kind === 'person'
+  const subtitle = person ? personLine(entry, companies) : entry.description
   return {
     id: entry.path,
     title: entryTitle(entry),
-    ...(entry.description ? { subtitle: entry.description } : {}),
+    ...(subtitle ? { subtitle } : {}),
     icon: ICON[entry.kind],
     badges: [...(entry.favorite ? [{ label: t('bibliotheque.entry.favorite'), tone: 'warning' as const }] : []), ...(entry.category ? [{ label: entry.category, tone: 'info' as const }] : [])],
-    text: excerpt(entry.text) || t('bibliotheque.entry.noText'),
+    // Une personne : ses coordonnées d'abord.
+    text: (person ? [entry.email, entry.phone, excerpt(entry.text, 160)].filter(Boolean).join(' · ') : excerpt(entry.text)) || t(person ? 'bibliotheque.person.noContact' : 'bibliotheque.entry.noText'),
     ...(show ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => show(entryPageOf(entry.kind, entry.path)) } } : {}),
     actions: [
       {
@@ -103,6 +122,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
   const places = deps.places[kind]
   const place = resolvePlace(places, param)
   const everything = await deps.stores[kind].all()
+  const companies = kind === 'person' ? await deps.stores.issuer.all() : []
   const by = groupingOf(ENTRIES_PAGE[kind], 'categorie')
   const under = everything.filter((entry) => isUnder(entry, place))
   const entries = by === 'repertoire' ? under : under.filter((entry) => isHere(entry, place))
@@ -149,7 +169,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
           },
           ...grouped(
             entries,
-            (entry) => entryCard(deps, entry),
+            (entry) => entryCard(deps, entry, companies),
             by === 'categorie'
               ? (entry) => (entry.category ? { key: entry.category.toLowerCase(), title: entry.category } : { key: '', title: t('bibliotheque.entry.noCategory'), order: 1 })
               : by === 'favoris'
@@ -175,10 +195,51 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
   const home = entry?.shelf ? placePageOf(ENTRIES_PAGE[kind], { shelf: entry.shelf, directory: entry.directory ?? '' }) : ENTRIES_PAGE[kind]
   const back: ViewAction = { id: 'back', label: (entry && placeName(deps.places[kind].shelves(), entry.shelf, entry.directory)) || t(`bibliotheque.${kind}.title`), run: () => deps.showPage?.(home) }
   if (!entry) return { title: t(`bibliotheque.${kind}.missing.title`), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.entry.missing') }] }
+  const companies = kind === 'person' || kind === 'issuer' ? await deps.stores.issuer.all() : []
+  // Une personne : ses coordonnées ; un clic sur son entreprise (de la liste) l'ouvre.
+  const company = kind === 'person' && entry.company ? companyOf(entry.company, companies) : undefined
+  const contact: HomeBlock[] =
+    kind === 'person'
+      ? [
+          {
+            kind: 'list',
+            title: t('bibliotheque.person.contact'),
+            items: [
+              {
+                id: 'company',
+                title: t('bibliotheque.person.field.company'),
+                detail: entry.company ? companyLabel(entry.company, companies) + (company ? '' : ` — ${t('bibliotheque.person.companyOutside')}`) : t('bibliotheque.person.none'),
+                ...(company && deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('issuer', company.path)) } } : {})
+              },
+              { id: 'role', title: t('bibliotheque.person.field.role'), detail: entry.description || t('bibliotheque.person.none') },
+              { id: 'email', title: t('bibliotheque.person.field.email'), detail: entry.email || t('bibliotheque.person.none') },
+              { id: 'phone', title: t('bibliotheque.person.field.phone'), detail: entry.phone || t('bibliotheque.person.none') }
+            ]
+          }
+        ]
+      : []
+  // Une entreprise : les personnes de la liste qui y travaillent.
+  const people = kind === 'issuer' ? (await deps.stores.person.all()).filter((each) => each.company && companyOf(each.company, companies)?.path === entry.path) : []
+  const staff: HomeBlock[] =
+    kind === 'issuer'
+      ? [
+          {
+            kind: 'list',
+            title: t('bibliotheque.issuer.people', { count: people.length }),
+            items: people.map((each) => ({
+              id: each.path,
+              title: each.name,
+              detail: [each.description, each.email, each.phone].filter(Boolean).join(' · '),
+              ...(deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('person', each.path)) } } : {})
+            })),
+            empty: t('bibliotheque.issuer.people.none')
+          }
+        ]
+      : []
   return {
     title: entryTitle(entry),
     back,
-    subtitle: [t(`bibliotheque.${kind}.one`), entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
+    subtitle: [t(`bibliotheque.${kind}.one`), kind === 'person' ? personLine(entry, companies) : '', entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
     actions: [
       {
         id: 'edit',
@@ -213,7 +274,9 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
       }
     ],
     blocks: [
-      ...(entry.description ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
+      ...(entry.description && kind !== 'person' ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
+      ...contact,
+      ...staff,
       { kind: 'text', title: t(`bibliotheque.${kind}.text`), paragraphs: entry.text ? entry.text.split(/\n{2,}/) : [], empty: t('bibliotheque.entry.noText') },
       { kind: 'text', title: t('bibliotheque.entry.where'), paragraphs: [t('bibliotheque.entry.placed', { place: placeLabel(deps.places[kind], entry) }), t(`bibliotheque.${kind}.where`)] }
     ]
@@ -229,9 +292,10 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const skills = await deps.stores.skill.all()
   const issuers = await deps.stores.issuer.all()
   const tags = await deps.stores.tag.all()
+  const persons = await deps.stores.person.all()
   const go = (page: string): ViewAction => ({ id: 'open', label: t('bibliotheque.hub.open'), run: () => deps.showPage?.(page) })
   // Plusieurs bibliothèques d'une sorte : une section par sorte, une carte par bibliothèque.
-  const several = (['document', 'prompt', 'persona', 'skill', 'issuer', 'tag'] as const).some((kind) => deps.places[kind].shelves().length > 1)
+  const several = (['document', 'prompt', 'persona', 'skill', 'issuer', 'person', 'tag'] as const).some((kind) => deps.places[kind].shelves().length > 1)
   if (several) {
     const placed = await deps.placedDocuments()
     const section = (kind: 'document' | EntryKind, icon: KindIcon, items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
@@ -259,6 +323,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
             { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
             { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' },
             { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
+            { label: t('bibliotheque.hub.persons'), value: String(persons.length), icon: 'user' },
             { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
           ]
         },
@@ -268,6 +333,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         section('persona', 'spark', personas),
         section('skill', 'list', skills),
         section('issuer', 'building', issuers),
+        section('person', 'user', persons),
         section('tag', 'tag', tags)
       ]
     }
@@ -291,8 +357,9 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
           { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
           { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
           { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' },
-            { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
-            { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
+          { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
+          { label: t('bibliotheque.hub.persons'), value: String(persons.length), icon: 'user' },
+          { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
         ]
       },
       {
@@ -303,6 +370,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
           card('personas', 'spark', personas.length, ENTRIES_PAGE.persona),
           card('skills', 'list', skills.length, ENTRIES_PAGE.skill),
           card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer),
+          card('persons', 'user', persons.length, ENTRIES_PAGE.person),
           card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)
         ]
       }
@@ -324,7 +392,7 @@ export function registerEntriesHome(views: ViewsRegistrar | undefined, deps: Ent
       icon: ICON[kind],
       color: 'teal',
       group: t('bibliotheque.name'),
-      order: { prompt: 28, persona: 29, skill: 30, issuer: 31, tag: 32 }[kind],
+      order: { prompt: 28, persona: 29, skill: 30, issuer: 31, tag: 32, person: 33 }[kind],
       description: t(`bibliotheque.${kind}.tile`),
       page: ENTRIES_PAGE[kind],
       run: () => show(ENTRIES_PAGE[kind])

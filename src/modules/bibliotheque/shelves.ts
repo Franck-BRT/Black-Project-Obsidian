@@ -15,8 +15,8 @@
 import { cleanFolder } from '../../core/settings'
 
 /** La sorte d'une bibliothèque. */
-export type ShelfKind = 'document' | 'prompt' | 'persona' | 'skill' | 'issuer' | 'tag'
-export const SHELF_KINDS: readonly ShelfKind[] = ['document', 'prompt', 'persona', 'skill', 'issuer', 'tag']
+export type ShelfKind = 'document' | 'prompt' | 'persona' | 'skill' | 'issuer' | 'tag' | 'person'
+export const SHELF_KINDS: readonly ShelfKind[] = ['document', 'prompt', 'persona', 'skill', 'issuer', 'tag', 'person']
 
 /** Une bibliothèque : son identifiant, son nom, son dossier ; la principale vient des réglages d'origine. */
 export interface Shelf {
