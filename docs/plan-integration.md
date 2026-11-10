@@ -640,6 +640,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   **Entreprises**
 - v0.117.0 : le **répertoire des personnes** dans la Bibliothèque (entreprise, fonction,
   coordonnées ; la fiche d'une entreprise montre ses personnes)
+- v0.118.0 : le dossier `Bibliothèque/Émetteurs` renommé `Bibliothèque/Entreprises` (à l'ouverture)
 
 ### Étape 7 — Livrables
 

@@ -129,9 +129,22 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
       },
       rename: async (from, to) => {
         const bytes = store.get(from)
-        if (!bytes) throw missing(from)
-        store.delete(from)
-        put(to, bytes)
+        if (bytes) {
+          store.delete(from)
+          put(to, bytes)
+          return
+        }
+        // Un dossier : tout ce qu'il contient, à la même place sous son nouveau nom.
+        if (!folders.has(from)) throw missing(from)
+        for (const path of [...store.keys()].filter((each) => each.startsWith(`${from}/`))) {
+          const moved = store.get(path)!
+          store.delete(path)
+          put(`${to}${path.slice(from.length)}`, moved)
+        }
+        for (const folder of [...folders].filter((each) => each === from || each.startsWith(`${from}/`))) {
+          folders.delete(folder)
+          addFolders(`${to}${folder.slice(from.length)}/x`)
+        }
       },
       trash: async (path) => {
         if (!store.delete(path)) throw missing(path)

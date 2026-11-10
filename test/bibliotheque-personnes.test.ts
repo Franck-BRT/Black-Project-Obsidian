@@ -20,10 +20,10 @@ const MODULES = [lectureFichiersModule, bibliothequeModule]
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
 const NEW_COMPANY = '\u0000nouvel-emetteur'
 
-async function start(platform: MemoryPlatform) {
+async function start(platform: MemoryPlatform, library: Record<string, unknown> = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = {}
+  const settings: Record<string, Record<string, unknown>> = { bibliotheque: library }
   const views = new ViewsRegistry()
   const shown: string[] = []
   for (const module of MODULES) {
@@ -45,12 +45,48 @@ async function start(platform: MemoryPlatform) {
   }
   const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
   const listsIn = (blocks: readonly HomeBlock[]): Extract<HomeBlock, { kind: 'list' }>[] => blocks.flatMap((block) => (block.kind === 'list' ? [block] : block.kind === 'section' ? listsIn(block.blocks) : []))
-  const addCompany = (code: string, name: string) => platform.fs.writeText(`Bibliothèque/Émetteurs/${name}.md`, `---\nbp-type: bibliotheque-emetteur\nnom: ${name}\ncode: ${code}\n---\n\n`)
+  const addCompany = (code: string, name: string) => platform.fs.writeText(`Bibliothèque/Entreprises/${name}.md`, `---\nbp-type: bibliotheque-emetteur\nnom: ${name}\ncode: ${code}\n---\n\n`)
   return { page, load, shown, cardsIn, listsIn, addCompany }
 }
 
 afterEach(async () => {
   for (const module of [...MODULES].reverse()) await module.deactivate?.()
+})
+
+describe('le dossier des entreprises', () => {
+  it('« Bibliothèque/Émetteurs » d’avant : renommé « Bibliothèque/Entreprises » à l’ouverture, ses notes et répertoires avec ; c’est dit', async () => {
+    const platform = memoryPlatform()
+    await platform.fs.writeText('Bibliothèque/Émetteurs/Agence spatiale européenne.md', '---\nbp-type: bibliotheque-emetteur\nnom: Agence spatiale européenne\ncode: ESA\n---\n\n')
+    await platform.fs.writeText('Bibliothèque/Émetteurs/Industriels/Thales.md', '---\nbp-type: bibliotheque-emetteur\nnom: Thales\ncode: THA\n---\n\n')
+    const { page } = await start(platform)
+    expect([...platform.files.keys()].filter((path) => path.includes('Émetteurs'))).toEqual([])
+    expect(platform.files.has('Bibliothèque/Entreprises/Agence spatiale européenne.md')).toBe(true)
+    expect(platform.files.has('Bibliothèque/Entreprises/Industriels/Thales.md')).toBe(true)
+    expect(platform.notices).toContain('Le dossier des entreprises est renommé : « Bibliothèque/Émetteurs » devient « Bibliothèque/Entreprises », ses notes avec.')
+    const companies = await page('bibliotheque.issuers').load()
+    expect(companies.subtitle).toContain('Bibliothèque/Entreprises')
+  })
+
+  it('le réglage écrit avec l’ancien dossier, ou avec celui d’origine : renommé aussi, le réglage suit', async () => {
+    for (const saved of ['Bibliothèque/Émetteurs', 'Bibliothèque/Entreprises']) {
+      const platform = memoryPlatform()
+      await platform.fs.writeText('Bibliothèque/Émetteurs/ESA.md', '---\nbp-type: bibliotheque-emetteur\nnom: ESA\ncode: ESA\n---\n\n')
+      const { page } = await start(platform, { dossierEmetteurs: saved })
+      expect(platform.files.has('Bibliothèque/Entreprises/ESA.md')).toBe(true)
+      expect((await page('bibliotheque.issuers').load()).subtitle).toContain('Bibliothèque/Entreprises')
+      for (const module of [...MODULES].reverse()) await module.deactivate?.()
+    }
+  })
+
+  it('les deux dossiers déjà là : l’ancien est gardé (le réglage le dit), rien n’est mêlé', async () => {
+    const platform = memoryPlatform()
+    await platform.fs.writeText('Bibliothèque/Émetteurs/ESA.md', '---\nbp-type: bibliotheque-emetteur\nnom: ESA\ncode: ESA\n---\n\n')
+    await platform.fs.writeText('Bibliothèque/Entreprises/Autre.md', 'une note à moi')
+    const { page } = await start(platform)
+    expect(platform.files.has('Bibliothèque/Émetteurs/ESA.md')).toBe(true)
+    expect(platform.files.has('Bibliothèque/Entreprises/Autre.md')).toBe(true)
+    expect((await page('bibliotheque.issuers').load()).subtitle).toContain('Bibliothèque/Émetteurs')
+  })
 })
 
 describe('le répertoire des personnes', () => {
@@ -96,7 +132,7 @@ describe('le répertoire des personnes', () => {
       ['Téléphone', '+33 1 23 45 67 89']
     ])
     contact.items[0]!.open!.run()
-    expect(shown.at(-1)).toBe(`bibliotheque.issuer?${encodeURIComponent('Bibliothèque/Émetteurs/Agence spatiale européenne.md')}`)
+    expect(shown.at(-1)).toBe(`bibliotheque.issuer?${encodeURIComponent('Bibliothèque/Entreprises/Agence spatiale européenne.md')}`)
     // La fiche de l'entreprise : ses personnes ; un clic mène à la personne.
     const esa = await load(shown.at(-1)!)
     const people = listsIn(esa.blocks).find((list) => list.title === 'Ses personnes (1)')!
@@ -105,7 +141,7 @@ describe('le répertoire des personnes', () => {
     expect(shown.at(-1)).toBe(`bibliotheque.person?${encodeURIComponent('Bibliothèque/Personnes/Marie Dupont.md')}`)
     // Une autre entreprise de la liste : personne.
     await addCompany('DGA', 'Direction générale de l’armement')
-    const dga = await page('bibliotheque.issuer').load(encodeURIComponent('Bibliothèque/Émetteurs/Direction générale de l’armement.md'))
+    const dga = await page('bibliotheque.issuer').load(encodeURIComponent('Bibliothèque/Entreprises/Direction générale de l’armement.md'))
     expect(listsIn(dga.blocks).find((list) => list.title === 'Ses personnes (0)')).toMatchObject({ items: [], empty: 'Aucune personne de cette entreprise dans le répertoire.' })
   })
 
@@ -115,7 +151,7 @@ describe('le répertoire des personnes', () => {
     platform.forms.push({ name: 'Paul Martin', company: NEW_COMPANY, description: 'Acheteur', email: '', phone: '', category: '', text: '', favorite: 'false' })
     platform.forms.push({ code: 'TAS', name: 'Thales Alenia Space', category: '', description: '', text: '', favorite: 'false' })
     await (await page('bibliotheque.persons').load()).actions!.find((action) => action.id === 'new')!.run()
-    expect(read(platform, 'Bibliothèque/Émetteurs/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
+    expect(read(platform, 'Bibliothèque/Entreprises/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
     expect(read(platform, 'Bibliothèque/Personnes/Paul Martin.md')).toMatch(/\nentreprise: TAS\n/)
     // Écrite à la main dans la note, une entreprise inconnue : gardée, dite hors de la liste.
     await platform.fs.writeText('Bibliothèque/Personnes/Léa Petit.md', '---\nbp-type: bibliotheque-personne\nnom: Léa Petit\nentreprise: Airbus\n---\n\n')

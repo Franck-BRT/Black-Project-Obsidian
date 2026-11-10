@@ -5,13 +5,23 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.38.0 (Black Projects 0.117.0) |
+| Version | 0.39.0 (Black Projects 0.118.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le dossier « Entreprises » (v0.39.0, Black Projects 0.118.0)
+
+Le dossier d'origine des entreprises devient `Bibliothèque/Entreprises` (celui d'une
+bibliothèque d'entreprises ajoutée : `Bibliothèques/Entreprises/…`). À l'activation
+(`renameIssuersFolder`), un coffre qui a encore `Bibliothèque/Émetteurs` — sans autre dossier
+réglé — le voit **renommé** (`FileSystem.rename` d'un dossier : dans Obsidian, par son
+gestionnaire de fichiers, les liens suivent), et une notice le dit ; s'il a déjà les deux, ou si
+le renommage échoue, le réglage garde l'ancien — rien n'est mêlé ni perdu. Les clés `emetteur…`
+des notes ne changent pas.
 
 ## Le répertoire des personnes (v0.38.0, Black Projects 0.117.0)
 

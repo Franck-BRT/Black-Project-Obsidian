@@ -84,7 +84,8 @@ export class ObsidianFileSystem implements FileSystem {
     const target = normalizePath(to)
     await this.ensureFolder(parentOf(target))
     const file = this.app.vault.getAbstractFileByPath(source)
-    if (file instanceof TFile) await this.app.fileManager.renameFile(file, target)
+    // Un fichier, un dossier (tout ce qu'il contient) : par Obsidian, les liens suivent.
+    if (file instanceof TFile || file instanceof TFolder) await this.app.fileManager.renameFile(file, target)
     else await this.adapter.rename(source, target)
   }
 

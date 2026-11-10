@@ -212,8 +212,9 @@ Filtre *Date à confirmer*.
 **La liste des entreprises** (Bibliothèque › **Entreprises**) — celles qui émettent les
 documents : comme les types de pièce, un **code** (« ESA ») et un **nom** (« Agence spatiale
 européenne ») — et, s'il le faut, les autres noms sous lesquels elle signe, un par ligne
-(« European Space Agency »). Une note par entreprise (dans le dossier
-`Bibliothèque/Émetteurs`, qui garde son nom : il se change dans les réglages). L'entreprise
+(« European Space Agency »). Une note par entreprise, dans le dossier
+`Bibliothèque/Entreprises` (un coffre qui avait encore `Bibliothèque/Émetteurs` le voit renommé
+à l'ouverture, ses notes avec). L'entreprise
 d'un document y est **reconnue** (son nom, un autre nom, ou son code en tête du document),
 **s'y choisit** (le crayon du champ, *Classer…* : une liste, et « ＋ Ajouter une entreprise à
 la liste… », son nom proposé) et se lit « ESA — Agence spatiale européenne ». Une entreprise

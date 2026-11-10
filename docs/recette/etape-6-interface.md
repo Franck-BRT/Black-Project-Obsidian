@@ -70,6 +70,12 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le dossier « Entreprises » (v0.118.0)
+
+- [ ] Un coffre qui a `Bibliothèque/Émetteurs` : à l'ouverture, il devient `Bibliothèque/Entreprises`
+      (ses notes, ses répertoires) ; une notice le dit ; la liste Entreprises est la même
+- [ ] Un coffre neuf : `Bibliothèque/Entreprises` dès la première entreprise
+
 ## Le répertoire des personnes (v0.117.0)
 
 - [ ] Bibliothèque › **Personnes** : **Nouvelle personne** — nom, entreprise (la liste des

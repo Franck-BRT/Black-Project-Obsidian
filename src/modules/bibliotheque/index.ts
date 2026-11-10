@@ -54,7 +54,9 @@ export const DEFAULT_PROMPTS_FOLDER = 'Bibliothèque/Prompts'
 export const DEFAULT_PERSONAS_FOLDER = 'Bibliothèque/Personas'
 export const DEFAULT_SKILLS_FOLDER = 'Bibliothèque/Skills'
 export const ISSUERS_FOLDER_KEY = 'dossierEmetteurs'
-export const DEFAULT_ISSUERS_FOLDER = 'Bibliothèque/Émetteurs'
+export const DEFAULT_ISSUERS_FOLDER = 'Bibliothèque/Entreprises'
+/** Son nom d'avant (« Émetteurs ») : un coffre qui l'a encore le voit renommé à l'ouverture. */
+export const FORMER_ISSUERS_FOLDER = 'Bibliothèque/Émetteurs'
 export const TAGS_FOLDER_KEY = 'dossierEtiquettes'
 export const DEFAULT_TAGS_FOLDER = 'Bibliothèque/Étiquettes'
 export const PERSONS_FOLDER_KEY = 'dossierPersonnes'
@@ -562,19 +564,47 @@ const folderOf = (settings: Readonly<Record<string, unknown>>, key = FOLDER_KEY,
   return typeof stored === 'string' && stored.trim() ? cleanFolder(stored) : fallback
 }
 
+/**
+ * Le dossier des entreprises s'appelait « Émetteurs » : à l'ouverture d'un coffre qui l'a
+ * encore (et qui n'a pas réglé un autre dossier), il est **renommé** « Entreprises », ses notes
+ * et ses répertoires avec. Un coffre qui a déjà les deux garde l'ancien (le réglage le dit) :
+ * rien n'est mêlé ni perdu.
+ */
+async function renameIssuersFolder(context: ModuleContext, t: (key: string, vars?: Record<string, string | number>) => string): Promise<void> {
+  const { platform, settings } = context
+  const saved = settings.get()[ISSUERS_FOLDER_KEY]
+  const configured = typeof saved === 'string' && saved.trim() ? cleanFolder(saved) : ''
+  // Un dossier choisi par l'utilisateur (ni l'ancien, ni celui d'origine, que la plateforme a pu écrire) : rien ne bouge.
+  if (configured && configured !== FORMER_ISSUERS_FOLDER && configured !== DEFAULT_ISSUERS_FOLDER) return
+  try {
+    if (!(await platform.fs.exists(FORMER_ISSUERS_FOLDER))) return
+    if (await platform.fs.exists(DEFAULT_ISSUERS_FOLDER)) {
+      if (configured !== FORMER_ISSUERS_FOLDER) await settings.save({ ...settings.get(), [ISSUERS_FOLDER_KEY]: FORMER_ISSUERS_FOLDER })
+      return
+    }
+    await platform.fs.rename(FORMER_ISSUERS_FOLDER, DEFAULT_ISSUERS_FOLDER)
+    if (configured === FORMER_ISSUERS_FOLDER) await settings.save({ ...settings.get(), [ISSUERS_FOLDER_KEY]: DEFAULT_ISSUERS_FOLDER })
+    platform.notifier.notify(t('bibliotheque.issuer.folderRenamed', { from: FORMER_ISSUERS_FOLDER, to: DEFAULT_ISSUERS_FOLDER }), 10000)
+  } catch {
+    // Pas renommé (un fichier ouvert, un droit) : le réglage garde l'ancien, la liste reste lue.
+    if (configured !== FORMER_ISSUERS_FOLDER) await settings.save({ ...settings.get(), [ISSUERS_FOLDER_KEY]: FORMER_ISSUERS_FOLDER })
+  }
+}
+
 export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.38.0',
+  version: '0.39.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
   settingsFields: [folderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
-  activate(context: ModuleContext) {
+  async activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
     const t = (key: string, vars?: Record<string, string | number>) => i18n.t(key, vars)
+    await renameIssuersFolder(context, t)
     const promptsFolder = () => folderOf(settings.get(), PROMPTS_FOLDER_KEY, DEFAULT_PROMPTS_FOLDER)
     const personasFolder = () => folderOf(settings.get(), PERSONAS_FOLDER_KEY, DEFAULT_PERSONAS_FOLDER)
     const skillsFolder = () => folderOf(settings.get(), SKILLS_FOLDER_KEY, DEFAULT_SKILLS_FOLDER)
@@ -697,7 +727,7 @@ export const bibliothequeModule: BlackModule = {
       prompt: 'Bibliothèques/Prompts',
       persona: 'Bibliothèques/Personas',
       skill: 'Bibliothèques/Skills',
-      issuer: 'Bibliothèques/Émetteurs',
+      issuer: 'Bibliothèques/Entreprises',
       tag: 'Bibliothèques/Étiquettes',
       person: 'Bibliothèques/Personnes'
     }

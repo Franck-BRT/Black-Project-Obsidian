@@ -50,7 +50,7 @@ async function start(platform: MemoryPlatform, modules: readonly BlackModule[] =
   const pour = async (name: string, text: string) => (await pourIntoLibrary([{ name, bytes: bytes(text) }], { module: 'bibliotheque', label: '' }))!.added[0]!
   /** Un émetteur de la liste, sa note écrite comme le fait l'application. */
   const addIssuer = (code: string, name: string, aliases: string[] = []) =>
-    platform.fs.writeText(`Bibliothèque/Émetteurs/${name}.md`, `---\nbp-type: bibliotheque-emetteur\nnom: ${name}\ncode: ${code}\n---\n\n${aliases.join('\n')}\n`)
+    platform.fs.writeText(`Bibliothèque/Entreprises/${name}.md`, `---\nbp-type: bibliotheque-emetteur\nnom: ${name}\ncode: ${code}\n---\n\n${aliases.join('\n')}\n`)
   const issuerItem = async (record: string): Promise<ListItem | undefined> => {
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(record))
     const identity = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.identite')
@@ -82,7 +82,7 @@ describe('la liste des émetteurs', () => {
       { key: 'name', label: 'Nom de l’entreprise', required: true }
     ])
     expect(form.fields.find((field) => field.key === 'text')).toMatchObject({ label: 'Autres noms (un par ligne)', required: false })
-    expect(read(platform, 'Bibliothèque/Émetteurs/Agence spatiale européenne.md')).toMatch(/^---\nbp-type: bibliotheque-emetteur\nnom: Agence spatiale européenne\ncode: ESA\ncategorie: Acheteur\n---\n\nEuropean Space Agency\n$/)
+    expect(read(platform, 'Bibliothèque/Entreprises/Agence spatiale européenne.md')).toMatch(/^---\nbp-type: bibliotheque-emetteur\nnom: Agence spatiale européenne\ncode: ESA\ncategorie: Acheteur\n---\n\nEuropean Space Agency\n$/)
     const after = await page('bibliotheque.issuers').load()
     const cardsIn = (blocks: readonly HomeBlock[]): { id: string; title: string }[] =>
       blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
@@ -151,7 +151,7 @@ describe('l’émetteur d’un document, dans la liste', () => {
     platform.forms.push({ code: 'TAS', name: 'Thales Alenia Space', category: '', description: '', text: '', favorite: 'false' })
     await (await issuerItem(doc.record))!.tools![0]!.run()
     expect(platform.asked.at(-1)!.fields.find((each) => each.key === 'name')).toMatchObject({ value: 'Thales Alenia Space' })
-    expect(read(platform, 'Bibliothèque/Émetteurs/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
+    expect(read(platform, 'Bibliothèque/Entreprises/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
     expect(read(platform, doc.record)).toMatch(/\nemetteur: TAS\n/)
     expect((await issuerItem(doc.record))?.detail).toBe('TAS — Thales Alenia Space')
   })
@@ -188,7 +188,7 @@ describe('un émetteur hors de la liste : l’y ajouter', () => {
       { key: 'code', value: 'TAS' },
       { key: 'name', value: 'Thales Alenia Space' }
     ])
-    expect(read(platform, 'Bibliothèque/Émetteurs/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
+    expect(read(platform, 'Bibliothèque/Entreprises/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
     expect(read(platform, doc.record)).toMatch(/\nemetteur: TAS\n/)
     expect(read(platform, other.record)).toMatch(/\nemetteur: TAS\n/)
     expect(platform.notices.at(-1)).toBe('« TAS — Thales Alenia Space » ajoutée à la liste des entreprises ; c’est l’entreprise du document. 1 autre(s) document(s) émis par « Thales Alenia Space » la prennent aussi.')
@@ -205,7 +205,7 @@ describe('un émetteur hors de la liste : l’y ajouter', () => {
     platform.forms.push(null)
     await (await issuerItem(doc.record))!.tools!.find((tool) => tool.id === 'add-issuer')!.run()
     expect(read(platform, doc.record)).toBe(before)
-    expect(platform.files.has('Bibliothèque/Émetteurs/Thales Alenia Space.md')).toBe(false)
+    expect(platform.files.has('Bibliothèque/Entreprises/Thales Alenia Space.md')).toBe(false)
   })
 })
 
