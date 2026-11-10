@@ -24,7 +24,8 @@ import { programmesEn, programmesFr } from './i18n'
 // ── Interface publique ──────────────────────────────────────────────────────────────
 export { registerPhaseKind, phaseKinds, type PhaseContext, type PhaseKind } from './kinds'
 export { addParallel, addSpan, addStage, AO_KIND, movePhase, remapSpans, removePhase, starterTypes } from './types'
-export { addDays, isLate, planPhases } from './model'
+export { addDays, daysBetween, isLate, planPhases, replanPhases, slipOf } from './model'
+export { shortDay } from './home'
 export { PROGRAMMES_PAGE, PROJECT_PAGE, phasePageOf, projectPageOf, programmePageOf } from './home'
 export type { Affaire, PhaseStatus, Programme, Project, ProjectPhase, ProjectType } from './model'
 
@@ -53,7 +54,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.3.1',
+  version: '0.4.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],

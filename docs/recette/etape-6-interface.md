@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le recalage des dates prévues ; « Phase technique » (v0.112.0)
+
+- [ ] Un projet démarré il y a un mois, rien commencé : ses phases à venir commencent
+      aujourd'hui ; la première est **En retard**, sa tuile dit « (+30 j) » ; la **Fin prévue**
+      dit « décalée de 30 j (initialement le …) »
+- [ ] Une phase terminée plus tôt que prévu (ses dates) : la suite avance, la fin prévue aussi
+- [ ] Une phase en cours qui dépasse sa fin prévue : elle s'étend jusqu'à aujourd'hui, la suite
+      recule ; sa page dit « planning initial : du … au … »
+- [ ] Changer la durée d'une phase, ou la date de démarrage : le planning initial est refait
+      (plus de décalage)
+- [ ] L'éditeur d'un type de projet, une phase : le champ s'appelle **Phase technique**
+      (Phase libre, Analyse d'appel d'offres)
+
 ## Un nouveau type de document, depuis les documents attendus (v0.111.1)
 
 - [ ] La fenêtre « Les documents attendus par … » : **Nouveau type de document** — sa fenêtre (code,

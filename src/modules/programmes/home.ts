@@ -10,7 +10,7 @@
 
 import { pageWith, type Breadcrumb, type Card, type HomeBlock, type JourneyPhase, type JourneySpan, type JourneyStage, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { phaseKind, type PhaseContext } from './kinds'
-import { FREE_KIND, isLate, PHASE_STATUSES, progressOf, stagesOf, type Affaire, type PhaseSpec, type PhaseStatus, type Programme, type Project, type ProjectPhase, type ProjectType } from './model'
+import { daysBetween, FREE_KIND, isLate, PHASE_STATUSES, slipOf, progressOf, stagesOf, type Affaire, type PhaseSpec, type PhaseStatus, type Programme, type Project, type ProjectPhase, type ProjectType } from './model'
 import type { ProgrammeStore } from './store'
 import type { Direction } from './types'
 
@@ -73,6 +73,11 @@ export function kindLabel(t: Translate, kind: string): string {
   return phaseKind(kind)?.label ?? t('programmes.kind.unknown', { kind })
 }
 
+/** Le glissement depuis le planning initial, en quelques mots : « (+3 j) », « (−2 j) » ; aucun : rien. */
+function slipText(t: Translate, days: number): string {
+  return days ? ` ${t(days > 0 ? 'programmes.slip.later' : 'programmes.slip.earlier', { days: Math.abs(days) })}` : ''
+}
+
 /** Un jour en court : « 12/03 » (l'année, si ce n'est pas celle d'aujourd'hui). */
 export function shortDay(day: string, year = new Date().getFullYear()): string {
   const [y = '', m = '', d = ''] = day.split('-')
@@ -101,7 +106,7 @@ async function projectStages(deps: HomeDeps, project: Project, open: boolean): P
           const docs = phase.documents ?? []
           const detail = [
             (await phaseKind(phase.kind)?.detail?.(phase).catch(() => null)) ?? (phase.end ? t('programmes.phase.endOn', { date: shortDay(phase.end) }) : ''),
-            phase.plannedStart && phase.status !== 'terminee' ? t('programmes.phase.planned', { from: shortDay(phase.plannedStart), to: shortDay(phase.plannedEnd ?? phase.plannedStart) }) : '',
+            phase.plannedStart && phase.status !== 'terminee' ? t('programmes.phase.planned', { from: shortDay(phase.plannedStart), to: shortDay(phase.plannedEnd ?? phase.plannedStart) }) + slipText(t, slipOf(phase)) : '',
             docs.length ? t('programmes.docs.count', { received: docs.filter((doc) => doc.received).length, total: docs.length }) : ''
           ]
             .filter(Boolean)
@@ -278,12 +283,24 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
   const { done, total, current } = advance(project)
   const next = project.phases.find((phase) => phase.status === 'a-venir')
   const ends = project.phases.map((phase) => phase.plannedEnd).filter((day): day is string => !!day).sort()
+  const initialEnds = project.phases.map((phase) => phase.initialEnd).filter((day): day is string => !!day).sort()
+  const projectSlip = ends.length && initialEnds.length ? daysBetween(initialEnds.at(-1)!, ends.at(-1)!) : 0
   const late = project.phases.filter((phase) => isLate(phase, deps.today()))
   const stats: Stat[] = [
     { label: t('programmes.project.advanceLabel'), value: t('programmes.project.advance', { done, total }), icon: 'check', ...(done === total && total ? { tone: 'success' as const } : {}) },
     { label: t('programmes.project.currentLabel'), value: current.map((phase) => phase.name).join(', ') || (next ? t('programmes.project.next', { name: next.name }) : '—'), icon: 'play' },
     { label: t('programmes.project.startLabel'), value: project.start ? shortDay(project.start) : t('programmes.project.notStarted'), icon: 'calendar' },
-    { label: t('programmes.project.endLabel'), value: ends.length ? shortDay(ends.at(-1)!) : '—', icon: 'clock', ...(late.length ? { tone: 'danger' as const, hint: t('programmes.project.lateHint', { count: late.length }) } : {}) },
+    {
+      label: t('programmes.project.endLabel'),
+      value: ends.length ? shortDay(ends.at(-1)!) : '—',
+      icon: 'clock',
+      ...(late.length || projectSlip
+        ? {
+            ...(late.length || projectSlip > 0 ? { tone: (late.length ? 'danger' : 'warning') as 'danger' | 'warning' } : { tone: 'success' as const }),
+            hint: [projectSlip ? t(projectSlip > 0 ? 'programmes.project.slipLater' : 'programmes.project.slipEarlier', { days: Math.abs(projectSlip), date: shortDay(initialEnds.at(-1)!) }) : '', late.length ? t('programmes.project.lateHint', { count: late.length }) : ''].filter(Boolean).join(' · ')
+          }
+        : {})
+    },
     { label: t('programmes.fact.affaires'), value: String(affaires.length), icon: 'building' }
   ]
   const affaireCards: Card[] = affaires.map((affaire) => ({
@@ -341,6 +358,7 @@ async function phasePage(deps: HomeDeps, param?: string): Promise<PageView> {
   const late = isLate(phase, deps.today())
   const dates = [
     phase.plannedStart ? t('programmes.phase.plannedLong', { from: shortDay(phase.plannedStart), to: shortDay(phase.plannedEnd ?? phase.plannedStart) }) : project.start ? '' : t('programmes.phase.notPlanned'),
+    phase.initialStart && slipOf(phase) ? t('programmes.phase.initial', { from: shortDay(phase.initialStart), to: shortDay(phase.initialEnd ?? phase.initialStart) }) + slipText(t, slipOf(phase)) : '',
     phase.duration !== undefined ? t('programmes.phase.duration', { days: phase.duration }) : '',
     phase.start ? t('programmes.phase.startOn', { date: shortDay(phase.start) }) : '',
     phase.end ? t('programmes.phase.endOn', { date: shortDay(phase.end) }) : '',

@@ -100,9 +100,12 @@ export interface ProjectPhase extends Omit<PhaseSpec, 'documents'> {
   /** Ses dates réelles : commencée, terminée. */
   start?: string
   end?: string
-  /** Ses dates prévues : du démarrage du projet et des durées des phases d'avant. */
+  /** Ses dates prévues : du démarrage du projet et des durées des phases d'avant, recalées sur ce qui s'est passé. */
   plannedStart?: string
   plannedEnd?: string
+  /** Ses dates du planning initial (au démarrage, ou quand une durée change) : le recalage s'y mesure. */
+  initialStart?: string
+  initialEnd?: string
   /** Ce qui la porte : une note (l'analyse de l'appel d'offres, son chemin). */
   link?: string
   documents?: ExpectedDoc[]
@@ -312,6 +315,8 @@ export function readProject(path: string, data: Record<string, unknown>): Projec
             ...(plain(raw.fin) ? { end: plain(raw.fin) } : {}),
             ...(plain(raw.prevuDebut) ? { plannedStart: plain(raw.prevuDebut) } : {}),
             ...(plain(raw.prevuFin) ? { plannedEnd: plain(raw.prevuFin) } : {}),
+            ...(plain(raw.initialDebut) ? { initialStart: plain(raw.initialDebut) } : {}),
+            ...(plain(raw.initialFin) ? { initialEnd: plain(raw.initialFin) } : {}),
             ...(unlink(raw.lien) ? { link: unlink(raw.lien) } : {}),
             ...((docs) => (docs.length ? { documents: docs } : {}))(readDocs(raw.documents, 'type'))
           }
@@ -359,6 +364,8 @@ export function projectData(project: Omit<Project, 'path' | 'folder' | 'name'>):
       ...(phase.duration !== undefined ? { duree: phase.duration } : {}),
       ...(phase.plannedStart ? { prevuDebut: phase.plannedStart } : {}),
       ...(phase.plannedEnd ? { prevuFin: phase.plannedEnd } : {}),
+      ...(phase.initialStart ? { initialDebut: phase.initialStart } : {}),
+      ...(phase.initialEnd ? { initialFin: phase.initialEnd } : {}),
       ...(phase.start ? { debut: phase.start } : {}),
       ...(phase.end ? { fin: phase.end } : {}),
       ...(phase.link ? { lien: link(phase.link) } : {}),
@@ -406,6 +413,8 @@ export function planPhases(phases: readonly ProjectPhase[], start: string | unde
       const unplanned = { ...phase }
       delete unplanned.plannedStart
       delete unplanned.plannedEnd
+      delete unplanned.initialStart
+      delete unplanned.initialEnd
       return unplanned
     })
   const out = new Map<string, ProjectPhase>()
@@ -422,8 +431,64 @@ export function planPhases(phases: readonly ProjectPhase[], start: string | unde
   return phases.map((phase) => out.get(phase.id) ?? phase)
 }
 
-/** Une phase en retard : sa fin prévue passée, et pas terminée (ni sans objet). */
-export const isLate = (phase: ProjectPhase, today: string): boolean => !!phase.plannedEnd && phase.plannedEnd < today && phase.status !== 'terminee' && phase.status !== 'sans-objet'
+const later = (a: string, b: string): string => (a > b ? a : b)
+
+/** Le nombre de jours de `from` à `to` (négatif si `to` vient avant). */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000)
+}
+
+/**
+ * Les dates prévues **recalées** sur ce qui s'est passé, au jour `today` :
+ *
+ * - une phase **terminée** va de son début réel à sa fin réelle (finie tôt : la suite avance ;
+ *   tard : elle recule) ;
+ * - une phase **en cours** part de son début réel ; en retard, elle s'étend jusqu'à aujourd'hui ;
+ * - une phase **à venir** ne commence pas dans le passé : au plus tôt aujourd'hui ;
+ * - **sans objet** : un jour, sans retarder la suite.
+ *
+ * L'étape suivante commence le lendemain de la fin la plus tardive de l'étape. Sans démarrage :
+ * aucune date prévue.
+ */
+export function replanPhases(phases: readonly ProjectPhase[], start: string | undefined, today: string): ProjectPhase[] {
+  if (!start) return planPhases(phases, undefined)
+  const out = new Map<string, ProjectPhase>()
+  let day = start
+  for (const stage of stagesOf(phases)) {
+    const stageStart = day
+    let next: string | null = null
+    for (const phase of stage) {
+      const days = Math.max(0, phase.duration ?? 0)
+      const span = (from: string) => addDays(from, Math.max(0, days - 1))
+      let from = stageStart
+      let to = stageStart
+      if (phase.status === 'terminee') {
+        from = phase.start ?? stageStart
+        to = phase.end ?? span(from)
+      } else if (phase.status === 'en-cours') {
+        from = phase.start ?? stageStart
+        to = later(span(from), today)
+      } else if (phase.status === 'a-venir') {
+        from = later(stageStart, today)
+        to = span(from)
+      }
+      out.set(phase.id, { ...phase, plannedStart: from, plannedEnd: to })
+      // Ce qui occupe l'étape : une durée, ou une phase menée (commencée, terminée).
+      if (phase.status !== 'sans-objet' && (days > 0 || phase.status !== 'a-venir')) next = next ? later(next, addDays(to, 1)) : addDays(to, 1)
+    }
+    if (next) day = next
+  }
+  return phases.map((phase) => out.get(phase.id) ?? phase)
+}
+
+/** Une phase en retard : la fin de son planning initial passée, et pas terminée (ni sans objet). */
+export const isLate = (phase: ProjectPhase, today: string): boolean => {
+  const due = phase.initialEnd ?? phase.plannedEnd
+  return !!due && due < today && phase.status !== 'terminee' && phase.status !== 'sans-objet'
+}
+
+/** De combien de jours ses dates prévues ont glissé depuis le planning initial (0 : aucun). */
+export const slipOf = (phase: ProjectPhase): number => (phase.plannedEnd && phase.initialEnd ? daysBetween(phase.initialEnd, phase.plannedEnd) : 0)
 
 /** Une affaire relue de sa note. */
 export function readAffaire(path: string, data: Record<string, unknown>): Affaire {

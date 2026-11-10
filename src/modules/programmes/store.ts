@@ -26,6 +26,7 @@ import {
   baseName,
   phasesFromType,
   planPhases,
+  replanPhases,
   spansFromType,
   PROGRAMME_TYPE,
   programmeData,
@@ -122,7 +123,7 @@ export class ProgrammeStore {
   // ── Projets ───────────────────────────────────────────────────────────────────
 
   async projects(programme: Programme): Promise<Project[]> {
-    return (await this.notesIn(programme.folder, PROJECT_TYPE)).map(({ path, data }) => readProject(path, data))
+    return (await this.notesIn(programme.folder, PROJECT_TYPE)).map(({ path, data }) => this.planned(readProject(path, data)))
   }
 
   /** Tous les projets, de tous les programmes. */
@@ -130,9 +131,10 @@ export class ProgrammeStore {
     return (await Promise.all((await this.programmes()).map((programme) => this.projects(programme)))).flat()
   }
 
+  /** Un projet, ses dates prévues recalées au jour d'aujourd'hui (une phase en retard s'étend, la suite recule). */
   async project(path: string): Promise<Project | null> {
     const data = await this.read(path, PROJECT_TYPE)
-    return data ? readProject(path, data) : null
+    return data ? this.planned(readProject(path, data)) : null
   }
 
   /** Un projet neuf dans un programme : les phases de son type, toutes à venir. */
@@ -149,10 +151,24 @@ export class ProgrammeStore {
     return (await this.project(path))!
   }
 
-  /** Enregistrer un projet ; ses dates prévues recalculées (de son démarrage, des durées). */
-  private async saveProject(project: Project): Promise<Project> {
-    const planned = { ...project, phases: planPhases(project.phases, project.start) }
-    await this.write(project.path, projectData(planned), project.name)
+  /**
+   * Les dates d'un projet : prévues, **recalées** sur ce qui s'est passé (au jour d'aujourd'hui) ;
+   * celles du planning initial, gardées — refaites quand `rebase` (un démarrage, une durée
+   * changée), ou s'il n'y en a pas encore.
+   */
+  private planned(project: Project, rebase = false): Project {
+    const initial = new Map(planPhases(project.phases, project.start).map((phase) => [phase.id, phase]))
+    const phases = replanPhases(project.phases, project.start, this.deps.today()).map((phase) => {
+      if (!project.start) return phase
+      const base = rebase || !phase.initialEnd ? initial.get(phase.id) : undefined
+      return base ? { ...phase, initialStart: base.plannedStart!, initialEnd: base.plannedEnd! } : phase
+    })
+    return { ...project, phases }
+  }
+
+  /** Enregistrer un projet ; ses dates prévues recalées (`rebase` : son planning initial refait). */
+  private async saveProject(project: Project, rebase = false): Promise<Project> {
+    await this.write(project.path, projectData(this.planned(project, rebase)), project.name)
     return (await this.project(project.path))!
   }
 
@@ -163,7 +179,7 @@ export class ProgrammeStore {
     const next: Project = { ...project }
     if (start) next.start = start
     else delete next.start
-    return this.saveProject(next)
+    return this.saveProject(next, true)
   }
 
   /** Une phase d'un projet changée (son état, ses dates, ce qui la porte). */
@@ -178,7 +194,8 @@ export class ProgrammeStore {
       if ('documents' in patch && !patch.documents?.length) delete next.documents
       return next
     })
-    return this.saveProject({ ...project, phases })
+    // Une durée changée : un nouveau planning, le planning initial avec.
+    return this.saveProject({ ...project, phases }, 'duration' in patch)
   }
 
   // ── Affaires ──────────────────────────────────────────────────────────────────

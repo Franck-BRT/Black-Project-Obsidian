@@ -627,6 +627,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
   par type de pièce ; reçus, reliés)
 - v0.111.1 : **Nouveau type de document** depuis la fenêtre des documents attendus
   (`PickManyView.create`, `createPieceType`)
+- v0.112.0 : le **recalage automatique** des dates prévues (phases finies, en retard, à venir ;
+  le planning initial gardé, le décalage affiché) ; « Sorte » devient **Phase technique**
 
 ### Étape 7 — Livrables
 

@@ -5,13 +5,28 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.3.1 (Black Projects 0.111.1) |
+| Version | 0.4.0 (Black Projects 0.112.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Le recalage des dates prévues ; « Phase technique » (v0.4.0, Black Projects 0.112.0)
+
+Les dates prévues d'un projet démarré sont **recalées** à chaque lecture (`replanPhases(phases,
+start, today)`, `model.ts`) : une phase terminée garde ses vraies dates (début, fin) ; une phase
+en cours va de son début au plus tard de sa fin prévue et d'aujourd'hui ; une phase à venir
+commence au plus tôt aujourd'hui ; l'étape suivante commence le lendemain de la fin la plus
+tardive. Le calcul pur (`planPhases`) est gardé comme **planning initial** — `initialDebut`,
+`initialFin` dans l'en-tête de chaque phase — refait au démarrage, à une durée changée, ou s'il
+manque. Le retard (`isLate`) se mesure sur la fin du planning initial ; le décalage
+(`slipOf`, `daysBetween`) se lit sur les tuiles (« +5 j »), la page d'une phase (« planning
+initial : du … au … ») et la fin prévue du projet (« décalée de 12 j, initialement le … »).
+
+Le champ « Sorte » d'une phase s'appelle **Phase technique** (phase libre, ou celle d'un
+module).
 
 ## Un nouveau type de document, depuis les documents attendus (v0.3.1, Black Projects 0.111.1)
 

@@ -14,7 +14,8 @@ import { CREATE_IN_PICK, memoryPlatform, type MemoryPlatform } from '../src/core
 import { ViewsRegistry, type HomeBlock, type PageView } from '../src/core/views'
 import { MODULES } from '../src/modules'
 import { aoModule } from '../src/modules/ao'
-import { addParallel, addSpan, addStage, movePhase, planPhases, programmesModule, remapSpans, removePhase, starterTypes, type ProjectPhase, type ProjectType } from '../src/modules/programmes'
+import { addDays, addParallel, addSpan, addStage, movePhase, planPhases, programmesModule, remapSpans, removePhase, replanPhases, shortDay, starterTypes, type ProjectPhase, type ProjectType } from '../src/modules/programmes'
+import { localToday } from '../src/core/dates'
 
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
 const tr = (key: string) => key
@@ -255,9 +256,32 @@ describe('le planning : des durées, un démarrage, des dates prévues', () => {
     expect(planPhases(planned, undefined).every((each) => !each.plannedStart && !each.plannedEnd)).toBe(true)
   })
 
-  it('« Démarrer le projet » : les dates prévues écrites ; la fin prévue ; une phase dont la fin est passée est en retard ; changer une durée décale la suite', async () => {
+  it('le recalage : une phase finie tôt avance la suite ; en retard, elle s’étend jusqu’à aujourd’hui ; une phase à venir ne commence pas dans le passé', () => {
+    const base = [phase('lancement', 1, 5), phase('realisation', 2, 30), phase('achats', 2, 10), phase('recette', 3, 10)]
+    const dates = (list: ProjectPhase[]) => list.map((each) => [each.id, each.plannedStart, each.plannedEnd])
+    // Le lancement fini en 3 jours au lieu de 5 : la suite avance de 2 jours.
+    const early = base.map((each) => (each.id === 'lancement' ? { ...each, status: 'terminee' as const, start: '2026-03-02', end: '2026-03-04' } : each))
+    expect(dates(replanPhases(early, '2026-03-02', '2026-03-05'))).toEqual([
+      ['lancement', '2026-03-02', '2026-03-04'],
+      ['realisation', '2026-03-05', '2026-04-03'],
+      ['achats', '2026-03-05', '2026-03-14'],
+      ['recette', '2026-04-04', '2026-04-13']
+    ])
+    // En cours depuis le 2, pas fini le 12 (prévu le 6) : il s'étend jusqu'au 12, la suite recule.
+    const late = base.map((each) => (each.id === 'lancement' ? { ...each, status: 'en-cours' as const, start: '2026-03-02' } : each))
+    expect(dates(replanPhases(late, '2026-03-02', '2026-03-12')).slice(0, 2)).toEqual([
+      ['lancement', '2026-03-02', '2026-03-12'],
+      ['realisation', '2026-03-13', '2026-04-11']
+    ])
+    // Rien commencé le 10 : le lancement commence aujourd'hui, pas le 2.
+    expect(dates(replanPhases(base, '2026-03-02', '2026-03-10'))[0]).toEqual(['lancement', '2026-03-10', '2026-03-14'])
+  })
+
+  it('« Démarrer le projet » : le planning initial et les dates prévues ; démarré dans le passé, rien commencé — recalé sur aujourd’hui, en retard ; changer une durée refait le planning', async () => {
     const platform = memoryPlatform()
     const { load, action, journey, shown } = await start(platform)
+    const today = localToday()
+    const ago = addDays(today, -30)
     platform.forms.push({ name: 'P', code: '', description: '', color: 'indigo', icon: 'folder' })
     await action(await load('programmes'), 'new')
     platform.forms.push({ name: 'Q', programme: 'Programmes/P/P.md', type: 'projet-simple', description: '', affaire: 'false', client: '', reference: '' })
@@ -266,23 +290,26 @@ describe('le planning : des durées, un démarrage, des dates prévues', () => {
     let project = await load(projectPage)
     expect(project.actions!.find((each) => each.id === 'start')).toMatchObject({ label: 'Démarrer le projet', primary: true })
     expect(project.blocks[0]!.kind === 'stats' && project.blocks[0].stats.map((stat) => [stat.label, stat.value])).toContainEqual(['Démarrage', 'pas démarré'])
-    // Démarré il y a longtemps : 5 + 30 + 10 + 5 jours.
-    platform.forms.push({ start: '2020-01-06' })
+    // Démarré il y a 30 jours, rien commencé : tout part d'aujourd'hui (5 + 30 + 10 + 5 jours).
+    platform.forms.push({ start: ago })
     await action(project, 'start')
-    expect(platform.notices.at(-1)).toBe('« Q » démarré : fin prévue le 2020-02-24.')
+    expect(platform.notices.at(-1)).toBe(`« Q » démarré : fin prévue le ${addDays(today, 49)}.`)
     const note = read(platform, 'Programmes/P/Q/Q.md')
-    expect(note).toMatch(/\ndemarrage: "2020-01-06"\n/)
-    expect(note).toMatch(/- id: lancement\n(?:  .*\n)*?  duree: 5\n  prevuDebut: "2020-01-06"\n  prevuFin: "2020-01-10"\n/)
+    expect(note).toContain(`\ndemarrage: "${ago}"\n`)
+    expect(note).toContain(`- id: lancement\n  nom: Lancement\n  sorte: libre\n  icone: play\n  couleur: teal\n  etape: 1\n  statut: a-venir\n  duree: 5\n  prevuDebut: "${today}"\n  prevuFin: "${addDays(today, 4)}"\n  initialDebut: "${ago}"\n  initialFin: "${addDays(ago, 4)}"\n`)
     project = await load(projectPage)
     expect(project.actions!.find((each) => each.id === 'start')!.label).toBe('Date de démarrage')
     const stats = project.blocks[0]!.kind === 'stats' ? project.blocks[0].stats : []
-    expect(stats.find((stat) => stat.label === 'Fin prévue')).toMatchObject({ value: '24/02/2020', tone: 'danger', hint: '4 phase(s) en retard' })
+    expect(stats.find((stat) => stat.label === 'Fin prévue')).toMatchObject({ value: shortDay(addDays(today, 49)), tone: 'danger', hint: `décalée de 30 j (initialement le ${shortDay(addDays(ago, 49))}) · 1 phase(s) en retard` })
     const tiles = journey(project).stages.map((stage) => stage.phases[0]!)
-    expect(tiles[0]).toMatchObject({ status: { label: 'En retard', tone: 'danger' }, detail: 'prévue du 06/01/2020 au 10/01/2020' })
-    // La durée du lancement passe à 10 jours : la réalisation commence 5 jours plus tard.
-    platform.forms.push({ start: '', end: '', duration: '10' })
+    expect(tiles[0]).toMatchObject({ status: { label: 'En retard', tone: 'danger' }, detail: `prévue du ${shortDay(today)} au ${shortDay(addDays(today, 4))} (+30 j)` })
+    // Le lancement commencé il y a 30 jours, toujours en cours : il s'étend jusqu'à aujourd'hui.
+    platform.forms.push({ start: ago, end: '', duration: '5' })
     await action(await load(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|lancement`), 'dates')
-    expect(read(platform, 'Programmes/P/Q/Q.md')).toMatch(/- id: realisation\n(?:  .*\n)*?  duree: 30\n  prevuDebut: "2020-01-16"\n  prevuFin: "2020-02-14"\n/)
+    await action(await load(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|lancement`), 'status-en-cours')
+    const phase1 = await load(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|lancement`)
+    expect(phase1.blocks.find((block) => block.kind === 'message')).toMatchObject({ tone: 'danger' })
+    expect(read(platform, 'Programmes/P/Q/Q.md')).toContain(`- id: realisation\n  nom: Réalisation\n  sorte: libre\n  icone: edit\n  couleur: blue\n  etape: 2\n  statut: a-venir\n  duree: 30\n  prevuDebut: "${addDays(today, 1)}"\n`)
     // Une durée qui n'en est pas une : refusée.
     platform.forms.push({ start: '', end: '', duration: 'dix' })
     await expect(action(await load(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|lancement`), 'dates')).rejects.toThrow('Une durée est un nombre de jours (0 ou plus).')

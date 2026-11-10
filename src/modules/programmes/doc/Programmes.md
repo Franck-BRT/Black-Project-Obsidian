@@ -29,15 +29,27 @@ fin, durée prévue).
 
 **Démarrer le projet** : sa date de démarrage ; les **dates prévues** de toutes ses phases en
 découlent (leurs durées) — les phases d'une étape commencent ensemble, l'étape suivante le
-lendemain de la fin de la plus longue. Changer la durée d'une phase décale les suivantes. Une
-phase dont la fin prévue est passée, et qui n'est pas terminée, est **en retard**.
+lendemain de la fin de la plus longue. Ce premier calcul est gardé : c'est le **planning
+initial**.
+
+**Le recalage automatique** : les dates prévues suivent ensuite ce qui se passe, chaque jour —
+
+- une phase **terminée** garde ses vraies dates : finie plus tôt, la suite **avance** ;
+- une phase **en cours** qui dépasse sa fin prévue s'étend jusqu'à aujourd'hui : la suite
+  **recule** d'autant ;
+- une phase **à venir** ne commence jamais dans le passé : au plus tôt, aujourd'hui.
+
+Une phase dont la fin du planning initial est passée, et qui n'est pas terminée, est **en
+retard**. Chaque tuile dit son décalage (« +5 j ») ; la **fin prévue** du projet dit de combien
+elle a bougé (« décalée de 12 j, initialement le … »). Changer la date de démarrage, ou la durée
+d'une phase, refait le planning initial.
 
 **Documents attendus** : une phase peut attendre des documents (plusieurs) ; sa page les liste
 — **Reçu**, **Relier le fichier** — et **Documents attendus** en ajoute ou en retire.
 
 ## 3. L'analyse d'un appel d'offres, une phase
 
-Une phase de la sorte **Analyse d'appel d'offres** est menée par le module AO :
+Une phase technique **Analyse d'appel d'offres** est menée par le module AO :
 
 - **Créer l'analyse** : la fenêtre de l'analyse s'ouvre, le nom du projet proposé ; l'analyse
   est reliée à la phase, qui commence ;
@@ -55,8 +67,8 @@ chiffrage en parallèle, remise, négociation, exécution, clôture) et **Projet
 
 Sur **Types de projet**, chaque type est dessiné ; un clic sur son titre ouvre son **éditeur** :
 
-- un clic sur une phase la **modifie** : son nom, sa **sorte** (libre, ou celle d'un module —
-  l'analyse d'un appel d'offres), son icône, sa couleur, sa **durée prévue**, si des **documents
+- un clic sur une phase la **modifie** : son nom, sa **phase technique** (phase libre, ou
+  celle d'un module — l'analyse d'un appel d'offres), son icône, sa couleur, sa **durée prévue**, si des **documents
   sont attendus** (l'interrupteur, puis leurs types de pièce, plusieurs au besoin — un type qui
   manque se crée d'ici : **Nouveau type de document**), ce qu'on y fait ;
 - ses boutons la **déplacent** (vers l'étape d'avant ou d'après, plus haut ou plus bas dans son
