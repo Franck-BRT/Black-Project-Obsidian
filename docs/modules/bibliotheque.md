@@ -5,13 +5,21 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.36.1 (Black Projects 0.111.1) |
+| Version | 0.37.0 (Black Projects 0.116.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## « Entreprises », plus « Émetteurs » (v0.37.0, Black Projects 0.116.0)
+
+La liste des émetteurs s'appelle **Entreprises** dans l'interface (titres, champs, messages,
+filtre *Entreprise à confirmer*) ; les messages d'un champ (« … : valeur identifiée par l'IA »)
+s'accordent avec tous. Rien ne change dans le coffre : le dossier par défaut reste
+`Bibliothèque/Émetteurs` (un coffre qui en a un ne le perd pas ; il se change dans les
+réglages), les clés `emetteur…` des notes et les variables `{emetteur}` des workflows aussi.
 
 ## Ce qu'il fait
 

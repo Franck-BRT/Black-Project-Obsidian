@@ -70,16 +70,16 @@ describe('la liste des émetteurs', () => {
     const { page } = await start(platform)
     const hub = await page('bibliotheque.accueil').load()
     const cards = hub.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
-    expect(cards.find((card) => card.title === 'Émetteurs')).toMatchObject({ subtitle: '0 émetteur(s)', icon: 'building' })
+    expect(cards.find((card) => card.title === 'Entreprises')).toMatchObject({ subtitle: '0 entreprise(s)', icon: 'building' })
     const issuers = await page('bibliotheque.issuers').load()
-    expect(issuers.title).toBe('Émetteurs')
+    expect(issuers.title).toBe('Entreprises')
     expect(issuers.actions?.map((action) => action.id)).not.toContain('starters')
     platform.forms.push({ code: 'ESA', name: 'Agence spatiale européenne', category: 'Acheteur', description: '', text: 'European Space Agency', favorite: 'false' })
     await issuers.actions!.find((action) => action.id === 'new')!.run()
     const form = platform.asked.at(-1)!
     expect(form.fields.slice(0, 2)).toMatchObject([
       { key: 'code', label: 'Code', required: true },
-      { key: 'name', label: 'Nom de l’émetteur', required: true }
+      { key: 'name', label: 'Nom de l’entreprise', required: true }
     ])
     expect(form.fields.find((field) => field.key === 'text')).toMatchObject({ label: 'Autres noms (un par ligne)', required: false })
     expect(read(platform, 'Bibliothèque/Émetteurs/Agence spatiale européenne.md')).toMatch(/^---\nbp-type: bibliotheque-emetteur\nnom: Agence spatiale européenne\ncode: ESA\ncategorie: Acheteur\n---\n\nEuropean Space Agency\n$/)
@@ -126,14 +126,14 @@ describe('l’émetteur d’un document, dans la liste', () => {
     await (await issuerItem(doc.record))!.tools![0]!.run()
     const field = platform.asked.at(-1)!.fields[0]!
     expect(field.kind === 'choice' && field.options.map((option) => option.label)).toEqual([
-      '— Aucun —',
+      '— Aucune —',
       'DGA — Direction générale de l’armement',
       'ESA — Agence spatiale européenne',
-      'Thales Alenia Space (hors de la liste des émetteurs)',
-      '＋ Ajouter un émetteur à la liste…'
+      'Thales Alenia Space (hors de la liste des entreprises)',
+      '＋ Ajouter une entreprise à la liste…'
     ])
     expect(read(platform, doc.record)).toMatch(/\nemetteur: DGA\n/)
-    expect(platform.notices.at(-1)).toBe('Émetteur : DGA — Direction générale de l’armement.')
+    expect(platform.notices.at(-1)).toBe('Entreprise : DGA — Direction générale de l’armement.')
   })
 
   it('« Ajouter un émetteur à la liste… » : sa fenêtre (le nom proposé), puis il devient celui du document', async () => {
@@ -174,11 +174,11 @@ describe('un émetteur hors de la liste : l’y ajouter', () => {
     const other = await pour('Autre note.txt', 'Émetteur : THALES ALENIA SPACE\nAutre texte.')
     const known = await pour('Spécification.txt', 'Agence spatiale européenne\nSpécification.')
     const item = await issuerItem(doc.record)
-    expect(item?.detail).toBe('Thales Alenia Space — hors de la liste des émetteurs')
+    expect(item?.detail).toBe('Thales Alenia Space — hors de la liste des entreprises')
     expect(item?.tools?.map((tool) => [tool.id, tool.label, tool.icon])).toEqual([
-      ['edit-issuer', 'Modifier : Émetteur', 'edit'],
-      ['research-issuer', 'Relancer la recherche dans le document : Émetteur', 'refresh'],
-      ['add-issuer', 'Ajouter « Thales Alenia Space » à la liste des émetteurs', 'plus']
+      ['edit-issuer', 'Modifier : Entreprise', 'edit'],
+      ['research-issuer', 'Relancer la recherche dans le document : Entreprise', 'refresh'],
+      ['add-issuer', 'Ajouter « Thales Alenia Space » à la liste des entreprises', 'plus']
     ])
     // Un émetteur de la liste : pas de bouton.
     expect((await issuerItem(known.record))?.tools?.map((tool) => tool.id)).toEqual(['edit-issuer', 'research-issuer'])
@@ -191,7 +191,7 @@ describe('un émetteur hors de la liste : l’y ajouter', () => {
     expect(read(platform, 'Bibliothèque/Émetteurs/Thales Alenia Space.md')).toMatch(/\ncode: TAS\n/)
     expect(read(platform, doc.record)).toMatch(/\nemetteur: TAS\n/)
     expect(read(platform, other.record)).toMatch(/\nemetteur: TAS\n/)
-    expect(platform.notices.at(-1)).toBe('« TAS — Thales Alenia Space » ajouté à la liste des émetteurs ; c’est l’émetteur du document. 1 autre(s) document(s) émis par « Thales Alenia Space » le prennent aussi.')
+    expect(platform.notices.at(-1)).toBe('« TAS — Thales Alenia Space » ajoutée à la liste des entreprises ; c’est l’entreprise du document. 1 autre(s) document(s) émis par « Thales Alenia Space » la prennent aussi.')
     const after = await issuerItem(doc.record)
     expect(after?.detail).toBe('TAS — Thales Alenia Space')
     expect(after?.tools?.map((tool) => tool.id)).toEqual(['edit-issuer', 'research-issuer'])

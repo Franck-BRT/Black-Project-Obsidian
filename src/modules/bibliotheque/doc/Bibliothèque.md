@@ -26,7 +26,7 @@ note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
   présentations, images, messages, notes, autres), son **type de pièce** — reconnu au nom du
   fichier et au début du texte (CCTP, RC, BPU… : la liste du module *Typage des pièces*, vos
   types compris), ou donné par l'analyse —,
-  sa référence, son édition, sa révision, sa date, son émetteur, ses étiquettes : **Classer…**
+  sa référence, son édition, sa révision, sa date, son entreprise, ses étiquettes : **Classer…**
   pour tout reprendre, ou le **crayon** à gauche d'un champ pour ne modifier que lui (il est
   alors confirmé ; le crayon de *Rangé* ouvre *Déplacer…*, celui de *Langue*, *Langue…*) ;
   le bouton à côté du crayon **relance la recherche** de ce champ dans le document — sans
@@ -209,20 +209,22 @@ propose la première date du texte — jamais une date limite ou une échéance 
 (« 12/02/2026 », « 12 février 2026 ») ; l'IA, si elle est réglée, la cherche d'abord.
 Filtre *Date à confirmer*.
 
-**La liste des émetteurs** (Bibliothèque › **Émetteurs**) : comme les types de pièce, un
-**code** (« ESA ») et un **nom** (« Agence spatiale européenne ») — et, s'il le faut, les
-autres noms sous lesquels il signe, un par ligne (« European Space Agency »). Une note par
-émetteur. L'émetteur d'un document y est **reconnu** (son nom, un autre nom, ou son code en
-tête du document), **s'y choisit** (le crayon du champ, *Classer…* : une liste, et
-« ＋ Ajouter un émetteur à la liste… », son nom proposé) et se lit « ESA — Agence spatiale
-européenne ». Un émetteur **hors de la liste** est dit tel sur la fiche ; le bouton **+** de
-sa ligne l'y ajoute (son nom et un code proposés — « TAS » pour Thales Alenia Space) : il
-devient l'émetteur du document, et des autres documents qui portaient ce nom.
+**La liste des entreprises** (Bibliothèque › **Entreprises**) — celles qui émettent les
+documents : comme les types de pièce, un **code** (« ESA ») et un **nom** (« Agence spatiale
+européenne ») — et, s'il le faut, les autres noms sous lesquels elle signe, un par ligne
+(« European Space Agency »). Une note par entreprise (dans le dossier
+`Bibliothèque/Émetteurs`, qui garde son nom : il se change dans les réglages). L'entreprise
+d'un document y est **reconnue** (son nom, un autre nom, ou son code en tête du document),
+**s'y choisit** (le crayon du champ, *Classer…* : une liste, et « ＋ Ajouter une entreprise à
+la liste… », son nom proposé) et se lit « ESA — Agence spatiale européenne ». Une entreprise
+**hors de la liste** est dite telle sur la fiche ; le bouton **+** de sa ligne l'y ajoute (son
+nom et un code proposés — « TAS » pour Thales Alenia Space) : elle devient l'entreprise du
+document, et des autres documents qui portaient ce nom.
 
-**L'émetteur** aussi : dit par le document (« Émetteur : », « Émis par », « Pouvoir
-adjudicateur : »…), il est donné. Sinon il est **à confirmer** : la fiche propose
-l'organisme lu au début du document (**Prendre « … »**), **Pas d'émetteur**, ou
-**Classer…** ; l'IA, si elle est réglée, le cherche d'abord. Filtre *Émetteur à confirmer*.
+**L'entreprise** aussi : dite par le document (« Émetteur : », « Émis par », « Pouvoir
+adjudicateur : »…), elle est donnée. Sinon elle est **à confirmer** : la fiche propose
+l'organisme lu au début du document (**Prendre « … »**), **Pas d'entreprise**, ou
+**Classer…** ; l'IA, si elle est réglée, la cherche d'abord. Filtre *Entreprise à confirmer*.
 
 **La référence et la version** (édition, révision) sont aussi lues à l'entrée : au début du
 document (« Réf. : … », « Édition 2 », « Indice B », « Version 2.1 »), sinon dans le nom du

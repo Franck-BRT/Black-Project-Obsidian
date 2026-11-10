@@ -88,21 +88,21 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(doc).toMatchObject({ issuer: '', issuerToConfirm: true, issuerProbable: 'Agence spatiale européenne' })
     expect(read(platform, doc.record)).toMatch(/\nemetteurAConfirmer: true\nemetteurProbable: Agence spatiale européenne\n/)
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Émetteur à confirmer'))
-    expect(message).toMatchObject({ tone: 'warning', text: 'Émetteur à confirmer : le document semble émis par « Agence spatiale européenne » (lu sans certitude).' })
-    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « Agence spatiale européenne »', 'Pas d’émetteur', 'Classer…'])
+    const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Entreprise à confirmer'))
+    expect(message).toMatchObject({ tone: 'warning', text: 'Entreprise à confirmer : le document semble émis par « Agence spatiale européenne » (lu sans certitude).' })
+    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « Agence spatiale européenne »', 'Pas d’entreprise', 'Classer…'])
     expect((await page('bibliotheque.documents').load()).filters?.map((filter) => filter.id)).toContain('emetteur-a-confirmer')
     await (message?.kind === 'message' ? message.actions![0]!.run() : null)
-    expect(platform.notices.at(-1)).toBe('Émetteur confirmé : « Agence spatiale européenne ».')
+    expect(platform.notices.at(-1)).toBe('Entreprise confirmée : « Agence spatiale européenne ».')
     expect(read(platform, doc.record)).toMatch(/\nemetteur: Agence spatiale européenne\n/)
     expect(read(platform, doc.record)).not.toMatch(/emetteurAConfirmer/)
     // Aucun probable : « Pas d'émetteur » le confirme vide.
     const other = await pour('Plan.txt', 'Rapport de recette des antennes')
     const view = await page('bibliotheque.document').load(encodeURIComponent(other.record))
-    const none = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Émetteur à confirmer'))
+    const none = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Entreprise à confirmer'))
     expect(none?.kind === 'message' && none.actions!.map((action) => action.id)).toEqual(['keep-issuer', 'classify-issuer'])
     await (none?.kind === 'message' ? none.actions![0]!.run() : null)
-    expect(platform.notices.at(-1)).toBe('« Plan » : sans émetteur.')
+    expect(platform.notices.at(-1)).toBe('« Plan » : sans entreprise.')
     expect(read(platform, other.record)).not.toMatch(/emetteurAConfirmer/)
   })
 })
@@ -120,7 +120,7 @@ describe('la seconde passe, avec l’IA', () => {
     const { system } = await start(memoryPlatform())
     expect(system()).toMatchObject({
       enabled: true,
-      name: 'Identifier avec l’IA l’émetteur d’un document, quand la première passe n’est pas sûre',
+      name: 'Identifier avec l’IA l’entreprise qui émet un document, quand la première passe n’est pas sûre',
       trigger: { kind: 'bibliotheque.document-verse' },
       conditions: [{ field: 'emetteuraconfirmer', op: 'not-empty', value: '' }],
       actions: [{ kind: 'ia.emetteur-document', fields: { fiche: '{fiche}' } }]
@@ -142,6 +142,6 @@ describe('la seconde passe, avec l’IA', () => {
     const doc = await pour('CCTP.txt', COVER)
     expect(read(platform, doc.record)).toMatch(/\nemetteur: Agence spatiale européenne\n/)
     expect(read(platform, doc.record)).toMatch(/\nemetteurIdentifiePar: ia\n/)
-    expect(journal()).toContain('« CCTP » : émis par « Agence spatiale européenne », identifié par l’IA.')
+    expect(journal()).toContain('« CCTP » : émis par « Agence spatiale européenne » — entreprise identifiée par l’IA.')
   })
 })

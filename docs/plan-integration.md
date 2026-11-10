@@ -635,6 +635,9 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.114.1 : le texte extrait (et la comparaison des versions) sur **toute la largeur** de la page
 - v0.115.0 : les **cellules fusionnées** des tableaux — lues (Word, Excel, PowerPoint, HTML),
   écrites en tableau HTML, montrées fusionnées ; la vision et la relecture les gardent
+- v0.116.0 : le **contrôle des lectures IA qui bouclent** (repérées, relancées une fois, sinon
+  gardées jusqu'à la boucle et dites ; une erreur si rien n'est lu) ; « Émetteurs » devient
+  **Entreprises**
 
 ### Étape 7 — Livrables
 

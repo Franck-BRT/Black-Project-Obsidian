@@ -76,9 +76,9 @@ De même pour le **titre** (« Identifier avec l'IA le titre d'un document… »
 titre de la page de garde, fait des mots du document ; pour la **catégorie** (« Identifier avec l'IA la catégorie d'un document… », activé) :
 choisie dans la liste des catégories ; pour la **date** (« Identifier avec l'IA la date d'un document… », activé) :
 celle de son édition ou de sa signature, qui doit y figurer ; pour les **étiquettes** (« Donner avec l'IA les étiquettes d'un document… », activé) :
-de 3 à 6, celles déjà en usage dans la bibliothèque d'abord, dites par le document sinon ; et pour l'**émetteur**
-(« Identifier avec l'IA l'émetteur d'un document… », activé) : l'organisme qui a écrit le
-document, qui doit y figurer — choisi, s'il y est, dans la liste des émetteurs de la
+de 3 à 6, celles déjà en usage dans la bibliothèque d'abord, dites par le document sinon ; et pour l'**entreprise**
+(« Identifier avec l'IA l'entreprise qui émet un document… », activé) : l'organisme qui a écrit le
+document, qui doit y figurer — choisie, si elle y est, dans la liste des entreprises de la
 bibliothèque (par son code). Et **« Identifier avec l'IA la
 référence et la version d'un document, quand la première passe n'est pas sûre »** (activé) : quand le document ne les dit pas clairement
 (référence lue seulement dans le nom du fichier, version absente…), l'IA les cherche au
@@ -91,6 +91,11 @@ est une nouvelle version du texte du document : l'extraite est gardée, on les c
 Des notices disent la relecture en cours (et ses morceaux), puis ce qu'elle a donné. Elle se
 relance quand on **extrait de nouveau** le texte d'un document, ou par **Relire avec l'IA**
 (section *Texte extrait* de sa fiche).
+**Une lecture qui boucle** — le modèle répète le même passage encore et encore, jusqu'à sa limite
+de longueur — est repérée : la page (ou la partie) est **relue une deuxième fois**, autrement.
+Bouclée encore : ce qui précède la boucle est gardé, et la page est marquée dans le texte
+(« la lecture par l'IA a bouclé deux fois… ») ; une notice le dit. Rien que des boucles : un
+message d'erreur, et le texte de la fiche ne change pas — essayez un autre modèle de vision.
 Sur la fiche, **Relire avec l'IA** fait choisir le modèle : **simple** (le texte extrait) ou **avec
 la vision** (chaque page d'un PDF, ou l'image, regardée et comparée au texte extrait — plus sûr,
 plus lent) ; l'étape du workflow a le même choix (champ *Modèle*). Un document sans texte (un

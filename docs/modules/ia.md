@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.25.2 (Black Projects 0.115.0) |
+| Version | 0.26.0 (Black Projects 0.116.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,20 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Le contrôle des lectures qui bouclent (v0.26.0, Black Projects 0.116.0)
+
+Un modèle qui **boucle** (le même passage répété jusqu'à la limite de longueur) est repéré —
+`repetitionLoop(text, cut)` : un motif de 4 à 400 caractères (au moins 4 lettres ou chiffres)
+répété jusqu'à la fin, les espaces comptés comme un seul, 8 fois et 600 caractères, ou 4 fois et
+200 quand la réponse a été coupée par la limite (`finish_reason: length`, lu par
+`AiClient.reply`). La page de la vision, ou la partie de la relecture, est **redemandée une
+fois** : la consigne dit la boucle (`ia.wf.loop.again`), la température passe à 0,3. Bouclée
+encore : la vision garde ce qui précède la boucle (s'il dit assez, sinon le texte extrait de la
+page) et marque la page dans le texte ; la relecture garde la partie telle quelle ; une notice
+le dit (`ia.wf.vision.looped`, `ia.wf.proofread.looped`). Rien que des boucles : une erreur
+(`ia.wf.vision.allLooped`, `ia.wf.proofread.allLooped`), pas de nouvelle version. Les messages
+disent aussi « l'entreprise » d'un document, plus « l'émetteur ».
 
 ## Les tableaux fusionnés et les cases à cocher dans les consignes (v0.25.2, Black Projects 0.115.0)
 

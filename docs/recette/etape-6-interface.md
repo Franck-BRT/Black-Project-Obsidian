@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les lectures qui bouclent ; « Entreprises » (v0.116.0)
+
+- [ ] Une lecture par la vision dont le modèle boucle (le même passage répété) : une notice
+      « la lecture de la page n a bouclé — relancée une deuxième fois » ; relue bien, le texte
+      est propre
+- [ ] Bouclée deux fois : le texte s'arrête où la répétition commençait, la page est marquée
+      (« la lecture par l'IA a bouclé deux fois… ») ; une notice dit combien de pages
+- [ ] Rien que des boucles : un message d'erreur, le texte de la fiche ne change pas
+- [ ] Bibliothèque : **Entreprises** (plus « Émetteurs ») — l'accueil, la liste, le champ de la
+      fiche « Entreprise », « Nouvelle entreprise », le filtre *Entreprise à confirmer*
+
 ## Les cellules fusionnées (v0.115.0)
 
 - [ ] Déposer un document Word (ou Excel, PowerPoint, une page web) dont un tableau a des

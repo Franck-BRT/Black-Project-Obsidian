@@ -28,7 +28,7 @@ import { KNOWN_KEY, listedModels, LISTED_KEY, MODEL_KEYS, MODEL_USES, modelsFor,
 // ── Interface publique ────────────────────────────────────────────────────────────
 export { AiClient, describeHttp, type AiConnection } from './client'
 export { forgetImageRefusals } from './workflows'
-export { proofreadChunks, readCategoryAnswer, readDateAnswer, readProofread, readVisionPage, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer } from './workflows'
+export { proofreadChunks, readCategoryAnswer, readDateAnswer, readProofread, readVisionPage, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer, repetitionLoop, type RepetitionLoop } from './workflows'
 export {
   buildChatBody,
   cosine,
@@ -299,7 +299,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.25.2',
+  version: '0.26.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),

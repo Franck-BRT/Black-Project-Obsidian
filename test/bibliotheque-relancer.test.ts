@@ -86,12 +86,12 @@ describe('relancer la recherche d’un champ, sans IA', () => {
     expect(read(platform, doc.record)).toMatch(/\ntitre: Autre titre\n/)
     await (await tool(doc.record, 'title', 'research')).run()
     expect(read(platform, doc.record)).toMatch(/\ntitre: Plan de management\n/)
-    expect(platform.notices.at(-1)).toBe('Titre : trouvé dans le document — Plan de management.')
+    expect(platform.notices.at(-1)).toBe('Titre : valeur trouvée dans le document — Plan de management.')
     platform.forms.push({ value: '2020-01-01' })
     await (await tool(doc.record, 'date', 'edit')).run()
     await (await tool(doc.record, 'date', 'research')).run()
     expect(read(platform, doc.record)).toMatch(/\ndateDocument: "2026-03-12"\n/)
-    expect(platform.notices.at(-1)).toBe('Date du document : trouvé dans le document — 12 mars 2026.')
+    expect(platform.notices.at(-1)).toBe('Date du document : valeur trouvée dans le document — 12 mars 2026.')
   })
 
   it('la référence, l’édition, la révision : chacune seule ; « Référence et version », les trois', async () => {
@@ -106,14 +106,14 @@ describe('relancer la recherche d’un champ, sans IA', () => {
     await (await tool(doc.record, 'revision', 'edit')).run()
     await (await tool(doc.record, 'revision', 'research')).run()
     expect(read(platform, doc.record)).toMatch(/\nreference: X-9\nedition: "2"\nrevision: B\n/)
-    expect(platform.notices.at(-1)).toBe('Révision : trouvé dans le document — B.')
+    expect(platform.notices.at(-1)).toBe('Révision : valeur trouvée dans le document — B.')
     // L'édition relancée : elle seule.
     await (await tool(doc.record, 'edition', 'research')).run()
     expect(read(platform, doc.record)).toMatch(/\nreference: X-9\nedition: "2"\nrevision: B\n/)
     // La référence relancée : celle du document revient.
     await (await tool(doc.record, 'reference', 'research')).run()
     expect(read(platform, doc.record)).toMatch(/\nreference: PMP-01\n/)
-    expect(platform.notices.at(-1)).toBe('Référence : trouvé dans le document — PMP-01.')
+    expect(platform.notices.at(-1)).toBe('Référence : valeur trouvée dans le document — PMP-01.')
   })
 
   it('pas sûr : à confirmer, avec ce qui a été lu ; sans le module IA, c’est dit', async () => {
@@ -127,10 +127,10 @@ describe('relancer la recherche d’un champ, sans IA', () => {
     expect(read(platform, doc.record)).toMatch(/\ntitre: Compte rendu\n/)
     expect(read(platform, doc.record)).toMatch(/\ntitreAConfirmer: true\ntitreProbable: Note sur la station sol\n/)
     expect(platform.notices.at(-1)).toBe(
-      'Titre : pas trouvé sûrement ; « Note sur la station sol » proposé, à confirmer. L’IA n’a pas été demandée (le module IA, ou le module Workflows, n’est pas actif).'
+      'Titre : pas de valeur sûre ; « Note sur la station sol » proposé, à confirmer. L’IA n’a pas été demandée (le module IA, ou le module Workflows, n’est pas actif).'
     )
     await (await tool(doc.record, 'issuer', 'research')).run()
-    expect(platform.notices.at(-1)).toMatch(/^Émetteur : pas trouvé sûrement ; à confirmer\./)
+    expect(platform.notices.at(-1)).toMatch(/^Entreprise : pas de valeur sûre ; à confirmer\./)
   })
 })
 
@@ -149,8 +149,8 @@ describe('relancer la recherche d’un champ, avec l’IA', () => {
     expect(platform.requests.length - before).toBe(1)
     expect(read(platform, doc.record)).toMatch(/\nemetteur: station sol\n/)
     expect(read(platform, doc.record)).toMatch(/\nemetteurIdentifiePar: ia\n/)
-    expect(platform.notices.at(-1)).toBe('Émetteur : identifié par l’IA — station sol.')
-    expect(journal().split('\n').filter((line) => line.includes('Identifier avec l’IA l’émetteur'))).toHaveLength(2)
+    expect(platform.notices.at(-1)).toBe('Entreprise : valeur identifiée par l’IA — station sol.')
+    expect(journal().split('\n').filter((line) => line.includes('Identifier avec l’IA l’entreprise'))).toHaveLength(2)
   })
 
   it('trouvé sûrement sans IA : l’IA n’est pas demandée', async () => {
@@ -161,7 +161,7 @@ describe('relancer la recherche d’un champ, avec l’IA', () => {
     const before = platform.requests.length
     await (await tool(doc.record, 'title', 'research')).run()
     expect(platform.requests.length).toBe(before)
-    expect(platform.notices.at(-1)).toBe('Titre : trouvé dans le document — Plan de management.')
+    expect(platform.notices.at(-1)).toBe('Titre : valeur trouvée dans le document — Plan de management.')
   })
 
   it('l’IA dit la référence et la version ensemble : relancer la révision ne change qu’elle', async () => {
@@ -176,7 +176,7 @@ describe('relancer la recherche d’un champ, avec l’IA', () => {
     answering(platform, (system) => (system.includes('référence') ? { reference: 'NS-44', edition: '3', revision: 'C', certain: true } : undefined))
     await (await tool(doc.record, 'revision', 'research')).run()
     expect(read(platform, doc.record)).toMatch(/\nreference: MA-REF\nedition: "9"\nrevision: C\n/)
-    expect(platform.notices.at(-1)).toBe('Révision : identifié par l’IA — C.')
+    expect(platform.notices.at(-1)).toBe('Révision : valeur identifiée par l’IA — C.')
   })
 
   it('son workflow système désactivé : l’IA n’est pas demandée, et c’est dit', async () => {
@@ -188,6 +188,6 @@ describe('relancer la recherche d’un champ, avec l’IA', () => {
     const before = platform.requests.length
     await (await tool(doc.record, 'date', 'research')).run()
     expect(platform.requests.length).toBe(before)
-    expect(platform.notices.at(-1)).toBe('Date du document : pas trouvé sûrement ; « 12 février 2026 » proposé, à confirmer. L’IA n’a pas été demandée : son workflow système est désactivé.')
+    expect(platform.notices.at(-1)).toBe('Date du document : pas de valeur sûre ; « 12 février 2026 » proposé, à confirmer. L’IA n’a pas été demandée : son workflow système est désactivé.')
   })
 })

@@ -23,6 +23,7 @@ import {
   LlmError,
   parseJsonContent,
   readChatContent,
+  readFinish,
   readEmbeddings,
   readModels,
   readRerank,
@@ -156,10 +157,19 @@ export class AiClient {
 
   /** La réponse du modèle, en texte. */
   async chat(request: Omit<ChatRequest, 'model'> & { model?: string }): Promise<string> {
+    return (await this.reply(request)).text
+  }
+
+  /**
+   * La réponse du modèle, et pourquoi il s'est arrêté : `stop`, il avait fini ; `length`, la
+   * limite de longueur l'a coupé (un modèle qui boucle s'arrête ainsi) ; '' s'il ne le dit pas.
+   */
+  async reply(request: Omit<ChatRequest, 'model'> & { model?: string }): Promise<{ text: string; finish: string }> {
     // Le rôle, puis les autres consignes, en tête du message système.
     const preamble = [this.persona, this.instructions].filter((part) => part.trim()).join('\n\n')
     const asked = preamble ? { ...request, messages: withRole(request.messages, preamble) } : request
-    return readChatContent(await this.send('chat/completions', 'POST', buildChatBody(this.withDefaults(asked))))
+    const payload = await this.send('chat/completions', 'POST', buildChatBody(this.withDefaults(asked)))
+    return { text: readChatContent(payload), finish: readFinish(payload) }
   }
 
   /**

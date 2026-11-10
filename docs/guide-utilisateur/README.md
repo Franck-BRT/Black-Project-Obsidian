@@ -12,7 +12,7 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.115.0)
+## Aujourd'hui (version 0.116.0)
 
 - **Les programmes** (menu **Programmes**) : vos programmes, leurs projets et leurs affaires.
   Un projet suit les phases de son **type**, dessinées en tuiles reliées par des flèches ; un
@@ -175,15 +175,15 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   catégorie, choisi dans la liste du module *Typage des pièces*, vos types compris — un type
   hors de la liste a son bouton **+** pour l'y ajouter : donné
   par l'analyse, ou le nom du fichier et le texte d'accord ; sinon à confirmer, l'IA
-  choisissant dans la liste), pour l'**émetteur** — choisi dans la liste des **émetteurs**
-  (Bibliothèque › Émetteurs : un code, un nom, d'autres noms ; « ＋ Ajouter un émetteur à la
-  liste… » depuis la fiche ; un émetteur hors de la liste a son bouton **+** pour l'y
+  choisissant dans la liste), pour l'**entreprise** qui l'émet — choisie dans la liste des **entreprises**
+  (Bibliothèque › Entreprises : un code, un nom, d'autres noms ; « ＋ Ajouter une entreprise à la
+  liste… » depuis la fiche ; une entreprise hors de la liste a son bouton **+** pour l'y
   ajouter, un code proposé, et les autres documents de ce nom suivent) et reconnu dans le
   document, pour les **étiquettes** (une liste dans Bibliothèque › **Étiquettes** : elles s'y cochent,
   s'y ajoutent d'un bouton **+**, leurs autres formes y sont ramenées ; « Mots-clés : … » ;
   sinon celles de la liste que dit le texte, puis les mots qui reviennent
   le plus, proposés — l'IA en donne de 3 à 6, celles déjà en usage d'abord), pour la **date** du document (« Date : … », « Toulouse, le … » ;
-  sinon la première date du texte, hors dates limites, proposée), pour l'**émetteur** (« Émetteur :
+  sinon la première date du texte, hors dates limites, proposée), pour l'**entreprise** (« Émetteur :
   … », « Émis par… » ; sinon l'organisme lu en tête, à confirmer) et pour la **référence** et la
   **version** (édition, révision) : lues au début du
   document ou dans le nom du fichier ; pas sûres, l'IA les cherche ; sinon « C'est juste »

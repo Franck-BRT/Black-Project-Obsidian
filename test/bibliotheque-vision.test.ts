@@ -15,14 +15,14 @@ import type { ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type HomeBlock, type ListItem, type ViewAction } from '../src/core/views'
 import { bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
-import { forgetImageRefusals, iaModule, readVisionPage } from '../src/modules/ia'
+import { forgetImageRefusals, iaModule, readVisionPage, repetitionLoop } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
 const ALL = [lectureFichiersModule, bibliothequeModule, workflowsModule, iaModule]
 const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small', modeleVision: 'pixtral-12b' }
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
-const chat = (content: unknown) => ({ status: 200, text: JSON.stringify({ choices: [{ message: { content: typeof content === 'string' ? content : JSON.stringify(content) }, finish_reason: 'stop' }] }) })
+const chat = (content: unknown, finish = 'stop') => ({ status: 200, text: JSON.stringify({ choices: [{ message: { content: typeof content === 'string' ? content : JSON.stringify(content) }, finish_reason: finish }] }) })
 
 /** Un PDF de texte, une page par liste de lignes (Helvetica, sans compression). */
 function textPdf(pages: string[][]): Uint8Array {
@@ -50,9 +50,11 @@ interface Seen {
 }
 
 let drawnPages = 2
+/** Ce que répond la relecture du texte (sinon : le texte tel quel) ; `system` : sa consigne. */
+let proofreadReply: ((text: string, system: string) => string | { text: string; finish: string }) | null = null
 let closed = 0
 
-async function start(platform: MemoryPlatform, see: (seen: Seen) => string, drawsPdf = true, ia: Record<string, unknown> = SERVEUR, gate: () => Promise<void> = async () => {}, refuses: (model: string) => boolean = () => false) {
+async function start(platform: MemoryPlatform, see: (seen: Seen) => string | { text: string; finish: string }, drawsPdf = true, ia: Record<string, unknown> = SERVEUR, gate: () => Promise<void> = async () => {}, refuses: (model: string) => boolean = () => false) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
   if (drawsPdf) platform.pages = { open: async () => ({ pages: drawnPages, page: async (number) => `data:image/jpeg;base64,${btoa(`P${number}`)}`, close: async () => void closed++ }) }
@@ -84,13 +86,16 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string, draw
       expect(one.text).toContain('Tu lis une page d’un document')
       if (refuses(body.model)) return { status: 400, text: JSON.stringify({ error: { message: `litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': {'error': {'message': '${body.model} is not a multimodal model'}}}` } }) }
       seen.push(one)
-      return chat(see(one))
+      const answer = see(one)
+      return typeof answer === 'string' ? chat(answer) : chat(answer.text, answer.finish)
     }
     const system = first
     if (system.startsWith('Tu identifies la langue')) return chat('fr')
     if (system.includes('Tu relis un texte extrait automatiquement')) {
       proofread.push(body.model)
       await gate()
+      const reply = proofreadReply?.(body.messages.at(-1)!.content as string, system)
+      if (reply !== undefined) return typeof reply === 'string' ? chat(reply) : chat(reply.text, reply.finish)
       return chat(body.messages.at(-1)!.content as string)
     }
     return chat({ title: '', issuer: '', category: '', date: '', tags: [], reference: '', edition: '', revision: '', certain: false })
@@ -115,6 +120,7 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string, draw
 
 afterEach(async () => {
   forgetImageRefusals()
+  proofreadReply = null
   for (const module of [...ALL].reverse()) await module.deactivate?.()
 })
 
@@ -124,6 +130,89 @@ describe('ce que lit la vision', () => {
     expect(readVisionPage('', 'texte')).toBeNull()
     expect(readVisionPage('Plan.', 'Le présent plan décrit l’organisation qualité du projet.')).toBeNull()
     expect(readVisionPage('Le présent plan décrit l’organisation.', 'Le pré- sent plan dé crit l’orga nisation.')).toBe('Le présent plan décrit l’organisation.')
+  })
+})
+
+/** La sortie de l'exemple : une ligne lue, puis la même phrase, en boucle, jusqu'à la limite. */
+const LOOP = `## Mesures\n\nRésistance de terre ≤ 100 Ω des prises de courant ${'≤ 100 Ω des prises de courant '.repeat(300)}≤ 100 Ω des pri`
+
+describe('une lecture qui boucle', () => {
+  it('repérée : le même passage répété jusqu’à la fin — où elle commence, ce qui se garde ; une réponse saine, des tableaux, des points de conduite, non', () => {
+    const loop = repetitionLoop(LOOP, true)!
+    expect(loop).toMatchObject({ start: 31, unit: '≤ 100 Ω des prises de courant', times: 301 })
+    expect(LOOP.slice(0, loop.keep)).toBe('## Mesures\n\nRésistance de terre ≤ 100 Ω des prises de courant')
+    // Sans « coupée par la limite » aussi, tant la boucle est longue ; des espaces qui changent n'y font rien.
+    expect(repetitionLoop(LOOP.replace(/courant /g, (_, at: number) => (at % 3 ? 'courant\n' : 'courant  ')))).not.toBeNull()
+    // Une page normale, un tableau aux lignes vides, des points de conduite, un formulaire répétitif court : non.
+    expect(repetitionLoop('# Plan\n\n' + 'Le présent plan décrit l’organisation qualité du projet. '.repeat(3))).toBeNull()
+    expect(repetitionLoop(`| Lot | Prix |\n|---|---|\n${'|  |  |\n'.repeat(200)}`, true)).toBeNull()
+    expect(repetitionLoop(`Sommaire ${'.'.repeat(2000)} 3`, true)).toBeNull()
+    expect(repetitionLoop(`| Question | Réponse |\n|---|---|\n${'| Conforme ? | ☐ Oui ☐ Non |\n'.repeat(6)}`)).toBeNull()
+    // Coupée par la limite, une boucle plus courte suffit : 4 fois, 200 caractères.
+    const short = `Texte. ${'Le titulaire fournit le dossier des ouvrages exécutés. '.repeat(5)}`
+    expect(repetitionLoop(short)).toBeNull()
+    expect(repetitionLoop(short, true)).not.toBeNull()
+  })
+
+  it('une page qui boucle : relue une deuxième fois (autrement : la consigne le dit, un peu de hasard) — bonne, elle est gardée', async () => {
+    const platform = memoryPlatform()
+    let calls = 0
+    const { pour, seen, textVersions } = await start(platform, () => (++calls === 1 ? { text: LOOP, finish: 'length' } : '## Mesures\n\nRésistance de terre ≤ 100 Ω des prises de courant.'))
+    const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
+    expect(seen).toHaveLength(2)
+    expect(seen[0]!.text).not.toContain('une première lecture a bouclé')
+    expect(seen[1]!.text).toContain('une première lecture a bouclé')
+    expect(platform.notices).toContain('« Scan PV » : la lecture de la page 1 a bouclé (le modèle répétait le même passage) — relancée une deuxième fois.')
+    expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 1 — lu par l’IA avec la vision'])
+    const note = read(platform, doc.record)
+    expect(note).toContain('Résistance de terre ≤ 100 Ω des prises de courant.')
+    expect(note).not.toContain('courant ≤ 100 Ω')
+    expect(platform.notices.some((notice) => notice.includes('mal lue'))).toBe(false)
+  })
+
+  it('bouclée deux fois : ce qui précède la boucle est gardé, la page marquée dans le texte ; un message le dit', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen } = await start(platform, (one) => (one.image.endsWith('UDE=') ? 'Page un, bien lue.' : { text: LOOP, finish: 'length' }))
+    const doc = await pour('Scan.pdf', textPdf([[], []]))
+    expect(seen).toHaveLength(3)
+    const note = read(platform, doc.record)
+    expect(note).toContain('Page un, bien lue.\n\n#### Mesures\n\nRésistance de terre ≤ 100 Ω des prises de courant\n\n*Page 2 : la lecture par l’IA a bouclé deux fois — le texte s’arrête là où la répétition commençait ; la suite de la page manque.*')
+    expect(note).not.toContain('courant ≤ 100 Ω')
+    const said = '« Scan » : 1 page(s) sur 2 mal lue(s) — le modèle (pixtral-12b) a bouclé, même relancé ; elles sont marquées dans le texte. Relancez la lecture, ou réglez un autre modèle de vision.'
+    expect(platform.notices).toContain(said)
+  })
+
+  it('rien que des boucles, rien à garder : une erreur, le texte de la fiche ne change pas', async () => {
+    const platform = memoryPlatform()
+    const { pour, seen, textVersions } = await start(platform, () => ({ text: '≤ 100 Ω des prises de courant '.repeat(300), finish: 'length' }))
+    const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
+    expect(seen).toHaveLength(2)
+    expect(await textVersions(doc.record)).toEqual([])
+    expect(read(platform, doc.record)).not.toContain('prises de courant')
+    expect(platform.notices.some((notice) => notice.includes('la lecture par l’IA a échoué — le modèle (pixtral-12b) a bouclé sur chaque page, même relancé'))).toBe(true)
+  })
+})
+
+describe('une relecture du texte qui boucle', () => {
+  it('relancée une deuxième fois (la consigne le dit) : bonne, elle fait la version ; bouclée encore partout : une erreur, pas de version', async () => {
+    const platform = memoryPlatform()
+    const asked: string[] = []
+    proofreadReply = (text, system) => {
+      asked.push(system)
+      return system.includes('une première lecture a bouclé') ? `${text}\n\nRelu.` : { text: `${text} ${'≤ 100 Ω des prises de courant '.repeat(200)}`, finish: 'length' }
+    }
+    const { pour, textVersions, textActions } = await start(platform, () => 'x')
+    const doc = await pour('Plan.pdf', textPdf([['Plan qualite', 'Le pre- sent plan'], ['Revue de con- ception']]))
+    expect(asked).toHaveLength(2)
+    expect(platform.notices).toContain('« Plan » : la relecture de la partie 1 a bouclé (le modèle répétait le même passage) — relancée une deuxième fois.')
+    expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 2 — relu par l’IA', 'Texte 1 — extrait du fichier'])
+    expect(read(platform, doc.record)).not.toContain('courant ≤ 100 Ω')
+    // Toujours en boucle : la partie gardée telle quelle, une erreur, pas de nouvelle version.
+    proofreadReply = (text) => ({ text: `${text} ${'≤ 100 Ω des prises de courant '.repeat(200)}`, finish: 'length' })
+    platform.choices.push('texte')
+    await (await textActions(doc.record)).find((action) => action.id === 'proofread')!.run()
+    expect(platform.notices.some((notice) => notice.includes('« Plan » : la relecture par l’IA a échoué — le modèle (mistral-small) a bouclé sur chaque partie, même relancé.'))).toBe(true)
+    expect(await textVersions(doc.record)).toHaveLength(2)
   })
 })
 
