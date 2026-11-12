@@ -75,6 +75,16 @@ plus récent ; le filtre **Dernières versions** les cache.
 
 ## 4. La page Bibliothèque
 
+L'**accueil de la bibliothèque** range ses bibliothèques **par groupe**, chacun une section
+qu'un clic déplie ou replie (l'état est gardé d'une ouverture à l'autre) :
+
+| Groupe | Ses bibliothèques |
+| --- | --- |
+| **Bibliothèques de documents** | les documents, les documents de référence |
+| **Bibliothèques de l'IA** | les prompts, les personas, les skills |
+| **Bibliothèques système** | les étiquettes |
+| **Bibliothèques personnelles** | les entreprises, les personnes |
+
 Menu **Bibliothèque** (ou sa tuile, ou le tableau de bord) : les chiffres (documents,
 taille, ajoutés cette semaine, versions à relier), une carte par document, le plus récent
 d'abord ; une recherche (titre, fichier, type de pièce, référence, origine) et des filtres :
@@ -301,7 +311,8 @@ pas ; son dossier se règle (`Bibliothèque/Références` d'origine).
 - La fiche d'un document de référence porte l'étoile **★ Document de référence**, et une
   section **Appelé par** : les programmes et les projets qui l'appellent (un clic y mène).
 - **Ranger dans les références**, sur la fiche d'un autre document, l'y range — comme
-  **Déplacer…** vers les documents de référence : une fenêtre propose de **laisser un
+  **Déplacer…** vers les documents de référence, ou en glissant sa fiche dans leur dossier
+  depuis l'explorateur de fichiers d'Obsidian : une fenêtre propose de **laisser un
   fantôme** à son ancienne place (ou pas).
 - Un document **déjà rangé**, déposé de nouveau ailleurs : après le fantôme, une fenêtre propose
   de le **ranger dans les documents de référence** (un fantôme restera à son ancienne place) ou

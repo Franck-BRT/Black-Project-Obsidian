@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.121.2)
+## Aujourd'hui (version 0.122.0)
+
+- **La bibliothèque par groupes** : ses bibliothèques rangées en quatre groupes qu'un clic
+  déplie ou replie — documents (et documents de référence), IA (prompts, personas, skills),
+  système (étiquettes), personnelles (entreprises, personnes). Une fiche glissée dans les
+  documents de référence depuis l'explorateur d'Obsidian : un fantôme à sa place vous est
+  proposé aussi.
 
 - **Pas de doublon, même déposé à la main** : un fichier glissé dans les `Originaux` d'une
   analyse et déjà dans la bibliothèque part à la corbeille à « Mettre à jour » ; sa pièce montre

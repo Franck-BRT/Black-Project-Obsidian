@@ -71,6 +71,8 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
   const missing = (path: string) => new Error(`Fichier introuvable : ${path}`)
   // Les dossiers : ceux créés explicitement, et ceux qui contiennent un fichier.
   const folders = new Set<string>()
+  /** Ceux qui veulent savoir quand un fichier est renommé ou déplacé. */
+  const renameListeners = new Set<(from: string, to: string) => void | Promise<void>>()
   const addFolders = (path: string) => {
     const parts = path.split('/')
     for (let index = 1; index < parts.length; index++) folders.add(parts.slice(0, index).join('/'))
@@ -132,6 +134,7 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
         if (bytes) {
           store.delete(from)
           put(to, bytes)
+          for (const listener of [...renameListeners]) await listener(from, to)
           return
         }
         // Un dossier : tout ce qu'il contient, à la même place sous son nouveau nom.
@@ -140,11 +143,16 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
           const moved = store.get(path)!
           store.delete(path)
           put(`${to}${path.slice(from.length)}`, moved)
+          for (const listener of [...renameListeners]) await listener(path, `${to}${path.slice(from.length)}`)
         }
         for (const folder of [...folders].filter((each) => each === from || each.startsWith(`${from}/`))) {
           folders.delete(folder)
           addFolders(`${to}${folder.slice(from.length)}/x`)
         }
+      },
+      onRenamed: (listener) => {
+        renameListeners.add(listener)
+        return () => void renameListeners.delete(listener)
       },
       trash: async (path) => {
         if (!store.delete(path)) throw missing(path)

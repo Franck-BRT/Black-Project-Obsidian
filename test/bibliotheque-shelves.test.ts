@@ -220,10 +220,12 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     platform.choices.push('Bibliothèque/Prompts')
     await fiche.actions!.find((each) => each.id === 'move')!.run()
     expect(await platform.fs.exists('Bibliothèque/Prompts/Cohérence.md')).toBe(true)
-    // L'accueil : une section par sorte, une carte par bibliothèque.
+    // L'accueil : une section par groupe, dedans les bibliothèques de chaque sorte, une carte chacune.
     const hub = await page('bibliotheque.accueil').load()
     const sections = hub.blocks.flatMap((block) => (block.kind === 'section' ? [block.title] : []))
-    expect(sections).toEqual(['Documents', 'Prompts', 'Personas', 'Skills', 'Entreprises', 'Personnes', 'Étiquettes'])
+    expect(sections).toEqual(['Bibliothèques de documents', 'Bibliothèques de l’IA', 'Bibliothèques système', 'Bibliothèques personnelles'])
+    const ia = hub.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.hub.groupe.ia')
+    expect(ia?.kind === 'section' && ia.blocks.map((block) => (block.kind === 'cards' ? block.title : ''))).toEqual(['Prompts · 2 bibliothèque(s)', 'Personas · 1 bibliothèque(s)', 'Skills · 1 bibliothèque(s)'])
     expect(cardsIn(hub.blocks).filter((card) => card.id.startsWith('prompt:')).map((card) => [card.title, card.subtitle])).toEqual([
       ['Prompts', '1 prompt(s)'],
       ['Relecture', '0 prompt(s)']

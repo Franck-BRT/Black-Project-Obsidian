@@ -295,48 +295,52 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const tags = await deps.stores.tag.all()
   const persons = await deps.stores.person.all()
   const go = (page: string): ViewAction => ({ id: 'open', label: t('bibliotheque.hub.open'), run: () => deps.showPage?.(page) })
-  // Plusieurs bibliothèques d'une sorte : une section par sorte, une carte par bibliothèque.
-  // (La bibliothèque des documents de référence, toujours là, ne compte pas.)
+  const stats: HomeBlock = {
+    kind: 'stats',
+    stats: [
+      { label: t('bibliotheque.hub.documents'), value: String(documents.count), icon: 'book' },
+      { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
+      { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
+      { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' },
+      { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
+      { label: t('bibliotheque.hub.persons'), value: String(persons.length), icon: 'user' },
+      { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
+    ]
+  }
+  const likely: HomeBlock[] = documents.likely ? [{ kind: 'message', tone: 'warning', text: t('bibliotheque.home.likely', { count: documents.likely }) }] : []
+  /**
+   * Les bibliothèques, **regroupées** en sections qu'on déplie ou replie : les documents (et
+   * ceux de référence), celles de l'IA (prompts, personas, skills), celles du système (les
+   * étiquettes), les personnelles (entreprises, personnes).
+   */
+  const group = (id: string, icon: KindIcon, blocks: HomeBlock[], count: number): HomeBlock => ({
+    kind: 'section',
+    id: `bibliotheque.hub.groupe.${id}`,
+    title: t(`bibliotheque.hub.group.${id}`),
+    subtitle: t(`bibliotheque.hub.group.${id}.sub`, { count }),
+    icon,
+    blocks
+  })
+  // Plusieurs bibliothèques d'une sorte (la bibliothèque des documents de référence, toujours là, ne compte pas) :
+  // dans chaque groupe, les cartes de ses bibliothèques, sorte par sorte.
   const several = (['document', 'prompt', 'persona', 'skill', 'issuer', 'person', 'tag'] as const).some((kind) => severalShelves(deps.places[kind].shelves()))
   if (several) {
     const placed = await deps.placedDocuments()
-    const section = (kind: 'document' | EntryKind, icon: KindIcon, items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
-      kind: 'section',
-      id: `bibliotheque.hub.${kind}`,
-      title: t(`bibliotheque.hub.${kind}s`),
-      subtitle: t('bibliotheque.hub.shelves', { count: deps.places[kind].shelves().length }),
-      icon,
-      blocks: [
-        {
-          kind: 'cards',
-          cards: shelfCards(deps.places[kind], items, icon),
-          actions: [{ id: 'new-shelf', label: t('bibliotheque.shelf.new'), tooltip: t(`bibliotheque.shelf.new.${kind}.tip`), icon: 'plus', run: () => void deps.places[kind].newShelf(kind) }]
-        }
-      ]
+    const shelvesOf = (kind: 'document' | EntryKind, icon: KindIcon, items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
+      kind: 'cards',
+      title: `${t(`bibliotheque.hub.${kind}s`)} · ${t('bibliotheque.hub.shelves', { count: deps.places[kind].shelves().length })}`,
+      cards: shelfCards(deps.places[kind], items, icon),
+      actions: [{ id: `new-shelf-${kind}`, label: t('bibliotheque.shelf.new'), tooltip: t(`bibliotheque.shelf.new.${kind}.tip`), icon: 'plus', run: () => void deps.places[kind].newShelf(kind) }]
     })
     return {
       subtitle: t('bibliotheque.hub.subtitle'),
       blocks: [
-        {
-          kind: 'stats',
-          stats: [
-            { label: t('bibliotheque.hub.documents'), value: String(documents.count), icon: 'book' },
-            { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
-            { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
-            { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' },
-            { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
-            { label: t('bibliotheque.hub.persons'), value: String(persons.length), icon: 'user' },
-            { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
-          ]
-        },
-        ...(documents.likely ? [{ kind: 'message' as const, tone: 'warning' as const, text: t('bibliotheque.home.likely', { count: documents.likely }) }] : []),
-        section('document', 'book', placed),
-        section('prompt', 'chat', prompts),
-        section('persona', 'spark', personas),
-        section('skill', 'list', skills),
-        section('issuer', 'building', issuers),
-        section('person', 'user', persons),
-        section('tag', 'tag', tags)
+        stats,
+        ...likely,
+        group('documents', 'book', [shelvesOf('document', 'book', placed)], documents.count),
+        group('ia', 'spark', [shelvesOf('prompt', 'chat', prompts), shelvesOf('persona', 'spark', personas), shelvesOf('skill', 'list', skills)], prompts.length + personas.length + skills.length),
+        group('systeme', 'tag', [shelvesOf('tag', 'tag', tags)], tags.length),
+        group('personnelles', 'user', [shelvesOf('issuer', 'building', issuers), shelvesOf('person', 'user', persons)], issuers.length + persons.length)
       ]
     }
   }
@@ -352,34 +356,23 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   // Les documents de référence : leur carte, à côté de celle des documents.
   const referenceShelf = deps.places.document.shelves().find((shelf) => shelf.reference)
   const references = referenceShelf ? (await deps.placedDocuments()).filter((item) => item.shelf === REFERENCE_SHELF).length : 0
+  const cards = (list: Card[]): HomeBlock[] => [{ kind: 'cards', cards: list }]
   return {
     subtitle: t('bibliotheque.hub.subtitle'),
     blocks: [
-      {
-        kind: 'stats',
-        stats: [
-          { label: t('bibliotheque.hub.documents'), value: String(documents.count), icon: 'book' },
-          { label: t('bibliotheque.hub.prompts'), value: String(prompts.length), icon: 'chat' },
-          { label: t('bibliotheque.hub.personas'), value: String(personas.length), icon: 'spark' },
-          { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' },
-          { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
-          { label: t('bibliotheque.hub.persons'), value: String(persons.length), icon: 'user' },
-          { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
-        ]
-      },
-      {
-        kind: 'cards',
-        cards: [
+      stats,
+      group(
+        'documents',
+        'book',
+        cards([
           card('documents', 'book', documents.count - references, deps.documentsPage, documents.likely ? t('bibliotheque.home.likely', { count: documents.likely }) : ''),
-          ...(referenceShelf ? [card('references', 'star', references, placePageOf(deps.documentsPage, { shelf: REFERENCE_SHELF, directory: '' }))] : []),
-          card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt),
-          card('personas', 'spark', personas.length, ENTRIES_PAGE.persona),
-          card('skills', 'list', skills.length, ENTRIES_PAGE.skill),
-          card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer),
-          card('persons', 'user', persons.length, ENTRIES_PAGE.person),
-          card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)
-        ]
-      }
+          ...(referenceShelf ? [card('references', 'star', references, placePageOf(deps.documentsPage, { shelf: REFERENCE_SHELF, directory: '' }))] : [])
+        ]),
+        documents.count
+      ),
+      group('ia', 'spark', cards([card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt), card('personas', 'spark', personas.length, ENTRIES_PAGE.persona), card('skills', 'list', skills.length, ENTRIES_PAGE.skill)]), prompts.length + personas.length + skills.length),
+      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)]), tags.length),
+      group('personnelles', 'user', cards([card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer), card('persons', 'user', persons.length, ENTRIES_PAGE.person)]), issuers.length + persons.length)
     ]
   }
 }

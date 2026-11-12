@@ -5,13 +5,26 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.41.2 (Black Projects 0.121.2) |
+| Version | 0.42.0 (Black Projects 0.122.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## L'accueil par groupes ; le fantôme proposé depuis l'explorateur (v0.42.0, Black Projects 0.122.0)
+
+- **L'accueil de la bibliothèque** (`hubPage`) : quatre sections repliables
+  (`bibliotheque.hub.groupe.*`) — documents (et références), IA (prompts, personas, skills),
+  système (étiquettes), personnelles (entreprises, personnes) ; avec plusieurs bibliothèques
+  d'une sorte, ses cartes de bibliothèques dans son groupe, une rangée par sorte.
+- **Les sections repliables** gardent leur état d'une ouverture à l'autre (`localStorage`,
+  `black-projects.sections-repliees` ; sans stockage, le temps de la session).
+- **Depuis l'explorateur d'Obsidian** : `FileSystem.onRenamed` (nouveau, facultatif ;
+  `vault.on('rename')`). Une fiche glissée d'ailleurs dans les documents de référence : ses
+  appels suivent, « Un fantôme à sa place ? ». Ce que la bibliothèque déplace elle-même est dit
+  d'avance (`StoreDeps.moving`) et ne compte pas.
 
 ## Vers les références : un fantôme proposé (v0.41.2, Black Projects 0.121.2)
 

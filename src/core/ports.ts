@@ -38,6 +38,11 @@ export interface FileSystem {
   allFiles?(): Promise<VaultPath[]>
   /** Supprimer un fichier : à la corbeille, selon le réglage du coffre, quand la plateforme en a une. */
   trash?(path: VaultPath): Promise<void>
+  /**
+   * Être prévenu quand un fichier est renommé ou déplacé — par l'utilisateur (l'explorateur de
+   * fichiers d'Obsidian) comme par l'application. Rend de quoi ne plus l'être.
+   */
+  onRenamed?(listener: (from: VaultPath, to: VaultPath) => void | Promise<void>): () => void
 }
 
 export interface HttpRequest {

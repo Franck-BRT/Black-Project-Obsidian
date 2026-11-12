@@ -79,6 +79,14 @@ export class ObsidianFileSystem implements FileSystem {
   }
 
   /** Par le gestionnaire de fichiers d'Obsidian : les liens vers le fichier suivent. */
+  /** Les renommages du coffre (l'explorateur de fichiers, les autres extensions, l'application). */
+  onRenamed(listener: (from: string, to: string) => void | Promise<void>): () => void {
+    const ref = this.app.vault.on('rename', (file, oldPath) => {
+      if (file instanceof TFile) void Promise.resolve(listener(oldPath, file.path)).catch((error: unknown) => console.error('[Black Projects]', error))
+    })
+    return () => this.app.vault.offref(ref)
+  }
+
   async rename(from: string, to: string): Promise<void> {
     const source = normalizePath(from)
     const target = normalizePath(to)

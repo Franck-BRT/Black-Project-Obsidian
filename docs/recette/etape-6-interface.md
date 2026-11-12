@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## L'accueil de la bibliothèque par groupes ; le fantôme depuis l'explorateur (v0.122.0)
+
+- [ ] Bibliothèque : quatre groupes — documents, IA, système, personnelles ; un clic replie,
+      un autre déplie ; l'état est gardé après avoir relancé Obsidian
+- [ ] Dans l'explorateur de fichiers d'Obsidian, glisser une fiche de document dans
+      `Bibliothèque/Références` : « Un fantôme à sa place ? » ; accepté, le fantôme est là
+- [ ] **Ranger dans les références** depuis l'application : une seule question
+
 ## Pas de doublon dans les originaux ; un fantôme proposé (v0.121.2)
 
 - [ ] Une norme dans les documents de référence ; la même glissée dans les `Originaux` d'une

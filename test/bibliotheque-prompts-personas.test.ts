@@ -93,7 +93,9 @@ describe('les bibliothèques de prompts et de personas', () => {
     const stats = hub.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Documents=1', 'Prompts=0', 'Personas=0', 'Skills=0', 'Entreprises=0', 'Personnes=0', 'Étiquettes=0'])
     const cards = cardsOf(hub)
-    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Prompts', 'Personas', 'Skills', 'Entreprises', 'Personnes', 'Étiquettes'])
+    // Par groupe : les documents, l'IA, le système, les personnelles — chacun une section qu'on déplie ou replie.
+    expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title}|${block.collapsed ?? false}`] : []))).toEqual(['Bibliothèques de documents|false', 'Bibliothèques de l’IA|false', 'Bibliothèques système|false', 'Bibliothèques personnelles|false'])
+    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Prompts', 'Personas', 'Skills', 'Étiquettes', 'Entreprises', 'Personnes'])
     await cards[3]!.open!.run()
     expect(shown.at(-1)).toBe('bibliotheque.personas')
     expect(views.allTiles().map((tile) => tile.id)).toEqual(expect.arrayContaining(['bibliotheque.prompts', 'bibliotheque.personas']))

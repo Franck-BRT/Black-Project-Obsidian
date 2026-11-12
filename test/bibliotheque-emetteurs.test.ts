@@ -69,7 +69,8 @@ describe('la liste des émetteurs', () => {
     const platform = memoryPlatform()
     const { page } = await start(platform)
     const hub = await page('bibliotheque.accueil').load()
-    const cards = hub.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+    // Les cartes sont rangées par groupe (« Bibliothèques personnelles »…).
+    const cards = hub.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? block.blocks.flatMap((each) => (each.kind === 'cards' ? each.cards : [])) : []))
     expect(cards.find((card) => card.title === 'Entreprises')).toMatchObject({ subtitle: '0 entreprise(s)', icon: 'building' })
     const issuers = await page('bibliotheque.issuers').load()
     expect(issuers.title).toBe('Entreprises')

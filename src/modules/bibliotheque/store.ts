@@ -54,6 +54,8 @@ export interface StoreDeps {
   notesHeading(): string
   /** Des dossiers à ne pas parcourir comme des fiches de documents (ceux des prompts, des personas). */
   skip?(): readonly string[]
+  /** Une fiche que la bibliothèque déplace elle-même (de, vers) : dit avant, pour qu'on ne le prenne pas pour un geste de l'utilisateur. */
+  moving?(from: string, to: string): void
   /** Les bibliothèques de documents (la principale d'abord) ; sinon, la seule : le dossier. */
   shelves?(): readonly Shelf[]
   /** Le dossier où verser, sans lieu précis : la racine de la bibliothèque par défaut. */
@@ -666,6 +668,7 @@ export class LibraryStore {
     for (const { ghost } of ghosts) if (inPlace(ghost.path)) await this.removeGhost(ghost.path)
     await fs.ensureFolder(folder)
     const target = await this.free(`${folder}/${baseName(record)}`)
+    this.deps.moving?.(record, target)
     await fs.rename(record, target)
     for (const { ghost } of ghosts) if (!inPlace(ghost.path)) await fs.writeText(ghost.path, (await fs.readText(ghost.path)).split(`[[${record}`).join(`[[${target}`))
     for (const other of await this.all()) {

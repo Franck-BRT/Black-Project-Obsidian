@@ -68,6 +68,9 @@ export const DEFAULT_REFERENCES_FOLDER = 'Bibliothèque/Références'
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
 export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
 
+/** Ce qui arrête d'écouter les renommages du coffre (à la désactivation). */
+let stopRenames: (() => void) | null = null
+
 let active: {
   store: LibraryStore
   t: (key: string, vars?: Record<string, string | number>) => string
@@ -757,7 +760,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.41.2',
+  version: '0.42.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -783,6 +786,8 @@ export const bibliothequeModule: BlackModule = {
       person: () => folderOf(settings.get(), PERSONS_FOLDER_KEY, DEFAULT_PERSONS_FOLDER)
     }
     const referencesFolder = () => folderOf(settings.get(), REFERENCES_FOLDER_KEY, DEFAULT_REFERENCES_FOLDER)
+    /** Les fiches que la bibliothèque déplace elle-même : leur renommage n'est pas un geste de l'utilisateur. */
+    const ownMoves = new Set<string>()
     const shelves = (kind: ShelfKind): Shelf[] => shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`), { folder: referencesFolder(), name: t('bibliotheque.shelf.references') })
     const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
     const store = new LibraryStore({
@@ -818,7 +823,8 @@ export const bibliothequeModule: BlackModule = {
       // Les prompts et les personas, rangés sous la bibliothèque (ou ailleurs) : pas des documents.
       skip: () => ENTRY_KINDS.flatMap((kind) => shelves(kind)).map((shelf) => shelf.folder),
       shelves: () => shelves('document'),
-      target: () => defaultShelf('document').folder
+      target: () => defaultShelf('document').folder,
+      moving: (from, to) => void ownMoves.add(`${from}\u0000${to}`)
     })
     const entryStore = (kind: EntryKind) =>
       new EntryStore(kind, { fs: platform.fs, yaml: platform.yaml, folder: mainFolder[kind], shelves: () => shelves(kind), target: () => defaultShelf(kind).folder })
@@ -863,6 +869,32 @@ export const bibliothequeModule: BlackModule = {
       platform.notifier.notify(t(left ? 'bibliotheque.references.moved' : 'bibliotheque.references.movedNoGhost', { title: doc.title, references }), 7000)
       return moved
     }
+    /**
+     * Une fiche déplacée **depuis l'explorateur d'Obsidian** dans les documents de référence (d'un
+     * autre dossier) : ses appels suivent, et un fantôme à son ancienne place est proposé — comme
+     * par « Déplacer… ». Ce que la bibliothèque déplace elle-même ne compte pas.
+     */
+    stopRenames?.()
+    stopRenames =
+      platform.fs.onRenamed?.(async (from, to) => {
+        if (ownMoves.delete(`${from}\u0000${to}`) || !to.endsWith('.md')) return
+        const before = from.slice(0, from.lastIndexOf('/'))
+        const after = to.slice(0, to.lastIndexOf('/'))
+        if (before === after || !inReferences(after) || inReferences(before)) return
+        const doc = await store.load(to)
+        if (!doc) return
+        await recordMoved(from, to)
+        const references = placeOfFolder(after)
+        const where = placeOfFolder(before)
+        const leave = await platform.ui.confirm({
+          title: t('bibliotheque.references.ghost.title'),
+          message: t('bibliotheque.references.ghost.message', { title: doc.title, where, references }),
+          confirm: t('bibliotheque.references.ghost.place'),
+          cancel: t('bibliotheque.references.ghost.none')
+        })
+        if (leave && (await store.addGhost(doc, before, references))) platform.notifier.notify(t('bibliotheque.references.ghost.done', { title: doc.title, where }), 6000)
+        pagesChanged()
+      }) ?? null
     /**
      * Proposer — ou placer d'office — un fantôme d'un document ici. Un document déjà rangé
      * ailleurs que dans les références : le ranger dans les références est proposé (versé dans
@@ -1921,5 +1953,7 @@ export const bibliothequeModule: BlackModule = {
   deactivate() {
     pieceTypeMaker = null
     active = null
+    stopRenames?.()
+    stopRenames = null
   }
 }

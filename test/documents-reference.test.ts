@@ -67,7 +67,7 @@ describe('les documents de référence', () => {
     const platform = memoryPlatform()
     const { load, shown } = await start(platform)
     const hub = await load('bibliotheque.accueil')
-    const cards = hub.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+    const cards = hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [block])).flatMap((block) => (block.kind === 'cards' ? block.cards : []))
     expect(cards.map((card) => card.title).slice(0, 2)).toEqual(['Documents', 'Documents de référence'])
     const refsCard = cards.find((card) => card.id === 'references')!
     expect(refsCard).toMatchObject({ subtitle: '0 document(s)', icon: 'star' })
@@ -86,7 +86,7 @@ describe('les documents de référence', () => {
     expect(section(fiche, 'bibliotheque.document.appels')).toMatchObject({ title: 'Appelé par (0)', subtitle: 'Aucun programme ni projet ne l’appelle encore.' })
     // La bibliothèque principale ne parcourt pas son dossier : le document n'y est pas deux fois.
     const hubAfter = await load('bibliotheque.accueil')
-    const counts = hubAfter.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).map((card) => `${card.title}=${card.subtitle}`)
+    const counts = hubAfter.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [block])).flatMap((block) => (block.kind === 'cards' ? block.cards : [])).map((card) => `${card.title}=${card.subtitle}`)
     expect(counts.slice(0, 2)).toEqual(['Documents=0 document(s)', 'Documents de référence=1 document(s)'])
   })
 
@@ -226,5 +226,41 @@ describe('les documents de référence', () => {
     platform.choices.push('Bibliothèque/Archives')
     await (await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Plan.md')}`)).actions!.find((action) => action.id === 'move')!.run()
     expect(platform.confirmed).toHaveLength(asked)
+  })
+
+  it('déplacé depuis l’explorateur d’Obsidian dans les documents de référence : le fantôme proposé aussi, les appels suivent ; une seule question par un déplacement de l’application', async () => {
+    const platform = memoryPlatform()
+    const { load } = await start(platform)
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    await (await load(`bibliotheque.documents?${encodeURIComponent('principale:Normes')}`)).drop!.run([{ name: 'ECSS.pdf', bytes: bytes('e') }, { name: 'Guide.pdf', bytes: bytes('g') }])
+    const store = programmesStore()!
+    const programme = await store.createProgramme('Spatial', { code: '', color: 'indigo', icon: 'rocket', description: '' })
+    await store.setReferences(programme.path, ['Bibliothèque/Normes/ECSS.md'])
+    // Glissée dans l'explorateur : la fiche arrive dans les références, la question vient.
+    const asked = platform.confirmed.length
+    platform.confirmations.push(true)
+    await platform.fs.rename('Bibliothèque/Normes/ECSS.md', `${REFS}/ECSS.md`)
+    expect(platform.confirmed).toHaveLength(asked + 1)
+    expect(platform.confirmed.at(-1)).toMatchObject({ title: 'Un fantôme à sa place ?', message: expect.stringMatching(/^« ECSS » est maintenant rangé dans « Documents de référence »\. Laisser un fantôme dans « Normes »/) })
+    expect(read(platform, 'Bibliothèque/Normes/ECSS.md')).toContain(`de: "[[${REFS}/ECSS.md]]"`)
+    expect(platform.notices.at(-1)).toBe('Fantôme de « ECSS » laissé dans « Normes ».')
+    expect((await store.programme(programme.path))!.references).toEqual([`${REFS}/ECSS.md`])
+    // Refusé : pas de fantôme.
+    platform.confirmations.push(false)
+    await platform.fs.rename('Bibliothèque/Normes/Guide.md', `${REFS}/Guide.md`)
+    expect(await platform.fs.exists('Bibliothèque/Normes/Guide.md')).toBe(false)
+    // Déplacé à l'intérieur des références, ou ailleurs, ou une autre note : pas de question.
+    const now = platform.confirmed.length
+    await platform.fs.ensureFolder(`${REFS}/Normes`)
+    await platform.fs.rename(`${REFS}/Guide.md`, `${REFS}/Normes/Guide.md`)
+    await platform.fs.writeText('Bibliothèque/Notes.md', '# Une note')
+    await platform.fs.rename('Bibliothèque/Notes.md', `${REFS}/Notes.md`)
+    expect(platform.confirmed).toHaveLength(now)
+    // « Ranger dans les références » depuis l'application : une seule question (le renommage qu'elle fait ne compte pas).
+    await pourIntoLibrary([{ name: 'Plan.pdf', bytes: bytes('p') }], { module: 'bibliotheque', label: '' })
+    const before = platform.confirmed.length
+    platform.confirmations.push(true)
+    await (await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Plan.md')}`)).actions!.find((action) => action.id === 'to-references')!.run()
+    expect(platform.confirmed).toHaveLength(before + 1)
   })
 })

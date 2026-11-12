@@ -69,7 +69,7 @@ describe('la liste des étiquettes', () => {
     const platform = memoryPlatform()
     const { page } = await start(platform)
     const hub = await page('bibliotheque.accueil').load()
-    expect(hub.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((card) => card.title === 'Étiquettes')).toMatchObject({ subtitle: '0 étiquette(s)', icon: 'tag' })
+    expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [block])).flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((card) => card.title === 'Étiquettes')).toMatchObject({ subtitle: '0 étiquette(s)', icon: 'tag' })
     const tags = await page('bibliotheque.tags').load()
     expect(tags.actions?.map((action) => action.id)).not.toContain('starters')
     platform.forms.push({ name: 'antenne', category: '', description: '', text: 'antennes\nantenna', favorite: 'false' })

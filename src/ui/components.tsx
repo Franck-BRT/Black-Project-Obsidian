@@ -558,8 +558,29 @@ function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) 
   )
 }
 
-/** Ce que l'utilisateur a fait des sections repliables (repliée ou non), le temps de la session. */
-const folded = new Map<string, boolean>()
+/** Où est gardé, d'une session à l'autre, ce que l'utilisateur a fait des sections repliables. */
+const FOLDED_KEY = 'black-projects.sections-repliees'
+
+/** Ce que l'utilisateur a fait des sections repliables (repliée ou non) : gardé d'une ouverture à l'autre quand on le peut. */
+const folded = new Map<string, boolean>(
+  (() => {
+    try {
+      const saved: unknown = JSON.parse(globalThis.localStorage?.getItem(FOLDED_KEY) ?? '{}')
+      return saved && typeof saved === 'object' ? Object.entries(saved as Record<string, unknown>).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean') : []
+    } catch {
+      return []
+    }
+  })()
+)
+
+/** Garder ce qui est replié ou déplié (le stockage absent, plein, refusé : le temps de la session seulement). */
+function rememberFolded(): void {
+  try {
+    globalThis.localStorage?.setItem(FOLDED_KEY, JSON.stringify(Object.fromEntries(folded)))
+  } catch {
+    // Sans stockage : gardé le temps de la session.
+  }
+}
 
 /** Une section repliable : son intitulé (le bouton), puis ses blocs. */
 function FoldSection({ block, t, now, locale, narrowed }: { block: Extract<HomeBlock, { kind: 'section' }>; t: Translate; now: Date; locale: string; narrowed?: boolean }) {
@@ -571,6 +592,7 @@ function FoldSection({ block, t, now, locale, narrowed }: { block: Extract<HomeB
   const toggle = () => {
     const next = !collapsed
     folded.set(block.id, next)
+    rememberFolded()
     setCollapsed(next)
   }
   return (
