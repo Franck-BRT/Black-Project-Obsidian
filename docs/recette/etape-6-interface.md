@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## « Ses phases » repliable (v0.127.1)
+
+- [ ] La page d'un projet : « Ses phases » repliée d'origine, son en-tête dit l'avancement et
+      la phase en cours (« 0/9 phases · à venir : Veille »)
+- [ ] Un clic sur l'en-tête : le parcours se déplie (en vue Cartes, Liste, Tableau : les
+      cartes des phases) ; un autre clic le replie
+- [ ] Dépliée, puis Obsidian relancé : toujours dépliée
+
 ## Les répertoires d'un type de projet ; la vue retenue (v0.127.0)
 
 - [ ] Types de projet › un type : **Répertoires des documents** — ajouter « Offre », un

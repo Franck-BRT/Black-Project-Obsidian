@@ -558,11 +558,21 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
   }))
   const documents = await documentsSection(deps, programme?.name ?? '—', project.name, project.folders)
   const choice = viewChoice(deps, PROJECT_PAGE)
-  // Ses phases : en parcours, ou en cartes (liste, tableau), étape après étape.
-  const phases: HomeBlock =
+  // Ses phases : en parcours, ou en cartes (liste, tableau), étape après étape — dans une section
+  // repliée d'origine (pour la lisibilité) ; son en-tête dit l'avancement et la phase en cours.
+  const phasesShown: HomeBlock =
     choice.view === 'parcours'
-      ? { kind: 'journey', title: t('programmes.project.phases'), label: t('programmes.project.journey', { name: project.name }), stages: await projectStages(deps, project, true), spans: projectSpans(deps, project), legend: t('programmes.project.legend') }
-      : { kind: 'cards', title: t('programmes.project.phases'), cards: [...project.phases].sort((a, b) => a.stage - b.stage).map((phase) => phaseCard(deps, project, phase)) }
+      ? { kind: 'journey', label: t('programmes.project.journey', { name: project.name }), stages: await projectStages(deps, project, true), spans: projectSpans(deps, project), legend: t('programmes.project.legend') }
+      : { kind: 'cards', cards: [...project.phases].sort((a, b) => a.stage - b.stage).map((phase) => phaseCard(deps, project, phase)) }
+  const phases: HomeBlock = {
+    kind: 'section',
+    id: 'programmes.projet.phases',
+    title: t('programmes.project.phases'),
+    subtitle: [t('programmes.project.advance', { done, total }), current.map((phase) => phase.name).join(', ') || (next ? t('programmes.project.next', { name: next.name }) : '')].filter(Boolean).join(' · '),
+    icon: 'flow',
+    collapsed: true,
+    blocks: [phasesShown]
+  }
   return {
     title: project.name,
     grouping: choice.grouping,

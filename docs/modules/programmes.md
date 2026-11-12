@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.9.0 (Black Projects 0.127.0) |
+| Version | 0.9.1 (Black Projects 0.127.1) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## « Ses phases » repliable (v0.9.1, Black Projects 0.127.1)
+
+- Sur la page d'un projet, le parcours (ou les cartes) des phases est dans une section
+  `programmes.projet.phases`, **repliée d'origine** (`collapsed: true`) ; son en-tête dit
+  l'avancement et la phase en cours (« 0/9 phases · à venir : Veille »). Dépliée ou repliée, le
+  choix est retenu comme pour les autres sections (`black-projects.sections-repliees`).
 
 ## Les répertoires des documents d'un type ; la vue retenue (v0.9.0, Black Projects 0.127.0)
 

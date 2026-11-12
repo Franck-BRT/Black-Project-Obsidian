@@ -18,8 +18,10 @@ Le dossier `Programmes` se règle dans les paramètres du module. Chaque note ga
 ## 2. Les phases d'un projet
 
 Un projet suit des **étapes**, de gauche à droite ; une étape a une ou plusieurs **phases**,
-menées en même temps. Sur la page d'un projet, ses phases sont dessinées en tuiles reliées par
-des flèches :
+menées en même temps. Sur la page d'un projet, ses phases sont dans la section **Ses phases**,
+repliée d'origine pour la lisibilité : son en-tête dit l'avancement et la phase en cours
+(« 2/9 phases · Rédaction de l'offre ») ; un clic la déplie (le choix est gardé). Dépliées, les
+phases sont dessinées en tuiles reliées par des flèches :
 
 - **coche verte** : terminée ; **anneau** : en cours ; **pâle** : à venir ; **grisée** : sans objet.
 

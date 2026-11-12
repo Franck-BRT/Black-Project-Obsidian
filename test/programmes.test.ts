@@ -49,7 +49,9 @@ async function start(platform: MemoryPlatform, modules = MODULES) {
     expect(found, id).toBeDefined()
     await found!.run()
   }
-  const journey = (view: PageView): Extract<HomeBlock, { kind: 'journey' }> => view.blocks.find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey' && !block.compact)!
+  // Le parcours d'une page — sur celle d'un projet, dans la section repliable « Ses phases ».
+  const journey = (view: PageView): Extract<HomeBlock, { kind: 'journey' }> =>
+    view.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [block])).find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey' && !block.compact)!
   return { settings, views, shown, load, action, journey, commands }
 }
 
@@ -480,11 +482,15 @@ describe('la vue des programmes, d’un programme, d’un projet', () => {
     expect(programme.layouts).toEqual(['table'])
     expect(programme.blocks.find((block) => block.kind === 'cards')).toMatchObject({ title: 'Projets', cards: [{ title: 'Q' }] })
     // Le projet : ses phases en cartes, étape après étape, leur état et leurs dates.
+    // Elles sont dans une section « Ses phases », repliée d'origine, qui dit l'avancement.
+    const phasesSection = (view: PageView) => view.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'programmes.projet.phases')!
     let project = await load(projectPage)
-    expect(project.blocks.some((block) => block.kind === 'journey')).toBe(true)
+    expect(phasesSection(project)).toMatchObject({ title: 'Ses phases', subtitle: '0/4 phases · à venir : Lancement', collapsed: true })
+    expect(phasesSection(project).blocks.some((block) => block.kind === 'journey')).toBe(true)
+    expect(project.blocks.some((block) => block.kind === 'journey')).toBe(false)
     await project.grouping!.options.find((option) => option.id === 'cards')!.run()
     project = await load(projectPage)
-    const phases = project.blocks.find((block): block is Extract<HomeBlock, { kind: 'cards' }> => block.kind === 'cards' && block.title === 'Ses phases')!
+    const phases = phasesSection(project).blocks.find((block): block is Extract<HomeBlock, { kind: 'cards' }> => block.kind === 'cards')!
     expect(phases.cards.map((card) => card.title)).toEqual(['Lancement', 'Réalisation', 'Recette', 'Clôture'])
     expect(phases.cards[0]).toMatchObject({ subtitle: 'Étape 1 · Phase libre', badges: [{ label: 'À venir' }] })
     expect(phases.cards[0]!.facts!.map((fact) => fact.label)).toEqual(['Début prévu', 'Fin prévue', 'Terminée le', 'Documents reçus'])
@@ -492,6 +498,6 @@ describe('la vue des programmes, d’un programme, d’un projet', () => {
     expect(shown.at(-1)).toBe(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|lancement`)
     // Retour au parcours.
     await project.grouping!.options.find((option) => option.id === 'parcours')!.run()
-    expect((await load(projectPage)).blocks.some((block) => block.kind === 'journey')).toBe(true)
+    expect(phasesSection(await load(projectPage)).blocks.some((block) => block.kind === 'journey')).toBe(true)
   })
 })

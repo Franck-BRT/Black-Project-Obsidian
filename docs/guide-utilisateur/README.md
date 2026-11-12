@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.127.0)
+## Aujourd'hui (version 0.127.1)
+
+- **« Ses phases » se replie** : sur la page d'un projet, ses phases sont repliées d'origine,
+  pour la lisibilité ; l'en-tête dit où il en est (« 2/9 phases · Rédaction de l'offre »). Un
+  clic les déplie ; le choix est gardé.
 
 - **Les répertoires d'un type de projet** : dans l'éditeur d'un type, décrivez l'arborescence
   de documents de ses projets (répertoires, sous-répertoires) et les types de document attendus
