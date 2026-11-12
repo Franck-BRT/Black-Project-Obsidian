@@ -658,6 +658,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.126.0 : la **vue** des programmes, d'un programme, d'un projet : parcours, cartes, liste, tableau
 - v0.127.0 : les **répertoires des documents d'un type de projet** (et les types attendus dans chacun), créés avec chaque projet ; la vue retenue après relance
 - v0.127.1 : sur la page d'un projet, **« Ses phases » repliable**, repliée d'origine, son en-tête dit l'avancement
+- v0.128.0 : sur Programmes et la page d'un programme, les **phases de chaque projet repliées** d'origine ; **exporter, importer les types de projet** (un fichier JSON, sans doublon)
 
 ### Étape 7 — Livrables
 

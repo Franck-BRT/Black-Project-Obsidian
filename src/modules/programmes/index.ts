@@ -20,6 +20,7 @@ import { programmePageOf, projectPageOf, registerProgrammesHome, typePageOf, TYP
 import { AlreadyThere, ProgrammeStore } from './store'
 import { addFolder, addParallel, addSpan, addStage, copyType, findFolder, movePhase, newPhase, newType, readTypes, remapSpans, removeFolder, removePhase, removeSpan, replacePhase, TYPES_KEY, updateFolder, updateSpan } from './types'
 import { programmesEn, programmesFr } from './i18n'
+import { mergeTypes, readTypesFile, typesFile, typesFileName, TYPES_EXCHANGE_FOLDER } from './exchange'
 
 // ── Interface publique ──────────────────────────────────────────────────────────────
 export { registerPhaseKind, phaseKinds, type PhaseContext, type PhaseKind } from './kinds'
@@ -57,7 +58,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.9.1',
+  version: '0.10.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -438,6 +439,53 @@ export const programmesModule: BlackModule = {
         ),
       moved: async (from, to) => void (await store.referenceMoved(from, to))
     })
+    // ── Se passer des types de projet ───────────────────────────────────────────
+    /** Exporter un type (ou tous) : un fichier JSON dans `Échanges/Types de projet`, à se passer. */
+    const exportTypes = async (id?: string): Promise<void> => {
+      const chosen = id ? types().filter((each) => each.id === id) : types()
+      if (!chosen.length) {
+        notify(t('programmes.types.exchange.empty'))
+        return
+      }
+      const day = localToday()
+      await platform.fs.ensureFolder(TYPES_EXCHANGE_FOLDER)
+      const base = typesFileName(day, id ? chosen[0]!.name : undefined).replace(/\.json$/, '')
+      let path = `${TYPES_EXCHANGE_FOLDER}/${base}.json`
+      for (let index = 2; await platform.fs.exists(path); index++) path = `${TYPES_EXCHANGE_FOLDER}/${base} (${index}).json`
+      await platform.fs.writeText(path, typesFile(chosen, day))
+      const hidden = platform.display?.kind('json') === 'hidden'
+      notify([t('programmes.types.exchange.exported', { count: chosen.length, path }), ...(hidden ? [t('programmes.types.exchange.hidden')] : [])].join(' '), hidden ? 15000 : 10000)
+    }
+    /** Importer des types : un fichier (de l'ordinateur ou du coffre) ; déjà là à l'identique, pas une seconde fois. */
+    const importTypes = async (): Promise<void> => {
+      const source = await ui.pickOption(
+        [
+          { value: 'computer', label: t('programmes.types.exchange.computer'), description: t('programmes.types.exchange.computer.desc') },
+          { value: 'vault', label: t('programmes.types.exchange.vault'), description: t('programmes.types.exchange.vault.desc') }
+        ],
+        t('programmes.types.exchange.from')
+      )
+      let text: string | null = null
+      if (source === 'computer') {
+        const file = (await ui.pickExternalFiles({ accept: ['json'], multiple: false }))[0]
+        if (file) text = new TextDecoder().decode(file.bytes)
+      } else if (source === 'vault') {
+        const path = await ui.pickFile({ extensions: ['json'], placeholder: t('programmes.types.exchange.vault.pick') })
+        if (path) text = await platform.fs.readText(path)
+      }
+      if (text === null) return
+      const read = readTypesFile(text)
+      if (read === 'unreadable' || read === 'other') {
+        notify(t(read === 'unreadable' ? 'programmes.types.exchange.unreadable' : 'programmes.types.exchange.other'), 8000)
+        return
+      }
+      const merged = mergeTypes(types(), read, t('programmes.types.exchange.suffix'))
+      if (merged.added.length) await saveTypes(merged.types)
+      notify(t('programmes.types.exchange.imported', { added: merged.added.length, already: merged.already.length }), 8000)
+      changed()
+      show(merged.added.length === 1 ? typePageOf(merged.added[0]!.id) : TYPES_PAGE)
+    }
+
     registerProgrammesHome(views ?? { home: () => undefined, nav: () => undefined, tile: () => undefined, page: () => undefined }, {
       t,
       store,
@@ -494,6 +542,8 @@ export const programmesModule: BlackModule = {
         const path = await ui.pickFile({ placeholder: t('programmes.docs.link.placeholder') })
         if (path) await withDocs(projectPath, id, (docs) => docs.map((doc, at) => (at === index ? { ...doc, link: path, received: true, on: doc.on ?? localToday() } : doc)))
       },
+      exportTypes,
+      importTypes,
       newType: async () => {
         const named = await typeName(t('programmes.type.new'))
         if (!named) return

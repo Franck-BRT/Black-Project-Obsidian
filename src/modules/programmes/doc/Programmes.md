@@ -12,6 +12,10 @@ une de ces phases.
 | **Projet** | ce qu'on mène, phase par phase ; il suit les phases de son **type** | `Programmes/<Programme>/<Projet>/<Projet>.md` |
 | **Affaire** | une affaire du projet (un marché, un contrat) ; souvent, un projet est une affaire — mais il peut en avoir plusieurs | `Programmes/<Programme>/<Projet>/Affaires/<Affaire>.md` |
 
+Sur **Programmes** et sur la page d'un programme, chaque projet est dessiné en miniature, ses
+phases **repliées** d'origine : son nom (un clic ouvre sa page) et son avancement restent ; le
+chevron devant son nom déplie ses phases (le choix est gardé).
+
 Le dossier `Programmes` se règle dans les paramètres du module. Chaque note garde une partie
 **Notes** à vous : Black Projects n'écrit que son en-tête.
 
@@ -81,6 +85,15 @@ Sur **Types de projet**, chaque type est dessiné ; un clic sur son titre ouvre 
   veille à la remise de l'offre), dessinée en bandeau au-dessus d'elles ; un clic sur son nom la
   modifie (son nom, ses première et dernière étapes, sa couleur), sa corbeille la retire ;
 - **Nouveau type**, **Modifier**, **Dupliquer**, **Supprimer**, **Nouveau projet de ce type**.
+
+**Se passer des types de projet** : sur la page d'un type, **Exporter** l'écrit dans un fichier
+`.json` (ses étapes, ses phases, ses phases englobantes, ses documents attendus, ses
+répertoires) ; sur **Types de projet**, **Tout exporter** les écrit tous. Les fichiers sont
+rangés dans `Échanges/Types de projet`. **Importer…** reprend un tel fichier (de l'ordinateur ou
+du coffre) : un type déjà là à l'identique n'est pas ajouté une seconde fois ; un autre qui
+porte le nom d'un type du coffre arrive à côté, sous « <nom> (importé) ». Obsidian ne montre pas
+les `.json` par défaut : ils sont dans le dossier du coffre, ou activez « Détecter toutes les
+extensions de fichiers » (Paramètres › Fichiers et liens).
 
 Sur un projet, chaque phase englobante dit où elle en est (« 1/6 phases ») : terminée quand
 toutes ses phases le sont, en cours dès que l'une est commencée.

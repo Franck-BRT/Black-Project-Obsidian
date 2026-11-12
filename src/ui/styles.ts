@@ -194,6 +194,13 @@ button.bp-journey-title:hover { color: var(--bp-accent); }
 button.bp-journey-title:focus-visible { outline: 3px solid var(--bp-focus); outline-offset: 2px; border-radius: 4px; }
 .bp-journey-subtitle { flex-basis: 100%; font-size: 0.84em; color: var(--bp-text-muted); }
 .bp-journey.is-compact .bp-journey-head { margin-bottom: 4px; }
+.bp-journey-fold { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; color: var(--bp-text-muted); cursor: pointer; }
+.bp-journey-fold:hover:not(:disabled) { background: var(--bp-surface-2); color: var(--bp-text); }
+.bp-journey-fold:focus-visible { outline: 3px solid var(--bp-focus); outline-offset: 2px; }
+.bp-journey-fold:disabled { cursor: default; }
+.bp-journey-fold svg.bp-icon { transform: rotate(90deg); transition: transform var(--bp-speed); }
+.bp-journey.is-folded .bp-journey-fold svg.bp-icon { transform: rotate(0deg); }
+.bp-journey.is-folded .bp-journey-head { margin-bottom: 0; }
 .bp-journey-grid { display: grid; align-items: stretch; row-gap: 8px; width: max-content; }
 .bp-journey-span { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 4px 6px 4px 12px; border-radius: 12px; color: #ffffff; background-image: linear-gradient(160deg, rgba(255,255,255,0.18), rgba(0,0,0,0.12)); box-shadow: 0 3px 8px rgba(20, 24, 40, 0.14); }
 .bp-journey-span[data-progress="todo"] { filter: saturate(0.55); opacity: 0.8; }

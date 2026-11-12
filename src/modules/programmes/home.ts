@@ -44,6 +44,10 @@ export interface HomeDeps {
   editPhaseDates(project: string, phase: string): Promise<void>
   phaseContext(project: Project, phase: ProjectPhase): PhaseContext
   newType(): Promise<void>
+  /** Exporter un type de projet (ou tous, sans `id`) dans un fichier, à se passer. */
+  exportTypes?(id?: string): Promise<void>
+  /** Importer des types de projet d'un fichier. */
+  importTypes?(): Promise<void>
   editType(id: string): Promise<void>
   copyType(id: string): Promise<void>
   deleteType(id: string): Promise<void>
@@ -200,8 +204,12 @@ function typeSpans(deps: HomeDeps, type: ProjectType, editing: boolean): Journey
   }))
 }
 
-/** Un projet en parcours miniature, son titre ouvre sa page. */
-async function projectJourney(deps: HomeDeps, project: Project, compact: boolean, programme?: Programme): Promise<HomeBlock> {
+/**
+ * Un projet en parcours miniature, son titre ouvre sa page ; ses phases repliées d'origine (son
+ * en-tête dit l'avancement), ce que l'utilisateur en fait retenu page par page.
+ */
+async function projectJourney(deps: HomeDeps, project: Project, page: string, programme?: Programme): Promise<HomeBlock> {
+  const compact = true
   const { t } = deps
   const { done, total, current } = advance(project)
   const affaires = (await deps.store.affaires(project)).length
@@ -214,6 +222,7 @@ async function projectJourney(deps: HomeDeps, project: Project, compact: boolean
     stages: await projectStages(deps, project, !compact),
     spans: projectSpans(deps, project),
     compact,
+    fold: { id: `${page}|${project.path}`, collapsed: true },
     ...(deps.showPage ? { open: { id: 'open', label: t('programmes.project.open'), run: () => deps.showPage?.(projectPageOf(project.path)) } } : {})
   }
 }
@@ -338,7 +347,7 @@ async function programmesPage(deps: HomeDeps): Promise<PageView> {
   const projectCards: Card[] = []
   for (const programme of programmes)
     for (const project of projectsOf.get(programme.path) ?? []) {
-      if (choice.view === 'parcours') journeys.push(await projectJourney(deps, project, true, programme))
+      if (choice.view === 'parcours') journeys.push(await projectJourney(deps, project, PROGRAMMES_PAGE, programme))
       else projectCards.push(await projectCard(deps, project, programme))
     }
   const projectBlocks: HomeBlock[] = choice.view === 'parcours' ? journeys : projectCards.length ? [{ kind: 'cards', cards: projectCards }] : []
@@ -382,7 +391,7 @@ async function programmePage(deps: HomeDeps, param?: string): Promise<PageView> 
   const choice = viewChoice(deps, PROGRAMME_PAGE)
   // Ses projets : en parcours, ou en cartes (liste, tableau).
   const journeys: HomeBlock[] = []
-  if (choice.view === 'parcours') for (const project of projects) journeys.push(await projectJourney(deps, project, true))
+  if (choice.view === 'parcours') for (const project of projects) journeys.push(await projectJourney(deps, project, PROGRAMME_PAGE))
   else if (projects.length) journeys.push({ kind: 'cards', title: t('programmes.fact.projects'), cards: await Promise.all(projects.map((project) => projectCard(deps, project))) })
   const documents = await documentsSection(deps, programme.name)
   return {
@@ -707,7 +716,11 @@ function typesPage(deps: HomeDeps): PageView {
     title: t('programmes.types.title'),
     breadcrumb: crumbs(deps, [{ label: t('programmes.types.title') }]),
     subtitle: t('programmes.types.subtitle'),
-    actions: [{ id: 'new', label: t('programmes.type.new'), icon: 'plus', primary: true, run: () => deps.newType() }],
+    actions: [
+      { id: 'new', label: t('programmes.type.new'), icon: 'plus', primary: true, run: () => deps.newType() },
+      ...(deps.exportTypes ? [{ id: 'export-types', label: t('programmes.types.export'), tooltip: t('programmes.types.export.tip'), icon: 'archive' as const, run: () => deps.exportTypes!() }] : []),
+      ...(deps.importTypes ? [{ id: 'import-types', label: t('programmes.types.import'), tooltip: t('programmes.types.import.tip'), icon: 'upload' as const, run: () => deps.importTypes!() }] : [])
+    ],
     blocks: types.length
       ? types.map((type) => ({
           kind: 'journey' as const,
@@ -735,6 +748,7 @@ function typePage(deps: HomeDeps, param?: string): PageView {
       { id: 'span', label: t('programmes.span.add'), tooltip: t('programmes.span.add.tip'), icon: 'columns', run: () => deps.addTypeSpan(type.id) },
       { id: 'edit', label: t('programmes.type.edit'), icon: 'edit', run: () => deps.editType(type.id) },
       { id: 'copy', label: t('programmes.type.copy'), icon: 'copy', run: () => deps.copyType(type.id) },
+      ...(deps.exportTypes ? [{ id: 'export-type', label: t('programmes.type.export'), tooltip: t('programmes.type.export.tip'), icon: 'archive' as const, run: () => deps.exportTypes!(type.id) }] : []),
       { id: 'delete', label: t('programmes.type.delete'), icon: 'trash', run: () => deps.deleteType(type.id) }
     ],
     blocks: [

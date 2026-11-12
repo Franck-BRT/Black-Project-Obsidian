@@ -215,6 +215,12 @@ export type HomeBlock =
       /** Des **phases englobantes**, en bandeaux au-dessus des étapes qu'elles couvrent. */
       spans?: JourneySpan[]
       compact?: boolean
+      /**
+       * **Repliable** : un chevron devant son titre replie ses étapes (le titre, sa pastille et son
+       * sous-titre restent) ; repliée d'origine si `collapsed`. Ce que l'utilisateur en fait est
+       * retenu sous `id`, comme pour les sections.
+       */
+      fold?: { id: string; collapsed?: boolean }
       /** Une tuile « + » après la dernière étape : en ajouter une. */
       add?: ViewAction
       legend?: string

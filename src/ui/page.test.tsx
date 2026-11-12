@@ -159,6 +159,30 @@ describe('les sections repliables d’une page', () => {
     expect(html.match(/class="bp-fold /g) ?? html.match(/class="bp-fold"/g)).toBeTruthy()
   })
 
+  it('un parcours repliable : replié d’origine, son titre et son sous-titre seuls, un chevron pour le déplier ; une recherche l’ouvre', () => {
+    const journey: HomeBlock = {
+      kind: 'journey',
+      title: 'Station sol',
+      subtitle: '0/2 phases',
+      label: 'Les phases de Station sol',
+      compact: true,
+      fold: { id: 'test.parcours-replie', collapsed: true },
+      stages: [{ id: 'a', phases: [{ id: 'a', label: 'Veille', icon: 'search', color: 'slate' }] }, { id: 'b', phases: [{ id: 'b', label: 'Remise', icon: 'upload', color: 'violet' }] }]
+    }
+    const html = renderToString(<BlockView block={journey} t={t} now={new Date()} locale="fr-FR" />)
+    expect(html).toContain('class="bp-journey is-compact is-folded"')
+    expect(html).toMatch(/<button type="button" class="bp-journey-fold" aria-expanded="false"[^>]*title="Déplier « Station sol »"/)
+    expect(html).toContain('Station sol')
+    expect(html).toContain('0/2 phases')
+    expect(html).not.toContain('bp-journey-grid')
+    const searched = renderToString(<BlockView block={journey} t={t} now={new Date()} locale="fr-FR" narrowed />)
+    expect(searched).toContain('bp-journey-grid')
+    // Sans `fold` : comme avant, ni chevron ni repli.
+    const plain = renderToString(<BlockView block={{ ...journey, fold: undefined } as HomeBlock} t={t} now={new Date()} locale="fr-FR" />)
+    expect(plain).not.toContain('bp-journey-fold')
+    expect(plain).toContain('bp-journey-grid')
+  })
+
   it('une recherche : les sections sans résultat disparaissent, les autres s’ouvrent', () => {
     const { blocks } = filterBlocks(SECTIONS, 'remises', null)
     const html = blocks.map((block) => renderToString(<BlockView block={block} t={t} now={new Date()} locale="fr-FR" narrowed />)).join('')

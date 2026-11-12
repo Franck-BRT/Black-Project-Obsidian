@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les phases repliées sur les programmes ; se passer des types de projet (v0.128.0)
+
+- [ ] Un programme avec deux projets (vue Parcours) : chaque projet, son nom et son avancement,
+      ses phases repliées ; le chevron en déplie un ; Obsidian relancé : toujours déplié
+- [ ] Programmes (vue Parcours) : de même, sous « Ses projets »
+- [ ] Types de projet › **Tout exporter** : `Échanges/Types de projet/Types de projet <jour>.json` ;
+      la page d'un type › **Exporter** : `Type de projet <nom> <jour>.json`
+- [ ] Un autre coffre › Types de projet › **Importer…** › Sur l'ordinateur : le type ajouté ;
+      importé de nouveau : « 0 ajouté(s) » ; un type modifié au même nom : « <nom> (importé) »
+- [ ] Un fichier qui n'est pas un export de types : refusé, dit pourquoi
+
 ## « Ses phases » repliable (v0.127.1)
 
 - [ ] La page d'un projet : « Ses phases » repliée d'origine, son en-tête dit l'avancement et

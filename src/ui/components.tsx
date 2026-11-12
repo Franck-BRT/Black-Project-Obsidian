@@ -420,8 +420,20 @@ function Flowchart({ block }: { block: Extract<HomeBlock, { kind: 'flowchart' }>
  * Un parcours : ses étapes de gauche à droite, reliées par des flèches ; dans chacune, ses
  * phases en tuiles (comme l'accueil), l'une sous l'autre quand elles vont en parallèle.
  */
-function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) {
+function Journey({ block, t, narrowed }: { block: Extract<HomeBlock, { kind: 'journey' }>; t: Translate; narrowed?: boolean }) {
   const compact = block.compact === true
+  // Repliable : replié d'origine, ou comme l'utilisateur l'a laissé ; une recherche l'ouvre.
+  const [collapsed, setCollapsed] = useState(() => (block.fold ? (folded.get(block.fold.id) ?? block.fold.collapsed ?? false) : false))
+  const folds = !!block.fold
+  const open = !folds || narrowed || !collapsed
+  const foldTitle = block.title ?? block.label
+  const toggle = () => {
+    if (!block.fold) return
+    const next = !collapsed
+    folded.set(block.fold.id, next)
+    rememberFolded()
+    setCollapsed(next)
+  }
   // Une action finie (une phase ajoutée, modifiée) : la page se redessine.
   const after = useContext(AfterAction)
   const run = async (action: ViewAction) => {
@@ -497,9 +509,14 @@ function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) 
   const arrow = compact ? '16px' : '42px'
   const columns = [...block.stages.map((_, at) => (at ? `${arrow} auto` : 'auto')), ...(adding ? [`${arrow} auto`] : [])].join(' ')
   return (
-    <figure class={`bp-journey${compact ? ' is-compact' : ''}`} aria-label={block.label}>
-      {(block.title || block.subtitle) && (
+    <figure class={`bp-journey${compact ? ' is-compact' : ''}${open ? '' : ' is-folded'}`} aria-label={block.label} {...(block.fold ? { 'data-fold': block.fold.id } : {})}>
+      {(block.title || block.subtitle || folds) && (
         <figcaption class="bp-journey-head">
+          {folds && (
+            <button type="button" class="bp-journey-fold" aria-expanded={open} disabled={narrowed} onClick={toggle} title={t(open ? 'ui.dashboard.collapse' : 'ui.dashboard.expand', { title: foldTitle })} aria-label={t(open ? 'ui.dashboard.collapse' : 'ui.dashboard.expand', { title: foldTitle })}>
+              <Icon name="chevron" />
+            </button>
+          )}
           {block.title &&
             (block.open ? (
               <button type="button" class="bp-journey-title" onClick={() => void block.open!.run()} title={block.open.tooltip ?? block.open.label}>
@@ -513,47 +530,49 @@ function Journey({ block }: { block: Extract<HomeBlock, { kind: 'journey' }> }) 
           {block.subtitle && <span class="bp-journey-subtitle">{block.subtitle}</span>}
         </figcaption>
       )}
-      <div class="bp-journey-grid" style={{ gridTemplateColumns: columns }}>
-        {spans.map(({ span, lane, to }) => (
-          <div key={`span-${span.id}`} class={`bp-journey-span bp-tile-${span.color}`} data-progress={span.progress ?? 'plain'} style={{ gridColumn: `${span.from * 2 + 1} / ${to * 2 + 2}`, gridRow: String(lane + 1) }} title={compact ? [span.label, span.detail].filter(Boolean).join(' — ') : undefined}>
-            {!compact &&
-              (span.open ? (
-                <button type="button" class="bp-journey-span-label" onClick={() => void run(span.open!)} title={span.open.tooltip ?? span.open.label}>
-                  {span.progress === 'done' && <Icon name="check" />}
-                  {span.label}
-                </button>
-              ) : (
-                <span class="bp-journey-span-label">
-                  {span.progress === 'done' && <Icon name="check" />}
-                  {span.label}
-                </span>
-              ))}
-            {!compact && span.detail && <span class="bp-journey-span-detail">{span.detail}</span>}
-            {!compact && span.tools && span.tools.length > 0 && (
-              <span class="bp-journey-span-tools">
-                {span.tools.map((tool) => (
-                  <ActionButton key={tool.id} action={tool} compact />
+      {open && (
+        <div class="bp-journey-grid" style={{ gridTemplateColumns: columns }}>
+          {spans.map(({ span, lane, to }) => (
+            <div key={`span-${span.id}`} class={`bp-journey-span bp-tile-${span.color}`} data-progress={span.progress ?? 'plain'} style={{ gridColumn: `${span.from * 2 + 1} / ${to * 2 + 2}`, gridRow: String(lane + 1) }} title={compact ? [span.label, span.detail].filter(Boolean).join(' — ') : undefined}>
+              {!compact &&
+                (span.open ? (
+                  <button type="button" class="bp-journey-span-label" onClick={() => void run(span.open!)} title={span.open.tooltip ?? span.open.label}>
+                    {span.progress === 'done' && <Icon name="check" />}
+                    {span.label}
+                  </button>
+                ) : (
+                  <span class="bp-journey-span-label">
+                    {span.progress === 'done' && <Icon name="check" />}
+                    {span.label}
+                  </span>
                 ))}
-              </span>
-            )}
-          </div>
-        ))}
-        {block.stages.map((stage, index) => [
-          index > 0 ? <span key={`arrow-${stage.id}`} class="bp-journey-arrow" aria-hidden="true" style={{ gridColumn: String(index * 2), gridRow: String(stageRow) }} /> : null,
-          <div key={stage.id} class="bp-journey-column" style={{ gridColumn: String(index * 2 + 1), gridRow: String(stageRow) }}>
-            {!compact && stage.caption && <span class="bp-journey-stage-caption">{stage.caption}</span>}
-            <ul class="bp-journey-phases">{stage.phases.map(phase)}</ul>
-            {!compact && stage.add && adder(stage.add)}
-          </div>
-        ])}
-        {adding && block.add && [
-          block.stages.length > 0 ? <span key="arrow-add" class="bp-journey-arrow is-dashed" aria-hidden="true" style={{ gridColumn: String(block.stages.length * 2), gridRow: String(stageRow) }} /> : null,
-          <div key="add" class="bp-journey-column" style={{ gridColumn: String(block.stages.length * 2 + 1), gridRow: String(stageRow) }}>
-            {adder(block.add, true)}
-          </div>
-        ]}
-      </div>
-      {block.legend && <p class="bp-journey-legend">{block.legend}</p>}
+              {!compact && span.detail && <span class="bp-journey-span-detail">{span.detail}</span>}
+              {!compact && span.tools && span.tools.length > 0 && (
+                <span class="bp-journey-span-tools">
+                  {span.tools.map((tool) => (
+                    <ActionButton key={tool.id} action={tool} compact />
+                  ))}
+                </span>
+              )}
+            </div>
+          ))}
+          {block.stages.map((stage, index) => [
+            index > 0 ? <span key={`arrow-${stage.id}`} class="bp-journey-arrow" aria-hidden="true" style={{ gridColumn: String(index * 2), gridRow: String(stageRow) }} /> : null,
+            <div key={stage.id} class="bp-journey-column" style={{ gridColumn: String(index * 2 + 1), gridRow: String(stageRow) }}>
+              {!compact && stage.caption && <span class="bp-journey-stage-caption">{stage.caption}</span>}
+              <ul class="bp-journey-phases">{stage.phases.map(phase)}</ul>
+              {!compact && stage.add && adder(stage.add)}
+            </div>
+          ])}
+          {adding && block.add && [
+            block.stages.length > 0 ? <span key="arrow-add" class="bp-journey-arrow is-dashed" aria-hidden="true" style={{ gridColumn: String(block.stages.length * 2), gridRow: String(stageRow) }} /> : null,
+            <div key="add" class="bp-journey-column" style={{ gridColumn: String(block.stages.length * 2 + 1), gridRow: String(stageRow) }}>
+              {adder(block.add, true)}
+            </div>
+          ]}
+        </div>
+      )}
+      {open && block.legend && <p class="bp-journey-legend">{block.legend}</p>}
     </figure>
   )
 }
@@ -619,7 +638,7 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
     case 'flowchart':
       return <Flowchart block={block} />
     case 'journey':
-      return <Journey block={block} />
+      return <Journey block={block} t={t} {...(narrowed ? { narrowed } : {})} />
     case 'section':
       return <FoldSection block={block} t={t} now={now} locale={locale} {...(narrowed ? { narrowed } : {})} />
     case 'actions':

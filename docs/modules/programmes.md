@@ -5,13 +5,25 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.9.1 (Black Projects 0.127.1) |
+| Version | 0.10.0 (Black Projects 0.128.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les phases des projets repliées sur les programmes ; se passer des types (v0.10.0, Black Projects 0.128.0)
+
+- Sur **Programmes** et sur la page d'un programme (vue Parcours), le parcours miniature de
+  chaque projet est **repliable** (`fold` du bloc `journey`, `id` : `<page>|<chemin du projet>`),
+  replié d'origine ; son titre (qui ouvre le projet) et son sous-titre (avancement) restent.
+- `exchange.ts` : `typesFile` (JSON `{ format, sorte: 'types-de-projet', exporte, types }`),
+  `typesFileName`, `readTypesFile` (`'unreadable'`, `'other'`, ou les types relus par
+  `readProjectType`), `mergeTypes` (déjà là au même contenu, identifiant mis à part : laissé ;
+  un nom pris : « <nom> (importé) » ; un identifiant pris : un libre).
+- Actions : `export-type` (page d'un type), `export-types` et `import-types` (Types de projet) ;
+  les fichiers dans `Échanges/Types de projet` (un second export du jour : « (2) »).
 
 ## « Ses phases » repliable (v0.9.1, Black Projects 0.127.1)
 

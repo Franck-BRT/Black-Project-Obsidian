@@ -249,7 +249,10 @@ flèches, et dans chacune ses **phases** en tuiles (`JourneyPhase` : icône sur 
 `TileColor`, comme les tuiles de l'accueil ; `caption`, `detail`, `status` en pastille,
 `progress` — `done` (coche), `current` (anneau), `todo` (pâle), `skipped` (grisée) —, `open`,
 `tools`). Une étape peut avoir une tuile « + » (`add`), le parcours aussi (après la dernière
-étape) ; son titre peut ouvrir ce qu'il dessine (`open`) ; `compact` : en miniature. Des **phases englobantes** (`spans` : `JourneySpan`, `from`, `to`, le rang
+étape) ; son titre peut ouvrir ce qu'il dessine (`open`) ; `compact` : en miniature ; `fold`
+(`id`, `collapsed`) : **repliable** — un chevron devant son titre replie ses étapes (titre,
+pastille et sous-titre restent), replié d'origine si `collapsed`, ce que l'utilisateur en fait
+retenu sous `id` comme pour les sections (une recherche le déplie). Des **phases englobantes** (`spans` : `JourneySpan`, `from`, `to`, le rang
 de leurs première et dernière étapes) sont des bandeaux au-dessus des étapes qu'elles couvrent ;
 le parcours est une grille dont les colonnes sont ses étapes et ses flèches. Une carte
 peut porter une couleur (`Card.color`) : son icône sur cette couleur. Un choix d'une liste

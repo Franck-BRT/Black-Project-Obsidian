@@ -12,7 +12,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.127.1)
+## Aujourd'hui (version 0.128.0)
+
+- **Les phases repliées sur les programmes** : sur Programmes et sur la page d'un programme,
+  chaque projet montre son nom et son avancement ; ses phases se déplient d'un clic sur le
+  chevron (le choix est gardé).
+- **Se passer des types de projet** : **Exporter** un type (sur sa page) ou **Tout exporter**
+  (sur Types de projet) écrit un fichier dans `Échanges/Types de projet` ; **Importer…** le
+  reprend dans un autre coffre, sans doublon.
 
 - **« Ses phases » se replie** : sur la page d'un projet, ses phases sont repliées d'origine,
   pour la lisibilité ; l'en-tête dit où il en est (« 2/9 phases · Rédaction de l'offre »). Un
