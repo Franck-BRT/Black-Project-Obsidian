@@ -192,4 +192,39 @@ describe('les documents de référence', () => {
     expect(read(platform, `${REFS}/Plan.md`)).toMatch(/^---\nbp-type: bibliotheque-document\n/)
     expect(read(platform, 'Bibliothèque/Normes/Plan.md')).toContain('bp-type: bibliotheque-fantome')
   })
+
+  it('déplacé vers les documents de référence (« Déplacer… » ou « Ranger dans les références ») : un fantôme à sa place est proposé — accepté, il y est ; refusé, rien', async () => {
+    const platform = memoryPlatform()
+    const { load } = await start(platform)
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    await platform.fs.ensureFolder(`${REFS}/Normes`)
+    const at = `bibliotheque.documents?${encodeURIComponent('principale:Normes')}`
+    await (await load(at)).drop!.run([{ name: 'ECSS.pdf', bytes: bytes('e') }, { name: 'Guide.pdf', bytes: bytes('g') }])
+    // « Déplacer… » vers un répertoire des références : la question, acceptée.
+    platform.choices.push(`${REFS}/Normes`)
+    platform.confirmations.push(true)
+    await (await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Normes/ECSS.md')}`)).actions!.find((action) => action.id === 'move')!.run()
+    expect(platform.confirmed.at(-1)).toMatchObject({
+      title: 'Un fantôme à sa place ?',
+      message: '« ECSS » est maintenant rangé dans « Documents de référence › Normes ». Laisser un fantôme dans « Normes », là où il était — une petite note qui le montre encore là, et l’ouvre ?',
+      confirm: 'Laisser un fantôme',
+      cancel: 'Pas de fantôme'
+    })
+    expect(read(platform, `${REFS}/Normes/ECSS.md`)).toMatch(/^---\nbp-type: bibliotheque-document\n/)
+    expect(read(platform, 'Bibliothèque/Normes/ECSS.md')).toContain(`de: "[[${REFS}/Normes/ECSS.md]]"`)
+    expect(platform.notices.at(-1)).toBe('« ECSS » est rangé dans « Documents de référence › Normes » ; un fantôme reste à son ancienne place.')
+    // « Ranger dans les références », refusé : pas de fantôme.
+    platform.confirmations.push(false)
+    await (await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Normes/Guide.md')}`)).actions!.find((action) => action.id === 'to-references')!.run()
+    expect(await platform.fs.exists(`${REFS}/Guide.md`)).toBe(true)
+    expect(await platform.fs.exists('Bibliothèque/Normes/Guide.md')).toBe(false)
+    expect(platform.notices.at(-1)).toBe('« Guide » est rangé dans « Documents de référence ».')
+    // Déplacé ailleurs que dans les références : pas de question.
+    const asked = platform.confirmed.length
+    await platform.fs.ensureFolder('Bibliothèque/Archives')
+    await pourIntoLibrary([{ name: 'Plan.pdf', bytes: bytes('p') }], { module: 'bibliotheque', label: '' })
+    platform.choices.push('Bibliothèque/Archives')
+    await (await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Plan.md')}`)).actions!.find((action) => action.id === 'move')!.run()
+    expect(platform.confirmed).toHaveLength(asked)
+  })
 })

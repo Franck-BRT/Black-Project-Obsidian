@@ -757,7 +757,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.41.1',
+  version: '0.41.2',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -837,9 +837,10 @@ export const bibliothequeModule: BlackModule = {
     const inReferences = (folder: string): boolean => folder === referencesFolder() || folder.startsWith(`${referencesFolder()}/`)
     /**
      * Ranger un document dans les documents de référence (`folder` : l'un de leurs répertoires,
-     * sinon leur racine) : sa fiche y va, un fantôme reste à son ancienne place, ses appels suivent.
+     * sinon leur racine) : sa fiche y va, ses appels suivent ; un fantôme à son ancienne place,
+     * proposé (`ghost: 'ask'`) — ou placé d'office quand on l'a déjà dit (`'always'`).
      */
-    const toReferences = async (record: string, folder = referencesFolder()): Promise<string | null> => {
+    const toReferences = async (record: string, folder = referencesFolder(), ghost: 'ask' | 'always' = 'ask', ui: Ui = platform.ui): Promise<string | null> => {
       const doc = await store.load(record)
       if (!doc) return null
       const from = record.slice(0, record.lastIndexOf('/'))
@@ -847,9 +848,19 @@ export const bibliothequeModule: BlackModule = {
       const moved = await store.move(record, folder)
       if (!moved) return null
       await recordMoved(record, moved)
-      const placed = await store.load(moved)
-      if (placed) await store.addGhost(placed, from, placeOfFolder(folder))
-      platform.notifier.notify(t('bibliotheque.references.moved', { title: doc.title, references: placeOfFolder(folder) }), 7000)
+      const references = placeOfFolder(folder)
+      const before = placeOfFolder(from)
+      const leave =
+        ghost === 'always' ||
+        (await ui.confirm({
+          title: t('bibliotheque.references.ghost.title'),
+          message: t('bibliotheque.references.ghost.message', { title: doc.title, where: before, references }),
+          confirm: t('bibliotheque.references.ghost.place'),
+          cancel: t('bibliotheque.references.ghost.none')
+        }))
+      const placed = leave ? await store.load(moved) : null
+      const left = placed ? await store.addGhost(placed, from, references) : null
+      platform.notifier.notify(t(left ? 'bibliotheque.references.moved' : 'bibliotheque.references.movedNoGhost', { title: doc.title, references }), 7000)
       return moved
     }
     /**
@@ -871,7 +882,7 @@ export const bibliothequeModule: BlackModule = {
           confirm: t('bibliotheque.references.move', { references: ici }),
           cancel: t('bibliotheque.references.keep')
         })
-        if (sure) return toReferences(record, folder)
+        if (sure) return toReferences(record, folder, 'always', ui)
       }
       if (ask) {
         const sure = await ui.confirm({
@@ -893,7 +904,7 @@ export const bibliothequeModule: BlackModule = {
           confirm: t('bibliotheque.references.move', { references }),
           cancel: t('bibliotheque.references.keep')
         })
-        if (sure) await toReferences(record)
+        if (sure) await toReferences(record, referencesFolder(), 'always', ui)
       }
       return ghost
     }
@@ -1558,6 +1569,8 @@ export const bibliothequeModule: BlackModule = {
         if (!doc) return null
         const folder = await pickPlace('document', record.slice(0, record.lastIndexOf('/')), t('bibliotheque.move.pick', { name: doc.title }))
         if (!folder) return null
+        // Vers les documents de référence : un fantôme à son ancienne place, proposé.
+        if (inReferences(folder) && !inReferences(record.slice(0, record.lastIndexOf('/')))) return toReferences(record, folder)
         const moved = await store.move(record, folder)
         if (moved) {
           await recordMoved(record, moved)

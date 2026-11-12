@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.121.1)
+## Aujourd'hui (version 0.121.2)
+
+- **Pas de doublon, même déposé à la main** : un fichier glissé dans les `Originaux` d'une
+  analyse et déjà dans la bibliothèque part à la corbeille à « Mettre à jour » ; sa pièce montre
+  celui de la bibliothèque. Un document déplacé vers les documents de référence : un fantôme à
+  sa place vous est proposé.
 
 - **Un fichier n'est gardé qu'une fois** : déposé dans la bibliothèque, importé dans une analyse
   ou comme exigences, il est d'abord cherché dans toutes les bibliothèques (documents,

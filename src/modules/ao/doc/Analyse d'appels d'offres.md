@@ -156,7 +156,9 @@ Un fichier déjà importé à l'identique n'est pas importé une seconde fois ; 
 différent du même nom est gardé à côté (« RC (2).pdf »). Un fichier **déjà dans la
 bibliothèque** — dans n'importe laquelle de ses bibliothèques de documents : la principale,
 les documents de référence, une autre — n'est **pas copié** dans l'analyse : sa pièce montre
-le fichier de la bibliothèque, et le message de l'import le dit.
+le fichier de la bibliothèque, et le message de l'import le dit. Déposé à la main dans les
+`Originaux`, il part à la corbeille d'Obsidian à « Mettre à jour l'analyse » (sans corbeille :
+mis de côté dans `Pièces/_retirés`) — pas de doublon sur le disque.
 
 Les commandes travaillent sur l'analyse de la note ouverte ; sinon, elles demandent
 laquelle.

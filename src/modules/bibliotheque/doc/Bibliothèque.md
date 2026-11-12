@@ -300,8 +300,9 @@ pas ; son dossier se règle (`Bibliothèque/Références` d'origine).
 
 - La fiche d'un document de référence porte l'étoile **★ Document de référence**, et une
   section **Appelé par** : les programmes et les projets qui l'appellent (un clic y mène).
-- **Ranger dans les références**, sur la fiche d'un autre document, l'y range : un fantôme
-  reste à son ancienne place.
+- **Ranger dans les références**, sur la fiche d'un autre document, l'y range — comme
+  **Déplacer…** vers les documents de référence : une fenêtre propose de **laisser un
+  fantôme** à son ancienne place (ou pas).
 - Un document **déjà rangé**, déposé de nouveau ailleurs : après le fantôme, une fenêtre propose
   de le **ranger dans les documents de référence** (un fantôme restera à son ancienne place) ou
   de le **laisser où il est**. Déposé dans les documents de référence même, c'est ce qui est

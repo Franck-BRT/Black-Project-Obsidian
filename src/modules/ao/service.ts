@@ -370,6 +370,20 @@ export async function importFiles(
   return report
 }
 
+/** Le dossier où un fichier en double est mis de côté, sans corbeille : hors des originaux, il n'est plus une pièce. */
+export const SET_ASIDE = '_retirés'
+
+/** Un fichier déposé en double : à la corbeille (celle que l'utilisateur a choisie), sinon mis de côté dans l'analyse. */
+async function discard(fs: FileSystem, analysis: Analysis, path: string): Promise<void> {
+  if (fs.trash) {
+    await fs.trash(path)
+    return
+  }
+  const aside = `${piecesFolder(analysis)}/${SET_ASIDE}`
+  await fs.ensureFolder(aside)
+  await fs.rename(path, await freePath(fs, `${aside}/${path.slice(path.lastIndexOf('/') + 1)}`))
+}
+
 /** Deux places d'une pièce : les mêmes ? */
 const sameDestination = (a: Destination, b: Destination): boolean => a.place === b.place && (a.candidate ?? '') === (b.candidate ?? '')
 
@@ -482,11 +496,31 @@ export async function updateAnalysis(services: Services, analysis: Analysis): Pr
   const report: ImportReport = { imported: [], duplicates: [], archives: 0, brokenArchives: [] }
   const known = new Set((await pieceNotes(fs, analysis)).map((piece) => piece.original))
   const poured: { name: string; path: string; category: string }[] = []
+  const notes = await pieceNotes(fs, analysis)
   for (const original of await filesUnder(fs, piecesFolder(analysis))) {
     const destination = destinationOf(analysis, original)
     if (!destination || known.has(original)) continue
     const name = original.slice(original.lastIndexOf('/') + 1)
-    const read = await readPiece(name, new Uint8Array(await fs.readBinary(original)))
+    const bytes = new Uint8Array(await fs.readBinary(original))
+    // Déjà dans la bibliothèque, rangé ailleurs : pas de doublon sur le disque — le fichier déposé
+    // part (à la corbeille, sinon mis de côté), la pièce montre celui de la bibliothèque.
+    const inLibrary = await findInLibrary(bytes)
+    if (inLibrary?.file && inLibrary.file !== original && (await fs.exists(inLibrary.file))) {
+      await discard(fs, analysis, original)
+      if (notes.some((note) => note.original === inLibrary.file && sameDestination(note.destination, destination))) {
+        report.duplicates.push(name)
+        continue
+      }
+      ;(report.inLibrary ??= []).push({ name, title: inLibrary.title, place: inLibrary.place })
+      const read = await readPiece(name, bytes)
+      const type = classifyPiece(name, read.text, custom)
+      const piece = await writePieceNote(services, analysis, destination, inLibrary.file, read, type)
+      report.imported.push(piece)
+      notes.push({ note: piece.note, destination, original: inLibrary.file, type, state: read.state, characters: read.text.length })
+      poured.push({ name: inLibrary.file.slice(inLibrary.file.lastIndexOf('/') + 1), path: inLibrary.file, category: type === OTHER ? '' : type })
+      continue
+    }
+    const read = await readPiece(name, bytes)
     const type = classifyPiece(name, read.text, custom)
     report.imported.push(await writePieceNote(services, analysis, destination, original, read, type))
     poured.push({ name, path: original, category: type === OTHER ? '' : type })

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.37.2 (Black Projects 0.121.1) |
+| Version | 0.37.3 (Black Projects 0.121.2) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,13 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## Pas de doublon sur le disque, même déposé à la main (v0.37.3, Black Projects 0.121.2)
+
+`updateAnalysis` : un fichier déposé à la main dans des originaux, déjà dans la bibliothèque
+(rangé ailleurs), part à la corbeille (`fs.trash`), sinon dans `Pièces/_retirés` (hors des
+originaux : plus une pièce) ; sa pièce désigne le fichier de la bibliothèque (`inLibrary`), ou
+c'est un doublon quand la pièce y est déjà. « Mettre à jour » dit les doublons.
 
 ## Une pièce déjà dans la bibliothèque n'est pas copiée (v0.37.2, Black Projects 0.121.1)
 

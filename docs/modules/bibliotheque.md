@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.41.1 (Black Projects 0.121.1) |
+| Version | 0.41.2 (Black Projects 0.121.2) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Vers les références : un fantôme proposé (v0.41.2, Black Projects 0.121.2)
+
+`toReferences(record, folder, ghost)` : la fiche rangée dans les références, puis « Un fantôme à
+sa place ? » (`ghost: 'ask'`) — par **Ranger dans les références** comme par **Déplacer…** vers
+les références. Après la question du doublon, qui disait déjà qu'un fantôme resterait, il est
+placé d'office (`'always'`).
 
 ## Un fichier n'entre qu'une fois, par où qu'il arrive (v0.41.1, Black Projects 0.121.1)
 

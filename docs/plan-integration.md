@@ -648,6 +648,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.120.0 : un **cadre de page** n'est plus un tableau (PDF) ; les pieds de page restants (référence et page, variantes, lignes fourre-tout) ; le **sommaire de la vision** en liste imbriquée ; les retours à la ligne affichés comme dans Obsidian
 - v0.121.0 : les **documents de référence** — une bibliothèque à part, appelée par les programmes et les projets ; la fiche dit qui appelle ; un doublon proposé aux références
 - v0.121.1 : un fichier n'entre qu'une fois, par où qu'il arrive (une pièce d'analyse déjà dans la bibliothèque n'est plus copiée ; une fiche sans empreinte reconnue)
+- v0.121.2 : pas de doublon sur le disque pour un fichier déposé à la main dans les originaux d'une analyse ; un fantôme proposé quand un document va dans les références
 
 ### Étape 7 — Livrables
 

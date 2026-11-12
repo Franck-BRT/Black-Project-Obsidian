@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Pas de doublon dans les originaux ; un fantôme proposé (v0.121.2)
+
+- [ ] Une norme dans les documents de référence ; la même glissée dans les `Originaux` d'une
+      analyse depuis l'explorateur d'Obsidian, puis **Mettre à jour** : le fichier déposé est à
+      la corbeille, la pièce ouvre celui de la bibliothèque
+- [ ] **Déplacer…** un document vers les documents de référence (ou **Ranger dans les
+      références**) : « Un fantôme à sa place ? » — accepté, un fantôme à son ancienne place ;
+      refusé, rien
+
 ## Un fichier n'entre qu'une fois (v0.121.1)
 
 - [ ] Une norme glissée dans les documents de référence, puis glissée dans la bibliothèque

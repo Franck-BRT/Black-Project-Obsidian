@@ -13,7 +13,7 @@ import { createI18n } from '../src/core/i18n'
 import type { ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry } from '../src/core/views'
-import { aoModule, createAnalysis, importFiles } from '../src/modules/ao'
+import { aoModule, createAnalysis, importFiles, updateAnalysis } from '../src/modules/ao'
 import { bibliothequeModule, findInLibrary, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { exigencesModule } from '../src/modules/exigences'
 import { iaModule } from '../src/modules/ia'
@@ -109,5 +109,43 @@ describe('un fichier n’entre qu’une fois, par où qu’il arrive', () => {
     expect(report.added).toEqual([])
     expect(report.already.map((doc) => doc.record)).toEqual(['Bibliothèque/Normes/Norme.md'])
     expect(read(platform, 'Bibliothèque/Normes/Norme.md')).toMatch(/\nsha256: "[0-9a-f]{64}"\n/)
+  })
+
+  it('déposé à la main dans les originaux d’une analyse, déjà dans la bibliothèque : pas de doublon sur le disque — le fichier déposé part, la pièce montre celui de la bibliothèque', async () => {
+    const platform = memoryPlatform()
+    const { services } = await start(platform)
+    const first = (await pourIntoLibrary([{ name: 'Norme.csv', bytes: NORME }], { module: 'bibliotheque', label: '' }, { folder: 'Bibliothèque/Références' }))!.added[0]!
+    const analysis = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: '', reference: '' })
+    const dropped = `${analysis.folder}/Pièces/Appel d'offres/Originaux/Exigences client.csv`
+    await platform.fs.ensureFolder(dropped.slice(0, dropped.lastIndexOf('/')))
+    await platform.fs.writeBinary(dropped, NORME.slice().buffer)
+    const report = await updateAnalysis(services, analysis)
+    expect(report.inLibrary).toEqual([{ name: 'Exigences client.csv', title: 'Norme', place: expect.any(String) }])
+    expect(await platform.fs.exists(dropped)).toBe(false)
+    expect(read(platform, report.imported[0]!.note)).toContain(`fichier: "[[${first.file}]]"`)
+    expect(copies(platform, '.csv')).toEqual([first.file])
+    // Déposé encore une fois au même endroit : la pièce est déjà là — le fichier part, rien de plus.
+    await platform.fs.writeBinary(dropped, NORME.slice().buffer)
+    const again = await updateAnalysis(services, analysis)
+    expect(again.imported).toEqual([])
+    expect(again.duplicates).toEqual(['Exigences client.csv'])
+    expect(await platform.fs.exists(dropped)).toBe(false)
+    expect(records(platform)).toEqual([first.record])
+  })
+
+  it('sans corbeille (une plateforme qui n’en a pas) : le fichier déposé en double est mis de côté dans l’analyse, hors des originaux', async () => {
+    const platform = memoryPlatform()
+    delete (platform.fs as { trash?: unknown }).trash
+    const { services } = await start(platform)
+    await pourIntoLibrary([{ name: 'Norme.csv', bytes: NORME }], { module: 'bibliotheque', label: '' })
+    const analysis = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: '', reference: '' })
+    const dropped = `${analysis.folder}/Pièces/Appel d'offres/Originaux/Norme.csv`
+    await platform.fs.ensureFolder(dropped.slice(0, dropped.lastIndexOf('/')))
+    await platform.fs.writeBinary(dropped, NORME.slice().buffer)
+    await updateAnalysis(services, analysis)
+    expect(await platform.fs.exists(dropped)).toBe(false)
+    expect(await platform.fs.exists(`${analysis.folder}/Pièces/_retirés/Norme.csv`)).toBe(true)
+    // Mis de côté, il n'est plus une pièce : rien de plus à la mise à jour suivante.
+    expect((await updateAnalysis(services, analysis)).imported).toEqual([])
   })
 })
