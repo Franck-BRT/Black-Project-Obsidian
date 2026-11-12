@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les répertoires d'un type de projet ; la vue retenue (v0.127.0)
+
+- [ ] Types de projet › un type : **Répertoires des documents** — ajouter « Offre », un
+      sous-répertoire « Technique », y attendre un CCTP ; renommer, retirer
+- [ ] Un projet de ce type : ses répertoires dans `Bibliothèque/Projets/<Programme>/<Projet>` ;
+      « Documents du projet » : « Offre › Technique — CCTP : manquant » (orange)
+- [ ] Un CCTP rangé dans ce répertoire : « CCTP ✓ » (vert), « 1/1 répertoire(s) complet(s) »
+- [ ] Une vue (Liste, Tableau) ou un regroupement choisi, Obsidian relancé : toujours là
+
 ## La vue des programmes et des projets (v0.126.0)
 
 - [ ] Programmes, un programme, un projet : le sélecteur **Vue** (Parcours, Cartes, Liste,

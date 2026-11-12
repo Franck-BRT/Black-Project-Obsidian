@@ -15,15 +15,16 @@ import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
 import type { Choice, FormField } from '../../core/ports'
 import { phaseKinds, type PhaseContext } from './kinds'
-import { AFFAIRE_STATUSES, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type ExpectedDoc, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType, type SpanSpec } from './model'
+import { AFFAIRE_STATUSES, flatFolders, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type ExpectedDoc, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType, type SpanSpec } from './model'
 import { programmePageOf, projectPageOf, registerProgrammesHome, typePageOf, TYPES_PAGE } from './home'
 import { AlreadyThere, ProgrammeStore } from './store'
-import { addParallel, addSpan, addStage, copyType, movePhase, newPhase, newType, readTypes, remapSpans, removePhase, removeSpan, replacePhase, TYPES_KEY, updateSpan } from './types'
+import { addFolder, addParallel, addSpan, addStage, copyType, findFolder, movePhase, newPhase, newType, readTypes, remapSpans, removeFolder, removePhase, removeSpan, replacePhase, TYPES_KEY, updateFolder, updateSpan } from './types'
 import { programmesEn, programmesFr } from './i18n'
 
 // ── Interface publique ──────────────────────────────────────────────────────────────
 export { registerPhaseKind, phaseKinds, type PhaseContext, type PhaseKind } from './kinds'
-export { addParallel, addSpan, addStage, AO_KIND, movePhase, remapSpans, removePhase, starterTypes } from './types'
+export { addFolder, addParallel, addSpan, addStage, AO_KIND, findFolder, movePhase, remapSpans, removeFolder, removePhase, starterTypes, updateFolder } from './types'
+export { flatFolders, type FolderSpec } from './model'
 export { addDays, daysBetween, isLate, PHASE_ICONS, planPhases, replanPhases, slipOf } from './model'
 export { shortDay } from './home'
 export { PROGRAMMES_PAGE, PROJECT_PAGE, phasePageOf, projectPageOf, programmePageOf } from './home'
@@ -56,7 +57,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.8.0',
+  version: '0.9.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -184,8 +185,9 @@ export const programmesModule: BlackModule = {
       const type = all.find((each) => each.id === values.type) ?? all[0]!
       try {
         const project = await store.createProject(programme, name, type, (values.description ?? '').trim())
-        // Son répertoire dans la bibliothèque des documents projet, sous celui de son programme.
-        await projectDocumentsFolder(programme.name, project.name)
+        // Son répertoire dans la bibliothèque des documents projet, sous celui de son programme — et ceux que son type attend.
+        const home = await projectDocumentsFolder(programme.name, project.name)
+        if (home) for (const each of flatFolders(project.folders)) await platform.fs.ensureFolder(`${home}/${each.path}`)
         // Souvent, un projet est une affaire : la sienne, du même nom.
         if (values.affaire === 'true') await store.createAffaire(project, name, { client: (values.client ?? '').trim(), reference: (values.reference ?? '').trim() })
         notify(t('programmes.project.created', { name, type: type.name }))
@@ -576,6 +578,50 @@ export const programmesModule: BlackModule = {
         const fields = await spanForm(t('programmes.span.edit.title', { name: span.name }), type, span)
         if (fields) await withType(typeId, (current) => updateSpan(current, spanId, fields), false)
       },
+      // Les répertoires des documents d'un type.
+      addTypeFolder: async (typeId, parent) => {
+        const type = types().find((each) => each.id === typeId)
+        const inside = parent ? findFolder(type?.folders ?? [], parent) : null
+        const values = await ui.askForm({
+          title: inside ? t('programmes.folders.addSub', { name: inside.name }) : t('programmes.folders.add'),
+          intro: t('programmes.folders.add.intro'),
+          fields: [nameField('name', t('programmes.field.name'))],
+          submit: t('programmes.save')
+        })
+        const name = safeName(values?.name ?? '')
+        if (!name) return
+        await withType(typeId, (each) => addFolder(each, parent, name), false)
+        changed()
+      },
+      renameTypeFolder: async (typeId, folderId) => {
+        const folder = findFolder(types().find((each) => each.id === typeId)?.folders ?? [], folderId)
+        if (!folder) return
+        const values = await ui.askForm({ title: t('programmes.folders.rename'), fields: [nameField('name', t('programmes.field.name'), folder.name)], submit: t('programmes.save') })
+        const name = safeName(values?.name ?? '')
+        if (!name) return
+        await withType(typeId, (each) => updateFolder(each, folderId, { name }), false)
+        changed()
+      },
+      chooseFolderExpects: async (typeId, folderId) => {
+        const folder = findFolder(types().find((each) => each.id === typeId)?.folders ?? [], folderId)
+        if (!folder) return
+        const chosen = await pickDocTypes(t('programmes.folders.expects.title', { name: folder.name }), folder.expects ?? [])
+        if (!chosen) return
+        await withType(typeId, (each) => updateFolder(each, folderId, { expects: chosen }), false)
+        changed()
+      },
+      removeTypeFolder: async (typeId, folderId) => {
+        const folder = findFolder(types().find((each) => each.id === typeId)?.folders ?? [], folderId)
+        if (!folder) return
+        const sure = await ui.confirm({ title: t('programmes.folders.remove.title', { name: folder.name }), message: t('programmes.folders.remove.message'), confirm: t('programmes.folders.remove'), cancel: t('programmes.cancel'), danger: true })
+        if (!sure) return
+        await withType(typeId, (each) => removeFolder(each, folderId), false)
+        changed()
+      },
+      ensureProjectFolders: async (folder, paths) => {
+        for (const path of paths) await platform.fs.ensureFolder(`${folder}/${path}`)
+      },
+      folderPage: (folder) => libraryFolderPage(folder),
       removeTypeSpan: async (typeId, spanId) => {
         const span = types()
           .find((each) => each.id === typeId)

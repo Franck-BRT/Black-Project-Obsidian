@@ -145,7 +145,7 @@ export class ProgrammeStore {
     await this.deps.fs.ensureFolder(folder)
     await this.write(
       path,
-      projectData({ programme: programme.path, typeId: type.id, typeName: type.name, color: type.color, icon: type.icon, description, created: this.deps.today(), phases: phasesFromType(type), spans: spansFromType(type) }),
+      projectData({ programme: programme.path, typeId: type.id, typeName: type.name, color: type.color, icon: type.icon, description, created: this.deps.today(), phases: phasesFromType(type), spans: spansFromType(type), folders: type.folders ?? [] }),
       name
     )
     return (await this.project(path))!

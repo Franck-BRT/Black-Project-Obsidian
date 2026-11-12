@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.126.0)
+## Aujourd'hui (version 0.127.0)
+
+- **Les répertoires d'un type de projet** : dans l'éditeur d'un type, décrivez l'arborescence
+  de documents de ses projets (répertoires, sous-répertoires) et les types de document attendus
+  dans chacun ; chaque nouveau projet la reçoit dans la bibliothèque, et sa page dit ce qui
+  manque. La vue choisie est gardée après avoir relancé Obsidian.
 
 - **La vue des programmes** : sur Programmes, un programme ou un projet, le sélecteur **Vue** —
   Parcours, Cartes, Liste ou Tableau — montre les projets et les phases en tuiles reliées, en

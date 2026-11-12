@@ -128,6 +128,8 @@ export interface LibraryDocRef {
   detail: string
   /** Est-il rangé dans les documents de référence ? */
   reference: boolean
+  /** Son type de pièce (son code : « CCTP »), vide sans. */
+  category: string
 }
 
 /** Qui appelle un document : un programme, un projet (sa note, sa page). */
@@ -172,7 +174,8 @@ const docRef = (doc: LibraryDoc): LibraryDocRef => ({
   record: doc.record,
   title: doc.title,
   detail: [doc.reference, [doc.edition, doc.revision].filter(Boolean).join(' '), doc.category ? pieceTypeText(doc.category) : ''].filter(Boolean).join(' · '),
-  reference: doc.shelf === REFERENCE_SHELF
+  reference: doc.shelf === REFERENCE_SHELF,
+  category: doc.category
 })
 
 /** Les documents de référence (par titre) ; aucun sans le module. */
@@ -280,7 +283,7 @@ export async function chooseReferenceDocuments(title: string, current: readonly 
   const others = current.flatMap((record) => {
     if (refs.some((doc) => doc.record === record)) return []
     const doc = all.find((each) => each.record === record)
-    return [doc ? docRef(doc) : { record, title: record.slice(record.lastIndexOf('/') + 1).replace(/\.md$/, ''), detail: t('bibliotheque.references.gone'), reference: false }]
+    return [doc ? docRef(doc) : { record, title: record.slice(record.lastIndexOf('/') + 1).replace(/\.md$/, ''), detail: t('bibliotheque.references.gone'), reference: false, category: '' }]
   })
   const choice = (doc: LibraryDocRef) => ({ value: doc.record, label: doc.title, ...(doc.detail || !doc.reference ? { description: [doc.detail, doc.reference ? '' : t('bibliotheque.references.outside')].filter(Boolean).join(' · ') } : {}) })
   const pour = active.pour
@@ -849,7 +852,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.45.2',
+  version: '0.45.3',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),

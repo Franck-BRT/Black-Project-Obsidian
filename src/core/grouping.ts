@@ -4,8 +4,8 @@
 /**
  * Regrouper les cartes d'une page en **sections repliables** (la bibliothèque, les
  * exigences…) : une section par groupe, l'intitulé dit combien. Au-delà de quatre groupes
- * et de douze cartes, elles sont repliées d'origine ; le regroupement choisi vaut le temps
- * de la session, page par page.
+ * et de douze cartes, elles sont repliées d'origine ; le regroupement choisi est gardé page
+ * par page, d'une ouverture à l'autre.
  */
 
 import type { Card, HomeBlock, ViewAction } from './views'
@@ -19,11 +19,30 @@ export interface Group {
   order?: number
 }
 
-/** Le regroupement choisi pour chaque page (sinon celui d'origine), le temps de la session. */
-const chosen = new Map<string, string>()
+/** Où est gardé, d'une session à l'autre, le regroupement (ou la vue) choisi pour chaque page. */
+const CHOSEN_KEY = 'black-projects.regroupements'
+
+/** Le regroupement choisi pour chaque page (sinon celui d'origine) : gardé d'une ouverture à l'autre quand on le peut. */
+const chosen = new Map<string, string>(
+  (() => {
+    try {
+      const saved: unknown = JSON.parse(globalThis.localStorage?.getItem(CHOSEN_KEY) ?? '{}')
+      return saved && typeof saved === 'object' ? Object.entries(saved as Record<string, unknown>).filter((entry): entry is [string, string] => typeof entry[1] === 'string') : []
+    } catch {
+      return []
+    }
+  })()
+)
 
 export const groupingOf = (page: string, fallback: string): string => chosen.get(page) ?? fallback
-export const setGrouping = (page: string, id: string): void => void chosen.set(page, id)
+export const setGrouping = (page: string, id: string): void => {
+  chosen.set(page, id)
+  try {
+    globalThis.localStorage?.setItem(CHOSEN_KEY, JSON.stringify(Object.fromEntries(chosen)))
+  } catch {
+    // Sans stockage (plein, refusé) : le temps de la session.
+  }
+}
 
 /** Le sélecteur « Regrouper par » d'une page : ses choix (`prefix.id` pour leur libellé). */
 export function groupingSelector(page: string, current: string, ids: readonly string[], t: Translate, prefix: string): { label: string; current: string; options: ViewAction[] } {

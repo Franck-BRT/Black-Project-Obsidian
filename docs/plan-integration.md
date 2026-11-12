@@ -656,6 +656,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.125.1 : les **fantômes parmi les documents**, l'icône fantôme devant
 - v0.125.2 : l'icône fantôme sur la fiche d'un document montré ailleurs
 - v0.126.0 : la **vue** des programmes, d'un programme, d'un projet : parcours, cartes, liste, tableau
+- v0.127.0 : les **répertoires des documents d'un type de projet** (et les types attendus dans chacun), créés avec chaque projet ; la vue retenue après relance
 
 ### Étape 7 — Livrables
 

@@ -77,6 +77,17 @@ export interface SpanSpec {
   description?: string
 }
 
+/**
+ * Un **répertoire attendu** d'un projet, dans la bibliothèque des documents projet : son nom,
+ * les types de document qu'on y attend (les types de pièce : « CCTP »), ses sous-répertoires.
+ */
+export interface FolderSpec {
+  id: string
+  name: string
+  expects?: string[]
+  children?: FolderSpec[]
+}
+
 /** Un **type de projet** : ses phases, en étapes (les phases d'une étape vont en parallèle) ; ses phases englobantes. */
 export interface ProjectType {
   id: string
@@ -86,6 +97,8 @@ export interface ProjectType {
   description?: string
   stages: PhaseSpec[][]
   spans?: SpanSpec[]
+  /** Les répertoires (et sous-répertoires) de ses documents, créés avec chaque projet. */
+  folders?: FolderSpec[]
 }
 
 /** Où en est une phase d'un projet. */
@@ -144,6 +157,8 @@ export interface Project {
   spans: SpanSpec[]
   /** Les documents de référence qu'il appelle (les fiches de la bibliothèque). */
   references: string[]
+  /** Les répertoires de ses documents (copiés de son type à sa création), ce qu'on y attend. */
+  folders: FolderSpec[]
 }
 
 export type AffaireStatus = 'en-cours' | 'gagnee' | 'perdue' | 'abandonnee'
@@ -211,7 +226,37 @@ export function readProjectType(value: unknown): ProjectType | null {
         .filter((stage) => stage.length)
     : []
   const spans = Array.isArray(data.spans) ? data.spans.map((span) => readSpan(span, 0, stages.length - 1)).filter((span): span is SpanSpec => span !== null) : []
-  return { id, name, icon: asIcon(data.icon, 'flow'), color: asColor(data.color, 'indigo'), ...(plain(data.description) ? { description: plain(data.description) } : {}), stages, ...(spans.length ? { spans } : {}) }
+  const folders = readFolders(data.folders)
+  return { id, name, icon: asIcon(data.icon, 'flow'), color: asColor(data.color, 'indigo'), ...(plain(data.description) ? { description: plain(data.description) } : {}), stages, ...(spans.length ? { spans } : {}), ...(folders.length ? { folders } : {}) }
+}
+
+/** Des répertoires relus (d'un type : `name`, `expects`, `children` ; d'une note : `nom`, `attendus`, `sous`). */
+export function readFolders(value: unknown): FolderSpec[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((raw): FolderSpec[] => {
+    if (!raw || typeof raw !== 'object') return []
+    const data = raw as Record<string, unknown>
+    const id = plain(data.id)
+    const name = plain(data.name ?? data.nom)
+    if (!id || !name) return []
+    const list = data.expects ?? data.attendus
+    const expects = Array.isArray(list) ? list.map(plain).filter(Boolean) : []
+    const children = readFolders(data.children ?? data.sous)
+    return [{ id, name, ...(expects.length ? { expects } : {}), ...(children.length ? { children } : {}) }]
+  })
+}
+
+/** Des répertoires écrits dans une note de projet. */
+export function foldersData(folders: readonly FolderSpec[]): Record<string, unknown>[] {
+  return folders.map((folder) => ({ id: folder.id, nom: folder.name, ...(folder.expects?.length ? { attendus: folder.expects } : {}), ...(folder.children?.length ? { sous: foldersData(folder.children) } : {}) }))
+}
+
+/** Les répertoires d'un arbre, à plat, chacun avec son chemin (« Offre/Technique ») et sa profondeur (0 : à la racine). */
+export function flatFolders(folders: readonly FolderSpec[], parent = '', depth = 0): (FolderSpec & { path: string; depth: number })[] {
+  return folders.flatMap((folder) => {
+    const path = parent ? `${parent}/${safeName(folder.name)}` : safeName(folder.name)
+    return [{ ...folder, path, depth }, ...flatFolders(folder.children ?? [], path, depth + 1)]
+  })
 }
 
 /** Une phase englobante relue (`min`, `max` : les étapes possibles) ; `null` si elle n'en est pas une. */
@@ -360,11 +405,12 @@ export function readProject(path: string, data: Record<string, unknown>): Projec
     ...(plain(data.demarrage) ? { start: plain(data.demarrage) } : {}),
     phases,
     spans,
-    references: readReferences(data.references)
+    references: readReferences(data.references),
+    folders: readFolders(data.repertoires)
   }
 }
 
-export function projectData(project: Omit<Project, 'path' | 'folder' | 'name' | 'references'> & Partial<Pick<Project, 'references'>>): Record<string, unknown> {
+export function projectData(project: Omit<Project, 'path' | 'folder' | 'name' | 'references' | 'folders'> & Partial<Pick<Project, 'references' | 'folders'>>): Record<string, unknown> {
   return {
     'bp-type': PROJECT_TYPE,
     programme: link(project.programme),
@@ -395,7 +441,8 @@ export function projectData(project: Omit<Project, 'path' | 'folder' | 'name' | 
       ...(phase.description ? { description: phase.description } : {})
     })),
     ...(project.spans.length ? { englobantes: project.spans.map((span) => ({ id: span.id, nom: span.name, couleur: span.color, de: span.from, a: span.to, ...(span.description ? { description: span.description } : {}) })) } : {}),
-    ...referencesData(project.references)
+    ...referencesData(project.references),
+    ...(project.folders?.length ? { repertoires: foldersData(project.folders) } : {})
   }
 }
 

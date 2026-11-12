@@ -5,13 +5,25 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.8.0 (Black Projects 0.126.0) |
+| Version | 0.9.0 (Black Projects 0.127.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les répertoires des documents d'un type ; la vue retenue (v0.9.0, Black Projects 0.127.0)
+
+- `ProjectType.folders` : un arbre de `FolderSpec` (`id`, `name`, `expects` — des codes de types
+  de pièce —, `children`) ; l'éditeur de type le décrit (`addFolder`, `updateFolder`,
+  `removeFolder`, `findFolder`) ; `flatFolders` le met à plat (chemins, profondeurs).
+- À la création d'un projet : copié dans `Project.folders` (`repertoires` dans la note :
+  `nom`, `attendus`, `sous`), et créé dans la bibliothèque des documents projet. La page du projet
+  recrée ceux qui manquent et dit, répertoire par répertoire, les types attendus reçus ou non (le
+  type de pièce des documents : `LibraryDocRef.category`).
+- La vue choisie (et tout regroupement) est gardée d'une ouverture à l'autre (`core/grouping` :
+  stockage local `black-projects.regroupements`).
 
 ## La vue : parcours, cartes, liste, tableau (v0.8.0, Black Projects 0.126.0)
 

@@ -5,13 +5,19 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.45.2 (Black Projects 0.125.2) |
+| Version | 0.45.3 (Black Projects 0.127.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le type de pièce d'un document, pour les autres modules (v0.45.3, Black Projects 0.127.0)
+
+`LibraryDocRef.category` : le code du type de pièce d'un document (les répertoires attendus d'un
+projet disent ce qui est reçu). Le regroupement choisi d'une page est gardé d'une ouverture à
+l'autre.
 
 ## L'icône fantôme sur la fiche (v0.45.2, Black Projects 0.125.2)
 

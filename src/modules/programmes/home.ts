@@ -11,7 +11,7 @@
 import { groupingOf, setGrouping } from '../../core/grouping'
 import { pageWith, type Breadcrumb, type Card, type HomeBlock, type JourneyPhase, type JourneySpan, type JourneyStage, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { phaseKind, type PhaseContext } from './kinds'
-import { daysBetween, FREE_KIND, isLate, PHASE_STATUSES, slipOf, progressOf, stagesOf, type Affaire, type PhaseSpec, type PhaseStatus, type Programme, type Project, type ProjectPhase, type ProjectType } from './model'
+import { daysBetween, flatFolders, FREE_KIND, isLate, PHASE_STATUSES, slipOf, progressOf, stagesOf, type Affaire, type FolderSpec, type PhaseSpec, type PhaseStatus, type Programme, type Project, type ProjectPhase, type ProjectType } from './model'
 import type { ProgrammeStore } from './store'
 import type { Direction } from './types'
 
@@ -71,11 +71,20 @@ export interface HomeDeps {
    * documents projet : leur dossier (créé s'il manque), les documents, la page du dossier ; `null`
    * sans la bibliothèque.
    */
-  projectDocuments?(programme: string, project?: string): Promise<{ folder: string; docs: { record: string; title: string; detail: string }[]; page: string | null } | null>
+  projectDocuments?(programme: string, project?: string): Promise<{ folder: string; docs: { record: string; title: string; detail: string; category: string }[]; page: string | null } | null>
+  /** La page d'un dossier de la bibliothèque (un répertoire d'un projet) ; `null` hors d'elle. */
+  folderPage?(folder: string): string | null
   /** Verser des documents dans un dossier (le choix des fichiers). */
   pourProjectDocuments?(folder: string): Promise<void>
   /** Verser des fichiers glissés sur la page dans un dossier. */
   dropProjectDocuments?(folder: string, files: readonly { name: string; bytes: Uint8Array }[]): Promise<void>
+  /** Les répertoires des documents d'un type : en ajouter un (à la racine, ou dans un autre), le renommer, dire ce qu'on y attend, le retirer. */
+  addTypeFolder?(type: string, parent: string | null): Promise<void>
+  renameTypeFolder?(type: string, folder: string): Promise<void>
+  chooseFolderExpects?(type: string, folder: string): Promise<void>
+  removeTypeFolder?(type: string, folder: string): Promise<void>
+  /** Créer les répertoires d'un projet qui manquent (ses chemins sous son répertoire). */
+  ensureProjectFolders?(folder: string, paths: readonly string[]): Promise<void>
   /** La bibliothèque est-elle là (sans elle, pas de documents de référence) ? */
   referencesAvailable?(): boolean
   /** Un document de la bibliothèque, par sa fiche ; `null` s'il n'y est plus (ou sans la bibliothèque). */
@@ -214,7 +223,7 @@ async function projectJourney(deps: HomeDeps, project: Project, compact: boolean
 /**
  * Comment une page montre ses projets (ou les phases d'un projet) : en **parcours** (les phases
  * en tuiles reliées par des flèches), en **cartes**, en **liste** (une ligne chacun) ou en
- * **tableau** (une colonne par fait). Choisie page par page, retenue le temps de la session.
+ * **tableau** (une colonne par fait). Choisie page par page, retenue d'une ouverture à l'autre.
  */
 export type ProgrammesView = 'parcours' | 'cards' | 'list' | 'table'
 export const PROGRAMMES_VIEWS: readonly ProgrammesView[] = ['parcours', 'cards', 'list', 'table']
@@ -442,7 +451,8 @@ async function referencesSection(deps: HomeDeps, owner: { path: string; referenc
 async function documentsSection(
   deps: HomeDeps,
   programme: string,
-  project?: string
+  project?: string,
+  folders: readonly FolderSpec[] = []
 ): Promise<{ blocks: HomeBlock[]; drop?: { label: string; hint: string; run(files: readonly { name: string; bytes: Uint8Array }[]): Promise<void> } }> {
   const { t } = deps
   if (!deps.projectDocuments || deps.referencesAvailable?.() === false) return { blocks: [] }
@@ -460,17 +470,42 @@ async function documentsSection(
     ...(found.page ? [{ id: 'library-folder', label: t('programmes.docs.inLibrary'), tooltip: t('programmes.docs.inLibrary.tip', { folder: found.folder }), icon: 'book' as const, run: () => deps.showPage?.(found.page!) }] : [])
   ]
   const where = project ?? programme
+  // Ses répertoires attendus (de son type) : créés s'ils manquent ; dans chacun, ce qu'on attend, et ce qui y est.
+  const flat = flatFolders(folders)
+  if (flat.length) await deps.ensureProjectFolders?.(found.folder, flat.map((each) => each.path))
+  const expected: ListItem[] = flat.map((each) => {
+    const here = `${found.folder}/${each.path}`
+    const inside = found.docs.filter((doc) => doc.record.slice(0, doc.record.lastIndexOf('/')) === here)
+    const wanted = each.expects ?? []
+    const has = (code: string) => inside.some((doc) => doc.category.toLowerCase() === code.toLowerCase())
+    const missing = wanted.filter((code) => !has(code))
+    const page = deps.folderPage?.(here)
+    return {
+      id: `folder:${each.id}`,
+      title: each.path.split('/').join(' › '),
+      detail: [
+        ...wanted.map((code) => t(has(code) ? 'programmes.folders.got' : 'programmes.folders.missing', { type: deps.docLabel(code) })),
+        t('programmes.refs.count', { count: inside.length })
+      ].join(' · '),
+      icon: 'folder' as const,
+      tone: wanted.length ? (missing.length ? ('warning' as const) : ('success' as const)) : ('neutral' as const),
+      ...(page && deps.showPage ? { open: { id: 'open', label: t('programmes.docs.inLibrary'), run: () => deps.showPage!(page) } } : {})
+    }
+  })
+  const awaited = flat.reduce((sum, each) => sum + (each.expects?.length ?? 0), 0)
+  const received = expected.filter((item) => item.tone === 'success').length
   return {
     blocks: [
       {
         kind: 'section',
         id: `programmes.${kind}.documents`,
         title: t(`programmes.docs.title.${kind}`),
-        subtitle: t('programmes.refs.count', { count: items.length }),
+        subtitle: [t('programmes.refs.count', { count: items.length }), ...(awaited ? [t('programmes.folders.complete', { done: received, total: expected.filter((item) => item.tone !== 'neutral').length })] : [])].join(' · '),
         icon: 'file',
         blocks: [
           { kind: 'message', tone: 'info', text: t(items.length ? `programmes.docs.intro.${kind}` : `programmes.docs.none.${kind}`, { folder: found.folder }), actions },
-          ...(items.length ? [{ kind: 'list' as const, items }] : [])
+          ...(expected.length ? [{ kind: 'list' as const, title: t('programmes.folders.expected'), items: expected }] : []),
+          ...(items.length ? [expected.length ? { kind: 'list' as const, title: t('programmes.folders.all'), items } : { kind: 'list' as const, items }] : [])
         ]
       }
     ],
@@ -521,7 +556,7 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     open: { id: 'open', label: t('programmes.affaire.open'), run: () => deps.openNote(affaire.path) },
     actions: [{ id: 'status', label: t('programmes.affaire.setStatus'), icon: 'edit', run: () => deps.chooseAffaireStatus(affaire.path) }]
   }))
-  const documents = await documentsSection(deps, programme?.name ?? '—', project.name)
+  const documents = await documentsSection(deps, programme?.name ?? '—', project.name, project.folders)
   const choice = viewChoice(deps, PROJECT_PAGE)
   // Ses phases : en parcours, ou en cartes (liste, tableau), étape après étape.
   const phases: HomeBlock =
@@ -700,9 +735,45 @@ function typePage(deps: HomeDeps, param?: string): PageView {
         stages: typeStages(deps, type, true),
         spans: typeSpans(deps, type, true),
         add: { id: 'stage', label: t('programmes.type.addStage'), tooltip: t('programmes.type.addStage.tip'), run: () => deps.addTypePhase(type.id, 'new') }
-      }
+      },
+      ...typeFoldersSection(deps, type)
     ]
   }
+}
+
+/**
+ * Les **répertoires des documents** d'un type de projet : l'arborescence que chaque projet de ce
+ * type aura dans la bibliothèque des documents projet, et ce qu'on attend dans chaque répertoire.
+ */
+function typeFoldersSection(deps: HomeDeps, type: ProjectType): HomeBlock[] {
+  const { t } = deps
+  if (!deps.addTypeFolder) return []
+  const flat = flatFolders(type.folders ?? [])
+  const items: ListItem[] = flat.map((folder) => ({
+    id: folder.id,
+    title: folder.path.split('/').join(' › '),
+    detail: folder.expects?.length ? t('programmes.folders.expects', { types: folder.expects.map((code) => deps.docLabel(code)).join(', ') }) : t('programmes.folders.noExpect'),
+    icon: 'folder' as const,
+    tools: [
+      ...(deps.chooseFolderExpects ? [{ id: `expects-${folder.id}`, label: t('programmes.folders.chooseExpects'), icon: 'file' as const, run: () => deps.chooseFolderExpects!(type.id, folder.id) }] : []),
+      { id: `sub-${folder.id}`, label: t('programmes.folders.addSub', { name: folder.name }), icon: 'plus' as const, run: () => deps.addTypeFolder!(type.id, folder.id) },
+      ...(deps.renameTypeFolder ? [{ id: `rename-${folder.id}`, label: t('programmes.folders.rename'), icon: 'edit' as const, run: () => deps.renameTypeFolder!(type.id, folder.id) }] : []),
+      ...(deps.removeTypeFolder ? [{ id: `remove-${folder.id}`, label: t('programmes.folders.remove'), icon: 'trash' as const, run: () => deps.removeTypeFolder!(type.id, folder.id) }] : [])
+    ]
+  }))
+  return [
+    {
+      kind: 'section',
+      id: 'programmes.type.folders',
+      title: t('programmes.folders.title'),
+      subtitle: t('programmes.folders.count', { count: flat.length }),
+      icon: 'folder',
+      blocks: [
+        { kind: 'message', tone: 'info', text: t(flat.length ? 'programmes.folders.intro' : 'programmes.folders.none'), actions: [{ id: 'add-folder', label: t('programmes.folders.add'), icon: 'plus', ...(flat.length ? {} : { primary: true }), run: () => deps.addTypeFolder!(type.id, null) }] },
+        ...(items.length ? [{ kind: 'list' as const, items }] : [])
+      ]
+    }
+  ]
 }
 
 export function registerProgrammesHome(views: ViewsRegistrar, deps: HomeDeps): void {

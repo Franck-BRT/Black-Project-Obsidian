@@ -7,7 +7,7 @@
  * pures : un type changé est un nouveau type, rangé ensuite dans les réglages.
  */
 
-import { freeId, FREE_KIND, readProjectType, slug, type PhaseSpec, type ProjectType, type SpanSpec } from './model'
+import { freeId, FREE_KIND, readProjectType, slug, type FolderSpec, type PhaseSpec, type ProjectType, type SpanSpec } from './model'
 
 /** La clé des types de projet dans les réglages du module. */
 export const TYPES_KEY = 'typesProjet'
@@ -193,4 +193,59 @@ export function remapSpans(before: ProjectType, after: ProjectType): ProjectType
   const next: ProjectType = { ...after, spans }
   if (!spans.length) delete next.spans
   return next
+}
+
+// ── Les répertoires des documents d'un type ─────────────────────────────────────────
+
+/** Tous les identifiants de répertoires d'un arbre. */
+const folderIds = (folders: readonly FolderSpec[]): string[] => folders.flatMap((folder) => [folder.id, ...folderIds(folder.children ?? [])])
+
+/** Un arbre de répertoires, chacun passé par `change` (qui rend le répertoire changé, ou `null` pour le retirer). */
+const mapFolders = (folders: readonly FolderSpec[], change: (folder: FolderSpec) => FolderSpec | null): FolderSpec[] =>
+  folders.flatMap((folder) => {
+    const changed = change(folder)
+    if (!changed) return []
+    const children = mapFolders(changed.children ?? [], change)
+    const next: FolderSpec = { ...changed }
+    if (children.length) next.children = children
+    else delete next.children
+    return [next]
+  })
+
+/** Ajouter un répertoire à un type : à la racine (`parent` vide) ou dans un autre. */
+export function addFolder(type: ProjectType, parent: string | null, name: string): ProjectType {
+  const folder: FolderSpec = { id: freeId(slug(name), folderIds(type.folders ?? [])), name }
+  if (!parent) return { ...type, folders: [...(type.folders ?? []), folder] }
+  return { ...type, folders: mapFolders(type.folders ?? [], (each) => (each.id === parent ? { ...each, children: [...(each.children ?? []), folder] } : each)) }
+}
+
+/** Changer un répertoire d'un type (son nom, ce qu'on y attend). */
+export function updateFolder(type: ProjectType, id: string, patch: Partial<Pick<FolderSpec, 'name' | 'expects'>>): ProjectType {
+  return {
+    ...type,
+    folders: mapFolders(type.folders ?? [], (each) => {
+      if (each.id !== id) return each
+      const next: FolderSpec = { ...each, ...patch }
+      if (!next.expects?.length) delete next.expects
+      return next
+    })
+  }
+}
+
+/** Retirer un répertoire d'un type, et ses sous-répertoires. */
+export function removeFolder(type: ProjectType, id: string): ProjectType {
+  const folders = mapFolders(type.folders ?? [], (each) => (each.id === id ? null : each))
+  const next: ProjectType = { ...type, folders }
+  if (!folders.length) delete next.folders
+  return next
+}
+
+/** Un répertoire d'un type, par son identifiant. */
+export function findFolder(folders: readonly FolderSpec[], id: string): FolderSpec | null {
+  for (const folder of folders) {
+    if (folder.id === id) return folder
+    const inside = findFolder(folder.children ?? [], id)
+    if (inside) return inside
+  }
+  return null
 }

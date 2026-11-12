@@ -340,4 +340,46 @@ describe('les documents de référence', () => {
     ])
     expect(await platform.fs.exists('Bibliothèques/Documents/Archives/2025/Plan.md')).toBe(true)
   })
+
+  it('les répertoires d’un type de projet : décrits dans l’éditeur (sous-répertoires, types attendus) ; créés avec chaque projet dans les documents projet ; la page du projet dit ce qui manque', async () => {
+    const platform = memoryPlatform()
+    const { load, shown } = await start(platform)
+    const typePage = () => load('programmes.type?projet-simple')
+    const folders = async () => section(await typePage(), 'programmes.type.folders')
+    expect(await folders()).toMatchObject({ title: 'Répertoires des documents', subtitle: '0 répertoire(s)' })
+    platform.forms.push({ name: 'Offre' })
+    await sectionAction(await folders(), 'add-folder')!.run()
+    platform.forms.push({ name: 'Technique' })
+    await itemsOf(await folders())[0]!.tools!.find((tool) => tool.id === 'sub-offre')!.run()
+    platform.manyAnswers.push(['CCTP'])
+    await itemsOf(await folders())[1]!.tools!.find((tool) => tool.id === 'expects-technique')!.run()
+    expect(itemsOf(await folders()).map((item) => [item.title, item.detail])).toEqual([
+      ['Offre', 'Aucun type de document attendu'],
+      ['Offre › Technique', expect.stringMatching(/^Attendus : CCTP/)]
+    ])
+    // Un projet de ce type : ses répertoires, créés dans la bibliothèque des documents projet.
+    platform.forms.push({ name: 'P', code: '', description: '', color: 'indigo', icon: 'folder' })
+    await (await load('programmes')).actions!.find((action) => action.id === 'new')!.run()
+    platform.forms.push({ name: 'Q', programme: 'Programmes/P/P.md', type: 'projet-simple', description: '', affaire: 'false', client: '', reference: '' })
+    await (await load(shown.at(-1)!)).actions!.find((action) => action.id === 'project')!.run()
+    const projectPage = shown.at(-1)!
+    expect(await platform.fs.exists('Bibliothèque/Projets/P/Q/Offre/Technique')).toBe(true)
+    expect(read(platform, 'Programmes/P/Q/Q.md')).toContain('repertoires:\n- id: offre\n  nom: Offre\n  sous:\n  - id: technique\n    nom: Technique\n    attendus:\n    - CCTP\n')
+    // La page du projet : le CCTP attendu dans « Offre › Technique », manquant.
+    const expected = async () => (section(await load(projectPage), 'programmes.projet.documents')?.blocks ?? []).find((block): block is Extract<HomeBlock, { kind: 'list' }> => block.kind === 'list' && block.title === 'Répertoires attendus')!
+    let rows = (await expected()).items
+    expect(rows.map((item) => [item.title, item.tone])).toEqual([['Offre', 'neutral'], ['Offre › Technique', 'warning']])
+    expect(rows[1]!.detail).toMatch(/^CCTP.* : manquant · 0 document\(s\)$/)
+    // Le CCTP versé dans son répertoire : reçu.
+    await pourIntoLibrary([{ name: 'CCTP antenne.pdf', bytes: bytes('cctp'), category: 'CCTP' }], { module: 'bibliotheque', label: '' }, { folder: 'Bibliothèque/Projets/P/Q/Offre/Technique' })
+    rows = (await expected()).items
+    expect(rows[1]).toMatchObject({ tone: 'success', detail: expect.stringMatching(/^CCTP.* ✓ · 1 document\(s\)$/) })
+    expect(section(await load(projectPage), 'programmes.projet.documents')!.subtitle).toBe('1 document(s) · 1/1 répertoire(s) complet(s)')
+    await rows[1]!.open!.run()
+    expect(shown.at(-1)).toBe(`bibliotheque.documents?${encodeURIComponent('projets:P/Q/Offre/Technique')}`)
+    // Retiré du type : les projets déjà créés gardent les leurs.
+    await itemsOf(await folders())[0]!.tools!.find((tool) => tool.id === 'remove-offre')!.run()
+    expect(itemsOf(await folders())).toEqual([])
+    expect((await expected()).items).toHaveLength(2)
+  })
 })

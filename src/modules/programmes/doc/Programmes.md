@@ -114,5 +114,19 @@ Les pages **Programmes**, d'un **programme** et d'un **projet** ont un sélecteu
 (une ligne chacun) ou **Tableau** (une colonne par fait). Hors parcours, les projets sont en
 cartes — avancement, phase en cours, démarrage, fin prévue, affaires — et les phases d'un projet
 aussi — étape, état (en retard s'il l'est), début et fin prévus, terminée le, documents reçus ;
-les programmes et les affaires suivent la même vue. Chaque page garde la sienne, le temps de la
-session.
+les programmes et les affaires suivent la même vue. Chaque page garde la sienne, même après
+avoir relancé Obsidian.
+
+## 8. Les répertoires des documents d'un type
+
+Dans l'éditeur d'un type de projet, la section **Répertoires des documents** décrit
+l'arborescence de documents de ses projets : **Ajouter un répertoire**, puis, sur chacun,
+**Ajouter un sous-répertoire**, **Renommer**, **Retirer**, et **Types de document attendus…**
+(les types de pièce, plusieurs au besoin — un type qui manque se crée d'ici).
+
+Chaque projet créé de ce type reçoit ces répertoires dans la bibliothèque des documents projet
+(`Bibliothèque/Projets/<Programme>/<Projet>/…`) ; ils sont recopiés dans sa note (`repertoires`)
+— changer le type ensuite ne change pas les projets déjà créés. Sur la page du projet, **Documents
+du projet** montre les **répertoires attendus** : ce qu'on attend dans chacun (« CCTP : manquant »,
+« CCTP ✓ » dès qu'un document de ce type y est rangé), combien il en contient, et combien de
+répertoires sont complets ; un clic ouvre le répertoire dans la bibliothèque.
