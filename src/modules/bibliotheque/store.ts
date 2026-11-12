@@ -831,6 +831,36 @@ export class LibraryStore {
     await fs.writeText(doc.record, recordContent(doc, this.deps.notesHeading(), body))
   }
 
+  /**
+   * Une fiche sans empreinte (écrite à la main, ou d'avant les empreintes) dont le fichier a ces
+   * octets : son empreinte est calculée (de son fichier, s'il a la même taille) et gardée.
+   */
+  private async unfingerprinted(known: LibraryDoc[], size: number, hash: string): Promise<LibraryDoc | undefined> {
+    const { fs } = this.deps
+    for (const doc of known) {
+      if (doc.hash || (doc.size && doc.size !== size) || !doc.file || !(await fs.exists(doc.file))) continue
+      try {
+        doc.hash = await fingerprintOf(new Uint8Array(await fs.readBinary(doc.file)))
+      } catch {
+        continue
+      }
+      await this.save(doc)
+      if (doc.hash === hash) return doc
+    }
+    return undefined
+  }
+
+  /**
+   * Le document de la bibliothèque qui a déjà ces octets — dans n'importe quelle bibliothèque de
+   * documents (la principale, les références, les autres) —, ou `null`. Avant d'écrire un fichier
+   * dans le coffre, pour ne pas le copier une seconde fois.
+   */
+  async findByBytes(bytes: Uint8Array): Promise<LibraryDoc | null> {
+    const known = await this.all()
+    const hash = await fingerprintOf(bytes)
+    return known.find((doc) => doc.hash === hash) ?? (await this.unfingerprinted(known, bytes.byteLength, hash)) ?? null
+  }
+
   /** Verser des fichiers dans la bibliothèque, avec leur origine. */
   async pour(items: readonly PourItem[], origin: DocOrigin, options: PourOptions = {}): Promise<PourReport> {
     const { fs } = this.deps
@@ -847,8 +877,8 @@ export class LibraryStore {
         continue
       }
       const hash = await fingerprintOf(bytes)
-      // Déjà là (le même fichier, ou les mêmes octets ailleurs) : son origine s'ajoute.
-      const existing = known.find((doc) => (item.path && doc.file === item.path) || doc.hash === hash)
+      // Déjà là (le même fichier, ou les mêmes octets ailleurs, dans n'importe quelle bibliothèque de documents) : son origine s'ajoute.
+      const existing = known.find((doc) => (item.path && doc.file === item.path) || doc.hash === hash) ?? (await this.unfingerprinted(known, bytes.byteLength, hash))
       if (existing) {
         const origins = existing.origins.some((each) => sameOrigin(each, origin)) ? existing.origins : [...existing.origins, origin]
         const category = existing.category || item.category || options.category || ''

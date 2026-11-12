@@ -673,6 +673,7 @@ export const aoFr: Record<string, string> = {
   'ao.import.unread': '{count} sans texte lisible pour l’instant : voir le tableau des pièces.',
   'ao.import.archives': '{count} archive(s) ZIP ouverte(s).',
   'ao.import.duplicates': '{count} fichier(s) déjà dans l’analyse, non importé(s) à nouveau.',
+  'ao.import.inLibrary': '{count} fichier(s) déjà dans la bibliothèque, non copié(s) : la pièce montre celui de la bibliothèque — {files}.',
   'ao.import.broken': 'Archive(s) illisible(s), non importée(s) : {files}.',
   'ao.update.nothing': 'Aucune nouvelle pièce : le tableau des pièces est à jour.',
 
@@ -1428,6 +1429,7 @@ export const aoEn: Record<string, string> = {
   'ao.import.unread': '{count} without readable text for now: see the documents table.',
   'ao.import.archives': '{count} ZIP archive(s) opened.',
   'ao.import.duplicates': '{count} file(s) already in the analysis, not imported again.',
+  'ao.import.inLibrary': '{count} file(s) already in the library, not copied: the piece shows the library’s — {files}.',
   'ao.import.broken': 'Unreadable archive(s), not imported: {files}.',
   'ao.update.nothing': 'No new document: the documents table is up to date.',
 

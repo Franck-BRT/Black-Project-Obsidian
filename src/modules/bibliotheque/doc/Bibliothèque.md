@@ -17,8 +17,11 @@ Un fichier venu de l'ordinateur est **copié** dans la bibliothèque (dossier
 `_fichiers`) ; un fichier déjà dans le coffre — une pièce d'analyse — **reste où il est**,
 la fiche le désigne.
 
-Un **même fichier** (mêmes octets, quel que soit son nom) n'entre qu'une fois : sa fiche
-note seulement qu'il revient d'ailleurs (ses origines s'ajoutent).
+Un **même fichier** (mêmes octets, quel que soit son nom) n'entre qu'une fois, par où qu'il
+arrive (glissé, versé, importé dans une analyse, importé comme exigences, le dossier « À
+verser ») et où qu'il soit déjà rangé (la bibliothèque principale, les documents de
+référence, une bibliothèque ajoutée) : sa fiche note seulement qu'il revient d'ailleurs (ses
+origines s'ajoutent). Une fiche sans empreinte (écrite à la main) est reconnue à son fichier.
 
 ## 2. La fiche d'un document
 

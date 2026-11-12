@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Un fichier n'entre qu'une fois (v0.121.1)
+
+- [ ] Une norme glissée dans les documents de référence, puis glissée dans la bibliothèque
+      principale sous un autre nom : « déjà dans la bibliothèque », une seule fiche
+- [ ] La même norme importée dans une analyse : le message dit « déjà dans la bibliothèque,
+      non copié » ; rien dans `Originaux` ; la pièce ouvre le fichier de la bibliothèque
+- [ ] La même, importée comme exigences : une seule fiche, son origine ajoutée
+
 ## Les documents de référence (v0.121.0)
 
 - [ ] Bibliothèque : la carte **Documents de référence** à côté de Documents ; sa page, son

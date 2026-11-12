@@ -11,7 +11,7 @@
 import { localToday } from '../../core/dates'
 import { parseFrontmatter, setFrontmatterField } from '../../core/frontmatter'
 import type { ExternalFile, FileSystem } from '../../core/ports'
-import { pourIntoLibrary } from '../bibliotheque'
+import { findInLibrary, pourIntoLibrary } from '../bibliotheque'
 import { FileReadError, fileText, isArchive, isImage, isReadable, readArchive } from '../lecture-fichiers'
 import { classifyPiece, currentCode, currentTyping, OTHER, type CustomKeywords } from '../typage-pieces'
 import {
@@ -148,6 +148,11 @@ export interface ImportReport {
   imported: ImportedPiece[]
   /** Des fichiers déjà dans l'analyse, à l'identique : non importés une seconde fois. */
   duplicates: string[]
+  /**
+   * Des fichiers déjà dans la bibliothèque (rangés ailleurs, dans n'importe laquelle de ses
+   * bibliothèques de documents) : non copiés ; leur pièce montre le fichier de la bibliothèque.
+   */
+  inLibrary?: { name: string; title: string; place: string }[]
   /** Des archives ouvertes. */
   archives: number
   /** Des archives qui n'ont pas pu être ouvertes. */
@@ -319,6 +324,7 @@ export async function importFiles(
   }
 
   const poured: { name: string; path: string; bytes: Uint8Array; category: string }[] = []
+  const seen: { name: string; bytes: Uint8Array }[] = []
   for (const piece of pieces) {
     const place: PiecePlace = piece.place === 'les-deux' ? (placement.places[piece.path] ?? 'appel-d-offres') : piece.place
     const destination: Destination =
@@ -328,6 +334,28 @@ export async function importFiles(
     const wanted = `${placeOriginals(analysis, destination)}/${piece.path}`
     if ((await fs.exists(wanted)) && sameBytes(new Uint8Array(await fs.readBinary(wanted)), piece.bytes)) {
       report.duplicates.push(piece.path)
+      continue
+    }
+    // Deux fois le même fichier dans ce dépôt (une archive et sa copie à part : même nom, mêmes octets) : une seule pièce.
+    const fileName = piece.path.slice(piece.path.lastIndexOf('/') + 1)
+    if (seen.some((each) => each.name === fileName && sameBytes(each.bytes, piece.bytes))) {
+      report.duplicates.push(piece.path)
+      continue
+    }
+    seen.push({ name: fileName, bytes: piece.bytes })
+    // Déjà dans la bibliothèque (une autre analyse, les documents de référence…) : pas de seconde copie —
+    // la pièce montre le fichier de la bibliothèque.
+    const known = await findInLibrary(piece.bytes)
+    if (known?.file && (await fs.exists(known.file))) {
+      // Déjà une pièce de cette analyse, à cette place : rien de plus.
+      const notes = await pieceNotes(fs, analysis)
+      if (notes.some((note) => note.original === known.file && sameDestination(note.destination, destination))) {
+        report.duplicates.push(piece.path)
+        continue
+      }
+      ;(report.inLibrary ??= []).push({ name: piece.path, title: known.title, place: known.place })
+      report.imported.push(await writePieceNote(services, analysis, destination, known.file, piece.read, piece.type))
+      poured.push({ name: known.file.slice(known.file.lastIndexOf('/') + 1), path: known.file, bytes: piece.bytes, category: piece.type === OTHER ? '' : piece.type })
       continue
     }
     const original = await freePath(fs, wanted)
@@ -341,6 +369,9 @@ export async function importFiles(
   if (!services.noteByWorkflow?.('pieces') || !report.imported.length) await refreshTable(services, analysis)
   return report
 }
+
+/** Deux places d'une pièce : les mêmes ? */
+const sameDestination = (a: Destination, b: Destination): boolean => a.place === b.place && (a.candidate ?? '') === (b.candidate ?? '')
 
 /** Un nom de candidat utilisable comme nom de dossier. */
 export function safeCandidate(name: string | undefined): string {
@@ -508,7 +539,8 @@ export async function movePiece(services: Services, note: string, destination: D
     destination.place === 'reponse' && destination.candidate ? { place: 'reponse', candidate: safeCandidate(destination.candidate) } : destination
   const name = piece.original.slice(piece.original.lastIndexOf('/') + 1)
   let original = piece.original
-  if (piece.original && (await fs.exists(piece.original))) {
+  // Son original, s'il est dans l'analyse ; un fichier de la bibliothèque (rangé ailleurs) ne bouge pas.
+  if (piece.original && piece.original.startsWith(`${piecesFolder(piece.analysis)}/`) && (await fs.exists(piece.original))) {
     original = await freePath(fs, `${placeOriginals(piece.analysis, target)}/${name}`)
     await fs.rename(piece.original, original)
   }

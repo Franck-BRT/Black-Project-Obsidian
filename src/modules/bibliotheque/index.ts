@@ -165,6 +165,23 @@ export async function libraryDocument(record: string): Promise<LibraryDocRef | n
   return doc ? docRef(doc) : null
 }
 
+/**
+ * Ces octets sont-ils déjà dans la bibliothèque (n'importe laquelle de ses bibliothèques de
+ * documents) ? Le document, son fichier et où il est rangé ; `null` sinon, ou sans le module.
+ * Un module qui écrit un fichier dans le coffre le demande d'abord : un fichier déjà là n'est
+ * pas copié une seconde fois.
+ */
+export async function findInLibrary(bytes: Uint8Array): Promise<(LibraryDocRef & { file: string; place: string }) | null> {
+  if (!active) return null
+  try {
+    const doc = await active.store.findByBytes(bytes)
+    return doc ? { ...docRef(doc), file: doc.file, place: active.placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/'))) } : null
+  } catch (error) {
+    console.error('[Black Projects] bibliothèque', error)
+    return null
+  }
+}
+
 /** La page d'un document de la bibliothèque (sa fiche). */
 export const libraryDocPage = (record: string): string => docPageOf(record)
 
@@ -740,7 +757,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.41.0',
+  version: '0.41.1',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),

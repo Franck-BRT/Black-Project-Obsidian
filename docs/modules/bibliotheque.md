@@ -5,13 +5,24 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.41.0 (Black Projects 0.121.0) |
+| Version | 0.41.1 (Black Projects 0.121.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Un fichier n'entre qu'une fois, par où qu'il arrive (v0.41.1, Black Projects 0.121.1)
+
+- Tout versement passe par `store.pour`, qui compare l'empreinte aux fiches de **toutes** les
+  bibliothèques de documents (`all()` : la principale, les références, les ajoutées) ; le
+  dossier « À verser » aussi (`pourInbox`).
+- Une fiche **sans empreinte** (écrite à la main) : son empreinte est calculée de son fichier
+  quand un fichier de même taille se présente, et gardée (`unfingerprinted`).
+- `findInLibrary(bytes)` (interface publique) : le document qui a déjà ces octets, son fichier,
+  où il est rangé — demandé avant d'écrire un fichier dans le coffre (l'import des pièces
+  d'une analyse).
 
 ## Les documents de référence (v0.41.0, Black Projects 0.121.0)
 

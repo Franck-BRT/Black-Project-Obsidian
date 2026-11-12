@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.37.1 (Black Projects 0.109.1) |
+| Version | 0.37.2 (Black Projects 0.121.1) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,15 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## Une pièce déjà dans la bibliothèque n'est pas copiée (v0.37.2, Black Projects 0.121.1)
+
+`importFiles` demande d'abord à la bibliothèque si les octets y sont déjà (`findInLibrary`,
+toutes ses bibliothèques de documents). Oui : rien n'est écrit dans les originaux, la note de
+la pièce désigne le fichier de la bibliothèque, le rapport le dit (`inLibrary`) ; déjà une
+pièce de l'analyse à cette place : un doublon. Dans un même dépôt, le même fichier (même nom,
+mêmes octets — une archive et sa copie à part) ne fait qu'une pièce. `movePiece` ne déplace
+plus un original rangé hors de l'analyse.
 
 ## Plus d'entrée « Analyses » au menu (v0.37.1, Black Projects 0.109.1)
 

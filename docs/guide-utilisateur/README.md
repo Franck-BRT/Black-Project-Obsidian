@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.121.0)
+## Aujourd'hui (version 0.121.1)
+
+- **Un fichier n'est gardé qu'une fois** : déposé dans la bibliothèque, importé dans une analyse
+  ou comme exigences, il est d'abord cherché dans toutes les bibliothèques (documents,
+  documents de référence, les vôtres) ; déjà là, il n'est pas copié — sa fiche note d'où il
+  revient, la pièce d'une analyse montre le fichier de la bibliothèque.
 
 - **Les documents de référence** (Bibliothèque › **Documents de référence**) : les normes,
   procédures et guides communs à vos programmes et projets, rangés à part. Un programme ou un

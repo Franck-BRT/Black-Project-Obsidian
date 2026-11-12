@@ -153,7 +153,10 @@ Deux façons, au choix :
   dans l'explorateur de fichiers d'Obsidian, puis lancez **Mettre à jour l'analyse**.
 
 Un fichier déjà importé à l'identique n'est pas importé une seconde fois ; un fichier
-différent du même nom est gardé à côté (« RC (2).pdf »).
+différent du même nom est gardé à côté (« RC (2).pdf »). Un fichier **déjà dans la
+bibliothèque** — dans n'importe laquelle de ses bibliothèques de documents : la principale,
+les documents de référence, une autre — n'est **pas copié** dans l'analyse : sa pièce montre
+le fichier de la bibliothèque, et le message de l'import le dit.
 
 Les commandes travaillent sur l'analyse de la note ouverte ; sinon, elles demandent
 laquelle.
