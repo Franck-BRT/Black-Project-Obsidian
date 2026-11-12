@@ -652,6 +652,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.122.0 : l'**accueil de la bibliothèque par groupes** repliables (documents, IA, système, personnelles) ; le fantôme proposé aussi pour une fiche glissée dans les références depuis l'explorateur d'Obsidian
 - v0.123.0 : les **documents projet** (un répertoire par programme et par projet, montrés et reçus sur leurs pages) ; créer une bibliothèque depuis chaque groupe de l'accueil (et la voir aussitôt) ; « Bibliothèques système IA », « Annuaire » ; déplacer vers toutes les bibliothèques
 - v0.124.0 : **exporter / importer une bibliothèque** (une archive ZIP à se passer) ; plus de nouvelles bibliothèques de prompts, personas, skills, étiquettes
+- v0.125.0 : **tout exporter / tout importer** la bibliothèque d'un coup
 
 ### Étape 7 — Livrables
 

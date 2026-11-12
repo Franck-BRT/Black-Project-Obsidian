@@ -33,7 +33,7 @@ import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, readRecord, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, placePageOf, type ShelfPlacesDeps } from './places'
-import { archive, ARCHIVE_FILES, archiveName, EXCHANGE_FORMAT, MANIFEST, readManifest } from './exchange'
+import { archive, ARCHIVE_FILES, archiveName, EXCHANGE_FORMAT, MANIFEST, readManifest, WHOLE, type Manifest, type WholePart } from './exchange'
 import type { ZipEntry } from '../../core/formats/zip'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
 import { builtInShelf, defaultShelfOf, folderName, REFERENCE_SHELF, severalShelves, shelfOfPath, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
@@ -849,7 +849,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.44.0',
+  version: '0.45.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1158,11 +1158,8 @@ export const bibliothequeModule: BlackModule = {
     }
     /** Un nom de sorte, pour les messages : « prompts », « documents »… */
     const kindName = (kind: ShelfKind) => t(`bibliotheque.exchange.kind.${kind}`)
-    /**
-     * Exporter un lieu (une bibliothèque, ou l'un de ses répertoires) : une archive ZIP dans
-     * `Échanges/Bibliothèques`, à se passer — ses notes, ou ses documents (fiche et fichier).
-     */
-    const exportPlace = async (kind: ShelfKind, shelf: Shelf, directory: string): Promise<void> => {
+    /** Ce qu'un lieu (une bibliothèque, ou l'un de ses répertoires) met dans une archive : ses notes, ou ses documents (fiche et fichier). */
+    const collect = async (kind: ShelfKind, shelf: Shelf, directory: string): Promise<{ zipped: ZipEntry[]; documents: { fiche: string; fichier: string }[] }> => {
       const under = (item: { shelf?: string; directory?: string }) => item.shelf === shelf.id && (!directory || (item.directory ?? '') === directory || (item.directory ?? '').startsWith(`${directory}/`))
       const base = directory ? `${shelf.folder}/${directory}` : shelf.folder
       const relative = (path: string) => path.slice(base.length + 1)
@@ -1182,31 +1179,37 @@ export const bibliothequeModule: BlackModule = {
       } else {
         for (const entry of (await entries[kind as EntryKind].all()).filter(under)) zipped.push({ name: relative(entry.path), data: await read(entry.path) })
       }
+      return { zipped, documents }
+    }
+    /** Écrire une archive dans `Échanges/Bibliothèques` (un nom libre) ; rend son chemin. */
+    const writeArchive = async (name: string, manifest: Manifest, zipped: ZipEntry[]): Promise<string> => {
+      await platform.fs.ensureFolder(EXCHANGE_FOLDER)
+      let path = `${EXCHANGE_FOLDER}/${archiveName(name, manifest.exporte)}`
+      for (let index = 2; await platform.fs.exists(path); index++) path = `${EXCHANGE_FOLDER}/${archiveName(`${name} (${index})`, manifest.exporte)}`
+      await platform.fs.writeBinary(path, archive(manifest, zipped, new Date()).slice().buffer)
+      return path
+    }
+    const hiddenZip = (): boolean => platform.display?.kind('zip') === 'hidden'
+    /**
+     * Exporter un lieu (une bibliothèque, ou l'un de ses répertoires) : une archive ZIP dans
+     * `Échanges/Bibliothèques`, à se passer — ses notes, ou ses documents (fiche et fichier).
+     */
+    const exportPlace = async (kind: ShelfKind, shelf: Shelf, directory: string): Promise<void> => {
+      const { zipped, documents } = await collect(kind, shelf, directory)
       if (!zipped.length) {
         platform.notifier.notify(t('bibliotheque.exchange.empty', { where: directory || shelf.name }), 6000)
         return
       }
-      const day = localToday()
       const name = directory ? `${shelf.name} ${directory.split('/').join(' ')}` : shelf.name
-      await platform.fs.ensureFolder(EXCHANGE_FOLDER)
-      let path = `${EXCHANGE_FOLDER}/${archiveName(name, day)}`
-      for (let index = 2; await platform.fs.exists(path); index++) path = `${EXCHANGE_FOLDER}/${archiveName(`${name} (${index})`, day)}`
+      const path = await writeArchive(name, { format: EXCHANGE_FORMAT, sorte: kind, nom: name, exporte: localToday(), ...(kind === 'document' ? { documents } : {}) }, zipped)
       const count = kind === 'document' ? documents.length : zipped.length
-      const bytes = archive({ format: EXCHANGE_FORMAT, sorte: kind, nom: name, exporte: day, ...(kind === 'document' ? { documents } : {}) }, zipped, new Date())
-      await platform.fs.writeBinary(path, bytes.slice().buffer)
-      const hidden = platform.display?.kind('zip') === 'hidden'
-      platform.notifier.notify([t('bibliotheque.exchange.exported', { count, kind: kindName(kind), path }), ...(hidden ? [t('bibliotheque.exchange.hidden')] : [])].join(' '), hidden ? 15000 : 10000)
+      platform.notifier.notify([t('bibliotheque.exchange.exported', { count, kind: kindName(kind), path }), ...(hiddenZip() ? [t('bibliotheque.exchange.hidden')] : [])].join(' '), hiddenZip() ? 15000 : 10000)
     }
-    /**
-     * Importer une archive de bibliothèque dans un lieu : de l'ordinateur ou du coffre. Une note
-     * déjà là à l'identique n'est pas réécrite (différente : gardée à côté) ; un document passe
-     * par le versement (déjà là : pas de seconde copie ; nouveau : sa fiche reprend celle de
-     * l'archive).
-     */
-    const importInto = async (kind: ShelfKind, folder: string): Promise<void> => {
+    /** Choisir une archive (de l'ordinateur ou du coffre) et l'ouvrir : son manifeste et ses fichiers (chemins sans le dossier qui l'entoure) ; `null` sinon (dit pourquoi). */
+    const pickArchive = async (): Promise<{ manifest: Manifest; files: Map<string, Uint8Array> } | null> => {
       if (!archiveReader) {
         platform.notifier.notify(t('bibliotheque.exchange.noReader'), 8000)
-        return
+        return null
       }
       const source = await platform.ui.pickOption(
         [
@@ -1221,31 +1224,35 @@ export const bibliothequeModule: BlackModule = {
         const path = await platform.ui.pickFile({ extensions: ['zip'], placeholder: t('bibliotheque.exchange.vault.pick') })
         if (path) bytes = new Uint8Array(await platform.fs.readBinary(path))
       }
-      if (!bytes) return
+      if (!bytes) return null
       let inside: { path: string; bytes: Uint8Array }[]
       try {
         inside = await archiveReader(bytes)
       } catch {
         platform.notifier.notify(t('bibliotheque.exchange.unreadable'), 8000)
-        return
+        return null
       }
       const manifest = readManifest(inside)
       if (!manifest) {
         platform.notifier.notify(t('bibliotheque.exchange.notLibrary'), 8000)
-        return
-      }
-      if (manifest.sorte !== kind) {
-        platform.notifier.notify(t('bibliotheque.exchange.otherKind', { kind: kindName(manifest.sorte), here: kindName(kind) }), 10000)
-        return
+        return null
       }
       // L'archive a pu être refaite autour d'un dossier : ses chemins, sans lui.
       const holder = inside.find((entry) => entry.path === MANIFEST || entry.path.endsWith(`/${MANIFEST}`))!.path.slice(0, -MANIFEST.length)
-      const files = new Map(inside.filter((entry) => entry.path.startsWith(holder)).map((entry) => [entry.path.slice(holder.length), entry.bytes]))
+      return { manifest, files: new Map(inside.filter((entry) => entry.path.startsWith(holder)).map((entry) => [entry.path.slice(holder.length), entry.bytes])) }
+    }
+    /**
+     * Ranger dans un dossier ce qu'une archive porte d'une bibliothèque (`files` : ses chemins à
+     * elle). Une note déjà là à l'identique n'est pas réécrite (différente : gardée à côté) ; un
+     * document passe par le versement (déjà là : pas de seconde copie ; nouveau : sa fiche
+     * reprend celle de l'archive).
+     */
+    const restore = async (kind: ShelfKind, folder: string, files: ReadonlyMap<string, Uint8Array>, documents: readonly { fiche: string; fichier: string }[], name: string): Promise<{ added: number; already: number }> => {
       let added = 0
       let already = 0
       if (kind === 'document') {
-        const origin = { module: BIBLIOTHEQUE, label: t('bibliotheque.exchange.origin', { name: manifest.nom }) }
-        for (const each of manifest.documents ?? []) {
+        const origin = { module: BIBLIOTHEQUE, label: t('bibliotheque.exchange.origin', { name }) }
+        for (const each of documents) {
           const file = files.get(each.fichier)
           if (!file) continue
           const where = each.fiche.includes('/') ? `${folder}/${each.fiche.slice(0, each.fiche.lastIndexOf('/'))}` : folder
@@ -1290,7 +1297,88 @@ export const bibliothequeModule: BlackModule = {
           added++
         }
       }
+      return { added, already }
+    }
+    /** Importer une archive de bibliothèque dans un lieu (de la même sorte). */
+    const importInto = async (kind: ShelfKind, folder: string): Promise<void> => {
+      const picked = await pickArchive()
+      if (!picked) return
+      const { manifest, files } = picked
+      if (manifest.sorte === WHOLE) {
+        platform.notifier.notify(t('bibliotheque.exchange.wholeHere'), 10000)
+        return
+      }
+      if (manifest.sorte !== kind) {
+        platform.notifier.notify(t('bibliotheque.exchange.otherKind', { kind: kindName(manifest.sorte), here: kindName(kind) }), 10000)
+        return
+      }
+      const { added, already } = await restore(kind, folder, files, manifest.documents ?? [], manifest.nom)
       platform.notifier.notify(t('bibliotheque.exchange.imported', { added, already, kind: kindName(kind), name: manifest.nom }), 10000)
+      pagesChanged()
+    }
+    /**
+     * **Toute la bibliothèque**, d'un coup : chaque bibliothèque de chaque sorte (documents,
+     * références, documents projet, les vôtres ; prompts, personas, skills ; étiquettes ;
+     * entreprises, personnes) dans une seule archive, chacune sous `<sorte>/<bibliothèque>/`.
+     */
+    const exportAll = async (): Promise<void> => {
+      const zipped: ZipEntry[] = []
+      const parts: WholePart[] = []
+      const counts = new Map<ShelfKind, number>()
+      for (const kind of SHELF_KINDS) {
+        for (const shelf of shelves(kind)) {
+          const found = await collect(kind, shelf, '')
+          if (!found.zipped.length) continue
+          const prefix = `${kind}/${shelf.id}`
+          zipped.push(...found.zipped.map((entry) => ({ name: `${prefix}/${entry.name}`, data: entry.data })))
+          parts.push({ prefixe: prefix, sorte: kind, id: shelf.id, nom: shelf.name, ...(kind === 'document' ? { documents: found.documents } : {}) })
+          counts.set(kind, (counts.get(kind) ?? 0) + (kind === 'document' ? found.documents.length : found.zipped.length))
+        }
+      }
+      if (!zipped.length) {
+        platform.notifier.notify(t('bibliotheque.exchange.allEmpty'), 6000)
+        return
+      }
+      const name = t('bibliotheque.exchange.whole')
+      const path = await writeArchive(name, { format: EXCHANGE_FORMAT, sorte: WHOLE, nom: name, exporte: localToday(), bibliotheques: parts }, zipped)
+      const what = [...counts].map(([kind, count]) => `${count} ${kindName(kind)}`).join(', ')
+      platform.notifier.notify([t('bibliotheque.exchange.allExported', { what, path }), ...(hiddenZip() ? [t('bibliotheque.exchange.hidden')] : [])].join(' '), hiddenZip() ? 15000 : 10000)
+    }
+    /**
+     * Importer **toute une bibliothèque** : chaque partie dans la bibliothèque du même nom chez
+     * soi — la même (principale, références, documents projet), ou une créée pour elle (documents,
+     * annuaire) ; une bibliothèque de prompts, personas… en plus : dans un répertoire de la
+     * principale. Une archive d'une seule bibliothèque va dans la bibliothèque par défaut de sa sorte.
+     */
+    const importAll = async (): Promise<void> => {
+      const picked = await pickArchive()
+      if (!picked) return
+      const { manifest, files } = picked
+      const parts: WholePart[] = manifest.sorte === WHOLE ? manifest.bibliotheques ?? [] : [{ prefixe: '', sorte: manifest.sorte, id: defaultShelf(manifest.sorte).id, nom: manifest.nom, ...(manifest.documents ? { documents: manifest.documents } : {}) }]
+      const added = new Map<ShelfKind, number>()
+      let already = 0
+      for (const part of parts) {
+        if (!SHELF_KINDS.includes(part.sorte)) continue
+        const kind = part.sorte
+        let folder = shelves(kind).find((shelf) => shelf.id === part.id)?.folder
+        if (!folder && (kind === 'document' || kind === 'issuer' || kind === 'person')) {
+          const made = withShelf(settings.get(), kind, { name: part.nom, folder: `${SHELF_ROOT[kind]}/${folderName(part.nom) || 'Bibliothèque'}` }, allShelfFolders())
+          if (!('problem' in made)) {
+            await settings.save(made.settings)
+            await platform.fs.ensureFolder(made.shelf.folder)
+            folder = made.shelf.folder
+          }
+        }
+        // Sinon : dans un répertoire de la principale, du nom de la bibliothèque.
+        folder ??= `${shelves(kind)[0]!.folder}/${folderName(part.nom) || 'Importé'}`
+        const prefix = part.prefixe ? `${part.prefixe}/` : ''
+        const own = new Map([...files].filter(([path]) => path.startsWith(prefix)).map(([path, bytes]) => [path.slice(prefix.length), bytes]))
+        const result = await restore(kind, folder, own, part.documents ?? [], manifest.nom)
+        added.set(kind, (added.get(kind) ?? 0) + result.added)
+        already += result.already
+      }
+      const what = [...added].filter(([, count]) => count).map(([kind, count]) => `${count} ${kindName(kind)}`).join(', ') || t('bibliotheque.exchange.nothingNew')
+      platform.notifier.notify(t('bibliotheque.exchange.allImported', { name: manifest.nom, what, already }), 10000)
       pagesChanged()
     }
     const placesOf = (kind: ShelfKind): ShelfPlacesDeps => ({
@@ -2115,6 +2203,8 @@ export const bibliothequeModule: BlackModule = {
       },
       places,
       placedDocuments: () => store.all(),
+      exportAll,
+      importAll,
       ...(showPage ? { showPage } : {}),
       showNote,
       create: createEntry,

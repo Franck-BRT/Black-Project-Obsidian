@@ -20,10 +20,10 @@ const bytes = (text: string) => new TextEncoder().encode(text)
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
 
 /** Un coffre, ses modules actifs ; `stop` les arrête (pour passer à un autre coffre). */
-async function vault(platform: MemoryPlatform) {
+async function vault(platform: MemoryPlatform, initial: Record<string, Record<string, unknown>> = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = {}
+  const settings: Record<string, Record<string, unknown>> = { ...initial }
   const views = new ViewsRegistry()
   for (const module of MODULES) {
     const context: ModuleContext = {
@@ -39,7 +39,7 @@ async function vault(platform: MemoryPlatform) {
   }
   const load = (id: string, param?: string): Promise<PageView> => views.pages().find((each) => each.id === id)!.load(param)
   const run = async (view: PageView, id: string) => view.actions!.find((action) => action.id === id)!.run()
-  return { load, run, stop: async () => { for (const module of [...MODULES].reverse()) await module.deactivate?.() } }
+  return { load, run, settings, stop: async () => { for (const module of [...MODULES].reverse()) await module.deactivate?.() } }
 }
 
 /** L'archive écrite par le dernier export. */
@@ -122,5 +122,43 @@ describe('se passer une bibliothèque', () => {
     expect(record).toContain('reference: ECSS-E-ST-10C')
     expect(record).toContain('libelle: "Bibliothèque importée « Documents »"')
     expect([...theirs.files.keys()].filter((path) => path.endsWith('.pdf')).sort()).toEqual(['Bibliothèque/_fichiers/ECSS.pdf', 'Bibliothèque/_fichiers/Plan à moi.pdf'])
+  })
+
+  it('toute la bibliothèque d’un coup : chaque bibliothèque de chaque sorte dans une archive ; importée, chacune dans la sienne (créée au besoin) ; une seconde fois, rien de nouveau', async () => {
+    const mine = memoryPlatform()
+    const a = await vault(mine, { bibliotheque: { bibliotheques: { document: [{ id: 'archives', name: 'Archives', folder: 'Archives' }] } } })
+    await addStarterEntries('prompt', 'fr')
+    await addStarterEntries('persona', 'fr')
+    await pourIntoLibrary([{ name: 'Norme.pdf', bytes: bytes('norme') }], { module: 'bibliotheque', label: '' }, { folder: 'Bibliothèque/Références' })
+    await pourIntoLibrary([{ name: 'Vieux plan.pdf', bytes: bytes('vieux') }], { module: 'bibliotheque', label: '' }, { folder: 'Archives' })
+    const hub = await a.load('bibliotheque.accueil')
+    expect(hub.actions?.map((action) => action.id)).toEqual(['export-all', 'import-all'])
+    await a.run(hub, 'export-all')
+    const zip = exported(mine)
+    expect(zip.name).toMatch(/^Bibliothèque complète \d{4}-\d{2}-\d{2}\.zip$/)
+    expect(mine.notices.at(-1)).toMatch(/^Toute la bibliothèque exportée \(2 documents, 7 prompts, \d+ personas\) dans Échanges\/Bibliothèques\/Bibliothèque complète /)
+    await a.stop()
+
+    const theirs = memoryPlatform()
+    const b = await vault(theirs)
+    theirs.choices.push('computer')
+    theirs.externalFiles.push([zip])
+    await b.run(await b.load('bibliotheque.accueil'), 'import-all')
+    expect(theirs.notices.at(-1)).toMatch(/^Bibliothèque « complète » importée : 2 documents, 7 prompts, \d+ personas ajouté\(s\) ; 0 déjà là\.$/)
+    // Chacune dans la sienne : les références dans les références ; « Archives », créée.
+    expect(read(theirs, 'Bibliothèque/Références/Norme.md')).toContain('bp-type: bibliotheque-document')
+    expect(b.settings.bibliotheque?.bibliotheques).toMatchObject({ document: [{ id: 'archives', name: 'Archives' }] })
+    expect(await theirs.fs.exists('Bibliothèques/Documents/Archives/Vieux plan.md')).toBe(true)
+    expect([...theirs.files.keys()].filter((path) => path.startsWith('Bibliothèque/Prompts/') && path.endsWith('.md'))).toHaveLength(7)
+    // Une seconde fois : rien de nouveau.
+    theirs.choices.push('computer')
+    theirs.externalFiles.push([zip])
+    await b.run(await b.load('bibliotheque.accueil'), 'import-all')
+    expect(theirs.notices.at(-1)).toMatch(/^Bibliothèque « complète » importée : rien de nouveau ajouté\(s\) ; \d+ déjà là\.$/)
+    // Sur la page d'une seule bibliothèque : dit où l'importer.
+    theirs.choices.push('computer')
+    theirs.externalFiles.push([zip])
+    await b.run(await b.load('bibliotheque.prompts'), 'import-shelf')
+    expect(theirs.notices.at(-1)).toBe('Cette archive est toute une bibliothèque : importez-la depuis l’accueil de la bibliothèque (« Tout importer… »).')
   })
 })

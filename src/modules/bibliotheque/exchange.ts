@@ -27,13 +27,27 @@ export const MANIFEST = 'black-projects-bibliotheque.json'
 export const ARCHIVE_FILES = '_fichiers'
 export const EXCHANGE_FORMAT = 1
 
+/** La sorte d'une archive de **toute** la bibliothèque (chaque bibliothèque, sous `<sorte>/<bibliothèque>/`). */
+export const WHOLE = 'tout'
+
+/** Une bibliothèque, dans l'archive de toute la bibliothèque : où sont ses fichiers, ce qu'elle est. */
+export interface WholePart {
+  prefixe: string
+  sorte: ShelfKind
+  id: string
+  nom: string
+  documents?: { fiche: string; fichier: string }[]
+}
+
 export interface Manifest {
   format: number
-  sorte: ShelfKind
+  sorte: ShelfKind | typeof WHOLE
   nom: string
   exporte: string
   /** Les documents : la fiche, et le fichier dans l'archive. */
   documents?: { fiche: string; fichier: string }[]
+  /** Toute la bibliothèque : chacune de ses bibliothèques. */
+  bibliotheques?: WholePart[]
 }
 
 /** Le manifeste relu ; `null` si l'archive n'en a pas, ou pas un lisible. */
@@ -43,7 +57,22 @@ export function readManifest(entries: readonly { path: string; bytes: Uint8Array
   try {
     const data = JSON.parse(new TextDecoder().decode(found.bytes)) as Partial<Manifest>
     if (typeof data.sorte !== 'string' || typeof data.nom !== 'string') return null
-    return { format: Number(data.format) || 1, sorte: data.sorte, nom: data.nom, exporte: typeof data.exporte === 'string' ? data.exporte : '', ...(Array.isArray(data.documents) ? { documents: data.documents.filter((each) => each && typeof each.fiche === 'string' && typeof each.fichier === 'string') } : {}) }
+    const documents = (list: unknown): { fiche: string; fichier: string }[] =>
+      Array.isArray(list) ? list.filter((each): each is { fiche: string; fichier: string } => !!each && typeof each.fiche === 'string' && typeof each.fichier === 'string') : []
+    return {
+      format: Number(data.format) || 1,
+      sorte: data.sorte,
+      nom: data.nom,
+      exporte: typeof data.exporte === 'string' ? data.exporte : '',
+      ...(Array.isArray(data.documents) ? { documents: documents(data.documents) } : {}),
+      ...(Array.isArray(data.bibliotheques)
+        ? {
+            bibliotheques: data.bibliotheques
+              .filter((part): part is WholePart => !!part && typeof part.prefixe === 'string' && typeof part.sorte === 'string' && typeof part.id === 'string' && typeof part.nom === 'string')
+              .map((part) => ({ prefixe: part.prefixe, sorte: part.sorte, id: part.id, nom: part.nom, ...(part.documents ? { documents: documents(part.documents) } : {}) }))
+          }
+        : {})
+    }
   } catch {
     return null
   }

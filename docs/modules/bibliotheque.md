@@ -5,13 +5,24 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.44.0 (Black Projects 0.124.0) |
+| Version | 0.45.0 (Black Projects 0.125.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Toute la bibliothèque d'un coup (v0.45.0, Black Projects 0.125.0)
+
+- **Tout exporter / Tout importer…** sur l'accueil de la bibliothèque (`exportAll`, `importAll`
+  de `EntriesHomeDeps`). L'archive : `sorte: 'tout'` (`WHOLE`), et `bibliotheques` — chacune
+  `{ prefixe: '<sorte>/<id>', sorte, id, nom, documents? }` —, ses fichiers sous son préfixe.
+- L'import : chaque partie dans la bibliothèque du même identifiant ; sinon, pour les documents
+  et l'annuaire, une bibliothèque créée du même nom ; sinon un répertoire de la principale. Une
+  archive d'une seule bibliothèque va dans la bibliothèque par défaut de sa sorte ; une archive
+  complète importée sur la page d'une seule bibliothèque : dit d'aller sur l'accueil.
+- Le code d'échange partagé : `collect`, `writeArchive`, `pickArchive`, `restore`.
 
 ## Se passer une bibliothèque ; plus de nouvelles bibliothèques système (v0.44.0, Black Projects 0.124.0)
 

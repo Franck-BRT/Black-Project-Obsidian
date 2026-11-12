@@ -95,7 +95,13 @@ ses documents avec leur fiche. Passez ce fichier ; chez l'autre, **Importer…**
 la même sorte de bibliothèque, le reprend (de l'ordinateur ou du coffre) : une note déjà là à
 l'identique n'est pas réécrite (différente, la nouvelle est gardée à côté) ; un document déjà
 dans la bibliothèque n'est pas copié une seconde fois, un nouveau garde ce que disait sa fiche
-(titre, type, référence, édition…). Les **documents projet** sont une bibliothèque à part, toujours là (dossier
+(titre, type, référence, édition…).
+
+**Toute la bibliothèque d'un coup** : sur l'accueil de la bibliothèque, **Tout exporter** met
+chaque bibliothèque de chaque sorte (documents, références, documents projet, les vôtres ;
+prompts, personas, skills ; étiquettes ; entreprises, personnes) dans une seule archive ;
+**Tout importer…** la reprend : chaque partie dans la bibliothèque du même nom (une bibliothèque
+de documents ou de l'annuaire qui manque est créée), sans rien en double. Les **documents projet** sont une bibliothèque à part, toujours là (dossier
 `Bibliothèque/Projets`, réglable), un répertoire par programme puis par projet, créés tout seuls ;
 la page d'un programme ou d'un projet montre ses documents et les reçoit glissés-déposés.
 **Déplacer vers une bibliothèque…**, sur la fiche d'un document, propose toutes les

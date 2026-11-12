@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Toute la bibliothèque d'un coup (v0.125.0)
+
+- [ ] Accueil de la bibliothèque : **Tout exporter** → « Bibliothèque complète AAAA-MM-JJ.zip »
+      dans `Échanges/Bibliothèques`, le message dit ce qu'elle contient
+- [ ] Dans un autre coffre, **Tout importer…** : chaque bibliothèque retrouvée (les vôtres
+      créées) ; une seconde fois : « rien de nouveau »
+
 ## Se passer une bibliothèque (v0.124.0)
 
 - [ ] L'accueil de la bibliothèque : « Nouvelle bibliothèque » seulement pour les documents et

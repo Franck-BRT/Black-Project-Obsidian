@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.124.0)
+## Aujourd'hui (version 0.125.0)
+
+- **Toute la bibliothèque d'un coup** : **Tout exporter**, sur l'accueil de la bibliothèque, met
+  toutes vos bibliothèques dans une seule archive ; **Tout importer…**, chez un collègue, les
+  reprend chacune à sa place, sans rien en double.
 
 - **Se passer une bibliothèque** : **Exporter**, sur la page d'une bibliothèque (ou d'un de ses
   répertoires), écrit une archive ZIP dans `Échanges/Bibliothèques` ; **Importer…**, chez un

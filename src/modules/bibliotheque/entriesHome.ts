@@ -39,6 +39,9 @@ export interface EntriesHomeDeps {
   documentsPage: string
   documents(): Promise<{ count: number; likely: number }>
   showPage?(id: string): void
+  /** Toute la bibliothèque d'un coup : l'exporter en une archive, en importer une. */
+  exportAll?(): Promise<void>
+  importAll?(): Promise<void>
   showNote(path: string): Promise<void>
   /** Les bibliothèques de chaque sorte, leurs répertoires, et ce qu'on en fait (documents compris, pour l'accueil). */
   places: Readonly<Record<EntryKind | 'document', ShelfPlacesDeps>>
@@ -300,6 +303,11 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
     const shelf = await deps.places[kind].newShelf(kind)
     if (shelf) deps.showPage?.(placePageOf(deps.places[kind].page, { shelf: shelf.id, directory: '' }))
   }
+  // Toute la bibliothèque, d'un coup : à se passer (une archive), ou reprise d'une autre.
+  const wholeActions: ViewAction[] = [
+    ...(deps.exportAll ? [{ id: 'export-all', label: t('bibliotheque.exchange.exportAll'), tooltip: t('bibliotheque.exchange.exportAll.tip'), icon: 'archive' as const, run: () => deps.exportAll!() }] : []),
+    ...(deps.importAll ? [{ id: 'import-all', label: t('bibliotheque.exchange.importAll'), tooltip: t('bibliotheque.exchange.importAll.tip'), icon: 'upload' as const, run: () => deps.importAll!() }] : [])
+  ]
   const stats: HomeBlock = {
     kind: 'stats',
     stats: [
@@ -341,6 +349,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
     })
     return {
       subtitle: t('bibliotheque.hub.subtitle'),
+      actions: wholeActions,
       blocks: [
         stats,
         ...likely,
@@ -376,6 +385,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   ]
   return {
     subtitle: t('bibliotheque.hub.subtitle'),
+    actions: wholeActions,
     blocks: [
       stats,
       group(
