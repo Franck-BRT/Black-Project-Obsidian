@@ -18,7 +18,7 @@ import { LANGUAGES, type LanguageCode } from './language'
 import { docDateLabel, type KnownIssuer, type KnownTag } from './identity'
 import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
-import { REFERENCE_SHELF, severalShelves } from './shelves'
+import { builtInShelf, REFERENCE_SHELF, severalShelves } from './shelves'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
 export const DOC_PAGE = 'bibliotheque.document'
@@ -274,7 +274,7 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
   const groupOf = docGrouping === 'repertoire' ? directoryGroupOf(t, place.directory) : docGroupOf(deps, docGrouping)
   return {
     breadcrumb: top.breadcrumb,
-    title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : severalShelves(deps.places.shelves()) || place.shelf.reference ? place.shelf.name : t('bibliotheque.page.title'),
+    title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : severalShelves(deps.places.shelves()) || builtInShelf(place.shelf) ? place.shelf.name : t('bibliotheque.page.title'),
     ...(param ? { back: { id: 'back', label: t('bibliotheque.back.up'), run: () => deps.showPage?.(place.directory ? placePageOf(LIBRARY_PAGE, { shelf: place.shelf.id, directory: place.directory.split('/').slice(0, -1).join('/') }) : HUB_PAGE) } } : {}),
     subtitle: t('bibliotheque.page.subtitle', { folder: top.folder }) + top.note,
     // Des fichiers glissés-déposés sur la page : versés là où l'on est.
@@ -790,7 +790,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       { id: 'version', label: t('bibliotheque.newVersionOf'), tooltip: t('bibliotheque.newVersionOf.tip'), icon: 'flow', run: () => deps.newVersionOf(doc.record) },
       {
         id: 'move',
-        label: t('bibliotheque.move'),
+        label: t('bibliotheque.move.doc'),
         tooltip: t('bibliotheque.move.doc.tip'),
         icon: 'folder',
         run: moveDoc

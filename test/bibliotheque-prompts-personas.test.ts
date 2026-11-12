@@ -94,9 +94,19 @@ describe('les bibliothèques de prompts et de personas', () => {
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Documents=1', 'Prompts=0', 'Personas=0', 'Skills=0', 'Entreprises=0', 'Personnes=0', 'Étiquettes=0'])
     const cards = cardsOf(hub)
     // Par groupe : les documents, l'IA, le système, les personnelles — chacun une section qu'on déplie ou replie.
-    expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title}|${block.collapsed ?? false}`] : []))).toEqual(['Bibliothèques de documents|false', 'Bibliothèques de l’IA|false', 'Bibliothèques système|false', 'Bibliothèques personnelles|false'])
-    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Prompts', 'Personas', 'Skills', 'Étiquettes', 'Entreprises', 'Personnes'])
-    await cards[3]!.open!.run()
+    expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title}|${block.collapsed ?? false}`] : []))).toEqual(['Bibliothèques de documents|false', 'Bibliothèques système IA|false', 'Bibliothèques système|false', 'Annuaire|false'])
+    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Documents projet', 'Prompts', 'Personas', 'Skills', 'Étiquettes', 'Entreprises', 'Personnes'])
+    // Chaque groupe : de quoi créer une bibliothèque de chacune de ses sortes.
+    expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).flatMap((block) => (block.kind === 'cards' ? (block.actions ?? []).map((action) => action.label) : []))).toEqual([
+      'Nouvelle bibliothèque de documents',
+      'Nouvelle bibliothèque de prompts',
+      'Nouvelle bibliothèque de personas',
+      'Nouvelle bibliothèque de skills',
+      'Nouvelle bibliothèque d’étiquettes',
+      'Nouvelle bibliothèque d’entreprises',
+      'Nouvelle bibliothèque de personnes'
+    ])
+    await cards[4]!.open!.run()
     expect(shown.at(-1)).toBe('bibliotheque.personas')
     expect(views.allTiles().map((tile) => tile.id)).toEqual(expect.arrayContaining(['bibliotheque.prompts', 'bibliotheque.personas']))
     // Le dossier des prompts et des personas n'est pas parcouru comme des documents.

@@ -80,10 +80,17 @@ qu'un clic déplie ou replie (l'état est gardé d'une ouverture à l'autre) :
 
 | Groupe | Ses bibliothèques |
 | --- | --- |
-| **Bibliothèques de documents** | les documents, les documents de référence |
-| **Bibliothèques de l'IA** | les prompts, les personas, les skills |
+| **Bibliothèques de documents** | les documents, les documents de référence, les documents projet, les vôtres |
+| **Bibliothèques système IA** | les prompts, les personas, les skills |
 | **Bibliothèques système** | les étiquettes |
-| **Bibliothèques personnelles** | les entreprises, les personnes |
+| **Annuaire** | les entreprises, les personnes |
+
+Chaque groupe a ses boutons **Nouvelle bibliothèque de…** : la bibliothèque créée s'ouvre
+aussitôt. Les **documents projet** sont une bibliothèque à part, toujours là (dossier
+`Bibliothèque/Projets`, réglable), un répertoire par programme puis par projet, créés tout seuls ;
+la page d'un programme ou d'un projet montre ses documents et les reçoit glissés-déposés.
+**Déplacer vers une bibliothèque…**, sur la fiche d'un document, propose toutes les
+bibliothèques de documents — celles que vous avez créées comprises — et leurs répertoires.
 
 Menu **Bibliothèque** (ou sa tuile, ou le tableau de bord) : les chiffres (documents,
 taille, ajoutés cette semaine, versions à relier), une carte par document, le plus récent

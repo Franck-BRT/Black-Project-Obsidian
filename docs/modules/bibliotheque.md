@@ -5,13 +5,29 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.42.0 (Black Projects 0.122.0) |
+| Version | 0.43.0 (Black Projects 0.123.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les documents projet ; créer une bibliothèque depuis l'accueil (v0.43.0, Black Projects 0.123.0)
+
+- **Les documents projet** : une deuxième bibliothèque de documents toujours là
+  (`PROJECT_SHELF`, `projets` ; dossier `dossierProjets`, `Bibliothèque/Projets` d'origine) ;
+  avec celle des références, une bibliothèque « intégrée » (`builtInShelf`) : ni retirée, ni
+  par défaut, son nom toujours dit, ne comptant pas pour « plusieurs bibliothèques ».
+- **Interface publique** : `projectDocumentsFolder(programme, projet?)` (crée le répertoire),
+  `documentsIn(folder, deep)`, `pourDocumentsInto(folder)`, `dropDocumentsInto(folder, files)`,
+  `libraryFolderPage(folder)`.
+- **L'accueil** : les groupes « Bibliothèques système IA » et « Annuaire » ; dans chaque groupe,
+  **Nouvelle bibliothèque de…** pour chacune de ses sortes. Créée, la bibliothèque s'ouvre ; les
+  pages ouvertes se redessinent (`pagesChanged`) — elles ne la montraient pas avant un
+  rafraîchissement.
+- **Déplacer vers une bibliothèque…** (fiche) : toutes les bibliothèques de documents et leurs
+  répertoires (le libellé dit enfin que c'est vers une autre bibliothèque aussi).
 
 ## L'accueil par groupes ; le fantôme proposé depuis l'explorateur (v0.42.0, Black Projects 0.122.0)
 

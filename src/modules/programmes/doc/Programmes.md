@@ -97,3 +97,12 @@ Ils sont écrits en liens dans la note (`references:`), qu'Obsidian suit.
 Un projet n'hérite pas de ceux de son programme : chacun a sa liste. La fiche d'un document dit
 qui l'appelle ; un document déplacé dans la bibliothèque, les liens suivent ; retiré, la section
 le dit.
+
+## 6. Les documents d'un programme, d'un projet
+
+La bibliothèque a une bibliothèque **Documents projet** (`Bibliothèque/Projets`) : un répertoire
+par programme, et dedans un par projet, créés avec eux. La page d'un programme a sa section
+**Documents du programme**, celle d'un projet **Documents du projet** : les ouvrir, **Verser des
+documents**, **Voir dans la bibliothèque** (y créer des sous-répertoires, ranger). Des fichiers
+**glissés-déposés sur la page** y sont versés — un document déjà dans la bibliothèque n'est pas
+copié une seconde fois.

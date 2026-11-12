@@ -30,6 +30,8 @@ export interface Shelf {
   main: boolean
   /** La bibliothèque des documents de référence (des documents seulement). */
   reference?: boolean
+  /** La bibliothèque des documents projet (des documents seulement), un répertoire par programme et par projet. */
+  project?: boolean
 }
 
 export const SHELVES_KEY = 'bibliotheques'
@@ -37,6 +39,11 @@ export const DEFAULT_SHELF_KEY = 'bibliothequesParDefaut'
 export const MAIN_SHELF = 'principale'
 /** L'identifiant de la bibliothèque des documents de référence. */
 export const REFERENCE_SHELF = 'references'
+/** L'identifiant de la bibliothèque des documents projet. */
+export const PROJECT_SHELF = 'projets'
+
+/** Une bibliothèque toujours là (les documents de référence, les documents projet) : ni retirée, ni par défaut, son nom toujours dit. */
+export const builtInShelf = (shelf: Shelf | undefined): boolean => !!shelf && (!!shelf.reference || !!shelf.project)
 
 type Settings = Readonly<Record<string, unknown>>
 
@@ -51,7 +58,7 @@ function storedShelves(settings: Settings, kind: ShelfKind): Shelf[] {
     const id = typeof raw.id === 'string' ? raw.id : ''
     const name = typeof raw.name === 'string' ? raw.name.trim() : ''
     const folder = typeof raw.folder === 'string' ? cleanFolder(raw.folder) : ''
-    return id && name && folder && id !== MAIN_SHELF && id !== REFERENCE_SHELF ? [{ id, name, folder, main: false }] : []
+    return id && name && folder && id !== MAIN_SHELF && id !== REFERENCE_SHELF && id !== PROJECT_SHELF ? [{ id, name, folder, main: false }] : []
   })
 }
 
@@ -59,16 +66,29 @@ function storedShelves(settings: Settings, kind: ShelfKind): Shelf[] {
  * Les bibliothèques d'une sorte : la principale d'abord, puis (des documents) celle des
  * documents de référence, puis les autres par nom.
  */
-export function shelvesOf(settings: Settings, kind: ShelfKind, mainFolder: string, mainName: string, reference?: { folder: string; name: string }): Shelf[] {
-  const referenceShelf: Shelf[] = kind === 'document' && reference?.folder ? [{ id: REFERENCE_SHELF, name: reference.name, folder: reference.folder, main: false, reference: true }] : []
-  return [{ id: MAIN_SHELF, name: mainName, folder: mainFolder, main: true }, ...referenceShelf, ...storedShelves(settings, kind).sort((a, b) => a.name.localeCompare(b.name, 'fr'))]
+export function shelvesOf(
+  settings: Settings,
+  kind: ShelfKind,
+  mainFolder: string,
+  mainName: string,
+  reference?: { folder: string; name: string },
+  project?: { folder: string; name: string }
+): Shelf[] {
+  const builtIn: Shelf[] =
+    kind === 'document'
+      ? [
+          ...(reference?.folder ? [{ id: REFERENCE_SHELF, name: reference.name, folder: reference.folder, main: false, reference: true }] : []),
+          ...(project?.folder ? [{ id: PROJECT_SHELF, name: project.name, folder: project.folder, main: false, project: true }] : [])
+        ]
+      : []
+  return [{ id: MAIN_SHELF, name: mainName, folder: mainFolder, main: true }, ...builtIn, ...storedShelves(settings, kind).sort((a, b) => a.name.localeCompare(b.name, 'fr'))]
 }
 
 /**
  * Plusieurs bibliothèques à distinguer ? Celle des documents de référence, toujours là, ne
  * compte pas : avec la seule principale, les lieux se disent sans le nom de la bibliothèque.
  */
-export const severalShelves = (shelves: readonly Shelf[]): boolean => shelves.filter((shelf) => !shelf.reference).length > 1
+export const severalShelves = (shelves: readonly Shelf[]): boolean => shelves.filter((shelf) => !builtInShelf(shelf)).length > 1
 
 /** La bibliothèque où est rangé un chemin : la plus profonde qui le contient (celle des références, dans la principale). */
 export function shelfOfPath(shelves: readonly Shelf[], path: string): Shelf | undefined {
@@ -122,7 +142,7 @@ export function withShelf(
   if (taken.some((each) => overlaps(each, folder))) return { problem: 'overlap' }
   const current = storedShelves(settings, kind)
   let id = slug(name)
-  for (let index = 2; current.some((shelf) => shelf.id === id) || id === MAIN_SHELF || id === REFERENCE_SHELF; index++) id = `${slug(name)}-${index}`
+  for (let index = 2; current.some((shelf) => shelf.id === id) || id === MAIN_SHELF || id === REFERENCE_SHELF || id === PROJECT_SHELF; index++) id = `${slug(name)}-${index}`
   const shelf: Shelf = { id, name, folder, main: false }
   const all = isRecord(settings[SHELVES_KEY]) ? (settings[SHELVES_KEY] as Record<string, unknown>) : {}
   return { settings: { ...settings, [SHELVES_KEY]: { ...all, [kind]: [...current, shelf].map(({ id, name, folder }) => ({ id, name, folder })) } }, shelf }

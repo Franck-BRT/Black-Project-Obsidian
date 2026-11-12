@@ -65,6 +65,16 @@ export interface HomeDeps {
   linkDocument(project: string, phase: string, index: number): Promise<void>
   editTypeSpan(type: string, span: string): Promise<void>
   removeTypeSpan(type: string, span: string): Promise<void>
+  /**
+   * Les documents d'un programme (`project` absent) ou d'un projet, dans la bibliothèque des
+   * documents projet : leur dossier (créé s'il manque), les documents, la page du dossier ; `null`
+   * sans la bibliothèque.
+   */
+  projectDocuments?(programme: string, project?: string): Promise<{ folder: string; docs: { record: string; title: string; detail: string }[]; page: string | null } | null>
+  /** Verser des documents dans un dossier (le choix des fichiers). */
+  pourProjectDocuments?(folder: string): Promise<void>
+  /** Verser des fichiers glissés sur la page dans un dossier. */
+  dropProjectDocuments?(folder: string, files: readonly { name: string; bytes: Uint8Array }[]): Promise<void>
   /** La bibliothèque est-elle là (sans elle, pas de documents de référence) ? */
   referencesAvailable?(): boolean
   /** Un document de la bibliothèque, par sa fiche ; `null` s'il n'y est plus (ou sans la bibliothèque). */
@@ -264,8 +274,10 @@ async function programmePage(deps: HomeDeps, param?: string): Promise<PageView> 
   ]
   const journeys: HomeBlock[] = []
   for (const project of projects) journeys.push(await projectJourney(deps, project, true))
+  const documents = await documentsSection(deps, programme.name)
   return {
     title: programme.name,
+    ...(documents.drop ? { drop: documents.drop } : {}),
     breadcrumb: crumbs(deps, [{ label: programme.name }]),
     subtitle: [programme.code, programme.description].filter(Boolean).join(' · '),
     actions: [
@@ -276,6 +288,7 @@ async function programmePage(deps: HomeDeps, param?: string): Promise<PageView> 
     blocks: [
       { kind: 'stats', stats },
       ...(journeys.length ? journeys : [{ kind: 'message' as const, tone: 'info' as const, text: t('programmes.programme.empty'), actions: [{ id: 'first', label: t('programmes.project.new'), icon: 'plus' as const, primary: true, run: () => deps.newProject(programme.path) }] }]),
+      ...documents.blocks,
       ...(await referencesSection(deps, programme, 'programme'))
     ]
   }
@@ -316,6 +329,50 @@ async function referencesSection(deps: HomeDeps, owner: { path: string; referenc
       ]
     }
   ]
+}
+
+/**
+ * Les **documents** d'un programme ou d'un projet, rangés dans la bibliothèque des documents
+ * projet (un répertoire par programme, puis par projet) : les ouvrir, en verser ; la page entière
+ * les reçoit aussi glissés-déposés. Rien sans la bibliothèque.
+ */
+async function documentsSection(
+  deps: HomeDeps,
+  programme: string,
+  project?: string
+): Promise<{ blocks: HomeBlock[]; drop?: { label: string; hint: string; run(files: readonly { name: string; bytes: Uint8Array }[]): Promise<void> } }> {
+  const { t } = deps
+  if (!deps.projectDocuments || deps.referencesAvailable?.() === false) return { blocks: [] }
+  const found = await deps.projectDocuments(programme, project)
+  if (!found) return { blocks: [] }
+  const kind = project ? 'projet' : 'programme'
+  const items: ListItem[] = found.docs.map((doc) => ({
+    id: doc.record,
+    title: doc.title,
+    ...(doc.detail ? { detail: doc.detail } : {}),
+    ...(deps.showReference ? { open: { id: 'open', label: t('programmes.refs.open'), run: () => deps.showReference!(doc.record) } } : {})
+  }))
+  const actions: ViewAction[] = [
+    ...(deps.pourProjectDocuments ? [{ id: 'pour-documents', label: t('programmes.docs.pour'), icon: 'upload' as const, ...(items.length ? {} : { primary: true }), run: () => deps.pourProjectDocuments!(found.folder) }] : []),
+    ...(found.page ? [{ id: 'library-folder', label: t('programmes.docs.inLibrary'), tooltip: t('programmes.docs.inLibrary.tip', { folder: found.folder }), icon: 'book' as const, run: () => deps.showPage?.(found.page!) }] : [])
+  ]
+  const where = project ?? programme
+  return {
+    blocks: [
+      {
+        kind: 'section',
+        id: `programmes.${kind}.documents`,
+        title: t(`programmes.docs.title.${kind}`),
+        subtitle: t('programmes.refs.count', { count: items.length }),
+        icon: 'file',
+        blocks: [
+          { kind: 'message', tone: 'info', text: t(items.length ? `programmes.docs.intro.${kind}` : `programmes.docs.none.${kind}`, { folder: found.folder }), actions },
+          ...(items.length ? [{ kind: 'list' as const, items }] : [])
+        ]
+      }
+    ],
+    ...(deps.dropProjectDocuments ? { drop: { label: t('programmes.docs.drop', { name: where }), hint: t('programmes.docs.drop.hint'), run: (files) => deps.dropProjectDocuments!(found.folder, files) } } : {})
+  }
 }
 
 // ── Un projet ───────────────────────────────────────────────────────────────────────
@@ -361,8 +418,10 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     open: { id: 'open', label: t('programmes.affaire.open'), run: () => deps.openNote(affaire.path) },
     actions: [{ id: 'status', label: t('programmes.affaire.setStatus'), icon: 'edit', run: () => deps.chooseAffaireStatus(affaire.path) }]
   }))
+  const documents = await documentsSection(deps, programme?.name ?? '—', project.name)
   return {
     title: project.name,
+    ...(documents.drop ? { drop: documents.drop } : {}),
     breadcrumb: crumbs(deps, [{ label: programme?.name ?? '—', ...(programme ? { page: programmePageOf(programme.path) } : {}) }, { label: project.name }]),
     subtitle: [project.typeName, project.description].filter(Boolean).join(' · '),
     actions: [
@@ -381,6 +440,7 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
         icon: 'building',
         blocks: affaireCards.length ? [{ kind: 'cards', cards: affaireCards }] : [{ kind: 'message', tone: 'info', text: t('programmes.affaire.none'), actions: [{ id: 'first', label: t('programmes.affaire.new'), icon: 'plus', run: () => deps.newAffaire(project.path) }] }]
       },
+      ...documents.blocks,
       ...(await referencesSection(deps, project, 'projet'))
     ]
   }

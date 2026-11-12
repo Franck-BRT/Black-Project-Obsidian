@@ -10,7 +10,7 @@
 
 import { pageWith, type Breadcrumb, type Card, type FileDrop, type HomeBlock, type ViewAction } from '../../core/views'
 import type { Group } from '../../core/grouping'
-import { folderOfPlace, placeParam, readPlace, severalShelves, type Place, type Shelf, type ShelfKind } from './shelves'
+import { builtInShelf, folderOfPlace, placeParam, readPlace, severalShelves, type Place, type Shelf, type ShelfKind } from './shelves'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -126,10 +126,10 @@ export async function placeView(
         if (shelf) go('', shelf)()
       }
     },
-    ...(several && !isDefault && !place.shelf.reference
+    ...(several && !isDefault && !builtInShelf(place.shelf)
       ? [{ id: 'default-shelf', label: t('bibliotheque.shelf.makeDefault'), tooltip: t(`bibliotheque.shelf.makeDefault.${kind}.tip`), icon: 'star' as const, run: () => deps.setDefault(kind, place.shelf.id) }]
       : []),
-    ...(place.shelf.main || place.shelf.reference
+    ...(place.shelf.main || builtInShelf(place.shelf)
       ? []
       : [
           {
@@ -154,7 +154,7 @@ export async function placeView(
 }
 
 /** Les cartes des bibliothèques d'une sorte, pour l'accueil : combien chacune contient, laquelle est par défaut. */
-export function shelfCards(deps: Pick<ShelfPlacesDeps, 't' | 'kind' | 'page' | 'shelves' | 'defaultShelf' | 'showPage'>, items: readonly Placed[], icon: 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star'): Card[] {
+export function shelfCards(deps: Pick<ShelfPlacesDeps, 't' | 'kind' | 'page' | 'shelves' | 'defaultShelf' | 'showPage'>, items: readonly Placed[], icon: 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase'): Card[] {
   const { t, kind } = deps
   const chosen = deps.defaultShelf().id
   const several = severalShelves(deps.shelves())
@@ -165,10 +165,11 @@ export function shelfCards(deps: Pick<ShelfPlacesDeps, 't' | 'kind' | 'page' | '
       title: shelf.name,
       subtitle: t(`bibliotheque.place.${kind}.count`, { count: items.filter((item) => item.shelf === shelf.id).length }),
       // Les documents de référence : une étoile, et ce qu'ils sont.
-      icon: shelf.reference ? ('star' as const) : icon,
+      icon: shelf.reference ? ('star' as const) : shelf.project ? ('briefcase' as const) : icon,
       badges: [
         ...(several && shelf.id === chosen ? [{ label: t('bibliotheque.shelf.default'), tone: 'info' as const }] : []),
-        ...(shelf.reference ? [{ label: t('bibliotheque.references.badge'), tone: 'info' as const }] : [])
+        ...(shelf.reference ? [{ label: t('bibliotheque.references.badge'), tone: 'info' as const }] : []),
+        ...(shelf.project ? [{ label: t('bibliotheque.projects.badge'), tone: 'info' as const }] : [])
       ],
       text: shelf.folder,
       open: go,
@@ -193,7 +194,7 @@ export async function allPlaces(shelves: readonly Shelf[], subdirectories: (fold
 export function placeLabel(places: Pick<ShelfPlacesDeps, 't' | 'shelves'>, item: { shelf?: string; directory?: string }): string {
   const shelves = places.shelves()
   const shelf = shelves.find((each) => each.id === item.shelf)
-  const parts = [...((severalShelves(shelves) || shelf?.reference) && shelf ? [shelf.name] : []), ...(item.directory ?? '').split('/').filter(Boolean)]
+  const parts = [...((severalShelves(shelves) || builtInShelf(shelf)) && shelf ? [shelf.name] : []), ...(item.directory ?? '').split('/').filter(Boolean)]
   return parts.length ? parts.join(' › ') : places.t('bibliotheque.place.root')
 }
 

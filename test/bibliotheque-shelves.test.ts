@@ -188,7 +188,7 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     platform.choices.push('Bibliothèque/Archives')
     await (await page('bibliotheque.document').load(encodeURIComponent(first.record))).actions!.find((each) => each.id === 'move')!.run()
     // Les lieux offerts : la racine n'y est pas (il y est déjà) ; les documents de référence, si.
-    expect(platform.offered.at(-1)!.map((each) => each.label)).toEqual(['Documents › Archives', 'Documents de référence'])
+    expect(platform.offered.at(-1)!.map((each) => each.label)).toEqual(['Documents › Archives', 'Documents de référence', 'Documents projet'])
     expect(shown.at(-1)).toBe(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Archives/CCTP v1.md')}`)
     expect(await platform.fs.exists(first.record)).toBe(false)
     expect(await platform.fs.exists(first.file)).toBe(true)
@@ -223,7 +223,7 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     // L'accueil : une section par groupe, dedans les bibliothèques de chaque sorte, une carte chacune.
     const hub = await page('bibliotheque.accueil').load()
     const sections = hub.blocks.flatMap((block) => (block.kind === 'section' ? [block.title] : []))
-    expect(sections).toEqual(['Bibliothèques de documents', 'Bibliothèques de l’IA', 'Bibliothèques système', 'Bibliothèques personnelles'])
+    expect(sections).toEqual(['Bibliothèques de documents', 'Bibliothèques système IA', 'Bibliothèques système', 'Annuaire'])
     const ia = hub.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.hub.groupe.ia')
     expect(ia?.kind === 'section' && ia.blocks.map((block) => (block.kind === 'cards' ? block.title : ''))).toEqual(['Prompts · 2 bibliothèque(s)', 'Personas · 1 bibliothèque(s)', 'Skills · 1 bibliothèque(s)'])
     expect(cardsIn(hub.blocks).filter((card) => card.id.startsWith('prompt:')).map((card) => [card.title, card.subtitle])).toEqual([

@@ -9,7 +9,7 @@
  */
 
 import { localToday } from '../../core/dates'
-import { canCreatePieceType, chooseReferenceDocuments, createPieceType, libraryActive, libraryDocPage, libraryDocument, libraryPieceTypes, pieceTypeText, registerReferenceCallers } from '../bibliotheque'
+import { canCreatePieceType, chooseReferenceDocuments, createPieceType, documentsIn, dropDocumentsInto, libraryActive, libraryDocPage, libraryDocument, libraryFolderPage, libraryPieceTypes, pieceTypeText, pourDocumentsInto, projectDocumentsFolder, registerReferenceCallers } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
 import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
@@ -56,7 +56,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.6.0',
+  version: '0.7.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -112,6 +112,8 @@ export const programmesModule: BlackModule = {
           color: TILE_COLORS.includes(values.color as never) ? (values.color as ProjectType['color']) : 'indigo',
           icon: PHASE_ICONS.includes(values.icon as never) ? (values.icon as ProjectType['icon']) : 'folder'
         })
+        // Son répertoire dans la bibliothèque des documents projet.
+        await projectDocumentsFolder(programme.name)
         notify(t('programmes.programme.created', { name }))
         show(programmePageOf(programme.path))
         return programme.path
@@ -182,6 +184,8 @@ export const programmesModule: BlackModule = {
       const type = all.find((each) => each.id === values.type) ?? all[0]!
       try {
         const project = await store.createProject(programme, name, type, (values.description ?? '').trim())
+        // Son répertoire dans la bibliothèque des documents projet, sous celui de son programme.
+        await projectDocumentsFolder(programme.name, project.name)
         // Souvent, un projet est une affaire : la sienne, du même nom.
         if (values.affaire === 'true') await store.createAffaire(project, name, { client: (values.client ?? '').trim(), reference: (values.reference ?? '').trim() })
         notify(t('programmes.project.created', { name, type: type.name }))
@@ -437,6 +441,19 @@ export const programmesModule: BlackModule = {
       store,
       types,
       referencesAvailable: () => libraryActive(),
+      projectDocuments: async (programme, project) => {
+        const folder = await projectDocumentsFolder(programme, project)
+        // Ceux du projet, où qu'ils soient sous son répertoire ; ceux du programme, à sa racine (pas ceux de ses projets).
+        return folder ? { folder, docs: await documentsIn(folder, !!project), page: libraryFolderPage(folder) } : null
+      },
+      pourProjectDocuments: async (folder) => {
+        await pourDocumentsInto(folder)
+        changed()
+      },
+      dropProjectDocuments: async (folder, files) => {
+        await dropDocumentsInto(folder, files)
+        changed()
+      },
       referenceDoc: (record) => libraryDocument(record),
       chooseReferences,
       removeReference,

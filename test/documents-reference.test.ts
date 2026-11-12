@@ -263,4 +263,81 @@ describe('les documents de référence', () => {
     await (await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Plan.md')}`)).actions!.find((action) => action.id === 'to-references')!.run()
     expect(platform.confirmed).toHaveLength(before + 1)
   })
+
+  it('les documents projet : une bibliothèque à part, un répertoire par programme puis par projet ; la page du projet les montre et les reçoit glissés', async () => {
+    const platform = memoryPlatform()
+    const { load, shown } = await start(platform)
+    const store = programmesStore()!
+    const programme = await store.createProgramme('Spatial', { code: '', color: 'indigo', icon: 'rocket', description: '' })
+    const [type] = starterTypes((key) => key)
+    const project = await store.createProject(programme, 'Station sol', type!)
+    // La page du projet : sa section, son répertoire créé.
+    let view = await load(`programmes.projet?${encodeURIComponent(project.path)}`)
+    let docs = section(view, 'programmes.projet.documents')
+    expect(docs).toMatchObject({ title: 'Documents du projet', subtitle: '0 document(s)' })
+    expect(await platform.fs.exists('Bibliothèque/Projets/Spatial/Station sol')).toBe(true)
+    expect(view.drop?.label).toBe('Déposer dans les documents de « Station sol »')
+    // Des fichiers glissés sur la page : versés dans son répertoire.
+    await view.drop!.run([{ name: 'Planning.pdf', bytes: bytes('pl') }])
+    expect(await platform.fs.exists('Bibliothèque/Projets/Spatial/Station sol/Planning.md')).toBe(true)
+    view = await load(`programmes.projet?${encodeURIComponent(project.path)}`)
+    docs = section(view, 'programmes.projet.documents')
+    expect(itemsOf(docs).map((item) => item.title)).toEqual(['Planning'])
+    await itemsOf(docs)[0]!.open!.run()
+    expect(shown.at(-1)).toBe(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Projets/Spatial/Station sol/Planning.md')}`)
+    await sectionAction(docs, 'library-folder')!.run()
+    expect(shown.at(-1)).toBe(`bibliotheque.documents?${encodeURIComponent('projets:Spatial/Station sol')}`)
+    expect((await load(shown.at(-1)!)).title).toBe('Station sol')
+    // Le programme : les siens, pas ceux de ses projets.
+    const programmeView = await load(`programmes.programme?${encodeURIComponent(programme.path)}`)
+    expect(section(programmeView, 'programmes.programme.documents')).toMatchObject({ title: 'Documents du programme', subtitle: '0 document(s)' })
+    await programmeView.drop!.run([{ name: 'Charte.pdf', bytes: bytes('ch') }])
+    expect(itemsOf(section(await load(`programmes.programme?${encodeURIComponent(programme.path)}`), 'programmes.programme.documents')).map((item) => item.title)).toEqual(['Charte'])
+    // L'accueil de la bibliothèque : sa carte, ses documents comptés à part.
+    const hub = await load('bibliotheque.accueil')
+    const cards = hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [block])).flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+    expect(cards.filter((card) => card.id === 'documents' || card.id === 'projects').map((card) => `${card.title}=${card.subtitle}`)).toEqual(['Documents=0 document(s)', 'Documents projet=2 document(s)'])
+    // Elle ne se retire pas.
+    expect((await load(`bibliotheque.documents?${encodeURIComponent('projets:')}`)).actions?.map((action) => action.id)).not.toContain('remove-shelf')
+  })
+
+  it('l’accueil de la bibliothèque : chaque groupe crée une bibliothèque de ses sortes — créée, elle s’ouvre, et l’accueil la montre', async () => {
+    const platform = memoryPlatform()
+    const { load, shown } = await start(platform)
+    const hub = await load('bibliotheque.accueil')
+    const create = hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).flatMap((block) => (block.kind === 'cards' ? (block.actions ?? []) : [])).find((action) => action.id === 'new-shelf-document')!
+    platform.forms.push({ name: 'Archives', folder: '', default: 'false' })
+    await create.run()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(shown.at(-1)).toBe(`bibliotheque.documents?${encodeURIComponent('archives:')}`)
+    const again = await load('bibliotheque.accueil')
+    const titles = again.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).flatMap((block) => (block.kind === 'cards' ? block.cards : [])).map((card) => card.title)
+    expect(titles).toContain('Archives')
+  })
+
+  it('« Déplacer vers une bibliothèque… » : toutes les bibliothèques de documents, celles créées par l’utilisateur comprises, et leurs répertoires', async () => {
+    const platform = memoryPlatform()
+    const { load } = await start(platform)
+    const hub = await load('bibliotheque.accueil')
+    const create = hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).flatMap((block) => (block.kind === 'cards' ? (block.actions ?? []) : [])).find((action) => action.id === 'new-shelf-document')!
+    platform.forms.push({ name: 'Archives', folder: '', default: 'false' })
+    await create.run()
+    await platform.fs.ensureFolder('Bibliothèques/Documents/Archives/2025')
+    await platform.fs.ensureFolder('Bibliothèque/Projets/Spatial/Station sol')
+    const doc = (await pourIntoLibrary([{ name: 'Plan.pdf', bytes: bytes('p') }], { module: 'bibliotheque', label: '' }))!.added[0]!
+    const fiche = await load(`bibliotheque.document?${encodeURIComponent(doc.record)}`)
+    const move = fiche.actions!.find((action) => action.id === 'move')!
+    expect(move.label).toBe('Déplacer vers une bibliothèque…')
+    platform.choices.push('Bibliothèques/Documents/Archives/2025')
+    await move.run()
+    expect(platform.offered.at(-1)!.map((each) => each.label)).toEqual([
+      'Documents de référence',
+      'Documents projet',
+      'Documents projet › Spatial',
+      'Documents projet › Spatial › Station sol',
+      'Archives',
+      'Archives › 2025'
+    ])
+    expect(await platform.fs.exists('Bibliothèques/Documents/Archives/2025/Plan.md')).toBe(true)
+  })
 })

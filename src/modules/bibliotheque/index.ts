@@ -31,9 +31,9 @@ import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
-import { allPlaces, type ShelfPlacesDeps } from './places'
+import { allPlaces, placePageOf, type ShelfPlacesDeps } from './places'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
-import { defaultShelfOf, folderName, REFERENCE_SHELF, severalShelves, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
+import { builtInShelf, defaultShelfOf, folderName, REFERENCE_SHELF, severalShelves, shelfOfPath, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -64,6 +64,9 @@ export const DEFAULT_PERSONS_FOLDER = 'Bibliothèque/Personnes'
 /** Le dossier de la bibliothèque des documents de référence (réglage), et son dossier d'origine. */
 export const REFERENCES_FOLDER_KEY = 'dossierReferences'
 export const DEFAULT_REFERENCES_FOLDER = 'Bibliothèque/Références'
+/** Le dossier de la bibliothèque des documents projet (réglage), et son dossier d'origine. */
+export const PROJECTS_FOLDER_KEY = 'dossierProjets'
+export const DEFAULT_PROJECTS_FOLDER = 'Bibliothèque/Projets'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
 export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
@@ -87,6 +90,12 @@ let active: {
   tagList(): Promise<KnownTag[]>
   /** Le dossier des documents de référence. */
   referencesFolder(): string
+  /** Le dossier des documents projet. */
+  projectsFolder(): string
+  /** La bibliothèque de documents d'un dossier (la plus profonde qui le contient). */
+  shelfOf(folder: string): Shelf | undefined
+  /** Créer un dossier (et ses parents) s'il manque. */
+  ensureFolder(folder: string): Promise<void>
   /** Verser des documents choisis (l'ordinateur, le coffre) dans un dossier. */
   pour(folder?: string): Promise<PourReport | null>
   /** Ranger un document dans les documents de référence (un fantôme à son ancienne place) ; rend sa nouvelle fiche. */
@@ -183,6 +192,62 @@ export async function findInLibrary(bytes: Uint8Array): Promise<(LibraryDocRef &
     console.error('[Black Projects] bibliothèque', error)
     return null
   }
+}
+
+// ── Les documents projet : un répertoire par programme, puis par projet ─────────────
+
+export { PROJECT_SHELF } from './shelves'
+
+/** Un nom de répertoire sûr, tiré d'un nom de programme ou de projet. */
+const directoryName = (name: string): string => folderName(name) || '_'
+
+/**
+ * Le dossier des documents d'un programme (`project` absent) ou d'un projet, dans la
+ * bibliothèque des documents projet : `Bibliothèque/Projets/<Programme>/<Projet>`. Créé s'il
+ * manque. Vide sans le module.
+ */
+export async function projectDocumentsFolder(programme: string, project?: string): Promise<string> {
+  if (!active) return ''
+  const folder = [active.projectsFolder(), directoryName(programme), ...(project ? [directoryName(project)] : [])].join('/')
+  await active.ensureFolder(folder)
+  return folder
+}
+
+/**
+ * Les documents rangés dans un dossier de la bibliothèque (`deep` : ses sous-répertoires
+ * aussi), par titre ; aucun sans le module.
+ */
+export async function documentsIn(folder: string, deep = false): Promise<LibraryDocRef[]> {
+  if (!active || !folder) return []
+  return (await active.store.all())
+    .filter((doc) => {
+      const where = doc.record.slice(0, doc.record.lastIndexOf('/'))
+      return where === folder || (deep && where.startsWith(`${folder}/`))
+    })
+    .map(docRef)
+    .sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+}
+
+/** Verser des documents dans un dossier de la bibliothèque : le choix des fichiers (l'ordinateur, le coffre), puis le versement. */
+export async function pourDocumentsInto(folder: string): Promise<void> {
+  await active?.pour(folder)
+}
+
+/** Verser des fichiers glissés-déposés dans un dossier de la bibliothèque (un document déjà rangé ailleurs : un fantôme proposé). */
+export async function dropDocumentsInto(folder: string, files: readonly { name: string; bytes: Uint8Array }[]): Promise<void> {
+  if (!active || !files.length) return
+  await pourIntoLibrary(
+    files.map((file) => ({ name: file.name, bytes: file.bytes })),
+    { module: BIBLIOTHEQUE, label: active.t('bibliotheque.origin.hand') },
+    { folder, ghosts: true }
+  )
+}
+
+/** La page d'un dossier de la bibliothèque (sa bibliothèque, son répertoire) ; `null` hors de la bibliothèque. */
+export function libraryFolderPage(folder: string): string | null {
+  if (!active) return null
+  const shelf = active.shelfOf(folder)
+  return shelf ? placePageOf(LIBRARY_PAGE, { shelf: shelf.id, directory: folder.slice(shelf.folder.length).replace(/^\/+/, '') }) : null
 }
 
 /** La page d'un document de la bibliothèque (sa fiche). */
@@ -680,6 +745,16 @@ const referencesFolderField: TextField = {
   normalize: cleanFolder
 }
 
+const projectsFolderField: TextField = {
+  kind: 'text',
+  key: PROJECTS_FOLDER_KEY,
+  nameKey: 'bibliotheque.setting.projects.folder',
+  descKey: 'bibliotheque.setting.projects.folder.desc',
+  tooltipKey: 'bibliotheque.setting.projects.folder.tip',
+  defaultValue: DEFAULT_PROJECTS_FOLDER,
+  normalize: cleanFolder
+}
+
 /** Le réglage du dossier de chaque sorte d'entrées, et son dossier d'origine. */
 const FOLDER_KEYS: Readonly<Record<EntryKind, readonly [string, string]>> = {
   prompt: [PROMPTS_FOLDER_KEY, DEFAULT_PROMPTS_FOLDER],
@@ -760,11 +835,11 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.42.0',
+  version: '0.43.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField, referencesFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
+  settingsFields: [folderField, referencesFolderField, projectsFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   async activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
@@ -788,7 +863,9 @@ export const bibliothequeModule: BlackModule = {
     const referencesFolder = () => folderOf(settings.get(), REFERENCES_FOLDER_KEY, DEFAULT_REFERENCES_FOLDER)
     /** Les fiches que la bibliothèque déplace elle-même : leur renommage n'est pas un geste de l'utilisateur. */
     const ownMoves = new Set<string>()
-    const shelves = (kind: ShelfKind): Shelf[] => shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`), { folder: referencesFolder(), name: t('bibliotheque.shelf.references') })
+    const projectsFolder = () => folderOf(settings.get(), PROJECTS_FOLDER_KEY, DEFAULT_PROJECTS_FOLDER)
+    const shelves = (kind: ShelfKind): Shelf[] =>
+      shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`), { folder: referencesFolder(), name: t('bibliotheque.shelf.references') }, { folder: projectsFolder(), name: t('bibliotheque.shelf.projects') })
     const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
     const store = new LibraryStore({
       fs: platform.fs,
@@ -837,7 +914,7 @@ export const bibliothequeModule: BlackModule = {
       if (!shelf) return folder
       const parts = folder.slice(shelf.folder.length).split('/').filter(Boolean)
       // Une seule bibliothèque : son nom n'apprend rien, sauf à sa racine.
-      return (severalShelves(all) || shelf.reference || !parts.length ? [shelf.name, ...parts] : parts).join(' › ')
+      return (severalShelves(all) || builtInShelf(shelf) || !parts.length ? [shelf.name, ...parts] : parts).join(' › ')
     }
     /** Un dossier des documents de référence (ou de l'un de ses répertoires) ? */
     const inReferences = (folder: string): boolean => folder === referencesFolder() || folder.startsWith(`${referencesFolder()}/`)
@@ -953,6 +1030,9 @@ export const bibliothequeModule: BlackModule = {
       issuers: () => knownIssuers(),
       tagList: () => knownTags(),
       referencesFolder,
+      projectsFolder,
+      shelfOf: (folder) => shelfOfPath(shelves('document'), folder),
+      ensureFolder: (folder) => platform.fs.ensureFolder(folder),
       pour: (folder) => pour(folder),
       toReferences: (record) => toReferences(record)
     }
@@ -1019,6 +1099,8 @@ export const bibliothequeModule: BlackModule = {
       await settings.save(values.default === 'true' ? withDefaultShelf(made.settings, kind, made.shelf.id) : made.settings)
       await platform.fs.ensureFolder(made.shelf.folder)
       platform.notifier.notify(t('bibliotheque.shelf.created', { name: made.shelf.name, folder: made.shelf.folder }), 6000)
+      // Les pages ouvertes (l'accueil de la bibliothèque) la montrent aussitôt.
+      pagesChanged()
       return made.shelf
     }
     const newDirectory = async (_kind: ShelfKind, folder: string): Promise<string | null> => {
@@ -1041,12 +1123,13 @@ export const bibliothequeModule: BlackModule = {
     }
     const setDefault = async (kind: ShelfKind, id: string): Promise<void> => {
       await settings.save(withDefaultShelf(settings.get(), kind, id))
+      pagesChanged()
       const shelf = shelves(kind).find((each) => each.id === id)
       if (shelf) platform.notifier.notify(t(`bibliotheque.shelf.defaultDone.${kind}`, { name: shelf.name }), 6000)
     }
     const removeShelf = async (kind: ShelfKind, id: string): Promise<boolean> => {
       const shelf = shelves(kind).find((each) => each.id === id)
-      if (!shelf || shelf.main || shelf.reference) return false
+      if (!shelf || shelf.main || builtInShelf(shelf)) return false
       const sure = await platform.ui.confirm({
         title: t('bibliotheque.shelf.remove.title', { name: shelf.name }),
         message: t('bibliotheque.shelf.remove.message', { name: shelf.name, folder: shelf.folder }),
@@ -1055,6 +1138,7 @@ export const bibliothequeModule: BlackModule = {
       })
       if (!sure) return false
       await settings.save(withoutShelf(settings.get(), kind, id))
+      pagesChanged()
       platform.notifier.notify(t('bibliotheque.shelf.removed', { name: shelf.name, folder: shelf.folder }), 8000)
       return true
     }

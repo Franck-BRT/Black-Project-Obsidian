@@ -12,7 +12,15 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.122.0)
+## Aujourd'hui (version 0.123.0)
+
+- **Les documents projet** (Bibliothèque › **Documents projet**) : un répertoire par programme,
+  puis par projet, créés avec eux ; la page d'un programme ou d'un projet montre ses documents —
+  glissez-y des fichiers pour les ajouter.
+- **Créer une bibliothèque** : chaque groupe de l'accueil de la bibliothèque a ses boutons
+  **Nouvelle bibliothèque de…** ; la nouvelle s'ouvre aussitôt. **Déplacer vers une
+  bibliothèque…**, sur la fiche d'un document, propose toutes les bibliothèques, les vôtres
+  comprises.
 
 - **La bibliothèque par groupes** : ses bibliothèques rangées en quatre groupes qu'un clic
   déplie ou replie — documents (et documents de référence), IA (prompts, personas, skills),

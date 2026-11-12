@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Documents projet ; créer une bibliothèque ; déplacer partout (v0.123.0)
+
+- [ ] Bibliothèque : groupes « Bibliothèques de documents », « Bibliothèques système IA »,
+      « Bibliothèques système », « Annuaire » ; chaque groupe a ses **Nouvelle bibliothèque de…**
+- [ ] **Nouvelle bibliothèque de documents** : elle s'ouvre ; l'accueil la montre aussitôt
+- [ ] La carte **Documents projet** ; un programme puis un projet créés : leurs répertoires
+      dans `Bibliothèque/Projets`
+- [ ] Sur la page du projet, glisser des fichiers : ils sont dans « Documents du projet » ;
+      **Voir dans la bibliothèque** ouvre son répertoire
+- [ ] Sur une fiche, **Déplacer vers une bibliothèque…** : toutes les bibliothèques, les vôtres
+      comprises, et leurs répertoires
+
 ## L'accueil de la bibliothèque par groupes ; le fantôme depuis l'explorateur (v0.122.0)
 
 - [ ] Bibliothèque : quatre groupes — documents, IA, système, personnelles ; un clic replie,

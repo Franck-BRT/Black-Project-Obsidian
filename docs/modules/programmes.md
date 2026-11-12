@@ -5,13 +5,21 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.6.0 (Black Projects 0.121.0) |
+| Version | 0.7.0 (Black Projects 0.123.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les documents d'un programme, d'un projet (v0.7.0, Black Projects 0.123.0)
+
+- Créés, un programme et un projet ont leur répertoire dans la bibliothèque des documents
+  projet (`projectDocumentsFolder`) ; leurs pages, une section **Documents du programme** /
+  **du projet** (ouvrir, verser, voir dans la bibliothèque) et la page entière reçoit des fichiers
+  glissés-déposés (`dropDocumentsInto`). Ceux du programme : à la racine de son répertoire ;
+  ceux du projet : tout son répertoire.
 
 ## Les documents de référence (v0.6.0, Black Projects 0.121.0)
 

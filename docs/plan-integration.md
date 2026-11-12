@@ -650,6 +650,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.121.1 : un fichier n'entre qu'une fois, par où qu'il arrive (une pièce d'analyse déjà dans la bibliothèque n'est plus copiée ; une fiche sans empreinte reconnue)
 - v0.121.2 : pas de doublon sur le disque pour un fichier déposé à la main dans les originaux d'une analyse ; un fantôme proposé quand un document va dans les références
 - v0.122.0 : l'**accueil de la bibliothèque par groupes** repliables (documents, IA, système, personnelles) ; le fantôme proposé aussi pour une fiche glissée dans les références depuis l'explorateur d'Obsidian
+- v0.123.0 : les **documents projet** (un répertoire par programme et par projet, montrés et reçus sur leurs pages) ; créer une bibliothèque depuis chaque groupe de l'accueil (et la voir aussitôt) ; « Bibliothèques système IA », « Annuaire » ; déplacer vers toutes les bibliothèques
 
 ### Étape 7 — Livrables
 

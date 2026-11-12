@@ -13,7 +13,7 @@ import { startersFor } from './starters'
 import { ENTRY_KINDS, entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, shelfCards, type ShelfPlacesDeps } from './places'
-import { REFERENCE_SHELF, severalShelves } from './shelves'
+import { PROJECT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -29,7 +29,7 @@ export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = {
 export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag', person: 'bibliotheque.person' }
 export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(ENTRY_PAGE[kind], encodeURIComponent(path))
 
-type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star'
+type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase'
 const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user' }
 
 export interface EntriesHomeDeps {
@@ -295,6 +295,11 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const tags = await deps.stores.tag.all()
   const persons = await deps.stores.person.all()
   const go = (page: string): ViewAction => ({ id: 'open', label: t('bibliotheque.hub.open'), run: () => deps.showPage?.(page) })
+  /** Créer une bibliothèque, puis l'ouvrir (sa page la montre aussitôt, vide). */
+  const openNewShelf = async (kind: 'document' | EntryKind): Promise<void> => {
+    const shelf = await deps.places[kind].newShelf(kind)
+    if (shelf) deps.showPage?.(placePageOf(deps.places[kind].page, { shelf: shelf.id, directory: '' }))
+  }
   const stats: HomeBlock = {
     kind: 'stats',
     stats: [
@@ -310,8 +315,9 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const likely: HomeBlock[] = documents.likely ? [{ kind: 'message', tone: 'warning', text: t('bibliotheque.home.likely', { count: documents.likely }) }] : []
   /**
    * Les bibliothèques, **regroupées** en sections qu'on déplie ou replie : les documents (et
-   * ceux de référence), celles de l'IA (prompts, personas, skills), celles du système (les
-   * étiquettes), les personnelles (entreprises, personnes).
+   * ceux de référence, et ceux des projets), le système IA (prompts, personas, skills), le
+   * système (les étiquettes), l'annuaire (entreprises, personnes). Chaque groupe a de quoi
+   * créer une bibliothèque de chacune de ses sortes.
    */
   const group = (id: string, icon: KindIcon, blocks: HomeBlock[], count: number): HomeBlock => ({
     kind: 'section',
@@ -330,7 +336,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
       kind: 'cards',
       title: `${t(`bibliotheque.hub.${kind}s`)} · ${t('bibliotheque.hub.shelves', { count: deps.places[kind].shelves().length })}`,
       cards: shelfCards(deps.places[kind], items, icon),
-      actions: [{ id: `new-shelf-${kind}`, label: t('bibliotheque.shelf.new'), tooltip: t(`bibliotheque.shelf.new.${kind}.tip`), icon: 'plus', run: () => void deps.places[kind].newShelf(kind) }]
+      actions: [{ id: `new-shelf-${kind}`, label: t('bibliotheque.shelf.new'), tooltip: t(`bibliotheque.shelf.new.${kind}.tip`), icon: 'plus', run: () => void openNewShelf(kind) }]
     })
     return {
       subtitle: t('bibliotheque.hub.subtitle'),
@@ -340,7 +346,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         group('documents', 'book', [shelvesOf('document', 'book', placed)], documents.count),
         group('ia', 'spark', [shelvesOf('prompt', 'chat', prompts), shelvesOf('persona', 'spark', personas), shelvesOf('skill', 'list', skills)], prompts.length + personas.length + skills.length),
         group('systeme', 'tag', [shelvesOf('tag', 'tag', tags)], tags.length),
-        group('personnelles', 'user', [shelvesOf('issuer', 'building', issuers), shelvesOf('person', 'user', persons)], issuers.length + persons.length)
+        group('annuaire', 'user', [shelvesOf('issuer', 'building', issuers), shelvesOf('person', 'user', persons)], issuers.length + persons.length)
       ]
     }
   }
@@ -353,10 +359,20 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
     open: go(page),
     actions: [{ ...go(page), id: 'see', icon: 'chevron' }]
   })
-  // Les documents de référence : leur carte, à côté de celle des documents.
+  // Les documents de référence et les documents projet : leurs cartes, à côté de celle des documents.
+  const placed = await deps.placedDocuments()
   const referenceShelf = deps.places.document.shelves().find((shelf) => shelf.reference)
-  const references = referenceShelf ? (await deps.placedDocuments()).filter((item) => item.shelf === REFERENCE_SHELF).length : 0
-  const cards = (list: Card[]): HomeBlock[] => [{ kind: 'cards', cards: list }]
+  const projectShelf = deps.places.document.shelves().find((shelf) => shelf.project)
+  const references = placed.filter((item) => item.shelf === REFERENCE_SHELF).length
+  const projects = placed.filter((item) => item.shelf === PROJECT_SHELF).length
+  /** Les cartes d'un groupe, et de quoi créer une bibliothèque de chacune de ses sortes. */
+  const cards = (list: Card[], kinds: readonly ('document' | EntryKind)[]): HomeBlock[] => [
+    {
+      kind: 'cards',
+      cards: list,
+      actions: kinds.map((kind) => ({ id: `new-shelf-${kind}`, label: t(`bibliotheque.hub.newShelf.${kind}`), tooltip: t(`bibliotheque.shelf.new.${kind}.tip`), icon: 'plus' as const, run: () => void openNewShelf(kind) }))
+    }
+  ]
   return {
     subtitle: t('bibliotheque.hub.subtitle'),
     blocks: [
@@ -364,15 +380,19 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
       group(
         'documents',
         'book',
-        cards([
-          card('documents', 'book', documents.count - references, deps.documentsPage, documents.likely ? t('bibliotheque.home.likely', { count: documents.likely }) : ''),
-          ...(referenceShelf ? [card('references', 'star', references, placePageOf(deps.documentsPage, { shelf: REFERENCE_SHELF, directory: '' }))] : [])
-        ]),
+        cards(
+          [
+            card('documents', 'book', documents.count - references - projects, deps.documentsPage, documents.likely ? t('bibliotheque.home.likely', { count: documents.likely }) : ''),
+            ...(referenceShelf ? [card('references', 'star', references, placePageOf(deps.documentsPage, { shelf: REFERENCE_SHELF, directory: '' }))] : []),
+            ...(projectShelf ? [card('projects', 'briefcase', projects, placePageOf(deps.documentsPage, { shelf: PROJECT_SHELF, directory: '' }))] : [])
+          ],
+          ['document']
+        ),
         documents.count
       ),
-      group('ia', 'spark', cards([card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt), card('personas', 'spark', personas.length, ENTRIES_PAGE.persona), card('skills', 'list', skills.length, ENTRIES_PAGE.skill)]), prompts.length + personas.length + skills.length),
-      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)]), tags.length),
-      group('personnelles', 'user', cards([card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer), card('persons', 'user', persons.length, ENTRIES_PAGE.person)]), issuers.length + persons.length)
+      group('ia', 'spark', cards([card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt), card('personas', 'spark', personas.length, ENTRIES_PAGE.persona), card('skills', 'list', skills.length, ENTRIES_PAGE.skill)], ['prompt', 'persona', 'skill']), prompts.length + personas.length + skills.length),
+      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)], ['tag']), tags.length),
+      group('annuaire', 'user', cards([card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer), card('persons', 'user', persons.length, ENTRIES_PAGE.person)], ['issuer', 'person']), issuers.length + persons.length)
     ]
   }
 }
