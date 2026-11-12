@@ -654,6 +654,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.124.0 : **exporter / importer une bibliothèque** (une archive ZIP à se passer) ; plus de nouvelles bibliothèques de prompts, personas, skills, étiquettes
 - v0.125.0 : **tout exporter / tout importer** la bibliothèque d'un coup
 - v0.125.1 : les **fantômes parmi les documents**, l'icône fantôme devant
+- v0.125.2 : l'icône fantôme sur la fiche d'un document montré ailleurs
 
 ### Étape 7 — Livrables
 

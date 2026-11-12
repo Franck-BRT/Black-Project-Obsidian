@@ -785,7 +785,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     { label: t('bibliotheque.field.family'), value: t(`bibliotheque.family.${doc.family}`), icon: ICON[doc.family] },
     { label: t('bibliotheque.field.size'), value: readableSize(doc.size, deps.locale), icon: 'file' },
     { label: t('bibliotheque.field.added'), value: doc.added || '—', icon: 'clock' },
-    { label: t('bibliotheque.field.version'), value: versionLabel(doc) || (older.length ? `v${older.length + 1}` : '—'), icon: 'flow', ...(newer.length ? { tone: 'warning' as const, hint: t('bibliotheque.badge.replaced') } : {}) }
+    { label: t('bibliotheque.field.version'), value: versionLabel(doc) || (older.length ? `v${older.length + 1}` : '—'), icon: 'flow', ...(newer.length ? { tone: 'warning' as const, hint: t('bibliotheque.badge.replaced') } : {}) },
+    // Montré aussi ailleurs : ses fantômes, l'icône fantôme.
+    ...(ghosts.length ? [{ label: t('bibliotheque.stat.ghosts'), value: String(ghosts.length), icon: 'ghost' as const, hint: t('bibliotheque.stat.ghosts.doc', { places: ghosts.map(({ ghost }) => placeLabel(deps.places, ghost)).join(', ') }) }] : [])
   ]
   const field = (key: string, value: string): ListItem => ({ id: key, title: t(`bibliotheque.field.${key}`), detail: value || '—' })
   const origins: ListItem[] = doc.origins.map((origin, index) => ({
@@ -907,13 +909,14 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         : []),
       ...(ghosts.length
         ? [
-            fold('fantomes', t('bibliotheque.section.ghosts', { count: ghosts.length }), ghosts.map(({ ghost }) => placeLabel(deps.places, ghost)).join(' · '), 'copy', {
+            fold('fantomes', t('bibliotheque.section.ghosts', { count: ghosts.length }), ghosts.map(({ ghost }) => placeLabel(deps.places, ghost)).join(' · '), 'ghost', {
               kind: 'list',
               intro: [t('bibliotheque.ghost.hint')],
               items: ghosts.map(({ ghost }) => ({
                 id: ghost.path,
                 title: placeLabel(deps.places, ghost),
                 detail: ghost.path,
+                icon: 'ghost' as const,
                 open: { id: 'open', label: t('bibliotheque.place.open'), run: () => deps.showPage?.(placePageOf(LIBRARY_PAGE, { shelf: ghost.shelf ?? '', directory: ghost.directory ?? '' })) }
               }))
             })

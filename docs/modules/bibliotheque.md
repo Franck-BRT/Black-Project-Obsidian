@@ -5,13 +5,19 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.45.1 (Black Projects 0.125.1) |
+| Version | 0.45.2 (Black Projects 0.125.2) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## L'icône fantôme sur la fiche (v0.45.2, Black Projects 0.125.2)
+
+La fiche d'un document montré ailleurs : un chiffre « Fantômes » (où, au survol), la section
+« Montré aussi ailleurs » et chacune de ses lignes avec l'icône `ghost`. Une ligne de liste peut
+désormais avoir son icône (`ListItem.icon`, à la place de celle de son ton).
 
 ## Les fantômes parmi les documents (v0.45.1, Black Projects 0.125.1)
 

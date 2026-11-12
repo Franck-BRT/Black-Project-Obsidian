@@ -292,7 +292,8 @@ Dans la page du répertoire, les fantômes sont **parmi les documents**, dans le
 avec l'**icône fantôme** devant et « Rangé dans … » (les chiffres en haut les comptent) : un clic
 ouvre le document ; **Aller à l'original** mène là où il est rangé ; **Retirer le fantôme**
 l'enlève (le document reste). Le fantôme suit son document s'il est déplacé, et part s'il
-est retiré. La fiche du document dit où il est montré aussi.
+est retiré. La fiche du document dit où il est montré aussi : le chiffre **Fantômes** et la
+section **Montré aussi ailleurs**, avec l'icône fantôme.
 
 C'est le workflow système « Proposer un fantôme d'un document déjà dans la
 bibliothèque » : vous pouvez le régler pour placer le fantôme sans demander (*Comment* :

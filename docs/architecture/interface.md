@@ -287,7 +287,8 @@ lignes `| … |` sans ligne de séparation y sont aussi un tableau
 
 Une liste peut porter un intitulé (`title` : « Dernières exécutions ») ; ses éléments
 peuvent porter des filtres (`ListItem.tags`, le journal) : elle se filtre et compte alors
-comme des cartes. Un élément peut porter de petits boutons (`ListItem.tools`), avant sa
+comme des cartes. Un élément peut avoir son icône (`ListItem.icon`, à la place de celle de
+son ton : l'icône fantôme d'un fantôme). Un élément peut porter de petits boutons (`ListItem.tools`), avant sa
 marque, dont l'intitulé (« Modifier : Titre », « Relancer la recherche… ») est dit au survol
 et aux lecteurs d'écran — les champs d'une fiche ; leur place est gardée sur chaque ligne de
 la liste, les marques restent alignées. Un champ de texte d'une fenêtre peut avoir un

@@ -134,7 +134,10 @@ describe('les fantômes de la bibliothèque', () => {
     expect(shown.at(-1)).toBe(`bibliotheque.documents?${at('Normes')}`)
     // Sa fiche dit où il est montré aussi.
     const fiche = await page('bibliotheque.document').load(encodeURIComponent('Bibliothèque/Normes/ECSS-E-ST-10C.md'))
-    expect(sectionList(fiche.blocks, (title) => title.startsWith('Montré aussi ailleurs'))).toMatchObject({ items: [{ title: 'À la racine', detail: 'Bibliothèque/ECSS-E-ST-10C.md' }] })
+    expect(sectionList(fiche.blocks, (title) => title.startsWith('Montré aussi ailleurs'))).toMatchObject({ items: [{ title: 'À la racine', detail: 'Bibliothèque/ECSS-E-ST-10C.md', icon: 'ghost' }] })
+    // L'icône fantôme sur sa fiche : la section, et un chiffre.
+    expect(fiche.blocks.find((block) => block.kind === 'section' && block.title.startsWith('Montré aussi ailleurs'))).toMatchObject({ icon: 'ghost' })
+    expect(fiche.blocks.find((block) => block.kind === 'stats')).toMatchObject({ stats: expect.arrayContaining([expect.objectContaining({ label: 'Fantômes', value: '1', icon: 'ghost', hint: 'Montré aussi dans : À la racine.' })]) })
     // Retirer le fantôme : mis de côté, le document reste.
     await ghost!.actions!.find((action) => action.id === 'remove-ghost')!.run()
     expect(platform.notices.at(-1)).toBe('Fantôme retiré : le document reste dans la bibliothèque.')

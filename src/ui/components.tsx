@@ -185,7 +185,7 @@ function ListItemView({ item, slots = 0 }: { item: ListItem; slots?: number }) {
         </span>
       )}
       <span class={`bp-list-mark bp-tone-${tone}`}>
-        <Icon name={TONE_ICON[tone]} />
+        <Icon name={item.icon ?? TONE_ICON[tone]} />
       </span>
       <div class="bp-list-body">
         <div class="bp-list-title">

@@ -70,6 +70,11 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## L'icône fantôme sur la fiche (v0.125.2)
+
+- [ ] La fiche d'un document qui a un fantôme : le chiffre « Fantômes » (icône fantôme), la
+      section « Montré aussi ailleurs » et ses lignes avec l'icône fantôme
+
 ## Les fantômes parmi les documents (v0.125.1)
 
 - [ ] Un document des références montré aussi dans « Documents » : dans la liste, dans son

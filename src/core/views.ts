@@ -171,6 +171,8 @@ export interface ListItem {
   /** Quand, tel qu'à montrer : « 2026-11-05 14:02 ». */
   when?: string
   tone?: Tone
+  /** Son icône, à la place de celle de son ton (un fantôme : `ghost`). */
+  icon?: IconName
   open?: ViewAction
   /** De petits boutons (icône seule), avant sa marque, qui se disent au survol : modifier un champ d'une fiche, relancer sa recherche. */
   tools?: ViewAction[]
