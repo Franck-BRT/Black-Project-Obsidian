@@ -155,7 +155,11 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
         return () => void renameListeners.delete(listener)
       },
       trash: async (path) => {
-        if (!store.delete(path)) throw missing(path)
+        if (store.delete(path)) return
+        // Un dossier : lui et tout ce qu'il contient.
+        if (!folders.has(path)) throw missing(path)
+        for (const each of [...store.keys()].filter((key) => key.startsWith(`${path}/`))) store.delete(each)
+        for (const folder of [...folders].filter((each) => each === path || each.startsWith(`${path}/`))) folders.delete(folder)
       },
       allFiles: async () => [...store.keys()].filter((path) => !path.split('/').some((part) => part.startsWith('.'))),
       list: async (folder) => {

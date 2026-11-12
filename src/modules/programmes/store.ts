@@ -268,4 +268,36 @@ export class ProgrammeStore {
     await this.write(path, affaireData({ ...affaire, status, programme: project?.programme ?? '' }), affaire.name)
     return this.affaire(path)
   }
+
+  // ── Supprimer ─────────────────────────────────────────────────────────────────
+
+  /** Peut-on supprimer (la plateforme a-t-elle une corbeille) ? */
+  get canDelete(): boolean {
+    return !!this.deps.fs.trash
+  }
+
+  /**
+   * Supprimer un projet : son dossier — sa note, ses affaires, ce qu'on y a rangé — à la
+   * corbeille du coffre. Ses documents dans la bibliothèque, ses analyses d'appel d'offres
+   * restent. `false` s'il n'y est plus (ou sans corbeille).
+   */
+  async deleteProject(path: string): Promise<boolean> {
+    const project = await this.project(path)
+    if (!project || !this.deps.fs.trash || !this.inside(project.folder)) return false
+    await this.deps.fs.trash(project.folder)
+    return true
+  }
+
+  /** Supprimer un programme : son dossier (sa note, ses projets, leurs affaires) à la corbeille. */
+  async deleteProgramme(path: string): Promise<boolean> {
+    const programme = await this.programme(path)
+    if (!programme || !this.deps.fs.trash || !this.inside(programme.folder)) return false
+    await this.deps.fs.trash(programme.folder)
+    return true
+  }
+
+  /** Un dossier sous celui des programmes (jamais lui-même) : de quoi ne rien supprimer d'autre. */
+  private inside(folder: string): boolean {
+    return folder.startsWith(`${this.root}/`) && folder.length > this.root.length + 1
+  }
 }

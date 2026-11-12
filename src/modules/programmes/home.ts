@@ -44,6 +44,9 @@ export interface HomeDeps {
   editPhaseDates(project: string, phase: string): Promise<void>
   phaseContext(project: Project, phase: ProjectPhase): PhaseContext
   newType(): Promise<void>
+  /** Supprimer un projet, un programme (après confirmation ; absents sans corbeille). */
+  deleteProject?(path: string): Promise<void>
+  deleteProgramme?(path: string): Promise<void>
   /** Exporter un type de projet (ou tous, sans `id`) dans un fichier, à se passer. */
   exportTypes?(id?: string): Promise<void>
   /** Importer des types de projet d'un fichier. */
@@ -404,7 +407,8 @@ async function programmePage(deps: HomeDeps, param?: string): Promise<PageView> 
     actions: [
       { id: 'project', label: t('programmes.project.new'), icon: 'plus', primary: true, run: () => deps.newProject(programme.path) },
       { id: 'edit', label: t('programmes.programme.edit'), icon: 'edit', run: () => deps.editProgramme(programme.path) },
-      { id: 'note', label: t('programmes.note'), icon: 'book', run: () => deps.openNote(programme.path) }
+      { id: 'note', label: t('programmes.note'), icon: 'book', run: () => deps.openNote(programme.path) },
+      ...(deps.deleteProgramme ? [{ id: 'delete', label: t('programmes.programme.delete'), tooltip: t('programmes.programme.delete.tip'), icon: 'trash' as const, run: () => deps.deleteProgramme!(programme.path) }] : [])
     ],
     blocks: [
       { kind: 'stats', stats },
@@ -592,7 +596,8 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     actions: [
       { id: 'start', label: t(project.start ? 'programmes.project.restart' : 'programmes.project.start'), tooltip: t('programmes.project.start.tip'), icon: 'calendar', ...(project.start ? {} : { primary: true }), run: () => deps.startProject(project.path) },
       { id: 'affaire', label: t('programmes.affaire.new'), icon: 'plus', ...(project.start ? { primary: true } : {}), run: () => deps.newAffaire(project.path) },
-      { id: 'note', label: t('programmes.note'), icon: 'book', run: () => deps.openNote(project.path) }
+      { id: 'note', label: t('programmes.note'), icon: 'book', run: () => deps.openNote(project.path) },
+      ...(deps.deleteProject ? [{ id: 'delete', label: t('programmes.project.delete'), tooltip: t('programmes.project.delete.tip'), icon: 'trash' as const, run: () => deps.deleteProject!(project.path) }] : [])
     ],
     blocks: [
       { kind: 'stats', stats },

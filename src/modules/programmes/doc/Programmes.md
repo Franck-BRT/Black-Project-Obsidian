@@ -12,6 +12,12 @@ une de ces phases.
 | **Projet** | ce qu'on mène, phase par phase ; il suit les phases de son **type** | `Programmes/<Programme>/<Projet>/<Projet>.md` |
 | **Affaire** | une affaire du projet (un marché, un contrat) ; souvent, un projet est une affaire — mais il peut en avoir plusieurs | `Programmes/<Programme>/<Projet>/Affaires/<Affaire>.md` |
 
+**Supprimer le projet** (sur sa page) met son dossier à la corbeille du coffre : sa note, ses
+affaires et ce que vous y avez rangé. **Supprimer le programme** fait de même pour le programme,
+ses projets et leurs affaires. Une question est posée avant ; les documents dans la
+bibliothèque et les analyses d'appel d'offres restent. Depuis la corbeille d'Obsidian (ou celle
+du système), on peut les récupérer.
+
 Sur **Programmes** et sur la page d'un programme, chaque projet est dessiné en miniature, ses
 phases **repliées** d'origine : son nom (un clic ouvre sa page) et son avancement restent ; le
 chevron devant son nom déplie ses phases (le choix est gardé).

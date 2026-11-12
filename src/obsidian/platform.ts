@@ -97,10 +97,13 @@ export class ObsidianFileSystem implements FileSystem {
     else await this.adapter.rename(source, target)
   }
 
-  /** Par le gestionnaire de fichiers d'Obsidian : à la corbeille que l'utilisateur a choisie (système, `.trash`, ou effacé). */
+  /**
+   * Par le gestionnaire de fichiers d'Obsidian : à la corbeille que l'utilisateur a choisie
+   * (système, `.trash`, ou effacé). Un dossier y part avec tout ce qu'il contient.
+   */
   async trash(path: string): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(normalizePath(path))
-    if (file instanceof TFile) await this.app.fileManager.trashFile(file)
+    if (file instanceof TFile || file instanceof TFolder) await this.app.fileManager.trashFile(file)
   }
 
   /** L'index du coffre d'Obsidian (sans ses dossiers cachés). */

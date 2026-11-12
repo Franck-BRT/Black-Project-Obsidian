@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Supprimer un projet, un programme (v0.129.0)
+
+- [ ] La page d'un projet › **Supprimer le projet** : la question dit son dossier, ses affaires,
+      ce qui reste ; Annuler : rien ne part
+- [ ] Confirmé : son dossier dans la corbeille du coffre, retour au programme ; les autres
+      projets là ; ses documents toujours dans la bibliothèque
+- [ ] La page d'un programme › **Supprimer le programme** : ses projets et leurs affaires à la
+      corbeille, retour à Programmes ; les autres programmes là
+
 ## Les phases repliées sur les programmes ; se passer des types de projet (v0.128.0)
 
 - [ ] Un programme avec deux projets (vue Parcours) : chaque projet, son nom et son avancement,

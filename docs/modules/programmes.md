@@ -5,13 +5,22 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.10.0 (Black Projects 0.128.0) |
+| Version | 0.11.0 (Black Projects 0.129.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Supprimer un projet, un programme (v0.11.0, Black Projects 0.129.0)
+
+- `ProgrammeStore.deleteProject(path)`, `deleteProgramme(path)` : le dossier du projet (ou du
+  programme) à la corbeille (`FileSystem.trash`, qui prend maintenant aussi un dossier) ; jamais
+  hors du dossier des programmes, ni lui-même. `canDelete` : la plateforme a une corbeille.
+- Actions `delete` sur la page d'un projet et sur celle d'un programme, après une confirmation
+  (`danger`) qui dit le dossier, le nombre de projets et d'affaires, et ce qui reste (documents de
+  la bibliothèque, analyses d'AO). Sans corbeille : pas de bouton.
 
 ## Les phases des projets repliées sur les programmes ; se passer des types (v0.10.0, Black Projects 0.128.0)
 

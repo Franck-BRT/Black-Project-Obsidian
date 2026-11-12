@@ -36,7 +36,7 @@ export interface FileSystem {
   rename(from: VaultPath, to: VaultPath): Promise<void>
   /** Tous les fichiers du coffre, hors dossiers cachés (`.obsidian`…) — l'index de la plateforme, quand elle en a un. */
   allFiles?(): Promise<VaultPath[]>
-  /** Supprimer un fichier : à la corbeille, selon le réglage du coffre, quand la plateforme en a une. */
+  /** Supprimer un fichier (ou un dossier et tout ce qu'il contient) : à la corbeille, selon le réglage du coffre, quand la plateforme en a une. */
   trash?(path: VaultPath): Promise<void>
   /**
    * Être prévenu quand un fichier est renommé ou déplacé — par l'utilisateur (l'explorateur de

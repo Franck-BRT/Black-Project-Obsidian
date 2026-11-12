@@ -16,7 +16,7 @@ import type { BlackModule, ModuleContext, TextField } from '../../core/modules/m
 import type { Choice, FormField } from '../../core/ports'
 import { phaseKinds, type PhaseContext } from './kinds'
 import { AFFAIRE_STATUSES, flatFolders, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type ExpectedDoc, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType, type SpanSpec } from './model'
-import { programmePageOf, projectPageOf, registerProgrammesHome, typePageOf, TYPES_PAGE } from './home'
+import { programmePageOf, PROGRAMMES_PAGE, projectPageOf, registerProgrammesHome, typePageOf, TYPES_PAGE } from './home'
 import { AlreadyThere, ProgrammeStore } from './store'
 import { addFolder, addParallel, addSpan, addStage, copyType, findFolder, movePhase, newPhase, newType, readTypes, remapSpans, removeFolder, removePhase, removeSpan, replacePhase, TYPES_KEY, updateFolder, updateSpan } from './types'
 import { programmesEn, programmesFr } from './i18n'
@@ -58,7 +58,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.10.0',
+  version: '0.11.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -439,6 +439,51 @@ export const programmesModule: BlackModule = {
         ),
       moved: async (from, to) => void (await store.referenceMoved(from, to))
     })
+    // ── Supprimer un projet, un programme ───────────────────────────────────────
+    /** Supprimer un projet (après confirmation) : son dossier à la corbeille ; ses documents restent dans la bibliothèque. */
+    const deleteProject = async (path: string): Promise<void> => {
+      const project = await store.project(path)
+      if (!project) return
+      const affaires = (await store.affaires(project)).length
+      const sure = await ui.confirm({
+        title: t('programmes.project.delete.title', { name: project.name }),
+        message: t('programmes.project.delete.message', { folder: project.folder, affaires }),
+        confirm: t('programmes.project.delete'),
+        cancel: t('programmes.cancel'),
+        danger: true
+      })
+      if (!sure) return
+      if (!(await store.deleteProject(path))) {
+        notify(t('programmes.delete.failed'), 8000)
+        return
+      }
+      notify(t('programmes.project.deleted', { name: project.name }), 8000)
+      changed()
+      show(programmePageOf(project.programme))
+    }
+    /** Supprimer un programme (après confirmation) : son dossier, ses projets et leurs affaires, à la corbeille. */
+    const deleteProgramme = async (path: string): Promise<void> => {
+      const programme = await store.programme(path)
+      if (!programme) return
+      const projects = await store.projects(programme)
+      const affaires = (await Promise.all(projects.map((project) => store.affaires(project)))).flat().length
+      const sure = await ui.confirm({
+        title: t('programmes.programme.delete.title', { name: programme.name }),
+        message: t('programmes.programme.delete.message', { folder: programme.folder, projects: projects.length, affaires }),
+        confirm: t('programmes.programme.delete'),
+        cancel: t('programmes.cancel'),
+        danger: true
+      })
+      if (!sure) return
+      if (!(await store.deleteProgramme(path))) {
+        notify(t('programmes.delete.failed'), 8000)
+        return
+      }
+      notify(t('programmes.programme.deleted', { name: programme.name, projects: projects.length }), 8000)
+      changed()
+      show(PROGRAMMES_PAGE)
+    }
+
     // ── Se passer des types de projet ───────────────────────────────────────────
     /** Exporter un type (ou tous) : un fichier JSON dans `Échanges/Types de projet`, à se passer. */
     const exportTypes = async (id?: string): Promise<void> => {
@@ -544,6 +589,7 @@ export const programmesModule: BlackModule = {
       },
       exportTypes,
       importTypes,
+      ...(store.canDelete ? { deleteProject, deleteProgramme } : {}),
       newType: async () => {
         const named = await typeName(t('programmes.type.new'))
         if (!named) return

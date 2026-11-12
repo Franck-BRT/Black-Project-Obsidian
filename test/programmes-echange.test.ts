@@ -4,7 +4,8 @@
 /**
  * **Se passer des types de projet** : un type, ou tous, exportés en un fichier ; importés dans
  * un autre coffre ; une seconde fois, rien en double ; un type d'un nom déjà pris, ajouté à côté.
- * Et, sur les pages des programmes, les **phases de chaque projet repliées d'origine**.
+ * Sur les pages des programmes, les **phases de chaque projet repliées d'origine**. Et
+ * **supprimer** un projet, un programme : leur dossier à la corbeille, après confirmation.
  */
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -134,5 +135,72 @@ describe('les phases des projets, sur les pages des programmes', () => {
     expect(onProgramme!.subtitle).toContain('0/4 phases')
     const [onProgrammes] = journeys(await load('programmes'))
     expect(onProgrammes).toMatchObject({ title: 'Q', fold: { id: 'programmes|Programmes/P/Q/Q.md', collapsed: true } })
+  })
+})
+
+describe('supprimer un projet, un programme', () => {
+  it('un projet : après confirmation, son dossier (note, affaires) à la corbeille ; ses voisins restent ; renoncé, rien ne part', async () => {
+    const platform = memoryPlatform()
+    const { load, run, shown } = await vault(platform)
+    platform.forms.push({ name: 'P', code: '', description: '', color: 'indigo', icon: 'folder' })
+    await run(await load('programmes'), 'new')
+    const programmePage = shown.at(-1)!
+    platform.forms.push({ name: 'Q', programme: 'Programmes/P/P.md', type: 'projet-simple', description: '', affaire: 'true', client: 'CNES', reference: '' })
+    await run(await load(programmePage), 'project')
+    const projectPage = shown.at(-1)!
+    platform.forms.push({ name: 'R', programme: 'Programmes/P/P.md', type: 'projet-simple', description: '', affaire: 'false', client: '', reference: '' })
+    await run(await load(programmePage), 'project')
+    platform.files.set('Programmes/P/Q/Compte rendu.md', bytes('# Mes notes'))
+    const project = await load(projectPage)
+    expect(project.actions?.map((action) => action.id)).toEqual(['start', 'affaire', 'note', 'delete'])
+    // Renoncé : rien ne part.
+    platform.confirmations.push(false)
+    await run(project, 'delete')
+    expect(platform.confirmed.at(-1)).toMatchObject({ title: 'Supprimer le projet « Q » ?', danger: true })
+    expect(platform.confirmed.at(-1)!.message).toContain('Programmes/P/Q')
+    expect(platform.confirmed.at(-1)!.message).toContain('ses 1 affaire(s)')
+    expect(await platform.fs.exists('Programmes/P/Q/Q.md')).toBe(true)
+    // Confirmé : son dossier à la corbeille, et retour au programme.
+    platform.confirmations.push(true)
+    await run(await load(projectPage), 'delete')
+    expect([...platform.files.keys()].filter((path) => path.startsWith('Programmes/P/Q/'))).toEqual([])
+    expect(await platform.fs.exists('Programmes/P/Q')).toBe(false)
+    expect(await platform.fs.exists('Programmes/P/R/R.md')).toBe(true)
+    expect(platform.notices.at(-1)).toBe('Projet « Q » supprimé (à la corbeille du coffre).')
+    expect(shown.at(-1)).toBe(programmePage)
+    expect((await load(programmePage)).blocks.filter((block) => block.kind === 'journey').map((block) => block.kind === 'journey' && block.title)).toEqual(['R'])
+  })
+
+  it('un programme : après confirmation, son dossier, ses projets et leurs affaires à la corbeille ; les autres programmes restent', async () => {
+    const platform = memoryPlatform()
+    const { load, run, shown } = await vault(platform)
+    for (const name of ['P', 'S']) {
+      platform.forms.push({ name, code: '', description: '', color: 'indigo', icon: 'folder' })
+      await run(await load('programmes'), 'new')
+    }
+    platform.forms.push({ name: 'Q', programme: 'Programmes/P/P.md', type: 'projet-simple', description: '', affaire: 'true', client: '', reference: '' })
+    await run(await load('programmes'), 'project')
+    const programmePage = `programmes.programme?${encodeURIComponent('Programmes/P/P.md')}`
+    const programme = await load(programmePage)
+    expect(programme.actions?.map((action) => action.id)).toEqual(['project', 'edit', 'note', 'delete'])
+    platform.confirmations.push(true)
+    await run(programme, 'delete')
+    expect(platform.confirmed.at(-1)).toMatchObject({ title: 'Supprimer le programme « P » ?', danger: true })
+    expect(platform.confirmed.at(-1)!.message).toContain('ses 1 projet(s), leurs 1 affaire(s)')
+    expect([...platform.files.keys()].filter((path) => path.startsWith('Programmes/P/'))).toEqual([])
+    expect(await platform.fs.exists('Programmes/S/S.md')).toBe(true)
+    expect(platform.notices.at(-1)).toBe('Programme « P » supprimé, avec ses 1 projet(s) (à la corbeille du coffre).')
+    expect(shown.at(-1)).toBe('programmes')
+    const cards = (await load('programmes')).blocks.find((block) => block.kind === 'cards')
+    expect(cards?.kind === 'cards' && cards.cards.map((card) => card.title)).toEqual(['S'])
+  })
+
+  it('sans corbeille : pas de bouton pour supprimer', async () => {
+    const platform = memoryPlatform()
+    delete (platform.fs as { trash?: unknown }).trash
+    const { load, run, shown } = await vault(platform)
+    platform.forms.push({ name: 'P', code: '', description: '', color: 'indigo', icon: 'folder' })
+    await run(await load('programmes'), 'new')
+    expect((await load(shown.at(-1)!)).actions?.map((action) => action.id)).not.toContain('delete')
   })
 })

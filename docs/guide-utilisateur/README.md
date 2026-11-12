@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.128.0)
+## Aujourd'hui (version 0.129.0)
+
+- **Supprimer un projet, un programme** : sur leur page, **Supprimer le projet** ou **Supprimer
+  le programme** — après une question, leur dossier (notes, affaires, projets) part à la
+  corbeille du coffre ; leurs documents restent dans la bibliothèque.
 
 - **Les phases repliées sur les programmes** : sur Programmes et sur la page d'un programme,
   chaque projet montre son nom et son avancement ; ses phases se déplient d'un clic sur le
