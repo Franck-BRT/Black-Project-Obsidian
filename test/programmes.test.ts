@@ -447,3 +447,51 @@ describe('l’analyse d’un appel d’offres, phase d’un projet', () => {
     expect(programmesModule.id).toBe('programmes')
   })
 })
+
+describe('la vue des programmes, d’un programme, d’un projet', () => {
+  it('« Vue » : parcours (d’origine), cartes, liste, tableau — les projets, les phases en cartes avec leurs faits ; chaque page la sienne', async () => {
+    const platform = memoryPlatform()
+    const { load, action, shown } = await start(platform)
+    platform.forms.push({ name: 'P', code: '', description: '', color: 'indigo', icon: 'folder' })
+    await action(await load('programmes'), 'new')
+    const programmePage = shown.at(-1)!
+    platform.forms.push({ name: 'Q', programme: 'Programmes/P/P.md', type: 'projet-simple', description: '', affaire: 'false', client: '', reference: '' })
+    await action(await load(programmePage), 'project')
+    const projectPage = shown.at(-1)!
+    // D'origine : en parcours.
+    let view = await load('programmes')
+    expect(view.grouping).toMatchObject({ label: 'Vue', current: 'parcours' })
+    expect(view.grouping!.options.map((option) => option.label)).toEqual(['Parcours', 'Cartes', 'Liste', 'Tableau'])
+    expect(view.layouts).toEqual(['cards'])
+    const section = (page: PageView) => page.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'programmes.projets')!
+    expect(section(view).blocks[0]!.kind).toBe('journey')
+    // En liste : les projets en cartes, une ligne chacun, leurs faits.
+    await view.grouping!.options.find((option) => option.id === 'list')!.run()
+    view = await load('programmes')
+    expect(view.layouts).toEqual(['list'])
+    const cards = section(view).blocks[0]
+    expect(cards).toMatchObject({ kind: 'cards', cards: [{ title: 'Q', subtitle: 'P · Projet simple' }] })
+    expect(cards!.kind === 'cards' && cards!.cards[0]!.facts!.map((fact) => fact.label)).toEqual(['Avancement', 'En cours', 'Démarrage', 'Fin prévue', 'Affaires'])
+    // Le programme garde la sienne (parcours) ; en tableau, ses projets en cartes.
+    let programme = await load(programmePage)
+    expect(programme.grouping!.current).toBe('parcours')
+    await programme.grouping!.options.find((option) => option.id === 'table')!.run()
+    programme = await load(programmePage)
+    expect(programme.layouts).toEqual(['table'])
+    expect(programme.blocks.find((block) => block.kind === 'cards')).toMatchObject({ title: 'Projets', cards: [{ title: 'Q' }] })
+    // Le projet : ses phases en cartes, étape après étape, leur état et leurs dates.
+    let project = await load(projectPage)
+    expect(project.blocks.some((block) => block.kind === 'journey')).toBe(true)
+    await project.grouping!.options.find((option) => option.id === 'cards')!.run()
+    project = await load(projectPage)
+    const phases = project.blocks.find((block): block is Extract<HomeBlock, { kind: 'cards' }> => block.kind === 'cards' && block.title === 'Ses phases')!
+    expect(phases.cards.map((card) => card.title)).toEqual(['Lancement', 'Réalisation', 'Recette', 'Clôture'])
+    expect(phases.cards[0]).toMatchObject({ subtitle: 'Étape 1 · Phase libre', badges: [{ label: 'À venir' }] })
+    expect(phases.cards[0]!.facts!.map((fact) => fact.label)).toEqual(['Début prévu', 'Fin prévue', 'Terminée le', 'Documents reçus'])
+    await phases.cards[0]!.open!.run()
+    expect(shown.at(-1)).toBe(`programmes.phase?${encodeURIComponent('Programmes/P/Q/Q.md')}|lancement`)
+    // Retour au parcours.
+    await project.grouping!.options.find((option) => option.id === 'parcours')!.run()
+    expect((await load(projectPage)).blocks.some((block) => block.kind === 'journey')).toBe(true)
+  })
+})

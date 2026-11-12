@@ -8,6 +8,7 @@
  * dessine phase par phase.
  */
 
+import { groupingOf, setGrouping } from '../../core/grouping'
 import { pageWith, type Breadcrumb, type Card, type HomeBlock, type JourneyPhase, type JourneySpan, type JourneyStage, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { phaseKind, type PhaseContext } from './kinds'
 import { daysBetween, FREE_KIND, isLate, PHASE_STATUSES, slipOf, progressOf, stagesOf, type Affaire, type PhaseSpec, type PhaseStatus, type Programme, type Project, type ProjectPhase, type ProjectType } from './model'
@@ -208,6 +209,92 @@ async function projectJourney(deps: HomeDeps, project: Project, compact: boolean
   }
 }
 
+// ── La vue d'une page : parcours, cartes, liste, tableau ─────────────────────────
+
+/**
+ * Comment une page montre ses projets (ou les phases d'un projet) : en **parcours** (les phases
+ * en tuiles reliées par des flèches), en **cartes**, en **liste** (une ligne chacun) ou en
+ * **tableau** (une colonne par fait). Choisie page par page, retenue le temps de la session.
+ */
+export type ProgrammesView = 'parcours' | 'cards' | 'list' | 'table'
+export const PROGRAMMES_VIEWS: readonly ProgrammesView[] = ['parcours', 'cards', 'list', 'table']
+
+const viewKey = (page: string) => `${page}#vue`
+const viewOf = (page: string): ProgrammesView => {
+  const chosen = groupingOf(viewKey(page), 'parcours')
+  return (PROGRAMMES_VIEWS as readonly string[]).includes(chosen) ? (chosen as ProgrammesView) : 'parcours'
+}
+
+/** Le sélecteur « Vue » d'une page, et l'affichage de ses cartes qui en découle. */
+function viewChoice(deps: HomeDeps, page: string): { view: ProgrammesView; grouping: NonNullable<PageView['grouping']>; layouts: PageView['layouts'] } {
+  const { t } = deps
+  const view = viewOf(page)
+  return {
+    view,
+    grouping: { label: t('programmes.view.label'), current: view, options: PROGRAMMES_VIEWS.map((id) => ({ id, label: t(`programmes.view.${id}`), icon: VIEW_ICON[id], run: () => setGrouping(viewKey(page), id) })) },
+    // En parcours, les cartes (programmes, affaires) en grille ; sinon, comme la vue choisie.
+    layouts: [view === 'parcours' ? 'cards' : view]
+  }
+}
+
+const VIEW_ICON: Record<ProgrammesView, 'flow' | 'grid' | 'list' | 'columns'> = { parcours: 'flow', cards: 'grid', list: 'list', table: 'columns' }
+
+/** Un projet en carte (vues cartes, liste, tableau) : son avancement, ses phases en cours, ses dates. */
+async function projectCard(deps: HomeDeps, project: Project, programme?: Programme): Promise<Card> {
+  const { t } = deps
+  const { done, total, current } = advance(project)
+  const affaires = (await deps.store.affaires(project)).length
+  const late = project.phases.filter((phase) => isLate(phase, deps.today())).length
+  const ends = project.phases.map((phase) => phase.plannedEnd).filter((day): day is string => !!day).sort()
+  const next = project.phases.find((phase) => phase.status === 'a-venir')
+  return {
+    id: project.path,
+    title: project.name,
+    subtitle: [programme?.name, project.typeName].filter(Boolean).join(' · '),
+    icon: project.icon,
+    color: project.color,
+    badges: [
+      ...(done === total && total ? [{ label: t('programmes.project.finished'), tone: 'success' as const }] : []),
+      ...(late ? [{ label: t('programmes.project.lateHint', { count: late }), tone: 'danger' as const }] : []),
+      ...(!project.start ? [{ label: t('programmes.project.notStarted'), tone: 'neutral' as const }] : [])
+    ],
+    ...(project.description ? { text: project.description } : {}),
+    facts: [
+      { label: t('programmes.project.advanceLabel'), value: t('programmes.project.advance', { done, total }) },
+      { label: t('programmes.project.currentLabel'), value: current.map((phase) => phase.name).join(', ') || (next ? t('programmes.project.next', { name: next.name }) : '—') },
+      { label: t('programmes.project.startLabel'), value: project.start ? shortDay(project.start) : '—' },
+      { label: t('programmes.project.endLabel'), value: ends.length ? shortDay(ends.at(-1)!) : '—' },
+      { label: t('programmes.fact.affaires'), value: String(affaires) }
+    ],
+    ...(deps.showPage ? { open: { id: 'open', label: t('programmes.project.open'), run: () => deps.showPage?.(projectPageOf(project.path)) } } : {}),
+    tags: [`projet-${project.typeId}`]
+  }
+}
+
+/** Une phase d'un projet en carte : son état, ses dates prévues (et réelles), ses documents attendus. */
+function phaseCard(deps: HomeDeps, project: Project, phase: ProjectPhase): Card {
+  const { t } = deps
+  const late = isLate(phase, deps.today())
+  const docs = phase.documents ?? []
+  return {
+    id: `${project.path}#${phase.id}`,
+    title: phase.name,
+    subtitle: [t('programmes.view.stage', { stage: phase.stage }), kindLabel(t, phase.kind)].join(' · '),
+    icon: phase.icon,
+    color: phase.color,
+    badges: [late ? { label: t('programmes.status.late'), tone: 'danger' as const } : { label: t(`programmes.status.${phase.status}`), tone: STATUS_TONE[phase.status] }],
+    ...(phase.description ? { text: phase.description } : {}),
+    facts: [
+      { label: t('programmes.view.plannedStart'), value: phase.plannedStart ? shortDay(phase.plannedStart) : '—' },
+      { label: t('programmes.view.plannedEnd'), value: phase.plannedEnd ? `${shortDay(phase.plannedEnd)}${slipText(t, slipOf(phase))}` : '—' },
+      { label: t('programmes.view.done'), value: phase.end ? shortDay(phase.end) : '—' },
+      { label: t('programmes.view.documents'), value: docs.length ? `${docs.filter((doc) => doc.received).length}/${docs.length}` : '—' }
+    ],
+    ...(deps.showPage ? { open: { id: 'open', label: t('programmes.phase.open', { name: phase.name }), run: () => deps.showPage?.(phasePageOf(project.path, phase.id)) } } : {}),
+    tags: [`etat-${late ? 'retard' : phase.status}`]
+  }
+}
+
 // ── Les programmes ─────────────────────────────────────────────────────────────────
 
 async function programmesPage(deps: HomeDeps): Promise<PageView> {
@@ -236,10 +323,21 @@ async function programmesPage(deps: HomeDeps): Promise<PageView> {
       }
     })
   )
+  const choice = viewChoice(deps, PROGRAMMES_PAGE)
+  // Les projets : en parcours, ou en cartes (liste, tableau).
   const journeys: HomeBlock[] = []
-  for (const programme of programmes) for (const project of projectsOf.get(programme.path) ?? []) journeys.push(await projectJourney(deps, project, true, programme))
+  const projectCards: Card[] = []
+  for (const programme of programmes)
+    for (const project of projectsOf.get(programme.path) ?? []) {
+      if (choice.view === 'parcours') journeys.push(await projectJourney(deps, project, true, programme))
+      else projectCards.push(await projectCard(deps, project, programme))
+    }
+  const projectBlocks: HomeBlock[] = choice.view === 'parcours' ? journeys : projectCards.length ? [{ kind: 'cards', cards: projectCards }] : []
+  const projectCount = journeys.length + projectCards.length
   return {
     subtitle: t('programmes.page.subtitle', { folder: store.root }),
+    grouping: choice.grouping,
+    layouts: choice.layouts,
     actions: [
       { id: 'new', label: t('programmes.programme.new'), icon: 'plus', primary: true, run: () => deps.newProgramme() },
       { id: 'project', label: t('programmes.project.new'), icon: 'flow', run: () => deps.newProject() },
@@ -248,7 +346,7 @@ async function programmesPage(deps: HomeDeps): Promise<PageView> {
     blocks: programmes.length
       ? [
           { kind: 'cards', title: t('programmes.page.programmes'), cards },
-          ...(journeys.length ? [{ kind: 'section' as const, id: 'programmes.projets', title: t('programmes.page.projects'), subtitle: t('programmes.page.projects.count', { count: journeys.length }), icon: 'flow' as const, blocks: journeys }] : [])
+          ...(projectCount ? [{ kind: 'section' as const, id: 'programmes.projets', title: t('programmes.page.projects'), subtitle: t('programmes.page.projects.count', { count: projectCount }), icon: 'flow' as const, blocks: projectBlocks }] : [])
         ]
       : [{ kind: 'message', tone: 'info', text: t('programmes.page.empty'), actions: [{ id: 'first', label: t('programmes.programme.new'), icon: 'plus', primary: true, run: () => deps.newProgramme() }] }],
     search: { label: t('programmes.page.search') }
@@ -272,11 +370,16 @@ async function programmePage(deps: HomeDeps, param?: string): Promise<PageView> 
     { label: t('programmes.fact.affaires'), value: String(affaires.length), icon: 'building' },
     { label: t('programmes.fact.running'), value: String(projects.filter((project) => advance(project).current.length).length), icon: 'play' }
   ]
+  const choice = viewChoice(deps, PROGRAMME_PAGE)
+  // Ses projets : en parcours, ou en cartes (liste, tableau).
   const journeys: HomeBlock[] = []
-  for (const project of projects) journeys.push(await projectJourney(deps, project, true))
+  if (choice.view === 'parcours') for (const project of projects) journeys.push(await projectJourney(deps, project, true))
+  else if (projects.length) journeys.push({ kind: 'cards', title: t('programmes.fact.projects'), cards: await Promise.all(projects.map((project) => projectCard(deps, project))) })
   const documents = await documentsSection(deps, programme.name)
   return {
     title: programme.name,
+    grouping: choice.grouping,
+    layouts: choice.layouts,
     ...(documents.drop ? { drop: documents.drop } : {}),
     breadcrumb: crumbs(deps, [{ label: programme.name }]),
     subtitle: [programme.code, programme.description].filter(Boolean).join(' · '),
@@ -419,8 +522,16 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     actions: [{ id: 'status', label: t('programmes.affaire.setStatus'), icon: 'edit', run: () => deps.chooseAffaireStatus(affaire.path) }]
   }))
   const documents = await documentsSection(deps, programme?.name ?? '—', project.name)
+  const choice = viewChoice(deps, PROJECT_PAGE)
+  // Ses phases : en parcours, ou en cartes (liste, tableau), étape après étape.
+  const phases: HomeBlock =
+    choice.view === 'parcours'
+      ? { kind: 'journey', title: t('programmes.project.phases'), label: t('programmes.project.journey', { name: project.name }), stages: await projectStages(deps, project, true), spans: projectSpans(deps, project), legend: t('programmes.project.legend') }
+      : { kind: 'cards', title: t('programmes.project.phases'), cards: [...project.phases].sort((a, b) => a.stage - b.stage).map((phase) => phaseCard(deps, project, phase)) }
   return {
     title: project.name,
+    grouping: choice.grouping,
+    layouts: choice.layouts,
     ...(documents.drop ? { drop: documents.drop } : {}),
     breadcrumb: crumbs(deps, [{ label: programme?.name ?? '—', ...(programme ? { page: programmePageOf(programme.path) } : {}) }, { label: project.name }]),
     subtitle: [project.typeName, project.description].filter(Boolean).join(' · '),
@@ -431,7 +542,7 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     ],
     blocks: [
       { kind: 'stats', stats },
-      { kind: 'journey', title: t('programmes.project.phases'), label: t('programmes.project.journey', { name: project.name }), stages: await projectStages(deps, project, true), spans: projectSpans(deps, project), legend: t('programmes.project.legend') },
+      phases,
       {
         kind: 'section',
         id: 'programmes.projet.affaires',

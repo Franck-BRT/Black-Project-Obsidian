@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La vue des programmes et des projets (v0.126.0)
+
+- [ ] Programmes, un programme, un projet : le sélecteur **Vue** (Parcours, Cartes, Liste,
+      Tableau) ; en liste ou en tableau, les projets avec leur avancement et leurs dates ; les
+      phases d'un projet avec leur état, leurs dates, leurs documents reçus ; un clic les ouvre
+- [ ] Chaque page garde sa vue ; « Parcours » revient aux tuiles
+
 ## L'icône fantôme sur la fiche (v0.125.2)
 
 - [ ] La fiche d'un document qui a un fantôme : le chiffre « Fantômes » (icône fantôme), la

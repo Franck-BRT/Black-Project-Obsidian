@@ -5,13 +5,21 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.7.0 (Black Projects 0.123.0) |
+| Version | 0.8.0 (Black Projects 0.126.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## La vue : parcours, cartes, liste, tableau (v0.8.0, Black Projects 0.126.0)
+
+Le sélecteur « Vue » (la place du regroupement d'une page) des pages programmes, programme et
+projet : `parcours` (d'origine), `cards`, `list`, `table` (`PROGRAMMES_VIEWS`, retenu par page,
+`groupingOf`). Hors parcours, les projets (`projectCard`) et les phases (`phaseCard`) sont des
+cartes, et la page n'offre que cet affichage (`layouts: [vue]`) : les programmes et les affaires
+le suivent.
 
 ## Les documents d'un programme, d'un projet (v0.7.0, Black Projects 0.123.0)
 

@@ -106,3 +106,13 @@ par programme, et dedans un par projet, créés avec eux. La page d'un programme
 documents**, **Voir dans la bibliothèque** (y créer des sous-répertoires, ranger). Des fichiers
 **glissés-déposés sur la page** y sont versés — un document déjà dans la bibliothèque n'est pas
 copié une seconde fois.
+
+## 7. La vue
+
+Les pages **Programmes**, d'un **programme** et d'un **projet** ont un sélecteur **Vue** :
+**Parcours** (d'origine : les phases en tuiles reliées par des flèches), **Cartes**, **Liste**
+(une ligne chacun) ou **Tableau** (une colonne par fait). Hors parcours, les projets sont en
+cartes — avancement, phase en cours, démarrage, fin prévue, affaires — et les phases d'un projet
+aussi — étape, état (en retard s'il l'est), début et fin prévus, terminée le, documents reçus ;
+les programmes et les affaires suivent la même vue. Chaque page garde la sienne, le temps de la
+session.

@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.125.2)
+## Aujourd'hui (version 0.126.0)
+
+- **La vue des programmes** : sur Programmes, un programme ou un projet, le sélecteur **Vue** —
+  Parcours, Cartes, Liste ou Tableau — montre les projets et les phases en tuiles reliées, en
+  cartes, en lignes ou en tableau (avancement, dates, état, documents reçus).
 
 - **L'icône fantôme sur la fiche** d'un document montré ailleurs : son chiffre « Fantômes » et
   la section « Montré aussi ailleurs ».
