@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Se passer une bibliothèque (v0.124.0)
+
+- [ ] L'accueil de la bibliothèque : « Nouvelle bibliothèque » seulement pour les documents et
+      l'annuaire ; plus sur les pages des prompts, personas, skills, étiquettes
+- [ ] Prompts : **Exporter** → une archive dans `Échanges/Bibliothèques` ; dans un autre coffre,
+      **Importer…** → les prompts ; une seconde fois : « 0 ajouté(s), N déjà là »
+- [ ] Documents (ou un répertoire) : **Exporter**, puis **Importer…** ailleurs : fiches et
+      fichiers, ce qu'elles disaient gardé ; un document déjà là n'est pas copié
+- [ ] Une archive de prompts importée dans les personas : refusée, le message dit où l'importer
+
 ## Documents projet ; créer une bibliothèque ; déplacer partout (v0.123.0)
 
 - [ ] Bibliothèque : groupes « Bibliothèques de documents », « Bibliothèques système IA »,

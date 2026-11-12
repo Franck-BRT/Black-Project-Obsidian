@@ -29,7 +29,8 @@ import { readShown } from './capabilities'
 import { formatsCatalogue } from './catalogue'
 import { lectureDocs } from './doc'
 import { lectureEn, lectureFr } from './i18n'
-import { setReadability, setTextReader, setTranscriber } from '../bibliotheque'
+import { setArchiveReader, setReadability, setTextReader, setTranscriber } from '../bibliotheque'
+import { unzip as unzipEntries } from './formats/unzip'
 import { isArchive } from './archive'
 import { fileText as rawFileText, FileReadError, isImage, isReadable as rawIsReadable, TEXT_EXTENSIONS } from './readers/fileText'
 import { registerLectureWorkflows } from './workflows'
@@ -118,7 +119,7 @@ export const lectureFichiersModule: BlackModule = {
   id: LECTURE_FICHIERS,
   nameKey: 'lecture-fichiers.name',
   descriptionKey: 'lecture-fichiers.description',
-  version: '0.14.1',
+  version: '0.14.2',
   requires: [],
   texts: { fr: lectureFr, en: lectureEn },
   details: (settings) => formatsCatalogue(readAliases(settings), display),
@@ -165,6 +166,8 @@ export const lectureFichiersModule: BlackModule = {
         return null
       }
     })
+    // Et l'ouverture d'une archive : pour importer une bibliothèque qu'on vous a passée.
+    setArchiveReader(async (bytes) => (await unzipEntries(bytes)).map((entry) => ({ path: entry.name, bytes: entry.data })))
     // Et sa transcription, écrite dans sa fiche — comme le texte d'une pièce d'analyse.
     setTranscriber(async (name, bytes) => {
       const at = name.lastIndexOf('.')
@@ -191,6 +194,7 @@ export const lectureFichiersModule: BlackModule = {
     setReadability(null)
     setTextReader(null)
     setTranscriber(null)
+    setArchiveReader(null)
     unsubscribe?.()
     unsubscribe = null
     configureAliases({})

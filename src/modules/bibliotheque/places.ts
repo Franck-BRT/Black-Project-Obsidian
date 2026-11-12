@@ -36,6 +36,12 @@ export interface ShelfPlacesDeps {
   removeShelf(kind: ShelfKind, id: string): Promise<boolean>
   /** Des fichiers glissés-déposés sur un lieu (`where` : son nom) : y verser (les documents seulement). */
   dropInto?(folder: string, where: string): FileDrop
+  /** Peut-on créer d'autres bibliothèques de cette sorte (non : les prompts, personas, skills, étiquettes) ? */
+  canCreateShelves?: boolean
+  /** Exporter un lieu (sa bibliothèque, ou l'un de ses répertoires) en une archive à se passer. */
+  exportPlace?(kind: ShelfKind, shelf: Shelf, directory: string): Promise<void>
+  /** Importer une archive de bibliothèque dans un lieu. */
+  importInto?(kind: ShelfKind, folder: string): Promise<void>
 }
 
 /** Le lieu d'une page : celui du paramètre, sinon la racine de la bibliothèque par défaut. */
@@ -116,16 +122,24 @@ export async function placeView(
   const isDefault = deps.defaultShelf().id === place.shelf.id
   const actions: ViewAction[] = [
     newDirectory,
-    {
-      id: 'new-shelf',
-      label: t('bibliotheque.shelf.new'),
-      tooltip: t(`bibliotheque.shelf.new.${kind}.tip`),
-      icon: 'plus',
-      run: async () => {
-        const shelf = await deps.newShelf(kind)
-        if (shelf) go('', shelf)()
-      }
-    },
+    ...(deps.canCreateShelves === false
+      ? []
+      : [
+          {
+            id: 'new-shelf',
+            label: t('bibliotheque.shelf.new'),
+            tooltip: t(`bibliotheque.shelf.new.${kind}.tip`),
+            icon: 'plus' as const,
+            run: async () => {
+              const shelf = await deps.newShelf(kind)
+              if (shelf) go('', shelf)()
+            }
+          }
+        ]),
+    ...(deps.exportPlace
+      ? [{ id: 'export-shelf', label: t('bibliotheque.exchange.export'), tooltip: t('bibliotheque.exchange.export.tip', { where: place.directory || place.shelf.name }), icon: 'archive' as const, run: () => deps.exportPlace!(kind, place.shelf, place.directory) }]
+      : []),
+    ...(deps.importInto ? [{ id: 'import-shelf', label: t('bibliotheque.exchange.import'), tooltip: t('bibliotheque.exchange.import.tip', { folder }), icon: 'upload' as const, run: () => deps.importInto!(kind, folder) }] : []),
     ...(several && !isDefault && !builtInShelf(place.shelf)
       ? [{ id: 'default-shelf', label: t('bibliotheque.shelf.makeDefault'), tooltip: t(`bibliotheque.shelf.makeDefault.${kind}.tip`), icon: 'star' as const, run: () => deps.setDefault(kind, place.shelf.id) }]
       : []),

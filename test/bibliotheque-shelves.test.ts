@@ -75,7 +75,7 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     const { settings, page, shown, current } = await start(platform)
     let view = await page('bibliotheque.documents').load()
     expect(crumbsOf(view)).toEqual(['Bibliothèque', 'Documents'])
-    expect(view.actions?.map((each) => each.id)).toEqual(['pour', 'new-directory', 'new-shelf'])
+    expect(view.actions?.map((each) => each.id)).toEqual(['pour', 'new-directory', 'new-shelf', 'export-shelf', 'import-shelf'])
     // Nom, dossier proposé d'après le nom, par défaut.
     platform.forms.push({ name: 'Normes', folder: '', default: 'true' })
     await action(view, 'new-shelf').run()
@@ -200,9 +200,12 @@ describe('plusieurs bibliothèques, des répertoires', () => {
   it('prompts et personas : une autre bibliothèque, des répertoires, y créer, déplacer ; l’accueil montre chaque bibliothèque', async () => {
     const platform = memoryPlatform()
     const { settings, page, shown, current } = await start(platform)
+    // Les prompts : on n'en crée plus d'autre bibliothèque ; une qui existe déjà (d'une version d'avant) reste montrée et servie.
     const prompts = await page('bibliotheque.prompts').load()
-    platform.forms.push({ name: 'Relecture', folder: 'Prompts de relecture', default: 'false' })
-    await action(prompts, 'new-shelf').run()
+    expect(prompts.actions?.map((each) => each.id)).not.toContain('new-shelf')
+    settings.bibliotheques = { prompt: [{ id: 'relecture', name: 'Relecture', folder: 'Prompts de relecture' }] }
+    await platform.fs.ensureFolder('Prompts de relecture')
+    shown.push(`bibliotheque.prompts?${encodeURIComponent('relecture:')}`)
     let view = await current()
     expect(crumbsOf(view)).toEqual(['Bibliothèque', 'Relecture'])
     platform.forms.push({ name: 'Technique' })
@@ -240,6 +243,6 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     expect(platform.notices.at(-1)).toBe('« Relecture » retirée de la liste. Son dossier Prompts de relecture est intact.')
     expect(settings.bibliothequesParDefaut).toEqual({})
     expect(await platform.fs.exists('Prompts de relecture/Technique')).toBe(true)
-    expect((await page('bibliotheque.prompts').load()).actions?.map((each) => each.id)).toEqual(['new', 'starters', 'new-directory', 'new-shelf'])
+    expect((await page('bibliotheque.prompts').load()).actions?.map((each) => each.id)).toEqual(['new', 'starters', 'new-directory', 'export-shelf', 'import-shelf'])
   })
 })

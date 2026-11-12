@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.123.0)
+## Aujourd'hui (version 0.124.0)
+
+- **Se passer une bibliothèque** : **Exporter**, sur la page d'une bibliothèque (ou d'un de ses
+  répertoires), écrit une archive ZIP dans `Échanges/Bibliothèques` ; **Importer…**, chez un
+  collègue, la reprend — sans rien en double. Les prompts, personas, skills et étiquettes ont
+  désormais une seule bibliothèque chacun.
 
 - **Les documents projet** (Bibliothèque › **Documents projet**) : un répertoire par programme,
   puis par projet, créés avec eux ; la page d'un programme ou d'un projet montre ses documents —

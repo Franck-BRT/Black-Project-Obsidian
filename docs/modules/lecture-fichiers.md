@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.14.1 (Black Projects 0.120.0) |
+| Version | 0.14.2 (Black Projects 0.124.0) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -16,6 +16,11 @@
 
 Le module transforme un document en texte que l'outil, puis l'IA, peuvent lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
 colonnes** — c'est là que sont souvent les exigences et les prix.
+
+## Ouvrir une bibliothèque qu'on vous a passée (v0.14.2, Black Projects 0.124.0)
+
+Le module donne à la bibliothèque de quoi ouvrir une archive ZIP (`setArchiveReader`, par
+`unzip`) : l'import d'une bibliothèque exportée.
 
 ## Un cadre de page n'est pas un tableau (v0.14.1, Black Projects 0.120.0)
 

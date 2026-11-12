@@ -336,7 +336,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
       kind: 'cards',
       title: `${t(`bibliotheque.hub.${kind}s`)} · ${t('bibliotheque.hub.shelves', { count: deps.places[kind].shelves().length })}`,
       cards: shelfCards(deps.places[kind], items, icon),
-      actions: [{ id: `new-shelf-${kind}`, label: t('bibliotheque.shelf.new'), tooltip: t(`bibliotheque.shelf.new.${kind}.tip`), icon: 'plus', run: () => void openNewShelf(kind) }]
+      // Les prompts, personas, skills, étiquettes : une bibliothèque chacun, on n'en crée pas d'autre.
+      actions: deps.places[kind].canCreateShelves === false ? [] : [{ id: `new-shelf-${kind}`, label: t('bibliotheque.shelf.new'), tooltip: t(`bibliotheque.shelf.new.${kind}.tip`), icon: 'plus', run: () => void openNewShelf(kind) }]
     })
     return {
       subtitle: t('bibliotheque.hub.subtitle'),
@@ -390,8 +391,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         ),
         documents.count
       ),
-      group('ia', 'spark', cards([card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt), card('personas', 'spark', personas.length, ENTRIES_PAGE.persona), card('skills', 'list', skills.length, ENTRIES_PAGE.skill)], ['prompt', 'persona', 'skill']), prompts.length + personas.length + skills.length),
-      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)], ['tag']), tags.length),
+      group('ia', 'spark', cards([card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt), card('personas', 'spark', personas.length, ENTRIES_PAGE.persona), card('skills', 'list', skills.length, ENTRIES_PAGE.skill)], []), prompts.length + personas.length + skills.length),
+      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)], []), tags.length),
       group('annuaire', 'user', cards([card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer), card('persons', 'user', persons.length, ENTRIES_PAGE.person)], ['issuer', 'person']), issuers.length + persons.length)
     ]
   }

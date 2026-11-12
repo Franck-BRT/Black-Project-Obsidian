@@ -99,10 +99,6 @@ describe('les bibliothèques de prompts et de personas', () => {
     // Chaque groupe : de quoi créer une bibliothèque de chacune de ses sortes.
     expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).flatMap((block) => (block.kind === 'cards' ? (block.actions ?? []).map((action) => action.label) : []))).toEqual([
       'Nouvelle bibliothèque de documents',
-      'Nouvelle bibliothèque de prompts',
-      'Nouvelle bibliothèque de personas',
-      'Nouvelle bibliothèque de skills',
-      'Nouvelle bibliothèque d’étiquettes',
       'Nouvelle bibliothèque d’entreprises',
       'Nouvelle bibliothèque de personnes'
     ])
@@ -120,7 +116,7 @@ describe('les bibliothèques de prompts et de personas', () => {
     const empty = await page('bibliotheque.prompts').load()
     expect(empty.breadcrumb?.items.map((item) => item.label)).toEqual(['Bibliothèque', 'Prompts'])
     expect(empty.blocks[0]).toMatchObject({ kind: 'message', tone: 'info' })
-    expect(empty.actions?.map((action) => action.id)).toEqual(['new', 'starters', 'new-directory', 'new-shelf'])
+    expect(empty.actions?.map((action) => action.id)).toEqual(['new', 'starters', 'new-directory', 'export-shelf', 'import-shelf'])
     await addStarters('prompt')
     expect(platform.notices.at(-1)).toMatch(/^7 prompt\(s\) ajouté\(s\) : Pénalités, Critères d’attribution/)
     await addStarters('prompt')

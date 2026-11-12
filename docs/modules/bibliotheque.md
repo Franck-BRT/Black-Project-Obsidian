@@ -5,13 +5,26 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.43.0 (Black Projects 0.123.0) |
+| Version | 0.44.0 (Black Projects 0.124.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Se passer une bibliothèque ; plus de nouvelles bibliothèques système (v0.44.0, Black Projects 0.124.0)
+
+- **Exporter / Importer…** sur la page de chaque lieu (`exportPlace`, `importInto` de
+  `ShelfPlacesDeps`) ; le format dans `exchange.ts` : une archive ZIP avec
+  `black-projects-bibliotheque.json` (sorte, nom, jour ; les documents : fiche et fichier sous
+  `_fichiers/`). Écrite dans `Échanges/Bibliothèques` (`EXCHANGE_FORMAT` 1).
+- L'import : la même sorte seulement (sinon dit pourquoi) ; une note identique non réécrite,
+  différente gardée à côté (« (importé) ») ; un document par `store.pour` (déjà là : rien), sa
+  fiche reprend celle de l'archive. L'archive s'ouvre par la lecture de fichiers
+  (`setArchiveReader`) ; sans elle, l'import le dit.
+- `canCreateShelves` : non pour les prompts, personas, skills et étiquettes (plus de « Nouvelle
+  bibliothèque » sur leurs pages ni à l'accueil) ; celles qui existent restent montrées.
 
 ## Les documents projet ; créer une bibliothèque depuis l'accueil (v0.43.0, Black Projects 0.123.0)
 

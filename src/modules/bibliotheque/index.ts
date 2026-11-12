@@ -18,6 +18,7 @@
 import { completeLists } from '../../core/lists'
 import { completeTables } from '../../core/tables'
 import { localToday } from '../../core/dates'
+import { readYamlFrontmatter } from '../../core/yaml'
 import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import type { Choice, Ui } from '../../core/ports'
@@ -29,9 +30,11 @@ import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { startersFor } from './starters'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
-import { baseName, CATEGORIES, nestHeadings, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
+import { baseName, CATEGORIES, nestHeadings, readRecord, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, placePageOf, type ShelfPlacesDeps } from './places'
+import { archive, ARCHIVE_FILES, archiveName, EXCHANGE_FORMAT, MANIFEST, readManifest } from './exchange'
+import type { ZipEntry } from '../../core/formats/zip'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
 import { builtInShelf, defaultShelfOf, folderName, REFERENCE_SHELF, severalShelves, shelfOfPath, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
@@ -70,6 +73,17 @@ export const DEFAULT_PROJECTS_FOLDER = 'Bibliothèque/Projets'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
 export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
+
+/** Ouvrir une archive ZIP (par la lecture de fichiers) : pour importer une bibliothèque. */
+let archiveReader: ((bytes: Uint8Array) => Promise<{ path: string; bytes: Uint8Array }[]>) | null = null
+
+/** La lecture de fichiers dit comment ouvrir une archive (rien sans elle : l'import d'une bibliothèque le dit). */
+export function setArchiveReader(reader: ((bytes: Uint8Array) => Promise<{ path: string; bytes: Uint8Array }[]>) | null): void {
+  archiveReader = reader
+}
+
+/** Le dossier du coffre où sont écrites les bibliothèques exportées. */
+export const EXCHANGE_FOLDER = 'Échanges/Bibliothèques'
 
 /** Ce qui arrête d'écouter les renommages du coffre (à la désactivation). */
 let stopRenames: (() => void) | null = null
@@ -835,7 +849,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.43.0',
+  version: '0.44.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1142,6 +1156,143 @@ export const bibliothequeModule: BlackModule = {
       platform.notifier.notify(t('bibliotheque.shelf.removed', { name: shelf.name, folder: shelf.folder }), 8000)
       return true
     }
+    /** Un nom de sorte, pour les messages : « prompts », « documents »… */
+    const kindName = (kind: ShelfKind) => t(`bibliotheque.exchange.kind.${kind}`)
+    /**
+     * Exporter un lieu (une bibliothèque, ou l'un de ses répertoires) : une archive ZIP dans
+     * `Échanges/Bibliothèques`, à se passer — ses notes, ou ses documents (fiche et fichier).
+     */
+    const exportPlace = async (kind: ShelfKind, shelf: Shelf, directory: string): Promise<void> => {
+      const under = (item: { shelf?: string; directory?: string }) => item.shelf === shelf.id && (!directory || (item.directory ?? '') === directory || (item.directory ?? '').startsWith(`${directory}/`))
+      const base = directory ? `${shelf.folder}/${directory}` : shelf.folder
+      const relative = (path: string) => path.slice(base.length + 1)
+      const read = async (path: string) => new Uint8Array(await platform.fs.readBinary(path))
+      const zipped: ZipEntry[] = []
+      const documents: { fiche: string; fichier: string }[] = []
+      if (kind === 'document') {
+        for (const doc of (await store.all()).filter(under)) {
+          const fiche = relative(doc.record)
+          zipped.push({ name: fiche, data: await read(doc.record) })
+          if (doc.file && (await platform.fs.exists(doc.file))) {
+            const fichier = `${ARCHIVE_FILES}/${fiche.replace(/\.md$/, '')}/${doc.file.slice(doc.file.lastIndexOf('/') + 1)}`
+            zipped.push({ name: fichier, data: await read(doc.file) })
+            documents.push({ fiche, fichier })
+          }
+        }
+      } else {
+        for (const entry of (await entries[kind as EntryKind].all()).filter(under)) zipped.push({ name: relative(entry.path), data: await read(entry.path) })
+      }
+      if (!zipped.length) {
+        platform.notifier.notify(t('bibliotheque.exchange.empty', { where: directory || shelf.name }), 6000)
+        return
+      }
+      const day = localToday()
+      const name = directory ? `${shelf.name} ${directory.split('/').join(' ')}` : shelf.name
+      await platform.fs.ensureFolder(EXCHANGE_FOLDER)
+      let path = `${EXCHANGE_FOLDER}/${archiveName(name, day)}`
+      for (let index = 2; await platform.fs.exists(path); index++) path = `${EXCHANGE_FOLDER}/${archiveName(`${name} (${index})`, day)}`
+      const count = kind === 'document' ? documents.length : zipped.length
+      const bytes = archive({ format: EXCHANGE_FORMAT, sorte: kind, nom: name, exporte: day, ...(kind === 'document' ? { documents } : {}) }, zipped, new Date())
+      await platform.fs.writeBinary(path, bytes.slice().buffer)
+      const hidden = platform.display?.kind('zip') === 'hidden'
+      platform.notifier.notify([t('bibliotheque.exchange.exported', { count, kind: kindName(kind), path }), ...(hidden ? [t('bibliotheque.exchange.hidden')] : [])].join(' '), hidden ? 15000 : 10000)
+    }
+    /**
+     * Importer une archive de bibliothèque dans un lieu : de l'ordinateur ou du coffre. Une note
+     * déjà là à l'identique n'est pas réécrite (différente : gardée à côté) ; un document passe
+     * par le versement (déjà là : pas de seconde copie ; nouveau : sa fiche reprend celle de
+     * l'archive).
+     */
+    const importInto = async (kind: ShelfKind, folder: string): Promise<void> => {
+      if (!archiveReader) {
+        platform.notifier.notify(t('bibliotheque.exchange.noReader'), 8000)
+        return
+      }
+      const source = await platform.ui.pickOption(
+        [
+          { value: 'computer', label: t('bibliotheque.pour.computer'), description: t('bibliotheque.exchange.computer.desc') },
+          { value: 'vault', label: t('bibliotheque.pour.vault'), description: t('bibliotheque.exchange.vault.desc') }
+        ],
+        t('bibliotheque.exchange.from')
+      )
+      let bytes: Uint8Array | null = null
+      if (source === 'computer') bytes = (await platform.ui.pickExternalFiles({ accept: ['zip'], multiple: false }))[0]?.bytes ?? null
+      else if (source === 'vault') {
+        const path = await platform.ui.pickFile({ extensions: ['zip'], placeholder: t('bibliotheque.exchange.vault.pick') })
+        if (path) bytes = new Uint8Array(await platform.fs.readBinary(path))
+      }
+      if (!bytes) return
+      let inside: { path: string; bytes: Uint8Array }[]
+      try {
+        inside = await archiveReader(bytes)
+      } catch {
+        platform.notifier.notify(t('bibliotheque.exchange.unreadable'), 8000)
+        return
+      }
+      const manifest = readManifest(inside)
+      if (!manifest) {
+        platform.notifier.notify(t('bibliotheque.exchange.notLibrary'), 8000)
+        return
+      }
+      if (manifest.sorte !== kind) {
+        platform.notifier.notify(t('bibliotheque.exchange.otherKind', { kind: kindName(manifest.sorte), here: kindName(kind) }), 10000)
+        return
+      }
+      // L'archive a pu être refaite autour d'un dossier : ses chemins, sans lui.
+      const holder = inside.find((entry) => entry.path === MANIFEST || entry.path.endsWith(`/${MANIFEST}`))!.path.slice(0, -MANIFEST.length)
+      const files = new Map(inside.filter((entry) => entry.path.startsWith(holder)).map((entry) => [entry.path.slice(holder.length), entry.bytes]))
+      let added = 0
+      let already = 0
+      if (kind === 'document') {
+        const origin = { module: BIBLIOTHEQUE, label: t('bibliotheque.exchange.origin', { name: manifest.nom }) }
+        for (const each of manifest.documents ?? []) {
+          const file = files.get(each.fichier)
+          if (!file) continue
+          const where = each.fiche.includes('/') ? `${folder}/${each.fiche.slice(0, each.fiche.lastIndexOf('/'))}` : folder
+          await platform.fs.ensureFolder(where)
+          const report = await store.pour([{ name: each.fichier.slice(each.fichier.lastIndexOf('/') + 1), bytes: file }], origin, { folder: where })
+          const fresh = report.added[0]
+          if (!fresh) {
+            already += report.already.length
+            continue
+          }
+          added++
+          // Sa fiche reprend ce que disait celle de l'archive (titre, type, référence, édition, entreprise…).
+          const record = files.get(each.fiche)
+          const was = record ? readRecord(each.fiche, readYamlFrontmatter(platform.yaml, new TextDecoder().decode(record)).data) : null
+          if (was) {
+            const keep = { ...fresh }
+            for (const key of ['title', 'category', 'reference', 'edition', 'revision', 'issuer', 'tags', 'date', 'language'] as const) {
+              const value = was[key]
+              if (value !== undefined && value !== '' && !(Array.isArray(value) && !value.length)) Object.assign(keep, { [key]: value })
+            }
+            for (const flag of ['titleToConfirm', 'identityToConfirm', 'categoryToConfirm', 'issuerToConfirm', 'dateToConfirm', 'tagsToConfirm', 'languageToConfirm'] as const) {
+              if (!was[flag]) delete keep[flag]
+            }
+            await store.save(keep)
+          }
+        }
+      } else {
+        for (const [path, content] of files) {
+          if (!path.endsWith('.md') || path === MANIFEST || path.startsWith(`${ARCHIVE_FILES}/`)) continue
+          let target = `${folder}/${path}`
+          if (await platform.fs.exists(target)) {
+            if (new TextDecoder().decode(content) === (await platform.fs.readText(target))) {
+              already++
+              continue
+            }
+            const stem = target.slice(0, -3)
+            target = `${stem} (importé).md`
+            for (let index = 2; await platform.fs.exists(target); index++) target = `${stem} (importé ${index}).md`
+          }
+          await platform.fs.ensureFolder(target.slice(0, target.lastIndexOf('/')))
+          await platform.fs.writeText(target, new TextDecoder().decode(content))
+          added++
+        }
+      }
+      platform.notifier.notify(t('bibliotheque.exchange.imported', { added, already, kind: kindName(kind), name: manifest.nom }), 10000)
+      pagesChanged()
+    }
     const placesOf = (kind: ShelfKind): ShelfPlacesDeps => ({
       t,
       kind,
@@ -1154,7 +1305,11 @@ export const bibliothequeModule: BlackModule = {
       newDirectory,
       newShelf,
       setDefault,
-      removeShelf
+      removeShelf,
+      // Les prompts, personas, skills, étiquettes : une seule bibliothèque chacun (on y ajoute ses entrées).
+      canCreateShelves: kind === 'document' || kind === 'issuer' || kind === 'person',
+      exportPlace,
+      importInto
     })
     const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill'), issuer: placesOf('issuer'), tag: placesOf('tag'), person: placesOf('person') }
     /** Choisir où ranger : chaque bibliothèque de la sorte, chacun de ses répertoires (sauf là où c'est déjà). */

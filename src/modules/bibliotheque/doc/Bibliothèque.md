@@ -85,8 +85,17 @@ qu'un clic déplie ou replie (l'état est gardé d'une ouverture à l'autre) :
 | **Bibliothèques système** | les étiquettes |
 | **Annuaire** | les entreprises, les personnes |
 
-Chaque groupe a ses boutons **Nouvelle bibliothèque de…** : la bibliothèque créée s'ouvre
-aussitôt. Les **documents projet** sont une bibliothèque à part, toujours là (dossier
+Les groupes des documents et de l'annuaire ont leurs boutons **Nouvelle bibliothèque de…** (la
+bibliothèque créée s'ouvre aussitôt) ; les prompts, personas, skills et étiquettes ont chacun
+une seule bibliothèque, où l'on ajoute ses entrées.
+
+**Se passer une bibliothèque** : sur la page d'une bibliothèque (ou de l'un de ses
+répertoires), **Exporter** écrit une archive ZIP dans `Échanges/Bibliothèques` — ses notes, ou
+ses documents avec leur fiche. Passez ce fichier ; chez l'autre, **Importer…**, sur la page de
+la même sorte de bibliothèque, le reprend (de l'ordinateur ou du coffre) : une note déjà là à
+l'identique n'est pas réécrite (différente, la nouvelle est gardée à côté) ; un document déjà
+dans la bibliothèque n'est pas copié une seconde fois, un nouveau garde ce que disait sa fiche
+(titre, type, référence, édition…). Les **documents projet** sont une bibliothèque à part, toujours là (dossier
 `Bibliothèque/Projets`, réglable), un répertoire par programme puis par projet, créés tout seuls ;
 la page d'un programme ou d'un projet montre ses documents et les reçoit glissés-déposés.
 **Déplacer vers une bibliothèque…**, sur la fiche d'un document, propose toutes les
