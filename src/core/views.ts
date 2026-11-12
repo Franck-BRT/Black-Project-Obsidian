@@ -43,6 +43,7 @@ export type IconName =
   | 'edit'
   | 'trash'
   | 'copy'
+  | 'ghost'
   | 'chevron'
   | 'chart'
   | 'grid'

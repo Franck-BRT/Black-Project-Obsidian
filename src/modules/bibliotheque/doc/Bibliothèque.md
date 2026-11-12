@@ -288,7 +288,8 @@ n'est pas copié une seconde fois : une fenêtre vous propose **Ne rien faire**,
 un fantôme ici**. Un fantôme est une petite note qui montre le document dans ce répertoire
 aussi, et l'ouvre d'ici — sans le dupliquer.
 
-Dans la page du répertoire, les fantômes sont sous « Aussi ici, rangés ailleurs » : un clic
+Dans la page du répertoire, les fantômes sont **parmi les documents**, dans leurs groupes,
+avec l'**icône fantôme** devant et « Rangé dans … » (les chiffres en haut les comptent) : un clic
 ouvre le document ; **Aller à l'original** mène là où il est rangé ; **Retirer le fantôme**
 l'enlève (le document reste). Le fantôme suit son document s'il est déplacé, et part s'il
 est retiré. La fiche du document dit où il est montré aussi.

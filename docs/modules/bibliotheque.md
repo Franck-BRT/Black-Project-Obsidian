@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.45.0 (Black Projects 0.125.0) |
+| Version | 0.45.1 (Black Projects 0.125.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les fantômes parmi les documents (v0.45.1, Black Projects 0.125.1)
+
+Plus de bloc « Aussi ici, rangés ailleurs » au-dessus des chiffres : les fantômes d'un lieu sont
+dans la liste de ses documents, dans les mêmes groupes (par leur document ; par répertoire, là où
+ils sont), l'icône `ghost` (nouvelle) devant, « Rangé dans … », le type et la catégorie, deux
+boutons (aller à l'original, retirer le fantôme) ; un chiffre « Fantômes » quand il y en a.
 
 ## Toute la bibliothèque d'un coup (v0.45.0, Black Projects 0.125.0)
 

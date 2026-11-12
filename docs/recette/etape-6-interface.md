@@ -70,6 +70,12 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les fantômes parmi les documents (v0.125.1)
+
+- [ ] Un document des références montré aussi dans « Documents » : dans la liste, dans son
+      groupe, l'icône fantôme devant, « Rangé dans « Documents de référence » » ; plus de bloc
+      à part au-dessus ; le chiffre « Fantômes »
+
 ## Toute la bibliothèque d'un coup (v0.125.0)
 
 - [ ] Accueil de la bibliothèque : **Tout exporter** → « Bibliothèque complète AAAA-MM-JJ.zip »

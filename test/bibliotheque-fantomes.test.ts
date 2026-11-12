@@ -115,16 +115,18 @@ describe('les fantômes de la bibliothèque', () => {
     expect(platform.confirmed).toHaveLength(asked)
   })
 
-  it('la page : le fantôme parmi « Aussi ici » ; il ouvre le document, mène à l’original, se retire (le document reste)', async () => {
+  it('la page : le fantôme parmi les documents du lieu, son icône fantôme ; il ouvre le document, mène à l’original, se retire (le document reste)', async () => {
     const platform = memoryPlatform()
     const { page, shown, dropAgain } = await start(platform)
     await filedInNormes(platform, page)
     platform.confirmations.push(true, false)
     await dropAgain()
     const root = await page('bibliotheque.documents').load()
-    expect(root.blocks.find((block) => block.kind === 'cards' && block.title?.startsWith('Aussi ici'))).toMatchObject({ title: 'Aussi ici, rangés ailleurs (1 fantôme(s))' })
+    // Plus de bloc à part : le fantôme est dans la liste des documents, dans son groupe, l'icône fantôme devant.
+    expect(root.blocks.some((block) => block.kind === 'cards' && block.title?.startsWith('Aussi ici'))).toBe(false)
     const [ghost] = ghostsOf(root)
-    expect(ghost).toMatchObject({ title: 'ECSS-E-ST-10C', subtitle: 'rangé dans « Normes »', badges: [{ label: 'Fantôme' }, { label: 'PDF' }], tags: ['fantomes', 'famille-pdf'] })
+    expect(ghost).toMatchObject({ title: 'ECSS-E-ST-10C', subtitle: 'Rangé dans « Normes »', icon: 'ghost', badges: [{ label: 'PDF' }, { label: 'Norme' }], tags: ['fantomes', 'famille-pdf', 'de-bibliotheque'] })
+    expect(root.blocks.find((block) => block.kind === 'stats')).toMatchObject({ stats: expect.arrayContaining([expect.objectContaining({ label: 'Fantômes', value: '1', icon: 'ghost' })]) })
     expect(root.filters?.map((filter) => filter.id)).toContain('fantomes')
     await ghost!.open!.run()
     expect(shown.at(-1)).toBe(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Normes/ECSS-E-ST-10C.md')}`)
@@ -153,7 +155,7 @@ describe('les fantômes de la bibliothèque', () => {
     platform.choices.push('Bibliothèque/Archives')
     await (await fiche()).actions!.find((action) => action.id === 'move')!.run()
     expect(read(platform, 'Bibliothèque/ECSS-E-ST-10C.md')).toContain('de: "[[Bibliothèque/Archives/ECSS-E-ST-10C.md]]"')
-    expect(ghostsOf(await page('bibliotheque.documents').load())[0]?.subtitle).toBe('rangé dans « Archives »')
+    expect(ghostsOf(await page('bibliotheque.documents').load())[0]?.subtitle).toBe('Rangé dans « Archives »')
     // Ramené à la racine, là où est son fantôme : le fantôme n'a plus rien à dire.
     platform.choices.push('Bibliothèque')
     await (await fiche()).actions!.find((action) => action.id === 'move')!.run()

@@ -179,7 +179,10 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
   }
 }
 
-/** La carte d'un fantôme : le document qu'il montre ici, et où il est rangé. */
+/**
+ * La carte d'un fantôme, parmi les documents du lieu : l'icône fantôme, le titre du document,
+ * où il est rangé ; l'ouvrir, aller à l'original, retirer le fantôme.
+ */
 function ghostCard(deps: LibraryHomeDeps, ghost: LibraryGhost, doc: LibraryDoc): Card {
   const { t } = deps
   const home = placePageOf(LIBRARY_PAGE, { shelf: doc.shelf ?? '', directory: doc.directory ?? '' })
@@ -187,15 +190,19 @@ function ghostCard(deps: LibraryHomeDeps, ghost: LibraryGhost, doc: LibraryDoc):
     id: `ghost:${ghost.path}`,
     title: doc.title,
     subtitle: t('bibliotheque.ghost.in', { where: placeLabel(deps.places, doc) }),
-    icon: 'copy',
-    badges: [{ label: t('bibliotheque.ghost'), tone: 'neutral' }, { label: t(`bibliotheque.family.${doc.family}`), tone: 'neutral' }],
-    text: t('bibliotheque.ghost.hint'),
-    ...(deps.showPage ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showPage?.(docPageOf(doc.record)) } } : {}),
+    icon: 'ghost',
+    badges: [{ label: t(`bibliotheque.family.${doc.family}`), tone: 'neutral' }, ...(doc.category ? [{ label: doc.category, tone: 'info' as const }] : [])],
+    facts: [
+      { label: t('bibliotheque.field.size'), value: readableSize(doc.size, deps.locale) },
+      { label: t('bibliotheque.field.added'), value: doc.added || '—' },
+      { label: t('bibliotheque.field.version'), value: versionLabel(doc) || '—' }
+    ],
+    ...(deps.showPage ? { open: { id: 'open', label: t('bibliotheque.doc.open'), tooltip: t('bibliotheque.ghost.hint'), run: () => deps.showPage?.(docPageOf(doc.record)) } } : {}),
     actions: [
-      { id: 'original', label: t('bibliotheque.ghost.go'), tooltip: t('bibliotheque.ghost.go.tip'), icon: 'chevron', run: () => deps.showPage?.(home) },
+      { id: 'original', label: t('bibliotheque.ghost.go'), tooltip: t('bibliotheque.ghost.go.tip'), icon: 'folder', run: () => deps.showPage?.(home) },
       { id: 'remove-ghost', label: t('bibliotheque.ghost.remove'), tooltip: t('bibliotheque.ghost.remove.tip'), icon: 'cross', run: () => deps.removeGhost(ghost.path) }
     ],
-    tags: ['fantomes', `famille-${doc.family}`]
+    tags: ['fantomes', `famille-${doc.family}`, ...new Set(doc.origins.map((origin) => `de-${origin.module}`))]
   }
 }
 
@@ -251,9 +258,6 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
   const top = await placeView(deps.places, place, everything)
   // Les fantômes de ce lieu : des documents rangés ailleurs, montrés ici aussi.
   const ghostsHere = (await deps.store.ghosts()).filter((entry): entry is GhostEntry & { doc: LibraryDoc } => !!entry.doc && isHere(entry.ghost, place))
-  const ghostBlock: HomeBlock[] = ghostsHere.length
-    ? [{ kind: 'cards', title: t('bibliotheque.ghost.section', { count: ghostsHere.length }), cards: ghostsHere.map(({ ghost, doc }) => ghostCard(deps, ghost, doc)) }]
-    : []
   const pourHere = () => deps.pour(top.folder)
   const missing = new Set((await Promise.all(docs.map(async (doc) => ((await deps.exists(doc.file)) ? '' : doc.record)))).filter(Boolean))
   const today = deps.today()
@@ -268,10 +272,16 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     { label: t('bibliotheque.stat.count'), value: String(under.length), icon: 'book' },
     { label: t('bibliotheque.stat.size'), value: readableSize(total, deps.locale), icon: 'file' },
     { label: t('bibliotheque.stat.recent'), value: String(recent), icon: 'clock', hint: t('bibliotheque.stat.recent.hint') },
-    { label: t('bibliotheque.stat.likely'), value: String(likely), icon: 'flow', ...(likely ? { tone: 'warning' as const, hint: t('bibliotheque.stat.likely.hint') } : {}) }
+    { label: t('bibliotheque.stat.likely'), value: String(likely), icon: 'flow', ...(likely ? { tone: 'warning' as const, hint: t('bibliotheque.stat.likely.hint') } : {}) },
+    ...(ghostsHere.length ? [{ label: t('bibliotheque.stat.ghosts'), value: String(ghostsHere.length), icon: 'ghost' as const, hint: t('bibliotheque.stat.ghosts.hint') }] : [])
   ]
   const empty: HomeBlock = { kind: 'message', tone: 'info', text: t(top.blocks.length ? 'bibliotheque.place.empty' : 'bibliotheque.empty'), actions: [{ id: 'pour', label: t('bibliotheque.pour'), icon: 'upload', run: pourHere }] }
   const groupOf = docGrouping === 'repertoire' ? directoryGroupOf(t, place.directory) : docGroupOf(deps, docGrouping)
+  // Les documents et les fantômes, ensemble, du plus récent au plus ancien ; un fantôme se range par son document (par répertoire : là où il est).
+  const listed: { doc: LibraryDoc; ghost?: LibraryGhost }[] = [...docs.map((doc) => ({ doc })), ...ghostsHere.map(({ ghost, doc }) => ({ doc, ghost }))].sort(
+    (a, b) => b.doc.added.localeCompare(a.doc.added) || a.doc.title.localeCompare(b.doc.title, 'fr')
+  )
+  const listedGroupOf = groupOf ? (item: { doc: LibraryDoc; ghost?: LibraryGhost }) => groupOf(item.ghost ? { ...item.doc, shelf: item.ghost.shelf, directory: item.ghost.directory } : item.doc) : null
   return {
     breadcrumb: top.breadcrumb,
     title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : severalShelves(deps.places.shelves()) || builtInShelf(place.shelf) ? place.shelf.name : t('bibliotheque.page.title'),
@@ -303,8 +313,13 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     ],
     blocks: [
       ...top.blocks,
-      ...ghostBlock,
-      ...(under.length ? [{ kind: 'stats' as const, stats }, ...(docs.length ? grouped(docs, (doc) => docCard(deps, doc, everything, missing.has(doc.record)), groupOf, `bibliotheque.documents.${docGrouping}`, (count) => t('bibliotheque.group.count', { count })) : [])] : ghostsHere.length ? [] : [empty])
+      ...(under.length || ghostsHere.length
+        ? [
+            { kind: 'stats' as const, stats },
+            // Les documents du lieu, et ses fantômes parmi eux (l'icône fantôme les distingue), dans les mêmes groupes.
+            ...(listed.length ? grouped(listed, (item) => (item.ghost ? ghostCard(deps, item.ghost, item.doc) : docCard(deps, item.doc, everything, missing.has(item.doc.record))), listedGroupOf, `bibliotheque.documents.${docGrouping}`, (count) => t('bibliotheque.group.count', { count })) : [])
+          ]
+        : [empty])
     ]
   }
 }
