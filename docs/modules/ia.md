@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.29.0 (Black Projects 0.134.0) |
+| Version | 0.30.0 (Black Projects 0.135.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,17 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Le circuit des documents (v0.30.0, Black Projects 0.135.0)
+
+- `ia.executer-skill`, sortie `ingestion` : l'action `ia.relire-texte` (guidée par le skill), sauf si
+  le texte a déjà été relu par l'IA, ou si son workflow système de lecture (`sys.ia.relire-textes`,
+  `sys.ia.lire-scans`) est actif et que ce n'est pas une relance (`{relance}`) — il est passé juste
+  avant ; état `ingere`. Sortie `analyse` : `ANALYSIS_SCHEMA`, `readAnalysisAnswer`,
+  `applyAnalysisDecision`. Une étape déjà faite (état du circuit au-delà) n'est pas refaite.
+- Workflow système `sys.ia.circuit` (`CIRCUIT_WORKFLOW`), déclaré après les passes de l'IA sur les
+  documents (les workflows s'exécutent dans l'ordre déclaré) : document versé, `{circuitencours}`
+  non vide → Ingérer, Analyser, Ranger un document.
 
 ## Exécuter un skill (v0.29.0, Black Projects 0.134.0)
 

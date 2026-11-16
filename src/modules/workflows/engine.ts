@@ -115,6 +115,15 @@ export class WorkflowEngine {
     return run
   }
 
+  /** Quand toute la file est passée (ce qui s'y ajoute en route compris). */
+  async idle(): Promise<void> {
+    let current: Promise<unknown>
+    do {
+      current = this.queue
+      await current
+    } while (current !== this.queue)
+  }
+
   /** Un workflow est-il en train de s'exécuter ? */
   get busy(): boolean {
     return this.running > 0

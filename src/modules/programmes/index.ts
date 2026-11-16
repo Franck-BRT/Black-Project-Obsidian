@@ -9,7 +9,7 @@
  */
 
 import { localToday } from '../../core/dates'
-import { canCreatePieceType, chooseReferenceDocuments, createPieceType, documentsIn, removeLibraryDirectory, dropDocumentsInto, libraryActive, libraryDocPage, libraryDocument, libraryFolderPage, libraryPieceTypes, pieceTypeText, pourDocumentsInto, projectDocumentsFolder, registerReferenceCallers } from '../bibliotheque'
+import { canCreatePieceType, chooseReferenceDocuments, createPieceType, documentsIn, removeLibraryDirectory, dropDocumentsInto, libraryActive, libraryDocPage, libraryDocument, libraryFolderPage, libraryPieceTypes, pieceTypeText, pourDocumentsInto, projectDocumentsFolder, registerReferenceCallers, libraryDoc, projectDocumentsPath, registerSkillContext } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
 import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
@@ -49,6 +49,8 @@ const folderField: TextField = {
 
 let active: { store: ProgrammeStore } | null = null
 /** Ce qui oublie les appels de documents de référence déclarés à la bibliothèque. */
+/** Les contextes de skill des programmes (les projets, leurs répertoires attendus) : de quoi les oublier. */
+let stopContexts: (() => void)[] = []
 let stopCallers: (() => void) | null = null
 
 /** Les programmes, pour les autres modules ; `null` sans le module. */
@@ -58,7 +60,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.12.0',
+  version: '0.13.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -429,6 +431,47 @@ export const programmesModule: BlackModule = {
       notify(t('programmes.refs.removed', { name: owner.name }), 5000)
       changed()
     }
+    // Le circuit des documents : les projets, et leurs répertoires attendus, pour les skills qui les demandent.
+    for (const stop of stopContexts) stop()
+    stopContexts = [
+      registerSkillContext({
+        key: 'projets',
+        label: t('programmes.skill.context.projets'),
+        provide: async () => {
+          const lines: string[] = []
+          for (const programme of await store.programmes())
+            for (const project of await store.projects(programme)) {
+              const current = project.phases.filter((phase) => phase.status === 'en-cours').map((phase) => phase.name)
+              lines.push(
+                `- ${project.path} — ${t('programmes.skill.ctx.project', { programme: programme.name, project: project.name, type: project.typeName || '—' })}${current.length ? ` ; ${t('programmes.skill.ctx.current', { phases: current.join(', ') })}` : ''}${project.description ? ` ; ${project.description}` : ''} ; ${t('programmes.skill.ctx.folder', { folder: projectDocumentsPath(programme.name, project.name) })}`
+              )
+            }
+          return lines.length ? [t('programmes.skill.ctx.projects'), ...lines].join('\n') : t('programmes.skill.ctx.noProjects')
+        }
+      }),
+      registerSkillContext({
+        key: 'repertoires-attendus',
+        label: t('programmes.skill.context.repertoires-attendus'),
+        provide: async (record) => {
+          const doc = await libraryDoc(record)
+          const lines: string[] = []
+          for (const programme of await store.programmes())
+            for (const project of await store.projects(programme)) {
+              const folders = flatFolders(project.folders)
+              if (!folders.length) continue
+              const root = projectDocumentsPath(programme.name, project.name)
+              const identified = doc?.circuitProject === project.path
+              lines.push(`${identified ? '★ ' : ''}${t('programmes.skill.ctx.expectedOf', { project: project.name })}${identified ? ` — ${t('programmes.skill.ctx.identified')}` : ''}`)
+              for (const folder of folders) {
+                const expects = folder.expects ?? []
+                const match = !!doc?.category && expects.some((code) => code.toLowerCase() === doc.category.toLowerCase())
+                lines.push(`  - ${root}/${folder.path}${expects.length ? ` — ${t('programmes.skill.ctx.expects', { types: expects.join(', ') })}` : ''}${match ? ` ← ${t(identified ? 'programmes.skill.ctx.proposed' : 'programmes.skill.ctx.matches', { type: doc!.category })}` : ''}`)
+              }
+            }
+          return lines.length ? lines.join('\n') : t('programmes.skill.ctx.noExpected')
+        }
+      })
+    ]
     stopCallers?.()
     stopCallers = registerReferenceCallers({
       callers: async (record) =>
@@ -791,5 +834,7 @@ export const programmesModule: BlackModule = {
     active = null
     stopCallers?.()
     stopCallers = null
+    for (const stop of stopContexts) stop()
+    stopContexts = []
   }
 }

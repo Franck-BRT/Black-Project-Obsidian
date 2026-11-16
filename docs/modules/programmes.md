@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.12.0 (Black Projects 0.130.0) |
+| Version | 0.13.0 (Black Projects 0.135.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les projets pour le circuit des documents (v0.13.0, Black Projects 0.135.0)
+
+- Contextes de skill inscrits auprès de la bibliothèque (`registerSkillContext`) : `projets` (chaque
+  projet : chemin, programme, type, phases en cours, répertoire de ses documents) et
+  `repertoires-attendus` (les répertoires de chaque projet, ce qu'ils attendent ; le projet reconnu
+  pour le document marqué ★, le répertoire qui attend son type de pièce « proposé d'office »).
 
 ## Supprimer une affaire, un répertoire d'un projet (v0.12.0, Black Projects 0.130.0)
 

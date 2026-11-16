@@ -315,6 +315,8 @@ export interface LibraryDoc {
   circuitProposal?: string
   circuitConfidence?: number
   circuitAlternatives?: string[]
+  /** Le projet que l'analyse du circuit a reconnu (la note du projet) : le rangement s'en sert. */
+  circuitProject?: string
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -402,7 +404,8 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.circuit && doc.circuitReason ? { 'circuit-raison': doc.circuitReason } : {}),
     ...(doc.circuit && doc.circuitProposal ? { 'circuit-proposition': doc.circuitProposal } : {}),
     ...(doc.circuit && doc.circuitConfidence !== undefined ? { 'circuit-confiance': doc.circuitConfidence } : {}),
-    ...(doc.circuit && doc.circuitAlternatives?.length ? { 'circuit-alternatives': doc.circuitAlternatives } : {})
+    ...(doc.circuit && doc.circuitAlternatives?.length ? { 'circuit-alternatives': doc.circuitAlternatives } : {}),
+    ...(doc.circuitProject ? { 'circuit-projet': link(doc.circuitProject) } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -474,7 +477,8 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
           ...(Number.isFinite(Number(data['circuit-confiance'])) && data['circuit-confiance'] !== null && data['circuit-confiance'] !== '' ? { circuitConfidence: Number(data['circuit-confiance']) } : {}),
           ...(Array.isArray(data['circuit-alternatives']) && data['circuit-alternatives'].length ? { circuitAlternatives: data['circuit-alternatives'].map(text).filter(Boolean) } : {})
         }
-      : {})
+      : {}),
+    ...(unlink(data['circuit-projet']) ? { circuitProject: unlink(data['circuit-projet']) } : {})
   }
 }
 

@@ -140,7 +140,7 @@ l'original (« Rétablir l'original ») ; pas les supprimer.
 | Repérer les nouvelles versions probables | des documents entrent dans la bibliothèque | marque la version précédente probable, à confirmer sur la fiche | activé |
 | Signaler les fichiers introuvables, chaque lundi | le lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 
-**Le dossier de dépôt** : posez des fichiers dans le dossier `À verser` de la bibliothèque (par défaut `Bibliothèque/À verser`)
+**Le dossier de dépôt** : posez des fichiers dans le dossier `À classer` de la bibliothèque (par défaut `Bibliothèque/À classer`)
 — par l'explorateur de fichiers, une synchronisation —, ils entrent dans la bibliothèque à
 l'ouverture d'Obsidian et chaque jour à 8 h, rangés dans `_fichiers` ; un fichier déjà
 dans la bibliothèque est mis de côté dans `_retirés`. Deux rappels, désactivés d'origine,
@@ -149,8 +149,8 @@ type de pièce).
 
 | Workflow système | Quand | D'origine |
 | --- | --- | --- |
-| Verser le dossier « À verser », à l'ouverture | à l'ouverture d'Obsidian | activé |
-| Verser le dossier « À verser », chaque jour | chaque jour à 8 h | activé |
+| Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | activé |
+| Verser le dossier « À classer », chaque jour | chaque jour à 8 h | activé |
 | Versions à confirmer, chaque lundi | le lundi à 8 h | désactivé |
 | Documents à classer, chaque lundi | le lundi à 8 h | désactivé |
 | Langues à confirmer, chaque lundi | le lundi à 8 h | désactivé |
@@ -200,11 +200,36 @@ rien n'est effacé), **Supprimer** (aussi sur sa carte : après une question, sa
 corbeille du coffre ; les étapes de workflow qui l'utilisent par son nom ne le trouvent plus).
 
 **Un skill exécutable** (le circuit des documents) : dans sa fenêtre, cochez ce qu'il **reçoit**
-avec un document (sa fiche, son texte, les dossiers où ranger, les règles de rangement), ce qu'il
-**rend** (une réponse libre, ou une **décision de rangement** : un dossier, une confiance, une
-raison) et son **seuil de confiance** (70 % par défaut). Sa fiche le dit (« Exécutable »). Le
-skill livré **Ranger un document** en est un. L'étape de workflow **Exécuter un skill** (module
+avec un document (sa fiche, son texte, les types de pièce, les entreprises connues, les dossiers où
+ranger, les règles de rangement ; avec le module Programmes, les projets en cours et leurs
+répertoires attendus), ce qu'il **rend** (une réponse libre, l'**ingestion**, une **analyse** ou une
+**décision de rangement**) et son **seuil de confiance** (70 % par défaut). Sa fiche le dit
+(« Exécutable »). Les skills livrés **Ingérer**, **Analyser** et **Ranger un document** en sont. L'étape de workflow **Exécuter un skill** (module
 IA) le lance sur un document : l'IA décide, l'application exécute.
+
+### Le circuit des documents
+
+Dans les **Paramètres** du module, **Le circuit des documents (IA)** (désactivé d'origine). Activé,
+chaque document que vous versez **sans lieu précis** (ou à la racine de la bibliothèque) — par
+**Verser**, en le glissant sur la page, ou en le posant dans `Bibliothèque/À classer` — entre dans
+**À classer** ; puis le workflow système **Circuit des documents** (module IA) enchaîne trois skills
+livrés, à modifier à votre goût :
+
+1. **Ingérer un document** : son texte relu par l'IA (s'il ne l'a pas déjà été à l'entrée) ;
+2. **Analyser un document** : son type de pièce, son entreprise (donnés s'ils manquaient ou étaient
+   à confirmer, et si l'IA est assez sûre), le **projet** qu'il concerne ;
+3. **Ranger un document** : son dossier — le répertoire du projet reconnu qui attend ce type de
+   pièce est proposé d'office ; sinon les règles de rangement, sinon le sujet principal.
+
+Assez sûr : rangé. Sinon : **À contrôler** (ci-dessous). Ce qui est versé dans un répertoire choisi,
+et les pièces des autres modules (analyses d'appel d'offres, imports d'exigences), n'y entrent
+pas. Le texte des documents est envoyé à l'IA réglée dans le module IA. Arrêté en route (l'IA
+coupée, Obsidian fermé), un document reprend **à l'ouverture** (workflow **Relancer le circuit des
+documents**) ; en attendant, la page **À contrôler** le montre dans **En cours dans le circuit**,
+avec **Ranger moi-même…**. Chaque lundi, un rappel dit s'il reste des documents à contrôler. La
+fiche d'un document du circuit a une section **Circuit** : où il en est, ce qui a été fait.
+
+L'ancien dossier `À verser` est repris : il devient `À classer`.
 
 ### À contrôler
 
@@ -339,7 +364,7 @@ Chaque sorte — documents, prompts, personas — peut avoir **plusieurs bibliot
 **Nouvelle bibliothèque** (sur sa page, ou sur l'accueil de la bibliothèque) lui donne un
 nom et un dossier (vide : `Bibliothèques/Documents/<nom>`, `Bibliothèques/Prompts/<nom>`…).
 L'une est **par défaut** : ce qui arrive sans lieu précis — les pièces d'une analyse, un
-import, le dossier « À verser », un exemple — y entre, à sa racine ; **Définir par
+import, le dossier « À classer », un exemple — y entre, à sa racine ; **Définir par
 défaut** la change. **Retirer la bibliothèque** l'ôte de la liste : son dossier et ses
 notes restent dans le coffre.
 

@@ -149,20 +149,53 @@ const SKILLS: Record<Language, EntryDraft[]> = {
     ),
     executable(
       entry(
+        'Ingérer un document',
+        'Circuit',
+        'Relire le texte extrait d’un document qui entre dans la bibliothèque',
+        [
+          'Tu relis le texte extrait automatiquement d’un document qui entre dans la bibliothèque.',
+          '- Garde tout le contenu, dans l’ordre : ne résume pas, n’ajoute rien.',
+          '- Recolle les mots coupés, répare les listes et les tableaux abîmés, remets les titres en Markdown.',
+          '- Garde les références, les numéros d’articles, les chiffres et les unités exactement comme ils sont.'
+        ].join('\n')
+      ),
+      [],
+      'ingestion'
+    ),
+    executable(
+      entry(
+        'Analyser un document',
+        'Circuit',
+        'Dire de quoi il s’agit : type de pièce, émetteur, projet concerné',
+        [
+          'Tu analyses un document qui entre dans la bibliothèque. Lis sa fiche et le début de son texte, puis :',
+          '1. Son **type de pièce** : un code de la liste des types de pièce (CCTP, CCAP…), sinon vide.',
+          '2. Son **émetteur** : une entreprise de la liste (son code), sinon vide.',
+          '3. Le **projet** qu’il concerne : le chemin exact d’un projet de la liste (son nom, son client, sa référence apparaissent dans le document), sinon vide.',
+          '4. Ta **confiance**, de 0 à 1, et ta **raison** en une phrase.',
+          'N’invente rien : ce qui n’est pas dans les listes reste vide.'
+        ].join('\n')
+      ),
+      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets'],
+      'analyse'
+    ),
+    executable(
+      entry(
         'Ranger un document',
         'Circuit',
         'Choisir le dossier où ranger un document de la bibliothèque',
         [
           'Tu ranges un document de la bibliothèque. Procède ainsi :',
           '1. Lis sa fiche et le début de son texte : de quoi parle-t-il, qui l’a émis, pour quel projet ou quel sujet ?',
-          '2. Applique les règles de rangement, si elles sont écrites ; sinon, range selon le **sujet principal** du document (pas son format, ni d’où il vient).',
-          '3. Choisis **un seul** dossier, et seulement parmi ceux de la liste « Dossiers où ranger », écrit exactement comme dans la liste.',
-          '4. Donne ta confiance, de 0 à 1 : 0,9 si le document le dit clairement (son titre, son en-tête), 0,5 si tu hésites entre deux dossiers, 0,2 si tu devines.',
-          '5. Explique en une phrase pourquoi, et propose deux autres dossiers possibles, du plus au moins probable.',
+          '2. Si un projet a été reconnu (sa fiche le dit) et que l’un de ses répertoires attend ce type de pièce (marqué « proposé d’office »), choisis ce répertoire.',
+          '3. Sinon, applique les règles de rangement, si elles sont écrites ; sinon, range selon le **sujet principal** du document (pas son format, ni d’où il vient).',
+          '4. Choisis **un seul** dossier, et seulement parmi ceux de la liste « Dossiers où ranger », écrit exactement comme dans la liste.',
+          '5. Donne ta confiance, de 0 à 1 : 0,9 si le document le dit clairement (son titre, son en-tête, un répertoire proposé d’office), 0,5 si tu hésites entre deux dossiers, 0,2 si tu devines.',
+          '6. Explique en une phrase pourquoi, et propose deux autres dossiers possibles, du plus au moins probable.',
           'Si aucun dossier ne convient, réponds avec un dossier vide et dis pourquoi : mieux vaut ne pas ranger que ranger au hasard.'
         ].join('\n')
       ),
-      ['fiche', 'texte', 'dossiers', 'regles-de-rangement'],
+      ['fiche', 'texte', 'dossiers', 'projets', 'repertoires-attendus', 'regles-de-rangement'],
       'rangement'
     )
   ],
@@ -193,20 +226,53 @@ const SKILLS: Record<Language, EntryDraft[]> = {
     ),
     executable(
       entry(
+        'Ingest a document',
+        'Pipeline',
+        'Proofread the extracted text of a document entering the library',
+        [
+          'You proofread the automatically extracted text of a document entering the library.',
+          '- Keep all the content, in order: do not summarise, add nothing.',
+          '- Rejoin split words, repair broken lists and tables, restore headings in Markdown.',
+          '- Keep references, clause numbers, figures and units exactly as they are.'
+        ].join('\n')
+      ),
+      [],
+      'ingestion'
+    ),
+    executable(
+      entry(
+        'Analyse a document',
+        'Pipeline',
+        'Say what it is: document type, issuer, project concerned',
+        [
+          'You analyse a document entering the library. Read its record and the beginning of its text, then:',
+          '1. Its **document type**: a code from the list of document types, otherwise empty.',
+          '2. Its **issuer**: a company from the list (its code), otherwise empty.',
+          '3. The **project** it concerns: the exact path of a project from the list (its name, client or reference appear in the document), otherwise empty.',
+          '4. Your **confidence**, from 0 to 1, and your **reason** in one sentence.',
+          'Invent nothing: what is not in the lists stays empty.'
+        ].join('\n')
+      ),
+      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets'],
+      'analyse'
+    ),
+    executable(
+      entry(
         'File a document',
         'Pipeline',
         'Choose the folder where a library document goes',
         [
           'You file a library document. Proceed as follows:',
           '1. Read its record and the beginning of its text: what is it about, who issued it, for which project or topic?',
-          '2. Apply the filing rules, if they are written; otherwise file by the **primary subject** of the document (not its format, nor where it came from).',
-          '3. Choose **one** folder, and only among those of the list “Folders to file in”, written exactly as in the list.',
-          '4. Give your confidence, from 0 to 1: 0.9 if the document says it clearly (its title, its header), 0.5 if you hesitate between two folders, 0.2 if you are guessing.',
-          '5. Explain why in one sentence, and propose two other possible folders, from the most to the least likely.',
+          '2. If a project was recognised (its record says so) and one of its folders expects this document type (marked “proposed”), choose that folder.',
+          '3. Otherwise apply the filing rules, if they are written; otherwise file by the **primary subject** of the document (not its format, nor where it came from).',
+          '4. Choose **one** folder, and only among those of the list “Folders to file in”, written exactly as in the list.',
+          '5. Give your confidence, from 0 to 1: 0.9 if the document says it clearly (its title, its header, a proposed folder), 0.5 if you hesitate between two folders, 0.2 if you are guessing.',
+          '6. Explain why in one sentence, and propose two other possible folders, from the most to the least likely.',
           'If no folder fits, answer with an empty folder and say why: better not to file than to file at random.'
         ].join('\n')
       ),
-      ['fiche', 'texte', 'dossiers', 'regles-de-rangement'],
+      ['fiche', 'texte', 'dossiers', 'projets', 'repertoires-attendus', 'regles-de-rangement'],
       'rangement'
     )
   ]

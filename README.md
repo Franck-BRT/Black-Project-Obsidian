@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.134.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+**Version 0.135.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
 l'accueil et l'interface.** L'accueil est une grille de tuiles que chacun compose (avec
 leurs pastilles : prochaine remise, exigences faibles…) ; les informations sont dans un
 tableau de bord et une barre de gauche que chacun range aussi (Accueil toujours en haut,
@@ -78,7 +78,7 @@ dans Obsidian en ouvrant le dossier comme un coffre.
 | [Présentation](docs/00-Présentation.md) | Ce qu'est Black Projects, pour qui |
 | [Plan d'intégration](docs/plan-integration.md) | Les étapes, dans l'ordre |
 | [Architecture](docs/architecture/vue-d-ensemble.md) | Cœur, modules, adaptateurs |
-| [Circuit des documents](docs/architecture/circuit-des-documents.md) | Du dépôt au rangement, par des skills ; À contrôler (version A livrée) |
+| [Circuit des documents](docs/architecture/circuit-des-documents.md) | Du dépôt au rangement, par des skills ; À contrôler (versions A et B livrées) |
 | [Installation](docs/installation/README.md) | Installer le plugin dans un coffre |
 | [Développement](docs/developpement/regles.md) | Règles du dépôt, contrôles |
 

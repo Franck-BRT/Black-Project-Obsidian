@@ -44,7 +44,15 @@ import {
 export const FILES_FOLDER = '_fichiers'
 export const SET_ASIDE_FOLDER = '_retirés'
 /** Le dossier de dépôt : ce qu'on y pose (explorateur, synchronisation) entre dans la bibliothèque. */
-export const INBOX_FOLDER = 'À verser'
+/**
+ * **À classer** : l'entrée de la bibliothèque. Ce qu'on y pose (l'explorateur, une
+ * synchronisation) y est versé ; et, le circuit des documents actif, chaque document versé sans
+ * lieu précis y attend d'être ingéré, analysé et rangé. Parcouru (ses documents comptent), mais
+ * pas un répertoire où l'on range.
+ */
+export const INBOX_FOLDER = 'À classer'
+/** L'ancien nom de l'entrée : repris (renommé) à l'activation. */
+export const LEGACY_INBOX_FOLDER = 'À verser'
 /**
  * Le dossier des documents **à contrôler** (le circuit : l'IA n'a pas été assez sûre pour les
  * ranger) : parcouru comme les autres (ses documents comptent, pour les doublons), mais ce
@@ -67,6 +75,8 @@ export interface StoreDeps {
   shelves?(): readonly Shelf[]
   /** Le dossier où verser, sans lieu précis : la racine de la bibliothèque par défaut. */
   target?(): string
+  /** Le circuit des documents est-il actif (un versement de la bibliothèque, sans lieu précis, y entre alors) ? */
+  circuit?(): boolean
   /**
    * Le texte d'un fichier (la lecture de fichiers) : `null` quand il n'est pas lu (format non
    * lu, illisible) ; absent, rien n'est lu. Pour deviner sa langue.
@@ -587,7 +597,7 @@ export class LibraryStore {
    * L'état d'un document dans le circuit, changé (une clé à `undefined` : ôtée), et une ligne
    * de plus dans l'historique de sa note (`history` : le titre de la section, la ligne).
    */
-  async setCircuit(record: string, patch: Partial<Pick<LibraryDoc, 'circuit' | 'circuitReason' | 'circuitProposal' | 'circuitConfidence' | 'circuitAlternatives'>>, history?: { heading: string; line: string }): Promise<LibraryDoc | null> {
+  async setCircuit(record: string, patch: Partial<Pick<LibraryDoc, 'circuit' | 'circuitReason' | 'circuitProposal' | 'circuitConfidence' | 'circuitAlternatives' | 'circuitProject'>>, history?: { heading: string; line: string }): Promise<LibraryDoc | null> {
     const { fs, yaml } = this.deps
     const doc = await this.load(record)
     if (!doc) return null
@@ -601,6 +611,21 @@ export class LibraryStore {
     return next
   }
 
+  /** L'historique du circuit d'un document : les lignes de sa section (`heading`), dans l'ordre. */
+  async circuitHistory(record: string, heading: string): Promise<string[]> {
+    const { fs, yaml } = this.deps
+    if (!(await fs.exists(record))) return []
+    const lines = readYamlFrontmatter(yaml, await fs.readText(record)).body.split('\n')
+    const at = lines.findIndex((line) => line.trim() === `## ${heading}`)
+    if (at === -1) return []
+    const out: string[] = []
+    for (const line of lines.slice(at + 1)) {
+      if (/^#{1,2} /.test(line) || line.startsWith('<!--')) break
+      if (line.startsWith('- ')) out.push(line.slice(2).trim())
+    }
+    return out
+  }
+
   get target(): string {
     return this.deps.target?.() ?? this.root
   }
@@ -608,7 +633,7 @@ export class LibraryStore {
   /** Un sous-dossier à parcourir (ni fichiers, ni retirés, ni dépôt, ni une autre bibliothèque, ni prompts ou personas) ? */
   private walkable(sub: string): boolean {
     const name = baseName(sub)
-    if (name.startsWith('_') || name.startsWith('.') || name === INBOX_FOLDER) return false
+    if (name.startsWith('_') || name.startsWith('.') || name === LEGACY_INBOX_FOLDER) return false
     if ((this.deps.skip?.() ?? []).includes(sub)) return false
     return !this.shelves().some((shelf) => shelf.folder === sub)
   }
@@ -618,7 +643,7 @@ export class LibraryStore {
     const { fs } = this.deps
     if (!(await fs.exists(folder))) return []
     return (await fs.list(folder))
-      .folders.filter((sub) => this.walkable(sub) && sub !== this.controlFolder)
+      .folders.filter((sub) => this.walkable(sub) && sub !== this.controlFolder && sub !== this.inbox)
       .sort((a, b) => baseName(a).localeCompare(baseName(b), 'fr'))
   }
 
@@ -899,7 +924,10 @@ export class LibraryStore {
   /** Verser des fichiers dans la bibliothèque, avec leur origine. */
   async pour(items: readonly PourItem[], origin: DocOrigin, options: PourOptions = {}): Promise<PourReport> {
     const { fs } = this.deps
-    const report: PourReport = { added: [], already: [], failed: [], folder: options.folder ?? this.target }
+    // Le circuit des documents : versé par la bibliothèque sans lieu précis (ou à sa racine), le document attend dans À classer.
+    const inCircuit = !!this.deps.circuit?.() && origin.module === 'bibliotheque' && (!options.folder || options.folder === this.target)
+    const folder = inCircuit ? this.inbox : (options.folder ?? this.target)
+    const report: PourReport = { added: [], already: [], failed: [], folder }
     const known = await this.all()
     // Ceux de ce même versement : deux fichiers du même nom y sont deux formats d'un document, pas deux versions.
     const batch = new Set<string>()
@@ -932,7 +960,8 @@ export class LibraryStore {
       }
       const title = titleFromName(item.name)
       const family = familyOf(item.name)
-      const record = await this.free(`${options.folder ?? this.target}/${safeName(title)}.md`)
+      if (inCircuit) await fs.ensureFolder(folder)
+      const record = await this.free(`${folder}/${safeName(title)}.md`)
       // Une version précédente probable (le nom du fichier versé fait foi : un fichier copié a pu être renommé).
       const previous = options.detectVersions === false ? undefined : likelyPreviousOf({ record, file: item.name, family, hash }, known, batch)
       // Son texte, transcrit dans sa fiche (comme une pièce d'analyse) — et lu une seule fois.
@@ -954,6 +983,7 @@ export class LibraryStore {
         origins: [origin],
         ...(previous ? { likelyPrevious: previous.record } : {}),
         copied: !item.path || item.owned === true,
+        ...(inCircuit ? { circuit: 'a-classer' as const } : {}),
         ...(transcript ? { reading: transcript.state, characters: transcript.text.length } : {}),
         ...(await this.readIdentity(item.name, family, bytes, item.category || options.category || '', transcript ? (transcript.state === 'lue' ? transcript.text : null) : undefined))
       }
@@ -994,6 +1024,29 @@ export class LibraryStore {
     return missing.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
   }
 
+  /**
+   * L'ancienne entrée « À verser » : renommée « À classer » (s'il n'y en a pas encore), sinon
+   * son contenu y passe. Rend s'il y avait quelque chose à reprendre.
+   */
+  async migrateInbox(): Promise<boolean> {
+    const { fs } = this.deps
+    const legacy = `${this.root}/${LEGACY_INBOX_FOLDER}`
+    if (!(await fs.exists(legacy))) return false
+    if (!(await fs.exists(this.inbox))) {
+      await fs.rename(legacy, this.inbox)
+      return true
+    }
+    const files: string[] = []
+    const walk = async (folder: string): Promise<void> => {
+      const listing = await fs.list(folder)
+      files.push(...listing.files)
+      for (const sub of listing.folders) await walk(sub)
+    }
+    await walk(legacy)
+    for (const path of files) await fs.rename(path, await this.free(`${this.inbox}/${path.slice(legacy.length + 1)}`))
+    return files.length > 0
+  }
+
   get inbox(): string {
     return `${this.root}/${INBOX_FOLDER}`
   }
@@ -1015,6 +1068,12 @@ export class LibraryStore {
       for (const sub of listing.folders) await walk(sub)
     }
     await walk(this.inbox)
+    // Les fiches qui y attendent (le circuit des documents) : déjà dans la bibliothèque, pas à verser.
+    for (const path of [...files]) {
+      if (!path.endsWith('.md')) continue
+      const data = readYamlFrontmatter(this.deps.yaml, await fs.readText(path)).data
+      if (readRecord(path, data) || readGhost(path, data)) files.splice(files.indexOf(path), 1)
+    }
     if (!files.length) return report
     const known = new Set((await this.all()).map((doc) => doc.hash))
     const fresh: PourItem[] = []

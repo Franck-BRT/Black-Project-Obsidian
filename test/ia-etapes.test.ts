@@ -90,9 +90,9 @@ describe('les étapes qui demandent l’IA', () => {
   it('la bibliothèque de skills : ses exemples, une note par skill ; les listes des champs', async () => {
     const platform = memoryPlatform()
     await start(platform)
-    expect(await addStarterEntries('skill', 'fr')).toEqual(['Lire un CCTP', 'Repérer les pénalités', 'Vérifier une exigence', 'Répondre en tableau', 'Ranger un document'])
+    expect(await addStarterEntries('skill', 'fr')).toEqual(['Lire un CCTP', 'Repérer les pénalités', 'Vérifier une exigence', 'Répondre en tableau', 'Ingérer un document', 'Analyser un document', 'Ranger un document'])
     // Un skill exécutable (le circuit des documents) : ce qu'il reçoit, ce qu'il rend, son seuil, dans sa note.
-    expect(read(platform, 'Bibliothèque/Skills/Ranger un document.md')).toMatch(/\ncontexte:\n- fiche\n- texte\n- dossiers\n- regles-de-rangement\nsortie: rangement\nseuil: 0\.7\n/)
+    expect(read(platform, 'Bibliothèque/Skills/Ranger un document.md')).toMatch(/\ncontexte:\n- fiche\n- texte\n- dossiers\n- projets\n- repertoires-attendus\n- regles-de-rangement\nsortie: rangement\nseuil: 0\.7\n/)
     expect(read(platform, 'Bibliothèque/Skills/Répondre en tableau.md')).toMatch(/^---\nbp-type: bibliotheque-skill\nnom: Répondre en tableau\ncategorie: Rédaction\n/)
     expect((await libraryEntries('skill')).map((entry) => entry.name)).toContain('Lire un CCTP')
     expect((await fieldSourceOptions('bibliotheque.skill'))?.find((option) => option.value === 'Répondre en tableau')).toMatchObject({ label: 'Répondre en tableau', description: 'Rédaction · Une réponse courte, en tableau, sources citées' })

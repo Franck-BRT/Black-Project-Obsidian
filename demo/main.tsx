@@ -143,9 +143,14 @@ platform.http = {
     if (seeing) await new Promise((resolve) => setTimeout(resolve, 250))
     // Le circuit : un skill de rangement — sans IA réelle, une proposition peu sûre (le premier
     // répertoire de la liste), pour montrer « À contrôler ».
-    const filing = asked.includes('Tu suis la procédure du skill')
-    const folders = [...asked.matchAll(/^- (\S[^\n]*?) — /gm)].map((match) => match[1]!)
-    const content = filing
+    const analysing = asked.includes('« typePiece »')
+    const filing = !analysing && asked.includes('Tu suis la procédure du skill')
+    const folders = [...asked.matchAll(/^- (\S[^\n]*?) — /gm)].map((match) => match[1]!).filter((folder) => !folder.endsWith('.md'))
+    // L'analyse : sans IA réelle, le premier projet de la liste (s'il y en a), sans certitude.
+    const projects = [...asked.matchAll(/^- (Programmes\/[^\n]*?\.md) — /gm)].map((match) => match[1]!)
+    const content = analysing
+      ? JSON.stringify({ typePiece: '', emetteur: '', projet: projects[0] ?? '', confiance: 0.6, raison: 'Démonstration, sans IA réelle : le projet est deviné, pas lu.' })
+      : filing
       ? JSON.stringify({
           dossier: folders.find((folder) => folder.includes('/')) ?? folders[0] ?? '',
           confiance: 0.55,
@@ -279,7 +284,7 @@ async function start(): Promise<void> {
   // Un workflow de l'utilisateur, à côté des workflows système créés à l'activation.
   settings.workflows = {
     ...settings.workflows,
-    workflows: [...((settings.workflows?.workflows as unknown[] | undefined) ?? []), { id: 'wf-1', name: 'Prévenir à chaque analyse créée', enabled: true, mode: 'auto', trigger: { kind: 'ao.analyse-creee' }, conditions: [], actions: [{ kind: 'notifier', fields: { message: 'Nouvelle analyse : {analyse}' } }], created: new Date().toISOString() }, { id: 'wf-ranger', name: 'Ranger avec l’IA chaque document versé', enabled: false, mode: 'auto', trigger: { kind: 'bibliotheque.document-verse' }, conditions: [], actions: [{ kind: 'ia.executer-skill', fields: { fiche: '{fiche}', skill: 'Ranger un document', seuil: '' } }], created: new Date().toISOString() }]
+    workflows: [...((settings.workflows?.workflows as unknown[] | undefined) ?? []), { id: 'wf-1', name: 'Prévenir à chaque analyse créée', enabled: true, mode: 'auto', trigger: { kind: 'ao.analyse-creee' }, conditions: [], actions: [{ kind: 'notifier', fields: { message: 'Nouvelle analyse : {analyse}' } }], created: new Date().toISOString() }]
   }
 
   const stamp = new Date().toISOString().slice(0, 10)

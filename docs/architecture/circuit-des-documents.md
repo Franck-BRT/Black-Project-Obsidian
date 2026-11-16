@@ -2,7 +2,7 @@
 
 > Copyright © 2026 Black Room Technologies. Tous droits réservés.
 
-**Statut : conception validée ; version A livrée (Black Projects 0.134.0).** Les décisions prises sont à la fin.
+**Statut : conception validée ; versions A (0.134.0) et B (0.135.0) livrées.** Les décisions prises sont à la fin.
 
 ## Le besoin
 
@@ -300,8 +300,11 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
 1. **Version A — l'étape et le contrôle** ✅ *(0.134.0)* : `ia.executer-skill` (contexte, sortie
    validée, confiance, seuil), l'état `circuit`, À contrôler et sa page ; le skill livré « Ranger un
    document » (contextes fiche, texte, dossiers, règles de rangement).
-2. **Version B — le circuit** : À classer comme entrée unique, les trois skills livrés, le
-   workflow système « Circuit des documents » et la relance.
+2. **Version B — le circuit** ✅ *(0.135.0)* : À classer comme entrée unique (réglage « Le
+   circuit des documents (IA) », désactivé d'origine ; seuls les versements de la bibliothèque
+   sans lieu précis y entrent), les trois skills livrés, le workflow système « Circuit des
+   documents » (déclaré par le module IA après ses passes sur les documents), la relance à
+   l'ouverture, le rappel du lundi, « En cours dans le circuit » et la section Circuit de la fiche.
 3. **Version C — les liens** : candidats et entités, liens dans la fiche, rétroliens, entretien.
 
 Chaque version : tests (avec une IA simulée qui rend des réponses sûres, peu sûres,

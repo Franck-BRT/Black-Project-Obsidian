@@ -20,7 +20,7 @@ import { completeTables } from '../../core/tables'
 import { localToday } from '../../core/dates'
 import { readYamlFrontmatter } from '../../core/yaml'
 import { fillTemplate } from '../../core/docs'
-import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
+import type { BlackModule, BooleanField, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import type { Choice, FormField, Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
 import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, runSystemWorkflow, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
@@ -29,7 +29,7 @@ import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type 
 import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { startersFor } from './starters'
-import { DEFAULT_THRESHOLD, readThreshold, SKILL_CONTEXTS, SKILL_OUTPUTS, thresholdLabel, type FilingDecision } from './skills'
+import { DEFAULT_THRESHOLD, readThreshold, SKILL_CONTEXTS, SKILL_OUTPUTS, thresholdLabel, type AnalysisDecision, type FilingDecision } from './skills'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, readRecord, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
@@ -114,6 +114,11 @@ let active: {
   /** Le circuit : les dossiers où ranger ; appliquer (ou soumettre) une décision de rangement. */
   filingFolders(): Promise<{ folder: string; label: string }[]>
   applyFiling(record: string, decision: FilingDecision | null, threshold: number, skill: string): Promise<FilingOutcome | null>
+  applyAnalysis(record: string, decision: AnalysisDecision | null, threshold: number, skill: string): Promise<string | null>
+  markIngested(record: string, skill: string, detail: string): Promise<void>
+  circuitActive(): boolean
+  /** Les skills du circuit (ingérer, analyser, ranger) : ajoutés s'ils manquent. */
+  ensureCircuitSkills(): Promise<void>
   /** Supprimer un répertoire de documents (après une question) ; `true` s'il est parti. */
   removeDirectory(folder: string): Promise<boolean>
   /** Verser des documents choisis (l'ordinateur, le coffre) dans un dossier. */
@@ -421,7 +426,37 @@ export async function applyFilingDecision(record: string, decision: FilingDecisi
   return active ? active.applyFiling(record, decision, threshold, skill) : null
 }
 
-export { DEFAULT_THRESHOLD, FILING_SCHEMA, readFilingAnswer, readThreshold, thresholdLabel, type FilingDecision } from './skills'
+export { ANALYSIS_SCHEMA, DEFAULT_THRESHOLD, FILING_SCHEMA, readAnalysisAnswer, readFilingAnswer, readThreshold, thresholdLabel, type AnalysisDecision, type FilingDecision } from './skills'
+
+/**
+ * Une analyse (rendue par un skill) : le projet reconnu gardé sur la fiche (s'il existe), pour
+ * le rangement ; sûre (confiance au moins égale au seuil), le type de pièce et l'émetteur
+ * donnés — seulement s'ils manquaient ou étaient à confirmer (ce qui est sûr ne change pas).
+ * L'état devient « analysé » (dans le circuit). Rend ce qui a été fait, en une phrase.
+ */
+export async function applyAnalysisDecision(record: string, decision: AnalysisDecision | null, threshold: number, skill: string): Promise<string | null> {
+  return active ? active.applyAnalysis(record, decision, threshold, skill) : null
+}
+
+/** L'ingestion d'un document faite (sa relecture, `detail`) : l'état devient « ingéré » (dans le circuit), dit sur sa fiche. */
+export async function markIngested(record: string, skill: string, detail: string): Promise<void> {
+  await active?.markIngested(record, skill, detail)
+}
+
+/** L'IA a-t-elle déjà relu le texte de ce document (une version du texte « relue par l'IA ») ? */
+export async function aiProofreadAlready(record: string): Promise<boolean> {
+  return active ? (await active.store.textVersions(record)).some((version) => version.origin === 'ia') : false
+}
+
+/** Le circuit des documents est-il actif (son réglage) ? */
+export function circuitActive(): boolean {
+  return active?.circuitActive() ?? false
+}
+
+/** Le répertoire des documents d'un programme ou d'un projet (sans le créer). */
+export function projectDocumentsPath(programme: string, project?: string): string {
+  return active ? [active.projectsFolder(), directoryName(programme), ...(project ? [directoryName(project)] : [])].join('/') : ''
+}
 
 /** Ce qu'on dit à l'IA d'un persona, avant toute autre consigne : qui elle est, comment répondre. */
 export function personaInstructions(persona: Pick<LibraryEntry, 'name' | 'text'>): string {
@@ -522,6 +557,8 @@ async function announce(report: PourReport, origin: DocOrigin, ghosts = false): 
   if (ghosts) await announceKnown(report, origin)
   if (!active || !report.added.length) return
   const { store, t } = active
+  // Le circuit des documents : ses skills là avant qu'il ne démarre.
+  if (report.added.some((doc) => doc.circuit === 'a-classer')) await active.ensureCircuitSkills()
   await emitWorkflowEvent(TRIGGER_BATCH, batchSubject(report.added, origin, t))
   // Son workflow a pu y repérer des versions : les fiches relues.
   report.added = await Promise.all(report.added.map(async (doc) => (await store.load(doc.record)) ?? doc))
@@ -823,6 +860,9 @@ function pouredSubject(doc: LibraryDoc, issuers: readonly KnownIssuer[] = []): S
       dateaconfirmer: doc.dateToConfirm ? t('bibliotheque.read.yes') : '',
       etiquettes: doc.tags.join(', '),
       etiquettesaconfirmer: doc.tagsToConfirm ? t('bibliotheque.read.yes') : '',
+      // Le circuit des documents : où il en est ; « en cours » tant qu'il n'est ni rangé, ni à contrôler, ni écarté.
+      circuit: doc.circuit ?? '',
+      circuitencours: doc.circuit === 'a-classer' || doc.circuit === 'ingere' || doc.circuit === 'analyse' ? t('bibliotheque.read.yes') : '',
       fiche: doc.record
     }
   }
@@ -846,6 +886,20 @@ const referencesFolderField: TextField = {
   tooltipKey: 'bibliotheque.setting.references.folder.tip',
   defaultValue: DEFAULT_REFERENCES_FOLDER,
   normalize: cleanFolder
+}
+
+/** Le workflow système du circuit des documents (déclaré par le module IA, après ses passes sur les documents). */
+export const CIRCUIT_WORKFLOW = 'sys.ia.circuit'
+
+/** Le réglage du circuit des documents : désactivé par défaut (il envoie le texte des documents à l'IA). */
+export const CIRCUIT_KEY = 'circuit'
+const circuitField: BooleanField = {
+  kind: 'boolean',
+  key: CIRCUIT_KEY,
+  nameKey: 'bibliotheque.setting.circuit',
+  descKey: 'bibliotheque.setting.circuit.desc',
+  tooltipKey: 'bibliotheque.setting.circuit.tip',
+  defaultValue: false
 }
 
 const projectsFolderField: TextField = {
@@ -938,11 +992,11 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.49.0',
+  version: '0.50.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField, referencesFolderField, projectsFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
+  settingsFields: [folderField, circuitField, referencesFolderField, projectsFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   async activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
@@ -974,6 +1028,7 @@ export const bibliothequeModule: BlackModule = {
       fs: platform.fs,
       yaml: platform.yaml,
       folder: mainFolder.document,
+      circuit: () => settings.get()[CIRCUIT_KEY] === true,
       today: localToday,
       notesHeading: () => t('bibliotheque.notes'),
       ghostLine: (link, where) => t('bibliotheque.ghost.line', { link, where }),
@@ -1122,6 +1177,12 @@ export const bibliothequeModule: BlackModule = {
     }
     // Une lecture par l'IA qui commence, avance, finit : les pages ouvertes se redessinent.
     pagesChanged = () => context.views?.changed?.()
+    // L'ancienne entrée « À verser » devient « À classer » (son contenu repris).
+    try {
+      await store.migrateInbox()
+    } catch (error) {
+      console.error('[Black Projects] bibliothèque', error)
+    }
     active = {
       store,
       t,
@@ -1138,6 +1199,15 @@ export const bibliothequeModule: BlackModule = {
       ensureFolder: (folder) => platform.fs.ensureFolder(folder),
       filingFolders: () => filingFoldersNow(),
       applyFiling: (record, decision, threshold, skill) => applyFiling(record, decision, threshold, skill),
+      applyAnalysis: (record, decision, threshold, skill) => applyAnalysis(record, decision, threshold, skill),
+      markIngested: async (record, skill, detail) => {
+        const doc = await store.load(record)
+        if (!doc) return
+        await store.setCircuit(record, doc.circuit === 'a-classer' ? { circuit: 'ingere' } : {}, circuitLine('bibliotheque.circuit.line.ingested', { skill, detail }))
+        pagesChanged()
+      },
+      circuitActive: () => settings.get()[CIRCUIT_KEY] === true,
+      ensureCircuitSkills: () => ensureCircuitSkills(),
       removeDirectory: (folder) => removeDirectory('document', folder),
       pour: (folder) => pour(folder),
       toReferences: (record) => toReferences(record)
@@ -1154,11 +1224,25 @@ export const bibliothequeModule: BlackModule = {
       id: TRIGGER_POURED,
       labelKey: 'bibliotheque.wf.trigger.poured',
       descKey: 'bibliotheque.wf.trigger.poured.desc',
-      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteurnom', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'date', 'dateaconfirmer', 'texteextrait', 'scan', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
+      fields: ['titre', 'famille', 'categorie', 'fichier', 'origine', 'extension', 'lisible', 'lecture', 'langue', 'langueaconfirmer', 'reference', 'edition', 'revision', 'identiteaconfirmer', 'titreaconfirmer', 'emetteur', 'emetteurnom', 'emetteuraconfirmer', 'categorieaconfirmer', 'etiquettes', 'etiquettesaconfirmer', 'date', 'dateaconfirmer', 'texteextrait', 'scan', 'circuit', 'circuitencours', 'fiche'].map((key) => ({ key, labelKey: `bibliotheque.wf.var.${key}` }))
     })
     registerLibraryWorkflows({
       t,
       store,
+      relaunchCircuit: async () => {
+        if (settings.get()[CIRCUIT_KEY] !== true) return 0
+        await ensureCircuitSkills()
+        const pending = (await store.all()).filter((doc) => doc.circuit === 'a-classer' || doc.circuit === 'ingere' || doc.circuit === 'analyse')
+        // Chacun repasse par le circuit, à la suite (un workflow s'exécute déjà : sans l'attendre, il le bloquerait) ; « relance » : sa lecture n'a pas pu se faire à l'entrée.
+        const issuers = await knownIssuers()
+        for (const doc of pending) {
+          const subject = pouredSubject(doc, issuers)
+          const run = runSystemWorkflow(CIRCUIT_WORKFLOW, TRIGGER_POURED, { ...subject, vars: { ...subject.vars, relance: t('bibliotheque.read.yes') } })
+          if (!workflowRunning()) await run
+        }
+        return pending.length
+      },
+      toControl: async () => (await store.all()).filter((doc) => doc.circuit === 'a-controler'),
       pourNow,
       // Le dossier de dépôt : versé, puis annoncé (le versement, chaque document) comme un autre.
       pourInbox: async () => {
@@ -1621,7 +1705,8 @@ export const bibliothequeModule: BlackModule = {
             line('bibliotheque.circuit.ctx.date', doc.date),
             line('bibliotheque.circuit.ctx.tags', doc.tags.join(', ')),
             line('bibliotheque.circuit.ctx.language', doc.language),
-            line('bibliotheque.circuit.ctx.origins', doc.origins.map((origin) => [origin.module, origin.label].filter(Boolean).join(' — ')).join(' ; '))
+            line('bibliotheque.circuit.ctx.origins', doc.origins.map((origin) => [origin.module, origin.label].filter(Boolean).join(' — ')).join(' ; ')),
+            line('bibliotheque.circuit.ctx.project', doc.circuitProject)
           ]
             .filter(Boolean)
             .join('\n')
@@ -1634,6 +1719,19 @@ export const bibliothequeModule: BlackModule = {
           const text = ((await store.textOfRecord(record)) ?? '').trim()
           if (!text) return t('bibliotheque.circuit.ctx.noText')
           return text.length > SKILL_TEXT_LIMIT ? `${text.slice(0, SKILL_TEXT_LIMIT)}\n\n${t('bibliotheque.circuit.ctx.truncated', { shown: SKILL_TEXT_LIMIT, total: text.length })}` : text
+        }
+      }),
+      registerSkillContext({
+        key: 'types-de-piece',
+        label: t('bibliotheque.skill.context.types-de-piece'),
+        provide: async () => [t('bibliotheque.circuit.ctx.types'), ...libraryPieceTypes().map((type) => `- ${type.code}${type.label && type.label !== type.code ? ` — ${type.label}` : ''}`)].join('\n')
+      }),
+      registerSkillContext({
+        key: 'emetteurs',
+        label: t('bibliotheque.skill.context.emetteurs'),
+        provide: async () => {
+          const known = await knownIssuers()
+          return known.length ? [t('bibliotheque.circuit.ctx.issuers'), ...known.map((issuer) => `- ${issuer.code} — ${issuer.name}${issuer.aliases.length ? ` (${issuer.aliases.join(', ')})` : ''}`)].join('\n') : t('bibliotheque.circuit.ctx.noIssuers')
         }
       }),
       registerSkillContext({
@@ -1687,6 +1785,36 @@ export const bibliothequeModule: BlackModule = {
       )
       pagesChanged()
       return { outcome: 'a-controler', record: moved, message: t('bibliotheque.circuit.toControl', { title: doc.title, confidence: percent(decision?.confidence ?? 0), threshold: percent(threshold) }) }
+    }
+    const applyAnalysis = async (record: string, decision: AnalysisDecision | null, threshold: number, skill: string): Promise<string | null> => {
+      const doc = await store.load(record)
+      if (!doc) return null
+      const project = decision?.project && decision.project.endsWith('.md') && (await platform.fs.exists(decision.project)) ? decision.project : ''
+      const sure = !!decision && decision.confidence >= threshold
+      const done: string[] = []
+      if (sure && decision.category && decision.category !== doc.category && (doc.categoryToConfirm || !doc.category)) {
+        await store.setCategory(record, decision.category, true)
+        done.push(t('bibliotheque.circuit.analysis.category', { category: decision.category }))
+      }
+      if (sure && decision.issuer && decision.issuer !== doc.issuer && (doc.issuerToConfirm || !doc.issuer)) {
+        await store.setIssuer(record, decision.issuer, true)
+        done.push(t('bibliotheque.circuit.analysis.issuer', { issuer: decision.issuer }))
+      }
+      if (project) done.push(t('bibliotheque.circuit.analysis.project', { project: baseName(project).replace(/\.md$/, '') }))
+      const summary = !decision
+        ? t('bibliotheque.circuit.reason.unreadable')
+        : [done.join(', ') || t('bibliotheque.circuit.analysis.nothing'), `${t('bibliotheque.circuit.analysis.confidence', { confidence: percent(decision.confidence) })}${sure ? '' : ` — ${t('bibliotheque.circuit.analysis.unsure', { threshold: percent(threshold) })}`}`].join(' · ')
+      await store.setCircuit(
+        record,
+        { ...(doc.circuit === 'a-classer' || doc.circuit === 'ingere' ? { circuit: 'analyse' as const } : {}), ...(project ? { circuitProject: project } : {}) },
+        circuitLine('bibliotheque.circuit.line.analysed', { skill, summary })
+      )
+      pagesChanged()
+      return t('bibliotheque.circuit.analysed', { title: doc.title, summary })
+    }
+    /** Les skills du circuit (ceux qui rendent une décision) : ajoutés à la bibliothèque des skills s'ils manquent. */
+    const ensureCircuitSkills = async (): Promise<void> => {
+      await entries.skill.addStarters(startersFor('skill', i18n.language).filter((draft) => !!draft.output))
     }
     /** À contrôler : la proposition de l'IA, acceptée. */
     const acceptProposal = async (record: string): Promise<string | null> => {
@@ -2225,7 +2353,14 @@ export const bibliothequeModule: BlackModule = {
     registerLibraryHome(context.views, {
       t,
       store,
-      control: { list: toControl, place: placeOfFolder, accept: acceptProposal, elsewhere: fileElsewhere, discard: discardControlled },
+      control: {
+        list: toControl,
+        pending: async () => (await store.all()).filter((doc) => doc.circuit === 'a-classer' || doc.circuit === 'ingere' || doc.circuit === 'analyse'),
+        place: placeOfFolder,
+        accept: acceptProposal,
+        elsewhere: fileElsewhere,
+        discard: discardControlled
+      },
       today: localToday,
       locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR',
       ...(showPage ? { showPage } : {}),

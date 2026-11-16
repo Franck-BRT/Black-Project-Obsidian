@@ -16,9 +16,10 @@ import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/
 import { addStarterEntries, bibliothequeModule, libraryEntries, pourIntoLibrary, readFilingAnswer, readThreshold } from '../src/modules/bibliotheque'
 import { iaModule } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
+import { programmesModule } from '../src/modules/programmes'
 import { actionSpec, NO_SUBJECT, workflowsModule } from '../src/modules/workflows'
 
-const ALL: BlackModule[] = [lectureFichiersModule, bibliothequeModule, workflowsModule, iaModule]
+const ALL: BlackModule[] = [lectureFichiersModule, bibliothequeModule, workflowsModule, iaModule, programmesModule]
 const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' }
 const bytes = (text: string) => new TextEncoder().encode(text)
 const read = (platform: MemoryPlatform, path: string) => new TextDecoder().decode(platform.files.get(path))
@@ -111,11 +112,11 @@ describe('un skill exécutable', () => {
     const { load } = await start(platform)
     await addStarterEntries('skill', 'fr')
     const skill = (await libraryEntries('skill')).find((entry) => entry.name === 'Ranger un document')!
-    expect(skill).toMatchObject({ context: ['fiche', 'texte', 'dossiers', 'regles-de-rangement'], output: 'rangement', threshold: 0.7 })
+    expect(skill).toMatchObject({ context: ['fiche', 'texte', 'dossiers', 'projets', 'repertoires-attendus', 'regles-de-rangement'], output: 'rangement', threshold: 0.7 })
     const page = await load(`bibliotheque.skill?${encodeURIComponent(skill.path)}`)
     const executable = page.blocks.find((block) => block.kind === 'text' && block.title === 'Exécutable')
     expect(executable?.kind === 'text' && executable.paragraphs).toEqual([
-      'Il reçoit : Sa fiche, Son texte, Les dossiers où ranger, Les règles de rangement.',
+      'Il reçoit : Sa fiche, Son texte, Les dossiers où ranger, Les projets en cours, Les répertoires attendus des projets, Les règles de rangement.',
       'Il rend : Une décision de rangement (un dossier, une confiance, une raison).',
       'Seuil de confiance : 70 % — en dessous, le document va dans « À contrôler ».'
     ])
@@ -123,7 +124,7 @@ describe('un skill exécutable', () => {
     platform.forms.push({ name: 'Ranger un document', category: 'Circuit', description: '', text: 'Range.', favorite: 'false', 'contexte:fiche': 'true', 'contexte:texte': 'false', 'contexte:dossiers': 'true', 'contexte:regles-de-rangement': 'true', sortie: 'rangement', seuil: '80 %' })
     await page.actions!.find((action) => action.id === 'edit')!.run()
     const form = platform.asked.at(-1)!
-    expect(form.fields.filter((field) => field.key.startsWith('contexte:')).map((field) => field.label)).toEqual(['Sa fiche', 'Son texte', 'Les dossiers où ranger', 'Les règles de rangement'])
+    expect(form.fields.filter((field) => field.key.startsWith('contexte:')).map((field) => field.label)).toEqual(['Sa fiche', 'Son texte', 'Les types de pièce', 'Les entreprises connues', 'Les dossiers où ranger', 'Les règles de rangement', 'Les projets en cours', 'Les répertoires attendus des projets'])
     expect(form.fields.find((field) => field.key === 'sortie')).toMatchObject({ kind: 'choice', value: 'rangement' })
     expect(form.fields.find((field) => field.key === 'seuil')).toMatchObject({ value: '0,7' })
     expect((await libraryEntries('skill')).find((entry) => entry.name === 'Ranger un document')).toMatchObject({ context: ['fiche', 'dossiers', 'regles-de-rangement'], output: 'rangement', threshold: 0.8, text: 'Range.' })

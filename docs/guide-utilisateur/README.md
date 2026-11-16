@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.134.0)
+## Aujourd'hui (version 0.135.0)
+
+- **Le circuit des documents** : activez-le (Paramètres › Bibliothèque). Chaque document versé
+  sans lieu précis entre dans **À classer** ; l'IA le relit, l'analyse (type de pièce, entreprise,
+  projet) et le range — dans le répertoire du projet qui attend ce type de pièce, quand il y en a
+  un. Pas assez sûre : **À contrôler**. L'ancien dossier « À verser » s'appelle maintenant
+  « À classer ».
 
 - **Le circuit des documents commence** : un skill peut maintenant **ranger un document** (« Ranger
   un document », dans les skills) ; l'étape de workflow **Exécuter un skill** le lance. Si l'IA

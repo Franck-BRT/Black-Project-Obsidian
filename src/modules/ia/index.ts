@@ -12,7 +12,7 @@
  * tout le reste de Black Projects fonctionne : seules ces fonctions le disent.
  */
 
-import { setAiProofread, setAiResearch, setAiVision, type ResearchField } from '../bibliotheque'
+import { CIRCUIT_WORKFLOW, setAiProofread, setAiResearch, setAiVision, type ResearchField } from '../bibliotheque'
 import { OPENING, registerAction, registerAiGuidance, registerSystemWorkflow } from '../workflows'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
@@ -302,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.29.0',
+  version: '0.30.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -511,6 +511,25 @@ export const iaModule: BlackModule = {
         trigger: { kind: 'bibliotheque.document-verse' },
         conditions: [{ field: 'emetteuraconfirmer', op: 'not-empty', value: '' }],
         actions: [{ kind: 'ia.emetteur-document', fields: { fiche: '{fiche}' } }]
+      })
+    })
+    // Le circuit des documents (le réglage de la bibliothèque) : ingérer, analyser, ranger — après
+    // les passes ci-dessus (les workflows s'exécutent dans l'ordre où ils sont déclarés), pour
+    // ne pas refaire leur travail ni déplacer une fiche qu'elles lisent encore.
+    registerSystemWorkflow({
+      id: CIRCUIT_WORKFLOW,
+      moduleKey: 'ia.name',
+      enabledByDefault: true,
+      make: (tr) => ({
+        name: tr('ia.sys.circuit'),
+        mode: 'auto',
+        trigger: { kind: 'bibliotheque.document-verse' },
+        conditions: [{ field: 'circuitencours', op: 'not-empty', value: '' }],
+        actions: [
+          { kind: 'ia.executer-skill', fields: { fiche: '{fiche}', skill: tr('ia.sys.circuit.ingest'), seuil: '' } },
+          { kind: 'ia.executer-skill', fields: { fiche: '{fiche}', skill: tr('ia.sys.circuit.analyse'), seuil: '' } },
+          { kind: 'ia.executer-skill', fields: { fiche: '{fiche}', skill: tr('ia.sys.circuit.file'), seuil: '' } }
+        ]
       })
     })
     registerSystemWorkflow({

@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le circuit des documents, version B (v0.135.0)
+
+- [ ] Paramètres › Bibliothèque › **Le circuit des documents (IA)** : activé (IA réglée)
+- [ ] Un ancien `Bibliothèque/À verser` : devenu `Bibliothèque/À classer`, son contenu repris
+- [ ] Verser un document (sans lieu, ou à la racine) : sa fiche dans À classer, puis ingéré,
+      analysé, rangé (ou À contrôler) ; la section **Circuit** de sa fiche le raconte
+- [ ] Un projet dont le type attend un CCTP dans « Offre › Technique » : un CCTP de ce projet
+      y est rangé
+- [ ] Versé dans un répertoire choisi, ou une pièce d'analyse d'AO : pas de circuit
+- [ ] IA coupée pendant le circuit : la page À contrôler › **En cours dans le circuit** ; Obsidian
+      relancé, IA revenue : il reprend
+- [ ] Workflows : « Circuit des documents », « Relancer le circuit des documents, à l'ouverture »,
+      « Rappeler les documents à contrôler, chaque lundi » ; Skills : Ingérer, Analyser, Ranger
+
 ## Le circuit des documents, version A (v0.134.0)
 
 - [ ] Bibliothèque › Skills › **Ajouter les exemples** : « Ranger un document » ; sa fiche dit

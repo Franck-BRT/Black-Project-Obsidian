@@ -125,6 +125,11 @@ export async function runDueWorkflows(): Promise<void> {
   await engine?.tick()
 }
 
+/** Attendre que tous les workflows en file soient passés (ceux qu'ils ont mis à la suite compris). */
+export async function workflowsIdle(): Promise<void> {
+  await engine?.idle()
+}
+
 /** Exécute les workflows « À l'ouverture » (la première minuterie le fait ; les tests aussi). */
 export async function runOpeningWorkflows(): Promise<void> {
   await engine?.emit({ trigger: OPENING, subject: NO_SUBJECT })
@@ -144,6 +149,12 @@ export const workflowRunning = (): boolean => engine?.busy ?? false
 export function systemWorkflowManages(id: string): boolean {
   if (!engine || !session) return false
   return session.load().some((workflow) => workflow.system === id)
+}
+
+/** Un workflow système est-il présent **et activé** (il s'exécutera à son déclencheur) ? */
+export function systemWorkflowEnabled(id: string): boolean {
+  if (!engine || !session) return false
+  return session.load().some((workflow) => workflow.system === id && workflow.enabled)
 }
 
 const readWorkflows = (settings: Readonly<Record<string, unknown>>): Workflow[] => {
@@ -197,7 +208,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.20.0',
+  version: '0.21.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),

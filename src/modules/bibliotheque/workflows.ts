@@ -107,6 +107,9 @@ export interface LibraryWorkflowDeps {
    * un fantôme d'un document dans un dossier. Rend la note du fantôme, ou `null`.
    */
   offerGhost(record: string, folder: string, ask: boolean, ui: Ui): Promise<string | null>
+  /** Le circuit des documents : relancer ceux qui s'y sont arrêtés (rend combien) ; ceux qui attendent d'être contrôlés. */
+  relaunchCircuit(): Promise<number>
+  toControl(): Promise<LibraryDoc[]>
 }
 
 /** Le sujet d'un document déjà là : lui, où il est rangé, et le lieu où on l'a déposé. */
@@ -252,6 +255,37 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
     }
   })
 
+  // ── Le circuit des documents : relancer, rappeler ce qui est à contrôler ──
+  registerAction({
+    id: 'bibliotheque.relancer-circuit',
+    labelKey: 'bibliotheque.wf.action.relaunch',
+    descKey: 'bibliotheque.wf.action.relaunch.desc',
+    fields: [],
+    results: ['text'],
+    async run() {
+      const count = await deps.relaunchCircuit()
+      const text = t(count ? 'bibliotheque.wf.relaunch.done' : 'bibliotheque.wf.relaunch.none', { count })
+      return { lines: [text], results: { text } }
+    }
+  })
+  registerAction({
+    id: 'bibliotheque.rappel-a-controler',
+    labelKey: 'bibliotheque.wf.action.toControl',
+    descKey: 'bibliotheque.wf.action.toControl.desc',
+    fields: [],
+    results: ['text'],
+    async run({ notifier }) {
+      const pending = (await deps.toControl()).sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+      if (!pending.length) {
+        const text = t('bibliotheque.wf.toControl.none')
+        return { lines: [text], results: { text } }
+      }
+      const text = t('bibliotheque.wf.toControl.found', { count: pending.length, titles: someTitles(pending) })
+      notifier.notify(text, 15000)
+      return { lines: [text], paths: pending.map((doc) => doc.record), results: { text } }
+    }
+  })
+
   registerAction({
     id: 'bibliotheque.a-classer',
     labelKey: 'bibliotheque.wf.action.unclassified',
@@ -322,4 +356,7 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   system('langues-a-confirmer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.langues-a-confirmer', fields: {} }])
   system('fantome', true, { kind: TRIGGER_KNOWN }, [{ kind: 'bibliotheque.fantome', fields: { quoi: 'demander', fiche: '{fiche}', dossier: '{dossier}' } }])
   system('a-classer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.a-classer', fields: {} }])
+  // Le circuit des documents : ceux qui s'y sont arrêtés (IA coupée, Obsidian fermé) reprennent à l'ouverture ; ce qui est à contrôler, rappelé le lundi.
+  system('relancer-circuit', true, { kind: OPENING }, [{ kind: 'bibliotheque.relancer-circuit', fields: {} }])
+  system('rappel-a-controler', true, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.rappel-a-controler', fields: {} }])
 }

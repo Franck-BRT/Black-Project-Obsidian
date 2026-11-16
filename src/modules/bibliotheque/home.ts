@@ -410,8 +410,10 @@ async function controlNotice(deps: LibraryHomeDeps): Promise<HomeBlock[]> {
   const { t } = deps
   if (!deps.control) return []
   const count = (await deps.control.list()).length
-  if (!count) return []
-  return [{ kind: 'message', tone: 'warning', text: t('bibliotheque.control.notice', { count }), actions: [{ id: 'control', label: t('bibliotheque.control.open'), icon: 'flag', primary: true, run: () => deps.showPage?.(CONTROL_PAGE) }] }]
+  const pending = (await deps.control.pending?.())?.length ?? 0
+  if (!count && !pending) return []
+  const text = [count ? t('bibliotheque.control.notice', { count }) : '', pending ? t('bibliotheque.control.notice.pending', { count: pending }) : ''].filter(Boolean).join(' ')
+  return [{ kind: 'message', tone: count ? 'warning' : 'info', text, actions: [{ id: 'control', label: t(count ? 'bibliotheque.control.open' : 'bibliotheque.control.see'), icon: 'flag', primary: !!count, run: () => deps.showPage?.(CONTROL_PAGE) }] }]
 }
 
 export async function docPage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
@@ -925,6 +927,16 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         ]
       }),
       fold('origines', t('bibliotheque.section.origins', { count: origins.length }), originText(t, doc), 'upload', { kind: 'list', items: origins, empty: t('bibliotheque.origins.none') }),
+      // Le circuit des documents : où il en est, ce qui a été fait (l'historique de sa note).
+      ...(doc.circuit
+        ? [
+            fold('circuit', t('bibliotheque.circuit.heading'), t(`bibliotheque.control.state.${doc.circuit}`), 'flow', {
+              kind: 'list',
+              items: (await deps.store.circuitHistory(doc.record, t('bibliotheque.circuit.heading'))).map((line, index) => ({ id: `circuit-${index}`, title: line })),
+              empty: t('bibliotheque.circuit.empty')
+            })
+          ]
+        : []),
       // Qui l'appelle : toujours pour un document de référence ; pour un autre, s'il est appelé.
       ...(isReference || callers.length
         ? [

@@ -13,10 +13,14 @@
  */
 
 /** Ce qu'un skill peut recevoir, livré par la bibliothèque (d'autres modules en ajoutent). */
-export const SKILL_CONTEXTS = ['fiche', 'texte', 'dossiers', 'regles-de-rangement'] as const
+export const SKILL_CONTEXTS = ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'dossiers', 'regles-de-rangement'] as const
 
-/** Ce qu'un skill peut rendre : rien (une réponse libre), ou une décision de forme fixée. */
-export const SKILL_OUTPUTS = ['rangement'] as const
+/**
+ * Ce qu'un skill peut rendre : rien (une réponse libre), ou une décision de forme fixée —
+ * l'**ingestion** (le texte relu : sa procédure guide la relecture), l'**analyse** (type de
+ * pièce, émetteur, projet), le **rangement** (un dossier).
+ */
+export const SKILL_OUTPUTS = ['ingestion', 'analyse', 'rangement'] as const
 export type SkillOutput = (typeof SKILL_OUTPUTS)[number]
 
 /** Le seuil de confiance par défaut : en dessous, la décision n'est pas appliquée, elle est soumise. */
@@ -88,4 +92,68 @@ export function readFilingAnswer(answer: unknown, allowed: readonly string[]): F
     .map((each) => (typeof each === 'string' ? known.get(trimFolder(each).toLowerCase()) : undefined))
     .filter((each): each is string => !!each && each !== folder)
   return { folder, confidence: folder ? readConfidence(data.confiance) : 0, reason, alternatives: [...new Set(alternatives)] }
+}
+
+/** Ce que l'analyse d'un document établit. */
+export interface AnalysisDecision {
+  /** Un type de pièce de la liste (son code) ; vide : aucun de la liste. */
+  category: string
+  /** Un émetteur de la liste (son code) ; vide : aucun de la liste. */
+  issuer: string
+  /** La note du projet concerné (un chemin), vide : aucun. */
+  project: string
+  confidence: number
+  reason: string
+}
+
+/** La forme de la réponse d'analyse, demandée à l'IA. */
+export const ANALYSIS_SCHEMA = {
+  name: 'analyse',
+  schema: {
+    type: 'object',
+    properties: {
+      typePiece: { type: 'string' },
+      emetteur: { type: 'string' },
+      projet: { type: 'string' },
+      confiance: { type: 'number' },
+      raison: { type: 'string' }
+    },
+    required: ['typePiece', 'emetteur', 'projet', 'confiance', 'raison'],
+    additionalProperties: false
+  }
+}
+
+const fold = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[«»"“”]/g, '')
+    .trim()
+
+/**
+ * Relire la réponse d'analyse : un type de pièce de la liste (par son code ou son libellé,
+ * « CCTP — Cahier… » aussi), un émetteur de la liste (code, nom ou autre nom), le chemin d'un
+ * projet tel quel (l'application vérifie qu'il existe). Ce qui n'est pas de la liste est
+ * laissé vide. `null` : illisible.
+ */
+export function readAnalysisAnswer(
+  answer: unknown,
+  lists: { types: readonly { code: string; label: string }[]; issuers: readonly { code: string; name: string; aliases: readonly string[] }[] }
+): AnalysisDecision | null {
+  if (typeof answer !== 'object' || answer === null) return null
+  const data = answer as Record<string, unknown>
+  const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+  const said = { type: text(data.typePiece), issuer: text(data.emetteur), project: text(data.projet), reason: text(data.raison) }
+  if (!said.type && !said.issuer && !said.project && !said.reason) return null
+  const head = (value: string) => fold(value.split(/\s+[—–(-]\s*/)[0] ?? value)
+  const type = said.type ? lists.types.find((each) => [each.code, each.label].some((name) => fold(name) === fold(said.type) || fold(name) === head(said.type))) : undefined
+  const issuer = said.issuer ? lists.issuers.find((each) => [each.code, each.name, ...each.aliases].some((name) => fold(name) === fold(said.issuer) || fold(name) === head(said.issuer))) : undefined
+  return {
+    category: type?.code ?? '',
+    issuer: issuer?.code ?? '',
+    project: said.project.replace(/^\[\[|\]\]$/g, '').trim(),
+    confidence: readConfidence(data.confiance),
+    reason: said.reason
+  }
 }

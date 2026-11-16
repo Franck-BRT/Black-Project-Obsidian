@@ -5,13 +5,35 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.49.0 (Black Projects 0.134.0) |
+| Version | 0.50.0 (Black Projects 0.135.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le circuit des documents, version B : À classer, ingérer, analyser, ranger (v0.50.0, Black Projects 0.135.0)
+
+- `INBOX_FOLDER` = **À classer** (`LEGACY_INBOX_FOLDER` « À verser » repris à l'activation :
+  `LibraryStore.migrateInbox`) ; parcouru, jamais une destination ; `pourInbox` n'y reverse pas les
+  fiches qui y attendent.
+- Réglage `circuit` (`BooleanField`, désactivé) ; `StoreDeps.circuit` : un versement d'origine
+  `bibliotheque`, sans dossier ou à la racine (`target`), range sa fiche dans À classer avec
+  `circuit: a-classer`. Variables du déclencheur : `{circuit}`, `{circuitencours}`.
+- `skills.ts` : sorties `ingestion`, `analyse` (`ANALYSIS_SCHEMA`, `readAnalysisAnswer` — type de
+  pièce et émetteur de la liste, projet tel quel) ; contextes `types-de-piece`, `emetteurs`.
+- `applyAnalysisDecision` (le projet gardé — `circuit-projet` —, type et émetteur donnés si sûrs et
+  à confirmer ou vides, état `analyse`), `markIngested` (état `ingere`), `aiProofreadAlready`,
+  `circuitActive`, `projectDocumentsPath`, `CIRCUIT_WORKFLOW`.
+- Skills livrés **Ingérer**, **Analyser**, **Ranger un document** (ce dernier reçoit aussi les
+  projets et leurs répertoires attendus) ; ajoutés s'ils manquent au premier document du circuit.
+- Actions `bibliotheque.relancer-circuit` (les documents arrêtés repassent par le circuit, à la
+  suite de la file, avec `{relance}`) et `bibliotheque.rappel-a-controler` ; workflows système
+  `relancer-circuit` (à l'ouverture) et `rappel-a-controler` (le lundi), actifs.
+- Page À contrôler : section **En cours dans le circuit** (« Ranger moi-même… ») ; l'avis de la
+  page des documents compte aussi ceux en cours ; la fiche, une section **Circuit** (l'historique,
+  `LibraryStore.circuitHistory`).
 
 ## Le circuit des documents, version A : skills exécutables, À contrôler (v0.49.0, Black Projects 0.134.0)
 
