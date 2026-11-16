@@ -15,6 +15,7 @@ import { ENTRY_KINDS, entryCategories, type EntryKind, type EntryStore, type Lib
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, shelfCards, type ShelfPlacesDeps } from './places'
 import { PROJECT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
+import { plainText } from '../../core/markdown'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -73,8 +74,9 @@ const slug = (category: string): string =>
     .replace(/[^a-z0-9]+/g, '-')}`
 
 /** Les premiers mots d'un texte, sur une ligne. */
+// L'extrait d'une carte : le texte sans sa syntaxe Markdown (titres, puces, gras…).
 const excerpt = (text: string, size = 220): string => {
-  const flat = text.replace(/\s+/g, ' ').trim()
+  const flat = plainText(text.replace(/^\s*#{1,6}\s+/gm, '').replace(/^\s*(?:[-*+]|\d{1,3}[.)])\s+/gm, ''))
   return flat.length > size ? `${flat.slice(0, size - 1)}…` : flat
 }
 
@@ -300,7 +302,8 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
       ...(entry.description && kind !== 'person' ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
       ...contact,
       ...staff,
-      { kind: 'text', title: t(`bibliotheque.${kind}.text`), paragraphs: entry.text ? entry.text.split(/\n{2,}/) : [], empty: t('bibliotheque.entry.noText') },
+      // Le texte mis en forme : titres, listes, gras… (un prompt, un skill s'écrivent en Markdown).
+      { kind: 'markdown', title: t(`bibliotheque.${kind}.text`), text: entry.text ?? '', empty: t('bibliotheque.entry.noText') },
       // Un skill exécutable (le circuit des documents) : ce qu'il reçoit, ce qu'il rend, son seuil.
       ...(kind === 'skill' && (entry.context?.length || entry.output)
         ? [

@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.50.3 (Black Projects 0.136.1) |
+| Version | 0.50.4 (Black Projects 0.136.2) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le texte d'une entrée mis en forme (v0.50.4, Black Projects 0.136.2)
+
+- La fiche d'un prompt, d'un persona, d'un skill (et des autres entrées) montre son texte en
+  **Markdown mis en forme** (bloc `markdown` au lieu de `text` : titres, listes numérotées ou à
+  puces, gras, tableaux) ; l'extrait de sa carte est sans syntaxe (`plainText`, titres et puces
+  retirés).
 
 ## Les skills du circuit dès l'activation (v0.50.3, Black Projects 0.136.1)
 

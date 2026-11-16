@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.1)
+## Aujourd'hui (version 0.136.2)
+
+- **Le texte des prompts, personas et skills mis en forme** : sur leur fiche, les listes
+  numérotées, le gras, les titres s'affichent comme dans une note (plus de `**` visibles) ; sur
+  leur carte, l'extrait est sans ces signes.
 
 - **Les skills du circuit sont là dès le départ** : « Ingérer un document », « Analyser un
   document » et « Ranger un document » apparaissent dans Bibliothèque › Skills sans attendre le

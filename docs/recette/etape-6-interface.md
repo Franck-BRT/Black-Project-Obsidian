@@ -70,6 +70,12 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le texte des entrées mis en forme (v0.136.2)
+
+- [ ] Bibliothèque › Skills › **Analyser un document** : sa méthode en liste numérotée, le gras
+      rendu (aucun `**` visible) ; sa carte : l'extrait sans `**` ni numéros
+- [ ] Un prompt, un persona écrit avec des titres, des puces : mis en forme sur sa fiche
+
 ## Les skills du circuit dès l'activation (v0.136.1)
 
 - [ ] Nouveau coffre, ou coffre existant mis à jour : Bibliothèque › Skills montre **Ingérer un
