@@ -305,12 +305,50 @@ export interface LibraryDoc {
   tagsProbable?: string[]
   /** Ses étiquettes ont été données par l'IA. */
   tagsByAi?: boolean
+  /**
+   * **Le circuit des documents** : où il en est ; à contrôler, pourquoi (la raison de l'IA),
+   * ce qu'elle propose (un dossier), avec quelle confiance, et ses autres dossiers possibles.
+   * Absent : le document n'est pas dans le circuit (tous ceux d'avant).
+   */
+  circuit?: CircuitState
+  circuitReason?: string
+  circuitProposal?: string
+  circuitConfidence?: number
+  circuitAlternatives?: string[]
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
 }
 
 export const RECORD_TYPE = 'bibliotheque-document'
+
+/** Où en est un document dans le circuit : à classer, ingéré, analysé, rangé, à contrôler, écarté. */
+export type CircuitState = 'a-classer' | 'ingere' | 'analyse' | 'range' | 'a-controler' | 'ecarte'
+export const CIRCUIT_STATES: readonly CircuitState[] = ['a-classer', 'ingere', 'analyse', 'range', 'a-controler', 'ecarte']
+
+/**
+ * L'historique du circuit, dans la note d'un document : une ligne de plus dans sa section
+ * (`heading`), créée au besoin avant le texte extrait (ou à la fin) ; le reste ne bouge pas.
+ */
+export function withCircuitLine(body: string, heading: string, line: string): string {
+  const title = `## ${heading}`
+  const entry = `- ${line.trim()}`
+  const lines = body.split('\n')
+  const at = lines.findIndex((each) => each.trim() === title)
+  if (at !== -1) {
+    // La fin de la section : le titre suivant, ou le texte extrait, ou la fin de la note.
+    let end = lines.findIndex((each, index) => index > at && (/^#{1,2} /.test(each) || each.startsWith(TEXT_START)))
+    if (end === -1) end = lines.length
+    let last = end
+    while (last > at + 1 && !lines[last - 1]!.trim()) last--
+    lines.splice(last, 0, entry)
+    return lines.join('\n')
+  }
+  const section = `${title}\n\n${entry}\n`
+  const start = body.indexOf(TEXT_START)
+  if (start !== -1) return `${body.slice(0, start).trimEnd()}\n\n${section}\n${body.slice(start)}`
+  return `${body.trimEnd()}\n\n${section}`
+}
 
 const link = (path: string): string => `[[${path}]]`
 /** Le chemin d'un lien « [[chemin|texte]] », ou le texte tel quel. */
@@ -359,7 +397,12 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.textVersion ? { texteVersion: doc.textVersion } : {}),
     ...(doc.tagsToConfirm ? { etiquettesAConfirmer: true } : {}),
     ...(doc.tagsToConfirm && doc.tagsProbable?.length ? { etiquettesProbables: doc.tagsProbable } : {}),
-    ...(doc.tagsByAi ? { etiquettesIdentifieesPar: 'ia' } : {})
+    ...(doc.tagsByAi ? { etiquettesIdentifieesPar: 'ia' } : {}),
+    ...(doc.circuit ? { circuit: doc.circuit } : {}),
+    ...(doc.circuit && doc.circuitReason ? { 'circuit-raison': doc.circuitReason } : {}),
+    ...(doc.circuit && doc.circuitProposal ? { 'circuit-proposition': doc.circuitProposal } : {}),
+    ...(doc.circuit && doc.circuitConfidence !== undefined ? { 'circuit-confiance': doc.circuitConfidence } : {}),
+    ...(doc.circuit && doc.circuitAlternatives?.length ? { 'circuit-alternatives': doc.circuitAlternatives } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -422,7 +465,16 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
     ...(Number(data.texteVersion) ? { textVersion: Number(data.texteVersion) } : {}),
     ...(data.etiquettesAConfirmer === true ? { tagsToConfirm: true } : {}),
     ...(data.etiquettesAConfirmer === true && Array.isArray(data.etiquettesProbables) && data.etiquettesProbables.length ? { tagsProbable: data.etiquettesProbables.map(text).filter(Boolean) } : {}),
-    ...(data.etiquettesIdentifieesPar === 'ia' ? { tagsByAi: true } : {})
+    ...(data.etiquettesIdentifieesPar === 'ia' ? { tagsByAi: true } : {}),
+    ...(CIRCUIT_STATES.includes(data.circuit as CircuitState)
+      ? {
+          circuit: data.circuit as CircuitState,
+          ...(text(data['circuit-raison']) ? { circuitReason: text(data['circuit-raison']) } : {}),
+          ...(text(data['circuit-proposition']) ? { circuitProposal: text(data['circuit-proposition']) } : {}),
+          ...(Number.isFinite(Number(data['circuit-confiance'])) && data['circuit-confiance'] !== null && data['circuit-confiance'] !== '' ? { circuitConfidence: Number(data['circuit-confiance']) } : {}),
+          ...(Array.isArray(data['circuit-alternatives']) && data['circuit-alternatives'].length ? { circuitAlternatives: data['circuit-alternatives'].map(text).filter(Boolean) } : {})
+        }
+      : {})
   }
 }
 

@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le circuit des documents, version A (v0.134.0)
+
+- [ ] Bibliothèque › Skills › **Ajouter les exemples** : « Ranger un document » ; sa fiche dit
+      « Exécutable » (il reçoit, il rend, son seuil) ; **Modifier** : un interrupteur par contexte,
+      la sortie, le seuil — gardés à l'enregistrement
+- [ ] Un workflow « Bibliothèque : document versé » → **Exécuter un skill** (« Ranger un
+      document ») ; IA réglée ; un document versé : rangé (sûre), ou dans **À contrôler**
+- [ ] Page des documents : « N document(s) à contrôler » → **Contrôler** ; la carte : proposition,
+      confiance, raison ; **Accepter** le range ; **Choisir ailleurs…** (propositions de l'IA
+      d'abord) ; **Écarter** le met de côté
+- [ ] La fiche d'un document à contrôler : le même message ; sa section **Circuit** garde
+      l'historique
+- [ ] `Bibliothèque/Règles de rangement.md` écrite : le skill la reçoit
+- [ ] `À contrôler` n'apparaît pas comme répertoire ni comme destination
+
 ## Supprimer un skill, un workflow (v0.133.0)
 
 - [ ] Bibliothèque › Skills › un skill › **Supprimer** (sur sa carte ou sa fiche) : sa note à la

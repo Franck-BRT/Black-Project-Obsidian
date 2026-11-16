@@ -21,7 +21,7 @@ import { localToday } from '../../core/dates'
 import { readYamlFrontmatter } from '../../core/yaml'
 import { fillTemplate } from '../../core/docs'
 import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
-import type { Choice, Ui } from '../../core/ports'
+import type { Choice, FormField, Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
 import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, runSystemWorkflow, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
@@ -29,6 +29,7 @@ import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type 
 import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { startersFor } from './starters'
+import { DEFAULT_THRESHOLD, readThreshold, SKILL_CONTEXTS, SKILL_OUTPUTS, thresholdLabel, type FilingDecision } from './skills'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, readRecord, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
@@ -110,6 +111,9 @@ let active: {
   shelfOf(folder: string): Shelf | undefined
   /** Créer un dossier (et ses parents) s'il manque. */
   ensureFolder(folder: string): Promise<void>
+  /** Le circuit : les dossiers où ranger ; appliquer (ou soumettre) une décision de rangement. */
+  filingFolders(): Promise<{ folder: string; label: string }[]>
+  applyFiling(record: string, decision: FilingDecision | null, threshold: number, skill: string): Promise<FilingOutcome | null>
   /** Supprimer un répertoire de documents (après une question) ; `true` s'il est parti. */
   removeDirectory(folder: string): Promise<boolean>
   /** Verser des documents choisis (l'ordinateur, le coffre) dans un dossier. */
@@ -348,6 +352,76 @@ export async function namedEntry(kind: EntryKind, name: string | undefined): Pro
   if (found?.text) return found
   throw new Error(active ? active.t(`bibliotheque.${kind}.notFound`, { name: wanted }) : `${kind} « ${wanted} » introuvable.`)
 }
+
+// ── Les skills exécutables : le circuit des documents ──────────────────────────────
+
+/** Un contexte qu'un skill peut recevoir : son nom en mots, et de quoi le rassembler pour un document. */
+export interface SkillContext {
+  key: string
+  label: string
+  /** Ce que reçoit l'IA, pour ce document (du texte) ; vide : rien à en dire. */
+  provide(record: string): Promise<string>
+}
+
+const skillContexts = new Map<string, SkillContext>()
+
+/** Déclarer un contexte (la bibliothèque les siens ; un autre module, les siens : les projets…) ; rend de quoi l'oublier. */
+export function registerSkillContext(context: SkillContext): () => void {
+  skillContexts.set(context.key, context)
+  return () => {
+    if (skillContexts.get(context.key) === context) skillContexts.delete(context.key)
+  }
+}
+
+/** Les contextes connus : ceux de la bibliothèque d'abord, dans leur ordre, puis ceux des autres modules. */
+export function skillContextKeys(): string[] {
+  const own = SKILL_CONTEXTS.filter((key) => skillContexts.has(key)) as string[]
+  return [...own, ...[...skillContexts.keys()].filter((key) => !own.includes(key))]
+}
+
+/** Le nom d'un contexte, en mots (inconnu : sa clé). */
+export function skillContextLabel(key: string): string {
+  return skillContexts.get(key)?.label ?? key
+}
+
+/** Ce que reçoit un skill pour un document : une section par contexte demandé (un contexte inconnu est dit tel). */
+export async function skillContextFor(record: string, keys: readonly string[]): Promise<string> {
+  const parts: string[] = []
+  for (const key of keys) {
+    const context = skillContexts.get(key)
+    if (!context) {
+      parts.push(`## ${key}\n\n${active?.t('bibliotheque.skill.context.unknown') ?? '—'}`)
+      continue
+    }
+    parts.push(`## ${context.label}\n\n${(await context.provide(record)).trim() || '—'}`)
+  }
+  return parts.join('\n\n')
+}
+
+/** Les dossiers où l'on peut ranger un document (ce que le skill de rangement peut choisir), chacun en mots. */
+export async function filingFolders(): Promise<{ folder: string; label: string }[]> {
+  return active ? active.filingFolders() : []
+}
+
+/** Ce qu'est devenue une décision de rangement : appliquée (rangé), ou soumise (à contrôler). */
+export interface FilingOutcome {
+  outcome: 'range' | 'a-controler'
+  /** La fiche, là où elle est maintenant. */
+  record: string
+  message: string
+}
+
+/**
+ * Une décision de rangement (rendue par un skill) : sûre (un dossier proposé, une confiance
+ * au moins égale au seuil) — appliquée, le document rangé ; sinon (ou illisible : `null`) —
+ * soumise, le document dans À contrôler avec la raison et la proposition. Toujours journalisée
+ * sur sa fiche. `null` : le document n'est plus là.
+ */
+export async function applyFilingDecision(record: string, decision: FilingDecision | null, threshold: number, skill: string): Promise<FilingOutcome | null> {
+  return active ? active.applyFiling(record, decision, threshold, skill) : null
+}
+
+export { DEFAULT_THRESHOLD, FILING_SCHEMA, readFilingAnswer, readThreshold, thresholdLabel, type FilingDecision } from './skills'
 
 /** Ce qu'on dit à l'IA d'un persona, avant toute autre consigne : qui elle est, comment répondre. */
 export function personaInstructions(persona: Pick<LibraryEntry, 'name' | 'text'>): string {
@@ -672,6 +746,8 @@ export function setAiProofread(systemWorkflow: string | null): void {
 let aiRunning: AiReading | null = null
 const aiQueue: AiReading[] = []
 let pagesChanged: () => void = () => undefined
+/** Les contextes de skill de la bibliothèque, déclarés à l'activation : de quoi les oublier. */
+let stopSkillContexts: (() => void)[] = []
 
 /** Pour le module IA : une lecture commence (`detail` : où elle en est), ou avance. */
 export function aiReadingProgress(record: string, title: string, detail = ''): void {
@@ -862,7 +938,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.48.0',
+  version: '0.49.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1060,6 +1136,8 @@ export const bibliothequeModule: BlackModule = {
       projectsFolder,
       shelfOf: (folder) => shelfOfPath(shelves('document'), folder),
       ensureFolder: (folder) => platform.fs.ensureFolder(folder),
+      filingFolders: () => filingFoldersNow(),
+      applyFiling: (record, decision, threshold, skill) => applyFiling(record, decision, threshold, skill),
       removeDirectory: (folder) => removeDirectory('document', folder),
       pour: (folder) => pour(folder),
       toReferences: (record) => toReferences(record)
@@ -1508,6 +1586,146 @@ export const bibliothequeModule: BlackModule = {
       }
       return platform.ui.pickOption(options, title)
     }
+
+    // ── Le circuit des documents : les contextes des skills, les décisions, À contrôler ──
+    /** Les dossiers où ranger un document : chaque bibliothèque de documents, chacun de ses répertoires. */
+    const filingFoldersNow = async (): Promise<{ folder: string; label: string }[]> =>
+      (await allPlaces(shelves('document'), subdirectories('document'))).map((place) => ({ folder: place.folder, label: [place.shelf.name, ...place.directory.split('/').filter(Boolean)].join(' › ') }))
+    /** « 2026-11-16 10:42 » : quand, pour l'historique d'une fiche. */
+    const momentNow = (): string => {
+      const now = new Date()
+      return `${localToday()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    }
+    const percent = (value: number): string => `${Math.round(value * 100)} %`
+    const circuitLine = (key: string, vars: Record<string, string | number>) => ({ heading: t('bibliotheque.circuit.heading'), line: `${momentNow()} · ${t(key, vars)}` })
+    /** Ce que lit le skill de rangement : les règles de la bibliothèque principale (une note à soi), s'il y en a. */
+    const rulesNote = (): string => `${store.root}/${t('bibliotheque.circuit.rulesNote')}.md`
+    const SKILL_TEXT_LIMIT = 12000
+    // Les contextes livrés par la bibliothèque : la fiche, le texte, les dossiers, les règles de rangement.
+    for (const stop of stopSkillContexts) stop()
+    stopSkillContexts = [
+      registerSkillContext({
+        key: 'fiche',
+        label: t('bibliotheque.skill.context.fiche'),
+        provide: async (record) => {
+          const doc = await store.load(record)
+          if (!doc) return ''
+          const line = (key: string, value: string | undefined) => (value ? `- ${t(key)} : ${value}` : '')
+          return [
+            line('bibliotheque.circuit.ctx.title', doc.title),
+            line('bibliotheque.circuit.ctx.file', baseName(doc.file)),
+            line('bibliotheque.circuit.ctx.where', placeOfFolder(record.slice(0, record.lastIndexOf('/')))),
+            line('bibliotheque.circuit.ctx.category', doc.category),
+            line('bibliotheque.circuit.ctx.issuer', doc.issuer),
+            line('bibliotheque.circuit.ctx.reference', [doc.reference, versionLabel(doc)].filter(Boolean).join(' ')),
+            line('bibliotheque.circuit.ctx.date', doc.date),
+            line('bibliotheque.circuit.ctx.tags', doc.tags.join(', ')),
+            line('bibliotheque.circuit.ctx.language', doc.language),
+            line('bibliotheque.circuit.ctx.origins', doc.origins.map((origin) => [origin.module, origin.label].filter(Boolean).join(' — ')).join(' ; '))
+          ]
+            .filter(Boolean)
+            .join('\n')
+        }
+      }),
+      registerSkillContext({
+        key: 'texte',
+        label: t('bibliotheque.skill.context.texte'),
+        provide: async (record) => {
+          const text = ((await store.textOfRecord(record)) ?? '').trim()
+          if (!text) return t('bibliotheque.circuit.ctx.noText')
+          return text.length > SKILL_TEXT_LIMIT ? `${text.slice(0, SKILL_TEXT_LIMIT)}\n\n${t('bibliotheque.circuit.ctx.truncated', { shown: SKILL_TEXT_LIMIT, total: text.length })}` : text
+        }
+      }),
+      registerSkillContext({
+        key: 'dossiers',
+        label: t('bibliotheque.skill.context.dossiers'),
+        provide: async () => [t('bibliotheque.circuit.ctx.folders'), ...(await filingFoldersNow()).map((each) => `- ${each.folder} — ${each.label}`)].join('\n')
+      }),
+      registerSkillContext({
+        key: 'regles-de-rangement',
+        label: t('bibliotheque.skill.context.regles-de-rangement'),
+        provide: async () => {
+          const path = rulesNote()
+          if (!(await platform.fs.exists(path))) return t('bibliotheque.circuit.ctx.noRules')
+          return readYamlFrontmatter(platform.yaml, await platform.fs.readText(path)).body.replace(/%%[\s\S]*?%%/g, '').trim() || t('bibliotheque.circuit.ctx.noRules')
+        }
+      })
+    ]
+    /** Ranger pour de bon (une décision sûre, ou celle de l'utilisateur) : la fiche va dans le dossier, le circuit dit « rangé ». */
+    const fileInto = async (record: string, folder: string, line: { heading: string; line: string }, confidence?: number): Promise<string> => {
+      const moved = (await store.move(record, folder)) ?? record
+      await store.setCircuit(moved, { circuit: 'range', circuitReason: undefined, circuitProposal: undefined, circuitAlternatives: undefined, circuitConfidence: confidence }, line)
+      pagesChanged()
+      return moved
+    }
+    const applyFiling = async (record: string, decision: FilingDecision | null, threshold: number, skill: string): Promise<FilingOutcome | null> => {
+      const doc = await store.load(record)
+      if (!doc) return null
+      if (decision && decision.folder && decision.confidence >= threshold) {
+        const place = placeOfFolder(decision.folder)
+        const moved = await fileInto(record, decision.folder, circuitLine('bibliotheque.circuit.line.filed', { skill, place, confidence: percent(decision.confidence) }), decision.confidence)
+        return { outcome: 'range', record: moved, message: t('bibliotheque.circuit.filed', { title: doc.title, place, confidence: percent(decision.confidence) }) }
+      }
+      // Pas sûre (ou illisible, ou un dossier qui n'existe pas) : soumise à l'utilisateur.
+      const reason = !decision
+        ? t('bibliotheque.circuit.reason.unreadable')
+        : !decision.folder
+          ? [t('bibliotheque.circuit.reason.noFolder'), decision.reason].filter(Boolean).join(' — ')
+          : decision.reason || t('bibliotheque.circuit.reason.none')
+      await platform.fs.ensureFolder(store.controlFolder)
+      const moved = (await store.move(record, store.controlFolder)) ?? record
+      await store.setCircuit(
+        moved,
+        {
+          circuit: 'a-controler',
+          circuitReason: reason,
+          circuitProposal: decision?.folder || undefined,
+          circuitConfidence: decision?.confidence ?? 0,
+          circuitAlternatives: decision?.alternatives.length ? decision.alternatives : undefined
+        },
+        circuitLine('bibliotheque.circuit.line.toControl', { skill, confidence: percent(decision?.confidence ?? 0), threshold: percent(threshold), reason })
+      )
+      pagesChanged()
+      return { outcome: 'a-controler', record: moved, message: t('bibliotheque.circuit.toControl', { title: doc.title, confidence: percent(decision?.confidence ?? 0), threshold: percent(threshold) }) }
+    }
+    /** À contrôler : la proposition de l'IA, acceptée. */
+    const acceptProposal = async (record: string): Promise<string | null> => {
+      const doc = await store.load(record)
+      if (!doc?.circuitProposal) return null
+      const place = placeOfFolder(doc.circuitProposal)
+      const moved = await fileInto(record, doc.circuitProposal, circuitLine('bibliotheque.circuit.line.accepted', { place }))
+      platform.notifier.notify(t('bibliotheque.circuit.accepted', { title: doc.title, place }), 6000)
+      return moved
+    }
+    /** À contrôler : un autre dossier, choisi (les autres propositions de l'IA d'abord, puis tous). */
+    const fileElsewhere = async (record: string): Promise<string | null> => {
+      const doc = await store.load(record)
+      if (!doc) return null
+      const all = await filingFoldersNow()
+      const proposed = [doc.circuitProposal, ...(doc.circuitAlternatives ?? [])].filter((each): each is string => !!each)
+      const options = [
+        ...proposed.filter((folder) => all.some((each) => each.folder === folder)).map((folder) => ({ value: folder, label: all.find((each) => each.folder === folder)!.label, description: t('bibliotheque.circuit.proposedByAi') })),
+        ...all.filter((each) => !proposed.includes(each.folder)).map((each) => ({ value: each.folder, label: each.label, description: each.folder }))
+      ]
+      const folder = await platform.ui.pickOption(options, t('bibliotheque.circuit.pick', { title: doc.title }))
+      if (!folder) return null
+      const place = placeOfFolder(folder)
+      const moved = await fileInto(record, folder, circuitLine('bibliotheque.circuit.line.chosen', { place }))
+      platform.notifier.notify(t('bibliotheque.circuit.accepted', { title: doc.title, place }), 6000)
+      return moved
+    }
+    /** À contrôler : écarté — la fiche mise de côté (rien n'est effacé). */
+    const discardControlled = async (record: string): Promise<boolean> => {
+      const doc = await store.load(record)
+      if (!doc) return false
+      await store.setCircuit(record, { circuit: 'ecarte' }, circuitLine('bibliotheque.circuit.line.discarded', {}))
+      await store.setAside(record)
+      platform.notifier.notify(t('bibliotheque.circuit.discarded', { title: doc.title }), 6000)
+      pagesChanged()
+      return true
+    }
+    /** Les documents à contrôler. */
+    const toControl = async (): Promise<LibraryDoc[]> => (await store.all()).filter((doc) => doc.circuit === 'a-controler')
 
     /** Verser des documents soi-même : de l'ordinateur (copiés) ou du coffre (laissés à leur place) ; dans un dossier, sinon la bibliothèque par défaut. */
     const pour = async (folder?: string): Promise<PourReport | null> => {
@@ -2007,6 +2225,7 @@ export const bibliothequeModule: BlackModule = {
     registerLibraryHome(context.views, {
       t,
       store,
+      control: { list: toControl, place: placeOfFolder, accept: acceptProposal, elsewhere: fileElsewhere, discard: discardControlled },
       today: localToday,
       locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR',
       ...(showPage ? { showPage } : {}),
@@ -2239,7 +2458,9 @@ export const bibliothequeModule: BlackModule = {
           { kind: 'text', key: 'category', label: t('bibliotheque.entry.field.category'), value: current?.category ?? '', ...(categories.length ? { description: t('bibliotheque.entry.field.category.known', { list: categories.join(', ') }) } : {}) },
           { kind: 'text', key: 'description', label: t('bibliotheque.entry.field.description'), value: current?.description ?? '', placeholder: t(`bibliotheque.${kind}.field.description.placeholder`) },
           { kind: 'textarea', key: 'text', label: t(`bibliotheque.${kind}.text`), required: kind !== 'issuer' && kind !== 'tag', value: current?.text ?? '', placeholder: t(`bibliotheque.${kind}.field.text.placeholder`), tooltip: t(`bibliotheque.${kind}.field.text.tip`) },
-          { kind: 'toggle', key: 'favorite', label: t('bibliotheque.entry.favorite'), value: current?.favorite ?? false, tooltip: t(`bibliotheque.${kind}.field.favorite.tip`) }
+          { kind: 'toggle', key: 'favorite', label: t('bibliotheque.entry.favorite'), value: current?.favorite ?? false, tooltip: t(`bibliotheque.${kind}.field.favorite.tip`) },
+          // Un skill exécutable : ce qu'il reçoit, ce qu'il rend, son seuil.
+          ...(kind === 'skill' ? skillFormFields(current) : [])
         ],
         submit: current ? t('bibliotheque.entry.save') : t('bibliotheque.entry.create')
       })
@@ -2247,7 +2468,39 @@ export const bibliothequeModule: BlackModule = {
       const text = values?.text?.trim() ?? ''
       const code = (values?.code ?? '').trim().replace(/\s+/g, ' ')
       if (!values || !name || (!text && kind !== 'issuer' && kind !== 'tag') || (kind === 'issuer' && !code)) return null
-      return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true', ...(kind === 'issuer' ? { code } : {}) }
+      return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true', ...(kind === 'issuer' ? { code } : {}), ...(kind === 'skill' ? skillDraft(values) : {}) }
+    }
+    /** Les champs d'un skill exécutable : un interrupteur par contexte, la sortie, le seuil. */
+    const skillFormFields = (current?: LibraryEntry): FormField[] => [
+      ...skillContextKeys().map((key, index) => ({
+        kind: 'toggle' as const,
+        key: `contexte:${key}`,
+        label: skillContextLabel(key),
+        value: current?.context?.includes(key) ?? false,
+        ...(index === 0 ? { description: t('bibliotheque.skill.field.context.desc') } : {})
+      })),
+      {
+        kind: 'choice',
+        key: 'sortie',
+        label: t('bibliotheque.skill.field.output'),
+        value: current?.output ?? '',
+        description: t('bibliotheque.skill.field.output.desc'),
+        options: [{ value: '', label: t('bibliotheque.skill.output.none') }, ...SKILL_OUTPUTS.map((output) => ({ value: output, label: t(`bibliotheque.skill.output.${output}`) }))]
+      },
+      {
+        kind: 'text',
+        key: 'seuil',
+        label: t('bibliotheque.skill.field.threshold'),
+        value: current?.threshold !== undefined ? String(current.threshold).replace('.', ',') : '',
+        placeholder: String(DEFAULT_THRESHOLD).replace('.', ','),
+        description: t('bibliotheque.skill.field.threshold.desc', { threshold: thresholdLabel(DEFAULT_THRESHOLD) })
+      }
+    ]
+    const skillDraft = (values: Record<string, string>): Pick<EntryDraft, 'context' | 'output' | 'threshold'> => {
+      const context = skillContextKeys().filter((key) => values[`contexte:${key}`] === 'true')
+      const output = (values.sortie ?? '').trim()
+      const threshold = readThreshold(values.seuil)
+      return { ...(context.length ? { context } : {}), ...(output ? { output } : {}), ...(threshold !== null ? { threshold } : {}) }
     }
     /**
      * La fenêtre d'une personne : son nom, son entreprise (dans la liste des entreprises, ou
@@ -2321,6 +2574,7 @@ export const bibliothequeModule: BlackModule = {
     registerEntriesHome(context.views, {
       t,
       stores: entries,
+      skillContextLabel,
       documentsPage: LIBRARY_PAGE,
       documents: async () => {
         const docs = await store.all()
@@ -2426,6 +2680,8 @@ export const bibliothequeModule: BlackModule = {
   deactivate() {
     pieceTypeMaker = null
     active = null
+    for (const stop of stopSkillContexts) stop()
+    stopSkillContexts = []
     stopRenames?.()
     stopRenames = null
   }

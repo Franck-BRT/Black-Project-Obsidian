@@ -2,8 +2,7 @@
 
 > Copyright © 2026 Black Room Technologies. Tous droits réservés.
 
-**Statut : conception, à relire.** Rien de ce document n'est encore codé. Les questions
-ouvertes sont à la fin, avec la réponse proposée par défaut.
+**Statut : conception validée ; version A livrée (Black Projects 0.134.0).** Les décisions prises sont à la fin.
 
 ## Le besoin
 
@@ -39,8 +38,14 @@ de workflows de l'application orchestre).
 | **Fail closed** : en dessous d'un seuil de confiance, on n'applique pas, on soumet à l'humain | **À contrôler** |
 | **Cycle d'entretien** périodique | Un workflow planifié qui relance, revérifie, signale |
 
-Ce qu'on **ne reprend pas** : la recherche vectorielle et les embeddings, le graphe en base,
-les connecteurs externes (courriel, calendrier), l'exécution d'outils libres par l'IA.
+**Mis de côté pour plus tard** (pas écarté : on y reviendra une fois le circuit en place) :
+
+- la recherche vectorielle et les embeddings (trouver des liens par le sens, pas seulement
+  par les noms) ;
+- le graphe en base (parcourir les relations entre pages plutôt que relire les notes) ;
+- les connecteurs externes (courriel, calendrier, réunions) comme sources d'entrée ;
+- l'exécution d'outils libres par l'IA (l'IA qui appelle elle-même les actions, au lieu de
+  rendre une décision que l'application applique).
 
 ## Le principe : l'IA décide, le code exécute
 
@@ -292,8 +297,9 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
 
 ## Le découpage proposé
 
-1. **Version A — l'étape et le contrôle** : `ia.executer-skill` (contexte, sortie validée,
-   confiance, seuil), l'état `circuit`, À contrôler et sa page. Testable avec un skill simple.
+1. **Version A — l'étape et le contrôle** ✅ *(0.134.0)* : `ia.executer-skill` (contexte, sortie
+   validée, confiance, seuil), l'état `circuit`, À contrôler et sa page ; le skill livré « Ranger un
+   document » (contextes fiche, texte, dossiers, règles de rangement).
 2. **Version B — le circuit** : À classer comme entrée unique, les trois skills livrés, le
    workflow système « Circuit des documents » et la relance.
 3. **Version C — les liens** : candidats et entités, liens dans la fiche, rétroliens, entretien.
@@ -301,17 +307,17 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
 Chaque version : tests (avec une IA simulée qui rend des réponses sûres, peu sûres,
 illisibles), démo, banc Obsidian, docs, comme d'habitude.
 
-## Questions ouvertes (réponses proposées par défaut)
+## Décisions (validées)
 
-1. **Seuil de confiance** : 0,7 par défaut, réglable par skill. *Proposé : oui.*
+1. **Seuil de confiance** : 0,7 par défaut, réglable par skill. **Décidé : oui.**
 2. **Où chercher les liens** : documents de la bibliothèque, programmes et projets,
-   entreprises et personnes, exigences ; les notes libres du coffre ? *Proposé : tout sauf les
-   notes libres dans un premier temps (trop de bruit), à ajouter ensuite.*
+   entreprises et personnes, exigences ; les notes libres du coffre ? **Décidé : tout sauf les
+   notes libres dans un premier temps (trop de bruit), à ajouter ensuite.**
 3. **Rétroliens** : écrits automatiquement dans les notes existantes, ou seulement proposés ?
-   *Proposé : écrits automatiquement, mais uniquement dans une section réservée, jamais
-   ailleurs dans la note.*
-4. **Un seul dossier d'entrée** : « À verser » devient « À classer » ? *Proposé : oui, avec
-   reprise de ce qui est déjà dans « À verser ».*
+   **Décidé : écrits automatiquement, mais uniquement dans une section réservée, jamais
+   ailleurs dans la note.**
+4. **Un seul dossier d'entrée** : « À verser » devient « À classer » ? **Décidé : oui, avec
+   reprise de ce qui est déjà dans « À verser ».**
 5. **IA autorisée pour le circuit** : toute IA configurée, ou une IA choisie (locale, ou celle
-   que l'entreprise autorise) ? *Proposé : un réglage « IA du circuit », vide par défaut — le
-   circuit ne démarre pas tant qu'il n'est pas choisi.*
+   que l'entreprise autorise) ? **Décidé : un réglage « IA du circuit », vide par défaut — le
+   circuit ne démarre pas tant qu'il n'est pas choisi** (version B).

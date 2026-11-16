@@ -8,11 +8,12 @@
  */
 
 import type { FileSystem, PageImages } from '../../core/ports'
-import { IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { applyFilingDecision, DEFAULT_THRESHOLD, FILING_SCHEMA, filingFolders, readFilingAnswer, readThreshold, skillContextFor, thresholdLabel, IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
 import { registerAction } from '../workflows'
 import type { AiClient } from './client'
 import { proofreadDocument, readWithVision, VisionRefused, type ReadingContext, type VisionReading } from './documentReading'
+import { LlmError } from './protocol'
 import { markImagesRefused, qualityLabel, visionModelOf } from './reading'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
@@ -728,6 +729,83 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       await fs().writeText(path, `${text}\n`)
       const link = `[[${path.replace(/\.md$/, '')}]]`
       return { lines: [t('ia.wf.written', { path: link })], paths: [path], results: { text, path, link } }
+    }
+  })
+  /**
+   * **Exécuter un skill** (le circuit des documents) sur un document de la bibliothèque : le
+   * skill dit ce qu'il reçoit (sa fiche, son texte, les dossiers…) et ce qu'il rend. Une
+   * décision de rangement est relue, puis appliquée si elle est sûre (confiance au moins égale
+   * au seuil), sinon soumise : le document va dans « À contrôler », avec la proposition et la
+   * raison. Une réponse illisible vaut « pas sûre ». Sans sortie déclarée : une réponse libre.
+   */
+  registerAction({
+    id: 'ia.executer-skill',
+    labelKey: 'ia.wf.action.skill',
+    descKey: 'ia.wf.action.skill.desc',
+    needsAi: true,
+    fields: [
+      { key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' },
+      { key: 'skill', labelKey: 'ia.wf.field.skill', kind: 'text', required: true, tooltipKey: 'ia.wf.field.skill.tip' },
+      { key: 'seuil', labelKey: 'ia.wf.field.threshold.skill', kind: 'text', tooltipKey: 'ia.wf.field.threshold.skill.tip' }
+    ],
+    results: ['text', 'decision', 'confiance', 'fiche'],
+    async run({ fields, guidance }) {
+      const record = (fields.fiche ?? '').trim()
+      const doc = record ? await libraryDoc(record) : null
+      if (!doc) {
+        const text = t('ia.wf.language.noDoc', { record })
+        return { lines: [text], results: { text, decision: '', confiance: '', fiche: record } }
+      }
+      const skill = await namedEntry('skill', fields.skill)
+      if (!skill) throw new Error(t('ia.wf.skill.none'))
+      // Les consignes du skill (sa procédure) arrivent par `guidance`, avec le persona choisi.
+      const ai = client()?.withInstructions(guidance)
+      if (!ai) throw new Error(t('ia.unavailable'))
+      const context = await skillContextFor(record, skill.context ?? [])
+      const user = [t('ia.wf.skill.document', { title: doc.title }), context].filter(Boolean).join('\n\n')
+      if (skill.output === 'rangement') {
+        const threshold = readThreshold(fields.seuil) ?? skill.threshold ?? DEFAULT_THRESHOLD
+        let answer: unknown = null
+        try {
+          answer = await ai.chatJson<unknown>({
+            messages: [
+              { role: 'system', content: t('ia.wf.skill.system.rangement') },
+              { role: 'user', content: user }
+            ],
+            temperature: 0,
+            schema: FILING_SCHEMA
+          })
+        } catch (error) {
+          // Une réponse qui n'est pas le JSON demandé : illisible, donc pas sûre (À contrôler). Le reste (serveur…) : l'étape échoue.
+          if (!(error instanceof LlmError && error.kind === 'shape')) throw new Error(describe(error))
+        }
+        const decision = readFilingAnswer(answer, (await filingFolders()).map((each) => each.folder))
+        const outcome = await applyFilingDecision(record, decision, threshold, skill.name)
+        if (!outcome) {
+          const text = t('ia.wf.language.noDoc', { record })
+          return { lines: [text], results: { text, decision: '', confiance: '', fiche: record } }
+        }
+        return {
+          lines: [outcome.message, ...(outcome.outcome === 'a-controler' ? [t('ia.wf.skill.threshold', { threshold: thresholdLabel(threshold) })] : [])],
+          paths: [outcome.record],
+          results: { text: outcome.message, decision: outcome.outcome, confiance: String(decision?.confidence ?? 0), fiche: outcome.record }
+        }
+      }
+      let text: string
+      try {
+        text = (
+          await ai.chat({
+            messages: [
+              { role: 'system', content: t('ia.wf.system') },
+              { role: 'user', content: user }
+            ],
+            temperature: 0.2
+          })
+        ).trim()
+      } catch (error) {
+        throw new Error(describe(error))
+      }
+      return { lines: [t('ia.wf.answered', { length: text.length })], results: { text, decision: '', confiance: '', fiche: record } }
     }
   })
 }

@@ -13,6 +13,9 @@ type Language = 'fr' | 'en'
 
 const entry = (name: string, category: string, description: string, text: string): EntryDraft => ({ name, category, description, text, favorite: false })
 
+/** Un skill exécutable (le circuit des documents) : ce qu'il reçoit, ce qu'il rend, son seuil. */
+const executable = (draft: EntryDraft, context: string[], output: string, threshold = 0.7): EntryDraft => ({ ...draft, context, output, threshold })
+
 const PROMPTS: Record<Language, EntryDraft[]> = {
   fr: [
     entry(
@@ -143,6 +146,24 @@ const SKILLS: Record<Language, EntryDraft[]> = {
       'Rédaction',
       'Une réponse courte, en tableau, sources citées',
       'Réponds par un tableau Markdown, une ligne par point, avec une colonne « Source » (la pièce et l’article, ou la page). Pas d’introduction ni de conclusion. Si une information manque dans le dossier, écris « Non précisé » plutôt que de supposer.'
+    ),
+    executable(
+      entry(
+        'Ranger un document',
+        'Circuit',
+        'Choisir le dossier où ranger un document de la bibliothèque',
+        [
+          'Tu ranges un document de la bibliothèque. Procède ainsi :',
+          '1. Lis sa fiche et le début de son texte : de quoi parle-t-il, qui l’a émis, pour quel projet ou quel sujet ?',
+          '2. Applique les règles de rangement, si elles sont écrites ; sinon, range selon le **sujet principal** du document (pas son format, ni d’où il vient).',
+          '3. Choisis **un seul** dossier, et seulement parmi ceux de la liste « Dossiers où ranger », écrit exactement comme dans la liste.',
+          '4. Donne ta confiance, de 0 à 1 : 0,9 si le document le dit clairement (son titre, son en-tête), 0,5 si tu hésites entre deux dossiers, 0,2 si tu devines.',
+          '5. Explique en une phrase pourquoi, et propose deux autres dossiers possibles, du plus au moins probable.',
+          'Si aucun dossier ne convient, réponds avec un dossier vide et dis pourquoi : mieux vaut ne pas ranger que ranger au hasard.'
+        ].join('\n')
+      ),
+      ['fiche', 'texte', 'dossiers', 'regles-de-rangement'],
+      'rangement'
     )
   ],
   en: [
@@ -169,6 +190,24 @@ const SKILLS: Record<Language, EntryDraft[]> = {
       'Writing',
       'A short answer, as a table, sources quoted',
       'Answer with a Markdown table, one line per point, with a “Source” column (the document and clause, or the page). No introduction nor conclusion. If a piece of information is missing from the tender, write “Not stated” rather than assume.'
+    ),
+    executable(
+      entry(
+        'File a document',
+        'Pipeline',
+        'Choose the folder where a library document goes',
+        [
+          'You file a library document. Proceed as follows:',
+          '1. Read its record and the beginning of its text: what is it about, who issued it, for which project or topic?',
+          '2. Apply the filing rules, if they are written; otherwise file by the **primary subject** of the document (not its format, nor where it came from).',
+          '3. Choose **one** folder, and only among those of the list “Folders to file in”, written exactly as in the list.',
+          '4. Give your confidence, from 0 to 1: 0.9 if the document says it clearly (its title, its header), 0.5 if you hesitate between two folders, 0.2 if you are guessing.',
+          '5. Explain why in one sentence, and propose two other possible folders, from the most to the least likely.',
+          'If no folder fits, answer with an empty folder and say why: better not to file than to file at random.'
+        ].join('\n')
+      ),
+      ['fiche', 'texte', 'dossiers', 'regles-de-rangement'],
+      'rangement'
     )
   ]
 }

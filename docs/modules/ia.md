@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.28.0 (Black Projects 0.120.0) |
+| Version | 0.29.0 (Black Projects 0.134.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,15 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Exécuter un skill (v0.29.0, Black Projects 0.134.0)
+
+- Action `ia.executer-skill` (champs `fiche`, `skill`, `seuil` ; prompt et persona ajoutés comme
+  à toute action IA) : le contexte du skill (`skillContextFor`) ; sortie `rangement` — `chatJson`
+  avec `FILING_SCHEMA`, réponse relue (`readFilingAnswer`), puis `applyFilingDecision` (seuil : celui
+  de l'étape, sinon du skill, sinon 0,7). Une réponse qui n'est pas du JSON (`LlmError` `shape`) :
+  illisible, donc à contrôler ; une autre erreur (serveur) : l'étape échoue, le document ne bouge
+  pas. Sans sortie : une réponse libre (`text`). Résultats : `text`, `decision`, `confiance`, `fiche`.
 
 ## Les pieds de page restants, le sommaire de la vision (v0.28.0, Black Projects 0.120.0)
 

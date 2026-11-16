@@ -141,7 +141,18 @@ platform.http = {
     const pageText = (sent.messages?.at(-1)?.content ?? '').split('d’après l’image :\n\n')[1]
     // Une page regardée prend un peu de temps, comme avec un vrai modèle : on voit la lecture avancer.
     if (seeing) await new Promise((resolve) => setTimeout(resolve, 250))
-    const content = verifying
+    // Le circuit : un skill de rangement — sans IA réelle, une proposition peu sûre (le premier
+    // répertoire de la liste), pour montrer « À contrôler ».
+    const filing = asked.includes('Tu suis la procédure du skill')
+    const folders = [...asked.matchAll(/^- (\S[^\n]*?) — /gm)].map((match) => match[1]!)
+    const content = filing
+      ? JSON.stringify({
+          dossier: folders.find((folder) => folder.includes('/')) ?? folders[0] ?? '',
+          confiance: 0.55,
+          raison: 'Démonstration, sans IA réelle : le sujet du document n’a pas été lu, la proposition est au hasard.',
+          alternatives: folders.slice(0, 3)
+        })
+      : verifying
       ? JSON.stringify({ score: 92, problems: [] })
       : ocr
       ? 'PROCES-VERBAL DE RECEPTION\nLecture de demonstration par l OCR, sans IA reelle.'
@@ -264,10 +275,11 @@ async function start(): Promise<void> {
   // Les bibliothèques de prompts et de personas : leurs exemples, pour la visite.
   await addStarterEntries('prompt', 'fr')
   await addStarterEntries('persona', 'fr')
+  await addStarterEntries('skill', 'fr')
   // Un workflow de l'utilisateur, à côté des workflows système créés à l'activation.
   settings.workflows = {
     ...settings.workflows,
-    workflows: [...((settings.workflows?.workflows as unknown[] | undefined) ?? []), { id: 'wf-1', name: 'Prévenir à chaque analyse créée', enabled: true, mode: 'auto', trigger: { kind: 'ao.analyse-creee' }, conditions: [], actions: [{ kind: 'notifier', fields: { message: 'Nouvelle analyse : {analyse}' } }], created: new Date().toISOString() }]
+    workflows: [...((settings.workflows?.workflows as unknown[] | undefined) ?? []), { id: 'wf-1', name: 'Prévenir à chaque analyse créée', enabled: true, mode: 'auto', trigger: { kind: 'ao.analyse-creee' }, conditions: [], actions: [{ kind: 'notifier', fields: { message: 'Nouvelle analyse : {analyse}' } }], created: new Date().toISOString() }, { id: 'wf-ranger', name: 'Ranger avec l’IA chaque document versé', enabled: false, mode: 'auto', trigger: { kind: 'bibliotheque.document-verse' }, conditions: [], actions: [{ kind: 'ia.executer-skill', fields: { fiche: '{fiche}', skill: 'Ranger un document', seuil: '' } }], created: new Date().toISOString() }]
   }
 
   const stamp = new Date().toISOString().slice(0, 10)

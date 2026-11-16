@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.133.0)
+## Aujourd'hui (version 0.134.0)
+
+- **Le circuit des documents commence** : un skill peut maintenant **ranger un document** (« Ranger
+  un document », dans les skills) ; l'étape de workflow **Exécuter un skill** le lance. Si l'IA
+  n'est pas assez sûre, le document va dans **À contrôler** : vous acceptez sa proposition, en
+  choisissez une autre, ou l'écartez. Rien n'est rangé au hasard.
 
 - **Supprimer un skill, un workflow** : un skill, sur sa fiche ou sa carte (sa note à la
   corbeille) ; un workflow, sur sa fiche ou maintenant sur sa carte dans la liste

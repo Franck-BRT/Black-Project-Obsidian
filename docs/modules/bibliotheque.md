@@ -5,13 +5,35 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.48.0 (Black Projects 0.132.0) |
+| Version | 0.49.0 (Black Projects 0.134.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le circuit des documents, version A : skills exécutables, À contrôler (v0.49.0, Black Projects 0.134.0)
+
+Conception : [architecture/circuit-des-documents.md](../architecture/circuit-des-documents.md).
+
+- `skills.ts` (pur) : `SKILL_CONTEXTS` (`fiche`, `texte`, `dossiers`, `regles-de-rangement`),
+  `SKILL_OUTPUTS` (`rangement`), `DEFAULT_THRESHOLD` (0,7), `readThreshold`, `readConfidence`,
+  `FILING_SCHEMA`, `readFilingAnswer` (un dossier hors de la liste : confiance 0 ; illisible : `null`).
+- Un skill : `contexte`, `sortie`, `seuil` dans sa note (`LibraryEntry.context`, `output`,
+  `threshold`) ; sa fenêtre (un interrupteur par contexte, un choix de sortie, un seuil) ; sa fiche
+  (« Exécutable »). Skill livré : **Ranger un document**.
+- Registre des contextes : `registerSkillContext` (un autre module ajoute les siens),
+  `skillContextKeys`, `skillContextLabel`, `skillContextFor(record, keys)` (une section par contexte).
+- La fiche : `circuit` (`a-classer`, `ingere`, `analyse`, `range`, `a-controler`, `ecarte`),
+  `circuit-raison`, `circuit-proposition`, `circuit-confiance`, `circuit-alternatives` ; la section
+  **Circuit** (`withCircuitLine`) ; `LibraryStore.setCircuit`.
+- `Bibliothèque/À contrôler` (`CONTROL_FOLDER`) : parcouru (ses documents comptent pour les
+  doublons), mais pas un répertoire (`subdirectories` l'écarte : ni carte, ni destination).
+- `filingFolders()`, `applyFilingDecision(record, decision, threshold, skill)` : sûre — rangée
+  (`store.move`), sinon soumise (À contrôler, avec raison, proposition, alternatives) ; journalisée.
+- Page `bibliotheque.a-controler` (`controlHome.ts`) : Accepter, Choisir ailleurs…, Écarter ; un
+  message sur la page des documents et sur la fiche d'un document à contrôler.
 
 ## Supprimer un prompt, un persona (v0.48.0, Black Projects 0.132.0)
 

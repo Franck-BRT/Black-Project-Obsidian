@@ -31,6 +31,7 @@ import {
   textVersionContent,
   transcriptBlockOf,
   versionKey,
+  withCircuitLine,
   withTranscript,
   type DocFamily,
   type DocOrigin,
@@ -44,6 +45,12 @@ export const FILES_FOLDER = '_fichiers'
 export const SET_ASIDE_FOLDER = '_retirés'
 /** Le dossier de dépôt : ce qu'on y pose (explorateur, synchronisation) entre dans la bibliothèque. */
 export const INBOX_FOLDER = 'À verser'
+/**
+ * Le dossier des documents **à contrôler** (le circuit : l'IA n'a pas été assez sûre pour les
+ * ranger) : parcouru comme les autres (ses documents comptent, pour les doublons), mais ce
+ * n'est pas un répertoire où l'on range (ni carte, ni choix de destination).
+ */
+export const CONTROL_FOLDER = 'À contrôler'
 
 export interface StoreDeps {
   fs: FileSystem
@@ -571,6 +578,29 @@ export class LibraryStore {
   }
 
   /** Le dossier où verser sans lieu précis. */
+  /** Le dossier des documents à contrôler (dans la bibliothèque principale). */
+  get controlFolder(): string {
+    return `${this.root}/${CONTROL_FOLDER}`
+  }
+
+  /**
+   * L'état d'un document dans le circuit, changé (une clé à `undefined` : ôtée), et une ligne
+   * de plus dans l'historique de sa note (`history` : le titre de la section, la ligne).
+   */
+  async setCircuit(record: string, patch: Partial<Pick<LibraryDoc, 'circuit' | 'circuitReason' | 'circuitProposal' | 'circuitConfidence' | 'circuitAlternatives'>>, history?: { heading: string; line: string }): Promise<LibraryDoc | null> {
+    const { fs, yaml } = this.deps
+    const doc = await this.load(record)
+    if (!doc) return null
+    const next: LibraryDoc = { ...doc }
+    for (const [key, value] of Object.entries(patch) as [keyof typeof patch, unknown][]) {
+      if (value === undefined) delete next[key]
+      else (next as unknown as Record<string, unknown>)[key] = value
+    }
+    const body = readYamlFrontmatter(yaml, await fs.readText(record)).body
+    await fs.writeText(record, recordContent(next, this.deps.notesHeading(), history ? withCircuitLine(body, history.heading, history.line) : body))
+    return next
+  }
+
   get target(): string {
     return this.deps.target?.() ?? this.root
   }
@@ -587,7 +617,9 @@ export class LibraryStore {
   async subdirectories(folder: string): Promise<string[]> {
     const { fs } = this.deps
     if (!(await fs.exists(folder))) return []
-    return (await fs.list(folder)).folders.filter((sub) => this.walkable(sub)).sort((a, b) => baseName(a).localeCompare(baseName(b), 'fr'))
+    return (await fs.list(folder))
+      .folders.filter((sub) => this.walkable(sub) && sub !== this.controlFolder)
+      .sort((a, b) => baseName(a).localeCompare(baseName(b), 'fr'))
   }
 
   /** Les fiches de toutes les bibliothèques, partout sous leur dossier (sauf leurs fichiers et leurs retirés) ; chacune sait où elle est. */

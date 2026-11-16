@@ -8,6 +8,7 @@
  * et sa fiche (le texte, Modifier, Favori, Ouvrir sa note, Retirer).
  */
 
+import { DEFAULT_THRESHOLD } from './skills'
 import { pageWith, type Card, type HomeBlock, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { startersFor } from './starters'
 import { ENTRY_KINDS, entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
@@ -35,6 +36,8 @@ const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: '
 export interface EntriesHomeDeps {
   t: Translate
   stores: Readonly<Record<EntryKind, EntryStore>>
+  /** Le nom d'un contexte de skill exécutable (« Sa fiche », « Les dossiers où ranger »). */
+  skillContextLabel?(key: string): string
   /** La page des documents, et ses chiffres pour l'accueil de la bibliothèque. */
   documentsPage: string
   documents(): Promise<{ count: number; likely: number }>
@@ -298,6 +301,20 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
       ...contact,
       ...staff,
       { kind: 'text', title: t(`bibliotheque.${kind}.text`), paragraphs: entry.text ? entry.text.split(/\n{2,}/) : [], empty: t('bibliotheque.entry.noText') },
+      // Un skill exécutable (le circuit des documents) : ce qu'il reçoit, ce qu'il rend, son seuil.
+      ...(kind === 'skill' && (entry.context?.length || entry.output)
+        ? [
+            {
+              kind: 'text' as const,
+              title: t('bibliotheque.skill.executable'),
+              paragraphs: [
+                t('bibliotheque.skill.executable.context', { list: (entry.context ?? []).map((key) => deps.skillContextLabel?.(key) ?? key).join(', ') || '—' }),
+                t('bibliotheque.skill.executable.output', { output: t(entry.output ? `bibliotheque.skill.output.${entry.output}` : 'bibliotheque.skill.output.none') }),
+                t('bibliotheque.skill.executable.threshold', { threshold: `${Math.round((entry.threshold ?? DEFAULT_THRESHOLD) * 100)} %` })
+              ]
+            }
+          ]
+        : []),
       { kind: 'text', title: t('bibliotheque.entry.where'), paragraphs: [t('bibliotheque.entry.placed', { place: placeLabel(deps.places[kind], entry) }), t(`bibliotheque.${kind}.where`)] }
     ]
   }

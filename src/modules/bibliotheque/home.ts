@@ -19,6 +19,7 @@ import { docDateLabel, type KnownIssuer, type KnownTag } from './identity'
 import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 import { builtInShelf, REFERENCE_SHELF, severalShelves } from './shelves'
+import { CONTROL_PAGE, controlMessage, controlPage, type ControlDeps } from './controlHome'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
 export const DOC_PAGE = 'bibliotheque.document'
@@ -33,6 +34,8 @@ export type EditableField = (typeof EDITABLE_FIELDS)[number]
 export interface LibraryHomeDeps {
   t: Translate
   store: LibraryStore
+  /** Le circuit des documents : les documents à contrôler, et ce qu'on en fait. */
+  control?: ControlDeps
   today(): string
   locale: string
   showPage?(id: string): void
@@ -317,6 +320,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
       ...(ghostsHere.length ? [{ id: 'fantomes', label: t('bibliotheque.ghost.filter') }] : [])
     ],
     blocks: [
+      // Le circuit : des documents attendent qu'on les contrôle.
+      ...(await controlNotice(deps)),
       ...top.blocks,
       ...(under.length || ghostsHere.length
         ? [
@@ -400,6 +405,15 @@ export function qualityText(percent: number): string {
 }
 
 /** La fiche d'un document. */
+/** En tête de la page des documents : combien attendent d'être contrôlés (rien s'il n'y en a pas). */
+async function controlNotice(deps: LibraryHomeDeps): Promise<HomeBlock[]> {
+  const { t } = deps
+  if (!deps.control) return []
+  const count = (await deps.control.list()).length
+  if (!count) return []
+  return [{ kind: 'message', tone: 'warning', text: t('bibliotheque.control.notice', { count }), actions: [{ id: 'control', label: t('bibliotheque.control.open'), icon: 'flag', primary: true, run: () => deps.showPage?.(CONTROL_PAGE) }] }]
+}
+
 export async function docPage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
   const { t } = deps
   const record = param ? decodeURIComponent(param) : ''
@@ -856,6 +870,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         : [])
     ],
     blocks: [
+      // Le circuit : l'IA n'a pas su le ranger — sa proposition, sa raison, et quoi faire.
+      ...(doc.circuit === 'a-controler' && deps.control ? [controlMessage(t, deps.control, doc, (moved) => deps.showPage?.(moved ? docPageOf(moved) : CONTROL_PAGE))] : []),
       ...(present ? [] : [{ kind: 'message' as const, tone: 'danger' as const, text: t('bibliotheque.doc.fileMissing', { file: doc.file }) }]),
       // Une version précédente probable : à relier, ou à oublier.
       ...(likely
@@ -1000,6 +1016,10 @@ export function registerLibraryHome(views: ViewsRegistrar | undefined, deps: Lib
   views.page({ id: LIBRARY_PAGE, title: t('bibliotheque.page.title'), icon: 'book', parent: HUB_PAGE, load: (param) => libraryPage(deps, param) })
   views.page({ id: DOC_PAGE, title: t('bibliotheque.doc.title'), icon: 'file', parent: LIBRARY_PAGE, load: (param) => docPage(deps, param) })
   views.page({ id: COMPARE_PAGE, title: t('bibliotheque.compare.page'), icon: 'columns', parent: DOC_PAGE, load: (param) => comparePage(deps, param) })
+  if (deps.control) {
+    const control = deps.control
+    views.page({ id: CONTROL_PAGE, title: t('bibliotheque.control.title'), icon: 'flag', parent: LIBRARY_PAGE, load: () => controlPage(t, control, (record) => show(docPageOf(record))) })
+  }
   // Le menu mène à la bibliothèque : ses documents, ses prompts, ses personas.
   views.nav({ id: 'bibliotheque', label: t('bibliotheque.nav'), icon: 'book', order: 25, page: HUB_PAGE, run: () => show(HUB_PAGE) })
   views.tile({

@@ -18,6 +18,7 @@
 import type { FileSystem } from '../../core/ports'
 import { readYamlFrontmatter, toYaml, type YamlReader } from '../../core/yaml'
 import { MAIN_SHELF, type Shelf } from './shelves'
+import { readThreshold } from './skills'
 
 export type EntryKind = 'prompt' | 'persona' | 'skill' | 'issuer' | 'tag' | 'person'
 export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill', 'issuer', 'tag', 'person']
@@ -51,6 +52,13 @@ export interface LibraryEntry {
   company?: string
   email?: string
   phone?: string
+  /**
+   * Un **skill exécutable** : le contexte qu'il reçoit (« fiche », « texte », « dossiers »…),
+   * la sortie qu'il rend (« rangement » ; vide : une réponse libre), son seuil de confiance.
+   */
+  context?: string[]
+  output?: string
+  threshold?: number
   /** Où est sa note (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -91,7 +99,10 @@ export function entryContent(kind: EntryKind, draft: EntryDraft): string {
     ...(draft.phone?.trim() ? { telephone: draft.phone.trim() } : {}),
     ...(draft.category.trim() ? { categorie: draft.category.trim() } : {}),
     ...(draft.description.trim() ? { description: draft.description.trim() } : {}),
-    ...(draft.favorite ? { favori: true } : {})
+    ...(draft.favorite ? { favori: true } : {}),
+    ...(kind === 'skill' && draft.context?.length ? { contexte: [...draft.context] } : {}),
+    ...(kind === 'skill' && draft.output?.trim() ? { sortie: draft.output.trim() } : {}),
+    ...(kind === 'skill' && draft.threshold !== undefined ? { seuil: draft.threshold } : {})
   }
   return `---\n${toYaml(data)}\n---\n\n${draft.text.trim()}\n`
 }
@@ -112,8 +123,18 @@ export function readEntry(kind: EntryKind, path: string, data: Record<string, un
     ...(plain(data.code) ? { code: plain(data.code) } : {}),
     ...(plain(data.entreprise) ? { company: plain(data.entreprise) } : {}),
     ...(plain(data.email ?? data.courriel) ? { email: plain(data.email ?? data.courriel) } : {}),
-    ...(plain(data.telephone ?? data['téléphone'] ?? data.tel) ? { phone: plain(data.telephone ?? data['téléphone'] ?? data.tel) } : {})
+    ...(plain(data.telephone ?? data['téléphone'] ?? data.tel) ? { phone: plain(data.telephone ?? data['téléphone'] ?? data.tel) } : {}),
+    ...(kind === 'skill' ? skillFields(data) : {})
   }
+}
+
+/** Ce qui fait d'un skill un skill exécutable : son contexte, sa sortie, son seuil (ceux qu'il a). */
+function skillFields(data: Record<string, unknown>): Pick<LibraryEntry, 'context' | 'output' | 'threshold'> {
+  const raw = data.contexte ?? data.context
+  const context = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',') : []).map(plain).filter(Boolean)
+  const output = plain(data.sortie ?? data.output)
+  const threshold = readThreshold(data.seuil ?? data.threshold)
+  return { ...(context.length ? { context } : {}), ...(output ? { output } : {}), ...(threshold !== null ? { threshold } : {}) }
 }
 
 /** Toutes les entrées contiennent-elles chaque mot cherché (nom, catégorie, description, texte) ? */

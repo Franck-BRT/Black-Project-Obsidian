@@ -199,6 +199,32 @@ Chaque entrée est une note (dans `Bibliothèque/Prompts`, `Bibliothèque/Person
 rien n'est effacé), **Supprimer** (aussi sur sa carte : après une question, sa note part à la
 corbeille du coffre ; les étapes de workflow qui l'utilisent par son nom ne le trouvent plus).
 
+**Un skill exécutable** (le circuit des documents) : dans sa fenêtre, cochez ce qu'il **reçoit**
+avec un document (sa fiche, son texte, les dossiers où ranger, les règles de rangement), ce qu'il
+**rend** (une réponse libre, ou une **décision de rangement** : un dossier, une confiance, une
+raison) et son **seuil de confiance** (70 % par défaut). Sa fiche le dit (« Exécutable »). Le
+skill livré **Ranger un document** en est un. L'étape de workflow **Exécuter un skill** (module
+IA) le lance sur un document : l'IA décide, l'application exécute.
+
+### À contrôler
+
+Quand l'IA n'est **pas assez sûre** (confiance sous le seuil), qu'elle propose un dossier qui
+n'existe pas, ou que sa réponse est illisible, le document n'est pas rangé au hasard : il va
+dans `Bibliothèque/À contrôler`, avec la **proposition** de l'IA, sa **raison** et sa
+**confiance**. La page des documents le signale (« 1 document(s) à contrôler », **Contrôler**) ;
+la page **À contrôler** les montre, et sa fiche aussi. Pour chacun :
+
+- **Accepter** : il est rangé dans le dossier proposé ;
+- **Choisir ailleurs…** : les autres propositions de l'IA d'abord, puis tous les dossiers ;
+- **Écarter** : mis de côté dans les retirés (rien n'est effacé) ;
+- ou le laisser là, pour plus tard.
+
+Chaque décision s'écrit sur la fiche, dans la section **Circuit** (« rangé dans Normes
+(confiance 93 %) », « Contrôlé — proposition acceptée »). Une note `Bibliothèque/Règles de
+rangement.md`, si vous l'écrivez, est lue par le skill de rangement (« les normes vont dans
+Normes »…). `À contrôler` n'est pas un répertoire où l'on range : il n'a pas de carte, et
+n'est pas proposé comme destination.
+
 ## 7. La langue des documents
 
 À son entrée, la langue d'un document est **détectée** d'après son texte (français,

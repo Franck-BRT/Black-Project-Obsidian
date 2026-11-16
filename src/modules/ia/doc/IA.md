@@ -158,7 +158,11 @@ Deux autres workflows système le suivent :
 
 Dans les {{link:Modules/Workflows|workflows}}, l'action **Demander à l'IA** envoie une
 consigne et un contexte (souvent le résultat d'une étape d'avant, `{step1.text}`) ; sa
-réponse passe aux étapes suivantes, ou s'écrit dans une note.
+réponse passe aux étapes suivantes, ou s'écrit dans une note. L'action **Exécuter un skill**
+lance un skill exécutable de la {{link:Modules/Bibliothèque|bibliothèque}} sur un document : il
+reçoit ce que le skill demande (sa fiche, son texte, les dossiers…) ; une **décision de
+rangement** est appliquée si l'IA est assez sûre (son seuil, ou celui de l'étape), sinon le
+document va dans **À contrôler**, avec la proposition et la raison — jamais rangé au hasard.
 
 Ce que l'IA propose n'est jamais écrit sans vous : une reformulation se choisit, une
 traduction est marquée « automatique, à relire », une réponse cite où elle a lu.

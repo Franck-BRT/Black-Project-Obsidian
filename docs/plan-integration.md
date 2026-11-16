@@ -664,7 +664,8 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.131.0 : **supprimer un document** de la bibliothèque (sa fiche et son fichier à la corbeille ; la question dit s'il sert ailleurs)
 - v0.132.0 : **supprimer un prompt, un persona** (et les autres entrées : skills, entreprises, étiquettes, personnes), leur note à la corbeille
 - v0.133.0 : **supprimer un skill** (comme un prompt), **un workflow depuis sa carte** (les workflows système ne se suppriment pas)
-- Conception (à relire, rien n'est codé) : **le circuit des documents** — tout dépôt dans À classer, puis ingestion, analyse et liens, rangement par des skills exécutables ; ce qui n'est pas sûr va dans À contrôler ([architecture/circuit-des-documents.md](architecture/circuit-des-documents.md))
+- v0.134.0 : **le circuit des documents, version A** — skills exécutables (contexte, sortie, seuil), étape « Exécuter un skill », **À contrôler** (accepter, choisir ailleurs, écarter)
+- Conception : **le circuit des documents** — tout dépôt dans À classer, puis ingestion, analyse et liens, rangement par des skills exécutables ; ce qui n'est pas sûr va dans À contrôler ([architecture/circuit-des-documents.md](architecture/circuit-des-documents.md))
 
 ### Étape 7 — Livrables
 
