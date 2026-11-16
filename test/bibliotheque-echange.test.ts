@@ -136,7 +136,7 @@ describe('se passer une bibliothèque', () => {
     await a.run(hub, 'export-all')
     const zip = exported(mine)
     expect(zip.name).toMatch(/^Bibliothèque complète \d{4}-\d{2}-\d{2}\.zip$/)
-    expect(mine.notices.at(-1)).toMatch(/^Toute la bibliothèque exportée \(2 documents, 7 prompts, \d+ personas\) dans Échanges\/Bibliothèques\/Bibliothèque complète /)
+    expect(mine.notices.at(-1)).toMatch(/^Toute la bibliothèque exportée \(2 documents, 7 prompts, \d+ personas, 3 skills\) dans Échanges\/Bibliothèques\/Bibliothèque complète /)
     await a.stop()
 
     const theirs = memoryPlatform()
@@ -144,7 +144,8 @@ describe('se passer une bibliothèque', () => {
     theirs.choices.push('computer')
     theirs.externalFiles.push([zip])
     await b.run(await b.load('bibliotheque.accueil'), 'import-all')
-    expect(theirs.notices.at(-1)).toMatch(/^Bibliothèque « complète » importée : 2 documents, 7 prompts, \d+ personas ajouté\(s\) ; 0 déjà là\.$/)
+    // Les trois skills du circuit : déjà là (ajoutés à l'activation).
+    expect(theirs.notices.at(-1)).toMatch(/^Bibliothèque « complète » importée : 2 documents, 7 prompts, \d+ personas ajouté\(s\) ; 3 déjà là\.$/)
     // Chacune dans la sienne : les références dans les références ; « Archives », créée.
     expect(read(theirs, 'Bibliothèque/Références/Norme.md')).toContain('bp-type: bibliotheque-document')
     expect(b.settings.bibliotheque?.bibliotheques).toMatchObject({ document: [{ id: 'archives', name: 'Archives' }] })

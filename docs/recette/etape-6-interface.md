@@ -70,6 +70,12 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les skills du circuit dès l'activation (v0.136.1)
+
+- [ ] Nouveau coffre, ou coffre existant mis à jour : Bibliothèque › Skills montre **Ingérer un
+      document**, **Analyser un document**, **Ranger un document** (avant tout document versé)
+- [ ] Un de ces skills modifié : gardé tel quel au redémarrage ; supprimé : recréé au redémarrage
+
 ## D'origine, seuls les workflows essentiels (v0.136.0)
 
 - [ ] Nouveau coffre, ou coffre existant mis à jour : page Workflows › Système, **8 actifs** —

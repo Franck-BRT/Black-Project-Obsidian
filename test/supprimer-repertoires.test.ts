@@ -90,7 +90,7 @@ describe('supprimer un répertoire de la bibliothèque', () => {
     expect(platform.offered.at(-1)!.map((option) => option.label)).toEqual(['Les remonter dans Documents', 'Retirer aussi ses documents'])
     expect(platform.notices.at(-1)).toBe('Répertoire « Normes » supprimé ; ses 2 documents remontés dans Documents.')
     expect(await platform.fs.exists('Bibliothèque/Normes')).toBe(false)
-    expect(files(platform, 'Bibliothèque/').filter((path) => path.endsWith('.md'))).toEqual(['Bibliothèque/ECSS-E-10.md', 'Bibliothèque/ECSS-Q-80.md', 'Bibliothèque/Mes notes.md'])
+    expect(files(platform, 'Bibliothèque/').filter((path) => path.endsWith('.md') && !path.startsWith('Bibliothèque/Skills/'))).toEqual(['Bibliothèque/ECSS-E-10.md', 'Bibliothèque/ECSS-Q-80.md', 'Bibliothèque/Mes notes.md'])
     // Leurs fichiers n'ont pas bougé.
     expect(files(platform, 'Bibliothèque/_fichiers/')).toEqual(['Bibliothèque/_fichiers/ECSS-E-10.pdf', 'Bibliothèque/_fichiers/ECSS-Q-80.pdf'])
     expect(shown.at(-1)).toBe(`bibliotheque.documents?${encodeURIComponent('principale:')}`)

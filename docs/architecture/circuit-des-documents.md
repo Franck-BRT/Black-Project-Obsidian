@@ -173,7 +173,9 @@ possible : tout est alors proposé, rien n'est appliqué seul.
 ## Les trois skills livrés
 
 Ce sont des skills markdown ordinaires de la bibliothèque, livrés comme les exemples actuels,
-**modifiables** par chaque entreprise. Leur procédure est en français ; leur sortie, fixée.
+**modifiables** par chaque entreprise. Ils sont écrits dans la bibliothèque des skills **dès
+l'activation** *(0.136.1)* — le workflow système les nomme — et recréés s'ils manquent (par leur
+nom : un skill modifié est gardé tel quel). Leur procédure est en français ; leur sortie, fixée.
 
 ### Ingestion
 

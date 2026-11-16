@@ -5,13 +5,21 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.50.2 (Black Projects 0.136.0) |
+| Version | 0.50.3 (Black Projects 0.136.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les skills du circuit dès l'activation (v0.50.3, Black Projects 0.136.1)
+
+- À l'activation, les skills exécutables livrés (`startersFor('skill')` avec une `output` :
+  Ingérer, Analyser, Ranger un document) sont ajoutés à la bibliothèque des skills s'ils manquent
+  (`EntryStore.addStarters`, par leur nom) — avant, seulement au premier document entré dans
+  À classer, circuit activé : le workflow « Circuit des documents », actif d'origine, nommait des
+  skills que la page Skills ne montrait pas.
 
 ## Les workflows essentiels (v0.50.2, Black Projects 0.136.0)
 

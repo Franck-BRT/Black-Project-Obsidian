@@ -46,7 +46,7 @@ async function start(platform: MemoryPlatform, modules: readonly BlackModule[] =
   const services = { fs: platform.fs, t: i18n.t.bind(i18n), root: "Appels d'offres", today: () => '2026-11-06' }
   const system = (id: string) => (settings.workflows!.workflows as Workflow[]).find((each) => each.system === `sys.bibliotheque.${id}`)!
   const journal = () => (platform.files.has(JOURNAL) ? new TextDecoder().decode(platform.files.get(JOURNAL)) : '')
-  const records = () => [...platform.files.keys()].filter((path) => path.startsWith('Bibliothèque/') && path.endsWith('.md') && !path.includes('/_'))
+  const records = () => [...platform.files.keys()].filter((path) => path.startsWith('Bibliothèque/') && path.endsWith('.md') && !path.includes('/_') && !path.startsWith('Bibliothèque/Skills/'))
   return { settings, services, system, journal, records }
 }
 

@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.0)
+## Aujourd'hui (version 0.136.1)
+
+- **Les skills du circuit sont là dès le départ** : « Ingérer un document », « Analyser un
+  document » et « Ranger un document » apparaissent dans Bibliothèque › Skills sans attendre le
+  premier document ; modifiez-les à votre goût (un skill supprimé est recréé, le workflow
+  « Circuit des documents » l'appelle par son nom).
 
 - **D'origine, seuls les workflows essentiels sont actifs** : le circuit des documents (le
   circuit, sa relance à l'ouverture, le rappel des documents à contrôler), ce qui fait entrer les

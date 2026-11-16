@@ -152,7 +152,7 @@ describe('« À classer » et le réglage du circuit', () => {
 })
 
 describe('le workflow système « Circuit des documents »', () => {
-  it('déclaré après les passes de l’IA ; ses trois skills, livrés et ajoutés au premier document', async () => {
+  it('déclaré après les passes de l’IA ; ses trois skills, livrés et ajoutés dès l’activation', async () => {
     const platform = memoryPlatform()
     const { workflows, pour, answers } = await start(platform)
     const ids = workflows().map((workflow) => workflow.system).filter((id): id is string => !!id)
@@ -169,7 +169,8 @@ describe('le workflow système « Circuit des documents »', () => {
     })
     expect(workflows().find((workflow) => workflow.system === 'sys.bibliotheque.relancer-circuit')).toMatchObject({ enabled: true, trigger: { kind: 'ouverture' } })
     expect(workflows().find((workflow) => workflow.system === 'sys.bibliotheque.rappel-a-controler')).toMatchObject({ enabled: true })
-    expect(await libraryEntries('skill')).toEqual([])
+    // Ses trois skills : dans la bibliothèque des skills dès l'activation (son workflow les nomme).
+    expect((await libraryEntries('skill')).map((entry) => entry.name).sort()).toEqual(['Analyser un document', 'Ingérer un document', 'Ranger un document'])
     answers.analyse = () => ({ status: 500, text: 'panne' })
     await pour('A.txt', 'Un document.')
     expect((await libraryEntries('skill')).map((entry) => entry.name).sort()).toEqual(['Analyser un document', 'Ingérer un document', 'Ranger un document'])

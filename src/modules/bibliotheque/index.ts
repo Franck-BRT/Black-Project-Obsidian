@@ -992,7 +992,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.50.2',
+  version: '0.50.3',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1180,6 +1180,13 @@ export const bibliothequeModule: BlackModule = {
     // L'ancienne entrée « À verser » devient « À classer » (son contenu repris).
     try {
       await store.migrateInbox()
+    } catch (error) {
+      console.error('[Black Projects] bibliothèque', error)
+    }
+    // Les skills du circuit des documents (Ingérer, Analyser, Ranger un document) : là dès le départ,
+    // puisque son workflow système les nomme ; recréés s'ils manquent.
+    try {
+      await entries.skill.addStarters(startersFor('skill', i18n.language).filter((draft) => !!draft.output))
     } catch (error) {
       console.error('[Black Projects] bibliothèque', error)
     }

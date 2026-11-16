@@ -214,7 +214,8 @@ Dans les **Paramètres** du module, **Le circuit des documents (IA)** (désactiv
 chaque document que vous versez **sans lieu précis** (ou à la racine de la bibliothèque) — par
 **Verser**, en le glissant sur la page, ou en le posant dans `Bibliothèque/À classer` — entre dans
 **À classer** ; puis le workflow système **Circuit des documents** (module IA) enchaîne trois skills
-livrés, à modifier à votre goût :
+livrés, à modifier à votre goût — ils sont dans **Bibliothèque › Skills** dès le départ (recréés
+s'ils manquent, puisque le workflow les appelle par leur nom) :
 
 1. **Ingérer un document** : son texte relu par l'IA (s'il ne l'a pas déjà été à l'entrée) ;
 2. **Analyser un document** : son type de pièce, son entreprise (donnés s'ils manquaient ou étaient
