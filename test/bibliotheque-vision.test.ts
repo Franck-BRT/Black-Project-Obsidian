@@ -67,7 +67,7 @@ async function start(platform: MemoryPlatform, see: (seen: Seen) => string | { t
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
   if (drawsPdf) platform.pages = { open: async () => ({ pages: drawnPages, page: async (number) => `data:image/jpeg;base64,${btoa(`P${number}`)}`, close: async () => void closed++ }) }
-  const settings: Record<string, Record<string, unknown>> = { ia }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ia }
   const views = new ViewsRegistry()
   for (const module of ALL) {
     const context: ModuleContext = {

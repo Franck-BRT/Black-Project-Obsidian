@@ -12,7 +12,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.135.1)
+## Aujourd'hui (version 0.136.0)
+
+- **D'origine, seuls les workflows essentiels sont actifs** : le circuit des documents (le
+  circuit, sa relance à l'ouverture, le rappel des documents à contrôler), ce qui fait entrer les
+  fichiers dans la bibliothèque, et « Signaler les workflows cassés ». Les autres sont désactivés :
+  activez-les un par un sur la page Workflows. Pour revenir à ce que chaque module prévoit :
+  Paramètres › Workflows › **D'origine, seuls les workflows essentiels sont actifs**, désactivé.
+
 
 - **Ménage dans les workflows** : un document du circuit n'est plus relu ni analysé deux fois ; le
   rappel « Documents à classer » s'appelle maintenant « Documents sans type de pièce ».

@@ -337,11 +337,14 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   })
 
   // ── Les workflows système de la bibliothèque ──
+  // Les essentiels : ce sans quoi rien n'entre dans la bibliothèque, et le circuit des documents.
+  const essential = new Set(['ranger-pieces', 'ranger-fichiers', 'depot-ouverture', 'depot-quotidien', 'relancer-circuit', 'rappel-a-controler'])
   const system = (id: string, enabledByDefault: boolean, trigger: WorkflowTrigger, actions: WorkflowAction[], conditions: WorkflowCondition[] = []) =>
     registerSystemWorkflow({
       id: `sys.bibliotheque.${id}`,
       moduleKey: 'bibliotheque.name',
       enabledByDefault,
+      ...(essential.has(id) ? { essential: true } : {}),
       make: (tr) => ({ name: tr(`bibliotheque.sys.${id}`), mode: 'auto', trigger, conditions, actions })
     })
   const pour: WorkflowAction[] = [{ kind: 'bibliotheque.verser', fields: { depot: '{depot}' } }]

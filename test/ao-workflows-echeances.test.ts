@@ -44,7 +44,7 @@ const written = (offset: number) => {
 async function start(platform: MemoryPlatform) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false } }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false } }
   const commands = new Map<string, ModuleCommand>()
   for (const module of MODULES) {
     const context: ModuleContext = {

@@ -22,7 +22,7 @@ const json = (body: unknown) => ({ status: 200, text: JSON.stringify(body) })
 async function start(platform: MemoryPlatform, ia: Record<string, unknown>) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ia }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ia }
   const views = new ViewsRegistry()
   for (const module of MODULES) {
     const context: ModuleContext = {

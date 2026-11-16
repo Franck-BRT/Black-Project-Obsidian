@@ -40,7 +40,7 @@ function declare(message = 'Bonjour', enabledByDefault = true) {
 }
 
 async function start(platform: MemoryPlatform, stored: Workflow[] = []) {
-  const settings: Record<string, unknown> = { workflows: stored }
+  const settings: Record<string, unknown> = { workflows: stored, essentielsSeulement: false }
   const commands = new Map<string, ModuleCommand>()
   const views = new ViewsRegistry()
   const shown: string[] = []

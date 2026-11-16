@@ -27,7 +27,7 @@ const JOURNAL = 'Black Projects/Workflows/Journal des workflows.md'
 async function start(platform: MemoryPlatform, options: { typage?: Record<string, unknown>; modules?: readonly BlackModule[] } = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, 'typage-pieces': options.typage ?? {} }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, 'typage-pieces': options.typage ?? {} }
   const commands = new Map<string, ModuleCommand>()
   for (const module of options.modules ?? MODULES) {
     const context: ModuleContext = {

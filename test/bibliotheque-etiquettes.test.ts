@@ -34,7 +34,7 @@ const TEXT =
 async function start(platform: MemoryPlatform, modules: readonly BlackModule[] = ALL) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ia: SERVEUR }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ia: SERVEUR }
   const views = new ViewsRegistry()
   for (const module of modules) {
     const context: ModuleContext = {

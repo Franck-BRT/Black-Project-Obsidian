@@ -155,6 +155,8 @@ export function registerUpkeep(deps: UpkeepDeps): void {
       id: `sys.workflows.${id}`,
       moduleKey: 'workflows.name',
       enabledByDefault,
+      // Signaler les workflows cassés : essentiel (on voit ce qui ne va pas).
+      ...(id === 'casses' ? { essential: true } : {}),
       make: (tr) => ({ name: tr(`workflows.sys.${id}`), mode: 'auto', conditions: [], ...make(tr) })
     })
   system('casses', true, () => ({ trigger: { kind: OPENING }, actions: [{ kind: 'workflows.verifier', fields: {} }] }))

@@ -19,7 +19,7 @@
  */
 
 import { fillTemplate } from '../../core/docs'
-import type { BlackModule, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
+import type { BlackModule, BooleanField, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import { cleanFolder } from '../../core/settings'
 import { registerBuiltins } from './builtins'
 import { registerUpkeep } from './upkeep'
@@ -156,6 +156,17 @@ const readWorkflows = (settings: Readonly<Record<string, unknown>>): Workflow[] 
   return Array.isArray(stored) ? (stored as Workflow[]).map((workflow) => ({ ...workflow, conditions: workflow.conditions ?? [], actions: workflow.actions ?? [] })) : []
 }
 
+/** Le réglage : d'origine, seuls les workflows système essentiels sont actifs (oui, par défaut). */
+const ESSENTIALS_KEY = 'essentielsSeulement'
+const essentialsField: BooleanField = {
+  kind: 'boolean',
+  key: ESSENTIALS_KEY,
+  nameKey: 'workflows.setting.essentials',
+  descKey: 'workflows.setting.essentials.desc',
+  tooltipKey: 'workflows.setting.essentials.tip',
+  defaultValue: true
+}
+
 const folderField: TextField = {
   kind: 'text',
   key: FOLDER_KEY,
@@ -202,11 +213,11 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.21.1',
+  version: '0.22.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
-  settingsFields: [folderField],
+  settingsFields: [folderField, essentialsField],
   docs: ({ folder }) => [{ path: 'Modules/Workflows.md', content: fillTemplate(page, folder) }],
   async activate(context: ModuleContext) {
     const { platform, settings, i18n, commands } = context
@@ -228,7 +239,7 @@ export const workflowsModule: BlackModule = {
     const seed = () => {
       seeding = seeding
         .then(async () => {
-          const next = seedSystem(load(), allSystemWorkflows(), t, now())
+          const next = seedSystem(load(), allSystemWorkflows(), t, now(), settings.get()[ESSENTIALS_KEY] === false ? 'complet' : 'essentiels')
           if (next.changed) await save(next.workflows)
         })
         .catch((error: unknown) => console.error('[Black Projects] workflows système', error))
@@ -237,6 +248,8 @@ export const workflowsModule: BlackModule = {
     // L'entretien des workflows : ses propres workflows système (cassés, bilan, archive du journal).
     registerUpkeep({ fs: platform.fs, t, folder, load, now })
     whenSystemDeclared(() => void seed())
+    // Le réglage changé : l'état d'origine des workflows système suit (une fois).
+    settings.onChange?.(() => void seed())
     await seed()
 
     const showPage = context.showPage ? (id: string) => context.showPage?.(id) : undefined

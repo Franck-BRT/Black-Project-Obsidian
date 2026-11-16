@@ -91,6 +91,13 @@ qui ont un résultat.
 ou aucun regroupement. Les pages Analyses, Exigences et Bibliothèque ont aussi leurs
 vues.
 
+**D'origine, seuls les essentiels sont actifs** (réglage du module, oui par défaut) : le
+circuit des documents (le circuit, sa relance à l'ouverture, le rappel des documents à
+contrôler), ce sans quoi rien n'entre dans la bibliothèque (ranger les pièces et les fichiers
+importés, verser le dossier « À classer ») et « Signaler les workflows cassés ». Tous les
+autres sont **désactivés** : activez-les un par un, au besoin. La colonne *D'origine*
+ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
+
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
 | Note de l'analyse : le tableau des pièces, à l'import | pièces importées | réécrit le tableau des pièces de la note de l'analyse | actif |
@@ -170,7 +177,9 @@ demande de l'étape ; ce que vous avez choisi s'affiche sur le logigramme.
 ## 5. Réglages
 
 Paramètres → Black Projects → bouton **Fonctions** de la ligne « Workflows » : le dossier
-du journal (`Black Projects/Workflows` par défaut). Les workflows eux-mêmes sont gardés
-dans les réglages du plugin.
+du journal (`Black Projects/Workflows` par défaut), et **D'origine, seuls les workflows
+essentiels sont actifs** (oui par défaut). Changer ce réglage remet l'état (actif ou non) de
+tous les workflows système à la nouvelle origine — une fois : ce que vous activez ou
+désactivez ensuite est gardé. Les workflows eux-mêmes sont gardés dans les réglages du plugin.
 
 Voir {{link:Accueil|l'accueil}}.

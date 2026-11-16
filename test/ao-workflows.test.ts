@@ -31,7 +31,7 @@ const TENDER = `${ROOT}/Pièces/Appel d'offres/Originaux`
 async function start(platform: MemoryPlatform, ia: Record<string, unknown> = {}, ao: Record<string, unknown> = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false, ...ao }, ia }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false, ...ao }, ia }
   const commands = new Map<string, ModuleCommand>()
   for (const module of MODULES) {
     const context: ModuleContext = {

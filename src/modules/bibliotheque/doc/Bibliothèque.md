@@ -131,12 +131,14 @@ favoris, en cartes ou en liste.
 
 Ce que la bibliothèque fait d'elle-même est écrit en **workflows système** : page
 **Workflows**, filtre *Système*. Vous pouvez les modifier, les désactiver, et revenir à
-l'original (« Rétablir l'original ») ; pas les supprimer.
+l'original (« Rétablir l'original ») ; pas les supprimer. D'origine, seuls les **essentiels**
+sont actifs (réglage du module {{link:Modules/Workflows|Workflows}}) : ceux marqués « essentiel »
+ci-dessous ; les autres sont désactivés tant que vous ne les activez pas.
 
 | Workflow système | Quand | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Ranger les pièces importées dans la bibliothèque | des pièces sont importées dans une analyse | les range dans la bibliothèque | activé |
-| Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types de pièces ou de workflows | range le fichier importé | activé |
+| Ranger les pièces importées dans la bibliothèque | des pièces sont importées dans une analyse | les range dans la bibliothèque | activé (essentiel) |
+| Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types de pièces ou de workflows | range le fichier importé | activé (essentiel) |
 | Repérer les nouvelles versions probables | des documents entrent dans la bibliothèque | marque la version précédente probable, à confirmer sur la fiche | activé |
 | Signaler les fichiers introuvables, chaque lundi | le lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 
@@ -148,8 +150,8 @@ chaque lundi : les **versions à confirmer** et les **documents sans type de pi�
 
 | Workflow système | Quand | D'origine |
 | --- | --- | --- |
-| Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | activé |
-| Verser le dossier « À classer », chaque jour | chaque jour à 8 h | activé |
+| Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | activé (essentiel) |
+| Verser le dossier « À classer », chaque jour | chaque jour à 8 h | activé (essentiel) |
 | Versions à confirmer, chaque lundi | le lundi à 8 h | désactivé |
 | Documents sans type de pièce, chaque lundi | le lundi à 8 h | désactivé |
 | Langues à confirmer, chaque lundi | le lundi à 8 h | désactivé |

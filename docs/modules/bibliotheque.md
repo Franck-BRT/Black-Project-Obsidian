@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.50.1 (Black Projects 0.135.1) |
+| Version | 0.50.2 (Black Projects 0.136.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les workflows essentiels (v0.50.2, Black Projects 0.136.0)
+
+- Marqués `essential: true` (actifs d'origine quand seuls les essentiels le sont, le réglage du
+  module [Workflows](workflows.md)) : `ranger-pieces`, `ranger-fichiers`, `depot-ouverture`,
+  `depot-quotidien`, `relancer-circuit`, `rappel-a-controler`. Les autres workflows système de la
+  bibliothèque sont désactivés d'origine.
 
 ## Ménage des workflows (v0.50.1, Black Projects 0.135.1)
 

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.30.1 (Black Projects 0.135.1) |
+| Version | 0.30.2 (Black Projects 0.136.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,13 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Le circuit, seul workflow de l'IA actif d'origine (v0.30.2, Black Projects 0.136.0)
+
+- `sys.ia.circuit` est marqué `essential: true` : actif d'origine quand seuls les essentiels le
+  sont (le réglage du module [Workflows](workflows.md), oui par défaut). Les passes de l'IA sur
+  les documents (relecture, vision, langue, référence, titre, type de pièce, date, étiquettes,
+  entreprise), la vérification de la connexion et les autres sont désactivées d'origine.
 
 ## Ménage : un seul passage par document du circuit (v0.30.1, Black Projects 0.135.1)
 

@@ -23,7 +23,7 @@ const REFS = 'Bibliothèque/Références'
 async function start(platform: MemoryPlatform) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = {}
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false } }
   const views = new ViewsRegistry()
   const shown: string[] = []
   for (const module of MODULES) {

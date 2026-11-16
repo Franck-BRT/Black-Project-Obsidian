@@ -253,6 +253,14 @@ encore).
 Comme les autres workflows système : désactivables, modifiables, rétablissables ; non
 supprimables.
 
+**Les essentiels** *(0.136.0)* : d'origine, seuls ces workflows du circuit, ceux qui font
+entrer les fichiers dans la bibliothèque (ranger les pièces et fichiers importés, verser
+« À classer ») et « Signaler les workflows cassés » sont actifs (`essential: true` ; réglage
+« D'origine, seuls les workflows essentiels sont actifs » du module Workflows, oui par défaut).
+Les anciennes passes de l'IA sur les documents (relecture, vision, type de pièce, entreprise…)
+et les autres automatismes sont désactivés : le circuit les remplace, et on réactive au fur et à
+mesure ce qui manque.
+
 ## Sans IA, IA indisponible, confidentialité
 
 - **Sans IA configurée** : le circuit s'arrête après le dépôt et l'extraction ; les documents

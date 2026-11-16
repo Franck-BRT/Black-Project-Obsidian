@@ -86,7 +86,16 @@ export interface Workflow {
   system?: string
   /** L'empreinte de la version d'origine dont il est parti : modifié s'il n'y ressemble plus. */
   base?: string
+  /**
+   * Un workflow système : le choix d'origine qui a décidé de son état (« essentiels » : seuls
+   * les essentiels actifs ; « complet » : ce que chaque module prévoit). Changé, l'état est remis
+   * à la nouvelle origine — une fois.
+   */
+  defaults?: SystemDefaults
 }
+
+/** Ce qui est actif d'origine parmi les workflows système : les seuls essentiels, ou ce que prévoit chaque module. */
+export type SystemDefaults = 'essentiels' | 'complet'
 
 /** Ce qui est arrivé, tel qu'un workflow le reçoit. */
 export interface Subject {

@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## D'origine, seuls les workflows essentiels (v0.136.0)
+
+- [ ] Nouveau coffre, ou coffre existant mis à jour : page Workflows › Système, **8 actifs** —
+      Ranger les pièces importées, Ranger les fichiers importés, Verser « À classer » (ouverture
+      et chaque jour), Relancer le circuit, Rappeler les documents à contrôler, Circuit des
+      documents, Signaler les workflows cassés ; tous les autres désactivés
+- [ ] Activer un autre workflow système à la main, relancer Obsidian : il reste actif
+- [ ] Paramètres › Workflows › **D'origine, seuls les workflows essentiels sont actifs**
+      désactivé : chaque module retrouve ce qu'il prévoit ; réactivé : retour aux essentiels
+
 ## Le circuit des documents, version B (v0.135.0)
 
 - [ ] Paramètres › Bibliothèque › **Le circuit des documents (IA)** : activé (IA réglée)

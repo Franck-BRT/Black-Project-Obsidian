@@ -31,7 +31,7 @@ const SHORT = 'Rapport de visite du site, avec les remarques du client.'
 async function start(platform: MemoryPlatform, ia: Record<string, unknown> = SERVEUR) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ia }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ia }
   const views = new ViewsRegistry()
   for (const module of ALL) {
     const context: ModuleContext = {

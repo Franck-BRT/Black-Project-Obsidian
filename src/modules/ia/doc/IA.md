@@ -142,7 +142,7 @@ Ces workflows servent aussi au bouton **Relancer la recherche** d'un champ, sur 
 d'un document de la bibliothèque : quand la recherche sans IA n'est pas sûre, celui du champ
 est exécuté pour ce document (désactivé, l'IA n'est pas demandée, et c'est dit).
 
-Deux autres workflows système le suivent :
+Deux autres workflows système le suivent (désactivés d'origine tant que seuls les essentiels sont actifs — le réglage du module {{link:Modules/Workflows|Workflows}} ; seul le **Circuit des documents** l'est) :
 
 | Workflow système | Ce qu'il fait | D'origine |
 | --- | --- | --- |

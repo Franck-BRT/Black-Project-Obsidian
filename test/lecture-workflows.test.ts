@@ -30,7 +30,7 @@ const HOW = 'Si c’est du texte, déclarez une extension équivalente : Formats
 async function start(platform: MemoryPlatform, options: { lecture?: Record<string, unknown>; modules?: readonly BlackModule[]; workflows?: Workflow[] } = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, 'lecture-fichiers': options.lecture ?? {}, ...(options.workflows ? { workflows: { workflows: options.workflows } } : {}) }
+  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, 'lecture-fichiers': options.lecture ?? {}, workflows: { essentielsSeulement: false, ...(options.workflows ? { workflows: options.workflows } : {}) } }
   for (const module of options.modules ?? MODULES) {
     const context: ModuleContext = {
       moduleId: module.id,

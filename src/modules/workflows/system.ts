@@ -17,7 +17,7 @@
 
 import type { SystemWorkflowSpec, Translate } from './registry'
 import { systemWorkflowSpec } from './registry'
-import type { Workflow } from './model'
+import type { SystemDefaults, Workflow } from './model'
 
 type Definition = Pick<Workflow, 'name' | 'mode' | 'trigger' | 'conditions' | 'actions'>
 
@@ -36,17 +36,23 @@ const definitionOf = (spec: SystemWorkflowSpec, t: Translate): Definition => {
  * Crée les workflows système qui manquent, et met à jour ceux que l'utilisateur n'a pas
  * modifiés. Rend la liste, et si elle a changé.
  */
-export function seedSystem(workflows: readonly Workflow[], specs: readonly SystemWorkflowSpec[], t: Translate, now: Date): { workflows: Workflow[]; changed: boolean } {
+export function seedSystem(workflows: readonly Workflow[], specs: readonly SystemWorkflowSpec[], t: Translate, now: Date, defaults: SystemDefaults = 'complet'): { workflows: Workflow[]; changed: boolean } {
   const out = [...workflows]
   let changed = false
   for (const spec of specs) {
     const definition = definitionOf(spec, t)
     const print = fingerprint(definition)
+    const enabled = enabledOf(spec, defaults)
     const at = out.findIndex((each) => each.system === spec.id)
     if (at === -1) {
-      out.push({ ...definition, id: spec.id, enabled: spec.enabledByDefault, created: now.toISOString(), system: spec.id, base: print })
+      out.push({ ...definition, id: spec.id, enabled, created: now.toISOString(), system: spec.id, base: print, defaults })
       changed = true
       continue
+    }
+    // Le choix d'origine a changé (ou n'avait jamais été appliqué) : l'état suit la nouvelle origine, une fois.
+    if (out[at]!.defaults !== defaults) {
+      out[at] = { ...out[at]!, enabled, defaults }
+      changed = true
     }
     const current = out[at]!
     // Pas modifié par l'utilisateur, et l'origine a changé : il suit la nouvelle version.
@@ -57,6 +63,9 @@ export function seedSystem(workflows: readonly Workflow[], specs: readonly Syste
   }
   return { workflows: out, changed }
 }
+
+/** Actif d'origine : ce que prévoit son module ; seuls les essentiels, si c'est le choix. */
+export const enabledOf = (spec: SystemWorkflowSpec, defaults: SystemDefaults): boolean => spec.enabledByDefault && (defaults === 'complet' || spec.essential === true)
 
 /** Un workflow système dont le module est désactivé (ou un workflow ordinaire) : peut-il servir ? */
 export const usable = (workflow: Workflow): boolean => !workflow.system || !!systemWorkflowSpec(workflow.system)

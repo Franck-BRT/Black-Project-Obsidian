@@ -30,7 +30,7 @@ const JOURNAL = 'Black Projects/Workflows/Journal des workflows.md'
 async function start(platform: MemoryPlatform, modules: readonly BlackModule[] = MODULES) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false } }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false } }
   for (const module of modules) {
     const context: ModuleContext = {
       moduleId: module.id,

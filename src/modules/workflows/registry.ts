@@ -108,8 +108,14 @@ export interface SystemWorkflowSpec {
   id: string
   /** Le nom du module qui le déclare (sa clé), pour la page. */
   moduleKey: string
-  /** Actif à sa création. */
+  /** Actif à sa création (quand on active d'origine ce que chaque module prévoit). */
   enabledByDefault: boolean
+  /**
+   * **Essentiel** : actif d'origine même quand seuls les essentiels le sont (le réglage du
+   * module Workflows, par défaut) — le circuit des documents, et ce sans quoi rien n'entre dans
+   * la bibliothèque.
+   */
+  essential?: boolean
   make(t: Translate): Omit<Workflow, 'id' | 'created' | 'enabled' | 'system' | 'base' | 'lastRun' | 'runs'>
 }
 

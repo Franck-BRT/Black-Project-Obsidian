@@ -302,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.30.1',
+  version: '0.30.2',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -535,6 +535,7 @@ export const iaModule: BlackModule = {
       id: CIRCUIT_WORKFLOW,
       moduleKey: 'ia.name',
       enabledByDefault: true,
+      essential: true,
       make: (tr) => ({
         name: tr('ia.sys.circuit'),
         mode: 'auto',

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.21.1 (Black Projects 0.135.1) |
+| Version | 0.22.0 (Black Projects 0.136.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -282,6 +282,22 @@ champ avec l'IA, depuis la fiche d'un document.
 - La carte d'un workflow, sur la page « Workflows », a l'action `delete` (« Supprimer… ») :
   `WorkflowFicheDeps.remove`, la confirmation de `deleteWorkflow`. Pas pour un workflow système
   (il se désactive, ou se rétablit sur sa fiche).
+
+## D'origine, seuls les essentiels (v0.22.0, Black Projects 0.136.0)
+
+- Réglage `essentielsSeulement` (« D'origine, seuls les workflows essentiels sont actifs »,
+  **oui** par défaut) : un workflow système est actif d'origine s'il est prévu actif par son
+  module **et** marqué `essential: true` (`SystemWorkflowSpec`) — `enabledOf(spec, defaults)`.
+  Réglage désactivé : ce que chaque module prévoit (`enabledByDefault`), comme avant.
+- Les essentiels : le **circuit des documents** (`sys.ia.circuit`,
+  `sys.bibliotheque.relancer-circuit`, `sys.bibliotheque.rappel-a-controler`), ce sans quoi rien
+  n'entre dans la bibliothèque (`sys.bibliotheque.ranger-pieces`, `ranger-fichiers`,
+  `depot-ouverture`, `depot-quotidien`) et `sys.workflows.casses` (on voit ce qui casse). Les 41
+  autres sont désactivés ; on les active un par un, sur la page Workflows.
+- Chaque workflow système garde le choix d'origine qui a fixé son état (`Workflow.defaults` :
+  `essentiels` | `complet`). `seedSystem(…, defaults)` : différent (un coffre d'avant, sans
+  marque, ou le réglage changé — `settings.onChange` relance le semis), l'état est remis à la
+  nouvelle origine, **une fois** ; ce que l'utilisateur change ensuite est gardé.
 
 ## Attendre la file (v0.21.0, Black Projects 0.135.0)
 
