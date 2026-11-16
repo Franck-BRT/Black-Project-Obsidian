@@ -221,7 +221,9 @@ function workflowCard(deps: WorkflowsPageDeps, workflow: Workflow, logged: Logge
       { id: 'run', label: t('workflows.page.run'), icon: 'play', run: () => deps.runNow(workflow.id) },
       workflow.enabled
         ? { id: 'disable', label: t('workflows.edit.disable'), icon: 'hide', run: () => deps.setEnabled(workflow.id, false) }
-        : { id: 'enable', label: t('workflows.edit.enable'), icon: 'check', run: () => deps.setEnabled(workflow.id, true) }
+        : { id: 'enable', label: t('workflows.edit.enable'), icon: 'check', run: () => deps.setEnabled(workflow.id, true) },
+      // Un workflow système ne se supprime pas (il se rétablit, sur sa fiche).
+      ...(deps.fiche && !system ? [{ id: 'delete', label: t('workflows.edit.delete'), icon: 'trash' as const, run: async () => void (await deps.fiche!.remove(workflow.id)) }] : [])
     ],
     tags: [
       workflow.enabled ? 'actifs' : 'desactives',

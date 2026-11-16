@@ -213,7 +213,7 @@ describe('supprimer un document de la bibliothèque', () => {
 })
 
 describe('supprimer un prompt, un persona', () => {
-  for (const [kind, page] of [['prompt', 'bibliotheque.prompts'], ['persona', 'bibliotheque.personas']] as const) {
+  for (const [kind, page] of [['prompt', 'bibliotheque.prompts'], ['persona', 'bibliotheque.personas'], ['skill', 'bibliotheque.skills']] as const) {
     it(`un ${kind} : depuis sa page, après confirmation, sa note à la corbeille ; depuis sa carte aussi ; renoncé, il reste`, async () => {
       const platform = memoryPlatform()
       const { load, run, shown } = await vault(platform)

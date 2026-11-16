@@ -15,7 +15,7 @@ Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/d
 
 ## Supprimer un prompt, un persona (v0.48.0, Black Projects 0.132.0)
 
-- `EntryStore.remove(path)` : la note à la corbeille (`FileSystem.trash`). Action `delete` sur
+- `EntryStore.remove(path)` : la note à la corbeille (`FileSystem.trash`) — les skills compris. Action `delete` sur
   la fiche d'une entrée (après « Retirer », dont l'icône devient `archive`) et sur sa carte,
   après une confirmation (`danger`) — pour toutes les sortes d'entrées : prompts, personas,
   skills, entreprises, étiquettes, personnes. Absente sans corbeille.

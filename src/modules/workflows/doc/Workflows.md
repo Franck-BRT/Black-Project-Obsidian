@@ -44,7 +44,8 @@ Palette de commandes :
   échec, planifiés, sur événement, manuels, tout seul, demander d'abord. Un clic sur un
   workflow (son nom, ou **Modifier**) ouvre sa **fiche**, en page aussi, où tout se voit :
   en tête **Exécuter**, **Activer** ou **Désactiver**, **Nom, mode et déclencheur**,
-  **Dupliquer** (la copie s'ouvre), **Supprimer** ; ses chiffres (état, mode, exécutions,
+  **Dupliquer** (la copie s'ouvre), **Supprimer** (aussi sur sa carte, dans la liste — après une
+  question ; son journal reste) ; ses chiffres (état, mode, exécutions,
   dernière exécution) ; ses **conditions**, chacune avec **Retirer**, et « Ajouter une
   condition » ; ses **actions**, dans l'ordre, chacune avec **Modifier**, **Monter**,
   **Descendre**, **Retirer**, et « Ajouter une action » ; ses dernières exécutions.

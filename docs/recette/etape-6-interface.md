@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Supprimer un skill, un workflow (v0.133.0)
+
+- [ ] Bibliothèque › Skills › un skill › **Supprimer** (sur sa carte ou sa fiche) : sa note à la
+      corbeille du coffre
+- [ ] Workflows › la carte d'un workflow à moi › **Supprimer…** : la question ; confirmé, il
+      n'est plus dans la liste (son journal reste)
+- [ ] Les workflows système : pas de **Supprimer…** (ils se désactivent, ou se rétablissent)
+
 ## Supprimer un prompt, un persona (v0.132.0)
 
 - [ ] Bibliothèque › Prompts › un prompt › **Supprimer** : la question ; confirmé, sa note dans

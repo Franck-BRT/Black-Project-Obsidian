@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.132.0)
+## Aujourd'hui (version 0.133.0)
+
+- **Supprimer un skill, un workflow** : un skill, sur sa fiche ou sa carte (sa note à la
+  corbeille) ; un workflow, sur sa fiche ou maintenant sur sa carte dans la liste
+  (**Supprimer…** ; son journal reste). Les workflows système ne se suppriment pas : ils se
+  désactivent, ou se rétablissent.
 
 - **Supprimer un prompt, un persona** : sur sa fiche ou sa carte, **Supprimer** met sa note à
   la corbeille du coffre (de même pour les skills, entreprises, étiquettes, personnes).

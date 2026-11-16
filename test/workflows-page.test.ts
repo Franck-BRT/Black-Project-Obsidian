@@ -93,6 +93,20 @@ describe('la page Workflows', () => {
     expect(lists).toEqual([])
   })
 
+  it('sa carte : « Supprimer… » — après confirmation, il n’est plus là ; renoncé, il reste', async () => {
+    const platform = memoryPlatform()
+    const { views, settings } = await start(platform, true)
+    const remove = async () => cardsOf(await views.pages()[0]!.load()).find((card) => card.title === 'Prévenir à la main')!.actions!.find((action) => action.id === 'delete')!.run()
+    platform.confirmations.push(false)
+    await remove()
+    expect(platform.confirmed.at(-1)).toMatchObject({ title: 'Supprimer le workflow', danger: true })
+    expect((settings.workflows!.workflows as Workflow[]).map((each) => each.name)).toContain('Prévenir à la main')
+    platform.confirmations.push(true)
+    await remove()
+    expect((settings.workflows!.workflows as Workflow[]).map((each) => each.name)).not.toContain('Prévenir à la main')
+    expect(cardsOf(await views.pages()[0]!.load()).map((card) => card.title)).not.toContain('Prévenir à la main')
+  })
+
   it('les chiffres, une carte par workflow avec son échec récent, le journal ; filtres', async () => {
     const { views } = await start(memoryPlatform(), true)
     const view = await views.pages()[0]!.load()
@@ -103,13 +117,13 @@ describe('la page Workflows', () => {
     expect(morning!.badges?.map((badge) => badge.label)).toEqual(['Actif', 'Tout seul', 'Dernière exécution en échec'])
     expect(morning!.tags).toEqual(['actifs', 'en-echec', 'planifies', 'tout-seuls'])
     expect(morning!.text).toMatch(/^1\. /)
-    expect(morning!.actions?.map((action) => action.id)).toEqual(['edit', 'run', 'disable'])
+    expect(morning!.actions?.map((action) => action.id)).toEqual(['edit', 'run', 'disable', 'delete'])
     // Pas encore compté, mais dans le journal : le journal le dit.
     expect(morning!.facts?.map((fact) => fact.value)).toEqual(['2', '2026-11-05 08:30'])
     // Jamais exécuté : rien.
     expect(manual!.facts?.map((fact) => fact.value)).toEqual(['0', '—'])
     expect(manual!.tags).toEqual(['desactives', 'manuels', 'demandent'])
-    expect(manual!.actions?.map((action) => action.id)).toEqual(['edit', 'run', 'enable'])
+    expect(manual!.actions?.map((action) => action.id)).toEqual(['edit', 'run', 'enable', 'delete'])
     const journal = view.blocks.find((block) => block.kind === 'list')
     expect(journal?.kind === 'list' && journal.title).toBe('Dernières exécutions')
     expect(journal?.kind === 'list' && journal.items).toHaveLength(2)

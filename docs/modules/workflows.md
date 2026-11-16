@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.19.0 (Black Projects 0.93.0) |
+| Version | 0.20.0 (Black Projects 0.133.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -276,6 +276,12 @@ workflow système fait à son évènement — présent, activé, son déclencheu
 remplies, il est exécuté (`WorkflowEngine.emitTo`, à la suite des autres) et écrit au
 journal ; rend s'il l'a été. La bibliothèque s'en sert pour **relancer la recherche** d'un
 champ avec l'IA, depuis la fiche d'un document.
+
+## Supprimer depuis la carte (v0.20.0, Black Projects 0.133.0)
+
+- La carte d'un workflow, sur la page « Workflows », a l'action `delete` (« Supprimer… ») :
+  `WorkflowFicheDeps.remove`, la confirmation de `deleteWorkflow`. Pas pour un workflow système
+  (il se désactive, ou se rétablit sur sa fiche).
 
 ## Le moteur (`engine.ts`)
 
