@@ -116,6 +116,11 @@ export interface SystemWorkflowSpec {
    * la bibliothèque.
    */
   essential?: boolean
+  /**
+   * Les workflows système qu'il **remplace** (deux fusionnés en un) : retirés des workflows
+   * enregistrés quand il est créé ou mis à jour — ils ne servent plus.
+   */
+  replaces?: readonly string[]
   make(t: Translate): Omit<Workflow, 'id' | 'created' | 'enabled' | 'system' | 'base' | 'lastRun' | 'runs'>
 }
 

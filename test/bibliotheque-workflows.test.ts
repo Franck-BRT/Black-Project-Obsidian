@@ -59,32 +59,59 @@ afterEach(async () => {
 
 describe('les workflows système de la bibliothèque', () => {
   it('quatre, créés à l’activation : trois actifs, « fichiers introuvables » désactivé, chaque lundi à 8 h', async () => {
-    const { system } = await start(memoryPlatform())
-    expect(system('ranger-pieces')).toMatchObject({ enabled: true, name: 'Ranger les pièces importées dans la bibliothèque', trigger: { kind: 'bibliotheque.fichiers-deposes' }, conditions: [{ field: 'origine', op: 'is', value: 'ao' }] })
-    expect(system('ranger-fichiers')).toMatchObject({ enabled: true, trigger: { kind: 'bibliotheque.fichiers-deposes' }, conditions: [{ field: 'origine', op: 'is-not', value: 'ao' }] })
+    const { system, settings } = await start(memoryPlatform())
+    // Un seul pour tout ce qu'un module dépose : pièces d'analyse comprises, sans condition.
+    expect(system('ranger-fichiers')).toMatchObject({ enabled: true, name: 'Ranger les fichiers et pièces importés dans la bibliothèque', trigger: { kind: 'bibliotheque.fichiers-deposes' }, conditions: [] })
+    expect((settings.workflows!.workflows as Workflow[]).some((each) => each.system === 'sys.bibliotheque.ranger-pieces')).toBe(false)
     expect(system('nouvelles-versions')).toMatchObject({ enabled: true, trigger: { kind: 'bibliotheque.versement' }, actions: [{ kind: 'bibliotheque.versions' }] })
     expect(system('fichiers-introuvables')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
   })
 
-  it('les pièces importées : rangées par leur workflow, sans rien dire ; le journal le garde', async () => {
+  it('les pièces importées : rangées par le même workflow, sans rien dire ; le journal le garde', async () => {
     const platform = memoryPlatform()
     const { services, journal, records } = await start(platform)
     const analysis = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: 'Agence', reference: '' })
     await importFiles(services, analysis, [{ name: 'CCTP.md', bytes: enc('# CCTP\n\nLe titulaire doit fournir une antenne.') }], toTender)
     expect(records()).toEqual(['Bibliothèque/CCTP.md'])
-    expect(journal()).toMatch(/✅ fait · \*\*Ranger les pièces importées dans la bibliothèque\*\* · .*1 document\(s\) rangé\(s\), 0 y étai\(en\)t déjà\./)
+    expect(journal()).toMatch(/✅ fait · \*\*Ranger les fichiers et pièces importés dans la bibliothèque\*\* · .*1 document\(s\) rangé\(s\), 0 y étai\(en\)t déjà\./)
     expect(platform.notices.filter((notice) => notice.includes('Ranger'))).toEqual([])
   })
 
-  it('« ranger les pièces » désactivé : les pièces d’une analyse ne sont plus rangées ; les autres fichiers, si', async () => {
+  it('un coffre d’avant : « Ranger les pièces importées » retiré, fondu dans « Ranger les fichiers et pièces importés »', async () => {
+    const platform = memoryPlatform()
+    const first = await start(platform)
+    const stored = first.settings.workflows!.workflows as Workflow[]
+    // Le coffre d'avant : les deux workflows, l'un avec sa condition sur l'origine.
+    first.settings.workflows!.workflows = [
+      ...stored.filter((each) => each.system !== 'sys.bibliotheque.ranger-fichiers'),
+      { ...first.system('ranger-fichiers'), name: 'Ranger les fichiers importés dans la bibliothèque', conditions: [{ field: 'origine', op: 'is-not', value: 'ao' }], base: undefined },
+      { id: 'sys.bibliotheque.ranger-pieces', system: 'sys.bibliotheque.ranger-pieces', name: 'Ranger les pièces importées dans la bibliothèque', enabled: true, created: '2026-11-01T00:00:00.000Z', mode: 'auto', trigger: { kind: 'bibliotheque.fichiers-deposes' }, conditions: [{ field: 'origine', op: 'is', value: 'ao' }], actions: [{ kind: 'bibliotheque.verser', fields: { depot: '{depot}' } }] }
+    ]
+    for (const module of [...MODULES].reverse()) await module.deactivate?.()
+    const settings = first.settings
+    const i18n = createI18n('fr')
+    for (const module of MODULES) i18n.register('fr', module.texts.fr)
+    for (const module of MODULES)
+      await module.activate({
+        moduleId: module.id,
+        platform,
+        i18n,
+        settings: { get: () => settings[module.id] ?? {}, save: async (values) => void (settings[module.id] = values), onChange: () => () => {} },
+        commands: { register: () => {} },
+        views: new ViewsRegistry(),
+        showPage: () => {}
+      })
+    const workflows = settings.workflows!.workflows as Workflow[]
+    expect(workflows.filter((each) => each.system?.startsWith('sys.bibliotheque.ranger-')).map((each) => each.system)).toEqual(['sys.bibliotheque.ranger-fichiers'])
+  })
+
+  it('« ranger les fichiers et pièces importés » désactivé : les pièces d’une analyse ne sont plus rangées', async () => {
     const platform = memoryPlatform()
     const { services, system, records } = await start(platform)
-    system('ranger-pieces').enabled = false
+    system('ranger-fichiers').enabled = false
     const analysis = await createAnalysis(services, 'Station sol', { position: 'candidat', buyer: 'Agence', reference: '' })
     await importFiles(services, analysis, [{ name: 'CCTP.md', bytes: enc('# CCTP') }], toTender)
     expect(records()).toEqual([])
-    expect(await pourIntoLibrary([{ name: 'Exigences client.csv', bytes: enc('a;b') }], { module: 'exigences', label: 'Import' })).toMatchObject({ added: [{ title: 'Exigences client' }] })
-    expect(records()).toEqual(['Bibliothèque/Exigences client.md'])
   })
 
   it('« ranger les fichiers importés » désactivé : un import n’est plus rangé ; ce qu’on verse soi-même, toujours', async () => {
@@ -176,7 +203,7 @@ describe('les workflows système de la bibliothèque', () => {
     // Le dépôt, mis à la suite : rangé juste après.
     await vi.waitFor(() => expect(records()).toEqual(['Bibliothèque/Annexe.md']))
     expect(journal()).toMatch(/\*\*Déposer\*\* — 1\. test : déposé/)
-    await vi.waitFor(() => expect(journal()).toContain('**Ranger les fichiers importés dans la bibliothèque**'))
+    await vi.waitFor(() => expect(journal()).toContain('**Ranger les fichiers et pièces importés dans la bibliothèque**'))
   })
 })
 

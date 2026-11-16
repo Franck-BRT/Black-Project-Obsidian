@@ -137,8 +137,7 @@ ci-dessous ; les autres sont désactivés tant que vous ne les activez pas.
 
 | Workflow système | Quand | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Ranger les pièces importées dans la bibliothèque | des pièces sont importées dans une analyse | les range dans la bibliothèque | activé (essentiel) |
-| Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types de pièces ou de workflows | range le fichier importé | activé (essentiel) |
+| Ranger les fichiers et pièces importés dans la bibliothèque | des pièces importées dans une analyse, un import d'exigences, de types de pièces ou de workflows | les range dans la bibliothèque | activé (essentiel) |
 | Repérer les nouvelles versions probables | des documents entrent dans la bibliothèque | marque la version précédente probable, à confirmer sur la fiche | activé |
 | Signaler les fichiers introuvables, chaque lundi | le lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 
@@ -157,7 +156,8 @@ chaque lundi : les **versions à confirmer** et les **documents sans type de pi�
 | Langues à confirmer, chaque lundi | le lundi à 8 h | désactivé |
 | Proposer un fantôme d'un document déjà dans la bibliothèque | vous déposez un document déjà là, rangé ailleurs | activé |
 
-Désactiver un « Ranger… », c'est ne plus ranger ces fichiers-là ; ce que vous versez
+Le désactiver, c'est ne plus ranger ce que les modules déposent (pour écarter les seules pièces
+d'analyse : ajoutez-lui la condition *origine n'est pas ao*) ; ce que vous versez
 vous-même (« Verser des documents ») y entre toujours.
 
 Les déclencheurs, pour vos propres workflows :

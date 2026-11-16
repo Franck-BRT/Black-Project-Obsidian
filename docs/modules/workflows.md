@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.22.0 (Black Projects 0.136.0) |
+| Version | 0.23.0 (Black Projects 0.136.3) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -207,8 +207,7 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Ranger les pièces importées dans la bibliothèque | fichiers déposés dans l'application (par l'analyse) | verse les pièces | actif |
-| Ranger les fichiers importés dans la bibliothèque | fichiers déposés (import d'exigences, de types, de workflows) | verse le fichier | actif |
+| Ranger les fichiers et pièces importés dans la bibliothèque | fichiers déposés dans l'application (pièces d'analyse, import d'exigences, de types, de workflows) | verse le dépôt | actif |
 | Repérer les nouvelles versions probables | documents versés (une fois par versement) | marque la version précédente probable | actif |
 | Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 | Verser le dossier « À verser », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
@@ -283,6 +282,12 @@ champ avec l'IA, depuis la fiche d'un document.
   `WorkflowFicheDeps.remove`, la confirmation de `deleteWorkflow`. Pas pour un workflow système
   (il se désactive, ou se rétablit sur sa fiche).
 
+## Un workflow système qui en remplace d'autres (v0.23.0, Black Projects 0.136.3)
+
+- `SystemWorkflowSpec.replaces` : les workflows système qu'il remplace (deux fusionnés en un).
+  `seedSystem` les retire des workflows enregistrés — ils ne servent plus. Premier usage : « Ranger
+  les pièces importées » fondu dans « Ranger les fichiers et pièces importés » (bibliothèque).
+
 ## D'origine, seuls les essentiels (v0.22.0, Black Projects 0.136.0)
 
 - Réglage `essentielsSeulement` (« D'origine, seuls les workflows essentiels sont actifs »,
@@ -291,7 +296,7 @@ champ avec l'IA, depuis la fiche d'un document.
   Réglage désactivé : ce que chaque module prévoit (`enabledByDefault`), comme avant.
 - Les essentiels : le **circuit des documents** (`sys.ia.circuit`,
   `sys.bibliotheque.relancer-circuit`, `sys.bibliotheque.rappel-a-controler`), ce sans quoi rien
-  n'entre dans la bibliothèque (`sys.bibliotheque.ranger-pieces`, `ranger-fichiers`,
+  n'entre dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`,
   `depot-ouverture`, `depot-quotidien`) et `sys.workflows.casses` (on voit ce qui casse). Les 41
   autres sont désactivés ; on les active un par un, sur la page Workflows.
 - Chaque workflow système garde le choix d'origine qui a fixé son état (`Workflow.defaults` :

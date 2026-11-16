@@ -38,7 +38,7 @@ import { archive, ARCHIVE_FILES, archiveName, EXCHANGE_FORMAT, MANIFEST, readMan
 import type { ZipEntry } from '../../core/formats/zip'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
 import { builtInShelf, defaultShelfOf, folderName, REFERENCE_SHELF, severalShelves, shelfOfPath, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
-import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
+import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
 export type { DocOrigin, LibraryDoc, TextVersion, Transcript, TranscriptState } from './model'
@@ -73,7 +73,7 @@ export const PROJECTS_FOLDER_KEY = 'dossierProjets'
 export const DEFAULT_PROJECTS_FOLDER = 'Bibliothèque/Projets'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
-export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_PIECES, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
+export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
 
 /** Ouvrir une archive ZIP (par la lecture de fichiers) : pour importer une bibliothèque. */
 let archiveReader: ((bytes: Uint8Array) => Promise<{ path: string; bytes: Uint8Array }[]>) | null = null
@@ -490,15 +490,15 @@ export async function choosePersona(ui: Ui): Promise<LibraryEntry | null | undef
  * l'ordinateur y sont copiés. Un même fichier n'y entre qu'une fois. Sans le module actif,
  * ne fait rien (`null`). Ne lève pas : un fichier illisible est compté dans `failed`.
  *
- * Le module Workflows actif, un dépôt d'un autre module passe par ses workflows système
- * (« Ranger les pièces importées », « Ranger les fichiers importés ») : désactivés, les
- * fichiers ne sont pas rangés — `null`. Ce qu'on verse soi-même depuis la bibliothèque y
+ * Le module Workflows actif, un dépôt d'un autre module passe par son workflow système
+ * « Ranger les fichiers importés » (pièces d'analyse comprises) : désactivé, les fichiers ne
+ * sont pas rangés — `null`. Ce qu'on verse soi-même depuis la bibliothèque y
  * entre toujours.
  */
 export async function pourIntoLibrary(items: readonly PourItem[], origin: DocOrigin, options: PourOptions = {}): Promise<PourReport | null> {
   if (!active || !items.length) return null
   try {
-    if (origin.module !== BIBLIOTHEQUE && (systemWorkflowManages(SYS_PIECES) || systemWorkflowManages(SYS_FILES))) return await depositThroughWorkflows(items, origin, options)
+    if (origin.module !== BIBLIOTHEQUE && systemWorkflowManages(SYS_FILES)) return await depositThroughWorkflows(items, origin, options)
     return await pourNow(items, origin, options, true)
   } catch (error) {
     console.error('[Black Projects] bibliothèque', error)
@@ -992,7 +992,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.50.4',
+  version: '0.51.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),

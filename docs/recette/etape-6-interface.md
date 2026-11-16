@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Un seul workflow pour ranger ce qui est importé (v0.136.3)
+
+- [ ] Workflows › Système › Bibliothèque : **Ranger les fichiers et pièces importés dans la
+      bibliothèque**, seul ; « Ranger les pièces importées » n'y est plus (coffre existant compris)
+- [ ] Importer des pièces dans une analyse, puis un fichier d'exigences : tous deux rangés dans
+      la bibliothèque, le journal le dit sous ce seul workflow
+
 ## Le texte des entrées mis en forme (v0.136.2)
 
 - [ ] Bibliothèque › Skills › **Analyser un document** : sa méthode en liste numérotée, le gras
@@ -84,8 +91,8 @@ Sur le coffre de test.
 
 ## D'origine, seuls les workflows essentiels (v0.136.0)
 
-- [ ] Nouveau coffre, ou coffre existant mis à jour : page Workflows › Système, **8 actifs** —
-      Ranger les pièces importées, Ranger les fichiers importés, Verser « À classer » (ouverture
+- [ ] Nouveau coffre, ou coffre existant mis à jour : page Workflows › Système, **7 actifs** (8 avant 0.136.3) —
+      Ranger les fichiers et pièces importés, Verser « À classer » (ouverture
       et chaque jour), Relancer le circuit, Rappeler les documents à contrôler, Circuit des
       documents, Signaler les workflows cassés ; tous les autres désactivés
 - [ ] Activer un autre workflow système à la main, relancer Obsidian : il reste actif

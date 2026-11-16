@@ -93,7 +93,7 @@ vues.
 
 **D'origine, seuls les essentiels sont actifs** (réglage du module, oui par défaut) : le
 circuit des documents (le circuit, sa relance à l'ouverture, le rappel des documents à
-contrôler), ce sans quoi rien n'entre dans la bibliothèque (ranger les pièces et les fichiers
+contrôler), ce sans quoi rien n'entre dans la bibliothèque (ranger les fichiers et pièces
 importés, verser le dossier « À classer ») et « Signaler les workflows cassés ». Tous les
 autres sont **désactivés** : activez-les un par un, au besoin. La colonne *D'origine*
 ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
@@ -122,8 +122,7 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Vérifier la connexion à l'IA, à l'ouverture | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas ou si un modèle choisi n'y est plus | actif |
 | Signaler les nouveaux modèles du serveur, à l'ouverture | à l'ouverture d'Obsidian | nomme les modèles apparus sur le serveur, avec leur usage | actif |
 | Signaler un serveur d'IA lent, à l'ouverture | à l'ouverture d'Obsidian | prévient si l'IA met plus de 5 s à répondre | désactivé |
-| Ranger les pièces importées dans la bibliothèque | des pièces importées dans une analyse | les range dans la bibliothèque de documents | actif |
-| Ranger les fichiers importés dans la bibliothèque | un import d'exigences, de types ou de workflows | range le fichier importé | actif |
+| Ranger les fichiers et pièces importés dans la bibliothèque | des pièces importées dans une analyse, un import d'exigences, de types ou de workflows | les range dans la bibliothèque de documents | actif |
 | Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |
 | Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
 | Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |

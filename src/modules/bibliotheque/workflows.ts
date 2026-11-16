@@ -5,9 +5,9 @@
  * Les automatismes de la bibliothèque, écrits en **workflows système** — modifiables, non
  * supprimables :
  *
- * - **Ranger les pièces importées** (activé) : les pièces d'une analyse, à leur dépôt ;
- * - **Ranger les fichiers importés** (activé) : le fichier d'un import d'exigences, un
- *   échange de types de pièces ou de workflows ;
+ * - **Ranger les fichiers et pièces importés** (activé) : tout ce qu'un module dépose — les
+ *   pièces d'une analyse, le fichier d'un import d'exigences, un échange de types de pièces
+ *   ou de workflows (l'ancien « Ranger les pièces importées » y est fondu) ;
  * - **Repérer les nouvelles versions probables** (activé) : une fois par versement ;
  * - **Signaler les fichiers introuvables** (désactivé) : chaque lundi à 8 h ;
  * - **Proposer un fantôme d'un document déjà là** (activé) : déposé soi-même dans un lieu
@@ -34,14 +34,14 @@ export const TRIGGER_BATCH = 'bibliotheque.versement'
 /** Un document déposé (soi-même, dans un lieu) qui est déjà dans la bibliothèque, ailleurs : le déclencheur. */
 export const TRIGGER_KNOWN = 'bibliotheque.document-deja-la'
 
-export const SYS_PIECES = 'sys.bibliotheque.ranger-pieces'
+/** Ranger les fichiers importés (pièces d'analyse comprises) : un seul workflow, depuis 0.136.3. */
 export const SYS_FILES = 'sys.bibliotheque.ranger-fichiers'
+/** L'ancien « Ranger les pièces importées », fondu dans « Ranger les fichiers importés ». */
+const SYS_PIECES_RETIRED = 'sys.bibliotheque.ranger-pieces'
 export const SYS_VERSIONS = 'sys.bibliotheque.nouvelles-versions'
 export const SYS_MISSING = 'sys.bibliotheque.fichiers-introuvables'
 export const SYS_GHOST = 'sys.bibliotheque.fantome'
 
-/** Le module dont les dépôts sont des pièces d'analyse. */
-const PIECES_MODULE = 'ao'
 
 /** Un dépôt en attente de son workflow. */
 export interface Deposit {
@@ -338,18 +338,20 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
 
   // ── Les workflows système de la bibliothèque ──
   // Les essentiels : ce sans quoi rien n'entre dans la bibliothèque, et le circuit des documents.
-  const essential = new Set(['ranger-pieces', 'ranger-fichiers', 'depot-ouverture', 'depot-quotidien', 'relancer-circuit', 'rappel-a-controler'])
-  const system = (id: string, enabledByDefault: boolean, trigger: WorkflowTrigger, actions: WorkflowAction[], conditions: WorkflowCondition[] = []) =>
+  const essential = new Set(['ranger-fichiers', 'depot-ouverture', 'depot-quotidien', 'relancer-circuit', 'rappel-a-controler'])
+  const system = (id: string, enabledByDefault: boolean, trigger: WorkflowTrigger, actions: WorkflowAction[], conditions: WorkflowCondition[] = [], replaces: string[] = []) =>
     registerSystemWorkflow({
       id: `sys.bibliotheque.${id}`,
       moduleKey: 'bibliotheque.name',
       enabledByDefault,
       ...(essential.has(id) ? { essential: true } : {}),
+      ...(replaces.length ? { replaces } : {}),
       make: (tr) => ({ name: tr(`bibliotheque.sys.${id}`), mode: 'auto', trigger, conditions, actions })
     })
   const pour: WorkflowAction[] = [{ kind: 'bibliotheque.verser', fields: { depot: '{depot}' } }]
-  system('ranger-pieces', true, { kind: TRIGGER_DEPOSITED }, pour, [{ field: 'origine', op: 'is', value: PIECES_MODULE }])
-  system('ranger-fichiers', true, { kind: TRIGGER_DEPOSITED }, pour, [{ field: 'origine', op: 'is-not', value: PIECES_MODULE }])
+  // Tout ce qu'un module dépose (pièces d'analyse, imports d'exigences, de types de pièces, de
+  // workflows) : un seul workflow — « Ranger les pièces importées » y est fondu.
+  system('ranger-fichiers', true, { kind: TRIGGER_DEPOSITED }, pour, [], [SYS_PIECES_RETIRED])
   system('nouvelles-versions', true, { kind: TRIGGER_BATCH }, [{ kind: 'bibliotheque.versions', fields: {} }])
   system('fichiers-introuvables', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.introuvables', fields: {} }])
   const inbox: WorkflowAction[] = [{ kind: 'bibliotheque.depot', fields: {} }]

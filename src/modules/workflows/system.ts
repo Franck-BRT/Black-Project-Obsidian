@@ -33,12 +33,14 @@ const definitionOf = (spec: SystemWorkflowSpec, t: Translate): Definition => {
 }
 
 /**
- * Crée les workflows système qui manquent, et met à jour ceux que l'utilisateur n'a pas
- * modifiés. Rend la liste, et si elle a changé.
+ * Crée les workflows système qui manquent, met à jour ceux que l'utilisateur n'a pas
+ * modifiés, retire ceux qu'un autre remplace. Rend la liste, et si elle a changé.
  */
 export function seedSystem(workflows: readonly Workflow[], specs: readonly SystemWorkflowSpec[], t: Translate, now: Date, defaults: SystemDefaults = 'complet'): { workflows: Workflow[]; changed: boolean } {
-  const out = [...workflows]
-  let changed = false
+  // Les workflows système remplacés par un autre (deux fusionnés en un) : retirés.
+  const replaced = new Set(specs.flatMap((spec) => spec.replaces ?? []))
+  const out = workflows.filter((each) => !each.system || !replaced.has(each.system))
+  let changed = out.length !== workflows.length
   for (const spec of specs) {
     const definition = definitionOf(spec, t)
     const print = fingerprint(definition)

@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.2)
+## Aujourd'hui (version 0.136.3)
+
+- **Un seul workflow pour ranger ce qui est importé** : « Ranger les pièces importées » et
+  « Ranger les fichiers importés » faisaient la même chose ; ils deviennent **Ranger les fichiers
+  et pièces importés dans la bibliothèque**. L'ancien disparaît de la page Workflows.
 
 - **Le texte des prompts, personas et skills mis en forme** : sur leur fiche, les listes
   numérotées, le gras, les titres s'affichent comme dans une note (plus de `**` visibles) ; sur
@@ -339,8 +343,8 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
   se relie d'un clic ; « Retirer » met de côté, sans rien effacer. Ce que vous posez dans
   le dossier `Bibliothèque/À verser` (explorateur, synchronisation) y entre seul, à
   l'ouverture et chaque jour. Ce rangement est fait par
-  des **workflows système** que vous pouvez modifier ou couper : ranger les pièces
-  importées, ranger les fichiers importés, repérer les nouvelles versions probables, et,
+  des **workflows système** que vous pouvez modifier ou couper : ranger les fichiers et
+  pièces importés, repérer les nouvelles versions probables, et,
   désactivé d'origine, signaler chaque lundi les fichiers introuvables.
 - **Workflows** : les **workflows système** — ce que l'application fait d'elle-même (la
   note de l'analyse, le calendrier à l'import, le contrôle des exigences extraites, les

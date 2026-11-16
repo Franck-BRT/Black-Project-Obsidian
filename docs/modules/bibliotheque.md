@@ -5,13 +5,24 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.50.4 (Black Projects 0.136.2) |
+| Version | 0.51.0 (Black Projects 0.136.3) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Un seul workflow pour ranger ce que les modules déposent (v0.51.0, Black Projects 0.136.3)
+
+- « Ranger les pièces importées » (`sys.bibliotheque.ranger-pieces`, condition `origine` est
+  `ao`) et « Ranger les fichiers importés » (`ranger-fichiers`, condition `origine` n'est pas
+  `ao`) avaient le même déclencheur et la même action : fondus en **« Ranger les fichiers et
+  pièces importés dans la bibliothèque »** (`ranger-fichiers`, sans condition). `SYS_PIECES`
+  retiré ; `pourIntoLibrary` ne regarde plus que `SYS_FILES`.
+- Le workflow système fusionné déclare `replaces: ['sys.bibliotheque.ranger-pieces']` : à
+  l'activation, l'ancien est retiré des workflows enregistrés (voir [Workflows](workflows.md)).
+  Pour ne plus ranger les seules pièces d'analyse : une condition `origine` n'est pas `ao`.
 
 ## Le texte d'une entrée mis en forme (v0.50.4, Black Projects 0.136.2)
 
@@ -31,7 +42,7 @@ Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/d
 ## Les workflows essentiels (v0.50.2, Black Projects 0.136.0)
 
 - Marqués `essential: true` (actifs d'origine quand seuls les essentiels le sont, le réglage du
-  module [Workflows](workflows.md)) : `ranger-pieces`, `ranger-fichiers`, `depot-ouverture`,
+  module [Workflows](workflows.md)) : `ranger-fichiers`, `depot-ouverture`,
   `depot-quotidien`, `relancer-circuit`, `rappel-a-controler`. Les autres workflows système de la
   bibliothèque sont désactivés d'origine.
 
@@ -320,8 +331,7 @@ Les automatismes de la bibliothèque sont des [workflows système](workflows.md)
 
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Ranger les pièces importées dans la bibliothèque (`sys.bibliotheque.ranger-pieces`) | fichiers déposés dans l'application, `origine` est `ao` | `bibliotheque.verser` : verse le dépôt | actif |
-| Ranger les fichiers importés dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`) | fichiers déposés, `origine` n'est pas `ao` (exigences, typage-pieces, workflows) | `bibliotheque.verser` | actif |
+| Ranger les fichiers et pièces importés dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`) | fichiers déposés dans l'application, quel que soit le module (`ao`, `exigences`, `typage-pieces`, `workflows`) — sans condition depuis 0.51.0 (`ranger-pieces` y est fondu) | `bibliotheque.verser` : verse le dépôt | actif (essentiel) |
 | Repérer les nouvelles versions probables (`sys.bibliotheque.nouvelles-versions`) | documents versés (une fois par versement) | `bibliotheque.versions` : `markLikelyVersions` sur les fiches du versement | actif |
 | Signaler les fichiers introuvables, chaque lundi (`sys.bibliotheque.fichiers-introuvables`) | chaque lundi à 8 h | `bibliotheque.introuvables` : `missingFiles`, prévient s'il en manque, le journal garde les fiches | désactivé |
 
