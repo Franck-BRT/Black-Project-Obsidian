@@ -70,6 +70,12 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Supprimer un prompt, un persona (v0.132.0)
+
+- [ ] Bibliothèque › Prompts › un prompt › **Supprimer** : la question ; confirmé, sa note dans
+      la corbeille du coffre, retour aux prompts
+- [ ] La carte d'un persona › **Supprimer** : de même ; **Retirer** reste (mis de côté)
+
 ## Supprimer un document (v0.131.0)
 
 - [ ] La fiche d'un document › **Supprimer** : la question dit qu'il part à la corbeille (fiche

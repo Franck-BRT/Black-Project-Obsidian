@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.47.0 (Black Projects 0.131.0) |
+| Version | 0.48.0 (Black Projects 0.132.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Supprimer un prompt, un persona (v0.48.0, Black Projects 0.132.0)
+
+- `EntryStore.remove(path)` : la note à la corbeille (`FileSystem.trash`). Action `delete` sur
+  la fiche d'une entrée (après « Retirer », dont l'icône devient `archive`) et sur sa carte,
+  après une confirmation (`danger`) — pour toutes les sortes d'entrées : prompts, personas,
+  skills, entreprises, étiquettes, personnes. Absente sans corbeille.
 
 ## Supprimer un document (v0.47.0, Black Projects 0.131.0)
 

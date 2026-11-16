@@ -56,6 +56,8 @@ export interface EntriesHomeDeps {
   toggleFavorite(kind: EntryKind, path: string): Promise<void>
   /** La retirer, après confirmation ; vrai si elle l'a été. */
   setAside(kind: EntryKind, path: string): Promise<boolean>
+  /** La supprimer (sa note à la corbeille), après confirmation ; absent sans corbeille. */
+  remove?(kind: EntryKind, path: string): Promise<boolean>
   /** Écrire les exemples qui manquent. */
   addStarters(kind: EntryKind): Promise<void>
 }
@@ -111,7 +113,8 @@ function entryCard(deps: EntriesHomeDeps, entry: LibraryEntry, companies: readon
         label: t(entry.favorite ? 'bibliotheque.entry.unfavorite' : 'bibliotheque.entry.makeFavorite'),
         icon: 'star',
         run: () => deps.toggleFavorite(entry.kind, entry.path)
-      }
+      },
+      ...(deps.remove ? [{ id: 'delete', label: t('bibliotheque.entry.delete'), tooltip: t('bibliotheque.entry.delete.tip'), icon: 'trash' as const, run: async () => void (await deps.remove!(entry.kind, entry.path)) }] : [])
     ],
     tags: [...(entry.favorite ? ['favoris'] : []), ...(entry.category ? [slug(entry.category)] : ['sans-categorie'])]
   }
@@ -271,11 +274,24 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
         id: 'aside',
         label: t('bibliotheque.entry.setAside'),
         tooltip: t('bibliotheque.entry.setAside.tip'),
-        icon: 'trash',
+        icon: 'archive',
         run: async () => {
           if (await deps.setAside(kind, entry.path)) deps.showPage?.(home)
         }
-      }
+      },
+      ...(deps.remove
+        ? [
+            {
+              id: 'delete',
+              label: t('bibliotheque.entry.delete'),
+              tooltip: t('bibliotheque.entry.delete.tip'),
+              icon: 'trash' as const,
+              run: async () => {
+                if (await deps.remove!(kind, entry.path)) deps.showPage?.(home)
+              }
+            }
+          ]
+        : [])
     ],
     blocks: [
       ...(entry.description && kind !== 'person' ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),

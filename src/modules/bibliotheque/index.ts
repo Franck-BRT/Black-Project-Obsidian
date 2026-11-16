@@ -862,7 +862,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.47.0',
+  version: '0.48.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2367,6 +2367,25 @@ export const bibliothequeModule: BlackModule = {
         platform.notifier.notify(t('bibliotheque.entry.setAside.done', { name: current.name }), 6000)
         return true
       },
+      ...(platform.fs.trash
+        ? {
+            remove: async (kind: EntryKind, path: string) => {
+              const current = await entries[kind].load(path)
+              if (!current) return false
+              const sure = await platform.ui.confirm({
+                title: t('bibliotheque.entry.delete.title', { name: current.name }),
+                message: t('bibliotheque.entry.delete.message', { name: current.name, path }),
+                confirm: t('bibliotheque.entry.delete'),
+                cancel: t('bibliotheque.cancel'),
+                danger: true
+              })
+              if (!sure || !(await entries[kind].remove(path))) return false
+              platform.notifier.notify(t('bibliotheque.entry.delete.done', { name: current.name }), 6000)
+              pagesChanged()
+              return true
+            }
+          }
+        : {}),
       addStarters: async (kind) => {
         const added = await entries[kind].addStarters(startersFor(kind, i18n.language))
         platform.notifier.notify(added.length ? t(`bibliotheque.${kind}.starters.done`, { count: added.length, names: added.join(', ') }) : t('bibliotheque.entry.starters.none'), 8000)

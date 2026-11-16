@@ -272,6 +272,14 @@ export class EntryStore {
   }
 
   /** Retirer : la note mise de côté dans `_retirés` — rien n'est effacé. */
+  /** Supprimer une entrée : sa note à la corbeille du coffre ; `false` sans corbeille, ou si elle n'y est plus. */
+  async remove(path: string): Promise<boolean> {
+    const { fs } = this.deps
+    if (!fs.trash || !(await fs.exists(path))) return false
+    await fs.trash(path)
+    return true
+  }
+
   async setAside(path: string): Promise<boolean> {
     const { fs } = this.deps
     if (!(await fs.exists(path))) return false

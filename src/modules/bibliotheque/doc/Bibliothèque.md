@@ -196,7 +196,8 @@ Chaque entrée est une note (dans `Bibliothèque/Prompts`, `Bibliothèque/Person
 `Bibliothèque/Skills`) : **Nouveau prompt**, **Nouveau persona**, **Nouveau skill**, ou
 **Ajouter les exemples** — prêts pour les appels d'offres, à modifier. Sur la fiche : **Modifier**,
 **Mettre en favori** (les favoris viennent en tête des listes), **Retirer** (mis de côté,
-rien n'est effacé).
+rien n'est effacé), **Supprimer** (aussi sur sa carte : après une question, sa note part à la
+corbeille du coffre ; les étapes de workflow qui l'utilisent par son nom ne le trouvent plus).
 
 ## 7. La langue des documents
 
@@ -273,7 +274,7 @@ entreprise à la liste… », sa fenêtre s'ouvre), sa **fonction**, son **adres
 favorite ou non. Sa carte dit sa fonction, son entreprise et ses coordonnées ; la recherche la
 trouve par chacun. Sur sa fiche, un clic sur son entreprise ouvre celle-ci ; la fiche d'une
 entreprise montre **ses personnes**. Comme les autres listes : des répertoires, d'autres
-bibliothèques, **Déplacer…**, **Retirer**.
+bibliothèques, **Déplacer…**, **Retirer**, **Supprimer**.
 
 **L'entreprise** aussi : dite par le document (« Émetteur : », « Émis par », « Pouvoir
 adjudicateur : »…), elle est donnée. Sinon elle est **à confirmer** : la fiche propose

@@ -12,7 +12,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.131.0)
+## Aujourd'hui (version 0.132.0)
+
+- **Supprimer un prompt, un persona** : sur sa fiche ou sa carte, **Supprimer** met sa note à
+  la corbeille du coffre (de même pour les skills, entreprises, étiquettes, personnes).
 
 - **Supprimer un document** : sur sa fiche ou sa carte, **Supprimer** met sa fiche et son
   fichier à la corbeille du coffre (la question dit s'il sert à une analyse ou un projet).

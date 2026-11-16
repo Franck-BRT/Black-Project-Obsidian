@@ -5,7 +5,7 @@
  * **Supprimer un répertoire** d'une bibliothèque : vide, à la corbeille ; avec des documents,
  * au choix ils remontent d'un cran ou sont retirés (mis de côté, rien n'est effacé). Et, sur la
  * page d'un projet, **supprimer une affaire** et **un répertoire attendu** (qui n'est plus recréé).
- * Et **supprimer un document** : sa fiche et son fichier à la corbeille.
+ * Et **supprimer un document** (sa fiche et son fichier à la corbeille), **un prompt, un persona**.
  */
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -13,7 +13,7 @@ import { createI18n } from '../src/core/i18n'
 import type { ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
-import { bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
+import { addStarterEntries, bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
 import { programmesModule } from '../src/modules/programmes'
 
@@ -210,4 +210,33 @@ describe('supprimer un document de la bibliothèque', () => {
     const [doc] = (await pourIntoLibrary([{ name: 'Note.pdf', bytes: bytes('note') }], { module: 'bibliotheque', label: '' }))!.added
     expect((await load(`bibliotheque.document?${encodeURIComponent(doc!.record)}`)).actions?.map((action) => action.id)).not.toContain('delete')
   })
+})
+
+describe('supprimer un prompt, un persona', () => {
+  for (const [kind, page] of [['prompt', 'bibliotheque.prompts'], ['persona', 'bibliotheque.personas']] as const) {
+    it(`un ${kind} : depuis sa page, après confirmation, sa note à la corbeille ; depuis sa carte aussi ; renoncé, il reste`, async () => {
+      const platform = memoryPlatform()
+      const { load, run, shown } = await vault(platform)
+      await addStarterEntries(kind, 'fr')
+      const [first, second] = cards(await load(page))
+      await first!.open!.run()
+      const one = await load(shown.at(-1)!)
+      expect(one.actions?.map((action) => action.id).slice(-2)).toEqual(['aside', 'delete'])
+      platform.confirmations.push(false)
+      await run(one, 'delete')
+      expect(platform.confirmed.at(-1)).toMatchObject({ title: `Supprimer « ${first!.title} » ?`, danger: true })
+      expect(await platform.fs.exists(first!.id)).toBe(true)
+      platform.confirmations.push(true)
+      await run(one, 'delete')
+      expect(await platform.fs.exists(first!.id)).toBe(false)
+      expect(platform.notices.at(-1)).toBe(`« ${first!.title} » supprimé (à la corbeille du coffre).`)
+      expect(shown.at(-1)!.split('?')[0]).toBe(page)
+      // Depuis sa carte.
+      const card = cards(await load(page)).find((each) => each.title === second!.title)!
+      expect(card.actions!.map((action) => action.id)).toEqual(['favorite', 'delete'])
+      platform.confirmations.push(true)
+      await card.actions!.find((action) => action.id === 'delete')!.run()
+      expect(cards(await load(page)).map((each) => each.title)).not.toContain(second!.title)
+    })
+  }
 })
