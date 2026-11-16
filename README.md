@@ -78,6 +78,7 @@ dans Obsidian en ouvrant le dossier comme un coffre.
 | [Présentation](docs/00-Présentation.md) | Ce qu'est Black Projects, pour qui |
 | [Plan d'intégration](docs/plan-integration.md) | Les étapes, dans l'ordre |
 | [Architecture](docs/architecture/vue-d-ensemble.md) | Cœur, modules, adaptateurs |
+| [Circuit des documents](docs/architecture/circuit-des-documents.md) | Conception : du dépôt au rangement, par des skills ; À contrôler |
 | [Installation](docs/installation/README.md) | Installer le plugin dans un coffre |
 | [Développement](docs/developpement/regles.md) | Règles du dépôt, contrôles |
 
