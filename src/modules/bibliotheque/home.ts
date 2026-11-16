@@ -112,6 +112,8 @@ export interface LibraryHomeDeps {
   dismissLikely(record: string): Promise<void>
   /** Le retirer (après confirmation) ; rend vrai s'il l'a été. */
   setAside(record: string): Promise<boolean>
+  /** Le supprimer (après confirmation : sa fiche et son fichier à la corbeille) ; absent sans corbeille. */
+  deleteDoc?(record: string): Promise<boolean>
 }
 
 const ICON: Record<DocFamily, 'file' | 'columns' | 'chart' | 'eye' | 'chat' | 'book'> = {
@@ -161,7 +163,10 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
       { label: t('bibliotheque.field.version'), value: version || '—' }
     ],
     ...(show ? { open: { id: 'open', label: t('bibliotheque.doc.open'), tooltip: t('bibliotheque.doc.open'), run: () => show(docPageOf(doc.record)) } } : {}),
-    actions: missing ? [] : [{ id: 'file', label: t('bibliotheque.doc.file'), icon: 'file', run: () => deps.openFile(doc.file) }],
+    actions: [
+      ...(missing ? [] : [{ id: 'file', label: t('bibliotheque.doc.file'), icon: 'file' as const, run: () => deps.openFile(doc.file) }]),
+      ...(deps.deleteDoc ? [{ id: 'delete', label: t('bibliotheque.delete'), tooltip: t('bibliotheque.delete.tip'), icon: 'trash' as const, run: async () => void (await deps.deleteDoc!(doc.record)) }] : [])
+    ],
     tags: [
       `famille-${doc.family}`,
       ...new Set(doc.origins.map((origin) => `de-${origin.module}`)),
@@ -831,11 +836,24 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         id: 'aside',
         label: t('bibliotheque.setAside'),
         tooltip: t('bibliotheque.setAside.tip'),
-        icon: 'trash',
+        icon: 'archive',
         run: async () => {
           if (await deps.setAside(doc.record)) deps.showPage?.(home)
         }
-      }
+      },
+      ...(deps.deleteDoc
+        ? [
+            {
+              id: 'delete',
+              label: t('bibliotheque.delete'),
+              tooltip: t('bibliotheque.delete.tip'),
+              icon: 'trash' as const,
+              run: async () => {
+                if (await deps.deleteDoc!(doc.record)) deps.showPage?.(home)
+              }
+            }
+          ]
+        : [])
     ],
     blocks: [
       ...(present ? [] : [{ kind: 'message' as const, tone: 'danger' as const, text: t('bibliotheque.doc.fileMissing', { file: doc.file }) }]),

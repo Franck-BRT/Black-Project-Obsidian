@@ -1047,6 +1047,31 @@ export class LibraryStore {
   }
 
   /**
+   * **Supprimer un document** : sa fiche, son fichier (s'il a été copié dans la bibliothèque —
+   * un fichier resté à sa place, une pièce d'analyse, n'est pas touché), ses fantômes et les
+   * versions de son texte, à la corbeille du coffre. Les documents qui le donnaient pour version
+   * précédente perdent ce lien. `false` sans corbeille, ou s'il n'y est plus.
+   */
+  async deleteDoc(record: string): Promise<boolean> {
+    const { fs } = this.deps
+    const doc = await this.load(record)
+    if (!doc || !fs.trash) return false
+    for (const { ghost } of await this.ghostsOf(doc)) if (await fs.exists(ghost.path)) await fs.trash(ghost.path)
+    const texts = this.textVersionsFolder(doc)
+    if (await fs.exists(texts)) await fs.trash(texts)
+    if (doc.copied && (await fs.exists(doc.file))) await fs.trash(doc.file)
+    await fs.trash(record)
+    for (const other of await this.all()) {
+      if (other.previous !== record && other.likelyPrevious !== record) continue
+      const next = { ...other }
+      if (next.previous === record) delete next.previous
+      if (next.likelyPrevious === record) delete next.likelyPrevious
+      await this.save(next)
+    }
+    return true
+  }
+
+  /**
    * Retirer un document : sa fiche (et son fichier, s'il a été copié dans la bibliothèque)
    * mis de côté dans `_retirés` — rien n'est effacé. Un fichier resté à sa place (une pièce
    * d'analyse) n'est pas touché. Les documents qui le donnaient pour version précédente

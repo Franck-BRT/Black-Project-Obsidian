@@ -862,7 +862,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.46.0',
+  version: '0.47.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2191,7 +2191,35 @@ export const bibliothequeModule: BlackModule = {
         await store.setAside(record)
         platform.notifier.notify(t('bibliotheque.setAside.done', { title: doc.title }), 6000)
         return true
-      }
+      },
+      ...(platform.fs.trash
+        ? {
+            deleteDoc: async (record: string) => {
+              const doc = await store.load(record)
+              if (!doc) return false
+              // Ce qui s'en sert : les modules d'où il vient (une analyse…), ceux qui l'appellent (un projet…).
+              const users = [
+                ...doc.origins.filter((origin) => origin.module !== BIBLIOTHEQUE).map((origin) => [t(`${origin.module}.name`), origin.label].filter(Boolean).join(' — ')),
+                ...(await callersOf(record)).map((caller) => caller.title)
+              ]
+              const sure = await platform.ui.confirm({
+                title: t('bibliotheque.delete.title', { title: doc.title }),
+                message: [
+                  t(doc.copied ? 'bibliotheque.delete.message.copied' : 'bibliotheque.delete.message.inPlace', { title: doc.title, file: doc.file }),
+                  ...(users.length ? [t('bibliotheque.delete.users', { users: [...new Set(users)].join(', ') })] : [])
+                ].join('\n\n'),
+                confirm: t('bibliotheque.delete'),
+                cancel: t('bibliotheque.cancel'),
+                danger: true
+              })
+              if (!sure) return false
+              if (!(await store.deleteDoc(record))) return false
+              platform.notifier.notify(t('bibliotheque.delete.done', { title: doc.title }), 6000)
+              pagesChanged()
+              return true
+            }
+          }
+        : {})
     })
 
     // ── Les prompts et les personas ──

@@ -115,6 +115,12 @@ par famille, par origine, dernières versions, versions à relier, fichiers intr
 **Retirer de la bibliothèque** met la fiche de côté (dossier `_retirés`), avec le fichier
 s'il avait été copié ; rien n'est effacé, et une pièce d'analyse n'est pas touchée.
 
+**Supprimer** (sur la fiche, ou sur la carte d'un document) l'efface vraiment : après une
+question, sa fiche et son fichier (s'il a été copié dans la bibliothèque) partent à la corbeille
+du coffre, avec ses fantômes et les versions de son texte. La question dit s'il sert ailleurs (une
+analyse d'appel d'offres, un projet qui l'appelle) : eux ne le trouveront plus. Un fichier resté
+à sa place (une pièce d'analyse) n'est pas touché.
+
 **Affichage et regroupement** : sur la page des documents, en **cartes**, en **liste**
 ou en **tableau** (taille, date d'ajout, version), regroupés par **origine** (l'analyse,
 l'import), **famille**, **type de pièce** ou **mois d'ajout** — chaque groupe est une section

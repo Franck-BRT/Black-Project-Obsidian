@@ -5,6 +5,7 @@
  * **Supprimer un répertoire** d'une bibliothèque : vide, à la corbeille ; avec des documents,
  * au choix ils remontent d'un cran ou sont retirés (mis de côté, rien n'est effacé). Et, sur la
  * page d'un projet, **supprimer une affaire** et **un répertoire attendu** (qui n'est plus recréé).
+ * Et **supprimer un document** : sa fiche et son fichier à la corbeille.
  */
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -162,5 +163,51 @@ describe('sur la page d’un projet : supprimer une affaire, un répertoire atte
     // Rechargée : toujours pas recréé.
     expect(await platform.fs.exists('Bibliothèque/Projets/P/Q/Offre')).toBe(false)
     expect(new TextDecoder().decode(platform.files.get('Programmes/P/Q/Q.md'))).not.toContain('Offre')
+  })
+})
+
+describe('supprimer un document de la bibliothèque', () => {
+  it('depuis sa fiche : après confirmation, sa fiche et son fichier à la corbeille ; qui le donnait pour version précédente perd ce lien ; renoncé, rien ne part', async () => {
+    const platform = memoryPlatform()
+    const { load, run, shown } = await vault(platform)
+    const [plan] = (await pourIntoLibrary([{ name: 'Plan.pdf', bytes: bytes('plan v1') }], { module: 'ao', label: 'Station sol' }))!.added
+    const [suite] = (await pourIntoLibrary([{ name: 'Plan v2.pdf', bytes: bytes('plan v2') }], { module: 'bibliotheque', label: '' }))!.added
+    platform.files.set(suite!.record, bytes(new TextDecoder().decode(platform.files.get(suite!.record)).replace('\n---\n', `\nprecedent: "[[${plan!.record}]]"\n---\n`)))
+    const fiche = await load(`bibliotheque.document?${encodeURIComponent(plan!.record)}`)
+    expect(fiche.actions?.map((action) => action.id).slice(-2)).toEqual(['aside', 'delete'])
+    platform.confirmations.push(false)
+    await run(fiche, 'delete')
+    expect(platform.confirmed.at(-1)).toMatchObject({ title: 'Supprimer « Plan » ?', danger: true })
+    // Il sert à une analyse : la question le dit.
+    expect(platform.confirmed.at(-1)!.message).toContain('Station sol')
+    expect(await platform.fs.exists(plan!.record)).toBe(true)
+    platform.confirmations.push(true)
+    await run(await load(`bibliotheque.document?${encodeURIComponent(plan!.record)}`), 'delete')
+    expect(await platform.fs.exists(plan!.record)).toBe(false)
+    expect(await platform.fs.exists(plan!.file)).toBe(false)
+    expect(platform.notices.at(-1)).toBe('« Plan » supprimé (à la corbeille du coffre).')
+    expect(shown.at(-1)).toMatch(/^bibliotheque\.documents/)
+    expect(new TextDecoder().decode(platform.files.get(suite!.record))).not.toContain('precedent:')
+    expect(await platform.fs.exists(suite!.file)).toBe(true)
+  })
+
+  it('depuis sa carte, dans la liste des documents', async () => {
+    const platform = memoryPlatform()
+    const { load } = await vault(platform)
+    const [doc] = (await pourIntoLibrary([{ name: 'Note.pdf', bytes: bytes('note') }], { module: 'bibliotheque', label: '' }))!.added
+    const card = cards(await load('bibliotheque.documents')).find((each) => each.id === doc!.record)!
+    expect(card.actions!.map((action) => action.id)).toEqual(['file', 'delete'])
+    platform.confirmations.push(true)
+    await card.actions!.find((action) => action.id === 'delete')!.run()
+    expect(await platform.fs.exists(doc!.record)).toBe(false)
+    expect(cards(await load('bibliotheque.documents')).some((each) => each.id === doc!.record)).toBe(false)
+  })
+
+  it('sans corbeille : seulement « Retirer »', async () => {
+    const platform = memoryPlatform()
+    delete (platform.fs as { trash?: unknown }).trash
+    const { load } = await vault(platform)
+    const [doc] = (await pourIntoLibrary([{ name: 'Note.pdf', bytes: bytes('note') }], { module: 'bibliotheque', label: '' }))!.added
+    expect((await load(`bibliotheque.document?${encodeURIComponent(doc!.record)}`)).actions?.map((action) => action.id)).not.toContain('delete')
   })
 })

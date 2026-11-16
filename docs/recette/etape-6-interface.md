@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Supprimer un document (v0.131.0)
+
+- [ ] La fiche d'un document › **Supprimer** : la question dit qu'il part à la corbeille (fiche
+      et fichier), et s'il sert à une analyse ou un projet ; Annuler : rien ne part
+- [ ] Confirmé : la fiche et le fichier dans la corbeille du coffre, retour aux documents
+- [ ] La carte d'un document, dans la liste : **Supprimer** aussi
+- [ ] **Retirer de la bibliothèque** reste là : mis de côté dans `_retirés`, rien n'est effacé
+
 ## Supprimer une affaire, un répertoire (v0.130.0)
 
 - [ ] La page d'un projet › la carte d'une affaire › **Supprimer l'affaire** : après la

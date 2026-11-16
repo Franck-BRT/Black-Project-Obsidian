@@ -5,13 +5,22 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.46.0 (Black Projects 0.130.0) |
+| Version | 0.47.0 (Black Projects 0.131.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Supprimer un document (v0.47.0, Black Projects 0.131.0)
+
+- `LibraryStore.deleteDoc(record)` : ses fantômes, le dossier des versions de son texte, son
+  fichier s'il a été copié (`copied`), sa fiche — tous par `FileSystem.trash` ; les documents
+  qui le donnaient pour version précédente (`previous`, `likelyPrevious`) perdent ce lien.
+- Action `delete` sur la fiche (après « Retirer », dont l'icône devient `archive`) et sur la
+  carte d'un document ; la confirmation (`danger`) dit ses origines hors de la bibliothèque et
+  ceux qui l'appellent (`callersOf`). Absente sans corbeille.
 
 ## Supprimer un répertoire (v0.46.0, Black Projects 0.130.0)
 

@@ -661,6 +661,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.128.0 : sur Programmes et la page d'un programme, les **phases de chaque projet repliées** d'origine ; **exporter, importer les types de projet** (un fichier JSON, sans doublon)
 - v0.129.0 : **supprimer un projet, un programme** (après confirmation, à la corbeille du coffre ; les documents de la bibliothèque restent)
 - v0.130.0 : **supprimer une affaire, un répertoire** (de la bibliothèque — ses documents remontent ou sont retirés — et ceux attendus d'un projet, qui ne sont plus recréés)
+- v0.131.0 : **supprimer un document** de la bibliothèque (sa fiche et son fichier à la corbeille ; la question dit s'il sert ailleurs)
 
 ### Étape 7 — Livrables
 
