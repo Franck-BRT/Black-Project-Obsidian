@@ -44,8 +44,11 @@ export interface HomeDeps {
   editPhaseDates(project: string, phase: string): Promise<void>
   phaseContext(project: Project, phase: ProjectPhase): PhaseContext
   newType(): Promise<void>
-  /** Supprimer un projet, un programme (après confirmation ; absents sans corbeille). */
+  /** Supprimer un projet, un programme, une affaire (après confirmation ; absents sans corbeille). */
   deleteProject?(path: string): Promise<void>
+  deleteAffaire?(path: string): Promise<void>
+  /** Supprimer un répertoire des documents d'un projet (et ne plus l'attendre). */
+  removeProjectFolder?(project: string, folder: string): Promise<void>
   deleteProgramme?(path: string): Promise<void>
   /** Exporter un type de projet (ou tous, sans `id`) dans un fichier, à se passer. */
   exportTypes?(id?: string): Promise<void>
@@ -465,7 +468,8 @@ async function documentsSection(
   deps: HomeDeps,
   programme: string,
   project?: string,
-  folders: readonly FolderSpec[] = []
+  folders: readonly FolderSpec[] = [],
+  projectPath?: string
 ): Promise<{ blocks: HomeBlock[]; drop?: { label: string; hint: string; run(files: readonly { name: string; bytes: Uint8Array }[]): Promise<void> } }> {
   const { t } = deps
   if (!deps.projectDocuments || deps.referencesAvailable?.() === false) return { blocks: [] }
@@ -502,6 +506,7 @@ async function documentsSection(
       ].join(' · '),
       icon: 'folder' as const,
       tone: wanted.length ? (missing.length ? ('warning' as const) : ('success' as const)) : ('neutral' as const),
+      ...(projectPath && deps.removeProjectFolder ? { tools: [{ id: 'remove-folder', label: t('programmes.projectFolder.remove', { name: each.name }), icon: 'trash' as const, run: () => deps.removeProjectFolder!(projectPath, each.id) }] } : {}),
       ...(page && deps.showPage ? { open: { id: 'open', label: t('programmes.docs.inLibrary'), run: () => deps.showPage!(page) } } : {})
     }
   })
@@ -567,9 +572,12 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     ...([affaire.client, affaire.reference].filter(Boolean).length ? { subtitle: [affaire.client, affaire.reference].filter(Boolean).join(' · ') } : {}),
     badges: [{ label: t(`programmes.affaire.status.${affaire.status}`), tone: AFFAIRE_TONE[affaire.status] }],
     open: { id: 'open', label: t('programmes.affaire.open'), run: () => deps.openNote(affaire.path) },
-    actions: [{ id: 'status', label: t('programmes.affaire.setStatus'), icon: 'edit', run: () => deps.chooseAffaireStatus(affaire.path) }]
+    actions: [
+      { id: 'status', label: t('programmes.affaire.setStatus'), icon: 'edit', run: () => deps.chooseAffaireStatus(affaire.path) },
+      ...(deps.deleteAffaire ? [{ id: 'delete', label: t('programmes.affaire.delete'), tooltip: t('programmes.affaire.delete.tip'), icon: 'trash' as const, run: () => deps.deleteAffaire!(affaire.path) }] : [])
+    ]
   }))
-  const documents = await documentsSection(deps, programme?.name ?? '—', project.name, project.folders)
+  const documents = await documentsSection(deps, programme?.name ?? '—', project.name, project.folders, project.path)
   const choice = viewChoice(deps, PROJECT_PAGE)
   // Ses phases : en parcours, ou en cartes (liste, tableau), étape après étape — dans une section
   // repliée d'origine (pour la lisibilité) ; son en-tête dit l'avancement et la phase en cours.

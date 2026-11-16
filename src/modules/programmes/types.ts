@@ -232,9 +232,14 @@ export function updateFolder(type: ProjectType, id: string, patch: Partial<Pick<
   }
 }
 
+/** Sans ce répertoire (ni ses sous-répertoires). */
+export function withoutFolder(folders: readonly FolderSpec[], id: string): FolderSpec[] {
+  return mapFolders(folders, (each) => (each.id === id ? null : each))
+}
+
 /** Retirer un répertoire d'un type, et ses sous-répertoires. */
 export function removeFolder(type: ProjectType, id: string): ProjectType {
-  const folders = mapFolders(type.folders ?? [], (each) => (each.id === id ? null : each))
+  const folders = withoutFolder(type.folders ?? [], id)
   const next: ProjectType = { ...type, folders }
   if (!folders.length) delete next.folders
   return next

@@ -31,6 +31,8 @@ export interface ShelfPlacesDeps {
   subdirectories(folder: string): Promise<string[]>
   showPage?(id: string): void
   newDirectory(kind: ShelfKind, folder: string): Promise<string | null>
+  /** Supprimer un répertoire (une question d'abord) ; `true` s'il est parti. Absent sans corbeille. */
+  removeDirectory?(kind: ShelfKind, folder: string): Promise<boolean>
   newShelf(kind: ShelfKind): Promise<Shelf | null>
   setDefault(kind: ShelfKind, id: string): Promise<void>
   removeShelf(kind: ShelfKind, id: string): Promise<boolean>
@@ -105,7 +107,10 @@ export async function placeView(
       subtitle: t(`bibliotheque.place.${kind}.count`, { count: inside }),
       icon: 'folder',
       open: { id: 'open', label: t('bibliotheque.place.open'), run: go(directory) },
-      actions: [{ id: 'see', label: t('bibliotheque.place.open'), icon: 'chevron', run: go(directory) }],
+      actions: [
+        { id: 'see', label: t('bibliotheque.place.open'), icon: 'chevron', run: go(directory) },
+        ...(deps.removeDirectory ? [{ id: 'remove-directory', label: t('bibliotheque.place.remove'), tooltip: t('bibliotheque.place.remove.tip', { name: name(path) }), icon: 'trash' as const, run: async () => void (await deps.removeDirectory!(kind, path)) }] : [])
+      ],
       ...(deps.dropInto ? { drop: deps.dropInto(path, name(path)) } : {})
     }
   })
@@ -120,6 +125,20 @@ export async function placeView(
     }
   }
   const isDefault = deps.defaultShelf().id === place.shelf.id
+  const removeHere: ViewAction[] =
+    place.directory && deps.removeDirectory
+      ? [
+          {
+            id: 'remove-directory',
+            label: t('bibliotheque.place.remove'),
+            tooltip: t('bibliotheque.place.remove.tip', { name: name(folder) }),
+            icon: 'trash',
+            run: async () => {
+              if (await deps.removeDirectory!(kind, folder)) go(parts.slice(0, -1).join('/'))()
+            }
+          }
+        ]
+      : []
   const actions: ViewAction[] = [
     newDirectory,
     ...(deps.canCreateShelves === false
@@ -155,7 +174,8 @@ export async function placeView(
               if (await deps.removeShelf(kind, place.shelf.id)) show?.(deps.page)
             }
           }
-        ])
+        ]),
+    ...removeHere
   ]
   return {
     breadcrumb: crumbs,

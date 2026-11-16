@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.129.0)
+## Aujourd'hui (version 0.130.0)
+
+- **Supprimer une affaire, un répertoire** : **Supprimer l'affaire** sur sa carte ; la
+  corbeille devant un répertoire attendu d'un projet ; **Supprimer le répertoire** dans la
+  bibliothèque — s'il contient des documents, ils remontent d'un cran ou sont retirés (rien
+  n'est effacé).
 
 - **Supprimer un projet, un programme** : sur leur page, **Supprimer le projet** ou **Supprimer
   le programme** — après une question, leur dossier (notes, affaires, projets) part à la

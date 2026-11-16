@@ -5,13 +5,23 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.45.3 (Black Projects 0.127.0) |
+| Version | 0.46.0 (Black Projects 0.130.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Supprimer un répertoire (v0.46.0, Black Projects 0.130.0)
+
+- `removeDirectory(kind, folder)` (dans `activate`) : vide, une confirmation puis
+  `FileSystem.trash` ; sinon `pickOption` — `keep` (documents par `store.move`, entrées par
+  `EntryStore.move`, fantômes et autres fichiers renommés, tous vers le dossier du dessus) ou
+  `aside` (`setAside`, `removeGhost` ; le reste part avec le dossier). Refusé pour une
+  bibliothèque ou un dossier qui en contient une. Absent sans corbeille.
+- Actions `remove-directory` sur la carte d'un répertoire et sur sa page (retour au dessus).
+- `removeLibraryDirectory(folder)` (index) pour les autres modules (les répertoires d'un projet).
 
 ## Le type de pièce d'un document, pour les autres modules (v0.45.3, Black Projects 0.127.0)
 

@@ -5,13 +5,23 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.11.0 (Black Projects 0.129.0) |
+| Version | 0.12.0 (Black Projects 0.130.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Supprimer une affaire, un répertoire d'un projet (v0.12.0, Black Projects 0.130.0)
+
+- `ProgrammeStore.deleteAffaire(path)` (sa note à la corbeille) ; action `delete` sur la carte
+  d'une affaire, après confirmation.
+- `ProgrammeStore.setFolders(path, folders)` ; `withoutFolder(folders, id)` (types). Sur les
+  **répertoires attendus** d'un projet, l'outil `remove-folder` : `removeLibraryDirectory` (la
+  question de la bibliothèque), puis le répertoire (et ses sous-répertoires) retiré de la note du
+  projet — `ensureProjectFolders` ne le recrée plus. Absent de la bibliothèque : une
+  confirmation seule.
 
 ## Supprimer un projet, un programme (v0.11.0, Black Projects 0.129.0)
 

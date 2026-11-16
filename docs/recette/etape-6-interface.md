@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Supprimer une affaire, un répertoire (v0.130.0)
+
+- [ ] La page d'un projet › la carte d'une affaire › **Supprimer l'affaire** : après la
+      question, sa note à la corbeille ; le projet reste
+- [ ] **Répertoires attendus** › la corbeille devant « Offre » (vide) : après la question, parti
+      de la bibliothèque avec ses sous-répertoires ; la page rouverte ne le recrée pas
+- [ ] Bibliothèque › Documents › la carte d'un répertoire › **Supprimer le répertoire** : vide,
+      une confirmation ; avec un document, le choix — **Les remonter** (le document au-dessus) ou
+      **Retirer aussi** (dans `_retirés`)
+- [ ] La page d'un répertoire › **Supprimer le répertoire** : retour au répertoire du dessus
+
 ## Supprimer un projet, un programme (v0.129.0)
 
 - [ ] La page d'un projet › **Supprimer le projet** : la question dit son dossier, ses affaires,

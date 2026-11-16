@@ -9,7 +9,7 @@
  */
 
 import { localToday } from '../../core/dates'
-import { canCreatePieceType, chooseReferenceDocuments, createPieceType, documentsIn, dropDocumentsInto, libraryActive, libraryDocPage, libraryDocument, libraryFolderPage, libraryPieceTypes, pieceTypeText, pourDocumentsInto, projectDocumentsFolder, registerReferenceCallers } from '../bibliotheque'
+import { canCreatePieceType, chooseReferenceDocuments, createPieceType, documentsIn, removeLibraryDirectory, dropDocumentsInto, libraryActive, libraryDocPage, libraryDocument, libraryFolderPage, libraryPieceTypes, pieceTypeText, pourDocumentsInto, projectDocumentsFolder, registerReferenceCallers } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
 import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
@@ -18,7 +18,7 @@ import { phaseKinds, type PhaseContext } from './kinds'
 import { AFFAIRE_STATUSES, flatFolders, FREE_KIND, PHASE_ICONS, safeName, TILE_COLORS, type ExpectedDoc, type PhaseSpec, type PhaseStatus, type Project, type ProjectPhase, type ProjectType, type SpanSpec } from './model'
 import { programmePageOf, PROGRAMMES_PAGE, projectPageOf, registerProgrammesHome, typePageOf, TYPES_PAGE } from './home'
 import { AlreadyThere, ProgrammeStore } from './store'
-import { addFolder, addParallel, addSpan, addStage, copyType, findFolder, movePhase, newPhase, newType, readTypes, remapSpans, removeFolder, removePhase, removeSpan, replacePhase, TYPES_KEY, updateFolder, updateSpan } from './types'
+import { addFolder, addParallel, addSpan, addStage, copyType, findFolder, withoutFolder, movePhase, newPhase, newType, readTypes, remapSpans, removeFolder, removePhase, removeSpan, replacePhase, TYPES_KEY, updateFolder, updateSpan } from './types'
 import { programmesEn, programmesFr } from './i18n'
 import { mergeTypes, readTypesFile, typesFile, typesFileName, TYPES_EXCHANGE_FOLDER } from './exchange'
 
@@ -58,7 +58,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.11.0',
+  version: '0.12.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -484,6 +484,52 @@ export const programmesModule: BlackModule = {
       show(PROGRAMMES_PAGE)
     }
 
+    /** Supprimer une affaire (après confirmation) : sa note à la corbeille. */
+    const deleteAffaire = async (path: string): Promise<void> => {
+      const affaire = await store.affaire(path)
+      if (!affaire) return
+      const sure = await ui.confirm({
+        title: t('programmes.affaire.delete.title', { name: affaire.name }),
+        message: t('programmes.affaire.delete.message', { path }),
+        confirm: t('programmes.affaire.delete'),
+        cancel: t('programmes.cancel'),
+        danger: true
+      })
+      if (!sure) return
+      if (!(await store.deleteAffaire(path))) {
+        notify(t('programmes.delete.failed'), 8000)
+        return
+      }
+      notify(t('programmes.affaire.deleted', { name: affaire.name }), 8000)
+      changed()
+    }
+    /**
+     * Supprimer un répertoire des documents d'un projet : dans la bibliothèque (une question :
+     * ses documents remontent, ou sont retirés), et le projet ne l'attend plus (il n'est pas recréé).
+     */
+    const removeProjectFolder = async (projectPath: string, id: string): Promise<void> => {
+      const project = await store.project(projectPath)
+      const spec = project ? flatFolders(project.folders).find((each) => each.id === id) : undefined
+      if (!project || !spec) return
+      const programme = await store.programme(project.programme)
+      const root = await projectDocumentsFolder(programme?.name ?? '—', project.name)
+      const folder = root ? `${root}/${spec.path}` : null
+      if (folder && (await platform.fs.exists(folder))) {
+        if (!(await removeLibraryDirectory(folder))) return
+      } else {
+        const sure = await ui.confirm({
+          title: t('programmes.projectFolder.remove.title', { name: spec.name }),
+          message: t('programmes.projectFolder.remove.message', { name: spec.name }),
+          confirm: t('programmes.projectFolder.remove.confirm'),
+          cancel: t('programmes.cancel'),
+          danger: true
+        })
+        if (!sure) return
+      }
+      await store.setFolders(projectPath, withoutFolder(project.folders, id))
+      changed()
+    }
+
     // ── Se passer des types de projet ───────────────────────────────────────────
     /** Exporter un type (ou tous) : un fichier JSON dans `Échanges/Types de projet`, à se passer. */
     const exportTypes = async (id?: string): Promise<void> => {
@@ -589,7 +635,7 @@ export const programmesModule: BlackModule = {
       },
       exportTypes,
       importTypes,
-      ...(store.canDelete ? { deleteProject, deleteProgramme } : {}),
+      ...(store.canDelete ? { deleteProject, deleteProgramme, deleteAffaire, removeProjectFolder } : {}),
       newType: async () => {
         const named = await typeName(t('programmes.type.new'))
         if (!named) return

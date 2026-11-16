@@ -110,6 +110,8 @@ let active: {
   shelfOf(folder: string): Shelf | undefined
   /** Créer un dossier (et ses parents) s'il manque. */
   ensureFolder(folder: string): Promise<void>
+  /** Supprimer un répertoire de documents (après une question) ; `true` s'il est parti. */
+  removeDirectory(folder: string): Promise<boolean>
   /** Verser des documents choisis (l'ordinateur, le coffre) dans un dossier. */
   pour(folder?: string): Promise<PourReport | null>
   /** Ranger un document dans les documents de référence (un fantôme à son ancienne place) ; rend sa nouvelle fiche. */
@@ -246,6 +248,14 @@ export async function documentsIn(folder: string, deep = false): Promise<Library
 }
 
 /** Verser des documents dans un dossier de la bibliothèque : le choix des fichiers (l'ordinateur, le coffre), puis le versement. */
+/**
+ * Supprimer un répertoire de documents (un répertoire d'un projet…) : une question d'abord —
+ * ses documents remontent d'un cran, ou sont retirés. `false` : rien n'a changé.
+ */
+export async function removeLibraryDirectory(folder: string): Promise<boolean> {
+  return (await active?.removeDirectory(folder)) ?? false
+}
+
 export async function pourDocumentsInto(folder: string): Promise<void> {
   await active?.pour(folder)
 }
@@ -852,7 +862,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.45.3',
+  version: '0.46.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1050,6 +1060,7 @@ export const bibliothequeModule: BlackModule = {
       projectsFolder,
       shelfOf: (folder) => shelfOfPath(shelves('document'), folder),
       ensureFolder: (folder) => platform.fs.ensureFolder(folder),
+      removeDirectory: (folder) => removeDirectory('document', folder),
       pour: (folder) => pour(folder),
       toReferences: (record) => toReferences(record)
     }
@@ -1137,6 +1148,88 @@ export const bibliothequeModule: BlackModule = {
       await platform.fs.ensureFolder(path)
       platform.notifier.notify(t('bibliotheque.place.created', { name }), 5000)
       return path
+    }
+    /** Tous les fichiers sous un dossier (sous-dossiers compris). */
+    const filesUnder = async (folder: string): Promise<string[]> => {
+      const out: string[] = []
+      const walk = async (current: string): Promise<void> => {
+        const listing = await platform.fs.list(current)
+        out.push(...listing.files)
+        for (const sub of listing.folders) await walk(sub)
+      }
+      if (await platform.fs.exists(folder)) await walk(folder)
+      return out
+    }
+    /** Un chemin libre (« Plan (2).pdf » si « Plan.pdf » est pris). */
+    const freePath = async (path: string): Promise<string> => {
+      const dot = path.lastIndexOf('.')
+      const [stem, ext] = dot > path.lastIndexOf('/') ? [path.slice(0, dot), path.slice(dot)] : [path, '']
+      let candidate = path
+      for (let index = 2; await platform.fs.exists(candidate); index++) candidate = `${stem} (${index})${ext}`
+      return candidate
+    }
+    /**
+     * **Supprimer un répertoire** d'une bibliothèque. Vide : après confirmation, à la corbeille.
+     * Avec des documents (ou des entrées) : au choix, ils **remontent** dans le répertoire du
+     * dessus (sous-répertoires compris ; les autres fichiers aussi), ou ils sont **retirés** —
+     * mis de côté dans les retirés, rien n'est effacé ; le reste part à la corbeille avec le
+     * répertoire. Jamais une bibliothèque, ni un répertoire qui en contient une.
+     */
+    const removeDirectory = async (kind: ShelfKind, folder: string): Promise<boolean> => {
+      const fs = platform.fs
+      if (!fs.trash || !folder.includes('/')) return false
+      const name = folder.slice(folder.lastIndexOf('/') + 1)
+      const parent = folder.slice(0, folder.lastIndexOf('/'))
+      const under = (path: string) => path.startsWith(`${folder}/`)
+      if (SHELF_KINDS.some((each) => shelves(each).some((shelf) => shelf.folder === folder || under(shelf.folder)))) {
+        platform.notifier.notify(t('bibliotheque.place.remove.shelf', { name }), 8000)
+        return false
+      }
+      const docs = kind === 'document' ? (await store.all()).filter((doc) => under(doc.record)) : []
+      const notes = kind === 'document' ? [] : (await entries[kind as EntryKind].all()).filter((entry) => under(entry.path))
+      const ghosts = kind === 'document' ? (await store.ghosts()).map((entry) => entry.ghost.path).filter(under) : []
+      const known = new Set([...docs.map((doc) => doc.record), ...notes.map((entry) => entry.path), ...ghosts])
+      const others = (await filesUnder(folder)).filter((path) => !known.has(path))
+      const count = docs.length + notes.length
+      let choice: 'empty' | 'keep' | 'aside'
+      if (!count && !others.length) {
+        const sure = await platform.ui.confirm({
+          title: t('bibliotheque.place.remove.title', { name }),
+          message: t('bibliotheque.place.remove.empty', { folder }),
+          confirm: t('bibliotheque.place.remove'),
+          cancel: t('bibliotheque.cancel'),
+          danger: true
+        })
+        if (!sure) return false
+        choice = 'empty'
+      } else {
+        const what = t(!count ? 'bibliotheque.place.remove.files' : others.length ? 'bibliotheque.place.remove.whatFiles' : 'bibliotheque.place.remove.what', { count, kind: kindName(kind), others: others.length })
+        const picked = await platform.ui.pickOption(
+          [
+            { value: 'keep', label: t('bibliotheque.place.remove.keep', { parent: placeOfFolder(parent) || parent }), description: t('bibliotheque.place.remove.keep.desc', { what }) },
+            { value: 'aside', label: t('bibliotheque.place.remove.aside', { kind: kindName(kind) }), description: t('bibliotheque.place.remove.aside.desc', { what }) }
+          ],
+          t('bibliotheque.place.remove.ask', { name, what })
+        )
+        if (picked !== 'keep' && picked !== 'aside') return false
+        choice = picked
+      }
+      if (choice === 'keep') {
+        for (const doc of docs) await store.move(doc.record, parent)
+        for (const entry of notes) await entries[kind as EntryKind].move(entry.path, parent)
+        for (const path of [...ghosts, ...others]) if (await fs.exists(path)) await fs.rename(path, await freePath(`${parent}/${path.slice(path.lastIndexOf('/') + 1)}`))
+      } else if (choice === 'aside') {
+        for (const doc of docs) await store.setAside(doc.record)
+        for (const entry of notes) await entries[kind as EntryKind].setAside(entry.path)
+        for (const path of ghosts) await store.removeGhost(path)
+      }
+      if (await fs.exists(folder)) await fs.trash(folder)
+      platform.notifier.notify(
+        t(choice === 'keep' ? 'bibliotheque.place.removed.keep' : choice === 'aside' ? 'bibliotheque.place.removed.aside' : 'bibliotheque.place.removed', { name, count, kind: kindName(kind), parent: placeOfFolder(parent) || parent }),
+        8000
+      )
+      pagesChanged()
+      return true
     }
     const setDefault = async (kind: ShelfKind, id: string): Promise<void> => {
       await settings.save(withDefaultShelf(settings.get(), kind, id))
@@ -1394,6 +1487,7 @@ export const bibliothequeModule: BlackModule = {
       subdirectories: subdirectories(kind),
       ...(showPage ? { showPage } : {}),
       newDirectory,
+      ...(platform.fs.trash ? { removeDirectory } : {}),
       newShelf,
       setDefault,
       removeShelf,

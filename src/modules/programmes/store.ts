@@ -37,6 +37,7 @@ import {
   readProject,
   type Affaire,
   type AffaireStatus,
+  type FolderSpec,
   type Programme,
   type Project,
   type ProjectPhase,
@@ -172,6 +173,13 @@ export class ProgrammeStore {
     return (await this.project(project.path))!
   }
 
+  /** Les répertoires des documents d'un projet (un retiré n'est plus recréé). */
+  async setFolders(path: string, folders: readonly FolderSpec[]): Promise<Project | null> {
+    const project = await this.project(path)
+    if (!project) return null
+    return this.saveProject({ ...project, folders: [...folders] })
+  }
+
   /** Le démarrage d'un projet (vide : pas démarré) : toutes les dates prévues en découlent. */
   async setStart(path: string, start: string): Promise<Project | null> {
     const project = await this.project(path)
@@ -285,6 +293,14 @@ export class ProgrammeStore {
     const project = await this.project(path)
     if (!project || !this.deps.fs.trash || !this.inside(project.folder)) return false
     await this.deps.fs.trash(project.folder)
+    return true
+  }
+
+  /** Supprimer une affaire : sa note à la corbeille. */
+  async deleteAffaire(path: string): Promise<boolean> {
+    const affaire = await this.affaire(path)
+    if (!affaire || !this.deps.fs.trash || !this.inside(path)) return false
+    await this.deps.fs.trash(path)
     return true
   }
 

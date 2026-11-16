@@ -16,7 +16,8 @@ une de ces phases.
 affaires et ce que vous y avez rangé. **Supprimer le programme** fait de même pour le programme,
 ses projets et leurs affaires. Une question est posée avant ; les documents dans la
 bibliothèque et les analyses d'appel d'offres restent. Depuis la corbeille d'Obsidian (ou celle
-du système), on peut les récupérer.
+du système), on peut les récupérer. Une **affaire** se supprime de même : **Supprimer l'affaire**,
+sur sa carte (sa note à la corbeille).
 
 Sur **Programmes** et sur la page d'un programme, chaque projet est dessiné en miniature, ses
 phases **repliées** d'origine : son nom (un clic ouvre sa page) et son avancement restent ; le
@@ -150,4 +151,7 @@ Chaque projet créé de ce type reçoit ces répertoires dans la bibliothèque d
 — changer le type ensuite ne change pas les projets déjà créés. Sur la page du projet, **Documents
 du projet** montre les **répertoires attendus** : ce qu'on attend dans chacun (« CCTP : manquant »,
 « CCTP ✓ » dès qu'un document de ce type y est rangé), combien il en contient, et combien de
-répertoires sont complets ; un clic ouvre le répertoire dans la bibliothèque.
+répertoires sont complets ; un clic ouvre le répertoire dans la bibliothèque. La corbeille devant
+un répertoire le **supprime** : de la bibliothèque (une question : ses documents remontent d'un
+cran, ou sont retirés), et le projet ne l'attend plus — il n'est pas recréé (ses sous-répertoires
+non plus). Le type, lui, ne change pas.

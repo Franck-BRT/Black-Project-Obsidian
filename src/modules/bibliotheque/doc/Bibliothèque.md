@@ -318,6 +318,13 @@ sur une fiche, range ailleurs (le fichier d'un document ne bouge pas ; ses versi
 restent reliées). **Regrouper par › Répertoire** montre tout ce qui est dessous, un
 répertoire par section.
 
+**Supprimer le répertoire** (sur sa carte, ou sur sa page) : vide, il part à la corbeille du
+coffre après une question. S'il contient des documents (ou des prompts, des personas…), on
+choisit : **les remonter** dans le répertoire du dessus (ceux de ses sous-répertoires aussi,
+avec les autres fichiers), ou **les retirer** — mis de côté dans les retirés de la
+bibliothèque, rien n'est effacé. Une bibliothèque ne se supprime pas ainsi (**Retirer la
+bibliothèque**, sur sa page).
+
 **Glisser-déposer** : des fichiers glissés depuis l'explorateur de l'ordinateur et lâchés
 sur la page des documents y sont versés, là où vous êtes ; lâchés sur la carte d'un
 répertoire, dans ce répertoire. Comme « Verser des documents » : copiés dans la
