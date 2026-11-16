@@ -122,7 +122,7 @@ vues.
 | Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
 | Verser le dossier « À classer », chaque jour | chaque jour à 8 h | idem | actif |
 | Versions à confirmer, chaque lundi | lundi à 8 h | les nouvelles versions probables pas encore confirmées | désactivé |
-| Documents à classer, chaque lundi | lundi à 8 h | les documents sans catégorie | désactivé |
+| Documents sans type de pièce, chaque lundi | lundi à 8 h | les documents sans type de pièce | désactivé |
 | Signaler les formats non lus, au dépôt de fichiers | des fichiers déposés dans l'application | dit ceux dont le format n'est pas lu, et où déclarer une extension équivalente | actif |
 | Signaler les pièces illisibles, à l'import | des pièces illisibles importées | les nomme, et dit que faire | actif |
 | Signaler les pièces sans texte (scans), à l'import | des pièces sans texte importées | les nomme | désactivé |

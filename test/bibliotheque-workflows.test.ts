@@ -232,6 +232,6 @@ describe('le dossier de dépôt et les rappels du lundi (workflows système)', (
     await pourIntoLibrary([{ name: 'Divers.pdf', bytes: enc('x') }, { name: 'CCTP.pdf', bytes: enc('y') }], { module: 'bibliotheque', label: 'Versé à la main' })
     Object.assign(system('a-classer'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
     await runDueWorkflows()
-    expect(platform.notices).toContain('Bibliothèque : 1 document(s) sans catégorie — Divers. Sur leur fiche : « Classer… ».')
+    expect(platform.notices).toContain('Bibliothèque : 1 document(s) sans type de pièce — Divers. Sur leur fiche : « Classer… ».')
   })
 })

@@ -84,6 +84,10 @@ référence et la version d'un document, quand la première passe n'est pas sûr
 (référence lue seulement dans le nom du fichier, version absente…), l'IA les cherche au
 début de son texte ; ce qu'elle trouve doit y figurer — elle n'invente rien.
 
+Pour un document du **circuit des documents** (voir {{link:Modules/Bibliothèque|Bibliothèque}}), la
+relecture, le type de pièce et l'entreprise sont faits par ses étapes **Ingérer** et **Analyser** :
+les workflows ci-dessous qui s'en chargent d'habitude ne passent pas sur lui.
+
 **« Relire avec l'IA le texte extrait d'un document… »** (activé) : le texte extrait d'un
 document versé est relu — sa cohérence, sa mise en forme, ce que l'extraction a abîmé —, sans
 en changer le sens ; avec le prompt, le persona, le skill choisis dans son étape. Le texte relu

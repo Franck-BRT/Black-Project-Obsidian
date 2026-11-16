@@ -10,7 +10,7 @@
 import type { FileSystem, PageImages } from '../../core/ports'
 import { aiProofreadAlready, ANALYSIS_SCHEMA, applyAnalysisDecision, applyFilingDecision, DEFAULT_THRESHOLD, FILING_SCHEMA, filingFolders, markIngested, readAnalysisAnswer, readFilingAnswer, readThreshold, skillContextFor, thresholdLabel, IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
-import { actionSpec, registerAction, systemWorkflowEnabled } from '../workflows'
+import { actionSpec, registerAction } from '../workflows'
 import type { AiClient } from './client'
 import { proofreadDocument, readWithVision, VisionRefused, type ReadingContext, type VisionReading } from './documentReading'
 import { LlmError } from './protocol'
@@ -764,12 +764,10 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       // L'ingestion : le texte relu par l'IA (la procédure du skill guide la relecture) — sauf s'il l'a déjà été, ou si le document a passé cette étape.
       if (skill.output === 'ingestion') {
         if (doc.circuit && doc.circuit !== 'a-classer') return done(t('ia.wf.skill.ingested.already', { title: doc.title }), 'ingere')
-        // À l'entrée (pas une relance), les workflows système de lecture sont passés juste avant celui du circuit : pas de seconde relecture.
+        // Le seul endroit où un document du circuit est relu (les workflows de relecture l'écartent).
         const scan = doc.reading === 'sans-texte' || doc.reading === 'image'
-        const bySystem = !context.vars.relance && ((doc.reading === 'lue' && systemWorkflowEnabled('sys.ia.relire-textes')) || (scan && systemWorkflowEnabled('sys.ia.lire-scans')))
         let detail: string
         if (await aiProofreadAlready(record)) detail = t('ia.wf.skill.ingested.read')
-        else if (bySystem) detail = t('ia.wf.skill.ingested.bySystem')
         else if (doc.reading !== 'lue' && !scan) detail = t('ia.wf.skill.ingested.noText')
         else {
           const proofread = actionSpec('ia.relire-texte')

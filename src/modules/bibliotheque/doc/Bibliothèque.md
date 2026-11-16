@@ -144,15 +144,14 @@ l'original (« Rétablir l'original ») ; pas les supprimer.
 — par l'explorateur de fichiers, une synchronisation —, ils entrent dans la bibliothèque à
 l'ouverture d'Obsidian et chaque jour à 8 h, rangés dans `_fichiers` ; un fichier déjà
 dans la bibliothèque est mis de côté dans `_retirés`. Deux rappels, désactivés d'origine,
-chaque lundi : les **versions à confirmer** et les **documents à classer** (sans
-type de pièce).
+chaque lundi : les **versions à confirmer** et les **documents sans type de pièce**.
 
 | Workflow système | Quand | D'origine |
 | --- | --- | --- |
 | Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | activé |
 | Verser le dossier « À classer », chaque jour | chaque jour à 8 h | activé |
 | Versions à confirmer, chaque lundi | le lundi à 8 h | désactivé |
-| Documents à classer, chaque lundi | le lundi à 8 h | désactivé |
+| Documents sans type de pièce, chaque lundi | le lundi à 8 h | désactivé |
 | Langues à confirmer, chaque lundi | le lundi à 8 h | désactivé |
 | Proposer un fantôme d'un document déjà dans la bibliothèque | vous déposez un document déjà là, rangé ailleurs | activé |
 
@@ -230,6 +229,11 @@ avec **Ranger moi-même…**. Chaque lundi, un rappel dit s'il reste des documen
 fiche d'un document du circuit a une section **Circuit** : où il en est, ce qui a été fait.
 
 L'ancien dossier `À verser` est repris : il devient `À classer`.
+
+Pour un document du circuit, les workflows « Relire avec l'IA le texte… », « Lire avec la vision… »,
+« Identifier avec l'IA le type de pièce… » et « … l'entreprise qui émet… » ne passent pas : ses
+étapes **Ingérer** et **Analyser** s'en chargent (une seule relecture, une seule analyse). Les
+autres (langue, titre, date, référence, étiquettes) passent comme pour tout document.
 
 ### À contrôler
 

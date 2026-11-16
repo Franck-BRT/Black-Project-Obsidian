@@ -302,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.30.0',
+  version: '0.30.1',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -444,7 +444,11 @@ export const iaModule: BlackModule = {
         name: tr('ia.sys.categorie-documents'),
         mode: 'auto',
         trigger: { kind: 'bibliotheque.document-verse' },
-        conditions: [{ field: 'categorieaconfirmer', op: 'not-empty', value: '' }],
+        // Un document du circuit : son type de pièce est donné par son étape « Analyser ».
+        conditions: [
+          { field: 'categorieaconfirmer', op: 'not-empty', value: '' },
+          { field: 'circuit', op: 'empty', value: '' }
+        ],
         actions: [{ kind: 'ia.categorie-document', fields: { fiche: '{fiche}' } }]
       })
     })
@@ -470,7 +474,11 @@ export const iaModule: BlackModule = {
         name: tr('ia.sys.relire-textes'),
         mode: 'auto',
         trigger: { kind: 'bibliotheque.document-verse' },
-        conditions: [{ field: 'texteextrait', op: 'not-empty', value: '' }],
+        // Un document du circuit : relu par son étape « Ingérer » (pas deux fois).
+        conditions: [
+          { field: 'texteextrait', op: 'not-empty', value: '' },
+          { field: 'circuit', op: 'empty', value: '' }
+        ],
         actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}' } }]
       })
     })
@@ -483,7 +491,10 @@ export const iaModule: BlackModule = {
         name: tr('ia.sys.lire-scans'),
         mode: 'auto',
         trigger: { kind: 'bibliotheque.document-verse' },
-        conditions: [{ field: 'scan', op: 'not-empty', value: '' }],
+        conditions: [
+          { field: 'scan', op: 'not-empty', value: '' },
+          { field: 'circuit', op: 'empty', value: '' }
+        ],
         actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}', mode: 'vision' } }]
       })
     })
@@ -509,7 +520,11 @@ export const iaModule: BlackModule = {
         name: tr('ia.sys.emetteur-documents'),
         mode: 'auto',
         trigger: { kind: 'bibliotheque.document-verse' },
-        conditions: [{ field: 'emetteuraconfirmer', op: 'not-empty', value: '' }],
+        // Un document du circuit : son entreprise est donnée par son étape « Analyser ».
+        conditions: [
+          { field: 'emetteuraconfirmer', op: 'not-empty', value: '' },
+          { field: 'circuit', op: 'empty', value: '' }
+        ],
         actions: [{ kind: 'ia.emetteur-document', fields: { fiche: '{fiche}' } }]
       })
     })

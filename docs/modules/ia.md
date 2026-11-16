@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.30.0 (Black Projects 0.135.0) |
+| Version | 0.30.1 (Black Projects 0.135.1) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,15 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Ménage : un seul passage par document du circuit (v0.30.1, Black Projects 0.135.1)
+
+- Les workflows système `sys.ia.relire-textes`, `sys.ia.lire-scans`, `sys.ia.categorie-documents`,
+  `sys.ia.emetteur-documents` ont une condition de plus : `{circuit}` vide. Un document du circuit
+  est relu par l'étape **Ingérer** (seule), son type de pièce et son entreprise donnés par
+  **Analyser** — plus de double appel à l'IA. L'Ingestion ne regarde plus si un workflow de
+  relecture est passé (`systemWorkflowEnabled` n'y sert plus) : elle relit, sauf si l'IA l'a déjà
+  fait. Non modifiés par l'utilisateur, ces workflows suivent la nouvelle version d'eux-mêmes.
 
 ## Le circuit des documents (v0.30.0, Black Projects 0.135.0)
 

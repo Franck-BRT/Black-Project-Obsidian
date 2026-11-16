@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.21.0 (Black Projects 0.135.0) |
+| Version | 0.21.1 (Black Projects 0.135.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -283,12 +283,12 @@ champ avec l'IA, depuis la fiche d'un document.
   `WorkflowFicheDeps.remove`, la confirmation de `deleteWorkflow`. Pas pour un workflow système
   (il se désactive, ou se rétablit sur sa fiche).
 
-## Attendre la file ; un workflow système activé (v0.21.0, Black Projects 0.135.0)
+## Attendre la file (v0.21.0, Black Projects 0.135.0)
 
 - `workflowsIdle()` : attendre que la file soit passée, ce qui s'y ajoute en route compris
   (`WorkflowEngine.idle`) — pour les tests et la démonstration.
-- `systemWorkflowEnabled(id)` : un workflow système présent **et activé** (le circuit des documents
-  ne relit pas un texte que le workflow de relecture vient de relire).
+- (`systemWorkflowEnabled`, ajouté en 0.21.0, retiré en 0.21.1 : le circuit des documents n'en a
+  plus besoin — les workflows de relecture l'écartent eux-mêmes.)
 
 ## Le moteur (`engine.ts`)
 

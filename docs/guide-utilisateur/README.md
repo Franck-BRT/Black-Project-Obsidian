@@ -12,7 +12,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.135.0)
+## Aujourd'hui (version 0.135.1)
+
+- **Ménage dans les workflows** : un document du circuit n'est plus relu ni analysé deux fois ; le
+  rappel « Documents à classer » s'appelle maintenant « Documents sans type de pièce ».
 
 - **Le circuit des documents** : activez-le (Paramètres › Bibliothèque). Chaque document versé
   sans lieu précis entre dans **À classer** ; l'IA le relit, l'analyse (type de pièce, entreprise,

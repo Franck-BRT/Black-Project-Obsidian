@@ -111,7 +111,7 @@ describe('la relecture par l’IA, au versement', () => {
       enabled: true,
       name: 'Relire avec l’IA le texte extrait d’un document : cohérence, mise en forme, corrections',
       trigger: { kind: 'bibliotheque.document-verse' },
-      conditions: [{ field: 'texteextrait', op: 'not-empty', value: '' }],
+      conditions: [{ field: 'texteextrait', op: 'not-empty', value: '' }, { field: 'circuit', op: 'empty', value: '' }],
       actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}' } }]
     })
   })

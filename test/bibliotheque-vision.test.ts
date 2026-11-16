@@ -412,7 +412,7 @@ describe('un document sans texte : la vision seule', () => {
       enabled: true,
       name: 'Lire avec la vision un document versé sans texte (un scan, une image)',
       trigger: { kind: 'bibliotheque.document-verse' },
-      conditions: [{ field: 'scan', op: 'not-empty', value: '' }],
+      conditions: [{ field: 'scan', op: 'not-empty', value: '' }, { field: 'circuit', op: 'empty', value: '' }],
       actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}', mode: 'vision' } }]
     })
     const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))

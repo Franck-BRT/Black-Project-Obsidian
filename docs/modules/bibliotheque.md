@@ -5,13 +5,19 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.50.0 (Black Projects 0.135.0) |
+| Version | 0.50.1 (Black Projects 0.135.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Ménage des workflows (v0.50.1, Black Projects 0.135.1)
+
+- « Documents à classer, chaque lundi » (`sys.bibliotheque.a-classer`, les documents sans type de
+  pièce) se confondait avec le dossier À classer : il devient « Documents sans type de pièce,
+  chaque lundi » (l'action : « Compter les documents sans type de pièce »).
 
 ## Le circuit des documents, version B : À classer, ingérer, analyser, ranger (v0.50.0, Black Projects 0.135.0)
 

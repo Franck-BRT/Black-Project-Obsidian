@@ -151,12 +151,6 @@ export function systemWorkflowManages(id: string): boolean {
   return session.load().some((workflow) => workflow.system === id)
 }
 
-/** Un workflow système est-il présent **et activé** (il s'exécutera à son déclencheur) ? */
-export function systemWorkflowEnabled(id: string): boolean {
-  if (!engine || !session) return false
-  return session.load().some((workflow) => workflow.system === id && workflow.enabled)
-}
-
 const readWorkflows = (settings: Readonly<Record<string, unknown>>): Workflow[] => {
   const stored = settings[WORKFLOWS_KEY]
   return Array.isArray(stored) ? (stored as Workflow[]).map((workflow) => ({ ...workflow, conditions: workflow.conditions ?? [], actions: workflow.actions ?? [] })) : []
@@ -208,7 +202,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.21.0',
+  version: '0.21.1',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),

@@ -251,7 +251,7 @@ describe('la seconde passe, avec l’IA', () => {
       enabled: true,
       name: 'Identifier avec l’IA le type de pièce d’un document, quand la première passe n’est pas sûre',
       trigger: { kind: 'bibliotheque.document-verse' },
-      conditions: [{ field: 'categorieaconfirmer', op: 'not-empty', value: '' }],
+      conditions: [{ field: 'categorieaconfirmer', op: 'not-empty', value: '' }, { field: 'circuit', op: 'empty', value: '' }],
       actions: [{ kind: 'ia.categorie-document', fields: { fiche: '{fiche}' } }]
     })
   })
