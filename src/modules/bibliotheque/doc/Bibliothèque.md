@@ -420,6 +420,15 @@ la liste… », son nom proposé) et se lit « ESA — Agence spatiale européen
 nom et un code proposés — « TAS » pour Thales Alenia Space) : elle devient l'entreprise du
 document, et des autres documents qui portaient ce nom.
 
+**La fiche d'une entreprise** : ses chiffres en tête (documents émis, documents qui la citent,
+personnes) ; **L'entreprise** en lignes — code, nom, rôle, catégorie, autres noms, où elle est
+rangée —, chacune avec son bouton (modifier, déplacer) ; **Documents qu'elle émet** (ceux dont elle
+est l'entreprise ; « Entreprise à confirmer » en orange quand elle n'est pas sûre) ; **Documents qui la
+citent** (reliés à sa note par le circuit sans être émis par elle) ; **Ses personnes**. Un clic ouvre
+chaque document ou personne. Les lignes que Black Projects écrit en bas de sa note (« Liens (Black
+Projects) », ses rétroliens) ne sont pas de ses autres noms : sa fenêtre ne les montre pas, et elles
+sont gardées quand vous la modifiez.
+
 **Le répertoire des personnes** (Bibliothèque › **Personnes**) : les personnes avec qui vous
 travaillez, une note par personne (dans `Bibliothèque/Personnes`). **Nouvelle personne** : son
 nom et prénom, son **entreprise** (choisie dans la liste des entreprises — ou « ＋ Ajouter une

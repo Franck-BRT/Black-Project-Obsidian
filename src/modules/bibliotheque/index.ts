@@ -26,7 +26,7 @@ import { cleanFolder } from '../../core/settings'
 import { emitWorkflowEvent, NO_SUBJECT, onRunningChange, registerFieldSource, registerTrigger, runActionNow, runningSteps, runSystemWorkflow, stopRunning, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
 import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
-import { entryPageOf, entryTitle, HUB_PAGE as ENTRIES_HUB_PAGE, registerEntriesHome, type TermUse } from './entriesHome'
+import { entryPageOf, entryTitle, HUB_PAGE as ENTRIES_HUB_PAGE, registerEntriesHome, type CompanyDoc, type TermUse } from './entriesHome'
 import { libraryExplorer, type ExplorerPlace } from './explorer'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { previousStarterTexts, startersFor } from './starters'
@@ -1070,7 +1070,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.69.0',
+  version: '0.70.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -3209,7 +3209,28 @@ export const bibliothequeModule: BlackModule = {
       platform.notifier.notify(t(`bibliotheque.${kind}.created`, { name: draft.name }), 5000)
       return path
     }
+    /**
+     * **Les documents d'une entreprise** : ceux qu'elle émet (leur champ « Entreprise » : son code ou
+     * son nom ; à confirmer, dit), et ceux qui la citent (reliés à sa note par le circuit) sans être
+     * émis par elle.
+     */
+    const companyDocuments = async (entry: LibraryEntry): Promise<{ issued: CompanyDoc[]; cited: CompanyDoc[] }> => {
+      const all = await store.all()
+      const mine = (doc: LibraryDoc) => !!doc.issuer && (sameName(doc.issuer, entry.code || entry.name) || sameName(doc.issuer, entry.name))
+      const row = (doc: LibraryDoc): CompanyDoc => ({
+        record: doc.record,
+        title: doc.title,
+        detail: [doc.category, doc.date, placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/')))].filter(Boolean).join(' · '),
+        ...(mine(doc) && doc.issuerToConfirm ? { toConfirm: true } : {})
+      })
+      const byTitle = (a: CompanyDoc, b: CompanyDoc) => a.title.localeCompare(b.title, 'fr')
+      return {
+        issued: all.filter(mine).map(row).sort(byTitle),
+        cited: all.filter((doc) => !mine(doc) && (doc.links ?? []).includes(entry.path)).map(row).sort(byTitle)
+      }
+    }
     registerEntriesHome(context.views, {
+      companyDocuments,
       documentsUsing,
       linkTermIn: async (record: string) => void (await searchGlossary(record)),
       showDocument: (record: string) => showPage?.(docPageOf(record)),

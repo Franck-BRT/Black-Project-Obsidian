@@ -5,13 +5,27 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.69.0 (Black Projects 0.155.0) |
+| Version | 0.70.0 (Black Projects 0.156.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La fiche d'une entreprise reprise ; les rétroliens à part (v0.70.0, Black Projects 0.156.0)
+
+- Sa page à elle (`companyPage`, `entriesHome.ts`) : des chiffres (`stats` : documents émis, documents
+  qui la citent, personnes) ; les sections `bibliotheque.entreprise.entreprise` (code, nom, rôle,
+  catégorie, autres noms, rangée — lignes `fields` avec leur outil), `.emis` (les documents dont le
+  champ « Entreprise » est son code ou son nom ; à confirmer en orange), `.cites` (reliés à sa note,
+  pas émis par elle ; seulement s'il y en a), `.personnes` (repliée s'il n'y en a pas).
+- `companyDocuments(entry)` (`CompanyDoc`) les donne.
+- **Les rétroliens à part** : `readEntry` lit la section réservée (« ## Liens (Black Projects) »,
+  `splitBacklinks`) à part du texte (`LibraryEntry.backlinks`) ; `entryContent` la réécrit telle
+  quelle ; `update` la garde. Avant, elle était dans `text` : les « autres noms » d'une entreprise
+  (et les autres formes d'une étiquette) en recevaient les lignes — y compris dans ce qu'on donnait à
+  l'IA —, et la fenêtre d'une entrée les montrait.
 
 ## La fiche d'un terme du glossaire reprise (v0.69.0, Black Projects 0.155.0)
 

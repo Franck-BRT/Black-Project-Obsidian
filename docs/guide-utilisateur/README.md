@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.155.0)
+## Aujourd'hui (version 0.156.0)
+
+- **La fiche d'une entreprise reprise** : ses chiffres en tête ; l'entreprise en lignes (code, nom,
+  rôle, catégorie, autres noms, où elle est rangée) ; les documents qu'elle émet, ceux qui la citent,
+  ses personnes. Les rétroliens que Black Projects écrit dans sa note ne se mêlent plus à ses autres
+  noms.
 
 - **La fiche d'un terme du glossaire reprise** : sa définition en tête ; le terme en lignes (sigle,
   domaine, autres formes, où il est rangé) ; les documents qui l'emploient — reliés en vert, ou

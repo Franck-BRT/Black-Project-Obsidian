@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'une entreprise (v0.156.0)
+
+- [ ] Une entreprise (ESA, autres noms « European Space Agency »), une personne de l'ESA, un document
+      émis par l'ESA, un autre qui la cite (relié par le circuit)
+- [ ] Sa fiche : les chiffres (documents émis, qui la citent, personnes) ; « L'entreprise » en lignes,
+      chacune avec son bouton ; « Documents qu'elle émet » ; « Documents qui la citent » ; « Ses
+      personnes » — un clic ouvre chacun
+- [ ] Une entreprise dont la note a une section « Liens (Black Projects) » : ses autres noms ne la
+      contiennent pas ; « Modifier » ne la montre pas, et elle est toujours dans la note après
+
 ## La fiche d'un terme du glossaire (v0.155.0)
 
 - [ ] Glossaire avec ses exemples ; deux documents qui citent « CCTP », versés hors du circuit

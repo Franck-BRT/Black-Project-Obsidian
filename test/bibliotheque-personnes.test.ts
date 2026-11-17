@@ -135,14 +135,18 @@ describe('le répertoire des personnes', () => {
     expect(shown.at(-1)).toBe(`bibliotheque.issuer?${encodeURIComponent('Bibliothèque/Entreprises/Agence spatiale européenne.md')}`)
     // La fiche de l'entreprise : ses personnes ; un clic mène à la personne.
     const esa = await load(shown.at(-1)!)
-    const people = listsIn(esa.blocks).find((list) => list.title === 'Ses personnes (1)')!
+    const staff = esa.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.entreprise.personnes')!
+    expect(staff.title).toBe('Ses personnes (1)')
+    const people = listsIn(staff.blocks)[0]!
     expect(people.items.map((item) => [item.title, item.detail])).toEqual([['Marie Dupont', 'Responsable qualité · marie.dupont@esa.int · +33 1 23 45 67 89']])
     people.items[0]!.open!.run()
     expect(shown.at(-1)).toBe(`bibliotheque.person?${encodeURIComponent('Bibliothèque/Personnes/Marie Dupont.md')}`)
     // Une autre entreprise de la liste : personne.
     await addCompany('DGA', 'Direction générale de l’armement')
     const dga = await page('bibliotheque.issuer').load(encodeURIComponent('Bibliothèque/Entreprises/Direction générale de l’armement.md'))
-    expect(listsIn(dga.blocks).find((list) => list.title === 'Ses personnes (0)')).toMatchObject({ items: [], empty: 'Aucune personne de cette entreprise dans le répertoire.' })
+    const none = dga.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.entreprise.personnes')!
+    expect(none).toMatchObject({ title: 'Ses personnes (0)', collapsed: true })
+    expect(listsIn(none.blocks)[0]).toMatchObject({ items: [], empty: 'Aucune personne de cette entreprise dans le répertoire.' })
   })
 
   it('son entreprise ajoutée depuis sa fenêtre ; une entreprise écrite hors de la liste, gardée et dite ; une adresse qui n’en est pas une, refusée', async () => {

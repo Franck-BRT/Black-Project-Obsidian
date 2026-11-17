@@ -10,7 +10,6 @@
 
 import { DEFAULT_THRESHOLD } from './skills'
 import { pageWith, type Card, type Explorer, type HomeBlock, type ListItem, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
-import { withLinkSection } from './links'
 import { startersFor } from './starters'
 import { ENTRY_KINDS, entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
@@ -36,6 +35,14 @@ export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(E
 
 type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow' | 'bulb'
 const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user', glossary: 'bulb' }
+
+/** Un document d'une entreprise : où il est (son type, sa date, son lieu), et si l'entreprise y est à confirmer. */
+export interface CompanyDoc {
+  record: string
+  title: string
+  detail: string
+  toConfirm?: boolean
+}
 
 /** Un document qui emploie un terme du glossaire : où il est, s'il y est relié (lien et rétrolien), la forme qu'il emploie. */
 export interface TermUse {
@@ -82,6 +89,8 @@ export interface EntriesHomeDeps {
   documentsUsing?(path: string): Promise<TermUse[]>
   /** Relier à un document les termes du glossaire qu'il emploie (la recherche dans le glossaire, sans IA). */
   linkTermIn?(record: string): Promise<void>
+  /** Une entreprise : les documents qu'elle émet, et ceux qui la citent (reliés à sa note). */
+  companyDocuments?(entry: LibraryEntry): Promise<{ issued: CompanyDoc[]; cited: CompanyDoc[] }>
   /** Ouvrir la fiche d'un document. */
   showDocument?(record: string): void
 }
@@ -232,8 +241,100 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
   }
 }
 
-/** Son texte à soi : sans la section des rétroliens (que Black Projects tient à jour, montrée à part). */
-const ownText = (deps: EntriesHomeDeps, entry: LibraryEntry): string => withLinkSection(entry.text ?? '', deps.t('bibliotheque.links.backHeading'), []).trim()
+/** Son texte à soi (la section des rétroliens est à part, `backlinks` : la page les dit ailleurs). */
+const ownText = (_deps: EntriesHomeDeps, entry: LibraryEntry): string => (entry.text ?? '').trim()
+
+/**
+ * **La fiche d'une entreprise** : ses chiffres en tête (documents émis, documents qui la citent,
+ * personnes) ; l'entreprise (code, nom, rôle, catégorie, autres noms, rangée), chaque ligne avec son
+ * bouton ; les documents qu'elle émet (ceux où elle est à confirmer, dits) ; ceux qui la citent sans
+ * être émis par elle (reliés par le circuit) ; ses personnes.
+ */
+async function companyPage(deps: EntriesHomeDeps, entry: LibraryEntry, page: { back: ViewAction; actions: ViewAction[]; explorer?: Explorer }): Promise<PageView> {
+  const { t } = deps
+  const section = (id: string, title: string, subtitle: string, icon: 'info' | 'file' | 'link' | 'users', blocks: HomeBlock[], open = true): HomeBlock => ({
+    kind: 'section',
+    id: `bibliotheque.entreprise.${id}`,
+    title,
+    ...(subtitle ? { subtitle } : {}),
+    icon,
+    collapsed: !open,
+    blocks
+  })
+  const move = page.actions.find((action) => action.id === 'move')
+  const edit = page.actions.find((action) => action.id === 'edit')
+  const editTool = (field: string): ViewAction[] => (edit ? [{ ...edit, id: `edit-${field}`, label: t('bibliotheque.term.editField', { field: t(`bibliotheque.company.field.${field}`) }), primary: false }] : [])
+  const row = (id: string, value: string, tools: ViewAction[] = []): ListItem => ({ id, title: t(`bibliotheque.company.field.${id}`), detail: value || '—', ...(tools.length ? { tools } : {}) })
+  const names = entry.text
+    .split('\n')
+    .map((line) => line.replace(/^[-*•]\s*/, '').trim())
+    .filter((line) => line && !line.startsWith('#'))
+  const { issued, cited } = deps.companyDocuments ? await deps.companyDocuments(entry) : { issued: [], cited: [] }
+  const companies = await deps.stores.issuer.all()
+  const people = (await deps.stores.person.all()).filter((each) => each.company && companyOf(each.company, companies)?.path === entry.path).sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+  const docItem = (doc: CompanyDoc): ListItem => ({
+    id: `document-${doc.record}`,
+    title: doc.title,
+    detail: [doc.detail, doc.toConfirm ? t('bibliotheque.company.toConfirm') : ''].filter(Boolean).join(' · '),
+    icon: 'file',
+    ...(doc.toConfirm ? { tone: 'warning' as const } : {}),
+    ...(deps.showDocument ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showDocument!(doc.record) } } : {})
+  })
+  const toConfirm = issued.filter((doc) => doc.toConfirm).length
+  return {
+    title: entryTitle(entry),
+    ...(page.explorer ? { explorer: page.explorer } : {}),
+    back: page.back,
+    subtitle: [t('bibliotheque.issuer.one'), entry.description, entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
+    actions: page.actions,
+    blocks: [
+      // Ses chiffres, en tête.
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('bibliotheque.company.stat.issued'), value: String(issued.length), icon: 'file' },
+          { label: t('bibliotheque.company.stat.cited'), value: String(cited.length), icon: 'link' },
+          { label: t('bibliotheque.company.stat.people'), value: String(people.length), icon: 'users' }
+        ]
+      },
+      // L'entreprise : ce qui la désigne, et où elle est.
+      section('entreprise', t('bibliotheque.company.section'), [entry.code, names.length ? t('bibliotheque.company.names.count', { count: names.length }) : ''].filter(Boolean).join(' · '), 'info', [
+        {
+          kind: 'list',
+          fields: true,
+          items: [
+            row('code', entry.code ?? '', editTool('code')),
+            row('name', entry.name, editTool('name')),
+            row('role', entry.description, editTool('role')),
+            row('category', entry.category, editTool('category')),
+            { ...row('names', names.join(', '), editTool('names')), ...(names.length ? {} : { detail: t('bibliotheque.company.noNames') }) },
+            row('place', placeName(deps.places.issuer.shelves(), entry.shelf, entry.directory) || placeLabel(deps.places.issuer, entry), move ? [{ ...move, primary: false }] : [])
+          ]
+        }
+      ]),
+      // Les documents qu'elle émet.
+      section('emis', t('bibliotheque.company.issued', { count: issued.length }), toConfirm ? t('bibliotheque.company.issued.toConfirm', { count: toConfirm }) : '', 'file', [
+        { kind: 'list', items: issued.map(docItem), empty: t('bibliotheque.company.issued.none') }
+      ]),
+      // Ceux qui la citent, sans être émis par elle.
+      ...(cited.length ? [section('cites', t('bibliotheque.company.cited', { count: cited.length }), t('bibliotheque.company.cited.sub'), 'link', [{ kind: 'list', items: cited.map(docItem) }])] : []),
+      // Ses personnes.
+      section('personnes', t('bibliotheque.issuer.people', { count: people.length }), '', 'users', [
+        {
+          kind: 'list',
+          items: people.map((each) => ({
+            id: each.path,
+            title: each.name,
+            detail: [each.description, each.email, each.phone].filter(Boolean).join(' · '),
+            icon: 'user' as const,
+            ...(deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('person', each.path)) } } : {})
+          })),
+          empty: t('bibliotheque.issuer.people.none')
+        }
+      ], people.length > 0)
+    ]
+  }
+}
 
 /**
  * **La fiche d'un terme du glossaire** : sa définition en tête ; le terme (son nom, son sigle, son
@@ -452,8 +553,9 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
         ]
       : [])
   ]
-  // Un terme du glossaire : sa page à lui.
+  // Un terme du glossaire, une entreprise : leur page à eux.
   if (kind === 'glossary') return termPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
+  if (kind === 'issuer') return companyPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   return {
     title: entryTitle(entry),
     ...(explorer ? { explorer } : {}),

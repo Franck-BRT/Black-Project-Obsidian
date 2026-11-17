@@ -62,6 +62,11 @@ export interface LibraryEntry {
   threshold?: number
   /** Un **terme du glossaire** : ses autres formes (un pluriel, un synonyme, une autre langue), cherchées comme lui. */
   aliases?: string[]
+  /**
+   * La section des **rétroliens** de sa note (« ## Liens (Black Projects) », que Black Projects tient
+   * à jour), à part de son texte : ni montrée, ni modifiable dans sa fenêtre ; réécrite telle quelle.
+   */
+  backlinks?: string
   /** Où est sa note (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -108,19 +113,35 @@ export function entryContent(kind: EntryKind, draft: EntryDraft): string {
     ...(kind === 'skill' && draft.threshold !== undefined ? { seuil: draft.threshold } : {}),
     ...(draft.aliases?.length ? { autresFormes: draft.aliases.map((each) => each.trim()).filter(Boolean) } : {})
   }
-  return `---\n${toYaml(data)}\n---\n\n${draft.text.trim()}\n`
+  return `---\n${toYaml(data)}\n---\n\n${[draft.text.trim(), draft.backlinks?.trim() ?? ''].filter(Boolean).join('\n\n')}\n`
+}
+
+/** La section réservée des rétroliens (« ## Liens (Black Projects) », « ## Links (Black Projects) ») : jusqu'au titre suivant. */
+const BACKLINKS = /^## .*\(Black Projects\)\s*$/
+
+/** Le texte d'une note, et à part la section de ses rétroliens. */
+export function splitBacklinks(body: string): { text: string; backlinks: string } {
+  const lines = body.split('\n')
+  const at = lines.findIndex((line) => BACKLINKS.test(line))
+  if (at === -1) return { text: body, backlinks: '' }
+  let end = lines.findIndex((line, index) => index > at && /^#{1,2} /.test(line))
+  if (end === -1) end = lines.length
+  return { text: [...lines.slice(0, at), ...lines.slice(end)].join('\n'), backlinks: lines.slice(at, end).join('\n').trim() }
 }
 
 /** Une entrée relue de sa note ; `null` si ce n'en est pas une de ce genre. */
 export function readEntry(kind: EntryKind, path: string, data: Record<string, unknown> | null, body: string): LibraryEntry | null {
   if (!data || data['bp-type'] !== ENTRY_TYPE[kind]) return null
   const basename = path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, '')
+  // Ses rétroliens : à part (ni des autres noms, ni des notes).
+  const { text, backlinks } = splitBacklinks(body)
   return {
     kind,
     path,
     name: plain(data.nom ?? data.name) || basename,
     // Les commentaires d'Obsidian (%% … %%) ne sont pas pour l'IA.
-    text: body.replace(/%%[\s\S]*?%%/g, '').trim(),
+    text: text.replace(/%%[\s\S]*?%%/g, '').trim(),
+    ...(backlinks ? { backlinks } : {}),
     category: plain(data.categorie ?? data['catégorie'] ?? data.category),
     description: plain(data.description),
     favorite: data.favori === true || data.favorite === true,
@@ -286,7 +307,9 @@ export class EntryStore {
   /** Une entrée modifiée : sa note réécrite, renommée si son nom a changé ; rend son chemin. */
   async update(path: string, draft: EntryDraft): Promise<string> {
     const { fs } = this.deps
-    await fs.writeText(path, entryContent(this.kind, draft))
+    // Ses rétroliens (que la fenêtre ne montre pas) : gardés.
+    const backlinks = draft.backlinks ?? (await this.load(path))?.backlinks
+    await fs.writeText(path, entryContent(this.kind, { ...draft, ...(backlinks ? { backlinks } : {}) }))
     const folder = path.slice(0, path.lastIndexOf('/'))
     const target = await this.free(folder, draft.name, path)
     if (target === path) return path
