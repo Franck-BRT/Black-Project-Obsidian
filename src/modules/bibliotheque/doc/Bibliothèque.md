@@ -75,6 +75,13 @@ plus récent ; le filtre **Dernières versions** les cache.
 
 ## 4. La page Bibliothèque
 
+**Le parcours du document**, sur chaque fiche, dès sa création : une ligne par étape, en couleur —
+**vert** fait, **orange** en attente ou à confirmer, **rouge** en échec, **gris** à venir ou sans
+objet. Le contrôle des doublons (et ses fantômes, un bouton mène à chacun), la mise dans « À
+classer », l'ingestion, l'analyse et chacun de ses champs (type de pièce, entreprise, titre, date,
+langue, référence, étiquettes, projet), l'analyse des liens, leur création, le rangement. Là où le
+circuit s'est arrêté : **Continuer le circuit**.
+
 **La fiche d'un document** : sous son titre, une ligne dit ce qu'il est (famille, type de pièce,
 version, taille, date d'ajout). Ce qui reste à confirmer est en tête, **une ligne chacun** — le nom,
 la raison, les boutons (« Confirmer : Français », « Pas de date », « Modifier… »). **Identification**

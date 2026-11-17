@@ -351,6 +351,8 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
+- **Des sous-étapes** *(0.149.0)* : `ListItem.level` — une ligne en retrait sous celle d'avant (les
+  champs de l'analyse dans le parcours d'un document).
 - **Des lignes compactes** *(0.148.0)* : `ListItem.actions` — de petits boutons avec leur mot, au bout
   d'une ligne de liste (« Confirmer : Français », « Modifier… ») ; une liste `fields` — des champs, une
   ligne chacun : le nom à gauche, la valeur à droite, les petits boutons au bout (plus visibles au

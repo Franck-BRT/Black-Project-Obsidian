@@ -5,13 +5,31 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.62.0 (Black Projects 0.148.0) |
+| Version | 0.63.0 (Black Projects 0.149.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le parcours d'un document, sur sa fiche (v0.63.0, Black Projects 0.149.0)
+
+- `documentSteps(t, doc, context)` (`circuitSteps.ts`) : sur **chaque** fiche, dès sa création, la
+  section **Le parcours du document** (dépliée), une ligne par étape, en couleur (`tone`, icône, état
+  en `when`) — vert fait, orange en attente / à décider / à confirmer, rouge en échec, gris à venir ou
+  sans objet :
+  1. Contrôle des doublons (ses fantômes : où chacun le montre, un bouton par fantôme qui y mène) ;
+  2. Mise dans « À classer » (hors circuit : sans objet, versé directement) ;
+  3. Ingestion (son texte lu ; hors circuit, selon la lecture : lu, sans texte, illisible) ;
+  4. Analyse, puis en retrait (`ListItem.level`) : type de pièce, entreprise, titre, date, langue,
+     référence et version, étiquettes, projet — chacun fait, à confirmer ou aucun ;
+  5. Analyse des liens (liens trouvés ; entreprises ou personnes inconnues à créer : à décider) ;
+  6. Création des liens (dans la fiche, avec leurs rétroliens) ;
+  7. Rangement (rangé, à contrôler avec la proposition, écarté).
+- L'échec d'une étape (`circuitError`) sur sa ligne ; « Continuer le circuit » sur la ligne où il
+  s'est arrêté. Les quatre tuiles du circuit sur la fiche sont remplacées par cette liste (elles restent
+  sur la page de la bibliothèque « Circuit » et sur À contrôler).
 
 ## La fiche d'un document reprise (v0.62.0, Black Projects 0.148.0)
 

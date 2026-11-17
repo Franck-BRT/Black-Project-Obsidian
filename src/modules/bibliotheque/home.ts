@@ -21,7 +21,7 @@ import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 import { builtInShelf, CIRCUIT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
 import { CONTROL_PAGE, controlMessage, controlPage, proposalMessages, type ControlDeps } from './controlHome'
-import { circuitJourney, inCircuit } from './circuitSteps'
+import { circuitJourney, continueAction, documentSteps, inCircuit } from './circuitSteps'
 import type { ExplorerPlace } from './explorer'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -992,8 +992,6 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     blocks: [
       // Le circuit : l'IA n'a pas su le ranger — sa proposition, sa raison, et quoi faire.
       ...(doc.circuit === 'a-controler' && deps.control ? [controlMessage(t, deps.control, doc, (moved) => deps.showPage?.(moved ? docPageOf(moved) : CONTROL_PAGE))] : []),
-      // Encore dans le circuit : ses étapes, en couleur, et « Continuer le circuit ».
-      ...(inCircuit(doc) && deps.control ? [circuitJourney(t, deps.control, doc, false)] : []),
       // Les entreprises et personnes inconnues qu'il cite : à créer, ou à écarter.
       ...(deps.control ? proposalMessages(t, deps.control, doc) : []),
       ...(present ? [] : [{ kind: 'message' as const, tone: 'danger' as const, text: t('bibliotheque.doc.fileMissing', { file: doc.file }) }]),
@@ -1016,6 +1014,27 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
       // Ses fantômes (montré aussi ailleurs) : les seuls chiffres qui restent en tête.
       ...(ghosts.length ? [{ kind: 'stats' as const, stats: stats.filter((stat) => stat.icon === 'ghost') }] : []),
+      // Son parcours, dès sa création : une ligne par étape, en couleur (et « Continuer le circuit » où il s'est arrêté).
+      fold(
+        'parcours',
+        t('bibliotheque.steps.section'),
+        doc.circuit ? t(`bibliotheque.control.state.${doc.circuit}`) : t('bibliotheque.steps.outside'),
+        'flow',
+        {
+          kind: 'list',
+          items: documentSteps(t, doc, {
+            place: (folder) => deps.control?.place(folder) ?? folder,
+            here: placeLabel(deps.places, doc),
+            ghosts: ghosts.map(({ ghost }) => ({ label: placeLabel(deps.places, ghost), open: () => deps.showPage?.(placePageOf(LIBRARY_PAGE, { shelf: ghost.shelf ?? '', directory: ghost.directory ?? '' })) })),
+            issuer: issuerText,
+            date: (value) => docDateLabel(value, deps.locale),
+            links: doc.links?.length ?? 0,
+            proposals: doc.proposals?.length ?? 0,
+            continueAction: inCircuit(doc) && deps.control ? continueAction(t, deps.control, doc) : null
+          })
+        },
+        true
+      ),
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
       // Chaque champ : un bouton pour le modifier, seul (le lieu : Déplacer… ; la langue : Langue… ; à confirmer : Modifier…).
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {

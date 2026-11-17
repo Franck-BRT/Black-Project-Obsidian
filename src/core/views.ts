@@ -190,6 +190,8 @@ export interface ListItem {
   tools?: ViewAction[]
   /** De petits boutons avec leur mot, au bout de la ligne (« Confirmer : Français », « Modifier… »). */
   actions?: ViewAction[]
+  /** En retrait, sous la ligne d'avant (1 : une sous-étape). */
+  level?: number
   /** Les filtres d'une page auxquels l'élément répond (comme `Card.tags`). */
   tags?: string[]
 }

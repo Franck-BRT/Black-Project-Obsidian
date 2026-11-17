@@ -246,6 +246,10 @@ Pour chaque document : son titre, la proposition de l'IA, sa raison, sa confianc
 - **Laisser** : reste à contrôler ; **Écarter** : la fiche est retirée (`_retirés`) ;
 - **Continuer le circuit** *(0.140.0)* : le rangement redemandé à l'IA.
 
+Sur chaque fiche, **le parcours du document** *(0.149.0)* : toutes ses étapes, du contrôle des doublons au
+rangement — l'analyse détaillée champ par champ, l'analyse et la création des liens —, une ligne
+chacune, en couleur.
+
 Les étapes de chaque document encore dans À classer ou À contrôler se voient en couleur *(0.140.0)* :
 vert (faite), orange (en attente, ou à décider), rouge (en échec — l'erreur est gardée sur la fiche —,
 ou sans proposition), gris (à venir), avec **Continuer le circuit**.

@@ -290,9 +290,32 @@ describe('le workflow système « Circuit des documents »', () => {
     await pour('Norme.txt', 'ECSS-E-ST-10C.')
     expect(read(platform, 'Bibliothèque/Circuit/À classer/Norme.md')).toMatch(/\ncircuit-erreur: /)
     const fiche = await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Circuit/À classer/Norme.md')}`)
-    const onFiche = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
-    expect(onFiche).toMatchObject({ title: 'Les étapes du circuit', legend: 'Vert : fait · orange : en attente, ou à votre décision · rouge : en échec · gris : à venir' })
-    expect(onFiche.stages.map((stage) => stage.phases[0]!.color)).toEqual(['green', 'green', 'rose', 'slate'])
+    // Sur la fiche : son parcours, une ligne par étape, en couleur — l'analyse en échec (rouge), ses champs et la suite à venir.
+    const steps = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.parcours')!
+    expect(steps).toMatchObject({ title: 'Le parcours du document', subtitle: 'Ingéré, à analyser' })
+    expect(steps).not.toHaveProperty('collapsed', true)
+    const lines = steps.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    expect(lines.map((line) => [line.title, line.tone, line.when, line.level ?? 0])).toEqual([
+      ['Contrôle des doublons', 'success', 'Fait', 0],
+      ['Mise dans « À classer »', 'success', 'Fait', 0],
+      ['Ingestion', 'success', 'Fait', 0],
+      ['Analyse', 'danger', 'Échec', 0],
+      ['Type de pièce', 'neutral', 'À venir', 1],
+      ['Entreprise', 'neutral', 'À venir', 1],
+      ['Titre', 'neutral', 'À venir', 1],
+      ['Date du document', 'neutral', 'À venir', 1],
+      ['Langue', 'neutral', 'À venir', 1],
+      ['Référence et version', 'neutral', 'À venir', 1],
+      ['Étiquettes', 'neutral', 'À venir', 1],
+      ['Projet', 'neutral', 'À venir', 1],
+      ['Analyse des liens', 'neutral', 'À venir', 0],
+      ['Création des liens', 'neutral', 'À venir', 0],
+      ['Rangement', 'neutral', 'À venir', 0]
+    ])
+    // L'échec : l'erreur dite, et « Continuer le circuit » sur sa ligne.
+    const failed = lines.find((line) => line.title === 'Analyse')!
+    expect(failed.detail).toMatch(/500|panne/)
+    expect(failed.actions!.map((action) => action.id)).toEqual(['circuit-continue'])
     const shelf = await load('bibliotheque.documents?circuit')
     const section = deep(shelf.blocks).find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.circuit.etapes')!
     expect(section).toMatchObject({ title: 'Les étapes du circuit, document par document', subtitle: '1 document(s)' })
@@ -345,8 +368,9 @@ describe('le workflow système « Circuit des documents »', () => {
     await pour('Norme.txt', 'ECSS-E-ST-10C.')
     settings.bibliotheque = { ...settings.bibliotheque, circuit: false }
     const fiche = await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Circuit/À classer/Norme.md')}`)
-    const journey = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
-    expect(journey.actions![0]).toMatchObject({ id: 'circuit-continue', disabled: true, tooltip: 'Le circuit des documents est désactivé (Paramètres › Bibliothèque › Le circuit des documents (IA))' })
+    const steps = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.parcours')!
+    const failed = steps.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).find((line) => line.tone === 'danger')!
+    expect(failed.actions![0]).toMatchObject({ id: 'circuit-continue', disabled: true, tooltip: 'Le circuit des documents est désactivé (Paramètres › Bibliothèque › Le circuit des documents (IA))' })
   })
 
   it('le rappel du lundi : les documents à contrôler, s’il y en a', async () => {

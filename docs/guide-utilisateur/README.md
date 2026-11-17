@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.148.2)
+## Aujourd'hui (version 0.149.0)
+
+- **Le parcours de chaque document**, sur sa fiche dès sa création : une ligne par étape, en couleur
+  (vert fait, orange en attente ou à confirmer, rouge en échec, gris à venir) — contrôle des doublons
+  (avec un lien vers ses fantômes), mise dans « À classer », ingestion, analyse et chacun de ses champs
+  (type, entreprise, titre, date, langue, référence, étiquettes, projet), analyse et création des liens,
+  rangement. « Continuer le circuit » sur la ligne où il s'est arrêté.
 
 - Une bibliothèque vide ne répète plus « Verser des documents » dans son message : le bouton est en tête de page.
 

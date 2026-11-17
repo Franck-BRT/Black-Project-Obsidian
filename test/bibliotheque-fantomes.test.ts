@@ -138,6 +138,13 @@ describe('les fantômes de la bibliothèque', () => {
     // L'icône fantôme sur sa fiche : la section, et un chiffre.
     expect(fiche.blocks.find((block) => block.kind === 'section' && block.title.startsWith('Montré aussi ailleurs'))).toMatchObject({ icon: 'ghost' })
     expect(fiche.blocks.find((block) => block.kind === 'stats')).toMatchObject({ stats: expect.arrayContaining([expect.objectContaining({ label: 'Fantômes', value: '1', icon: 'ghost', hint: 'Montré aussi dans : À la racine.' })]) })
+    // Son parcours : le contrôle des doublons dit où un fantôme le montre, et y mène.
+    const parcours = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.parcours')!
+    const dedupe = parcours.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.title === 'Contrôle des doublons')!
+    expect(dedupe).toMatchObject({ tone: 'success', detail: 'Déposé aussi ailleurs : un fantôme le montre dans À la racine' })
+    expect(dedupe.actions!.map((action) => action.label)).toEqual(['Fantôme : À la racine'])
+    await dedupe.actions![0]!.run()
+    expect(shown.at(-1)).toMatch(/^bibliotheque\.documents\?/)
     // Retirer le fantôme : mis de côté, le document reste.
     await ghost!.actions!.find((action) => action.id === 'remove-ghost')!.run()
     expect(platform.notices.at(-1)).toBe('Fantôme retiré : le document reste dans la bibliothèque.')

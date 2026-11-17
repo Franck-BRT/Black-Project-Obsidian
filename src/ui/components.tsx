@@ -199,7 +199,7 @@ function ListItemView({ item, slots = 0, fields = false }: { item: ListItem; slo
       </li>
     )
   return (
-    <li class={`bp-list-item${item.tools?.length ? ' bp-list-editable' : ''}`}>
+    <li class={`bp-list-item${item.tools?.length ? ' bp-list-editable' : ''}${item.level ? ' is-sub' : ''}`} style={item.level ? { paddingLeft: `${4 + item.level * 30}px` } : undefined}>
       {slots > 0 && (
         <span class="bp-list-tools" style={{ minWidth: `${slots * 30 + (slots - 1) * 4}px` }}>
           {(item.tools ?? []).map((tool) => (

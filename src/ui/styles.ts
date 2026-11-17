@@ -450,6 +450,10 @@ button.bp-journey-tile:focus-visible { outline: 3px solid var(--bp-focus); outli
 .bp-list-title button { all: unset; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .bp-list-detail { color: var(--bp-text-muted); font-size: 0.88em; overflow-wrap: anywhere; }
 .bp-list-when { color: var(--bp-text-muted); font-size: 0.8em; white-space: nowrap; }
+.bp-list-item.is-sub { padding-top: 6px; padding-bottom: 6px; border-top-style: dashed; }
+.bp-list-item.is-sub .bp-list-title { font-weight: 600; font-size: 0.94em; }
+.bp-list-item.is-sub .bp-list-mark { padding: 2px; }
+.bp-list-item.is-sub .bp-list-mark svg.bp-icon { width: 13px; height: 13px; }
 
 /* Les messages */
 .bp-message { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: var(--bp-radius-small); border: 1px solid currentColor; }

@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le parcours de chaque document (v0.149.0)
+
+- [ ] Un document versé dans le circuit, rangé : « Le parcours du document » déplié — doublons, À classer,
+      ingestion, analyse (verts), puis en retrait chaque champ (vert s'il est donné, orange à confirmer,
+      gris « Aucun »), liens, rangement « Rangé : Normes » (vert)
+- [ ] Un document à contrôler : Rangement orange « Proposé : … », avec « Continuer le circuit »
+- [ ] L'IA en panne à l'analyse : la ligne Analyse rouge, l'erreur dite, « Continuer le circuit » ; la suite grise
+- [ ] Un document déposé deux fois : « Contrôle des doublons » dit où le fantôme le montre ; son bouton y mène
+- [ ] Un document versé dans un répertoire choisi (hors circuit) : « Mise dans À classer » sans objet,
+      l'analyse « identifié à l'entrée », rangé là où il est
+
 ## Sans le bouton en double (v0.148.2)
 
 - [ ] Une bibliothèque ou un répertoire vide : le message « Aucun document… » sans bouton ; « Verser des

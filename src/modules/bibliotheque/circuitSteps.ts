@@ -15,7 +15,7 @@
  * redemander le rangement à l'IA). Des fonctions pures.
  */
 
-import type { HomeBlock, IconName, JourneyProgress, TileColor, Tone, ViewAction } from '../../core/views'
+import type { HomeBlock, IconName, JourneyProgress, ListItem, TileColor, Tone, ViewAction } from '../../core/views'
 import type { LibraryDoc } from './model'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
@@ -124,4 +124,139 @@ export function circuitJourney(t: Translate, deps: CircuitStepsDeps, doc: Librar
     ...(titled ? {} : { legend: t('bibliotheque.circuit.steps.legend') }),
     actions: [...(action ? [action] : []), ...extra]
   }
+}
+
+// ── Le parcours complet d'un document, sur sa fiche ──
+
+/** Une étape du parcours d'un document : faite, en attente, à décider (à confirmer), en échec, à venir, sans objet. */
+export type DocStepState = 'done' | 'waiting' | 'decide' | 'failed' | 'later' | 'skipped'
+
+const STEP_TONE: Record<DocStepState, Tone> = { done: 'success', waiting: 'warning', decide: 'warning', failed: 'danger', later: 'neutral', skipped: 'neutral' }
+const STEP_ICON: Record<DocStepState, IconName> = { done: 'check', waiting: 'clock', decide: 'alert', failed: 'cross', later: 'more', skipped: 'hide' }
+
+/** Ce que le parcours d'un document a besoin de savoir, en plus de sa fiche. */
+export interface DocStepsContext {
+  /** Un dossier en mots (« Documents › Normes »). */
+  place(folder: string): string
+  /** Où il est rangé, en mots. */
+  here: string
+  /** Ses fantômes : où chacun le montre aussi, et y aller. */
+  ghosts: readonly { label: string; open(): void }[]
+  /** Une entreprise en mots (son code et son nom). */
+  issuer(code: string): string
+  /** Une date en mots. */
+  date(value: string): string
+  /** Combien de liens il a, et d'entreprises ou personnes proposées à créer. */
+  links: number
+  proposals: number
+  /** « Continuer le circuit » (absent : pas de bouton). */
+  continueAction?: ViewAction | null
+}
+
+/**
+ * **Le parcours d'un document**, dès sa création, une ligne par étape, chacune en couleur selon où
+ * il en est : le contrôle des doublons (et ses fantômes), l'entrée dans « À classer », l'ingestion
+ * (son texte lu), l'analyse — puis, en retrait, chaque champ (type de pièce, entreprise, titre, date,
+ * langue, référence, étiquettes, projet) —, l'analyse des liens, leur création, le rangement. Hors du
+ * circuit (versé dans un répertoire choisi, ou le circuit coupé), ce qui a été fait à l'entrée.
+ */
+export function documentSteps(t: Translate, doc: LibraryDoc, context: DocStepsContext): ListItem[] {
+  const circuit = !!doc.circuit
+  const state = doc.circuit ?? ''
+  const label = (key: DocStepState | 'confirm' | 'none'): string => t(`bibliotheque.steps.state.${key}`)
+  const item = (id: string, title: string, stepState: DocStepState, detail = '', level = 0, extra: Partial<ListItem> = {}): ListItem => ({
+    id: `parcours-${id}`,
+    title,
+    ...(detail ? { detail } : {}),
+    tone: STEP_TONE[stepState],
+    icon: STEP_ICON[stepState],
+    when: label(stepState),
+    ...(level ? { level } : {}),
+    ...extra
+  })
+  // L'étape où le circuit s'est arrêté (en échec, en attente, à décider) : « Continuer le circuit » y est.
+  const resume = (stepState: DocStepState): Partial<ListItem> =>
+    circuit && context.continueAction && (stepState === 'failed' || stepState === 'waiting' || (stepState === 'decide' && state === 'a-controler')) ? { actions: [context.continueAction] } : {}
+  const error = doc.circuitError ?? ''
+  const items: ListItem[] = []
+
+  // 1. Le contrôle des doublons : versé une seule fois ; déposé de nouveau ailleurs, ses fantômes l'y montrent.
+  items.push(
+    item('doublons', t('bibliotheque.steps.dedupe'), 'done', context.ghosts.length ? t('bibliotheque.steps.dedupe.ghosts', { places: context.ghosts.map((each) => each.label).join(', ') }) : t('bibliotheque.steps.dedupe.none'), 0, {
+      ...(context.ghosts.length ? { actions: context.ghosts.slice(0, 3).map((ghost, index) => ({ id: `fantome-${index}`, label: t('bibliotheque.steps.ghost', { place: ghost.label }), icon: 'ghost' as const, run: () => ghost.open() })) } : {})
+    })
+  )
+  // 2. L'entrée dans « À classer ».
+  items.push(circuit ? item('a-classer', t('bibliotheque.steps.inbox'), 'done', t('bibliotheque.steps.inbox.done')) : item('a-classer', t('bibliotheque.steps.inbox'), 'skipped', t('bibliotheque.steps.inbox.direct')))
+  // 3. L'ingestion : son texte lu (et relu par l'IA, dans le circuit).
+  const readDetail = doc.reading === 'lue' ? t('bibliotheque.steps.read', { count: (doc.characters ?? 0).toLocaleString('fr-FR') }) : doc.reading ? t(`bibliotheque.steps.read.${doc.reading}`) : t('bibliotheque.steps.read.none')
+  const readState: DocStepState = doc.reading === 'lue' ? 'done' : doc.reading === 'sans-texte' || doc.reading === 'image' ? 'decide' : doc.reading === 'illisible' ? 'failed' : 'later'
+  const ingestState: DocStepState = circuit ? (state === 'a-classer' ? (error ? 'failed' : 'waiting') : 'done') : readState
+  items.push(item('ingestion', t('bibliotheque.steps.ingest'), ingestState, ingestState === 'failed' && error ? error : readDetail, 0, resume(ingestState)))
+  // 4. L'analyse, puis chacun de ses champs.
+  const analysed = !circuit || (state !== 'a-classer' && state !== 'ingere')
+  const analysisState: DocStepState = !circuit ? 'done' : analysed ? 'done' : state === 'ingere' ? (error ? 'failed' : 'waiting') : 'later'
+  items.push(
+    item(
+      'analyse',
+      t('bibliotheque.steps.analyse'),
+      analysisState,
+      analysisState === 'failed' && error ? error : circuit ? (analysed ? t('bibliotheque.steps.analyse.done') : '') : t('bibliotheque.steps.analyse.entry'),
+      0,
+      resume(analysisState)
+    )
+  )
+  const field = (id: string, name: string, value: string, toConfirm: boolean): ListItem =>
+    !analysed ? item(id, name, 'later', '', 1) : toConfirm ? item(id, name, 'decide', value, 1, { when: label('confirm') }) : value ? item(id, name, 'done', value, 1) : item(id, name, 'skipped', '', 1, { when: label('none') })
+  const version = [doc.reference, doc.edition ? `ed${doc.edition}` : '', doc.revision ? `rev${doc.revision}` : ''].filter(Boolean).join(' ')
+  const projectName = doc.circuitProject ? doc.circuitProject.slice(doc.circuitProject.lastIndexOf('/') + 1).replace(/\.md$/, '') : ''
+  items.push(
+    field('type', t('bibliotheque.field.category'), doc.category, !!doc.categoryToConfirm),
+    field('entreprise', t('bibliotheque.field.issuer'), doc.issuer ? context.issuer(doc.issuer) : '', !!doc.issuerToConfirm),
+    field('titre', t('bibliotheque.field.title'), doc.title, !!doc.titleToConfirm),
+    field('date', t('bibliotheque.field.date'), doc.date ? context.date(doc.date) : '', !!doc.dateToConfirm),
+    field('langue', t('bibliotheque.field.language'), doc.language ? t(`bibliotheque.lang.${doc.language}`) : '', !!doc.languageToConfirm && !doc.language),
+    field('reference', t('bibliotheque.field.identity'), version, !!doc.identityToConfirm),
+    field('etiquettes', t('bibliotheque.field.tags'), doc.tags.join(', '), !!doc.tagsToConfirm),
+    ...(circuit ? [field('projet', t('bibliotheque.steps.project'), projectName, false)] : [])
+  )
+  // 5. L'analyse des liens : les entités que le texte cite ; les inconnues, proposées à créer.
+  const linksFound = context.links ? t('bibliotheque.steps.links.found', { count: context.links }) : ''
+  const proposed = context.proposals ? t('bibliotheque.steps.links.proposed', { count: context.proposals }) : ''
+  items.push(
+    !circuit && !context.links
+      ? item('liens', t('bibliotheque.steps.links'), 'skipped', t('bibliotheque.steps.outside'))
+      : !analysed
+        ? item('liens', t('bibliotheque.steps.links'), 'later')
+        : context.proposals
+          ? item('liens', t('bibliotheque.steps.links'), 'decide', [linksFound, proposed].filter(Boolean).join(' · '))
+          : context.links
+            ? item('liens', t('bibliotheque.steps.links'), 'done', linksFound)
+            : item('liens', t('bibliotheque.steps.links'), 'skipped', t('bibliotheque.steps.links.none'), 0, { when: label('none') })
+  )
+  // 6. La création des liens : dans la fiche, et un rétrolien dans chaque note citée.
+  items.push(
+    context.links
+      ? item('liens-crees', t('bibliotheque.steps.linksWritten'), 'done', t('bibliotheque.steps.linksWritten.done', { count: context.links }))
+      : !analysed
+        ? item('liens-crees', t('bibliotheque.steps.linksWritten'), 'later')
+        : item('liens-crees', t('bibliotheque.steps.linksWritten'), 'skipped', circuit ? t('bibliotheque.steps.linksWritten.none') : t('bibliotheque.steps.outside'), 0, { when: label(circuit ? 'none' : 'skipped') })
+  )
+  // 7. Le rangement.
+  const percent = (value: number | undefined): string => `${Math.round((value ?? 0) * 100)} %`
+  const filing: ListItem = !circuit
+    ? item('rangement', t('bibliotheque.steps.file'), 'done', t('bibliotheque.steps.file.here', { place: context.here }))
+    : state === 'range'
+      ? item('rangement', t('bibliotheque.steps.file'), 'done', t('bibliotheque.steps.file.here', { place: context.here }))
+      : state === 'ecarte'
+        ? item('rangement', t('bibliotheque.steps.file'), 'skipped', t('bibliotheque.steps.file.discarded'))
+        : state === 'a-controler'
+          ? doc.circuitProposal
+            ? item('rangement', t('bibliotheque.steps.file'), 'decide', t('bibliotheque.circuit.steps.proposed', { place: context.place(doc.circuitProposal), confidence: percent(doc.circuitConfidence) }), 0, resume('decide'))
+            : item('rangement', t('bibliotheque.steps.file'), 'failed', doc.circuitReason || t('bibliotheque.control.noProposal'), 0, resume('failed'))
+          : state === 'analyse'
+            ? item('rangement', t('bibliotheque.steps.file'), error ? 'failed' : 'waiting', error, 0, resume(error ? 'failed' : 'waiting'))
+            : item('rangement', t('bibliotheque.steps.file'), 'later')
+  items.push(filing)
+  return items
 }

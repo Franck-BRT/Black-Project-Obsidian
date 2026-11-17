@@ -194,10 +194,26 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     expect(lines.length).toBeGreaterThan(1)
     expect(lines.every((item) => item.tone === 'warning' && !!item.actions?.length && !/à confirmer :/.test(item.detail ?? ''))).toBe(true)
     expect(lines.find((item) => item.title === 'Langue')).toBeDefined()
+    // Son parcours, hors du circuit : doublons contrôlés, versé directement, son texte, ce qui a été identifié à l'entrée, rangé.
+    const parcours = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.parcours')!
+    const steps = parcours.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    expect(steps.filter((step) => !step.level).map((step) => [step.title, step.when])).toEqual([
+      ['Contrôle des doublons', 'Fait'],
+      ['Mise dans « À classer »', 'Sans objet'],
+      ['Ingestion', 'Échec'],
+      ['Analyse', 'Fait'],
+      ['Analyse des liens', 'Sans objet'],
+      ['Création des liens', 'Sans objet'],
+      ['Rangement', 'Fait']
+    ])
+    expect(steps.find((step) => step.title === 'Contrôle des doublons')!.detail).toBe('Aucun doublon : versé une seule fois')
+    expect(steps.find((step) => step.title === 'Langue')).toMatchObject({ level: 1, tone: 'warning', when: 'À confirmer' })
     // Ses chiffres (famille, taille, ajouté le), dans le sous-titre ; plus de tuiles.
     expect(fiche.subtitle).toMatch(/ · \d+ o · ajouté le \d{4}-\d{2}-\d{2}$/)
     expect(fiche.blocks.some((block) => block.kind === 'stats')).toBe(false)
     expect(fiche.blocks.flatMap((block) => (block.kind === 'section' && block.id !== 'bibliotheque.document.a-confirmer' ? [[block.id, block.title, block.subtitle ?? '', block.collapsed]] : []))).toEqual([
+      // Son parcours, dès sa création (versé hors du circuit, ici), déplié.
+      ['bibliotheque.document.parcours', 'Le parcours du document', 'Hors du circuit', false],
       ['bibliotheque.document.identite', 'Identification', '', false],
       ['bibliotheque.document.fichier', 'Le fichier', 'Courrier acheteur.pdf', true],
       ['bibliotheque.document.origines', 'D’où il vient (1)', "Analyse d'appels d'offres — Station sol", true],
