@@ -10,7 +10,7 @@
 import type { FileSystem, PageImages } from '../../core/ports'
 import { aiProofreadAlready, ANALYSIS_SCHEMA, applyAnalysisDecision, applyFilingDecision, DEFAULT_THRESHOLD, libraryEntries, linkCandidatesFor, FILING_SCHEMA, filingFolders, markCircuitError, markIngested, readAnalysisAnswer, readFilingAnswer, readThreshold, skillContextFor, thresholdLabel, IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
-import { actionSpec, registerAction } from '../workflows'
+import { actionSpec, registerAction, stopRequested } from '../workflows'
 import type { AiClient } from './client'
 import { proofreadDocument, readWithVision, VisionRefused, type ReadingContext, type VisionReading } from './documentReading'
 import { LlmError } from './protocol'
@@ -788,6 +788,8 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
             const outcome = proofread ? await proofread.run({ ...context, fields: { fiche: record, mode: 'auto', skill: skill.name } }) : null
             detail = outcome?.lines.at(-1) ?? t('ia.wf.skill.ingested.read')
           }
+          // L'arrêt du circuit demandé pendant la relecture : il n'avance pas.
+          if (stopRequested(record)) return done(t('ia.wf.skill.stopped', { title: doc.title }))
           await markIngested(record, skill.name, detail)
           return done(t('ia.wf.skill.ingested', { title: doc.title, detail }), 'ingere')
         }
@@ -802,6 +804,8 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
           } catch (error) {
             if (!(error instanceof LlmError && error.kind === 'shape')) throw new Error(describe(error))
           }
+          // L'arrêt du circuit demandé pendant que l'IA répondait : sa réponse est écartée.
+          if (stopRequested(record)) return done(t('ia.wf.skill.stopped', { title: doc.title }))
           const decision = readAnalysisAnswer(answer, { types: libraryPieceTypes(), issuers: await libraryIssuers(), candidates: await linkCandidatesFor(record), persons: (await libraryEntries('person')).map((entry) => entry.name) })
           const text = (await applyAnalysisDecision(record, decision, threshold, skill.name)) ?? t('ia.wf.language.noDoc', { record })
           return done(text, 'analyse', String(decision?.confidence ?? 0))
@@ -821,6 +825,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
             // Une réponse qui n'est pas le JSON demandé : illisible, donc pas sûre (À contrôler). Le reste (serveur…) : l'étape échoue.
             if (!(error instanceof LlmError && error.kind === 'shape')) throw new Error(describe(error))
           }
+          if (stopRequested(record)) return done(t('ia.wf.skill.stopped', { title: doc.title }))
           const decision = readFilingAnswer(answer, (await filingFolders()).map((each) => each.folder))
           const outcome = await applyFilingDecision(record, decision, threshold, skill.name)
           if (!outcome) {

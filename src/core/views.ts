@@ -100,6 +100,8 @@ export type IconName =
   | 'rocket'
   | 'satellite'
   | 'leaf'
+  | 'stop'
+  | 'spinner'
 
 /** Un bouton : ce qu'il dit, ce qu'il fait. */
 export interface ViewAction {

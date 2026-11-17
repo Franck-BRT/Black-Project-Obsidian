@@ -495,6 +495,11 @@ button.bp-journey-tile:focus-visible { outline: 3px solid var(--bp-focus); outli
 .bp-ui[data-motion="reduced"] .bp-skeleton { animation: none; }
 @media (prefers-reduced-motion: reduce) { .bp-skeleton { animation: none; } }
 @keyframes bp-wave { from { background-position: 200% 0; } to { background-position: 0 0; } }
+/* En cours : l'icône qui tourne */
+.bp-ui svg.bp-icon-spin { animation: bp-spin 1s linear infinite; transform-origin: 50% 50%; }
+.bp-ui[data-motion="reduced"] svg.bp-icon-spin { animation: none; }
+@media (prefers-reduced-motion: reduce) { .bp-ui svg.bp-icon-spin { animation: none; } }
+@keyframes bp-spin { to { transform: rotate(360deg); } }
 
 /* Le panneau d'apparence */
 .bp-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: min(420px, 92vw); max-height: 75vh; overflow: auto; padding: 18px; background: var(--bp-surface); border: 1px solid var(--bp-border); border-radius: var(--bp-radius); box-shadow: var(--bp-shadow); }

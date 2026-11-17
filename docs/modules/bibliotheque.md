@@ -5,13 +5,32 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.67.0 (Black Projects 0.153.0) |
+| Version | 0.68.0 (Black Projects 0.154.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le document en cours de traitement ; « Arrêter le circuit » (v0.68.0, Black Projects 0.154.0)
+
+- Ce que le circuit traite en ce moment : suivi par `onRunningChange` / `runningSteps()` du module
+  Workflows (le workflow du circuit, ou une étape relancée d'un bouton) ; la carte `circuitRunning`
+  (fiche → étape `ingestion`, `glossaire`, `analyse`, `rangement`) ; les pages se redessinent à
+  chaque étape. `ControlDeps.running(record)` et `stopCircuit(record)`.
+- La fiche : un bandeau (message `info`) « En cours de traitement dans le circuit : <étape> — … »
+  avec **Arrêter le circuit** ; son parcours : l'étape en cours (`DocStepState` `running` : bleu,
+  icône `spinner` qui tourne, sauf animations réduites), le bouton d'arrêt sur sa ligne, pas de
+  relance pendant ce temps. Les quatre étapes (`circuitJourney`) : l'étape en cours en bleu, la
+  pastille « En cours de traitement ». Les cartes et lignes des listes : la pastille et l'icône.
+- `continueAction` rend « Arrêter le circuit » (`stopAction`, `circuit-stop`) pour un document en
+  cours. `stopCircuit` : `stopRunning(record)` (le workflow s'arrête avant son étape suivante),
+  `circuit-arrete: true` (`LibraryDoc.circuitStopped`) et une ligne au journal du circuit ; reposé
+  après la dernière étape si elle a réécrit la fiche.
+- Arrêté : bandeau `warning` avec « Continuer le circuit », l'étape en attente dit « Arrêté à votre
+  demande ». La relance à l'ouverture (`relaunchCircuit`) le laisse ; `continueCircuit` et
+  `relaunchAll` ôtent la marque. « Tout continuer » ne compte pas le document en cours.
 
 ## La recherche dans le glossaire, une étape du circuit (v0.67.0, Black Projects 0.153.0)
 

@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.153.0)
+## Aujourd'hui (version 0.154.0)
+
+- **Le document en cours de traitement** : celui que le circuit traite en ce moment est signalé en
+  bleu — un bandeau en tête de sa fiche (l'étape : « Analyse — L'IA l'analyse… »), l'étape en cours
+  dans son parcours, une pastille « En cours de traitement » dans les listes. Pour lui, le bouton
+  devient **Arrêter le circuit** : il s'arrête avant l'étape suivante, sans appliquer la réponse en
+  cours de l'IA ; il n'est plus relancé à l'ouverture, « Continuer le circuit » le reprend.
 
 - **La recherche dans le glossaire, dans le circuit** : après l'ingestion, le circuit cherche (sans
   IA) les termes du glossaire que le document emploie et les relie à sa fiche, avec un lien retour dans

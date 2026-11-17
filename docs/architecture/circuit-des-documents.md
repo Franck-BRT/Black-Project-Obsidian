@@ -98,7 +98,10 @@ se journalise.
 ```
 
 Chaque étape peut s'arrêter (IA coupée, Obsidian fermé) : l'état sur la fiche dit où reprendre,
-et le workflow d'entretien relance ce qui attend.
+et le workflow d'entretien relance ce qui attend. Depuis 0.154.0, l'utilisateur peut aussi
+**arrêter le circuit** d'un document en cours de traitement (signalé sur sa fiche et dans les
+listes) : arrêt avant l'étape suivante, réponse de l'IA en cours écartée, marque `circuit-arrete`
+(la relance à l'ouverture le laisse ; « Continuer le circuit » le reprend).
 
 ## Les dossiers
 

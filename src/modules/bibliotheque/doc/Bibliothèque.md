@@ -76,8 +76,8 @@ plus récent ; le filtre **Dernières versions** les cache.
 ## 4. La page Bibliothèque
 
 **Le parcours du document**, sur chaque fiche, dès sa création : une ligne par étape, en couleur —
-**vert** fait, **orange** en attente ou à confirmer, **rouge** en échec, **gris** à venir ou sans
-objet. Le contrôle des doublons (et ses fantômes, un bouton mène à chacun), la mise dans « À
+**vert** fait, **bleu** en cours (l'icône tourne), **orange** en attente ou à confirmer, **rouge** en
+échec, **gris** à venir ou sans objet. Le contrôle des doublons (et ses fantômes, un bouton mène à chacun), la mise dans « À
 classer », l'ingestion, la **recherche dans le glossaire**, l'analyse et chacun de ses champs (type de pièce, entreprise, titre, date,
 langue, référence, étiquettes, projet), l'analyse des liens, leur création, le rangement. Là où le
 circuit s'est arrêté : **Continuer le circuit**.
@@ -88,6 +88,16 @@ termes du glossaire cherchés de nouveau (sans IA, toujours possible),
 l'analyse (qui donne aussi le projet et les liens), un champ cherché de nouveau, les liens réécrits,
 le rangement redemandé. Sous la liste, **Relancer tout le circuit** (après une question) le reprend
 depuis le début. Sans IA, ou le circuit coupé, les boutons des étapes du circuit sont grisés.
+
+**Le document en cours de traitement** : celui que le circuit traite en ce moment est signalé
+clairement — en tête de sa fiche, un bandeau bleu « En cours de traitement dans le circuit : Analyse —
+L'IA l'analyse… » ; dans son parcours, l'étape en cours en bleu ; dans les listes (la bibliothèque
+« Circuit », À classer…), la pastille **En cours de traitement** et une icône qui tourne. Pour lui,
+à la place de « Continuer le circuit » : **Arrêter le circuit**. Il s'arrête avant l'étape suivante ;
+ce que l'étape en cours trouve (la réponse de l'IA) n'est pas appliqué. Le document reste où il en
+était, marqué « Arrêté à votre demande » : la relance à l'ouverture d'Obsidian le laisse, et
+**Continuer le circuit** le reprend quand vous voulez. Pendant le traitement, les boutons ⟳ et
+« Relancer tout le circuit » attendent.
 
 **La fiche d'un document** : sous son titre, une ligne dit ce qu'il est (famille, type de pièce,
 version, taille, date d'ajout). Ce qui reste à confirmer est en tête, **une ligne chacun** — le nom,

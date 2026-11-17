@@ -21,7 +21,7 @@ import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 import { builtInShelf, CIRCUIT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
 import { CONTROL_PAGE, controlMessage, controlPage, proposalMessages, type ControlDeps } from './controlHome'
-import { circuitJourney, continueAction, documentSteps, inCircuit } from './circuitSteps'
+import { circuitJourney, continueAction, documentSteps, inCircuit, stopAction } from './circuitSteps'
 import type { ExplorerPlace } from './explorer'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -159,13 +159,17 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
   const { t } = deps
   const replaced = all.some((other) => other.previous === doc.record)
   const version = versionLabel(doc)
+  // En cours de traitement dans le circuit : dit d'abord, son icône tourne.
+  const running = deps.control?.running?.(doc.record) ? [{ label: t('bibliotheque.doc.running'), tone: 'info' as const }] : []
   if (light) {
     const pending = toConfirm(doc)
     const size = readableSize(doc.size, deps.locale)
     return {
       ...docCard(deps, doc, all, missing),
       subtitle: [doc.reference, version].filter(Boolean).join(' · ') || '',
+      ...(running.length ? { icon: 'spinner' as const } : {}),
       badges: [
+        ...running,
         ...(missing ? [{ label: t('bibliotheque.badge.missing'), tone: 'danger' as const }] : []),
         ...(doc.likelyPrevious ? [{ label: t('bibliotheque.badge.likely'), tone: 'warning' as const }] : []),
         ...(pending ? [{ label: t('bibliotheque.badge.toConfirm', { count: pending }), tone: 'warning' as const }] : [])
@@ -182,6 +186,7 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
     }
   }
   const badges: Badge[] = [
+    ...running,
     { label: t(`bibliotheque.family.${doc.family}`), tone: 'neutral' },
     ...(doc.category ? [{ label: doc.category, tone: 'info' as const }] : []),
     ...(doc.reference || version ? [{ label: [doc.reference, version].filter(Boolean).join(' · '), tone: 'neutral' as const }] : []),
@@ -195,7 +200,7 @@ function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDo
     id: doc.record,
     title: doc.title,
     subtitle: baseName(doc.file),
-    icon: ICON[doc.family],
+    icon: running.length ? 'spinner' : ICON[doc.family],
     badges,
     text: originText(t, doc),
     // Ses chiffres : en faits (les colonnes de la vue tableau).
@@ -388,7 +393,8 @@ function circuitStepsSection(deps: LibraryHomeDeps, docs: LibraryDoc[]): HomeBlo
   if (!control || !docs.length) return []
   const open = deps.showPage ? (record: string) => deps.showPage?.(docPageOf(record)) : undefined
   const blocked = control.cannotContinue?.() ?? null
-  const waiting = docs.filter((doc) => doc.circuit !== 'a-controler').length
+  // Ceux qui attendent (pas ceux à contrôler, ni celui que le circuit traite en ce moment).
+  const waiting = docs.filter((doc) => doc.circuit !== 'a-controler' && !control.running?.(doc.record)).length
   return [
     {
       kind: 'section',
@@ -523,6 +529,10 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   const ghosts = await deps.store.ghostsOf(doc)
   // Les termes du glossaire qu'il emploie : son parcours (l'étape de recherche) et sa section Glossaire.
   const glossaryTerms = (await deps.glossaryOf?.(doc.record)) ?? []
+  // En cours de traitement dans le circuit : l'étape, et « Arrêter le circuit ».
+  const circuitStep = deps.control?.running?.(doc.record) ?? null
+  const stop = deps.control ? stopAction(t, deps.control, doc) : null
+  const RUNNING_TITLE: Readonly<Record<string, string>> = { ingestion: 'bibliotheque.steps.ingest', glossaire: 'bibliotheque.steps.glossary', analyse: 'bibliotheque.steps.analyse', rangement: 'bibliotheque.steps.file' }
   // Un document de référence : qui l'appelle (programmes, projets).
   const isReference = doc.shelf === REFERENCE_SHELF
   const callers = (await deps.callers?.(doc.record)) ?? []
@@ -1016,6 +1026,12 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         : [])
     ],
     blocks: [
+      // En cours de traitement dans le circuit : dit en tête, avec « Arrêter le circuit ».
+      ...(circuitStep
+        ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.circuit.running.banner', { step: `${t(RUNNING_TITLE[circuitStep] ?? 'bibliotheque.steps.analyse')} — ${t(`bibliotheque.steps.running.${circuitStep}`)}` }), ...(stop ? { actions: [stop] } : {}) }]
+        : doc.circuitStopped && inCircuit(doc)
+          ? [{ kind: 'message' as const, tone: 'warning' as const, text: t('bibliotheque.circuit.stopped.banner'), ...(deps.control ? { actions: [continueAction(t, deps.control, doc)].filter((action): action is ViewAction => !!action) } : {}) }]
+          : []),
       // Le circuit : l'IA n'a pas su le ranger — sa proposition, sa raison, et quoi faire.
       ...(doc.circuit === 'a-controler' && deps.control ? [controlMessage(t, deps.control, doc, (moved) => deps.showPage?.(moved ? docPageOf(moved) : CONTROL_PAGE))] : []),
       // Les entreprises et personnes inconnues qu'il cite : à créer, ou à écarter.
@@ -1044,7 +1060,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       fold(
         'parcours',
         t('bibliotheque.steps.section'),
-        doc.circuit ? t(`bibliotheque.control.state.${doc.circuit}`) : t('bibliotheque.steps.outside'),
+        circuitStep ? t('bibliotheque.circuit.running') : doc.circuit ? t(`bibliotheque.control.state.${doc.circuit}`) : t('bibliotheque.steps.outside'),
         'flow',
         [
           {
@@ -1059,6 +1075,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             proposals: doc.proposals?.length ?? 0,
             glossary: glossaryTerms.map((term) => term.label),
             continueAction: inCircuit(doc) && deps.control ? continueAction(t, deps.control, doc) : null,
+            running: circuitStep,
+            stopAction: stop,
             relaunch: (id, title) => relaunchStepAction(id, title)
           })
         },
@@ -1071,9 +1089,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                     {
                       id: 'circuit-restart',
                       label: t('bibliotheque.steps.restart'),
-                      tooltip: deps.control.cannotContinue?.() ?? t('bibliotheque.steps.restart.tip'),
+                      tooltip: (circuitStep ? t('bibliotheque.circuit.running') : null) ?? deps.control.cannotContinue?.() ?? t('bibliotheque.steps.restart.tip'),
                       icon: 'refresh' as const,
-                      ...(deps.control.cannotContinue?.() ? { disabled: true } : {}),
+                      ...(circuitStep || deps.control.cannotContinue?.() ? { disabled: true } : {}),
                       run: async () => void (await deps.control!.relaunchAll!(doc.record))
                     }
                   ]

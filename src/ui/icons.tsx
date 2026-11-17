@@ -87,12 +87,15 @@ const PATHS: Record<IconName, string> = {
   pin: 'M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12zM12 6.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5',
   rocket: 'M12 2c3 2 5 6 5 10l-2 4H9l-2-4c0-4 2-8 5-10zM12 8a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3M9 16l-3 4h3M15 16l3 4h-3M11 19h2',
   satellite: 'M9 7h6v10H9zM2 8h5v8H2zM17 8h5v8h-5zM2 12h5M17 12h5M12 7V4M9.5 3h5',
-  leaf: 'M5 21c0-9 5-15 15-16-1 10-7 15-15 16zM5 21l8-8'
+  leaf: 'M5 21c0-9 5-15 15-16-1 10-7 15-15 16zM5 21l8-8',
+  stop: 'M6 6h12v12H6z',
+  // En cours : un arc qui tourne (immobile si l'utilisateur réduit les animations).
+  spinner: 'M12 3a9 9 0 1 0 9 9'
 }
 
 export function Icon({ name, label }: { name: IconName; label?: string }) {
   return (
-    <svg class="bp-icon" viewBox="0 0 24 24" aria-hidden={label ? undefined : 'true'} role={label ? 'img' : undefined} aria-label={label}>
+    <svg class={name === 'spinner' ? 'bp-icon bp-icon-spin' : 'bp-icon'} viewBox="0 0 24 24" aria-hidden={label ? undefined : 'true'} role={label ? 'img' : undefined} aria-label={label}>
       <path d={PATHS[name]} />
     </svg>
   )

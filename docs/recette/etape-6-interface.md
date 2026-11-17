@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le document en cours de traitement ; « Arrêter le circuit » (v0.154.0)
+
+- [ ] IA réglée (lente, ou un gros document), circuit actif : poser un document dans « À classer »
+- [ ] Bibliothèque › Circuit : sa carte « En cours de traitement » (pastille bleue), l'étape en cours
+      en bleu ; le bouton « Arrêter le circuit » à la place de « Continuer le circuit » ; « Tout
+      continuer » ne le compte pas
+- [ ] Sa fiche : en tête, « En cours de traitement dans le circuit : Analyse — L'IA l'analyse… » ;
+      dans le parcours, l'étape en bleu, son icône qui tourne, « Arrêter le circuit » sur sa ligne ;
+      pas de ⟳ pendant ce temps
+- [ ] « Arrêter le circuit » : message ; la réponse de l'IA arrivée ensuite n'est pas appliquée ; il
+      n'est pas rangé ; bandeau orange « Circuit arrêté à votre demande… », l'étape « Arrêté à votre
+      demande » ; journal des workflows : ⛔ « Arrêté à votre demande, avant l'étape n »
+- [ ] Rouvrir Obsidian : il n'est pas relancé ; « Continuer le circuit » le reprend et va au bout
+
 ## La recherche dans le glossaire, dans le circuit (v0.153.0)
 
 - [ ] Workflows : « Circuit des documents » — Ingérer, **Rechercher dans le glossaire**, Analyser, Ranger

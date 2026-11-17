@@ -24,7 +24,7 @@ import { cleanFolder } from '../../core/settings'
 import { registerBuiltins } from './builtins'
 import { registerUpkeep } from './upkeep'
 import page from './doc/Workflows.md'
-import { WorkflowEngine } from './engine'
+import { WorkflowEngine, type RunningStep } from './engine'
 import {
   addAction,
   addCondition,
@@ -80,6 +80,7 @@ export {
   type TriggerSpec
 } from './registry'
 export { MANUAL, NO_SUBJECT, OPENING, SCHEDULE, type Subject, type Workflow, type WorkflowAction, type WorkflowCondition, type WorkflowTrigger } from './model'
+export type { RunningStep } from './engine'
 
 export const WORKFLOWS = 'workflows'
 export const WORKFLOWS_KEY = 'workflows'
@@ -149,6 +150,25 @@ export const systemWorkflowsActive = (): boolean => engine !== null
 
 /** Un workflow s'exécute-t-il en ce moment ? (Ce qui est émis pendant ce temps passe après lui, sans être attendu.) */
 export const workflowRunning = (): boolean => engine?.busy ?? false
+
+/** Ce qui s'exécute en ce moment : chaque étape en cours (son workflow, son sujet, sa sorte, ses champs). */
+export const runningSteps = (): readonly RunningStep[] => engine?.runningSteps ?? []
+
+/** Arrêter ce qui s'exécute pour un sujet (un document) : avant son étape suivante. Rend s'il y avait quelque chose à arrêter. */
+export const stopRunning = (subjectPath: string): boolean => engine?.stop(subjectPath) ?? false
+
+/** L'arrêt d'un sujet est-il demandé (une étape en cours n'applique alors pas ce qu'elle a trouvé) ? */
+export const stopRequested = (subjectPath: string): boolean => engine?.stopRequested(subjectPath) ?? false
+
+/** Être prévenu quand ce qui s'exécute change (la page d'un document en cours se redessine). */
+const runningListeners = new Set<() => void>()
+export function onRunningChange(listener: () => void): () => void {
+  runningListeners.add(listener)
+  return () => void runningListeners.delete(listener)
+}
+const runningChanged = (): void => {
+  for (const listener of [...runningListeners]) listener()
+}
 
 /**
  * Un automatisme est-il confié à son workflow système : le module Workflows actif, le
@@ -222,7 +242,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.27.0',
+  version: '0.28.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -240,6 +260,7 @@ export const workflowsModule: BlackModule = {
     const save = (workflows: Workflow[]) => settings.save({ ...settings.get(), [WORKFLOWS_KEY]: workflows })
     const now = () => new Date()
     engine = new WorkflowEngine({ fs: platform.fs, ui: platform.ui, notifier: platform.notifier, t, now, load, save, folder })
+    engine.onRunningChange(runningChanged)
     const current: Session = { ui: platform.ui, notifier: platform.notifier, fs: platform.fs, t, engine, load, save, folder, now }
     session = current
 

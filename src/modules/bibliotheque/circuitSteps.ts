@@ -20,8 +20,11 @@ import type { LibraryDoc } from './model'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
-/** Où en est une étape : faite, en attente, à décider, en échec, à venir. */
-export type CircuitStepState = 'done' | 'waiting' | 'decide' | 'failed' | 'later'
+/** Où en est une étape : faite, en cours (le circuit la fait en ce moment), en attente, à décider, en échec, à venir. */
+export type CircuitStepState = 'done' | 'running' | 'waiting' | 'decide' | 'failed' | 'later'
+
+/** L'étape du parcours que le circuit fait en ce moment (`ingestion`, `glossaire`, `analyse`, `rangement`) → celle des quatre étapes du circuit. */
+const RUNNING_STAGE: Readonly<Record<string, CircuitStep['id']>> = { ingestion: 'ingerer', glossaire: 'analyser', analyse: 'analyser', projet: 'analyser', liens: 'analyser', rangement: 'ranger' }
 
 /** Une étape du circuit, pour un document. */
 export interface CircuitStep {
@@ -40,13 +43,15 @@ const NEXT: Record<string, number> = { 'a-classer': 1, ingere: 2, analyse: 3, 'a
 
 const percent = (value: number | undefined): string => `${Math.round((value ?? 0) * 100)} %`
 
-/** Les quatre étapes d'un document du circuit, et l'état de chacune. */
-export function circuitSteps(t: Translate, doc: LibraryDoc, place: (folder: string) => string): CircuitStep[] {
+/** Les quatre étapes d'un document du circuit, et l'état de chacune ; `running` : l'étape du parcours que le circuit fait en ce moment. */
+export function circuitSteps(t: Translate, doc: LibraryDoc, place: (folder: string) => string, running: string | null = null): CircuitStep[] {
   const next = NEXT[doc.circuit ?? ''] ?? 4
   const ids: CircuitStep['id'][] = ['verse', 'ingerer', 'analyser', 'ranger']
   const icons: IconName[] = ['upload', 'file', 'search', 'folder']
+  const now = running ? RUNNING_STAGE[running] : undefined
   return ids.map((id, at) => {
     const icon = icons[at]!
+    if (now === id) return { id, icon: 'spinner', state: 'running', detail: t(`bibliotheque.steps.running.${running}`) }
     if (at < next) return { id, icon, state: 'done', ...(at === 0 ? { detail: doc.added.slice(0, 10) } : {}) }
     if (at > next) return { id, icon, state: 'later' }
     // L'étape suivante : en échec, à votre décision, ou en attente.
@@ -56,13 +61,13 @@ export function circuitSteps(t: Translate, doc: LibraryDoc, place: (folder: stri
         ? { id, icon, state: 'decide', detail: t('bibliotheque.circuit.steps.proposed', { place: place(doc.circuitProposal), confidence: percent(doc.circuitConfidence) }) }
         : { id, icon, state: 'failed', detail: doc.circuitReason || t('bibliotheque.control.noProposal') }
     }
-    return { id, icon, state: 'waiting' }
+    return { id, icon, state: 'waiting', ...(doc.circuitStopped ? { detail: t('bibliotheque.steps.stopped') } : {}) }
   })
 }
 
-const COLOR: Record<CircuitStepState, TileColor> = { done: 'green', waiting: 'orange', decide: 'orange', failed: 'rose', later: 'slate' }
-const PROGRESS: Record<CircuitStepState, JourneyProgress> = { done: 'done', waiting: 'current', decide: 'current', failed: 'current', later: 'todo' }
-const TONE: Record<CircuitStepState, Tone> = { done: 'success', waiting: 'warning', decide: 'warning', failed: 'danger', later: 'neutral' }
+const COLOR: Record<CircuitStepState, TileColor> = { done: 'green', running: 'blue', waiting: 'orange', decide: 'orange', failed: 'rose', later: 'slate' }
+const PROGRESS: Record<CircuitStepState, JourneyProgress> = { done: 'done', running: 'current', waiting: 'current', decide: 'current', failed: 'current', later: 'todo' }
+const TONE: Record<CircuitStepState, Tone> = { done: 'success', running: 'info', waiting: 'warning', decide: 'warning', failed: 'danger', later: 'neutral' }
 
 /** Ce que les étapes savent faire : le dossier en mots, continuer le circuit, ouvrir la fiche. */
 export interface CircuitStepsDeps {
@@ -71,12 +76,36 @@ export interface CircuitStepsDeps {
   cannotContinue?(): string | null
   /** Continuer le circuit pour ce document (là où il s'est arrêté). */
   continueCircuit?(record: string): Promise<boolean>
+  /** L'étape que le circuit fait en ce moment pour ce document (`ingestion`, `glossaire`, `analyse`, `rangement`) ; `null` : aucune. */
+  running?(record: string): string | null
+  /** Arrêter le circuit pour ce document (il s'arrête avant son étape suivante ; celle en cours n'applique rien). */
+  stopCircuit?(record: string): Promise<boolean>
   /** Ouvrir la fiche du document. */
   open?(record: string): void
 }
 
-/** Le bouton « Continuer le circuit » d'un document (grisé, avec sa raison, si on ne peut pas). */
+/** Le bouton « Arrêter le circuit » d'un document que le circuit traite en ce moment ; `null` : il n'est pas en cours. */
+export function stopAction(t: Translate, deps: CircuitStepsDeps, doc: LibraryDoc): ViewAction | null {
+  if (!deps.stopCircuit || !deps.running?.(doc.record)) return null
+  return {
+    id: 'circuit-stop',
+    label: t('bibliotheque.circuit.stop'),
+    tooltip: t('bibliotheque.circuit.stop.tip'),
+    icon: 'stop',
+    primary: true,
+    run: async () => {
+      await deps.stopCircuit!(doc.record)
+    }
+  }
+}
+
+/**
+ * Le bouton « Continuer le circuit » d'un document (grisé, avec sa raison, si on ne peut pas) —
+ * ou, s'il est en cours de traitement, « Arrêter le circuit ».
+ */
 export function continueAction(t: Translate, deps: CircuitStepsDeps, doc: LibraryDoc): ViewAction | null {
+  const stop = stopAction(t, deps, doc)
+  if (stop) return stop
   if (!deps.continueCircuit) return null
   const blocked = deps.cannotContinue?.() ?? null
   return {
@@ -98,14 +127,16 @@ export function continueAction(t: Translate, deps: CircuitStepsDeps, doc: Librar
  * pour une liste de documents ; sans : sur la fiche même.
  */
 export function circuitJourney(t: Translate, deps: CircuitStepsDeps, doc: LibraryDoc, titled = true, extra: ViewAction[] = []): HomeBlock {
-  const steps = circuitSteps(t, doc, deps.place)
+  const running = deps.running?.(doc.record) ?? null
+  const steps = circuitSteps(t, doc, deps.place, running)
   const stuck = steps.find((step) => step.state !== 'done' && step.state !== 'later')
   const action = continueAction(t, deps, doc)
+  const state = running ? t('bibliotheque.circuit.running') : t(`bibliotheque.control.state.${doc.circuit ?? 'a-classer'}`)
   return {
     kind: 'journey',
-    label: t('bibliotheque.circuit.steps.label', { title: doc.title, state: t(`bibliotheque.control.state.${doc.circuit ?? 'a-classer'}`) }),
+    label: t('bibliotheque.circuit.steps.label', { title: doc.title, state }),
     ...(titled ? { title: doc.title, ...(deps.open ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.open!(doc.record) } } : {}) } : { title: t('bibliotheque.circuit.steps.title') }),
-    badge: { label: t(`bibliotheque.control.state.${doc.circuit ?? 'a-classer'}`), tone: stuck ? TONE[stuck.state] : 'success' },
+    badge: { label: state, tone: stuck ? TONE[stuck.state] : 'success' },
     stages: steps.map((step, at) => ({
       id: step.id,
       caption: t('bibliotheque.circuit.steps.caption', { n: at + 1 }),
@@ -129,10 +160,10 @@ export function circuitJourney(t: Translate, deps: CircuitStepsDeps, doc: Librar
 // ── Le parcours complet d'un document, sur sa fiche ──
 
 /** Une étape du parcours d'un document : faite, en attente, à décider (à confirmer), en échec, à venir, sans objet. */
-export type DocStepState = 'done' | 'waiting' | 'decide' | 'failed' | 'later' | 'skipped'
+export type DocStepState = 'done' | 'running' | 'waiting' | 'decide' | 'failed' | 'later' | 'skipped'
 
-const STEP_TONE: Record<DocStepState, Tone> = { done: 'success', waiting: 'warning', decide: 'warning', failed: 'danger', later: 'neutral', skipped: 'neutral' }
-const STEP_ICON: Record<DocStepState, IconName> = { done: 'check', waiting: 'clock', decide: 'alert', failed: 'cross', later: 'more', skipped: 'hide' }
+const STEP_TONE: Record<DocStepState, Tone> = { done: 'success', running: 'info', waiting: 'warning', decide: 'warning', failed: 'danger', later: 'neutral', skipped: 'neutral' }
+const STEP_ICON: Record<DocStepState, IconName> = { done: 'check', running: 'spinner', waiting: 'clock', decide: 'alert', failed: 'cross', later: 'more', skipped: 'hide' }
 
 /** Ce que le parcours d'un document a besoin de savoir, en plus de sa fiche. */
 export interface DocStepsContext {
@@ -153,6 +184,9 @@ export interface DocStepsContext {
   glossary?: readonly string[]
   /** « Continuer le circuit » (absent : pas de bouton). */
   continueAction?: ViewAction | null
+  /** L'étape que le circuit fait en ce moment (`ingestion`, `glossaire`, `analyse`, `rangement`), et « Arrêter le circuit » ; absente : aucune. */
+  running?: string | null
+  stopAction?: ViewAction | null
   /** Le bouton qui relance seulement cette étape (son identifiant, son nom) ; `null` : pas de bouton. */
   relaunch?(id: string, title: string): ViewAction | null
 }
@@ -169,9 +203,15 @@ export function documentSteps(t: Translate, doc: LibraryDoc, context: DocStepsCo
   const circuit = !!doc.circuit
   const state = doc.circuit ?? ''
   const label = (key: DocStepState | 'confirm' | 'none'): string => t(`bibliotheque.steps.state.${key}`)
-  const item = (id: string, title: string, stepState: DocStepState, detail = '', level = 0, extra: Partial<ListItem> = {}): ListItem => {
+  const running = context.running ?? null
+  const item = (id: string, title: string, given: DocStepState, givenDetail = '', level = 0, givenExtra: Partial<ListItem> = {}): ListItem => {
+    // L'étape en cours : en bleu, « Arrêter le circuit » sur sa ligne (pas de relance pendant ce temps).
+    const now = id === running
+    const stepState: DocStepState = now ? 'running' : given
+    const detail = now ? t(`bibliotheque.steps.running.${id}`) : givenDetail || (given === 'waiting' && doc.circuitStopped ? t('bibliotheque.steps.stopped') : '')
+    const extra: Partial<ListItem> = now ? { ...(context.stopAction ? { actions: [context.stopAction] } : {}) } : givenExtra
     // Relancer seulement cette étape : un petit bouton, devant la ligne.
-    const relaunch = context.relaunch?.(id, title) ?? null
+    const relaunch = running ? null : (context.relaunch?.(id, title) ?? null)
     return {
       id: `parcours-${id}`,
       title,
@@ -186,7 +226,7 @@ export function documentSteps(t: Translate, doc: LibraryDoc, context: DocStepsCo
   }
   // L'étape où le circuit s'est arrêté (en échec, en attente, à décider) : « Continuer le circuit » y est.
   const resume = (stepState: DocStepState): Partial<ListItem> =>
-    circuit && context.continueAction && (stepState === 'failed' || stepState === 'waiting' || (stepState === 'decide' && state === 'a-controler')) ? { actions: [context.continueAction] } : {}
+    !running && circuit && context.continueAction && (stepState === 'failed' || stepState === 'waiting' || (stepState === 'decide' && state === 'a-controler')) ? { actions: [context.continueAction] } : {}
   const error = doc.circuitError ?? ''
   const items: ListItem[] = []
 

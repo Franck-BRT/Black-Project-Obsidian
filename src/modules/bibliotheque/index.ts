@@ -23,7 +23,7 @@ import { fillTemplate } from '../../core/docs'
 import type { BlackModule, BooleanField, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import type { Choice, FormField, Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
-import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, runActionNow, runSystemWorkflow, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
+import { emitWorkflowEvent, NO_SUBJECT, onRunningChange, registerFieldSource, registerTrigger, runActionNow, runningSteps, runSystemWorkflow, stopRunning, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
 import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
 import { entryPageOf, entryTitle, HUB_PAGE as ENTRIES_HUB_PAGE, registerEntriesHome } from './entriesHome'
@@ -95,6 +95,8 @@ export const EXCHANGE_FOLDER = 'Échanges/Bibliothèques'
 
 /** Ce qui arrête d'écouter les renommages du coffre (à la désactivation). */
 let stopRenames: (() => void) | null = null
+/** Ne plus suivre ce que le circuit traite en ce moment (à la désactivation). */
+let stopRunningWatch: (() => void) | null = null
 
 let active: {
   store: LibraryStore
@@ -1068,7 +1070,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.67.0',
+  version: '0.68.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1346,7 +1348,8 @@ export const bibliothequeModule: BlackModule = {
       relaunchCircuit: async () => {
         if (!circuitOn(settings.get())) return 0
         await ensureCircuitSkills()
-        const pending = (await store.all()).filter((doc) => doc.circuit === 'a-classer' || doc.circuit === 'ingere' || doc.circuit === 'analyse')
+        // Pas ceux dont vous avez arrêté le circuit : « Continuer le circuit » les reprendra.
+        const pending = (await store.all()).filter((doc) => (doc.circuit === 'a-classer' || doc.circuit === 'ingere' || doc.circuit === 'analyse') && !doc.circuitStopped)
         // Chacun repasse par le circuit, à la suite (un workflow s'exécute déjà : sans l'attendre, il le bloquerait) ; « relance » : sa lecture n'a pas pu se faire à l'entrée.
         const issuers = await knownIssuers()
         for (const doc of pending) {
@@ -2052,12 +2055,13 @@ export const bibliothequeModule: BlackModule = {
     const continueCircuit = async (record: string, quiet = false): Promise<boolean> => {
       if (cannotContinue()) return false
       const doc = await store.load(record)
-      if (!doc || !inCircuit(doc)) return false
+      // Pas dans le circuit, ou déjà en cours de traitement : rien à continuer.
+      if (!doc || !inCircuit(doc) || circuitRunning.has(record)) return false
       await ensureCircuitSkills()
       const control = doc.circuit === 'a-controler'
       const ready = await store.setCircuit(
         record,
-        { ...(control ? { circuit: 'analyse' as const, circuitReason: undefined, circuitProposal: undefined, circuitConfidence: undefined, circuitAlternatives: undefined } : {}), circuitError: undefined },
+        { ...(control ? { circuit: 'analyse' as const, circuitReason: undefined, circuitProposal: undefined, circuitConfidence: undefined, circuitAlternatives: undefined } : {}), circuitError: undefined, circuitStopped: undefined },
         circuitLine('bibliotheque.circuit.line.continued', {})
       )
       if (!ready) return false
@@ -2078,7 +2082,7 @@ export const bibliothequeModule: BlackModule = {
     /** Continuer le circuit de tous ceux qui attendent (pas ceux à contrôler : ils attendent votre décision). */
     const continueAll = async (): Promise<number> => {
       if (cannotContinue()) return 0
-      const waiting = (await store.all()).filter((doc) => inCircuit(doc) && doc.circuit !== 'a-controler')
+      const waiting = (await store.all()).filter((doc) => inCircuit(doc) && doc.circuit !== 'a-controler' && !circuitRunning.has(doc.record))
       for (const doc of waiting) await continueCircuit(doc.record, true)
       if (waiting.length) platform.notifier.notify(t('bibliotheque.circuit.continuedAll', { count: waiting.length }), 5000)
       return waiting.length
@@ -2692,7 +2696,7 @@ export const bibliothequeModule: BlackModule = {
       }
       const skill = await skillFor(step === 'ingestion' ? 'ingestion' : step === 'rangement' ? 'rangement' : 'analyse')
       try {
-        const outcome = await runActionNow('ia.executer-skill', { fiche: record, skill, seuil: '', refaire: 'oui' })
+        const outcome = await runActionNow('ia.executer-skill', { fiche: record, skill, seuil: '', refaire: 'oui' }, { ...NO_SUBJECT, key: record, label: doc.title, path: record })
         tell(outcome ? outcome.lines.join(' ') : t('bibliotheque.steps.redo.noWorkflows'))
       } catch (error) {
         tell(t('bibliotheque.steps.redo.failed', { reason: error instanceof Error ? error.message : String(error) }))
@@ -2717,7 +2721,7 @@ export const bibliothequeModule: BlackModule = {
       if (!agreed) return false
       await store.setCircuit(
         record,
-        { circuit: 'a-classer', circuitReason: undefined, circuitProposal: undefined, circuitConfidence: undefined, circuitAlternatives: undefined, circuitError: undefined, circuitProject: undefined },
+        { circuit: 'a-classer', circuitReason: undefined, circuitProposal: undefined, circuitConfidence: undefined, circuitAlternatives: undefined, circuitError: undefined, circuitProject: undefined, circuitStopped: undefined },
         circuitLine('bibliotheque.circuit.line.restarted', {})
       )
       return continueCircuit(record)
@@ -2773,6 +2777,54 @@ export const bibliothequeModule: BlackModule = {
       return { title: doc.title, terms }
     }
 
+    /**
+     * **Ce que le circuit traite en ce moment** : le document (sa fiche) et l'étape (`ingestion`,
+     * `glossaire`, `analyse`, `rangement`) — le workflow du circuit, ou une étape relancée d'un
+     * bouton. Tenu à jour à chaque étape ; les pages se redessinent.
+     */
+    const circuitRunning = new Map<string, string>()
+    /** Les documents dont vous avez arrêté le circuit, le temps que leur étape en cours finisse. */
+    const stopping = new Set<string>()
+    const sameSkill = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
+    const refreshRunning = async (): Promise<void> => {
+      const skills = await entries.skill.all()
+      const next = new Map<string, string>()
+      for (const step of runningSteps()) {
+        if (step.system !== CIRCUIT_WORKFLOW && step.workflowId !== '') continue
+        const record = step.fields.fiche || step.subjectPath
+        const id = step.kind === 'bibliotheque.glossaire' ? 'glossaire' : step.kind === 'ia.executer-skill' ? skills.find((entry) => sameSkill(entry.name, step.fields.skill ?? ''))?.output : undefined
+        if (record && (id === 'ingestion' || id === 'analyse' || id === 'rangement' || id === 'glossaire')) next.set(record, id)
+      }
+      const before = [...circuitRunning.entries()].join('|')
+      // Ceux qui ne sont plus en cours, et dont vous aviez arrêté le circuit : marqués arrêtés (leur dernière étape a pu réécrire leur fiche).
+      for (const record of [...stopping]) {
+        if (next.has(record)) continue
+        stopping.delete(record)
+        const doc = await store.load(record)
+        if (doc && inCircuit(doc) && !doc.circuitStopped) await store.setCircuit(record, { circuitStopped: true })
+      }
+      circuitRunning.clear()
+      for (const [record, id] of next) circuitRunning.set(record, id)
+      if ([...circuitRunning.entries()].join('|') !== before) pagesChanged()
+    }
+    stopRunningWatch?.()
+    stopRunningWatch = onRunningChange(() => void refreshRunning().catch((error) => console.error('[Black Projects] bibliotheque', error)))
+    /** **Arrêter le circuit** d'un document en cours de traitement : il s'arrête avant son étape suivante ; ce que l'étape en cours trouve n'est pas appliqué. */
+    const stopCircuit = async (record: string): Promise<boolean> => {
+      const doc = await store.load(record)
+      if (!doc) return false
+      if (!stopRunning(record)) {
+        platform.notifier.notify(t('bibliotheque.circuit.stop.none', { title: doc.title }), 5000)
+        pagesChanged()
+        return false
+      }
+      stopping.add(record)
+      await store.setCircuit(record, { circuitStopped: true }, circuitLine('bibliotheque.circuit.line.stopped', {}))
+      platform.notifier.notify(t('bibliotheque.circuit.stopped', { title: doc.title }), 6000)
+      pagesChanged()
+      return true
+    }
+
     registerLibraryHome(context.views, {
       t,
       store,
@@ -2793,7 +2845,9 @@ export const bibliothequeModule: BlackModule = {
         continueCircuit: (record) => continueCircuit(record),
         continueAll,
         relaunchStep,
-        relaunchAll
+        relaunchAll,
+        running: (record) => circuitRunning.get(record) ?? null,
+        stopCircuit
       },
       today: localToday,
       locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR',
@@ -3270,5 +3324,7 @@ export const bibliothequeModule: BlackModule = {
     stopSkillContexts = []
     stopRenames?.()
     stopRenames = null
+    stopRunningWatch?.()
+    stopRunningWatch = null
   }
 }

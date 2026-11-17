@@ -683,6 +683,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
 - v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
+- v0.154.0 : **le document en cours de traitement dans le circuit**, signalé (bandeau, étape en bleu, pastille) ; pour lui, **Arrêter le circuit** à la place de « Continuer le circuit »
 - v0.153.0 : **la recherche dans le glossaire, une étape du circuit** (sans IA, entre l'ingestion et l'analyse) : les termes employés reliés à la fiche, avec un rétrolien ; l'analyse reçoit leur définition
 - v0.152.0 : **les autres formes d’un terme du glossaire** (pluriel, variante), cherchées comme lui, comme pour les étiquettes
 - v0.151.0 : **le glossaire** : une bibliothèque de termes (sigle, définition), reliée aux fiches (les termes qu'un document emploie, les documents qui emploient un terme ; un lien possible du circuit)

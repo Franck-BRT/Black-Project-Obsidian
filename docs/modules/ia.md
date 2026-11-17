@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.34.0 (Black Projects 0.153.0) |
+| Version | 0.35.0 (Black Projects 0.154.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -14,6 +14,12 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
 
+
+## « Arrêter le circuit » (v0.35.0, Black Projects 0.154.0)
+
+- L'étape « Exécuter un skill » (ingestion, analyse, rangement) n'applique pas la réponse de l'IA
+  si l'arrêt du circuit a été demandé pour ce document pendant qu'elle répondait
+  (`stopRequested`) : « circuit arrêté à votre demande — la réponse de l'IA est écartée ».
 
 ## La recherche dans le glossaire dans le circuit (v0.34.0, Black Projects 0.153.0)
 

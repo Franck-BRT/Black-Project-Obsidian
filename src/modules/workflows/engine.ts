@@ -78,14 +78,78 @@ export function journalLine(entry: LogEntry, t: Translate): string {
   return `- ${stamp(entry.at)} · ${MARK[entry.outcome]} ${t(`workflows.outcome.${entry.outcome}`)} · **${entry.workflow.name}**${about}${from}${what}${wrote}`.replace(/\n/g, ' ')
 }
 
+/** Ce qui s'exécute en ce moment : le workflow (vide : une action seule), son sujet, l'étape (rang, sorte, champs). */
+export interface RunningStep {
+  workflowId: string
+  system?: string
+  subjectPath: string
+  step: number
+  kind: string
+  fields: Readonly<Record<string, string>>
+}
+
 export class WorkflowEngine {
   /** Les heures des dernières exécutions de chaque workflow, pour arrêter une boucle. */
   private readonly recent = new Map<string, number[]>()
   private queue: Promise<unknown> = Promise.resolve()
   /** Un workflow s'exécute : ce qui est émis pendant ce temps (une action qui verse, qui crée…) est mis à la suite. */
   private running = 0
+  /** Les étapes en cours (un workflow, une action seule relancée d'un bouton). */
+  private steps: RunningStep[] = []
+  /** Les sujets dont on a demandé l'arrêt : leur workflow s'arrête avant son étape suivante. */
+  private readonly stops = new Set<string>()
+  private readonly listeners = new Set<() => void>()
 
   constructor(private readonly deps: EngineDeps) {}
+
+  /** Ce qui s'exécute en ce moment. */
+  get runningSteps(): readonly RunningStep[] {
+    return this.steps
+  }
+
+  /** Être prévenu quand ce qui s'exécute change ; rend de quoi ne plus l'être. */
+  onRunningChange(listener: () => void): () => void {
+    this.listeners.add(listener)
+    return () => void this.listeners.delete(listener)
+  }
+
+  private changed(): void {
+    for (const listener of [...this.listeners]) {
+      try {
+        listener()
+      } catch (error) {
+        console.error('[Black Projects] workflows', error)
+      }
+    }
+  }
+
+  private begin(step: RunningStep): void {
+    this.steps = [...this.steps.filter((each) => each !== step), step]
+    this.changed()
+  }
+
+  private end(step: RunningStep | undefined): void {
+    if (!step) return
+    this.steps = this.steps.filter((each) => each !== step)
+    this.changed()
+  }
+
+  /**
+   * Arrêter ce qui s'exécute pour un sujet (un document) : son workflow s'arrête avant son étape
+   * suivante — celle en cours finit (une réponse de l'IA qui arrive peut être écartée : voir
+   * `stopRequested`). Rend s'il y avait quelque chose à arrêter.
+   */
+  stop(subjectPath: string): boolean {
+    if (!subjectPath || !this.steps.some((each) => each.subjectPath === subjectPath)) return false
+    this.stops.add(subjectPath)
+    this.changed()
+    return true
+  }
+
+  /** L'arrêt d'un sujet a-t-il été demandé (son étape en cours n'applique pas ce qu'elle a trouvé) ? */
+  stopRequested(subjectPath: string): boolean {
+    return !!subjectPath && this.stops.has(subjectPath)
+  }
 
   /**
    * Une action seule, hors d'un workflow (une étape du circuit des documents relancée d'un bouton) :
@@ -97,8 +161,15 @@ export class WorkflowEngine {
     const spec = actionSpec(kind)
     if (!spec) throw new Error(t('workflows.step.unknown', { step: 1, kind }))
     const fields = Object.fromEntries(spec.fields.map((field) => [field.key, (given[field.key] ?? field.defaultValue ?? '').trim()]))
-    const guidance = spec.aiAdded?.length ? await guidanceFor(Object.fromEntries(spec.aiAdded.map((key) => [key, fields[key] ?? '']))) : ''
-    return spec.run({ fields, subject, vars: {}, t, ui, notifier, ...(guidance ? { guidance } : {}) })
+    const step: RunningStep = { workflowId: '', subjectPath: subject.path, step: 1, kind, fields }
+    this.begin(step)
+    try {
+      const guidance = spec.aiAdded?.length ? await guidanceFor(Object.fromEntries(spec.aiAdded.map((key) => [key, fields[key] ?? '']))) : ''
+      return await spec.run({ fields, subject, vars: {}, t, ui, notifier, ...(guidance ? { guidance } : {}) })
+    } finally {
+      this.end(step)
+      if (!this.steps.some((each) => each.subjectPath === subject.path)) this.stops.delete(subject.path)
+    }
   }
 
   /** Un évènement : les workflows qui y répondent s'exécutent, à la suite. */
@@ -169,6 +240,10 @@ export class WorkflowEngine {
       return await this.perform(workflow, event, byHand)
     } finally {
       this.running--
+      const path = event.subject.path
+      this.end(this.steps.find((each) => each.workflowId === workflow.id && each.subjectPath === path))
+      // Arrêté (ou fini) : la demande d'arrêt est oubliée — la prochaine fois, il repart.
+      if (!this.steps.some((each) => each.subjectPath === path)) this.stops.delete(path)
     }
   }
 
@@ -224,6 +299,14 @@ export class WorkflowEngine {
         return this.failed(workflow, entry('failed', lines, paths))
       }
       const fields = Object.fromEntries(spec.fields.map((field) => [field.key, expand(action.fields[field.key] ?? field.defaultValue ?? '', vars).trim()]))
+      // L'arrêt demandé (pour son sujet) : il s'arrête là, avant cette étape.
+      if (this.stopRequested(subject.path)) {
+        lines.push(t('workflows.stoppedByUser', { step }))
+        await this.finish(workflow, entry('stopped', lines, [...new Set(paths)]), true)
+        return 'stopped'
+      }
+      this.end(this.steps.find((each) => each.workflowId === workflow.id && each.subjectPath === subject.path))
+      this.begin({ workflowId: workflow.id, ...(workflow.system ? { system: workflow.system } : {}), subjectPath: subject.path, step, kind: action.kind, fields })
       const missing = spec.fields.find((field) => field.required && !fields[field.key])
       if (missing) {
         lines.push(t('workflows.step.missing', { step, action: t(spec.labelKey), field: t(missing.labelKey) }))

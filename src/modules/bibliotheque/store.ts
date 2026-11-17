@@ -611,7 +611,7 @@ export class LibraryStore {
    * L'état d'un document dans le circuit, changé (une clé à `undefined` : ôtée), et une ligne
    * de plus dans l'historique de sa note (`history` : le titre de la section, la ligne).
    */
-  async setCircuit(record: string, patch: Partial<Pick<LibraryDoc, 'circuit' | 'circuitReason' | 'circuitProposal' | 'circuitConfidence' | 'circuitAlternatives' | 'circuitProject' | 'circuitError'>>, history?: { heading: string; line: string }): Promise<LibraryDoc | null> {
+  async setCircuit(record: string, patch: Partial<Pick<LibraryDoc, 'circuit' | 'circuitReason' | 'circuitProposal' | 'circuitConfidence' | 'circuitAlternatives' | 'circuitProject' | 'circuitError' | 'circuitStopped'>>, history?: { heading: string; line: string }): Promise<LibraryDoc | null> {
     const { fs, yaml } = this.deps
     const doc = await this.load(record)
     if (!doc) return null

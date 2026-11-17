@@ -45,6 +45,10 @@ export interface ControlDeps {
   relaunchStep?(record: string, step: string): Promise<void>
   /** Relancer tout le circuit d'un document (après une question) ; vrai s'il a repris. */
   relaunchAll?(record: string): Promise<boolean>
+  /** L'étape que le circuit fait en ce moment pour un document (`ingestion`, `glossaire`, `analyse`, `rangement`) ; `null` : aucune. */
+  running?(record: string): string | null
+  /** Arrêter le circuit d'un document en cours de traitement. */
+  stopCircuit?(record: string): Promise<boolean>
 }
 
 /** Une proposition en mots : « l'entreprise « ESA — Agence spatiale européenne » », « la personne « Marie Durand » (ESA) ». */

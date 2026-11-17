@@ -319,6 +319,8 @@ export interface LibraryDoc {
   circuitError?: string
   /** Le projet que l'analyse du circuit a reconnu (la note du projet) : le rangement s'en sert. */
   circuitProject?: string
+  /** Le circuit arrêté à la demande de l'utilisateur : la relance à l'ouverture le laisse ; « Continuer le circuit » le reprend. */
+  circuitStopped?: boolean
   /** Ses liens (le circuit, version C) : les notes qu'il cite — leur raison est dans la section Liens de la note. */
   links?: string[]
   /** Les entreprises et personnes **inconnues** qu'il cite, que l'analyse propose de créer (l'utilisateur décide). */
@@ -428,6 +430,7 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.circuit && doc.circuitConfidence !== undefined ? { 'circuit-confiance': doc.circuitConfidence } : {}),
     ...(doc.circuit && doc.circuitAlternatives?.length ? { 'circuit-alternatives': doc.circuitAlternatives } : {}),
     ...(doc.circuit && doc.circuitError ? { 'circuit-erreur': doc.circuitError } : {}),
+    ...(doc.circuit && doc.circuitStopped ? { 'circuit-arrete': true } : {}),
     ...(doc.circuitProject ? { 'circuit-projet': link(doc.circuitProject) } : {}),
     ...(doc.links?.length ? { liens: doc.links.map(link) } : {}),
     ...(doc.glossarySearched !== undefined ? { 'glossaire-termes': doc.glossarySearched } : {}),
@@ -504,7 +507,8 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
           ...(text(data['circuit-proposition']) ? { circuitProposal: text(data['circuit-proposition']) } : {}),
           ...(Number.isFinite(Number(data['circuit-confiance'])) && data['circuit-confiance'] !== null && data['circuit-confiance'] !== '' ? { circuitConfidence: Number(data['circuit-confiance']) } : {}),
           ...(Array.isArray(data['circuit-alternatives']) && data['circuit-alternatives'].length ? { circuitAlternatives: data['circuit-alternatives'].map(text).filter(Boolean) } : {}),
-          ...(text(data['circuit-erreur']) ? { circuitError: text(data['circuit-erreur']) } : {})
+          ...(text(data['circuit-erreur']) ? { circuitError: text(data['circuit-erreur']) } : {}),
+          ...(data['circuit-arrete'] === true ? { circuitStopped: true } : {})
         }
       : {}),
     ...(unlink(data['circuit-projet']) ? { circuitProject: unlink(data['circuit-projet']) } : {}),

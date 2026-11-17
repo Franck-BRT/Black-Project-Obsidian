@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.27.0 (Black Projects 0.150.0) |
+| Version | 0.28.0 (Black Projects 0.154.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -13,6 +13,16 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/workflows/doc/Workflows.md`.
 
+
+## Ce qui s'exécute en ce moment ; arrêter (v0.28.0, Black Projects 0.154.0)
+
+- Le moteur tient la liste des étapes en cours (`RunningStep` : le workflow, son sujet, le rang, la
+  sorte et les champs de l'action — aussi pour une action seule, `runActionNow`) : `runningSteps()`,
+  et `onRunningChange(listener)` pour être prévenu à chaque étape.
+- `stopRunning(subjectPath)` : le workflow de ce sujet s'arrête avant son étape suivante (journal :
+  ⛔ « Arrêté à votre demande, avant l'étape n », sans message d'échec) ; `stopRequested(subjectPath)`
+  permet à une action en cours de ne pas appliquer ce qu'elle a trouvé. La demande est oubliée
+  quand l'exécution finit.
 
 ## Ce qu'il fait
 
