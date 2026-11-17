@@ -361,7 +361,7 @@ plus :
 | Extraire les exigences du CCTP à l'import | un CCTP importé | ouvre l'aperçu d'extraction de ses exigences : vous cochez, puis importez | désactivé |
 
 Les jours de chaque rappel se règlent dans son action. Vous pouvez aussi écrire les vôtres : déclencheurs *analyse créée*, *pièces
-importées*, *exigences extraites* ; actions calendrier, qualité, cohérence, couverture,
+importées*, *exigences extraites*, *analyse mise à jour* (l'un ou l'autre) ; actions calendrier, qualité, cohérence, couverture,
 interroger le dossier, questionnaire.
 
 ## Ce qui arrive ensuite

@@ -53,7 +53,7 @@ de lui pour fonctionner.
 
 | Module | Déclencheurs | Actions | Prêts à l'emploi |
 | --- | --- | --- | --- |
-| Analyse d'appels d'offres | analyse créée ; pièces importées (fichiers, ZIP, dépôt puis mise à jour) ; exigences extraites (d'une pièce, de toutes, oubliées) | relever le calendrier ; analyser la qualité ; vérifier la cohérence ; vérifier la couverture ; interroger le dossier (IA) ; remplir le questionnaire (IA) | calendrier à l'import ; qualité et cohérence à l'extraction ; questionnaire à l'import du CCAP, RC ou CCTP (demande d'abord) |
+| Analyse d'appels d'offres | analyse créée ; pièces importées (fichiers, ZIP, dépôt puis mise à jour) ; exigences extraites (d'une pièce, de toutes, oubliées) ; analyse mise à jour (l'un ou l'autre, 0.136.12) | relever le calendrier ; analyser la qualité ; vérifier la cohérence ; vérifier la couverture ; interroger le dossier (IA) ; remplir le questionnaire (IA) | calendrier à l'import ; qualité et cohérence à l'extraction ; questionnaire à l'import du CCAP, RC ou CCTP (demande d'abord) |
 | Exigences | exigence créée | analyser la qualité de la bibliothèque ; relire une exigence (IA, sans reformulation appliquée) | qualité chaque lundi à 8 h |
 | IA | — | demander à l'IA (consigne, contexte, note facultative) | — |
 
@@ -180,8 +180,7 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Note de l'analyse : le tableau des pièces, à l'import | pièces importées | réécrit le tableau des pièces de la note de l'analyse | actif |
-| Note de l'analyse : la liste des exigences, à l'extraction | exigences extraites | réécrit la liste des exigences (analyse, pièces) | actif |
+| Note de l'analyse : le tableau des pièces et la liste des exigences, à chaque mise à jour | analyse mise à jour (pièces importées, exigences extraites) | réécrit le tableau des pièces, puis la liste des exigences de la note de l'analyse | actif |
 | Relever le calendrier à l'import des pièces | pièces de l'appel d'offres importées | écrit la note Calendrier | actif |
 | Contrôler les exigences extraites (qualité et cohérence) | exigences extraites | qualité, puis cohérence entre pièces | actif |
 | Rappels des appels d'offres, chaque jour | chaque jour à 8 h (à l'ouverture si elle est plus tard) | une étape par échéance : dates limites de remise (J-7, J-3, J-1, le jour même), questions et visite (J-3, J-1, le jour même), fin de validité des offres (J-7, J-1) | actif |

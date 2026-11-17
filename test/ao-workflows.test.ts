@@ -70,8 +70,7 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
       'sys.ao.controle-extraction:true',
       'sys.ao.couverture-reponse:false',
       'sys.ao.extraire-cctp:false',
-      'sys.ao.note-exigences:true',
-      'sys.ao.note-pieces:true',
+      'sys.ao.note-analyse:true',
       'sys.ao.questionnaire-ia:false',
       'sys.ao.rappel-rangement:true',
       'sys.ao.rappels-quotidiens:true',
@@ -114,7 +113,12 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
     const journal = read(platform, 'Black Projects/Workflows/Journal des workflows.md')
     expect(journal).toMatch(/✅ fait · \*\*Contrôler les exigences extraites \(qualité et cohérence\)\*\* · sur « Station sol »/)
     expect(journal).toMatch(/✅ fait · \*\*Relever le calendrier à l’import des pièces\*\*/)
-    expect(journal).toMatch(/✅ fait · \*\*Note de l’analyse : le tableau des pièces, à l’import\*\*/)
+    // La note de l'analyse : un seul workflow, à l'import puis à l'extraction (« analyse mise à jour »).
+    expect(journal.match(/✅ fait · \*\*Note de l’analyse : le tableau des pièces et la liste des exigences, à chaque mise à jour\*\*/g)).toHaveLength(2)
+    expect(workflows().find((workflow) => workflow.system === 'sys.ao.note-analyse')).toMatchObject({
+      trigger: { kind: 'ao.analyse-mise-a-jour' },
+      actions: [{ kind: 'ao.note-pieces' }, { kind: 'ao.note-exigences' }]
+    })
     // Un workflow système réussi ne prévient pas à chaque fois (le journal le garde).
     expect(platform.notices.some((notice) => /^Workflow « Relever le calendrier/.test(notice))).toBe(false)
   })
@@ -122,7 +126,7 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
   it('la note de l’analyse sans son workflow système (désactivé) : elle n’est plus mise à jour à l’import', async () => {
     const platform = memoryPlatform()
     const { run, analysis, settings } = await start(platform)
-    settings.workflows!.workflows = (settings.workflows!.workflows as Workflow[]).map((workflow) => (workflow.system === 'sys.ao.note-pieces' ? { ...workflow, enabled: false } : workflow))
+    settings.workflows!.workflows = (settings.workflows!.workflows as Workflow[]).map((workflow) => (workflow.system === 'sys.ao.note-analyse' ? { ...workflow, enabled: false } : workflow))
     const before = read(platform, analysis.note)
     for (const name of ['RC.html']) platform.files.set(`${TENDER}/${name}`, new Uint8Array(readFileSync(folder + name)))
     platform.active = analysis.note

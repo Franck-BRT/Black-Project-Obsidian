@@ -8,7 +8,7 @@ demandé, et écrit chaque exécution dans un journal.
 
 | Partie | Ce que c'est | Exemples |
 | --- | --- | --- |
-| **Déclencheur** | quand il s'exécute | à la main ; à heure fixe (chaque jour, les jours ouvrés, chaque semaine, chaque mois — et, en option, à l'ouverture d'Obsidian) ; *AO : pièces importées* ; *AO : exigences extraites* ; *AO : analyse créée* ; *Exigences : exigence créée* |
+| **Déclencheur** | quand il s'exécute | à la main ; à heure fixe (chaque jour, les jours ouvrés, chaque semaine, chaque mois — et, en option, à l'ouverture d'Obsidian) ; *AO : pièces importées* ; *AO : exigences extraites* ; *AO : analyse mise à jour* (l'un ou l'autre) ; *AO : analyse créée* ; *Exigences : exigence créée* |
 | **Conditions** | sur ce qui est arrivé (facultatives) | *Types des pièces* **est** « CCAP, CCTP » ; *Places* **contient** « Appel d'offres » ; *Nombre* **est au moins** « 3 » |
 | **Actions** | ce qu'il fait, à la suite | relever le calendrier ; analyser la qualité ; vérifier la cohérence ou la couverture ; interroger le dossier ou remplir le questionnaire (IA) ; relire une exigence (IA) ; demander à l'IA ; écrire une note ; ajouter à une note ; prévenir |
 | **Mode** | seul ou après accord | **Demander d'abord** : il dit ce qu'il va faire et attend « Exécuter » ; **Tout seul** : il agit dès que le déclencheur arrive |
@@ -100,8 +100,7 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Note de l'analyse : le tableau des pièces, à l'import | pièces importées | réécrit le tableau des pièces de la note de l'analyse | actif |
-| Note de l'analyse : la liste des exigences, à l'extraction | exigences extraites | réécrit la liste des exigences (analyse, pièces) | actif |
+| Note de l'analyse : le tableau des pièces et la liste des exigences, à chaque mise à jour | analyse mise à jour (pièces importées, exigences extraites) | réécrit le tableau des pièces, puis la liste des exigences de la note de l'analyse | actif |
 | Relever le calendrier à l'import des pièces | pièces de l'appel d'offres importées | écrit la note Calendrier | actif |
 | Contrôler les exigences extraites (qualité et cohérence) | exigences extraites | qualité, puis cohérence entre pièces | actif |
 | Rappels des appels d'offres, chaque jour | chaque jour à 8 h (à l'ouverture si elle est plus tard) | une étape par échéance : dates limites de remise (J-7, J-3, J-1, le jour même), questions et visite (J-3, J-1, le jour même), fin de validité des offres (J-7, J-1) | actif |

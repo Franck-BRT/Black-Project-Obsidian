@@ -32,6 +32,8 @@ import { checkCoherence, checkCoverage, reportPath } from './verification'
 export const TRIGGER_CREATED = 'ao.analyse-creee'
 export const TRIGGER_IMPORTED = 'ao.pieces-importees'
 export const TRIGGER_EXTRACTED = 'ao.exigences-extraites'
+/** Une analyse mise à jour : des pièces importées, ou des exigences extraites ({quoi} : « pieces » ou « exigences »). */
+export const TRIGGER_UPDATED = 'ao.analyse-mise-a-jour'
 
 /** Les jours d'un jour à l'autre (AAAA-MM-JJ). */
 const daysBetween = (from: string, to: string): number => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000)
@@ -94,6 +96,8 @@ async function analysisSubject(services: Services, analysis: Analysis, extra: { 
 export async function emitImported(services: Services, analysis: Analysis, report: ImportReport): Promise<void> {
   if (!report.imported.length) return
   const { t } = services
+  // D'abord « analyse mise à jour » (la note de l'analyse), puis « pièces importées ».
+  await emitWorkflowEvent(TRIGGER_UPDATED, await analysisSubject(services, analysis, { vars: { quoi: 'pieces', nombre: String(report.imported.length) } }))
   await emitWorkflowEvent(
     TRIGGER_IMPORTED,
     await analysisSubject(services, analysis, {
@@ -118,6 +122,7 @@ export async function emitCreated(services: Services, analysis: Analysis): Promi
 
 export async function emitExtracted(services: Services, analysis: Analysis, piece: string, count: number): Promise<void> {
   if (count <= 0) return
+  await emitWorkflowEvent(TRIGGER_UPDATED, await analysisSubject(services, analysis, { vars: { quoi: 'exigences', piece, nombre: String(count) } }))
   await emitWorkflowEvent(TRIGGER_EXTRACTED, await analysisSubject(services, analysis, { vars: { piece, nombre: String(count) } }))
 }
 
@@ -170,6 +175,7 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
     pickSubject
   })
   registerTrigger({ id: TRIGGER_EXTRACTED, labelKey: 'ao.wf.trigger.extracted', descKey: 'ao.wf.trigger.extracted.desc', fields: subjectFields('piece', 'nombre'), pickSubject })
+  registerTrigger({ id: TRIGGER_UPDATED, labelKey: 'ao.wf.trigger.updated', descKey: 'ao.wf.trigger.updated.desc', fields: subjectFields('quoi', 'piece', 'nombre'), pickSubject })
 
   registerAction({
     id: 'ao.calendrier',
@@ -460,8 +466,20 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
       }
     })
   const analysisField = { analyse: '{analyse}' }
-  system('note-pieces', true, () => ({ trigger: { kind: TRIGGER_IMPORTED }, actions: [{ kind: 'ao.note-pieces', fields: analysisField }] }))
-  system('note-exigences', true, () => ({ trigger: { kind: TRIGGER_EXTRACTED }, actions: [{ kind: 'ao.note-exigences', fields: analysisField }] }))
+  // La note de l'analyse, à chaque mise à jour (pièces importées, exigences extraites) : son tableau
+  // des pièces et sa liste des exigences. Les deux d'avant (l'un à l'import, l'autre à l'extraction) y sont fondus.
+  system(
+    'note-analyse',
+    true,
+    () => ({
+      trigger: { kind: TRIGGER_UPDATED },
+      actions: [
+        { kind: 'ao.note-pieces', fields: analysisField },
+        { kind: 'ao.note-exigences', fields: analysisField }
+      ]
+    }),
+    ['note-pieces', 'note-exigences']
+  )
   system('calendrier-import', true, (tr) => ({
     trigger: { kind: TRIGGER_IMPORTED },
     conditions: [{ field: 'places', op: 'contains', value: tr('ao.place.tender') }],

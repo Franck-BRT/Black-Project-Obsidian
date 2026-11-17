@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.39.0 (Black Projects 0.136.8) |
+| Version | 0.40.0 (Black Projects 0.136.12) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,16 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## La note de l'analyse : un seul workflow (v0.40.0, Black Projects 0.136.12)
+
+- Un déclencheur de plus, **AO : analyse mise à jour** (`ao.analyse-mise-a-jour`,
+  `TRIGGER_UPDATED`) : émis juste avant *pièces importées* (`emitImported`) et *exigences extraites*
+  (`emitExtracted`) ; variable `{quoi}` (« pieces » ou « exigences »), avec `{piece}`, `{nombre}`.
+- `sys.ao.note-analyse` : « Note de l'analyse : le tableau des pièces et la liste des exigences, à
+  chaque mise à jour », à ce déclencheur ; deux étapes, `ao.note-pieces` puis `ao.note-exigences`.
+  Il remplace (`replaces`) `sys.ao.note-pieces` et `sys.ao.note-exigences`. `Services.noteByWorkflow`
+  regarde ce seul workflow (les deux parties de la note).
 
 ## Les pièces à problème, à l'import : un seul workflow (v0.39.0, Black Projects 0.136.8)
 

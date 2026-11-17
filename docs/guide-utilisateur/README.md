@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.11)
+## Aujourd'hui (version 0.136.12)
+
+- **La note de l'analyse : un seul workflow** — « Note de l'analyse : le tableau des pièces et la
+  liste des exigences, à chaque mise à jour » (à l'import des pièces comme à l'extraction des
+  exigences). Pour vos workflows : le déclencheur **AO : analyse mise à jour**, l'un ou l'autre.
 
 - **Verser « À classer » : un seul workflow** — « Verser le dossier « À classer », à l'ouverture et
   chaque jour ». Pour vos propres workflows *À heure fixe* : l'interrupteur **Aussi à l'ouverture

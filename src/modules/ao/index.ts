@@ -287,7 +287,8 @@ function servicesFor(context: ModuleContext): Services {
     today: localToday,
     rangement: rangementOf(context.settings.get()),
     // Avec le module Workflows, la note de l'analyse est tenue par ses workflows système (désactivés : plus tenue).
-    noteByWorkflow: (part) => systemWorkflowManages(part === 'pieces' ? 'sys.ao.note-pieces' : 'sys.ao.note-exigences')
+    // La note de l'analyse : réécrite par son workflow système (les deux parties), s'il est là.
+    noteByWorkflow: () => systemWorkflowManages('sys.ao.note-analyse')
   }
 }
 
@@ -440,7 +441,7 @@ export const aoModule: BlackModule = {
   id: AO,
   nameKey: 'ao.name',
   descriptionKey: 'ao.description',
-  version: '0.39.0',
+  version: '0.40.0',
   // Les pièces sont lues par le module Lecture de fichiers, typées par Typage des pièces ;
   // leurs exigences sont extraites et rangées par le module Exigences.
   requires: [LECTURE_FICHIERS, TYPAGE_PIECES, EXIGENCES],

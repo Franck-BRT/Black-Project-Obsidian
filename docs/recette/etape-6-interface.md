@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La note de l'analyse : un seul workflow (v0.136.12)
+
+- [ ] Workflows › Système › Analyse d'appels d'offres : **Note de l'analyse : le tableau des pièces et
+      la liste des exigences, à chaque mise à jour** (déclencheur « AO : analyse mise à jour », deux
+      étapes) ; les deux anciens n'y sont plus
+- [ ] L'activer ; importer des pièces : le tableau des pièces de la note à jour ; extraire les
+      exigences du CCTP : la liste des exigences de la note à jour
+- [ ] Le désactiver : la note n'est plus réécrite à l'import
+
 ## Verser « À classer » : un seul workflow (v0.136.11)
 
 - [ ] Workflows › Système › Bibliothèque : **Verser le dossier « À classer », à l'ouverture et chaque
