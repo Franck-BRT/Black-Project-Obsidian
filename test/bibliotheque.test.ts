@@ -319,6 +319,9 @@ describe('les bibliothèques en explorateur de fichiers (le réglage d’origine
     expect(view.layouts).toEqual(['list', 'cards', 'table'])
     expect(view.grouping).toBeDefined()
     expect(view.blocks.some((block) => block.kind === 'stats')).toBe(false)
+    // En tête : « Verser » visible ; les actions du lieu (nouveau répertoire, exporter…) dans le menu « … ».
+    expect(view.actions!.filter((action) => !action.more).map((action) => action.id)).toEqual(['pour'])
+    expect(view.actions!.filter((action) => action.more).map((action) => action.id)).toEqual(expect.arrayContaining(['new-directory', 'new-shelf', 'export-shelf', 'import-shelf']))
     // Un clic sur un répertoire : sa page, lui marqué.
     await nodeOf(explorer.nodes, 'Normes')!.open!.run()
     const normes = await page('bibliotheque.documents').load(shown.at(-1)!.split('?')[1])
@@ -328,6 +331,9 @@ describe('les bibliothèques en explorateur de fichiers (le réglage d’origine
     await doc.open!.run()
     const fiche = await page('bibliotheque.document').load(shown.at(-1)!.split('?')[1])
     expect(currents(fiche.explorer!.nodes)).toEqual(['Documents'])
+    // La fiche : ouvrir, modifier, déplacer, visibles ; le reste dans « … ».
+    expect(fiche.actions!.filter((action) => !action.more).map((action) => action.id)).toEqual(['file', 'classify', 'move'])
+    expect(fiche.actions!.filter((action) => action.more).map((action) => action.id)).toEqual(['language', 'version', 'to-references', 'note', 'aside', 'delete'])
     expect(currents((await page('bibliotheque.accueil').load()).explorer!.nodes)).toEqual(['Bibliothèque'])
     expect(currents((await page('bibliotheque.prompts').load()).explorer!.nodes)).toEqual(['Prompts'])
     // Le réglage coupé : l'affichage en cartes, comme avant.

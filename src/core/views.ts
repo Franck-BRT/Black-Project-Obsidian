@@ -24,6 +24,7 @@ export type IconName =
   | 'list'
   | 'menu'
   | 'filter'
+  | 'more'
   | 'check'
   | 'alert'
   | 'cross'
@@ -110,6 +111,8 @@ export interface ViewAction {
   primary?: boolean
   /** Grisé : on ne peut pas s'en servir pour l'instant (son infobulle dit pourquoi). */
   disabled?: boolean
+  /** Secondaire : rangé dans le menu « … » des boutons en tête de page (pas montré à part). */
+  more?: boolean
   run(): void | Promise<void>
 }
 

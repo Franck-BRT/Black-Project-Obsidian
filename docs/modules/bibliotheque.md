@@ -5,13 +5,22 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.59.0 (Black Projects 0.142.0) |
+| Version | 0.60.0 (Black Projects 0.144.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les actions secondaires dans le menu « … » (v0.60.0, Black Projects 0.144.0)
+
+- `ViewAction.more` : les actions d'un lieu (`placeView` : nouveau répertoire, nouvelle bibliothèque,
+  exporter, importer, par défaut, retirer la bibliothèque, supprimer le répertoire) ; « Ajouter les
+  exemples » d'une sorte d'entrées ; « Tout exporter », « Tout importer » de l'accueil.
+- La fiche d'un document : « Ouvrir le fichier », « Modifier… », « Déplacer… » visibles ; Langue…,
+  Nouvelle version de…, Ranger dans les références, Ouvrir sa note, Retirer, Supprimer dans « … ».
+  La fiche d'une entrée : Ouvrir sa note, Retirer, Supprimer dans « … ».
 
 ## Les bibliothèques en explorateur de fichiers (v0.59.0, Black Projects 0.142.0)
 

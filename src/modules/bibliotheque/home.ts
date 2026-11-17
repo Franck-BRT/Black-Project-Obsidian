@@ -886,8 +886,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     actions: [
       ...(present ? [{ id: 'file', label: t('bibliotheque.doc.file'), icon: 'file' as const, primary: true, run: () => deps.openFile(doc.file) }] : []),
       { id: 'classify', label: t('bibliotheque.classify'), icon: 'edit', run: () => deps.classify(doc.record) },
-      { id: 'language', label: t('bibliotheque.lang.choose'), tooltip: t('bibliotheque.lang.choose.tip'), icon: 'chat', run: () => deps.chooseLanguage(doc.record) },
-      { id: 'version', label: t('bibliotheque.newVersionOf'), tooltip: t('bibliotheque.newVersionOf.tip'), icon: 'flow', run: () => deps.newVersionOf(doc.record) },
+      // Les actions secondaires : dans le menu « … ».
+      { id: 'language', label: t('bibliotheque.lang.choose'), tooltip: t('bibliotheque.lang.choose.tip'), icon: 'chat', more: true, run: () => deps.chooseLanguage(doc.record) },
+      { id: 'version', label: t('bibliotheque.newVersionOf'), tooltip: t('bibliotheque.newVersionOf.tip'), icon: 'flow', more: true, run: () => deps.newVersionOf(doc.record) },
       {
         id: 'move',
         label: t('bibliotheque.move.doc'),
@@ -902,6 +903,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
               label: t('bibliotheque.references.toReferences'),
               tooltip: t('bibliotheque.references.toReferences.tip'),
               icon: 'star' as const,
+              more: true,
               run: async () => {
                 const moved = await deps.toReferences!(doc.record)
                 if (moved && moved !== doc.record) deps.showPage?.(docPageOf(moved))
@@ -909,12 +911,13 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             }
           ]
         : []),
-      { id: 'note', label: t('bibliotheque.doc.note'), icon: 'book', run: () => deps.showNote(doc.record) },
+      { id: 'note', label: t('bibliotheque.doc.note'), icon: 'book', more: true, run: () => deps.showNote(doc.record) },
       {
         id: 'aside',
         label: t('bibliotheque.setAside'),
         tooltip: t('bibliotheque.setAside.tip'),
         icon: 'archive',
+        more: true,
         run: async () => {
           if (await deps.setAside(doc.record)) deps.showPage?.(home)
         }
@@ -926,6 +929,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
               label: t('bibliotheque.delete'),
               tooltip: t('bibliotheque.delete.tip'),
               icon: 'trash' as const,
+              more: true,
               run: async () => {
                 if (await deps.deleteDoc!(doc.record)) deps.showPage?.(home)
               }

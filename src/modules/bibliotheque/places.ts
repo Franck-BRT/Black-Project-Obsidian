@@ -182,7 +182,8 @@ export async function placeView(
   return {
     breadcrumb: crumbs,
     blocks: [...(cards.length ? [{ kind: 'cards' as const, title: t('bibliotheque.place.directories', { count: cards.length }), cards }] : [])],
-    actions,
+    // Secondaires : dans le menu « … » de la page (seul « Verser », « Nouveau… » restent visibles).
+    actions: actions.map((action) => ({ ...action, more: true })),
     folder,
     // « La bibliothèque par défaut », quand il y en a plusieurs.
     note: isDefault && several ? ` · ${t('bibliotheque.shelf.default.long')}` : ''

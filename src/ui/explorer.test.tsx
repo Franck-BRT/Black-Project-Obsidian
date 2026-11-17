@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { createI18n } from '../core/i18n'
 import type { Explorer } from '../core/views'
 import { ExplorerTree } from './explorer'
+import { MoreMenu } from './moreMenu'
 
 describe('l’arborescence d’une page (un explorateur de fichiers)', () => {
   const i18n = createI18n('fr')
@@ -46,5 +47,16 @@ describe('l’arborescence d’une page (un explorateur de fichiers)', () => {
     expect(html).toMatch(/<li role="treeitem" aria-expanded="false" aria-selected="false" aria-label="Documents de référence \(0\)">/)
     expect(html).not.toContain('Guides')
     expect(html).toContain('aria-label="Déplier « Documents de référence »"')
+  })
+})
+
+describe('le menu « … » des actions secondaires', () => {
+  const i18n = createI18n('fr')
+  const t = i18n.t.bind(i18n)
+  it('un bouton « Plus d’actions », fermé d’origine ; sans action secondaire, rien', () => {
+    const html = renderToString(<MoreMenu actions={[{ id: 'export', label: 'Exporter', icon: 'archive', more: true, run: () => undefined }]} t={t} />)
+    expect(html).toMatch(/^<div class="bp-more"><button type="button" class="bp-button bp-more-button" aria-haspopup="menu" aria-expanded="false" aria-label="Plus d’actions" title="Plus d’actions">/)
+    expect(html).not.toContain('role="menu"')
+    expect(renderToString(<MoreMenu actions={[]} t={t} />)).toBe('')
   })
 })

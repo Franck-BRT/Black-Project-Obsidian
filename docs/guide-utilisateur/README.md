@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.143.0)
+## Aujourd'hui (version 0.144.0)
+
+- **Le menu « … »** : dans la bibliothèque, les boutons moins courants (nouveau répertoire, nouvelle
+  bibliothèque, exporter, importer, retirer, supprimer…) sont rangés derrière un bouton « … » ; seuls
+  les principaux restent visibles (« Verser des documents » ; sur une fiche : Ouvrir le fichier,
+  Modifier…, Déplacer…).
 
 - **Les filtres dans un menu déroulant** : sur chaque page qui en a (bibliothèque, analyses,
   exigences, workflows…), « Filtrer : Tout » à côté de la recherche, au lieu d'une rangée de boutons ;

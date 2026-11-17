@@ -344,6 +344,15 @@ button.bp-journey-tile:focus-visible { outline: 3px solid var(--bp-focus); outli
 
 /* Les actions rapides */
 .bp-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.bp-more { position: relative; display: inline-flex; }
+.bp-more-button { min-width: 42px; justify-content: center; }
+.bp-more-button svg.bp-icon { stroke-width: 3.2; }
+.bp-more-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 240px; max-width: 360px; padding: 6px; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius-small); background: var(--bp-surface); box-shadow: 0 12px 32px rgba(20, 24, 40, 0.18); }
+.bp-more-item { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 7px 10px; border-radius: 6px; color: var(--bp-text); cursor: pointer; }
+.bp-more-item:hover, .bp-more-item:focus-visible { background: var(--bp-surface-2); }
+.bp-more-item:focus-visible { outline: 2px solid var(--bp-focus); outline-offset: -2px; }
+.bp-more-item:disabled { opacity: 0.5; cursor: default; }
+.bp-more-item svg.bp-icon { flex: none; width: 17px; height: 17px; color: var(--bp-text-muted); }
 
 /* Les cartes */
 .bp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }

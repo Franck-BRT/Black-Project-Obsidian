@@ -351,6 +351,10 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
+- **Le menu « … »** *(0.144.0)* : une action de page marquée `more` (`ViewAction.more`) n'est pas un
+  bouton à part : elle va dans le menu « … » (`src/ui/moreMenu.tsx`) à la suite des boutons en tête de
+  page — ouvert sous le bouton, flèches pour passer d'une action à l'autre, Échap ou un clic ailleurs
+  le ferme. La bibliothèque y range ses actions secondaires.
 - **L'arborescence d'une page** *(0.142.0)* : `PageView.explorer` (des `ExplorerNode` : nom, icône,
   nombre, lieu montré, déplié d'origine, `open`, `drop`, enfants) — une colonne à gauche de la page
   (`src/ui/explorer.tsx`), collante, le reste à droite ; chevrons pour déplier (retenu :

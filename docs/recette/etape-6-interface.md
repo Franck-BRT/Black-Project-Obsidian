@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les actions secondaires dans le menu « … » (v0.144.0)
+
+- [ ] Bibliothèque › Documents : seul « Verser des documents » est visible, puis « … »
+- [ ] « … » : Nouveau répertoire, Nouvelle bibliothèque, Exporter, Importer… ; « Nouveau répertoire »
+      ouvre sa fenêtre, le répertoire apparaît dans la colonne de gauche
+- [ ] Au clavier : Entrée sur « … », flèches haut et bas, Échap ferme (le focus revient sur « … »)
+- [ ] Un clic ailleurs ferme le menu
+- [ ] La fiche d'un document : Ouvrir le fichier, Modifier…, Déplacer… ; dans « … » : Langue…,
+      Nouvelle version de…, Ranger dans les références, Ouvrir sa note, Retirer, Supprimer
+- [ ] L'accueil de la bibliothèque : « Tout exporter », « Tout importer… » dans « … »
+- [ ] Prompts : « Nouveau prompt » visible, « Ajouter les exemples » dans « … »
+
 ## Les filtres dans un menu déroulant (v0.143.0)
 
 - [ ] Bibliothèque › Documents : à côté de la recherche, « Filtrer : Tout » ; plus de rangée de boutons

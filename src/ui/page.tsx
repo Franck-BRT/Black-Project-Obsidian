@@ -14,6 +14,7 @@ import { DropLabel, useFileDrop } from './drop'
 import type { AppHost } from './host'
 import { Icon } from './icons'
 import { ExplorerTree } from './explorer'
+import { MoreMenu } from './moreMenu'
 
 type State = { status: 'loading' } | { status: 'ready'; view: PageView } | { status: 'failed'; reason: string }
 
@@ -217,9 +218,13 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
       {view.subtitle && <p class="bp-page-sub">{view.subtitle}</p>}
       {!!view.actions?.length && (
         <div class="bp-actions bp-page-actions">
-          {view.actions.map((action) => (
-            <ActionButton key={action.id} action={action} />
-          ))}
+          {view.actions
+            .filter((action) => !action.more)
+            .map((action) => (
+              <ActionButton key={action.id} action={action} />
+            ))}
+          {/* Les actions secondaires : dans le menu « … ». */}
+          <MoreMenu actions={view.actions.filter((action) => action.more)} t={t} />
         </div>
       )}
       {view.drop?.hint && (

@@ -154,7 +154,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
       if (path) deps.showPage?.(entryPageOf(kind, path))
     }
   }
-  const starters: ViewAction = { id: 'starters', label: t('bibliotheque.entry.starters'), tooltip: t(`bibliotheque.${kind}.starters.tip`), icon: 'copy', run: () => deps.addStarters(kind) }
+  const starters: ViewAction = { id: 'starters', label: t('bibliotheque.entry.starters'), tooltip: t(`bibliotheque.${kind}.starters.tip`), icon: 'copy', more: true, run: () => deps.addStarters(kind) }
   return {
     breadcrumb: top.breadcrumb,
     title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : places.shelves().length > 1 ? place.shelf.name : t(`bibliotheque.${kind}.title`),
@@ -203,7 +203,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
             (count) => t(`bibliotheque.${kind}.group.count`, { count })
           )
         ]
-      : [{ kind: 'message' as const, tone: 'info' as const, text: t(top.blocks.length ? 'bibliotheque.place.empty' : `bibliotheque.${kind}.empty`), actions: [create, { ...starters, primary: false }] }])
+      : [{ kind: 'message' as const, tone: 'info' as const, text: t(top.blocks.length ? 'bibliotheque.place.empty' : `bibliotheque.${kind}.empty`), actions: [create, { ...starters, primary: false, more: false }] }])
     ]
   }
 }
@@ -286,12 +286,14 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
           if (moved && moved !== entry.path) deps.showPage?.(entryPageOf(kind, moved))
         }
       },
-      { id: 'note', label: t('bibliotheque.entry.note'), icon: 'book', run: () => deps.showNote(entry.path) },
+      // Les actions secondaires : dans le menu « … ».
+      { id: 'note', label: t('bibliotheque.entry.note'), icon: 'book', more: true, run: () => deps.showNote(entry.path) },
       {
         id: 'aside',
         label: t('bibliotheque.entry.setAside'),
         tooltip: t('bibliotheque.entry.setAside.tip'),
         icon: 'archive',
+        more: true,
         run: async () => {
           if (await deps.setAside(kind, entry.path)) deps.showPage?.(home)
         }
@@ -303,6 +305,7 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
               label: t('bibliotheque.entry.delete'),
               tooltip: t('bibliotheque.entry.delete.tip'),
               icon: 'trash' as const,
+              more: true,
               run: async () => {
                 if (await deps.remove!(kind, entry.path)) deps.showPage?.(home)
               }
@@ -353,8 +356,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   }
   // Toute la bibliothèque, d'un coup : à se passer (une archive), ou reprise d'une autre.
   const wholeActions: ViewAction[] = [
-    ...(deps.exportAll ? [{ id: 'export-all', label: t('bibliotheque.exchange.exportAll'), tooltip: t('bibliotheque.exchange.exportAll.tip'), icon: 'archive' as const, run: () => deps.exportAll!() }] : []),
-    ...(deps.importAll ? [{ id: 'import-all', label: t('bibliotheque.exchange.importAll'), tooltip: t('bibliotheque.exchange.importAll.tip'), icon: 'upload' as const, run: () => deps.importAll!() }] : [])
+    ...(deps.exportAll ? [{ id: 'export-all', label: t('bibliotheque.exchange.exportAll'), tooltip: t('bibliotheque.exchange.exportAll.tip'), icon: 'archive' as const, more: true, run: () => deps.exportAll!() }] : []),
+    ...(deps.importAll ? [{ id: 'import-all', label: t('bibliotheque.exchange.importAll'), tooltip: t('bibliotheque.exchange.importAll.tip'), icon: 'upload' as const, more: true, run: () => deps.importAll!() }] : [])
   ]
   const stats: HomeBlock = {
     kind: 'stats',

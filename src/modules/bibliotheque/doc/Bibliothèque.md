@@ -75,6 +75,11 @@ plus récent ; le filtre **Dernières versions** les cache.
 
 ## 4. La page Bibliothèque
 
+**Le menu « … »**, à côté de « Verser des documents » : les actions moins courantes — nouveau
+répertoire, nouvelle bibliothèque, exporter, importer, retirer… Sur la fiche d'un document, « Ouvrir
+le fichier », « Modifier… » et « Déplacer… » restent visibles ; Langue…, Nouvelle version de…, Ranger
+dans les références, Ouvrir sa note, Retirer et Supprimer sont dans « … ».
+
 **En explorateur de fichiers** (d'origine) : une colonne à gauche montre toutes les bibliothèques —
 l'accueil, puis les groupes (documents, système IA, système, annuaire), chacune avec ses
 répertoires et combien chacun contient. Un clic ouvre un lieu, le chevron le déplie ou le replie
