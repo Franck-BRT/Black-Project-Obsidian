@@ -5,13 +5,29 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.58.0 (Black Projects 0.140.0) |
+| Version | 0.59.0 (Black Projects 0.142.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les bibliothèques en explorateur de fichiers (v0.59.0, Black Projects 0.142.0)
+
+- `explorer.ts` : `libraryExplorer(deps, current)` — l'arborescence (`PageView.explorer`) : l'accueil,
+  puis les groupes de l'accueil (documents ; prompts, personas, skills ; étiquettes ; entreprises,
+  personnes), chaque bibliothèque et ses répertoires (récursivement), leur nombre (`isUnder`), le
+  lieu `current` marqué ; un clic ouvre la page du lieu ; des fichiers lâchés sur un nœud de
+  documents y sont versés (pas dans le circuit).
+- Le réglage `explorateur` (`EXPLORER_KEY`, activé d'origine) ; `LibraryHomeDeps.explorer` /
+  `EntriesHomeDeps.explorer` : absent ou `undefined`, l'affichage en cartes d'avant.
+- En explorateur : les pages des lieux (documents, et chaque sorte d'entrées) proposent la liste
+  d'abord, sans le bloc des chiffres ; les documents sans regroupement d'origine (`aucun`, un choix
+  gardé l'emporte) ; l'accueil, la fiche d'un document ou d'une entrée et la page À contrôler ont
+  aussi la colonne (leur lieu marqué).
+- `LibraryHomeDeps.movedTo` : la page d'une fiche suit le document que le circuit a rangé pendant
+  qu'on l'ouvrait (versé seul, sa fiche s'ouvre : elle n'est plus « introuvable »).
 
 ## Les étapes du circuit, en couleur ; « Continuer le circuit » (v0.58.0, Black Projects 0.140.0)
 

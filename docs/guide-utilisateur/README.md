@@ -12,7 +12,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.141.0)
+## Aujourd'hui (version 0.142.0)
+
+- **Les bibliothèques en explorateur de fichiers** : une colonne à gauche montre toutes vos
+  bibliothèques (documents, références, projets, circuit, prompts, personas, skills, étiquettes,
+  entreprises, personnes) et leurs répertoires, avec leur nombre ; un clic y mène, le lieu où vous
+  êtes est marqué. Les documents sont en liste. Pour revenir aux cartes : Paramètres › Bibliothèque ›
+  **Les bibliothèques en explorateur de fichiers**, désactivé.
+- Un document versé seul ouvre sa fiche même si le circuit l'a déjà rangé ailleurs.
 
 - **Replier le menu de gauche** : le bouton ☰, en haut de la colonne, la replie (il ne reste que
   les icônes ; chaque nom s'affiche au survol) et la déplie. Votre choix est retenu.

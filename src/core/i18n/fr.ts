@@ -117,6 +117,8 @@ export const fr: Record<string, string> = {
   'ui.home.empty': 'Aucun module actif n’a de section d’accueil.',
   'ui.nav': 'Navigation',
   'ui.nav.fold': 'Replier le menu',
+  'ui.explorer.expand': 'Déplier « {name} »',
+  'ui.explorer.collapse': 'Replier « {name} »',
   'ui.nav.unfold': 'Déplier le menu',
   'ui.nav.home': 'Accueil',
   'ui.version': 'Version {version}',

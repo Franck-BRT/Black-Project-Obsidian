@@ -75,6 +75,15 @@ plus récent ; le filtre **Dernières versions** les cache.
 
 ## 4. La page Bibliothèque
 
+**En explorateur de fichiers** (d'origine) : une colonne à gauche montre toutes les bibliothèques —
+l'accueil, puis les groupes (documents, système IA, système, annuaire), chacune avec ses
+répertoires et combien chacun contient. Un clic ouvre un lieu, le chevron le déplie ou le replie
+(c'est retenu) ; le lieu montré est marqué, le chemin qui y mène déplié. Les documents sont en
+**liste** (les vues **Cartes** et **Tableau** restent au choix), sans les chiffres en tête : la
+colonne les dit. Des fichiers lâchés sur un répertoire de la colonne y sont versés. La fiche d'un
+document, les prompts, les personas… gardent la colonne. Pour revenir à l'affichage en cartes :
+Paramètres › Bibliothèque › **Les bibliothèques en explorateur de fichiers**, désactivé.
+
 L'**accueil de la bibliothèque** range ses bibliothèques **par groupe**, chacun une section
 qu'un clic déplie ou replie (l'état est gardé d'une ouverture à l'autre) :
 
@@ -461,6 +470,9 @@ pas ; son dossier se règle (`Bibliothèque/Références` d'origine).
   Une fiche déplacée, ses appels suivent.
 
 ## 11. Réglages
+
+**Les bibliothèques en explorateur de fichiers** (activé d'origine) : la colonne de gauche et les
+documents en liste ; désactivé, l'affichage en cartes (voir la section 4).
 
 **Dossier de la bibliothèque** (par défaut `Bibliothèque`), **dossier des documents de
 référence** (par défaut `Bibliothèque/Références`), **dossier des prompts** (par

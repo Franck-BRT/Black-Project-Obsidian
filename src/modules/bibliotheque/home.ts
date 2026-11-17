@@ -8,19 +8,21 @@
  * **fiche** d'un document : son identité, son fichier, d'où il vient, ses versions.
  */
 
-import { pageWith, type Badge, type Card, type HomeBlock, type IconName, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Explorer, type Badge, type Card, type HomeBlock, type IconName, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type AiReading, type LibraryDoc, type TextVersion } from './model'
 import { HUB_PAGE } from './entriesHome'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
 import type { GhostEntry, LibraryStore, ResearchField } from './store'
+import { CONTROL_FOLDER } from './store'
 import type { LibraryGhost } from './ghosts'
 import { LANGUAGES, type LanguageCode } from './language'
 import { docDateLabel, type KnownIssuer, type KnownTag } from './identity'
 import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
-import { builtInShelf, REFERENCE_SHELF, severalShelves } from './shelves'
+import { builtInShelf, CIRCUIT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
 import { CONTROL_PAGE, controlMessage, controlPage, proposalMessages, type ControlDeps } from './controlHome'
 import { circuitJourney, inCircuit } from './circuitSteps'
+import type { ExplorerPlace } from './explorer'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
 export const DOC_PAGE = 'bibliotheque.document'
@@ -35,6 +37,10 @@ export type EditableField = (typeof EDITABLE_FIELDS)[number]
 export interface LibraryHomeDeps {
   t: Translate
   store: LibraryStore
+  /** L'arborescence des bibliothèques (la colonne de gauche), le lieu montré marqué ; absente : l'affichage en cartes. */
+  explorer?(current: ExplorerPlace): Promise<Explorer | undefined>
+  /** Où une fiche a été déplacée (le circuit l'a rangée pendant qu'on la regardait), s'il le sait. */
+  movedTo?(record: string): string | undefined
   /** Le circuit des documents : les documents à contrôler, et ce qu'on en fait. */
   control?: ControlDeps
   today(): string
@@ -259,7 +265,9 @@ function docGroupOf(deps: LibraryHomeDeps, by: string): ((doc: LibraryDoc) => Gr
 export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promise<PageView> {
   const { t } = deps
   const place = resolvePlace(deps.places, param)
-  const docGrouping = groupingOf(LIBRARY_PAGE, 'origine')
+  // En explorateur de fichiers : l'arborescence à gauche, les documents en liste, sans regroupement d'origine.
+  const explorer = await deps.explorer?.({ kind: 'document', shelf: place.shelf.id, directory: place.directory })
+  const docGrouping = groupingOf(LIBRARY_PAGE, explorer ? 'aucun' : 'origine')
   const everything = (await deps.store.all()).sort((a, b) => b.added.localeCompare(a.added) || a.title.localeCompare(b.title, 'fr'))
   const under = everything.filter((doc) => isUnder(doc, place))
   // Regroupés par répertoire : tout ce qui est sous ce lieu ; sinon, ce qui est là même.
@@ -301,7 +309,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
       ? { drop: { ...deps.places.dropInto(top.folder, place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : place.shelf.name), hint: t('bibliotheque.drop.hint') } }
       : {}),
     actions: [{ id: 'pour', label: t('bibliotheque.pour'), tooltip: t('bibliotheque.pour.here.tip', { folder: top.folder }), icon: 'upload', primary: true, run: pourHere }, ...top.actions],
-    layouts: ['cards', 'list', 'table'],
+    layouts: explorer ? ['list', 'cards', 'table'] : ['cards', 'list', 'table'],
+    ...(explorer ? { explorer } : {}),
     grouping: groupingSelector(LIBRARY_PAGE, docGrouping, DOC_GROUPINGS, t, 'bibliotheque.group.doc'),
     search: { label: t('bibliotheque.search'), placeholder: t('bibliotheque.search.placeholder') },
     filters: [
@@ -328,7 +337,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
       ...(place.shelf.circuit && deps.control ? circuitStepsSection(deps, under.filter(inCircuit)) : []),
       ...(under.length || ghostsHere.length
         ? [
-            { kind: 'stats' as const, stats },
+            // Les chiffres du lieu : en explorateur, l'arborescence les dit déjà.
+            ...(explorer ? [] : [{ kind: 'stats' as const, stats }]),
             // Les documents du lieu, et ses fantômes parmi eux (l'icône fantôme les distingue), dans les mêmes groupes.
             ...(listed.length ? grouped(listed, (item) => (item.ghost ? ghostCard(deps, item.ghost, item.doc) : docCard(deps, item.doc, everything, missing.has(item.doc.record))), listedGroupOf, `bibliotheque.documents.${docGrouping}`, (count) => t('bibliotheque.group.count', { count })) : [])
           ]
@@ -462,8 +472,14 @@ async function controlNotice(deps: LibraryHomeDeps): Promise<HomeBlock[]> {
 
 export async function docPage(deps: LibraryHomeDeps, param: string | undefined): Promise<PageView> {
   const { t } = deps
-  const record = param ? decodeURIComponent(param) : ''
+  let record = param ? decodeURIComponent(param) : ''
   const all = await deps.store.all()
+  // Déplacée entre-temps (versée, puis rangée par le circuit) : sa page la suit.
+  for (let hops = 0; hops < 10 && !all.some((each) => each.record === record); hops++) {
+    const next = deps.movedTo?.(record)
+    if (!next) break
+    record = next
+  }
   const doc = all.find((each) => each.record === record)
   // Retour : là où il est rangé.
   const home = doc?.shelf ? placePageOf(LIBRARY_PAGE, { shelf: doc.shelf, directory: doc.directory ?? '' }) : LIBRARY_PAGE
@@ -861,7 +877,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     detail: origin.label || '—',
     ...(origin.link ? { open: { id: 'open', label: t('bibliotheque.origin.open'), run: () => deps.showNote(origin.link!) } } : {})
   }))
+  const explorer = await deps.explorer?.({ kind: 'document', shelf: doc.shelf ?? '', directory: doc.directory ?? '' })
   return {
+    ...(explorer ? { explorer } : {}),
     title: doc.title,
     back,
     subtitle: [isReference ? `★ ${t('bibliotheque.references.star')}` : '', t(`bibliotheque.family.${doc.family}`), doc.category].filter(Boolean).join(' · '),
@@ -1096,7 +1114,17 @@ export function registerLibraryHome(views: ViewsRegistrar | undefined, deps: Lib
   views.page({ id: COMPARE_PAGE, title: t('bibliotheque.compare.page'), icon: 'columns', parent: DOC_PAGE, load: (param) => comparePage(deps, param) })
   if (deps.control) {
     const control = deps.control
-    views.page({ id: CONTROL_PAGE, title: t('bibliotheque.control.title'), icon: 'flag', parent: LIBRARY_PAGE, load: () => controlPage(t, control, (record) => show(docPageOf(record))) })
+    views.page({
+      id: CONTROL_PAGE,
+      title: t('bibliotheque.control.title'),
+      icon: 'flag',
+      parent: LIBRARY_PAGE,
+      load: async () => {
+        const page = await controlPage(t, control, (record) => show(docPageOf(record)))
+        const explorer = await deps.explorer?.({ kind: 'document', shelf: CIRCUIT_SHELF, directory: CONTROL_FOLDER })
+        return explorer ? { ...page, explorer } : page
+      }
+    })
   }
   // Le menu mène à la bibliothèque : ses documents, ses prompts, ses personas.
   views.nav({ id: 'bibliotheque', label: t('bibliotheque.nav'), icon: 'book', order: 25, page: HUB_PAGE, run: () => show(HUB_PAGE) })

@@ -117,6 +117,8 @@ export const en: Record<string, string> = {
   'ui.home.empty': 'No active module has a home section.',
   'ui.nav': 'Navigation',
   'ui.nav.fold': 'Collapse the menu',
+  'ui.explorer.expand': 'Expand “{name}”',
+  'ui.explorer.collapse': 'Collapse “{name}”',
   'ui.nav.unfold': 'Expand the menu',
   'ui.nav.home': 'Home',
   'ui.version': 'Version {version}',

@@ -325,6 +325,19 @@ describe('le workflow système « Circuit des documents »', () => {
     expect(platform.notices).toContain('« Norme » : le circuit reprend.')
   })
 
+  it('la page d’une fiche suit le document que le circuit a rangé pendant qu’on la regardait', async () => {
+    const platform = memoryPlatform()
+    const { pour, answers, load } = await start(platform)
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    answers.analyse = () => chat({ typePiece: '', emetteur: '', projet: '', confiance: 0.9, raison: 'Une norme.' })
+    answers.rangement = () => chat({ dossier: 'Bibliothèque/Normes', confiance: 0.95, raison: 'Une norme.', alternatives: [] })
+    await pour('Norme.txt', 'ECSS-E-ST-10C.')
+    expect(platform.files.has('Bibliothèque/Normes/Norme.md')).toBe(true)
+    // Ouverte à son entrée (À classer) : elle est montrée là où elle est maintenant.
+    const fiche = await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Circuit/À classer/Norme.md')}`)
+    expect(fiche.title).toBe('Norme')
+  })
+
   it('« Continuer le circuit » grisé, avec sa raison, quand le circuit est coupé', async () => {
     const platform = memoryPlatform()
     const { pour, answers, load, settings } = await start(platform)

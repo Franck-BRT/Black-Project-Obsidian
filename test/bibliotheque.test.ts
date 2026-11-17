@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
+import { ViewsRegistry, type Card, type ExplorerNode, type HomeBlock, type PageView } from '../src/core/views'
 import { aoModule, createAnalysis, importFiles } from '../src/modules/ao'
 import { bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { exigencesModule } from '../src/modules/exigences'
@@ -37,7 +37,8 @@ const enc = (text: string) => new TextEncoder().encode(text)
 async function start(platform: MemoryPlatform, modules: readonly BlackModule[] = MODULES) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false } }
+  // L'affichage en cartes (l'explorateur de fichiers a ses propres essais, plus bas).
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false }, bibliotheque: { explorateur: false } }
   const commands = new Map<string, ModuleCommand>()
   const views = new ViewsRegistry()
   const shown: string[] = []
@@ -57,7 +58,7 @@ async function start(platform: MemoryPlatform, modules: readonly BlackModule[] =
   }
   const page = (id: string) => views.pages().find((each) => each.id === id)!
   const services = { fs: platform.fs, t: i18n.t.bind(i18n), root: "Appels d'offres", today: () => '2026-11-06' }
-  return { views, shown, noted, page, services, run: (id: string) => commands.get(id)!.run() }
+  return { views, shown, noted, page, services, settings, run: (id: string) => commands.get(id)!.run() }
 }
 
 // Les cartes, sections repliables comprises (les pages de la bibliothèque les regroupent).
@@ -285,5 +286,54 @@ describe('la page des documents : vues et regroupements', () => {
     view = await page('bibliotheque.prompts').load()
     expect(view.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title} (${block.subtitle})`] : []))).toEqual(['Les autres (7 prompt(s))'])
     await view.grouping!.options.find((option) => option.id === 'categorie')!.run()
+  })
+})
+
+describe('les bibliothèques en explorateur de fichiers (le réglage d’origine)', () => {
+  const nodeOf = (nodes: readonly ExplorerNode[], label: string): ExplorerNode | undefined => {
+    for (const node of nodes) {
+      if (node.label === label) return node
+      const inside = nodeOf(node.children ?? [], label)
+      if (inside) return inside
+    }
+    return undefined
+  }
+  const currents = (nodes: readonly ExplorerNode[]): string[] => nodes.flatMap((node) => [...(node.current ? [node.label] : []), ...currents(node.children ?? [])])
+
+  it('une colonne à gauche : l’accueil, les groupes, leurs bibliothèques et leurs répertoires, combien chacun contient ; le lieu montré marqué', async () => {
+    const platform = memoryPlatform()
+    const { page, shown, settings } = await start(platform)
+    settings.bibliotheque = {}
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    await pourIntoLibrary([{ name: 'Devis 2026.xlsx', bytes: enc('x') }, { name: 'CCTP lot 2.pdf', bytes: enc('y') }], { module: 'bibliotheque', label: 'Versé à la main' })
+    const view = await page('bibliotheque.documents').load()
+    const explorer = view.explorer!
+    expect(explorer.label).toBe('Les bibliothèques')
+    expect(explorer.nodes.map((node) => node.label)).toEqual(['Bibliothèque', 'Bibliothèques de documents', 'Bibliothèques système IA', 'Bibliothèques système', 'Annuaire'])
+    expect(nodeOf(explorer.nodes, 'Bibliothèques de documents')!.children!.map((node) => `${node.label} (${node.count})`)).toEqual(['Documents (2)', 'Documents de référence (0)', 'Documents projet (0)', 'Circuit (0)'])
+    expect(nodeOf(explorer.nodes, 'Bibliothèques système IA')!.children!.map((node) => node.label)).toEqual(['Prompts', 'Personas', 'Skills'])
+    expect(nodeOf(explorer.nodes, 'Documents')!.children!.map((node) => [node.label, node.icon, node.count])).toEqual([['Normes', 'folder', '0']])
+    expect(nodeOf(explorer.nodes, 'Circuit')!.children!.map((node) => node.label)).toEqual(['À classer', 'À contrôler'])
+    expect(currents(explorer.nodes)).toEqual(['Documents'])
+    // Les documents en liste d'abord, sans regroupement ni chiffres (l'arborescence les dit).
+    expect(view.layouts).toEqual(['list', 'cards', 'table'])
+    expect(view.grouping).toBeDefined()
+    expect(view.blocks.some((block) => block.kind === 'stats')).toBe(false)
+    // Un clic sur un répertoire : sa page, lui marqué.
+    await nodeOf(explorer.nodes, 'Normes')!.open!.run()
+    const normes = await page('bibliotheque.documents').load(shown.at(-1)!.split('?')[1])
+    expect(currents(normes.explorer!.nodes)).toEqual(['Normes'])
+    // Ailleurs dans la bibliothèque : la fiche d'un document (son lieu), l'accueil, les prompts.
+    const doc = cardsOf(view).find((card) => card.title === 'Devis 2026')!
+    await doc.open!.run()
+    const fiche = await page('bibliotheque.document').load(shown.at(-1)!.split('?')[1])
+    expect(currents(fiche.explorer!.nodes)).toEqual(['Documents'])
+    expect(currents((await page('bibliotheque.accueil').load()).explorer!.nodes)).toEqual(['Bibliothèque'])
+    expect(currents((await page('bibliotheque.prompts').load()).explorer!.nodes)).toEqual(['Prompts'])
+    // Le réglage coupé : l'affichage en cartes, comme avant.
+    settings.bibliotheque = { explorateur: false }
+    const cards = await page('bibliotheque.documents').load()
+    expect(cards.explorer).toBeUndefined()
+    expect(cards.layouts).toEqual(['cards', 'list', 'table'])
   })
 })

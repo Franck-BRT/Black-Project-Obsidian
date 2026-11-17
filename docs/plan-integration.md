@@ -683,6 +683,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
 - v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
+- v0.142.0 : **l'interface reprise, 2** : les bibliothèques en explorateur de fichiers (une colonne à gauche, bibliothèques et répertoires ; les documents en liste), au choix dans les paramètres ; la fiche d'un document versé suit le circuit
 - v0.141.0 : **l'interface reprise, 1** : le bouton ☰ replie et déplie le menu de gauche (les icônes seules), retenu
 - v0.140.0 : **les étapes du circuit en couleur** (vert, orange, rouge, gris) pour chaque document à classer ou à contrôler, l'échec d'une étape gardé sur la fiche, **Continuer le circuit** ; « Classer… » devient « Modifier… »
 - v0.139.0 : **la bibliothèque « Circuit »** : À classer et À contrôler sur une page à eux (`Bibliothèque/Circuit/…`), jamais une destination ; les anciens dossiers repris

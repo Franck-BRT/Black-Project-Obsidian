@@ -26,7 +26,8 @@ import { cleanFolder } from '../../core/settings'
 import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, runSystemWorkflow, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
 import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
-import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
+import { entryPageOf, entryTitle, HUB_PAGE as ENTRIES_HUB_PAGE, registerEntriesHome } from './entriesHome'
+import { libraryExplorer, type ExplorerPlace } from './explorer'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { previousStarterTexts, startersFor } from './starters'
 import type { EntityProposal } from './model'
@@ -959,6 +960,20 @@ const circuitField: BooleanField = {
   defaultValue: true
 }
 
+/**
+ * **Les bibliothèques en explorateur de fichiers** : une colonne à gauche (les bibliothèques et
+ * leurs répertoires), les documents en liste ; désactivé : l'affichage en cartes d'avant.
+ */
+export const EXPLORER_KEY = 'explorateur'
+const explorerField: BooleanField = {
+  kind: 'boolean',
+  key: EXPLORER_KEY,
+  nameKey: 'bibliotheque.setting.explorer',
+  descKey: 'bibliotheque.setting.explorer.desc',
+  tooltipKey: 'bibliotheque.setting.explorer.tip',
+  defaultValue: true
+}
+
 const projectsFolderField: TextField = {
   kind: 'text',
   key: PROJECTS_FOLDER_KEY,
@@ -1049,11 +1064,11 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.58.0',
+  version: '0.59.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField, circuitField, referencesFolderField, projectsFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
+  settingsFields: [folderField, explorerField, circuitField, referencesFolderField, projectsFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   async activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
@@ -1090,6 +1105,8 @@ export const bibliothequeModule: BlackModule = {
         { folder: `${mainFolder.document()}/${CIRCUIT_FOLDER}`, name: t('bibliotheque.shelf.circuit') }
       )
     const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
+    // Les fiches déplacées (le circuit les range pendant qu'on regarde) : la page d'une fiche la suit.
+    const movedRecords = new Map<string, string>()
     const store = new LibraryStore({
       fs: platform.fs,
       yaml: platform.yaml,
@@ -1127,7 +1144,10 @@ export const bibliothequeModule: BlackModule = {
       skip: () => ENTRY_KINDS.flatMap((kind) => shelves(kind)).map((shelf) => shelf.folder),
       shelves: () => shelves('document'),
       target: () => defaultShelf('document').folder,
-      moving: (from, to) => void ownMoves.add(`${from}\u0000${to}`)
+      moving: (from, to) => {
+        ownMoves.add(`${from}\u0000${to}`)
+        movedRecords.set(from, to)
+      }
     })
     const entryStore = (kind: EntryKind) =>
       new EntryStore(kind, { fs: platform.fs, yaml: platform.yaml, folder: mainFolder[kind], shelves: () => shelves(kind), target: () => defaultShelf(kind).folder })
@@ -1754,6 +1774,11 @@ export const bibliothequeModule: BlackModule = {
       importInto
     })
     const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill'), issuer: placesOf('issuer'), tag: placesOf('tag'), person: placesOf('person') }
+    /** L'arborescence des bibliothèques (en explorateur de fichiers, le réglage d'origine) ; sinon rien : l'affichage en cartes. */
+    const explorerFor = async (current: ExplorerPlace) =>
+      settings.get()[EXPLORER_KEY] === false
+        ? undefined
+        : libraryExplorer({ t, hub: ENTRIES_HUB_PAGE, places, items: (kind) => (kind === 'document' ? store.all() : entries[kind].all()), ...(showPage ? { showPage } : {}) }, current)
     /** Choisir où ranger : chaque bibliothèque de la sorte, chacun de ses répertoires (sauf là où c'est déjà). */
     const pickPlace = async (kind: ShelfKind, current: string, title: string): Promise<string | null> => {
       const options = (await allPlaces(shelves(kind), subdirectories(kind)))
@@ -2597,6 +2622,8 @@ export const bibliothequeModule: BlackModule = {
     registerLibraryHome(context.views, {
       t,
       store,
+      explorer: explorerFor,
+      movedTo: (record) => movedRecords.get(record),
       control: {
         list: toControl,
         pending: async () => (await store.all()).filter((doc) => doc.circuit === 'a-classer' || doc.circuit === 'ingere' || doc.circuit === 'analyse'),
@@ -2957,6 +2984,7 @@ export const bibliothequeModule: BlackModule = {
       return path
     }
     registerEntriesHome(context.views, {
+      explorer: explorerFor,
       t,
       stores: entries,
       skillContextLabel,

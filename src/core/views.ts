@@ -425,6 +425,39 @@ export interface PageView {
   layouts?: readonly PageLayout[]
   /** Regrouper les cartes (en sections) : les choix, celui en cours. */
   grouping?: { label: string; current: string; options: ViewAction[] }
+  /**
+   * Une **arborescence**, comme dans un explorateur de fichiers : une colonne à gauche de la
+   * page (les bibliothèques et leurs répertoires), le reste de la page à droite.
+   */
+  explorer?: Explorer
+}
+
+/** L'arborescence d'une page (sa colonne de gauche). */
+export interface Explorer {
+  /** Ce qu'elle montre, pour qui ne la voit pas (« Les bibliothèques »). */
+  label: string
+  nodes: ExplorerNode[]
+}
+
+/**
+ * Un nœud de l'arborescence : un groupe, une bibliothèque, un répertoire. Un clic ouvre sa page
+ * (`open`) ; ses enfants se déplient ou se replient (déplié d'origine si `expanded` — ceux sur
+ * le chemin du lieu montré ; l'interface retient ensuite ce que l'utilisateur en fait).
+ */
+export interface ExplorerNode {
+  /** Stable : le souvenir de son état (déplié ou non) y est attaché. */
+  id: string
+  label: string
+  icon?: IconName
+  /** Combien il contient, en court (« 7 »). */
+  count?: string
+  /** Le lieu montré par la page. */
+  current?: boolean
+  expanded?: boolean
+  open?: ViewAction
+  /** Des fichiers glissés-déposés sur le nœud (un répertoire : y verser). */
+  drop?: FileDrop
+  children?: ExplorerNode[]
 }
 
 /** Comment une page montre ses cartes. */

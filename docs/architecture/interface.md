@@ -351,6 +351,11 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
+- **L'arborescence d'une page** *(0.142.0)* : `PageView.explorer` (des `ExplorerNode` : nom, icône,
+  nombre, lieu montré, déplié d'origine, `open`, `drop`, enfants) — une colonne à gauche de la page
+  (`src/ui/explorer.tsx`), collante, le reste à droite ; chevrons pour déplier (retenu :
+  `black-projects.explorateur-deplie`), le lieu montré et le chemin qui y mène dépliés ; sous 900 px,
+  au-dessus de la page. Les bibliothèques s'en servent (le réglage « en explorateur de fichiers »).
 - **Le bouton ☰** *(0.141.0)*, en haut de la colonne : la replie (64 px, les icônes seules, le nom en
   info-bulle ; `.bp-shell.is-side-folded`) ou la déplie ; retenu dans le stockage du navigateur
   (`black-projects.menu-replie`) ; « Modifier le menu » la déplie ; sur petit écran, repliée, la

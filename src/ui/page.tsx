@@ -13,6 +13,7 @@ import { ActionButton, AfterAction, BlockView, BreadcrumbNav, LayoutContext } fr
 import { DropLabel, useFileDrop } from './drop'
 import type { AppHost } from './host'
 import { Icon } from './icons'
+import { ExplorerTree } from './explorer'
 
 type State = { status: 'loading' } | { status: 'ready'; view: PageView } | { status: 'failed'; reason: string }
 
@@ -203,14 +204,9 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
   const drop = useFileDrop(view.drop)
   // Une carte survolée (un répertoire) dit son propre « Déposer pour verser dans… ».
   const [inner, setInner] = useState<string | null>(null)
-  return (
-    <div class={`bp-page${drop.over ? ' is-drop-over' : ''}`} data-page={spec.id} aria-busy={drop.busy || undefined} {...drop.props}>
-      {drop.over && view.drop && (
-        <div class="bp-drop-banner" role="status">
-          <Icon name="upload" />
-          {inner ?? view.drop.label}
-        </div>
-      )}
+  // Le contenu de la page : seul, ou à droite de son arborescence.
+  const content = (
+    <>
       {view.breadcrumb && !onCrumbs && <BreadcrumbNav crumbs={view.breadcrumb} />}
       {view.back && !onBack && !hasHistory && (
         <button type="button" class="bp-back" onClick={() => void view.back!.run()}>
@@ -292,6 +288,24 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
         </div>
       </LayoutContext.Provider>
       </DropLabel.Provider>
+    </>
+  )
+  return (
+    <div class={`bp-page${drop.over ? ' is-drop-over' : ''}`} data-page={spec.id} aria-busy={drop.busy || undefined} {...drop.props}>
+      {drop.over && view.drop && (
+        <div class="bp-drop-banner" role="status">
+          <Icon name="upload" />
+          {inner ?? view.drop.label}
+        </div>
+      )}
+      {view.explorer ? (
+        <div class="bp-explorer-layout">
+          <ExplorerTree explorer={view.explorer} t={t} />
+          <div class="bp-explorer-main">{content}</div>
+        </div>
+      ) : (
+        content
+      )}
     </div>
   )
 }

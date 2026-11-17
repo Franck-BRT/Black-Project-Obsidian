@@ -70,6 +70,21 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les bibliothèques en explorateur de fichiers (v0.142.0)
+
+- [ ] Menu **Bibliothèque** : une colonne à gauche — Bibliothèque (marquée), puis Bibliothèques de
+      documents (Documents, Documents de référence, Documents projet, Circuit), système IA (Prompts,
+      Personas, Skills), système (Étiquettes), Annuaire (Entreprises, Personnes), chacune avec son nombre
+- [ ] Un clic sur Documents : la page des documents, en **liste**, Documents marqué ; un répertoire
+      (créé avec « Nouveau répertoire ») apparaît sous Documents, un clic y mène, le chemin déplié
+- [ ] Le chevron d'une bibliothèque la replie ; fermer et rouvrir : toujours repliée (sauf si l'on y est)
+- [ ] Un fichier lâché sur un répertoire de la colonne y est versé
+- [ ] La fiche d'un document, la page d'un prompt, la page À contrôler : la colonne reste, leur lieu marqué
+- [ ] Verser un seul document (le circuit actif) : sa fiche s'ouvre, même s'il est déjà rangé ailleurs
+- [ ] Paramètres › Bibliothèque › **Les bibliothèques en explorateur de fichiers** désactivé : les
+      pages d'avant (cartes, chiffres en tête) ; réactivé : la colonne revient
+- [ ] Fenêtre étroite : la colonne passe au-dessus de la page
+
 ## Replier le menu de gauche (v0.141.0)
 
 - [ ] Le bouton ☰ en haut de la colonne de gauche : la colonne se replie, seules les icônes restent ;

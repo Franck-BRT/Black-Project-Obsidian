@@ -9,13 +9,14 @@
  */
 
 import { DEFAULT_THRESHOLD } from './skills'
-import { pageWith, type Card, type HomeBlock, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Card, type Explorer, type HomeBlock, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { startersFor } from './starters'
 import { ENTRY_KINDS, entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, shelfCards, type ShelfPlacesDeps } from './places'
 import { CIRCUIT_SHELF, PROJECT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
 import { plainText } from '../../core/markdown'
+import type { ExplorerPlace } from './explorer'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -36,6 +37,8 @@ const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: '
 
 export interface EntriesHomeDeps {
   t: Translate
+  /** L'arborescence des bibliothèques (la colonne de gauche), le lieu montré marqué ; absente : l'affichage en cartes. */
+  explorer?(current: ExplorerPlace): Promise<Explorer | undefined>
   stores: Readonly<Record<EntryKind, EntryStore>>
   /** Le nom d'un contexte de skill exécutable (« Sa fiche », « Les dossiers où ranger »). */
   skillContextLabel?(key: string): string
@@ -135,6 +138,7 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
   const place = resolvePlace(places, param)
   const everything = await deps.stores[kind].all()
   const companies = kind === 'person' ? await deps.stores.issuer.all() : []
+  const explorer = await deps.explorer?.({ kind, shelf: place.shelf.id, directory: place.directory })
   const by = groupingOf(ENTRIES_PAGE[kind], 'categorie')
   const under = everything.filter((entry) => isUnder(entry, place))
   const entries = by === 'repertoire' ? under : under.filter((entry) => isHere(entry, place))
@@ -159,7 +163,8 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
       : {}),
     subtitle: t(`bibliotheque.${kind}.subtitle`, { folder: top.folder }) + top.note,
     actions: [create, ...(startersFor(kind, 'fr').length ? [starters] : []), ...top.actions],
-    layouts: ['cards', 'list'],
+    layouts: explorer ? ['list', 'cards'] : ['cards', 'list'],
+    ...(explorer ? { explorer } : {}),
     grouping: groupingSelector(ENTRIES_PAGE[kind], by, ENTRY_GROUPINGS, t, 'bibliotheque.group.entry'),
     search: { label: t('bibliotheque.entry.search'), placeholder: t(`bibliotheque.${kind}.search.placeholder`) },
     filters: [
@@ -171,14 +176,19 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
       ...top.blocks,
       ...(under.length
       ? [
-          {
-            kind: 'stats' as const,
-            stats: [
-              { label: t(`bibliotheque.${kind}.count`), value: String(under.length), icon: ICON[kind] },
-              { label: t('bibliotheque.entry.favorites'), value: String(under.filter((entry) => entry.favorite).length), icon: 'star' as const },
-              { label: t('bibliotheque.entry.categories'), value: String(entryCategories(under).length), icon: 'list' as const }
-            ]
-          },
+          // Les chiffres du lieu : en explorateur, l'arborescence les dit déjà.
+          ...(explorer
+            ? []
+            : [
+                {
+                  kind: 'stats' as const,
+                  stats: [
+                    { label: t(`bibliotheque.${kind}.count`), value: String(under.length), icon: ICON[kind] },
+                    { label: t('bibliotheque.entry.favorites'), value: String(under.filter((entry) => entry.favorite).length), icon: 'star' as const },
+                    { label: t('bibliotheque.entry.categories'), value: String(entryCategories(under).length), icon: 'list' as const }
+                  ]
+                }
+              ]),
           ...grouped(
             entries,
             (entry) => entryCard(deps, entry, companies),
@@ -248,8 +258,10 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
           }
         ]
       : []
+  const explorer = await deps.explorer?.({ kind, shelf: entry.shelf ?? '', directory: entry.directory ?? '' })
   return {
     title: entryTitle(entry),
+    ...(explorer ? { explorer } : {}),
     back,
     subtitle: [t(`bibliotheque.${kind}.one`), kind === 'person' ? personLine(entry, companies) : '', entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
     actions: [
@@ -451,7 +463,16 @@ export function registerEntriesHome(views: ViewsRegistrar | undefined, deps: Ent
   if (!views || !deps.showPage) return
   const { t } = deps
   const show = deps.showPage
-  views.page({ id: HUB_PAGE, title: t('bibliotheque.hub.title'), icon: 'book', load: () => hubPage(deps) })
+  views.page({
+    id: HUB_PAGE,
+    title: t('bibliotheque.hub.title'),
+    icon: 'book',
+    load: async () => {
+      const page = await hubPage(deps)
+      const explorer = await deps.explorer?.(null)
+      return explorer ? { ...page, explorer } : page
+    }
+  })
   for (const kind of ENTRY_KINDS) {
     views.page({ id: ENTRIES_PAGE[kind], title: t(`bibliotheque.${kind}.title`), icon: ICON[kind], parent: HUB_PAGE, load: (param) => entriesPage(deps, kind, param) })
     views.page({ id: ENTRY_PAGE[kind], title: t(`bibliotheque.${kind}.one`), icon: ICON[kind], parent: ENTRIES_PAGE[kind], load: (param) => entryPage(deps, kind, param) })
