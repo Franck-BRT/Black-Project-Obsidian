@@ -60,6 +60,8 @@ export interface LibraryEntry {
   context?: string[]
   output?: string
   threshold?: number
+  /** Un **terme du glossaire** : ses autres formes (un pluriel, un synonyme, une autre langue), cherchées comme lui. */
+  aliases?: string[]
   /** Où est sa note (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -103,7 +105,8 @@ export function entryContent(kind: EntryKind, draft: EntryDraft): string {
     ...(draft.favorite ? { favori: true } : {}),
     ...(kind === 'skill' && draft.context?.length ? { contexte: [...draft.context] } : {}),
     ...(kind === 'skill' && draft.output?.trim() ? { sortie: draft.output.trim() } : {}),
-    ...(kind === 'skill' && draft.threshold !== undefined ? { seuil: draft.threshold } : {})
+    ...(kind === 'skill' && draft.threshold !== undefined ? { seuil: draft.threshold } : {}),
+    ...(draft.aliases?.length ? { autresFormes: draft.aliases.map((each) => each.trim()).filter(Boolean) } : {})
   }
   return `---\n${toYaml(data)}\n---\n\n${draft.text.trim()}\n`
 }
@@ -125,8 +128,15 @@ export function readEntry(kind: EntryKind, path: string, data: Record<string, un
     ...(plain(data.entreprise) ? { company: plain(data.entreprise) } : {}),
     ...(plain(data.email ?? data.courriel) ? { email: plain(data.email ?? data.courriel) } : {}),
     ...(plain(data.telephone ?? data['téléphone'] ?? data.tel) ? { phone: plain(data.telephone ?? data['téléphone'] ?? data.tel) } : {}),
-    ...(kind === 'skill' ? skillFields(data) : {})
+    ...(kind === 'skill' ? skillFields(data) : {}),
+    ...(aliasesOf(data).length ? { aliases: aliasesOf(data) } : {})
   }
+}
+
+/** Les autres formes d'un terme (une liste, ou une ligne par forme). */
+function aliasesOf(data: Record<string, unknown>): string[] {
+  const raw = data.autresFormes ?? data['autres-formes'] ?? data.aliases
+  return [...new Set((Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split('\n') : []).map(plain).filter(Boolean))]
 }
 
 /** Ce qui fait d'un skill un skill exécutable : son contexte, sa sortie, son seuil (ceux qu'il a). */
@@ -141,7 +151,7 @@ function skillFields(data: Record<string, unknown>): Pick<LibraryEntry, 'context
 /** Toutes les entrées contiennent-elles chaque mot cherché (nom, catégorie, description, texte) ? */
 export function matchesEntry(entry: LibraryEntry, query: string): boolean {
   const words = fold(query).split(/\s+/).filter(Boolean)
-  const hay = fold([entry.code ?? '', entry.name, entry.category, entry.description, entry.company ?? '', entry.email ?? '', entry.phone ?? '', entry.text].join('\n'))
+  const hay = fold([entry.code ?? '', entry.name, ...(entry.aliases ?? []), entry.category, entry.description, entry.company ?? '', entry.email ?? '', entry.phone ?? '', entry.text].join('\n'))
   return words.every((word) => hay.includes(word))
 }
 

@@ -96,8 +96,36 @@ describe('le glossaire', () => {
     // Un terme qu'aucun document n'emploie : dit.
     const bpu = (await libraryEntries('glossary')).find((each) => each.code === 'BPU')!
     const none = await load(`bibliotheque.terme?${encodeURIComponent(bpu.path)}`)
-    expect(none.blocks.find((block) => block.kind === 'list' && (block.title ?? '').startsWith('Documents qui'))).toMatchObject({ items: [], empty: 'Aucun document de la bibliothèque n’emploie ce terme (ni son sigle) pour l’instant.' })
+    expect(none.blocks.find((block) => block.kind === 'list' && (block.title ?? '').startsWith('Documents qui'))).toMatchObject({ items: [], empty: 'Aucun document de la bibliothèque n’emploie ce terme (ni son sigle, ni une autre forme) pour l’instant.' })
     // Le circuit : un terme cité est un lien possible (l'IA peut l'y relier, avec un rétrolien).
     expect((await linkCandidatesFor(record)).filter((candidate) => candidate.kind === 'Terme du glossaire').map((candidate) => candidate.found)).toEqual(['CCTP', 'Recette'])
+  })
+
+  it('les autres formes d’un terme : cherchées comme lui ; dites sur sa page et sa carte', async () => {
+    const platform = memoryPlatform()
+    const { load } = await start(platform)
+    await addStarterEntries('glossary', 'fr')
+    const exigence = (await libraryEntries('glossary')).find((term) => term.name === 'Exigence')!
+    expect(exigence.aliases).toEqual(['exigences'])
+    expect(new TextDecoder().decode(platform.files.get(exigence.path))).toMatch(/\nautresFormes:\n- exigences\n/)
+    // Un document qui écrit « exigences » : le terme « Exigence » est sur sa fiche.
+    const report = await pourIntoLibrary([{ name: 'Revue.txt', bytes: enc('La revue des exigences a eu lieu.') }], { module: 'bibliotheque', label: 'Versé à la main' })
+    const fiche = await load(`bibliotheque.document?${encodeURIComponent(report!.added[0]!.record)}`)
+    const glossary = sections(fiche.blocks).find((section) => section.id === 'bibliotheque.document.glossaire')!
+    expect(glossary.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).map((item) => item.title)).toEqual(['Exigence'])
+    // Sa page et sa carte disent ses autres formes.
+    const term = await load(`bibliotheque.terme?${encodeURIComponent(exigence.path)}`)
+    expect(term.subtitle).toContain('Autres formes : exigences')
+    expect(cardsIn((await load('bibliotheque.glossaire')).blocks).find((card) => card.title === 'Exigence')!.text).toBe('Autres formes : exigences')
+  })
+
+  it('« Nouveau terme » : ses autres formes, une par ligne (sans doublon, ni son nom ni son sigle)', async () => {
+    const platform = memoryPlatform()
+    const { load } = await start(platform)
+    const page = await load('bibliotheque.glossaire')
+    platform.forms.push({ name: 'Plan de management', code: 'PMP', category: 'Projet', description: 'Le plan qui dit comment le projet est conduit.', text: '', aliases: 'plans de management\nPMP\nplan de management du projet\nplans de management', favorite: 'false' })
+    await page.actions!.find((action) => action.id === 'new')!.run()
+    const created = (await libraryEntries('glossary')).find((term) => term.code === 'PMP')!
+    expect(created.aliases).toEqual(['plans de management', 'plan de management du projet'])
   })
 })

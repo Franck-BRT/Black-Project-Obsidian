@@ -118,7 +118,13 @@ function entryCard(deps: EntriesHomeDeps, entry: LibraryEntry, companies: readon
     icon: ICON[entry.kind],
     badges: [...(entry.favorite ? [{ label: t('bibliotheque.entry.favorite'), tone: 'warning' as const }] : []), ...(entry.category ? [{ label: entry.category, tone: 'info' as const }] : [])],
     // Une personne : ses coordonnées d'abord.
-    text: (person ? [entry.email, entry.phone, excerpt(entry.text, 160)].filter(Boolean).join(' · ') : excerpt(entry.text)) || t(person ? 'bibliotheque.person.noContact' : 'bibliotheque.entry.noText'),
+    // Un terme du glossaire : ses autres formes (ses notes, sinon) ; rien de plus s'il n'en a pas.
+    text:
+      entry.kind === 'glossary'
+        ? entry.aliases?.length
+          ? t('bibliotheque.glossary.aliases', { forms: entry.aliases.join(', ') })
+          : excerpt(entry.text)
+        : (person ? [entry.email, entry.phone, excerpt(entry.text, 160)].filter(Boolean).join(' · ') : excerpt(entry.text)) || t(person ? 'bibliotheque.person.noContact' : 'bibliotheque.entry.noText'),
     ...(show ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => show(entryPageOf(entry.kind, entry.path)) } } : {}),
     actions: [
       {
@@ -269,7 +275,15 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
     title: entryTitle(entry),
     ...(explorer ? { explorer } : {}),
     back,
-    subtitle: [t(`bibliotheque.${kind}.one`), kind === 'person' ? personLine(entry, companies) : '', entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
+    subtitle: [
+      t(`bibliotheque.${kind}.one`),
+      kind === 'person' ? personLine(entry, companies) : '',
+      entry.category,
+      kind === 'glossary' && entry.aliases?.length ? t('bibliotheque.glossary.aliases', { forms: entry.aliases.join(', ') }) : '',
+      entry.favorite ? t('bibliotheque.entry.favorite') : ''
+    ]
+      .filter(Boolean)
+      .join(' · '),
     actions: [
       {
         id: 'edit',

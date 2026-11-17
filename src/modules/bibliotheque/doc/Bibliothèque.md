@@ -505,10 +505,14 @@ bibliothèques système) : **Nouveau terme**, ou **Ajouter les exemples** (des t
 d'offres et des projets : CCTP, CCAP, RC, BPU, DPGF, DCE, AE, mémoire technique, exigence, recette).
 Une note par terme, dans `Bibliothèque/Glossaire`.
 
+**Les autres formes** (comme pour les étiquettes) : un pluriel, une variante, une autre formulation
+(« exigences » pour « Exigence »), une par ligne dans le champ **Autres formes** du terme. Elles sont
+cherchées comme lui ; sa carte et sa page les disent (« Autres formes : … »).
+
 **Les liens avec les documents** :
 
 - la fiche d'un document a une section **Glossaire (n)** : les termes qu'il emploie (dans son titre ou
-  son texte, le terme ou son sigle, en mot entier), chacun avec sa définition ; un clic ouvre le terme ;
+  son texte, le terme, son sigle ou une autre forme, en mot entier), chacun avec sa définition ; un clic ouvre le terme ;
 - la page d'un terme dit **Documents qui l'emploient (n)** ; un clic ouvre leur fiche ;
 - le circuit des documents propose les termes cités comme liens possibles : l'IA peut les relier (le
   lien dans la fiche, un rétrolien dans la note du terme).

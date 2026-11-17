@@ -1068,7 +1068,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.65.0',
+  version: '0.66.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1894,7 +1894,7 @@ export const bibliothequeModule: BlackModule = {
       registerLinkSource({
         key: 'glossaire',
         label: t('bibliotheque.links.kind.glossary'),
-        items: async () => (await entries.glossary.all()).map((entry) => ({ path: entry.path, label: entryTitle(entry), names: [entry.name, entry.code ?? ''].filter(Boolean) }))
+        items: async () => (await entries.glossary.all()).map((entry) => ({ path: entry.path, label: entryTitle(entry), names: [entry.name, entry.code ?? '', ...(entry.aliases ?? [])].filter(Boolean) }))
       }),
       registerSkillContext({
         key: 'dossiers',
@@ -2711,7 +2711,7 @@ export const bibliothequeModule: BlackModule = {
      * citent, et ceux que le circuit y a reliés).
      */
     const glossaryItems = async (): Promise<(LinkSourceItem & { entry: LibraryEntry })[]> =>
-      (await entries.glossary.all()).map((entry) => ({ path: entry.path, label: entryTitle(entry), kind: 'glossary', names: [entry.name, entry.code ?? ''].filter(Boolean), entry }))
+      (await entries.glossary.all()).map((entry) => ({ path: entry.path, label: entryTitle(entry), kind: 'glossary', names: [entry.name, entry.code ?? '', ...(entry.aliases ?? [])].filter(Boolean), entry }))
     const docText = async (doc: LibraryDoc): Promise<string> => [doc.title, doc.reading === 'lue' ? ((await store.transcriptText(doc.record)) ?? '') : ''].join('\n')
     const glossaryOf = async (record: string): Promise<{ path: string; label: string; definition: string }[]> => {
       const doc = await store.load(record)
@@ -2992,6 +2992,10 @@ export const bibliothequeModule: BlackModule = {
           { kind: 'text', key: 'category', label: t('bibliotheque.entry.field.category'), value: current?.category ?? '', ...(categories.length ? { description: t('bibliotheque.entry.field.category.known', { list: categories.join(', ') }) } : {}) },
           { kind: kind === 'glossary' ? ('textarea' as const) : ('text' as const), key: 'description', label: t(kind === 'glossary' ? 'bibliotheque.glossary.field.description' : 'bibliotheque.entry.field.description'), required: kind === 'glossary', value: current?.description ?? '', placeholder: t(`bibliotheque.${kind}.field.description.placeholder`) },
           { kind: 'textarea', key: 'text', label: t(`bibliotheque.${kind}.text`), required: kind !== 'issuer' && kind !== 'tag' && kind !== 'glossary', value: current?.text ?? '', placeholder: t(`bibliotheque.${kind}.field.text.placeholder`), tooltip: t(`bibliotheque.${kind}.field.text.tip`) },
+          // Un terme du glossaire : ses autres formes, une par ligne (cherchées comme lui dans les documents).
+          ...(kind === 'glossary'
+            ? [{ kind: 'textarea' as const, key: 'aliases', label: t('bibliotheque.glossary.field.aliases'), value: (current?.aliases ?? preset.aliases ?? []).join('\n'), placeholder: t('bibliotheque.glossary.field.aliases.placeholder'), tooltip: t('bibliotheque.glossary.field.aliases.tip') }]
+            : []),
           { kind: 'toggle', key: 'favorite', label: t('bibliotheque.entry.favorite'), value: current?.favorite ?? false, tooltip: t(`bibliotheque.${kind}.field.favorite.tip`) },
           // Un skill exécutable : ce qu'il reçoit, ce qu'il rend, son seuil.
           ...(kind === 'skill' ? skillFormFields(current) : [])
@@ -3002,7 +3006,13 @@ export const bibliothequeModule: BlackModule = {
       const text = values?.text?.trim() ?? ''
       const code = (values?.code ?? '').trim().replace(/\s+/g, ' ')
       if (!values || !name || (!text && kind !== 'issuer' && kind !== 'tag' && kind !== 'glossary') || (kind === 'issuer' && !code) || (kind === 'glossary' && !(values.description ?? '').trim())) return null
-      return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true', ...(kind === 'issuer' || (kind === 'glossary' && code) ? { code } : {}), ...(kind === 'skill' ? skillDraft(values) : {}) }
+      return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true', ...(kind === 'issuer' || (kind === 'glossary' && code) ? { code } : {}), ...(kind === 'skill' ? skillDraft(values) : {}), ...(kind === 'glossary' ? glossaryAliases(values.aliases ?? '', name, code) : {}) }
+    }
+    /** Les autres formes d'un terme : une par ligne, sans doublon, ni son nom ni son sigle. */
+    const glossaryAliases = (raw: string, name: string, code: string): Pick<EntryDraft, 'aliases'> => {
+      const same = (a: string, b: string) => a.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase() === b.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+      const forms = [...new Set(raw.split(/\n|;/).map((each) => each.trim()).filter(Boolean))].filter((each) => !same(each, name) && !(code && same(each, code)))
+      return forms.length ? { aliases: forms } : {}
     }
     /** Les champs d'un skill exécutable : un interrupteur par contexte, la sortie, le seuil. */
     const skillFormFields = (current?: LibraryEntry): FormField[] => [

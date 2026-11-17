@@ -5,13 +5,26 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.65.0 (Black Projects 0.151.0) |
+| Version | 0.66.0 (Black Projects 0.152.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les autres formes d’un terme du glossaire (v0.66.0, Black Projects 0.152.0)
+
+- Comme pour les étiquettes : un terme a ses **autres formes** (`LibraryEntry.aliases`, champ
+  `autresFormes` de la note ; `autres-formes` et `aliases` sont lus aussi) — un pluriel, une variante, une
+  autre formulation. Le formulaire « Nouveau terme » / « Modifier » a le champ « Autres formes (une par
+  ligne) » ; à l'enregistrement, les doublons, le nom et le sigle du terme en sont retirés (sans tenir
+  compte des accents ni de la casse).
+- Elles sont cherchées comme le terme : la source de liens `glossaire` et `glossaryOf` (fiche d'un
+  document), `documentsUsing` (page du terme), la recherche dans le glossaire.
+- Affichées : « Autres formes : … » sur la carte du terme (à la place de l'extrait de ses notes) et dans
+  le sous-titre de sa page.
+- Les exemples livrés en ont (« exigences », « mémoires techniques », « actes d’engagement »…).
 
 ## Le glossaire (v0.65.0, Black Projects 0.151.0)
 

@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.151.0)
+## Aujourd'hui (version 0.152.0)
+
+- **Les autres formes d’un terme** : comme pour les étiquettes, un terme du glossaire a ses autres formes
+  (un pluriel, une variante : « exigences » pour « Exigence »), une par ligne dans son formulaire. Un
+  document qui en écrit une est relié au terme ; sa carte et sa page les disent.
 
 - **Le glossaire** : une bibliothèque de termes (son sigle, sa définition), dans Bibliothèque ›
   Glossaire ; « Ajouter les exemples » en met dix courants (CCTP, CCAP, RC, BPU…). La fiche d'un document

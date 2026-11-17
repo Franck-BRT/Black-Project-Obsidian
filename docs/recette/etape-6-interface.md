@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les autres formes d’un terme (v0.152.0)
+
+- [ ] « Nouveau terme » : le champ « Autres formes (une par ligne) » ; y mettre le sigle ou un doublon :
+      retirés à l'enregistrement
+- [ ] « Ajouter les exemples » : « Exigence » a pour autre forme « exigences » — dit sur sa carte et sur sa
+      page (« Autres formes : exigences »)
+- [ ] Verser un document qui écrit « exigences » et « mémoires techniques » : sa fiche, section
+      « Glossaire (2) » — Exigence, Mémoire technique
+- [ ] La page d'« Exigence » : le document est dans « Documents qui l'emploient »
+
 ## Le glossaire (v0.151.0)
 
 - [ ] Bibliothèque : « Glossaire » dans les bibliothèques système (colonne de gauche, accueil)
