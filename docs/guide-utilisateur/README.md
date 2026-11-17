@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.144.0)
+## Aujourd'hui (version 0.145.0)
+
+- **Des lignes plus légères dans la liste des documents** : le nom, puis le type de pièce, la date
+  d'ajout et la taille, sur une ligne ; une seule pastille, et seulement s'il y a quelque chose à faire
+  (« À confirmer », une version à relier, un fichier introuvable) ; plus de boutons sur chaque ligne —
+  un clic l'ouvre.
 
 - **Le menu « … »** : dans la bibliothèque, les boutons moins courants (nouveau répertoire, nouvelle
   bibliothèque, exporter, importer, retirer, supprimer…) sont rangés derrière un bouton « … » ; seuls

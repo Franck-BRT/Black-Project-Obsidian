@@ -135,6 +135,7 @@ const COMPONENTS_CSS = String.raw`
 .bp-cardrow-facts { display: flex; gap: 14px; margin: 0; color: var(--bp-text-muted); font-size: 0.88em; }
 .bp-cardrow-facts div { display: flex; flex-direction: column; white-space: nowrap; }
 .bp-cardrow-facts { flex: none; }
+.bp-cardrow-line { flex: none; color: var(--bp-text-muted); font-size: 0.88em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .bp-cardrow-facts dt { font-size: 0.85em; }
 .bp-cardrow-facts dd { margin: 0; color: var(--bp-text); font-weight: 600; }
 .bp-cardrow-actions, .bp-cardtable-actions { display: flex; gap: 4px; flex: none; }

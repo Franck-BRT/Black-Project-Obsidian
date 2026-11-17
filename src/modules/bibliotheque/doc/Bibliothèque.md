@@ -75,6 +75,11 @@ plus récent ; le filtre **Dernières versions** les cache.
 
 ## 4. La page Bibliothèque
 
+**Les lignes de la liste** (en explorateur) : le nom du document, puis à droite son type de pièce, sa
+date d'ajout et sa taille ; une pastille seulement s'il y a quelque chose à faire (« À confirmer (n) »,
+une version à relier, un fichier introuvable). Un clic sur la ligne ouvre la fiche. La recherche
+trouve aussi le nom du fichier et son origine.
+
 **Le menu « … »**, à côté de « Verser des documents » : les actions moins courantes — nouveau
 répertoire, nouvelle bibliothèque, exporter, importer, retirer… Sur la fiche d'un document, « Ouvrir
 le fichier », « Modifier… » et « Déplacer… » restent visibles ; Langue…, Nouvelle version de…, Ranger

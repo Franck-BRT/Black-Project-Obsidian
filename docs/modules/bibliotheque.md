@@ -5,13 +5,23 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.60.0 (Black Projects 0.144.0) |
+| Version | 0.61.0 (Black Projects 0.145.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les lignes allégées de la liste des documents (v0.61.0, Black Projects 0.145.0)
+
+- En explorateur, `docCard(…, light)` : le nom ; sa référence et sa version s'il en a ; une ligne
+  (`Card.line`) — type de pièce (sinon la famille), ajouté le, taille ; une pastille seulement s'il y a
+  à faire : « À confirmer (n) » (langue, identité, titre, entreprise, type, étiquettes, date), version à
+  relier, fichier introuvable ; pas de boutons (un clic ouvre la fiche). Le nom du fichier, l'origine,
+  la famille, le type restent cherchables (`Card.search`) ; les filtres ne changent pas. Les faits
+  (type de pièce, ajouté le, taille) font les colonnes de la vue tableau.
+- Les répertoires du lieu, en explorateur : sans le bouton « Ouvrir » (un clic sur la ligne y mène).
 
 ## Les actions secondaires dans le menu « … » (v0.60.0, Black Projects 0.144.0)
 

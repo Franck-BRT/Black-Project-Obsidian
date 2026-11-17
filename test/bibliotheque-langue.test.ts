@@ -40,7 +40,8 @@ const ENGLISH =
 async function start(platform: MemoryPlatform, modules: readonly BlackModule[] = ALL, workflows?: Workflow[]) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = workflows ? { workflows: { workflows } } : {}
+  // L'affichage en cartes (ses pastilles) : l'explorateur de fichiers a ses propres essais.
+  const settings: Record<string, Record<string, unknown>> = { ...(workflows ? { workflows: { workflows } } : {}), bibliotheque: { explorateur: false } }
   const views = new ViewsRegistry()
   for (const module of modules) {
     const context: ModuleContext = {

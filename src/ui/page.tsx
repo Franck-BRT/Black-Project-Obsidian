@@ -26,7 +26,7 @@ export function fold(text: string): string {
     .toLowerCase()
 }
 
-const cardText = (card: Card) => [card.title, card.subtitle, card.text, ...(card.badges ?? []).map((badge) => badge.label), ...(card.facts ?? []).map((fact) => `${fact.label} ${fact.value}`)].filter(Boolean).join(' ')
+const cardText = (card: Card) => [card.title, card.subtitle, card.text, card.line, card.search, ...(card.badges ?? []).map((badge) => badge.label), ...(card.facts ?? []).map((fact) => `${fact.label} ${fact.value}`)].filter(Boolean).join(' ')
 const itemText = (item: ListItem) => [item.title, item.detail].filter(Boolean).join(' ')
 
 /**

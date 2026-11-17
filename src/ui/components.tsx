@@ -238,7 +238,9 @@ function CardRow({ card, t, now, locale }: { card: CardView; t: Translate; now: 
         </div>
       )}
       {card.deadline && <DeadlineView deadline={card.deadline} t={t} now={now} locale={locale} />}
-      {!!card.facts?.length && (
+      {card.line ? (
+        <span class="bp-cardrow-line">{card.line}</span>
+      ) : !!card.facts?.length && (
         <dl class="bp-cardrow-facts">
           {card.facts.map((fact) => (
             <div key={fact.label} class={fact.tone ? `bp-tone-${fact.tone}` : undefined}>

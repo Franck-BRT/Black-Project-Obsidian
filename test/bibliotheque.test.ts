@@ -328,6 +328,15 @@ describe('les bibliothèques en explorateur de fichiers (le réglage d’origine
     expect(currents(normes.explorer!.nodes)).toEqual(['Normes'])
     // Ailleurs dans la bibliothèque : la fiche d'un document (son lieu), l'accueil, les prompts.
     const doc = cardsOf(view).find((card) => card.title === 'Devis 2026')!
+    // Une ligne allégée : une ligne de détails (type de pièce ou famille, ajouté le, taille), pas de boutons,
+    // une pastille seulement s'il y a quelque chose à confirmer ; le nom du fichier et l'origine, pour la recherche.
+    expect(doc.line).toMatch(/^.+ · \d{4}-\d{2}-\d{2} · 1 o$/)
+    expect(doc.actions).toEqual([])
+    expect(doc.text).toBe('')
+    expect((doc.badges ?? []).every((badge) => badge.tone === 'warning' || badge.tone === 'danger')).toBe(true)
+    expect(doc.search).toContain('Devis 2026.xlsx')
+    expect(doc.search).toContain('Versé à la main')
+    expect(doc.facts!.map((fact) => fact.label)).toEqual(['Type de pièce', 'Ajouté le', 'Taille'])
     await doc.open!.run()
     const fiche = await page('bibliotheque.document').load(shown.at(-1)!.split('?')[1])
     expect(currents(fiche.explorer!.nodes)).toEqual(['Documents'])

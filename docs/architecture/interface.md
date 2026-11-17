@@ -351,6 +351,9 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
+- **Une ligne discrète** *(0.145.0)* : `Card.line` remplace, en vue liste, les faits d'une carte par
+  une ligne de détails (« CCTP · 2026-11-17 · 172 o ») ; les faits restent les colonnes du tableau.
+  `Card.search` : du texte de plus pour la recherche, pas montré.
 - **Le menu « … »** *(0.144.0)* : une action de page marquée `more` (`ViewAction.more`) n'est pas un
   bouton à part : elle va dans le menu « … » (`src/ui/moreMenu.tsx`) à la suite des boutons en tête de
   page — ouvert sous le bouton, flèches pour passer d'une action à l'autre, Échap ou un clic ailleurs

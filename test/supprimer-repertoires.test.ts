@@ -23,7 +23,8 @@ const bytes = (text: string) => new TextEncoder().encode(text)
 async function vault(platform: MemoryPlatform, initial: Record<string, Record<string, unknown>> = {}) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ...initial }
+  // L'affichage en cartes (le bouton Supprimer sur la carte) : l'explorateur de fichiers a ses propres essais.
+  const settings: Record<string, Record<string, unknown>> = { bibliotheque: { explorateur: false }, ...initial }
   const views = new ViewsRegistry()
   const shown: string[] = []
   for (const module of MODULES) {

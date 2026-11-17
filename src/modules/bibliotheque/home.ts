@@ -144,11 +144,41 @@ function originText(t: Translate, doc: LibraryDoc): string {
   return doc.origins.map((origin) => [t(`${origin.module}.name`), origin.label].filter(Boolean).join(' — ')).join(' · ')
 }
 
-/** La carte d'un document. */
-function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDoc[], missing: boolean): Card {
+/** Ce qui reste à confirmer sur un document (sa langue, son titre, sa date…) : combien. */
+const toConfirm = (doc: LibraryDoc): number =>
+  [doc.languageToConfirm && !doc.language, doc.identityToConfirm, doc.titleToConfirm, doc.issuerToConfirm, doc.categoryToConfirm, doc.tagsToConfirm, doc.dateToConfirm].filter(Boolean).length
+
+/**
+ * La carte d'un document. `light` (en explorateur de fichiers) : allégée — son nom, sa référence,
+ * une ligne de détails (type de pièce, ajouté le, taille), une pastille seulement s'il y a quelque
+ * chose à faire (à confirmer, version à relier, introuvable), pas de boutons (un clic ouvre la fiche).
+ */
+function docCard(deps: LibraryHomeDeps, doc: LibraryDoc, all: readonly LibraryDoc[], missing: boolean, light = false): Card {
   const { t } = deps
   const replaced = all.some((other) => other.previous === doc.record)
   const version = versionLabel(doc)
+  if (light) {
+    const pending = toConfirm(doc)
+    const size = readableSize(doc.size, deps.locale)
+    return {
+      ...docCard(deps, doc, all, missing),
+      subtitle: [doc.reference, version].filter(Boolean).join(' · ') || '',
+      badges: [
+        ...(missing ? [{ label: t('bibliotheque.badge.missing'), tone: 'danger' as const }] : []),
+        ...(doc.likelyPrevious ? [{ label: t('bibliotheque.badge.likely'), tone: 'warning' as const }] : []),
+        ...(pending ? [{ label: t('bibliotheque.badge.toConfirm', { count: pending }), tone: 'warning' as const }] : [])
+      ],
+      line: [doc.category || t(`bibliotheque.family.${doc.family}`), doc.added, size].filter(Boolean).join(' · '),
+      search: [baseName(doc.file), originText(t, doc), t(`bibliotheque.family.${doc.family}`), doc.category].filter(Boolean).join(' '),
+      text: '',
+      facts: [
+        { label: t('bibliotheque.field.category'), value: doc.category || '—' },
+        { label: t('bibliotheque.field.added'), value: doc.added || '—' },
+        { label: t('bibliotheque.field.size'), value: size }
+      ],
+      actions: []
+    }
+  }
   const badges: Badge[] = [
     { label: t(`bibliotheque.family.${doc.family}`), tone: 'neutral' },
     ...(doc.category ? [{ label: doc.category, tone: 'info' as const }] : []),
@@ -332,7 +362,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     blocks: [
       // Le circuit : des documents attendent qu'on les contrôle.
       ...(await controlNotice(deps)),
-      ...top.blocks,
+      // Ses répertoires ; en explorateur, sans le bouton « Ouvrir » (un clic sur la ligne y mène).
+      ...(explorer ? top.blocks.map((block) => (block.kind === 'cards' ? { ...block, cards: block.cards.map((card) => ({ ...card, actions: (card.actions ?? []).filter((action) => action.id !== 'see') })) } : block)) : top.blocks),
       // La bibliothèque « Circuit » : les étapes de chacun de ses documents, et de quoi continuer.
       ...(place.shelf.circuit && deps.control ? circuitStepsSection(deps, under.filter(inCircuit)) : []),
       ...(under.length || ghostsHere.length
@@ -340,7 +371,7 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
             // Les chiffres du lieu : en explorateur, l'arborescence les dit déjà.
             ...(explorer ? [] : [{ kind: 'stats' as const, stats }]),
             // Les documents du lieu, et ses fantômes parmi eux (l'icône fantôme les distingue), dans les mêmes groupes.
-            ...(listed.length ? grouped(listed, (item) => (item.ghost ? ghostCard(deps, item.ghost, item.doc) : docCard(deps, item.doc, everything, missing.has(item.doc.record))), listedGroupOf, `bibliotheque.documents.${docGrouping}`, (count) => t('bibliotheque.group.count', { count })) : [])
+            ...(listed.length ? grouped(listed, (item) => (item.ghost ? ghostCard(deps, item.ghost, item.doc) : docCard(deps, item.doc, everything, missing.has(item.doc.record), !!explorer)), listedGroupOf, `bibliotheque.documents.${docGrouping}`, (count) => t('bibliotheque.group.count', { count })) : [])
           ]
         : [empty])
     ]

@@ -158,6 +158,13 @@ export interface Card {
   tags?: string[]
   /** Des fichiers glissés-déposés sur la carte (un répertoire : y verser). */
   drop?: FileDrop
+  /**
+   * En vue **liste** : ses détails en une ligne discrète (« CCTP · 2026-11-17 · 172 o »), à la place
+   * de ses faits (qui restent les colonnes de la vue tableau, et le pied de la carte).
+   */
+  line?: string
+  /** Du texte de plus pour la recherche, pas montré (le nom du fichier, d'où il vient). */
+  search?: string
 }
 
 /** Un indicateur : un chiffre et ce qu'il compte. */

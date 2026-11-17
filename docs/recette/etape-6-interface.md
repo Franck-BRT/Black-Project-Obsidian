@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les lignes allégées de la liste des documents (v0.145.0)
+
+- [ ] Bibliothèque › Documents (en explorateur, vue Liste) : chaque ligne, son nom puis, à droite,
+      « type de pièce · date d'ajout · taille » ; pas de bouton sur la ligne
+- [ ] Un document dont la langue, la date… sont à confirmer : une seule pastille « À confirmer (n) » ;
+      un document sans rien à confirmer : aucune pastille
+- [ ] Un clic sur la ligne ouvre la fiche
+- [ ] Chercher une extension (« .png ») ou une origine : le document est trouvé
+- [ ] Vue Tableau : colonnes Type de pièce, Ajouté le, Taille
+- [ ] L'explorateur désactivé (Paramètres) : les cartes d'avant, avec leurs pastilles et leurs boutons
+
 ## Les actions secondaires dans le menu « … » (v0.144.0)
 
 - [ ] Bibliothèque › Documents : seul « Verser des documents » est visible, puis « … »
