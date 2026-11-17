@@ -77,13 +77,13 @@ describe('la barre de gauche', () => {
       now: () => new Date('2026-11-06T09:30:00')
     }
   }
-  const labels = (html: string) => [...html.matchAll(/class="bp-nav-item"[^>]*>(?:<svg[^>]*>.*?<\/svg>)([^<]+)</g)].map((found) => found[1])
+  const labels = (html: string) => [...html.matchAll(/class="bp-nav-item"[^>]*>(?:<svg[^>]*>.*?<\/svg>)<span class="bp-nav-label">([^<]+)</g)].map((found) => found[1])
 
   it('Accueil en premier, Paramètres en dernier, et le menu rangé entre les deux', () => {
     const html = renderToString(<App host={host({ shown: ['workflows', `${TILE_PREFIX}ao.calendrier`], hidden: ['ui.dashboard', 'exigences'] })} generation={0} />)
     expect(labels(html)).toEqual(['Accueil', 'Workflows', 'Calendrier', 'Paramètres'])
     // En bas, sous la séparation : « Modifier le menu », puis Paramètres en dernier.
-    expect(html).toMatch(/class="bp-nav-bottom"><button type="button" class="bp-menu-link" data-tool="edit"[^>]*>.*?Modifier le menu<\/span><\/button><button type="button" class="bp-nav-item">.*?Paramètres<\/button><\/div><\/nav>/)
+    expect(html).toMatch(/class="bp-nav-bottom"><button type="button" class="bp-menu-link" data-tool="edit"[^>]*>.*?Modifier le menu<\/span><\/button><button type="button" class="bp-nav-item">.*?Paramètres<\/span><\/button><\/div><\/nav>/)
   })
 
   it('par défaut : le tableau de bord et les entrées des modules ; sans paramètres chez l’hôte, seulement « Modifier le menu » en bas', () => {
@@ -97,8 +97,27 @@ describe('la barre de gauche', () => {
     const base = host(null)
     const withPage = { ...base, settingsPage: 'core.parametres', pages: () => [{ id: 'core.parametres', title: 'Paramètres', icon: 'settings' as const, load: async () => ({ blocks: [] }) }] }
     const on = renderToString(<App host={withPage} generation={0} page="core.parametres" />)
-    expect(on).toMatch(/<button type="button" class="bp-nav-item" aria-current="page">.*?Paramètres<\/button><\/div><\/nav>/)
+    expect(on).toMatch(/<button type="button" class="bp-nav-item" aria-current="page">.*?Paramètres<\/span><\/button><\/div><\/nav>/)
     const off = renderToString(<App host={withPage} generation={0} />)
-    expect(off).not.toMatch(/aria-current="page">(?:(?!<button).)*Paramètres<\/button>/)
+    expect(off).not.toMatch(/aria-current="page">(?:(?!<button).)*Paramètres<\/span><\/button>/)
+  })
+
+  it('le bouton « hamburger » : déplié d’origine ; replié (retenu), les icônes seules, chaque libellé dit au survol', () => {
+    const open = renderToString(<App host={host(null)} generation={0} />)
+    expect(open).toMatch(/<button type="button" class="bp-side-toggle" aria-expanded="true" aria-label="Replier le menu" title="Replier le menu">/)
+    expect(open).not.toContain('is-side-folded')
+    const saved = new Map<string, string>([['black-projects.menu-replie', 'oui']])
+    const previous = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => void saved.set(key, value) } })
+    try {
+      const folded = renderToString(<App host={host(null)} generation={0} />)
+      expect(folded).toContain('<div class="bp-shell is-side-folded">')
+      expect(folded).toMatch(/<button type="button" class="bp-side-toggle" aria-expanded="false" aria-label="Déplier le menu" title="Déplier le menu">/)
+      expect(folded).toMatch(/<button type="button" class="bp-nav-item" title="Workflows">/)
+      expect(folded).toMatch(/data-tool="edit" aria-pressed="false" title="Modifier le menu">/)
+    } finally {
+      if (previous) Object.defineProperty(globalThis, 'localStorage', previous)
+      else delete (globalThis as { localStorage?: unknown }).localStorage
+    }
   })
 })

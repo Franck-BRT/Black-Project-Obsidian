@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Replier le menu de gauche (v0.141.0)
+
+- [ ] Le bouton ☰ en haut de la colonne de gauche : la colonne se replie, seules les icônes restent ;
+      au survol d'une icône, son nom ; un clic mène à sa page
+- [ ] Fermer et rouvrir Obsidian (ou la démo) : le menu est toujours replié
+- [ ] « Modifier le menu », menu replié : il se déplie pour la modification
+- [ ] ☰ de nouveau : le menu se déplie, avec ses libellés
+- [ ] Petit écran (fenêtre étroite) : replié, la navigation est cachée ; déplié, elle revient
+
 ## Les étapes du circuit en couleur, « Continuer le circuit » (v0.140.0)
 
 - [ ] IA réglée, mais en panne à l'analyse : verser un document — dans **Circuit**, la section « Les

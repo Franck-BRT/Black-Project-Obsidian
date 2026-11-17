@@ -24,6 +24,18 @@ import { Springboard } from './springboard'
 import { back as backFrom, leave, type Visit } from './history'
 import type { Breadcrumb, TileSpec, ViewAction } from '../core/views'
 
+/** Où est gardé, d'une ouverture à l'autre, le menu replié ou non. */
+const FOLDED_MENU_KEY = 'black-projects.menu-replie'
+
+/** Le menu était-il replié (le stockage absent, refusé : non) ? */
+function menuWasFolded(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(FOLDED_MENU_KEY) === 'oui'
+  } catch {
+    return false
+  }
+}
+
 /** L'accueil, le tableau de bord, ou la page d'un module (son identifiant : « ao.analyses »). */
 export type Page = string
 
@@ -34,6 +46,21 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
   const [panel, setPanel] = useState(false)
   const [local, setLocal] = useState(0)
   const [menuEditing, setMenuEditing] = useState(false)
+  // La colonne de gauche, repliée (ses icônes seules) ou dépliée : le bouton « hamburger » ; retenu.
+  const [sideFolded, setSideFolded] = useState(menuWasFolded)
+  const foldSide = (folded: boolean) => {
+    setSideFolded(folded)
+    try {
+      globalThis.localStorage?.setItem(FOLDED_MENU_KEY, folded ? 'oui' : 'non')
+    } catch {
+      // Sans stockage : retenu le temps de la session.
+    }
+  }
+  // Modifier le menu demande sa largeur : il se déplie.
+  const editMenu = (editing: boolean) => {
+    if (editing && sideFolded) foldSide(false)
+    setMenuEditing(editing)
+  }
   // Le titre d'une page qui dépend de ce qu'elle montre (le nom d'un workflow).
   const [pageTitle, setPageTitle] = useState<string | undefined>(undefined)
   // Le fil d'Ariane de la page montrée : tout en haut, au-dessus du « Retour ».
@@ -152,13 +179,23 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
           }
         }}
       >
-        <div class={`bp-shell${menuEditing ? ' is-menu-editing' : ''}`}>
+        <div class={`bp-shell${menuEditing ? ' is-menu-editing' : ''}${sideFolded ? ' is-side-folded' : ''}`}>
           <aside class="bp-side">
             <div class="bp-brand">
+              <button
+                type="button"
+                class="bp-side-toggle"
+                aria-expanded={!sideFolded}
+                aria-label={t(sideFolded ? 'ui.nav.unfold' : 'ui.nav.fold')}
+                title={t(sideFolded ? 'ui.nav.unfold' : 'ui.nav.fold')}
+                onClick={() => foldSide(!sideFolded)}
+              >
+                <Icon name="menu" />
+              </button>
               <span class="bp-brand-mark" aria-hidden="true">
                 BP
               </span>
-              <span>
+              <span class="bp-brand-text">
                 <span class="bp-brand-name">Black Projects</span>
                 <br />
                 <span class="bp-brand-by">by Black Room Technologies</span>
@@ -172,7 +209,8 @@ export function App({ host, generation, page: wanted = 'home', request = 0, onPa
               goHome={() => setPage('home')}
               goDashboard={() => setPage('dashboard')}
               editing={menuEditing}
-              setEditing={setMenuEditing}
+              setEditing={editMenu}
+              folded={sideFolded}
             />
             <div class="bp-side-foot">
               {t('ui.version', { version: host.version })}

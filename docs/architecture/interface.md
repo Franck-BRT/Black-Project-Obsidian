@@ -351,6 +351,10 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
+- **Le bouton ☰** *(0.141.0)*, en haut de la colonne : la replie (64 px, les icônes seules, le nom en
+  info-bulle ; `.bp-shell.is-side-folded`) ou la déplie ; retenu dans le stockage du navigateur
+  (`black-projects.menu-replie`) ; « Modifier le menu » la déplie ; sur petit écran, repliée, la
+  navigation est cachée.
 - **Modifier le menu** (en bas, sous la séparation, juste au-dessus de Paramètres ; en
   modification, ce bas de barre reste visible pendant qu'on fait défiler) : glisser-déposer, boutons Monter, Descendre, Retirer ; « Ajouter au
   menu », rangé par module ; « Rétablir le menu par défaut ». Le focus suit l'entrée

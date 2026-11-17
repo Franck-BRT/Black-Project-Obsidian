@@ -12,7 +12,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.140.0)
+## Aujourd'hui (version 0.141.0)
+
+- **Replier le menu de gauche** : le bouton ☰, en haut de la colonne, la replie (il ne reste que
+  les icônes ; chaque nom s'affiche au survol) et la déplie. Votre choix est retenu.
 
 - **Les étapes du circuit, en couleur** : pour chaque document encore dans « À classer » ou « À
   contrôler » (sur sa fiche, sur la page de la bibliothèque **Circuit**, et sur la page **À

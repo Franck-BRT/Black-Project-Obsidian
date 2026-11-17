@@ -29,8 +29,8 @@ const COMPONENTS_CSS = String.raw`
 /* La barre de gauche reste en place : seule la page (à droite) défile. */
 .bp-shell { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
 .bp-side { background: var(--bp-surface); border-right: 1px solid var(--bp-border); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; }
-.bp-brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 18px; }
-.bp-brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--bp-accent); color: var(--bp-accent-text); display: grid; place-items: center; font-weight: 800; }
+.bp-brand { display: flex; align-items: center; gap: 8px; padding: 4px 4px 18px; }
+.bp-brand-mark { flex: none; width: 34px; height: 34px; border-radius: 10px; background: var(--bp-accent); color: var(--bp-accent-text); display: grid; place-items: center; font-weight: 800; }
 .bp-brand-name { font-weight: 700; line-height: 1.2; }
 .bp-brand-by { font-size: 0.78em; color: var(--bp-text-muted); }
 .bp-nav { display: flex; flex-direction: column; gap: 2px; }
@@ -46,6 +46,15 @@ const COMPONENTS_CSS = String.raw`
 .bp-nav-bottom .bp-menu-link { margin-top: 0; }
 .bp-nav.is-editing .bp-nav-bottom { position: sticky; bottom: -20px; padding-bottom: 20px; background: var(--bp-surface); z-index: 1; }
 .bp-shell.is-menu-editing { grid-template-columns: 300px 1fr; }
+.bp-shell { transition: grid-template-columns var(--bp-speed); }
+.bp-side-toggle { all: unset; box-sizing: border-box; flex: none; width: 34px; height: 34px; border-radius: var(--bp-radius-small); display: grid; place-items: center; color: var(--bp-text-muted); cursor: pointer; transition: background var(--bp-speed), color var(--bp-speed); }
+.bp-side-toggle:hover { background: var(--bp-surface-2); color: var(--bp-text); }
+.bp-side-toggle:focus-visible { outline: 3px solid var(--bp-focus); outline-offset: 2px; }
+.bp-shell.is-side-folded { grid-template-columns: 64px 1fr; }
+.bp-shell.is-side-folded .bp-side { padding: 20px 8px; }
+.bp-shell.is-side-folded .bp-brand { flex-direction: column; gap: 8px; padding: 4px 0 18px; }
+.bp-shell.is-side-folded .bp-brand-text, .bp-shell.is-side-folded .bp-nav-label, .bp-shell.is-side-folded .bp-side-foot, .bp-shell.is-side-folded .bp-menu-link span { display: none; }
+.bp-shell.is-side-folded .bp-nav-item, .bp-shell.is-side-folded .bp-menu-link { justify-content: center; padding-left: 0; padding-right: 0; }
 .bp-menu-pinned { color: var(--bp-text-muted); cursor: default; }
 .bp-menu-pinned:hover { background: transparent; }
 .bp-menu-help { margin: 6px 4px; font-size: 0.82em; color: var(--bp-text-muted); }
@@ -624,6 +633,12 @@ button.bp-journey-tile:focus-visible { outline: 3px solid var(--bp-focus); outli
   .bp-nav.is-editing .bp-menu-link { width: 100%; }
   .bp-nav.is-editing .bp-nav-middle { flex-direction: column; }
   .bp-main { padding: 18px 14px 32px; }
+  /* Replié, sur petit écran : la marque et le bouton seuls, la navigation cachée. */
+  .bp-shell.is-side-folded { grid-template-columns: 1fr; }
+  .bp-shell.is-side-folded .bp-side { padding: 10px; }
+  .bp-shell.is-side-folded .bp-brand { flex-direction: row; padding: 4px 8px; }
+  .bp-shell.is-side-folded .bp-brand-text { display: inline; }
+  .bp-shell.is-side-folded .bp-nav { display: none; }
   .bp-backdrop { padding: 8px; }
   .bp-dialog-head, .bp-dialog-body, .bp-dialog-foot { padding-left: 14px; padding-right: 14px; }
 }

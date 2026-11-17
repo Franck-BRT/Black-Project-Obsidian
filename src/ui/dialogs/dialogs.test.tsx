@@ -264,7 +264,7 @@ describe('la fenêtre « Fonctions » d’un module', () => {
     expect(MODULE_PAGE).toBe('core.fonctions')
     expect(html).toMatch(/<h1 class="bp-hello"><svg[^>]*>.*?<\/svg>Essai — Fonctions<\/h1>/)
     expect(html).toContain('data-page="module-essai"')
-    expect(html).toMatch(/<button type="button" class="bp-nav-item" aria-current="page">.*?home\.nav\.settings<\/button>/)
+    expect(html).toMatch(/<button type="button" class="bp-nav-item" aria-current="page">.*?home\.nav\.settings<\/span><\/button>/)
     // Un module inconnu (désactivé, retiré) : l'accueil.
     expect(app(`${MODULE_PAGE}?inconnu`)).not.toContain('bp-module-page')
   })

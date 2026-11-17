@@ -116,6 +116,8 @@ export const en: Record<string, string> = {
   'ui.section.failed': 'This section could not load: {reason}',
   'ui.home.empty': 'No active module has a home section.',
   'ui.nav': 'Navigation',
+  'ui.nav.fold': 'Collapse the menu',
+  'ui.nav.unfold': 'Expand the menu',
   'ui.nav.home': 'Home',
   'ui.version': 'Version {version}',
   'ui.refresh': 'Refresh',

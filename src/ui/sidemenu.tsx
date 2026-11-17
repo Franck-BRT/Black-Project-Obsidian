@@ -27,7 +27,8 @@ export function SideMenu({
   goHome,
   goDashboard,
   editing,
-  setEditing
+  setEditing,
+  folded = false
 }: {
   host: AppHost
   generation: number
@@ -37,6 +38,8 @@ export function SideMenu({
   goDashboard: () => void
   editing: boolean
   setEditing: (editing: boolean) => void
+  /** Le menu replié : ses icônes seules (le libellé dit au survol). */
+  folded?: boolean
 }) {
   const { t } = host
   const home = t('ui.nav.home')
@@ -137,9 +140,9 @@ export function SideMenu({
         {editing ? (
           pinnedNote(home, t('ui.menu.pinnedTop'))
         ) : (
-          <button type="button" class="bp-nav-item" aria-current={page === 'home' ? 'page' : undefined} onClick={goHome}>
+          <button type="button" class="bp-nav-item" title={folded ? home : undefined} aria-current={page === 'home' ? 'page' : undefined} onClick={goHome}>
             <Icon name="home" />
-            {home}
+            <span class="bp-nav-label">{home}</span>
           </button>
         )}
       </div>
@@ -208,9 +211,9 @@ export function SideMenu({
           </>
         ) : (
           shown.map((item) => (
-            <button type="button" class="bp-nav-item" key={item.id} aria-current={item.page !== undefined && item.page === page ? 'page' : undefined} onClick={() => void item.run()}>
+            <button type="button" class="bp-nav-item" key={item.id} title={folded ? item.label : undefined} aria-current={item.page !== undefined && item.page === page ? 'page' : undefined} onClick={() => void item.run()}>
               <Icon name={item.icon} />
-              {item.label}
+              <span class="bp-nav-label">{item.label}</span>
             </button>
           ))
         )}
@@ -220,7 +223,7 @@ export function SideMenu({
       </p>
       {/* En bas, sous la séparation : « Modifier le menu », puis Paramètres, toujours le dernier. */}
       <div class="bp-nav-bottom">
-        <button type="button" class={`bp-menu-link${editing ? ' is-done' : ''}`} data-tool="edit" aria-pressed={editing} onClick={() => setEditing(!editing)}>
+        <button type="button" class={`bp-menu-link${editing ? ' is-done' : ''}`} data-tool="edit" aria-pressed={editing} title={folded ? t('ui.menu.edit') : undefined} onClick={() => setEditing(!editing)}>
           <Icon name={editing ? 'check' : 'edit'} />
           <span>{t(editing ? 'ui.tiles.done' : 'ui.menu.edit')}</span>
         </button>
@@ -228,9 +231,9 @@ export function SideMenu({
           (editing ? (
             pinnedNote(settings, t('ui.menu.pinnedBottom'))
           ) : (
-            <button type="button" class="bp-nav-item" aria-current={host.settingsPage !== undefined && page === host.settingsPage ? 'page' : undefined} onClick={() => host.openSettings?.()}>
+            <button type="button" class="bp-nav-item" title={folded ? settings : undefined} aria-current={host.settingsPage !== undefined && page === host.settingsPage ? 'page' : undefined} onClick={() => host.openSettings?.()}>
               <Icon name="settings" />
-              {settings}
+              <span class="bp-nav-label">{settings}</span>
             </button>
           ))}
       </div>

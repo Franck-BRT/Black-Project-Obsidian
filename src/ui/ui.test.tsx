@@ -80,7 +80,7 @@ describe('la coquille', () => {
   it('l’accueil : la navigation, le bonjour, la date, les tuiles', () => {
     const html = renderToString(<App host={host()} generation={0} />)
     expect(html).toContain('<nav class="bp-nav" aria-label="Navigation">')
-    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Accueil<\/button>/)
+    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg><span class="bp-nav-label">Accueil<\/span><\/button>/)
     expect(html).toContain('>Tableau de bord<')
     expect(html).toContain('>Exigences<')
     expect(html).toContain('<h1 class="bp-hello">Bonjour</h1>')
@@ -94,7 +94,7 @@ describe('la coquille', () => {
   it('le tableau de bord : son titre, et vide, expliqué', () => {
     const html = renderToString(<App host={host()} generation={0} page="dashboard" />)
     expect(html).toContain('<h1 class="bp-hello">Tableau de bord</h1>')
-    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Tableau de bord<\/button>/)
+    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg><span class="bp-nav-label">Tableau de bord<\/span><\/button>/)
     expect(html).toContain('Aucun module actif n’a de section d’accueil.')
   })
 })

@@ -71,6 +71,11 @@ retirez-la, ou ajoutez-en depuis « Ajouter au menu » — les entrées retirée
 fonctions des modules (calendrier, interroger le dossier, documentation…). « Rétablir le
 menu par défaut » remet tout en place. Votre menu est gardé.
 
+**Replier la barre de gauche** : le bouton ☰ (en haut, à gauche de la marque) la replie — il
+n'en reste que les icônes, chaque nom dit au survol — et la déplie. Ce choix est retenu d'une
+ouverture à l'autre ; « Modifier le menu » la déplie. Sur un petit écran, repliée, la
+navigation se cache tout à fait.
+
 **Modifier le tableau de bord** : chaque section devient une fiche. Glissez-la pour la
 déplacer, y compris d'une colonne à l'autre, ou utilisez ses boutons : monter, descendre,
 changer de colonne, masquer. Les **sections masquées** se réaffichent d'un clic ;

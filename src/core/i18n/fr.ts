@@ -116,6 +116,8 @@ export const fr: Record<string, string> = {
   'ui.section.failed': 'Cette section n’a pas pu se charger : {reason}',
   'ui.home.empty': 'Aucun module actif n’a de section d’accueil.',
   'ui.nav': 'Navigation',
+  'ui.nav.fold': 'Replier le menu',
+  'ui.nav.unfold': 'Déplier le menu',
   'ui.nav.home': 'Accueil',
   'ui.version': 'Version {version}',
   'ui.refresh': 'Rafraîchir',

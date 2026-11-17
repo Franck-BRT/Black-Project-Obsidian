@@ -102,7 +102,7 @@ describe('une page de module dans l’onglet', () => {
   it('son titre en tête, son entrée du menu marquée « page en cours »', () => {
     const html = renderToString(<App host={host()} generation={0} page="ao.analyses" />)
     expect(html).toMatch(/<h1 class="bp-hello"><svg[^>]*>.*?<\/svg>Analyses d’appels d’offres<\/h1>/)
-    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Analyses<\/button>/)
+    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg><span class="bp-nav-label">Analyses<\/span><\/button>/)
     // Le temps de charger : un squelette.
     expect(html).toContain('bp-skeleton')
   })
@@ -110,7 +110,7 @@ describe('une page de module dans l’onglet', () => {
   it('une page avec un paramètre (« ao.fiche?42 ») : la page trouvée, l’entrée de sa page parente marquée', () => {
     const html = renderToString(<App host={host()} generation={0} page="ao.fiche?42" />)
     expect(html).toMatch(/<h1 class="bp-hello"><svg[^>]*>.*?<\/svg>Analyse<\/h1>/)
-    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Analyses<\/button>/)
+    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg><span class="bp-nav-label">Analyses<\/span><\/button>/)
   })
 
   it('« Retour » mène au niveau supérieur — la page parente, sinon l’accueil —, pas à la page vue juste avant', () => {
@@ -124,7 +124,7 @@ describe('une page de module dans l’onglet', () => {
   it('une page inconnue (module désactivé) : l’accueil', () => {
     const html = renderToString(<App host={host()} generation={0} page="disparu.page" />)
     expect(html).toContain('Modifier l’accueil')
-    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg>Accueil<\/button>/)
+    expect(html).toMatch(/aria-current="page"><svg[^>]*>.*?<\/svg><span class="bp-nav-label">Accueil<\/span><\/button>/)
   })
 })
 

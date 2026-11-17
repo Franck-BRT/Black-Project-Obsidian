@@ -22,6 +22,7 @@ export type IconName =
   | 'folder'
   | 'file'
   | 'list'
+  | 'menu'
   | 'check'
   | 'alert'
   | 'cross'
