@@ -249,7 +249,7 @@ encore).
 |---|---|---|
 | **Circuit des documents** | un document entre dans À classer (`bibliotheque.document-verse`) | Ingestion → Analyse et liens → Rangement, chacun par `ia.executer-skill` ; le seuil décide |
 | **Relancer le circuit** | à l'ouverture, puis chaque jour | les fiches restées `a-classer` ou `ingere` (IA coupée) reprennent là où elles étaient |
-| **À contrôler en attente** | chaque lundi | prévient s'il y a des documents à contrôler, avec le lien vers la page |
+| **À contrôler en attente** | chaque lundi | prévient s'il y a des documents à contrôler, avec le lien vers la page — depuis 0.136.5, la première étape des « Rappels de la bibliothèque, chaque lundi » |
 | **Entretien des liens** (plus tard) | chaque semaine | liens vers des notes disparues, doublons probables, rétroliens manquants : signalés |
 
 Comme les autres workflows système : désactivables, modifiables, rétablissables ; non

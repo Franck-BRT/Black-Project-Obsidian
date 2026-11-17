@@ -138,7 +138,7 @@ describe('d’origine, seuls les workflows essentiels sont actifs', () => {
       [
         'sys.bibliotheque.depot-ouverture',
         'sys.bibliotheque.depot-quotidien',
-        'sys.bibliotheque.rappel-a-controler',
+        'sys.bibliotheque.rappels-lundi',
         'sys.bibliotheque.ranger-fichiers',
         'sys.bibliotheque.relancer-circuit',
         'sys.ia.circuit',

@@ -139,21 +139,19 @@ ci-dessous ; les autres sont désactivés tant que vous ne les activez pas.
 | --- | --- | --- | --- |
 | Ranger les fichiers et pièces importés dans la bibliothèque | des pièces importées dans une analyse, un import d'exigences, de types de pièces ou de workflows | les range dans la bibliothèque | activé (essentiel) |
 | Repérer les nouvelles versions probables | des documents entrent dans la bibliothèque | marque la version précédente probable, à confirmer sur la fiche | activé |
-| Signaler les fichiers introuvables, chaque lundi | le lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
+| Rappels de la bibliothèque, chaque lundi | le lundi à 8 h | une étape par rappel : documents **à contrôler**, **versions** et **langues à confirmer**, documents **sans type de pièce**, fichiers **introuvables** (plus dans le coffre) — chacune muette s'il n'y a rien à dire ; retirez une étape pour ne plus avoir ce rappel | activé (essentiel) |
 
 **Le dossier de dépôt** : posez des fichiers dans le dossier `À classer` de la bibliothèque (par défaut `Bibliothèque/À classer`)
 — par l'explorateur de fichiers, une synchronisation —, ils entrent dans la bibliothèque à
 l'ouverture d'Obsidian et chaque jour à 8 h, rangés dans `_fichiers` ; un fichier déjà
-dans la bibliothèque est mis de côté dans `_retirés`. Deux rappels, désactivés d'origine,
-chaque lundi : les **versions à confirmer** et les **documents sans type de pièce**.
+dans la bibliothèque est mis de côté dans `_retirés`. Les **versions à confirmer**, les
+**langues à confirmer** et les **documents sans type de pièce** sont rappelés le lundi, par les
+**Rappels de la bibliothèque** (ci-dessus).
 
 | Workflow système | Quand | D'origine |
 | --- | --- | --- |
 | Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | activé (essentiel) |
 | Verser le dossier « À classer », chaque jour | chaque jour à 8 h | activé (essentiel) |
-| Versions à confirmer, chaque lundi | le lundi à 8 h | désactivé |
-| Documents sans type de pièce, chaque lundi | le lundi à 8 h | désactivé |
-| Langues à confirmer, chaque lundi | le lundi à 8 h | désactivé |
 | Proposer un fantôme d'un document déjà dans la bibliothèque | vous déposez un document déjà là, rangé ailleurs | activé |
 
 Le désactiver, c'est ne plus ranger ce que les modules déposent (pour écarter les seules pièces

@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.4)
+## Aujourd'hui (version 0.136.5)
+
+- **Les rappels du lundi de la bibliothèque en un seul workflow** : « Rappels de la bibliothèque,
+  chaque lundi » dit, s'il y en a, les documents à contrôler, les versions et les langues à
+  confirmer, les documents sans type de pièce et les fichiers introuvables. Une étape par rappel :
+  retirez-en une pour ne plus l'avoir. Actif d'origine, il ne dit rien quand tout est en ordre.
 
 - **Deux autres doublons fondus dans les workflows** : la relecture du texte par l'IA et la
   lecture des scans avec la vision deviennent **un seul** workflow (« Relire avec l'IA le texte d'un

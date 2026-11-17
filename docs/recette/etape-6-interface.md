@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les rappels du lundi en un seul workflow (v0.136.5)
+
+- [ ] Workflows › Système › Bibliothèque : **Rappels de la bibliothèque, chaque lundi** (actif, cinq
+      étapes) ; « Rappeler les documents à contrôler », « Versions à confirmer », « Langues à
+      confirmer », « Documents sans type de pièce » et « Signaler les fichiers introuvables » n'y
+      sont plus (coffre existant compris)
+- [ ] **Exécuter maintenant** : une notice par rappel qui a quelque chose à dire, aucune sinon ; le
+      journal garde les cinq étapes
+- [ ] Retirer l'étape « Fichiers introuvables » : ce rappel ne vient plus, les autres si
+
 ## Deux autres doublons fondus (v0.136.4)
 
 - [ ] Workflows › Système › IA : « Lire avec la vision un document versé sans texte » et « Signaler

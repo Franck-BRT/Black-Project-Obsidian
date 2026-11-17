@@ -208,11 +208,9 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | --- | --- | --- | --- |
 | Ranger les fichiers et pièces importés dans la bibliothèque | fichiers déposés dans l'application (pièces d'analyse, import d'exigences, de types, de workflows) | verse le dépôt | actif |
 | Repérer les nouvelles versions probables | documents versés (une fois par versement) | marque la version précédente probable | actif |
-| Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
+| Rappels de la bibliothèque, chaque lundi (0.136.5 : les cinq rappels du lundi fondus) | lundi à 8 h | documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables — une étape chacun | actif |
 | Verser le dossier « À verser », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
 | Verser le dossier « À verser », chaque jour | chaque jour à 8 h | idem | actif |
-| Versions à confirmer, chaque lundi | lundi à 8 h | les nouvelles versions probables pas encore confirmées | désactivé |
-| Documents à classer, chaque lundi | lundi à 8 h | les documents sans catégorie | désactivé |
 
 **L'entretien des workflows (v0.13.0, Black Projects 0.67.0)** : le module n'avait pas
 d'automatisme à convertir — ce qu'il fait seul est le moteur (le journal tenu à 300
@@ -295,7 +293,7 @@ champ avec l'IA, depuis la fiche d'un document.
   Réglage désactivé : ce que chaque module prévoit (`enabledByDefault`), comme avant.
 - Les essentiels : le **circuit des documents** (`sys.ia.circuit`,
   `sys.bibliotheque.relancer-circuit`, `sys.bibliotheque.rappel-a-controler`), ce sans quoi rien
-  n'entre dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`,
+  n'entre dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`, avec `rappels-lundi`,
   `depot-ouverture`, `depot-quotidien`) et `sys.workflows.casses` (on voit ce qui casse). Les 41
   autres sont désactivés ; on les active un par un, sur la page Workflows.
 - Chaque workflow système garde le choix d'origine qui a fixé son état (`Workflow.defaults` :

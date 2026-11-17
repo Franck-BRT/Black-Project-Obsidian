@@ -168,7 +168,7 @@ describe('le workflow système « Circuit des documents »', () => {
       ]
     })
     expect(workflows().find((workflow) => workflow.system === 'sys.bibliotheque.relancer-circuit')).toMatchObject({ enabled: true, trigger: { kind: 'ouverture' } })
-    expect(workflows().find((workflow) => workflow.system === 'sys.bibliotheque.rappel-a-controler')).toMatchObject({ enabled: true })
+    expect(workflows().find((workflow) => workflow.system === 'sys.bibliotheque.rappels-lundi')).toMatchObject({ enabled: true, actions: [{ kind: 'bibliotheque.rappel-a-controler' }, {}, {}, {}, {}] })
     // Ses trois skills : dans la bibliothèque des skills dès l'activation (son workflow les nomme).
     expect((await libraryEntries('skill')).map((entry) => entry.name).sort()).toEqual(['Analyser un document', 'Ingérer un document', 'Ranger un document'])
     answers.analyse = () => ({ status: 500, text: 'panne' })

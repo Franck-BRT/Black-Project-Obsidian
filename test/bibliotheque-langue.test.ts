@@ -168,7 +168,7 @@ describe('la langue des documents de la bibliothèque', () => {
     expect(await again.pour('Cahier des charges.txt', FRENCH)).toMatchObject({ languageToConfirm: true })
   })
 
-  it('les workflows : {langue} et {langueaconfirmer} au document versé ; « Langues à confirmer, chaque lundi » (désactivé)', async () => {
+  it('les workflows : {langue} et {langueaconfirmer} au document versé ; « Langues à confirmer », une étape des rappels du lundi', async () => {
     const platform = memoryPlatform()
     const workflow: Workflow = {
       id: 'wf-langue',
@@ -184,7 +184,9 @@ describe('la langue des documents de la bibliothèque', () => {
     await pour('Cahier des charges.txt', FRENCH)
     await pour('Note.txt', 'Bonjour')
     expect(platform.notices).toEqual(expect.arrayContaining(['Cahier des charges : Français — à confirmer : non', 'Note :  — à confirmer : oui']))
-    const system = ((settings.workflows?.workflows ?? []) as Workflow[]).find((each) => each.system === 'sys.bibliotheque.langues-a-confirmer')
-    expect(system).toMatchObject({ enabled: false, name: 'Langues à confirmer, chaque lundi', trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
+    // Les langues à confirmer : une étape des rappels du lundi de la bibliothèque.
+    const system = ((settings.workflows?.workflows ?? []) as Workflow[]).find((each) => each.system === 'sys.bibliotheque.rappels-lundi')
+    expect(system).toMatchObject({ trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
+    expect(system!.actions.map((action) => action.kind)).toContain('bibliotheque.langues-a-confirmer')
   })
 })

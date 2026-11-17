@@ -123,11 +123,9 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Signaler un serveur d'IA lent, à l'ouverture | à l'ouverture d'Obsidian | prévient si l'IA met plus de 5 s à répondre | désactivé |
 | Ranger les fichiers et pièces importés dans la bibliothèque | des pièces importées dans une analyse, un import d'exigences, de types ou de workflows | les range dans la bibliothèque de documents | actif |
 | Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |
-| Signaler les fichiers introuvables, chaque lundi | lundi à 8 h | dit les documents dont le fichier n'est plus dans le coffre | désactivé |
+| Rappels de la bibliothèque, chaque lundi | lundi à 8 h | une étape par rappel : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables — chacune muette s'il n'y a rien | actif |
 | Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
 | Verser le dossier « À classer », chaque jour | chaque jour à 8 h | idem | actif |
-| Versions à confirmer, chaque lundi | lundi à 8 h | les nouvelles versions probables pas encore confirmées | désactivé |
-| Documents sans type de pièce, chaque lundi | lundi à 8 h | les documents sans type de pièce | désactivé |
 | Signaler les formats non lus, au dépôt de fichiers | des fichiers déposés dans l'application | dit ceux dont le format n'est pas lu, et où déclarer une extension équivalente | actif |
 | Signaler les pièces illisibles, à l'import | des pièces illisibles importées | les nomme, et dit que faire | actif |
 | Signaler les pièces sans texte (scans), à l'import | des pièces sans texte importées | les nomme | désactivé |

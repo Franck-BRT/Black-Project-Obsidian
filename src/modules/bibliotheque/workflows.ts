@@ -9,7 +9,9 @@
  *   pièces d'une analyse, le fichier d'un import d'exigences, un échange de types de pièces
  *   ou de workflows (l'ancien « Ranger les pièces importées » y est fondu) ;
  * - **Repérer les nouvelles versions probables** (activé) : une fois par versement ;
- * - **Signaler les fichiers introuvables** (désactivé) : chaque lundi à 8 h ;
+ * - **Rappels de la bibliothèque, chaque lundi** (activé) : une étape par rappel — documents à
+ *   contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers
+ *   introuvables —, chacune muette s'il n'y a rien à dire ;
  * - **Proposer un fantôme d'un document déjà là** (activé) : déposé soi-même dans un lieu
  *   de la bibliothèque, un document qui y est déjà ailleurs — une fenêtre propose de ne
  *   rien faire, ou de laisser ici un fantôme.
@@ -39,7 +41,10 @@ export const SYS_FILES = 'sys.bibliotheque.ranger-fichiers'
 /** L'ancien « Ranger les pièces importées », fondu dans « Ranger les fichiers importés ». */
 const SYS_PIECES_RETIRED = 'sys.bibliotheque.ranger-pieces'
 export const SYS_VERSIONS = 'sys.bibliotheque.nouvelles-versions'
-export const SYS_MISSING = 'sys.bibliotheque.fichiers-introuvables'
+/** Les rappels du lundi de la bibliothèque, en un seul workflow (depuis 0.136.5). */
+export const SYS_MONDAY = 'sys.bibliotheque.rappels-lundi'
+/** Les cinq rappels du lundi d'avant, fondus dans `SYS_MONDAY`. */
+const MONDAY_RETIRED = ['rappel-a-controler', 'versions-a-confirmer', 'langues-a-confirmer', 'a-classer', 'fichiers-introuvables'].map((id) => `sys.bibliotheque.${id}`)
 export const SYS_GHOST = 'sys.bibliotheque.fantome'
 
 
@@ -338,7 +343,7 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
 
   // ── Les workflows système de la bibliothèque ──
   // Les essentiels : ce sans quoi rien n'entre dans la bibliothèque, et le circuit des documents.
-  const essential = new Set(['ranger-fichiers', 'depot-ouverture', 'depot-quotidien', 'relancer-circuit', 'rappel-a-controler'])
+  const essential = new Set(['ranger-fichiers', 'depot-ouverture', 'depot-quotidien', 'relancer-circuit', 'rappels-lundi'])
   const system = (id: string, enabledByDefault: boolean, trigger: WorkflowTrigger, actions: WorkflowAction[], conditions: WorkflowCondition[] = [], replaces: string[] = []) =>
     registerSystemWorkflow({
       id: `sys.bibliotheque.${id}`,
@@ -353,15 +358,20 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   // workflows) : un seul workflow — « Ranger les pièces importées » y est fondu.
   system('ranger-fichiers', true, { kind: TRIGGER_DEPOSITED }, pour, [], [SYS_PIECES_RETIRED])
   system('nouvelles-versions', true, { kind: TRIGGER_BATCH }, [{ kind: 'bibliotheque.versions', fields: {} }])
-  system('fichiers-introuvables', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.introuvables', fields: {} }])
   const inbox: WorkflowAction[] = [{ kind: 'bibliotheque.depot', fields: {} }]
   system('depot-ouverture', true, { kind: OPENING }, inbox)
   system('depot-quotidien', true, { kind: SCHEDULE, every: 'day', time: '08:00' }, inbox)
-  system('versions-a-confirmer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.versions-a-confirmer', fields: {} }])
-  system('langues-a-confirmer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.langues-a-confirmer', fields: {} }])
   system('fantome', true, { kind: TRIGGER_KNOWN }, [{ kind: 'bibliotheque.fantome', fields: { quoi: 'demander', fiche: '{fiche}', dossier: '{dossier}' } }])
-  system('a-classer', false, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.a-classer', fields: {} }])
-  // Le circuit des documents : ceux qui s'y sont arrêtés (IA coupée, Obsidian fermé) reprennent à l'ouverture ; ce qui est à contrôler, rappelé le lundi.
+  // Le circuit des documents : ceux qui s'y sont arrêtés (IA coupée, Obsidian fermé) reprennent à l'ouverture.
   system('relancer-circuit', true, { kind: OPENING }, [{ kind: 'bibliotheque.relancer-circuit', fields: {} }])
-  system('rappel-a-controler', true, { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, [{ kind: 'bibliotheque.rappel-a-controler', fields: {} }])
+  // Les rappels du lundi, en un seul workflow : une étape par rappel, chacune muette s'il n'y a
+  // rien à dire (on retire une étape pour ne plus avoir ce rappel). Les cinq d'avant y sont fondus.
+  system(
+    'rappels-lundi',
+    true,
+    { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' },
+    ['bibliotheque.rappel-a-controler', 'bibliotheque.versions-a-confirmer', 'bibliotheque.langues-a-confirmer', 'bibliotheque.a-classer', 'bibliotheque.introuvables'].map((kind) => ({ kind, fields: {} })),
+    [],
+    MONDAY_RETIRED
+  )
 }

@@ -5,13 +5,23 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.51.1 (Black Projects 0.136.4) |
+| Version | 0.52.0 (Black Projects 0.136.5) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les rappels du lundi en un seul workflow (v0.52.0, Black Projects 0.136.5)
+
+- `sys.bibliotheque.rappels-lundi` (`SYS_MONDAY`) : « Rappels de la bibliothèque, chaque lundi »,
+  lundi à 8 h, cinq étapes — `bibliotheque.rappel-a-controler`, `versions-a-confirmer`,
+  `langues-a-confirmer`, `a-classer` (sans type de pièce), `introuvables` ; chaque action ne dit
+  rien s'il n'y a rien (le journal garde la ligne). Essentiel (il porte le rappel du circuit).
+- Il remplace (`replaces`) `rappel-a-controler`, `versions-a-confirmer`, `langues-a-confirmer`,
+  `a-classer` et `fichiers-introuvables` : retirés des coffres existants. `SYS_MISSING` retiré.
+- Pour ne plus avoir un rappel : retirer son étape ; pour les couper tous : désactiver le workflow.
 
 ## La notice « relecture non lancée » (v0.51.1, Black Projects 0.136.4)
 
@@ -338,7 +348,7 @@ Les automatismes de la bibliothèque sont des [workflows système](workflows.md)
 | --- | --- | --- | --- |
 | Ranger les fichiers et pièces importés dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`) | fichiers déposés dans l'application, quel que soit le module (`ao`, `exigences`, `typage-pieces`, `workflows`) — sans condition depuis 0.51.0 (`ranger-pieces` y est fondu) | `bibliotheque.verser` : verse le dépôt | actif (essentiel) |
 | Repérer les nouvelles versions probables (`sys.bibliotheque.nouvelles-versions`) | documents versés (une fois par versement) | `bibliotheque.versions` : `markLikelyVersions` sur les fiches du versement | actif |
-| Signaler les fichiers introuvables, chaque lundi (`sys.bibliotheque.fichiers-introuvables`) | chaque lundi à 8 h | `bibliotheque.introuvables` : `missingFiles`, prévient s'il en manque, le journal garde les fiches | désactivé |
+| Rappels de la bibliothèque, chaque lundi (`sys.bibliotheque.rappels-lundi`, 0.52.0) | chaque lundi à 8 h | cinq étapes : `bibliotheque.rappel-a-controler`, `bibliotheque.versions-a-confirmer`, `bibliotheque.langues-a-confirmer`, `bibliotheque.a-classer`, `bibliotheque.introuvables` (`missingFiles`) — chacune muette s'il n'y a rien | actif (essentiel) |
 
 **Le dépôt** : le module Workflows actif (`systemWorkflowManages` d'un des deux « Ranger »),
 `pourIntoLibrary` d'un autre module que la bibliothèque ne verse pas lui-même : il garde
@@ -365,9 +375,6 @@ Sans le module Workflows, la bibliothèque range et repère elle-même, comme en
 | --- | --- | --- | --- |
 | Verser le dossier « À verser », à l'ouverture (`sys.bibliotheque.depot-ouverture`) | à l'ouverture | `bibliotheque.depot` : `LibraryStore.pourInbox` | actif |
 | Verser le dossier « À verser », chaque jour (`sys.bibliotheque.depot-quotidien`) | chaque jour à 8 h | `bibliotheque.depot` | actif |
-| Versions à confirmer, chaque lundi (`sys.bibliotheque.versions-a-confirmer`) | lundi à 8 h | `bibliotheque.versions-a-confirmer` : les documents à `precedentProbable`, comptés et nommés | désactivé |
-| Documents à classer, chaque lundi (`sys.bibliotheque.a-classer`) | lundi à 8 h | `bibliotheque.a-classer` : les documents sans catégorie, comptés et nommés | désactivé |
-| Langues à confirmer, chaque lundi (`sys.bibliotheque.langues-a-confirmer`, v0.10.0) | lundi à 8 h | `bibliotheque.langues-a-confirmer` : les documents dont la langue est à confirmer, comptés et nommés | désactivé |
 | Proposer un fantôme d'un document déjà dans la bibliothèque (`sys.bibliotheque.fantome`, v0.9.0) | *Bibliothèque : document déjà là* | `bibliotheque.fantome` (*Demander*) : une fenêtre — « Ne rien faire » ou « Placer un fantôme ici » | actif |
 
 `pourInbox` : le dossier `<dossier>/À verser` (`INBOX_FOLDER`, jamais parcouru comme des

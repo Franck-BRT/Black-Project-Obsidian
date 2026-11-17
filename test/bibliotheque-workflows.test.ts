@@ -64,7 +64,6 @@ describe('les workflows système de la bibliothèque', () => {
     expect(system('ranger-fichiers')).toMatchObject({ enabled: true, name: 'Ranger les fichiers et pièces importés dans la bibliothèque', trigger: { kind: 'bibliotheque.fichiers-deposes' }, conditions: [] })
     expect((settings.workflows!.workflows as Workflow[]).some((each) => each.system === 'sys.bibliotheque.ranger-pieces')).toBe(false)
     expect(system('nouvelles-versions')).toMatchObject({ enabled: true, trigger: { kind: 'bibliotheque.versement' }, actions: [{ kind: 'bibliotheque.versions' }] })
-    expect(system('fichiers-introuvables')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
   })
 
   it('les pièces importées : rangées par le même workflow, sans rien dire ; le journal le garde', async () => {
@@ -152,23 +151,23 @@ describe('les workflows système de la bibliothèque', () => {
     expect(second.likelyPrevious).toBe(first.record)
   })
 
-  it('les fichiers introuvables, une fois activé : dits et gardés au journal', async () => {
+  it('les fichiers introuvables (une étape des rappels du lundi) : dits et gardés au journal', async () => {
     const platform = memoryPlatform()
     const { system, journal } = await start(platform)
     await pourIntoLibrary([{ name: 'Plan.pdf', bytes: enc('p') }, { name: 'Devis.xlsx', bytes: enc('d') }], { module: 'bibliotheque', label: 'Versé à la main' })
     platform.files.delete('Bibliothèque/_fichiers/Plan.pdf')
-    Object.assign(system('fichiers-introuvables'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
+    system('rappels-lundi').created = '2020-01-01T00:00:00.000Z'
     await runDueWorkflows()
-    expect(platform.notices.at(-1)).toBe('1 document(s) de la bibliothèque n’ont plus leur fichier : Plan.')
-    expect(journal()).toMatch(/Signaler les fichiers introuvables, chaque lundi.*\[\[Bibliothèque\/Plan\]\]/)
+    expect(platform.notices).toContain('1 document(s) de la bibliothèque n’ont plus leur fichier : Plan.')
+    expect(journal()).toMatch(/Rappels de la bibliothèque, chaque lundi.*\[\[Bibliothèque\/Plan\]\]/)
   })
 
-  it('désactivé d’origine : la planification ne le lance pas', async () => {
+  it('les rappels du lundi désactivés : la planification ne les lance pas', async () => {
     const platform = memoryPlatform()
     const { system, journal } = await start(platform)
-    system('fichiers-introuvables').created = '2020-01-01T00:00:00.000Z'
+    Object.assign(system('rappels-lundi'), { enabled: false, created: '2020-01-01T00:00:00.000Z' })
     await runDueWorkflows()
-    expect(journal()).not.toContain('Signaler les fichiers introuvables')
+    expect(journal()).not.toContain('Rappels de la bibliothèque')
   })
 
   it('sans le module Workflows : la bibliothèque range et repère elle-même', async () => {
@@ -208,12 +207,51 @@ describe('les workflows système de la bibliothèque', () => {
 })
 
 describe('le dossier de dépôt et les rappels du lundi (workflows système)', () => {
-  it('créés : le dépôt à l’ouverture et chaque jour actifs ; versions à confirmer et documents à classer désactivés', async () => {
+  it('créés : le dépôt à l’ouverture et chaque jour ; les rappels du lundi, un seul workflow d’une étape par rappel', async () => {
     const { system } = await start(memoryPlatform())
     expect(system('depot-ouverture')).toMatchObject({ enabled: true, name: 'Verser le dossier « À classer », à l’ouverture', trigger: { kind: 'ouverture' }, actions: [{ kind: 'bibliotheque.depot' }] })
     expect(system('depot-quotidien')).toMatchObject({ enabled: true, trigger: { kind: 'planifie', every: 'day', time: '08:00' }, actions: [{ kind: 'bibliotheque.depot' }] })
-    expect(system('versions-a-confirmer')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
-    expect(system('a-classer')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
+    expect(system('rappels-lundi')).toMatchObject({
+      enabled: true,
+      name: 'Rappels de la bibliothèque, chaque lundi : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables',
+      trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
+      actions: [{ kind: 'bibliotheque.rappel-a-controler' }, { kind: 'bibliotheque.versions-a-confirmer' }, { kind: 'bibliotheque.langues-a-confirmer' }, { kind: 'bibliotheque.a-classer' }, { kind: 'bibliotheque.introuvables' }]
+    })
+  })
+
+  it('rien à rappeler : aucune notice, le journal garde chaque étape', async () => {
+    const platform = memoryPlatform()
+    const { system, journal } = await start(platform)
+    system('rappels-lundi').created = '2020-01-01T00:00:00.000Z'
+    await runDueWorkflows()
+    expect(platform.notices).toEqual([])
+    expect(journal()).toContain('Rappels de la bibliothèque, chaque lundi')
+  })
+
+  it('un coffre d’avant : les cinq rappels du lundi retirés, fondus en un', async () => {
+    const platform = memoryPlatform()
+    const first = await start(platform)
+    const old = ['rappel-a-controler', 'versions-a-confirmer', 'langues-a-confirmer', 'a-classer', 'fichiers-introuvables'].map((id) => ({
+      id: `sys.bibliotheque.${id}`, system: `sys.bibliotheque.${id}`, name: id, enabled: true, created: '2026-11-01T00:00:00.000Z', mode: 'auto' as const,
+      trigger: { kind: 'planifie', every: 'week' as const, weekday: 1, time: '08:00' }, conditions: [], actions: [{ kind: `bibliotheque.${id}`, fields: {} }]
+    }))
+    first.settings.workflows!.workflows = [...(first.settings.workflows!.workflows as Workflow[]).filter((each) => each.system !== 'sys.bibliotheque.rappels-lundi'), ...old]
+    for (const module of [...MODULES].reverse()) await module.deactivate?.()
+    const settings = first.settings
+    const i18n = createI18n('fr')
+    for (const module of MODULES) i18n.register('fr', module.texts.fr)
+    for (const module of MODULES)
+      await module.activate({
+        moduleId: module.id,
+        platform,
+        i18n,
+        settings: { get: () => settings[module.id] ?? {}, save: async (values) => void (settings[module.id] = values), onChange: () => () => {} },
+        commands: { register: () => {} },
+        views: new ViewsRegistry(),
+        showPage: () => {}
+      })
+    const weekly = (settings.workflows!.workflows as Workflow[]).filter((each) => each.system?.startsWith('sys.bibliotheque.') && each.trigger.kind === 'planifie' && each.trigger.every === 'week')
+    expect(weekly.map((each) => each.system)).toEqual(['sys.bibliotheque.rappels-lundi'])
   })
 
   it('à l’ouverture : le dossier créé s’il manque, rien n’est dit', async () => {
@@ -243,21 +281,21 @@ describe('le dossier de dépôt et les rappels du lundi (workflows système)', (
     expect(read(platform, 'Bibliothèque/Plan.md')).toContain('Déposé dans « À classer »')
   })
 
-  it('les versions à confirmer, une fois activé : comptées et nommées', async () => {
+  it('les versions à confirmer (une étape des rappels du lundi) : comptées et nommées', async () => {
     const platform = memoryPlatform()
     const { system } = await start(platform)
     await pourIntoLibrary([{ name: 'CCTP ind A.pdf', bytes: enc('A') }], { module: 'bibliotheque', label: 'Versé à la main' })
     await pourIntoLibrary([{ name: 'CCTP ind B.pdf', bytes: enc('B') }], { module: 'bibliotheque', label: 'Versé à la main' })
-    Object.assign(system('versions-a-confirmer'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
+    system('rappels-lundi').created = '2020-01-01T00:00:00.000Z'
     await runDueWorkflows()
     expect(platform.notices).toContain('Bibliothèque : 1 nouvelle(s) version(s) probable(s) à confirmer — CCTP ind B. Sur leur fiche : « Relier comme nouvelle version » ou « Ce n’en est pas une ».')
   })
 
-  it('les documents à classer, une fois activé : comptés et nommés', async () => {
+  it('les documents sans type de pièce (une étape des rappels du lundi) : comptés et nommés', async () => {
     const platform = memoryPlatform()
     const { system } = await start(platform)
     await pourIntoLibrary([{ name: 'Divers.pdf', bytes: enc('x') }, { name: 'CCTP.pdf', bytes: enc('y') }], { module: 'bibliotheque', label: 'Versé à la main' })
-    Object.assign(system('a-classer'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
+    system('rappels-lundi').created = '2020-01-01T00:00:00.000Z'
     await runDueWorkflows()
     expect(platform.notices).toContain('Bibliothèque : 1 document(s) sans type de pièce — Divers. Sur leur fiche : « Classer… ».')
   })

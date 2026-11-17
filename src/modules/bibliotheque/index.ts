@@ -73,7 +73,7 @@ export const PROJECTS_FOLDER_KEY = 'dossierProjets'
 export const DEFAULT_PROJECTS_FOLDER = 'Bibliothèque/Projets'
 /** Un document entré dans la bibliothèque : le déclencheur de workflow. */
 export const TRIGGER_POURED = 'bibliotheque.document-verse'
-export { SYS_FILES, SYS_GHOST, SYS_MISSING, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
+export { SYS_FILES, SYS_GHOST, SYS_MONDAY, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN } from './workflows'
 
 /** Ouvrir une archive ZIP (par la lecture de fichiers) : pour importer une bibliothèque. */
 let archiveReader: ((bytes: Uint8Array) => Promise<{ path: string; bytes: Uint8Array }[]>) | null = null
@@ -992,7 +992,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.51.1',
+  version: '0.52.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
