@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les filtres dans un menu déroulant (v0.143.0)
+
+- [ ] Bibliothèque › Documents : à côté de la recherche, « Filtrer : Tout » ; plus de rangée de boutons
+- [ ] Choisir « Images » : seules les images restent, « 1 sur 7 affiché(s) », le menu marqué (couleur d'accent)
+- [ ] Revenir à « Tout » : tout revient, le menu n'est plus marqué
+- [ ] Analyses, Exigences, Workflows, Prompts : le même menu
+- [ ] Au clavier : Tab jusqu'au menu, flèches pour choisir
+
 ## Les bibliothèques en explorateur de fichiers (v0.142.0)
 
 - [ ] Menu **Bibliothèque** : une colonne à gauche — Bibliothèque (marquée), puis Bibliothèques de

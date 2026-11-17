@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.142.0)
+## Aujourd'hui (version 0.143.0)
+
+- **Les filtres dans un menu déroulant** : sur chaque page qui en a (bibliothèque, analyses,
+  exigences, workflows…), « Filtrer : Tout » à côté de la recherche, au lieu d'une rangée de boutons ;
+  le menu est marqué quand un filtre est choisi.
 
 - **Les bibliothèques en explorateur de fichiers** : une colonne à gauche montre toutes vos
   bibliothèques (documents, références, projets, circuit, prompts, personas, skills, étiquettes,

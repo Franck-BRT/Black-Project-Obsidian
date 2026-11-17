@@ -239,16 +239,8 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
               <input id={searchId} class="bp-input" type="search" value={query} placeholder={view.search.placeholder ?? view.search.label} onInput={(event) => setQuery(event.currentTarget.value)} />
             </div>
           )}
-          {!!view.filters?.length && (
-            <div class="bp-chips" role="group" aria-label={t('ui.page.filters')}>
-              {[{ id: null, label: t('ui.page.all') }, ...view.filters].map((each) => (
-                <button key={each.id ?? 'all'} type="button" class="bp-chip" aria-pressed={filter === each.id} onClick={() => setFilter(each.id)}>
-                  {filter === each.id && <Icon name="check" />}
-                  {each.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Les filtres : un menu déroulant (« Filtrer : Tout »), marqué quand l'un est choisi. */}
+          {!!view.filters?.length && <FilterMenu filters={view.filters} filter={filter} setFilter={setFilter} t={t} />}
         </div>
       )}
       {(layouts.length > 1 || view.grouping) && (
@@ -307,6 +299,24 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
         content
       )}
     </div>
+  )
+}
+
+/** Les filtres d'une page : un menu déroulant (« Filtrer : Tout »), marqué quand l'un est choisi. */
+export function FilterMenu({ filters, filter, setFilter, t }: { filters: readonly { id: string; label: string }[]; filter: string | null; setFilter: (filter: string | null) => void; t: AppHost['t'] }) {
+  return (
+    <label class={`bp-page-filter${filter ? ' is-active' : ''}`}>
+      <Icon name="filter" />
+      <span class="bp-page-filter-label">{t('ui.page.filter')}</span>
+      <select class="bp-select" aria-label={t('ui.page.filters')} value={filter ?? ''} onChange={(event) => setFilter(event.currentTarget.value || null)}>
+        <option value="">{t('ui.page.all')}</option>
+        {filters.map((each) => (
+          <option key={each.id} value={each.id}>
+            {each.label}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
 

@@ -11,6 +11,7 @@ const PATHS: Record<IconName, string> = {
   file: 'M6 3h8l4 4v14H6zM14 3v4h4',
   list: 'M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01',
   menu: 'M4 6h16M4 12h16M4 18h16',
+  filter: 'M3 5h18l-7 8v6l-4 2v-8z',
   check: 'M4 12l5 5L20 6',
   alert: 'M12 3l10 18H2zM12 10v5M12 18h.01',
   cross: 'M6 6l12 12M18 6L6 18',

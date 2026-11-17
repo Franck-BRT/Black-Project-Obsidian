@@ -201,7 +201,7 @@ que la recherche lit aussi. Il la déclare par
 - une **recherche** facultative : elle garde les cartes et les éléments de liste qui
   contiennent tous les mots tapés (titre, sous-titre, badges, faits), sans tenir compte
   des accents ni des majuscules ;
-- des **filtres** facultatifs, à bascule (« Tout » en plus) : une carte répond à ceux de ses
+- des **filtres** facultatifs, dans un menu déroulant *(0.143.0 ; avant : des boutons à bascule)* — « Filtrer : Tout », puis chacun ; marqué quand l'un est choisi (`FilterMenu`) : une carte répond à ceux de ses
   `tags`. Le nombre affiché est annoncé (« 1 sur 2 affiché(s) ») ; il ne compte que ce que
   la recherche ou le filtre trie (un filtre ne vise que les cartes : une liste — un journal
   — ne compte pas avec lui). Un bloc vidé dit, à sa place, que rien ne correspond.

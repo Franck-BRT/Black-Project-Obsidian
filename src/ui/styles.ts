@@ -109,6 +109,12 @@ const COMPONENTS_CSS = String.raw`
 .bp-page-search .bp-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--bp-text-muted); pointer-events: none; }
 .bp-page-search .bp-input { padding-left: 38px; }
 .bp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.bp-page-filter { flex: 0 0 auto; width: auto; display: inline-flex; align-items: center; gap: 8px; padding: 0 4px 0 12px; min-height: 40px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius-small); background: var(--bp-surface); color: var(--bp-text-muted); font-size: 0.92em; }
+.bp-page-filter svg.bp-icon { flex: none; width: 16px; height: 16px; }
+.bp-page-filter .bp-select { width: auto; min-width: 12em; max-width: 22em; min-height: 32px; padding: 4px 8px; border: 0; background: transparent; color: var(--bp-text); font-weight: 600; cursor: pointer; }
+.bp-page-filter:focus-within { border-color: var(--bp-focus); }
+.bp-page-filter.is-active { border-color: var(--bp-accent); background: var(--bp-accent-soft); color: var(--bp-accent); }
+.bp-page-filter.is-active .bp-select { color: var(--bp-accent); }
 .bp-page-views { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; }
 .bp-segmented { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius); background: var(--bp-surface); }
 .bp-segmented-label { padding: 0 8px; color: var(--bp-text-muted); font-size: 0.88em; }

@@ -9,7 +9,7 @@ import { ViewsRegistry, type Card, type HomeBlock } from '../core/views'
 import { BlockView, BreadcrumbNav, LayoutContext } from './components'
 import { readDropped } from './drop'
 import type { AppHost } from './host'
-import { filterBlocks, fold } from './page'
+import { FilterMenu, filterBlocks, fold } from './page'
 import { App } from './shell'
 
 const card = (id: string, title: string, subtitle: string, tags: string[]): Card => ({ id, title, subtitle, tags, badges: [{ label: tags[0] ?? '', tone: 'info' }] })
@@ -282,5 +282,23 @@ describe('le glisser-déposer de fichiers', () => {
     const folder = { name: 'Dossier', arrayBuffer: () => Promise.reject(new Error('un dossier')) } as unknown as File
     const read = await readDropped([new File(['bonjour'], 'Note.txt'), folder])
     expect(read.map((each) => [each.name, new TextDecoder().decode(each.bytes)])).toEqual([['Note.txt', 'bonjour']])
+  })
+})
+
+describe('les filtres d’une page', () => {
+  const i18n = createI18n('fr')
+  const t = i18n.t.bind(i18n)
+  const filters = [
+    { id: 'langue-a-confirmer', label: 'Langue à confirmer' },
+    { id: 'a-jour', label: 'Dernières versions' }
+  ]
+  it('un menu déroulant : « Filtrer : Tout », puis chaque filtre ; celui choisi, marqué', () => {
+    const none = renderToString(<FilterMenu filters={filters} filter={null} setFilter={() => undefined} t={t} />)
+    expect(none).toMatch(/^<label class="bp-page-filter"><svg[^>]*>.*?<\/svg><span class="bp-page-filter-label">Filtrer :<\/span><select class="bp-select" aria-label="Filtres">/)
+    expect([...none.matchAll(/<option([^>]*)>([^<]+)<\/option>/g)].map((found) => found[2])).toEqual(['Tout', 'Langue à confirmer', 'Dernières versions'])
+    expect(none).toMatch(/<option[^>]*selected[^>]*>Tout<\/option>/)
+    const chosen = renderToString(<FilterMenu filters={filters} filter="a-jour" setFilter={() => undefined} t={t} />)
+    expect(chosen).toContain('<label class="bp-page-filter is-active">')
+    expect(chosen).toMatch(/<option(?=[^>]*value="a-jour")(?=[^>]*selected)[^>]*>Dernières versions<\/option>/)
   })
 })

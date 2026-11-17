@@ -39,6 +39,7 @@ export const fr: Record<string, string> = {
   'ui.back': 'Retour : {title}',
   'ui.back.label': 'Remonter au niveau supérieur : {title} (Alt + ↑). La page précédente : Alt + ←',
   'ui.page.filters': 'Filtres',
+  'ui.page.filter': 'Filtrer :',
   'ui.page.all': 'Tout',
   'ui.page.group': 'Regrouper par',
   'ui.page.layout': 'Affichage',
