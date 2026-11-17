@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.32.0 (Black Projects 0.136.9) |
+| Version | 0.32.1 (Black Projects 0.136.14) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,11 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Le circuit, dès qu'une IA est réglée (v0.32.1, Black Projects 0.136.14)
+
+- `setAiCircuitReady(() => aiClient() !== null)` : la bibliothèque ne fait passer ses versements
+  par le circuit des documents (activé d'origine) que si une IA est réglée ici.
 
 ## Les vérifications à l'ouverture en un seul workflow (v0.32.0, Black Projects 0.136.9)
 

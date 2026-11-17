@@ -32,7 +32,7 @@ const FIXED = '# Plan qualité\n\nRéf. : PQ-07 — Édition 2\n\nLe présent pl
 async function start(platform: MemoryPlatform, proofread: (text: string, system: string) => string, ia: Record<string, unknown> = SERVEUR) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ia }
+  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, bibliotheque: { circuit: false }, ia }
   const views = new ViewsRegistry()
   const shown: string[] = []
   for (const module of ALL) {

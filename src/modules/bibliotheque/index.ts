@@ -820,6 +820,17 @@ export const aiReadingNow = (): { running: AiReading | null; queue: readonly AiR
 /** Ce qu'un modèle de vision peut regarder (le module IA le dit : une image, un PDF que la plateforme dessine). */
 let aiVision: ((file: string) => boolean) | null = null
 
+/** Le circuit des documents peut-il passer : une IA réglée (le module IA le dit ; sans lui, non). */
+let aiCircuitReady: (() => boolean) | null = null
+
+/** Pour le module IA : une IA est-elle réglée pour le circuit des documents (`null` : non) ? */
+export function setAiCircuitReady(ready: (() => boolean) | null): void {
+  aiCircuitReady = ready
+}
+
+/** Le circuit des documents : son réglage (activé d'origine), et une IA réglée. */
+const circuitOn = (values: Readonly<Record<string, unknown>>): boolean => values[CIRCUIT_KEY] !== false && aiCircuitReady?.() === true
+
 /** Pour le module IA : les fichiers qu'un modèle de vision peut regarder (`null` : aucun). */
 export function setAiVision(canSee: ((file: string) => boolean) | null): void {
   aiVision = canSee
@@ -891,7 +902,10 @@ const referencesFolderField: TextField = {
 /** Le workflow système du circuit des documents (déclaré par le module IA, après ses passes sur les documents). */
 export const CIRCUIT_WORKFLOW = 'sys.ia.circuit'
 
-/** Le réglage du circuit des documents : désactivé par défaut (il envoie le texte des documents à l'IA). */
+/**
+ * Le réglage du circuit des documents : activé par défaut (depuis 0.136.14) — il ne passe que si une
+ * IA est réglée dans le module IA ; sinon, les documents sont versés directement, comme avant.
+ */
 export const CIRCUIT_KEY = 'circuit'
 const circuitField: BooleanField = {
   kind: 'boolean',
@@ -899,7 +913,7 @@ const circuitField: BooleanField = {
   nameKey: 'bibliotheque.setting.circuit',
   descKey: 'bibliotheque.setting.circuit.desc',
   tooltipKey: 'bibliotheque.setting.circuit.tip',
-  defaultValue: false
+  defaultValue: true
 }
 
 const projectsFolderField: TextField = {
@@ -992,7 +1006,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.53.0',
+  version: '0.54.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1028,7 +1042,7 @@ export const bibliothequeModule: BlackModule = {
       fs: platform.fs,
       yaml: platform.yaml,
       folder: mainFolder.document,
-      circuit: () => settings.get()[CIRCUIT_KEY] === true,
+      circuit: () => circuitOn(settings.get()),
       today: localToday,
       notesHeading: () => t('bibliotheque.notes'),
       ghostLine: (link, where) => t('bibliotheque.ghost.line', { link, where }),
@@ -1213,7 +1227,7 @@ export const bibliothequeModule: BlackModule = {
         await store.setCircuit(record, doc.circuit === 'a-classer' ? { circuit: 'ingere' } : {}, circuitLine('bibliotheque.circuit.line.ingested', { skill, detail }))
         pagesChanged()
       },
-      circuitActive: () => settings.get()[CIRCUIT_KEY] === true,
+      circuitActive: () => circuitOn(settings.get()),
       ensureCircuitSkills: () => ensureCircuitSkills(),
       removeDirectory: (folder) => removeDirectory('document', folder),
       pour: (folder) => pour(folder),
@@ -1237,7 +1251,7 @@ export const bibliothequeModule: BlackModule = {
       t,
       store,
       relaunchCircuit: async () => {
-        if (settings.get()[CIRCUIT_KEY] !== true) return 0
+        if (!circuitOn(settings.get())) return 0
         await ensureCircuitSkills()
         const pending = (await store.all()).filter((doc) => doc.circuit === 'a-classer' || doc.circuit === 'ingere' || doc.circuit === 'analyse')
         // Chacun repasse par le circuit, à la suite (un workflow s'exécute déjà : sans l'attendre, il le bloquerait) ; « relance » : sa lecture n'a pas pu se faire à l'entrée.

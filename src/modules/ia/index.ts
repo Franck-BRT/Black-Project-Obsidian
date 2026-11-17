@@ -12,7 +12,7 @@
  * tout le reste de Black Projects fonctionne : seules ces fonctions le disent.
  */
 
-import { CIRCUIT_WORKFLOW, setAiProofread, setAiResearch, setAiVision, type ResearchField } from '../bibliotheque'
+import { CIRCUIT_WORKFLOW, setAiCircuitReady, setAiProofread, setAiResearch, setAiVision, type ResearchField } from '../bibliotheque'
 import { OPENING, registerAction, registerAiGuidance, registerSystemWorkflow, type WorkflowAction } from '../workflows'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
@@ -302,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.32.0',
+  version: '0.32.1',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -342,6 +342,8 @@ export const iaModule: BlackModule = {
     // « Extraire de nouveau » le texte d'un document, ou « Relire avec l'IA » : son workflow système de relecture.
     setAiProofread(PROOFREAD_SYSTEM)
     // Les fichiers qu'un modèle de vision regarde : les images, et les PDF si la plateforme sait dessiner leurs pages.
+    // Le circuit des documents : il passe dès qu'une IA est réglée.
+    setAiCircuitReady(() => aiClient() !== null)
     setAiVision((file) => {
       // Un modèle de vision (ou d'OCR) réglé exprès : sans lui, rien n'est montré en images.
       const client = aiClient()
@@ -560,5 +562,6 @@ export const iaModule: BlackModule = {
     for (const field of Object.keys(AI_RESEARCH)) setAiResearch(field as ResearchField, null)
     setAiProofread(null)
     setAiVision(null)
+    setAiCircuitReady(null)
   }
 }

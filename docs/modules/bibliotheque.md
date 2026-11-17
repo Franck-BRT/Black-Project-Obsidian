@@ -5,13 +5,21 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.53.0 (Black Projects 0.136.11) |
+| Version | 0.54.0 (Black Projects 0.136.14) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le circuit activé d'origine (v0.54.0, Black Projects 0.136.14)
+
+- Réglage `circuit` : `defaultValue: true` ; lu `!== false` (jamais touché : activé). Il ne vaut que
+  si une IA est réglée : `setAiCircuitReady` (le module IA : `aiClient() !== null`) — `circuitOn`,
+  pour `StoreDeps.circuit`, `circuitActive` et la relance. Sans IA (ou sans le module IA), les
+  versements sans lieu vont directement dans la bibliothèque, comme avant.
+- Un réglage déjà désactivé à la main reste désactivé.
 
 ## Verser « À classer » : un seul workflow (v0.53.0, Black Projects 0.136.11)
 
@@ -79,7 +87,7 @@ Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/d
 - `INBOX_FOLDER` = **À classer** (`LEGACY_INBOX_FOLDER` « À verser » repris à l'activation :
   `LibraryStore.migrateInbox`) ; parcouru, jamais une destination ; `pourInbox` n'y reverse pas les
   fiches qui y attendent.
-- Réglage `circuit` (`BooleanField`, désactivé) ; `StoreDeps.circuit` : un versement d'origine
+- Réglage `circuit` (`BooleanField`, désactivé ; activé d'origine depuis 0.54.0, si une IA est réglée) ; `StoreDeps.circuit` : un versement d'origine
   `bibliotheque`, sans dossier ou à la racine (`target`), range sa fiche dans À classer avec
   `circuit: a-classer`. Variables du déclencheur : `{circuit}`, `{circuitencours}`.
 - `skills.ts` : sorties `ingestion`, `analyse` (`ANALYSIS_SCHEMA`, `readAnalysisAnswer` — type de

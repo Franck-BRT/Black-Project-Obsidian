@@ -269,8 +269,9 @@ mesure ce qui manque.
 
 ## Sans IA, IA indisponible, confidentialité
 
-- **Sans IA configurée** : le circuit s'arrête après le dépôt et l'extraction ; les documents
-  restent dans À classer, et l'utilisateur range lui-même (comme aujourd'hui).
+- **Sans IA configurée** : le circuit ne prend pas les documents — ils sont versés directement,
+  comme avant le circuit *(0.136.14 : le réglage du circuit, activé d'origine, ne vaut que si une IA
+  est réglée dans le module IA)*.
 - **IA indisponible** pendant le circuit : la fiche garde son état, le workflow de relance
   reprend plus tard ; rien n'est rangé au hasard.
 - **Confidentialité** : le circuit envoie le texte des documents à l'IA. Il n'utilise que l'IA
@@ -316,7 +317,8 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
    validée, confiance, seuil), l'état `circuit`, À contrôler et sa page ; le skill livré « Ranger un
    document » (contextes fiche, texte, dossiers, règles de rangement).
 2. **Version B — le circuit** ✅ *(0.135.0)* : À classer comme entrée unique (réglage « Le
-   circuit des documents (IA) », désactivé d'origine ; seuls les versements de la bibliothèque
+   circuit des documents (IA) », désactivé d'origine — **activé d'origine depuis 0.136.14**, s'il y a
+   une IA réglée ; seuls les versements de la bibliothèque
    sans lieu précis y entrent), les trois skills livrés, le workflow système « Circuit des
    documents » (déclaré par le module IA après ses passes sur les documents), la relance à
    l'ouverture, le rappel du lundi, « En cours dans le circuit » et la section Circuit de la fiche.
@@ -338,4 +340,6 @@ illisibles), démo, banc Obsidian, docs, comme d'habitude.
    reprise de ce qui est déjà dans « À verser ».**
 5. **IA autorisée pour le circuit** : toute IA configurée, ou une IA choisie (locale, ou celle
    que l'entreprise autorise) ? **Décidé : un réglage « IA du circuit », vide par défaut — le
-   circuit ne démarre pas tant qu'il n'est pas choisi** (version B).
+   circuit ne démarre pas tant qu'il n'est pas choisi** (version B). *Revu (0.136.14) : le réglage du
+   circuit, activé d'origine, prend l'IA réglée dans le module IA ; sans IA, pas de circuit. Un choix
+   d'IA propre au circuit reste à faire.*

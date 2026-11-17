@@ -208,8 +208,9 @@ IA) le lance sur un document : l'IA décide, l'application exécute.
 
 ### Le circuit des documents
 
-Dans les **Paramètres** du module, **Le circuit des documents (IA)** (désactivé d'origine). Activé,
-chaque document que vous versez **sans lieu précis** (ou à la racine de la bibliothèque) — par
+Dans les **Paramètres** du module, **Le circuit des documents (IA)** : activé d'origine, il ne
+prend les documents que si une IA est réglée (page {{link:Modules/IA|IA}}) — sans IA, ils sont versés
+directement. Désactivez-le pour ne pas envoyer le texte des documents à l'IA. Activé, chaque document que vous versez **sans lieu précis** (ou à la racine de la bibliothèque) — par
 **Verser**, en le glissant sur la page, ou en le posant dans `Bibliothèque/À classer` — entre dans
 **À classer** ; puis le workflow système **Circuit des documents** (module IA) enchaîne trois skills
 livrés, à modifier à votre goût — ils sont dans **Bibliothèque › Skills** dès le départ (recréés

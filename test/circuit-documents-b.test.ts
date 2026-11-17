@@ -41,10 +41,11 @@ interface Answers {
   rangement: () => { status: number; text: string }
 }
 
-async function start(platform: MemoryPlatform, circuit = true) {
+async function start(platform: MemoryPlatform, circuit: boolean | undefined = true, ia: Record<string, unknown> = SERVEUR) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ia: SERVEUR, bibliotheque: { circuit }, programmes: { typesProjet: TYPES } }
+  // `circuit` absent : le réglage d'origine (activé).
+  const settings: Record<string, Record<string, unknown>> = { ia, bibliotheque: circuit === undefined ? {} : { circuit }, programmes: { typesProjet: TYPES } }
   const views = new ViewsRegistry()
   const shown: string[] = []
   for (const module of ALL) {
@@ -107,6 +108,27 @@ async function project(harness: Awaited<ReturnType<typeof start>>, platform: Mem
 
 afterEach(async () => {
   for (const module of [...ALL].reverse()) await module.deactivate?.()
+})
+
+describe('le circuit, activé d’origine', () => {
+  it('le réglage jamais touché, une IA réglée : un document versé sans lieu entre dans le circuit', async () => {
+    const platform = memoryPlatform()
+    const { pour, answers } = await start(platform, undefined)
+    answers.analyse = () => ({ status: 500, text: 'panne' })
+    const report = await pour('A.txt', 'Un document.')
+    expect(report.added[0]!.record).toBe('Bibliothèque/À classer/A.md')
+    await workflowsIdle()
+    expect(read(platform, 'Bibliothèque/À classer/A.md')).toMatch(/\ncircuit: ingere\n/)
+  })
+
+  it('sans IA réglée : le document est versé directement, comme avant (pas de circuit)', async () => {
+    const platform = memoryPlatform()
+    const { pour } = await start(platform, undefined, {})
+    const report = await pour('A.txt', 'Un document.')
+    expect(report.added[0]!.record).toBe('Bibliothèque/A.md')
+    await workflowsIdle()
+    expect(read(platform, 'Bibliothèque/A.md')).not.toMatch(/\ncircuit:/)
+  })
 })
 
 describe('« À classer » et le réglage du circuit', () => {

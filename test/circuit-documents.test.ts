@@ -29,7 +29,8 @@ const SKILL_SYSTEM = 'Tu suis la procédure du skill'
 async function start(platform: MemoryPlatform) {
   const i18n = createI18n('fr')
   for (const module of ALL) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { ia: SERVEUR }
+  // La version A : l'étape « Exécuter un skill » seule, le circuit (version B) désactivé.
+  const settings: Record<string, Record<string, unknown>> = { ia: SERVEUR, bibliotheque: { circuit: false } }
   const views = new ViewsRegistry()
   const shown: string[] = []
   for (const module of ALL) {

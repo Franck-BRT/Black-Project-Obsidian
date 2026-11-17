@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le circuit activé d'origine (v0.136.14)
+
+- [ ] Nouveau coffre, IA réglée : Paramètres › Bibliothèque › **Le circuit des documents (IA)**
+      activé ; un document versé sans lieu entre dans « À classer », puis le circuit le prend
+- [ ] Sans IA réglée : un document versé va directement dans la bibliothèque (pas d'« À classer »)
+- [ ] Le réglage désactivé à la main : il le reste après mise à jour ; versement direct
+
 ## La note de l'analyse, essentielle (v0.136.13)
 
 - [ ] Nouveau coffre, ou coffre existant mis à jour : **Note de l'analyse : le tableau des pièces et la
