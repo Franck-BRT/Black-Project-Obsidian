@@ -73,10 +73,8 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
       'sys.ao.note-exigences:true',
       'sys.ao.note-pieces:true',
       'sys.ao.questionnaire-ia:false',
-      'sys.ao.rappel-echeances:true',
       'sys.ao.rappel-rangement:true',
-      'sys.ao.rappel-remises:true',
-      'sys.ao.validite-offres:false',
+      'sys.ao.rappels-quotidiens:true',
       'sys.exigences.controle-import:true',
       'sys.exigences.rappels-lundi:false',
       'sys.exigences.relire-nouvelles:false',
@@ -173,14 +171,14 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
     const now = new Date()
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
     const days = Math.round((Date.parse('2027-01-15T00:00:00Z') - Date.parse(`${today}T00:00:00Z`)) / 86_400_000)
-    settings.workflows!.workflows = workflows().map((workflow) => (workflow.system === 'sys.ao.rappel-remises' ? { ...workflow, actions: [{ kind: 'ao.rappel-remises', fields: { jours: `${days}` } }] } : workflow))
-    platform.choices.push('sys.ao.rappel-remises')
+    settings.workflows!.workflows = workflows().map((workflow) => (workflow.system === 'sys.ao.rappels-quotidiens' ? { ...workflow, actions: [{ kind: 'ao.rappel-remises', fields: { jours: `${days}` } }] } : workflow))
+    platform.choices.push('sys.ao.rappels-quotidiens')
     await run('workflows-executer')
     expect(platform.notices).toContain(`Station sol : remise dans ${days} jour(s), le 2027-01-15.`)
     // Hors des jours dits : rien n'est montré, le journal dit « aucune ».
-    settings.workflows!.workflows = workflows().map((workflow) => (workflow.system === 'sys.ao.rappel-remises' ? { ...workflow, actions: [{ kind: 'ao.rappel-remises', fields: { jours: `${days + 1}` } }] } : workflow))
+    settings.workflows!.workflows = workflows().map((workflow) => (workflow.system === 'sys.ao.rappels-quotidiens' ? { ...workflow, actions: [{ kind: 'ao.rappel-remises', fields: { jours: `${days + 1}` } }] } : workflow))
     const before = platform.notices.length
-    platform.choices.push('sys.ao.rappel-remises')
+    platform.choices.push('sys.ao.rappels-quotidiens')
     await run('workflows-executer')
     expect(platform.notices.slice(before).some((notice) => /remise dans/.test(notice))).toBe(false)
     expect(read(platform, 'Black Projects/Workflows/Journal des workflows.md')).toContain('Aucune remise à rappeler aujourd’hui.')

@@ -104,12 +104,10 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Note de l'analyse : la liste des exigences, à l'extraction | exigences extraites | réécrit la liste des exigences (analyse, pièces) | actif |
 | Relever le calendrier à l'import des pièces | pièces de l'appel d'offres importées | écrit la note Calendrier | actif |
 | Contrôler les exigences extraites (qualité et cohérence) | exigences extraites | qualité, puis cohérence entre pièces | actif |
-| Rappel des dates limites de remise | chaque jour à 8 h (à l'ouverture si elle est plus tard) | prévient à J-7, J-3, J-1 et le jour même | actif |
+| Rappels des appels d'offres, chaque jour | chaque jour à 8 h (à l'ouverture si elle est plus tard) | une étape par échéance : dates limites de remise (J-7, J-3, J-1, le jour même), questions et visite (J-3, J-1, le jour même), fin de validité des offres (J-7, J-1) | actif |
 | Rappel du réglage du rangement, à l'ouverture | à l'ouverture d'Obsidian | tant qu'aucun type n'est rangé, explique où le régler | actif |
 | Questionnaire (IA) à l'import du CCAP, du RC ou du CCTP | ces pièces importées | lance le questionnaire (demande d'abord) | désactivé |
 | Vérifier la couverture d'une réponse importée | pièces de réponse importées | couverture de la réponse | désactivé |
-| Rappel des questions et de la visite | chaque jour à 8 h | prévient à J-3, J-1 et le jour même | actif |
-| Rappel de la fin de validité des offres | chaque jour à 8 h | la remise passée, prévient à J-7 et J-1 | désactivé |
 | Extraire les exigences du CCTP à l'import | un CCTP importé | l'aperçu d'extraction, puis les exigences | désactivé |
 | Signaler les workflows cassés, à l'ouverture | à l'ouverture d'Obsidian | dit les workflows actifs dont le déclencheur ou une action vient d'un module désactivé | actif |
 | Bilan des workflows, chaque lundi | lundi à 8 h | les exécutions des 7 derniers jours, les échecs et lesquels | désactivé |

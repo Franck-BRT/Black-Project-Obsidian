@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les rappels quotidiens des appels d'offres en un seul workflow (v0.136.7)
+
+- [ ] Workflows › Système › Analyse d'appels d'offres : **Rappels des appels d'offres, chaque jour**
+      (trois étapes, chacune ses jours) ; « Rappel des dates limites de remise », « Rappel des
+      questions et de la visite » et « Rappel de la fin de validité des offres » n'y sont plus
+- [ ] Une analyse dont la remise est dans 7 jours, **Exécuter** : la remise rappelée ; rien d'autre
+      s'il n'y a ni question, ni visite, ni fin de validité proche
+
 ## Les rappels du lundi des exigences en un seul workflow (v0.136.6)
 
 - [ ] Workflows › Système › Exigences : **Rappels des exigences, chaque lundi** (désactivé, trois

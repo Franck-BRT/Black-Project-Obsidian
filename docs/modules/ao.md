@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.37.3 (Black Projects 0.121.2) |
+| Version | 0.38.0 (Black Projects 0.136.7) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,16 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## Les rappels quotidiens en un seul workflow (v0.38.0, Black Projects 0.136.7)
+
+- `sys.ao.rappels-quotidiens` : « Rappels des appels d'offres, chaque jour : dates limites de
+  remise, questions et visite, fin de validité des offres », chaque jour à 8 h ; trois étapes,
+  chacune avec son champ « jours » — `ao.rappel-remises` (`7, 3, 1, 0`), `ao.rappel-echeances`
+  (`3, 1, 0`), `ao.validite-offres` (`7, 1`) —, muettes s'il n'y a rien à rappeler.
+- Il remplace (`replaces`) `sys.ao.rappel-remises`, `sys.ao.rappel-echeances` et
+  `sys.ao.validite-offres` : retirés des coffres existants. Actif quand chaque module active ce
+  qu'il prévoit (la validité, désactivée avant, en est une étape : retirez-la pour ne pas l'avoir).
 
 ## Pas de doublon sur le disque, même déposé à la main (v0.37.3, Black Projects 0.121.2)
 
@@ -271,8 +281,8 @@ données).
 
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Rappel des questions et de la visite (`sys.ao.rappel-echeances`) | chaque jour à 8 h | `ao.rappel-echeances` (champ « jours », `3, 1, 0`) : la date limite des questions et la visite de site (`calendarOf`, natures `questions`, `visite`) qui tombent à autant de jours | actif |
-| Rappel de la fin de validité des offres (`sys.ao.validite-offres`) | chaque jour à 8 h | `ao.validite-offres` (champ « jours », `7, 1`) : une fois la remise passée, la fin de validité (`validityEnd` : sa date, sinon son délai — jours, semaines, mois — compté depuis la remise) | désactivé |
+| Rappel des questions et de la visite (`sys.ao.rappel-echeances` ; depuis 0.38.0, une étape de `rappels-quotidiens`) | chaque jour à 8 h | `ao.rappel-echeances` (champ « jours », `3, 1, 0`) : la date limite des questions et la visite de site (`calendarOf`, natures `questions`, `visite`) qui tombent à autant de jours | actif |
+| Rappel de la fin de validité des offres (`sys.ao.validite-offres` ; depuis 0.38.0, une étape de `rappels-quotidiens`) | chaque jour à 8 h | `ao.validite-offres` (champ « jours », `7, 1`) : une fois la remise passée, la fin de validité (`validityEnd` : sa date, sinon son délai — jours, semaines, mois — compté depuis la remise) | désactivé |
 | Extraire les exigences du CCTP à l'import (`sys.ao.extraire-cctp`) | pièces importées, `types` contient CCTP | `ao.extraire` (champs `analyse`, `type`) : pour les pièces de l'import de ce type, l'aperçu d'extraction (`extractFromPiece`), puis `emitExtracted` — les workflows des exigences extraites passent après | désactivé |
 
 ## Une note produite, en page (v0.15.0, Black Projects 0.27.0)

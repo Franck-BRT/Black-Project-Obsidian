@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.6)
+## Aujourd'hui (version 0.136.7)
+
+- **Les rappels quotidiens des appels d'offres en un seul workflow** : « Rappels des appels
+  d'offres, chaque jour » rappelle les dates limites de remise, la date limite des questions et la
+  visite, et la fin de validité des offres — chacune à ses jours (réglables dans son étape), rien
+  s'il n'y a rien. Retirez une étape pour ne plus avoir ce rappel.
 
 - **Les rappels du lundi des exigences en un seul workflow** : « Rappels des exigences, chaque
   lundi » écrit la note « Qualité des exigences », puis dit les traductions à revoir. Désactivé

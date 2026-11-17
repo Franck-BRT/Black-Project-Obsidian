@@ -73,6 +73,21 @@ afterEach(async () => {
 })
 
 describe('les workflows système', () => {
+  it('un workflow système qui en remplace d’autres (deux fondus en un) : les anciens retirés des workflows enregistrés', async () => {
+    registerTrigger({ id: 'test.arrive', labelKey: 'test.sys', descKey: 'test.sys', fields: [] })
+    registerSystemWorkflow({
+      id: 'sys.test.ensemble',
+      moduleKey: 'test.name',
+      enabledByDefault: true,
+      replaces: ['sys.test.un', 'sys.test.deux'],
+      make: () => ({ name: 'Ensemble', mode: 'auto', trigger: { kind: 'test.arrive' }, conditions: [], actions: [{ kind: 'notifier', fields: { message: 'un' } }, { kind: 'notifier', fields: { message: 'deux' } }] })
+    })
+    const old = (id: string): Workflow => ({ id, system: id, name: id, enabled: true, created: '2026-11-01T00:00:00.000Z', mode: 'auto', trigger: { kind: 'test.arrive' }, conditions: [], actions: [] })
+    const mine: Workflow = { ...old('w-1'), system: undefined }
+    const { workflows } = await start(memoryPlatform(), [old('sys.test.un'), old('sys.test.deux'), mine])
+    expect(workflows().map((each) => each.id).sort()).toEqual(['sys.test.ensemble', 'w-1'])
+  })
+
   it('créés à l’activation, actifs ou non selon ce qui est prévu ; un module qui en déclare après les crée aussi', async () => {
     declare()
     const { workflows } = await start(memoryPlatform())

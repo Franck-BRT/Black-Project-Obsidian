@@ -448,11 +448,12 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
   })
 
   // ── Les workflows système : les automatismes de l'analyse d'appels d'offres ──
-  const system = (id: string, enabledByDefault: boolean, make: (tr: Translate) => { mode?: 'auto' | 'ask'; trigger: { kind: string; every?: 'day'; time?: string }; conditions?: { field: string; op: 'contains' | 'is'; value: string }[]; actions: WorkflowAction[] }) =>
+  const system = (id: string, enabledByDefault: boolean, make: (tr: Translate) => { mode?: 'auto' | 'ask'; trigger: { kind: string; every?: 'day'; time?: string }; conditions?: { field: string; op: 'contains' | 'is'; value: string }[]; actions: WorkflowAction[] }, replaces: string[] = []) =>
     registerSystemWorkflow({
       id: `sys.ao.${id}`,
       moduleKey: 'ao.name',
       enabledByDefault,
+      ...(replaces.length ? { replaces: replaces.map((each) => `sys.ao.${each}`) } : {}),
       make: (tr) => {
         const made = make(tr)
         return { name: tr(`ao.sys.${id}`), mode: made.mode ?? 'auto', trigger: made.trigger, conditions: made.conditions ?? [], actions: made.actions }
@@ -473,10 +474,22 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
       { kind: 'ao.coherence', fields: analysisField }
     ]
   }))
-  system('rappel-remises', true, () => ({ trigger: { kind: SCHEDULE, every: 'day', time: '08:00' }, actions: [{ kind: 'ao.rappel-remises', fields: { jours: '7, 3, 1, 0' } }] }))
+  // Les rappels quotidiens, en un seul workflow : une étape par échéance (ses jours à elle), chacune
+  // muette s'il n'y a rien à rappeler. Les trois d'avant (remises, questions et visite, validité) y sont fondus.
+  system(
+    'rappels-quotidiens',
+    true,
+    () => ({
+      trigger: { kind: SCHEDULE, every: 'day', time: '08:00' },
+      actions: [
+        { kind: 'ao.rappel-remises', fields: { jours: '7, 3, 1, 0' } },
+        { kind: 'ao.rappel-echeances', fields: { jours: '3, 1, 0' } },
+        { kind: 'ao.validite-offres', fields: { jours: '7, 1' } }
+      ]
+    }),
+    ['rappel-remises', 'rappel-echeances', 'validite-offres']
+  )
   system('rappel-rangement', true, () => ({ trigger: { kind: OPENING }, actions: [{ kind: 'ao.rappel-rangement', fields: {} }] }))
-  system('rappel-echeances', true, () => ({ trigger: { kind: SCHEDULE, every: 'day', time: '08:00' }, actions: [{ kind: 'ao.rappel-echeances', fields: { jours: '3, 1, 0' } }] }))
-  system('validite-offres', false, () => ({ trigger: { kind: SCHEDULE, every: 'day', time: '08:00' }, actions: [{ kind: 'ao.validite-offres', fields: { jours: '7, 1' } }] }))
   system('extraire-cctp', false, () => ({
     trigger: { kind: TRIGGER_IMPORTED },
     conditions: [{ field: 'types', op: 'contains', value: 'CCTP' }],

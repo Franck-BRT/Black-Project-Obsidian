@@ -190,7 +190,8 @@ fenêtre du module, le rétablit.
 
 Ces automatismes — le rappel, mais aussi le tableau des pièces et la liste des exigences
 de la note de l'analyse, le calendrier à l'import, le contrôle des exigences extraites, le
-rappel des dates limites de remise (J-7, J-3, J-1, le jour même) — sont des **workflows
+rappel des dates limites de remise (J-7, J-3, J-1, le jour même, avec les questions, la visite et
+la fin de validité : « Rappels des appels d'offres, chaque jour ») — sont des **workflows
 système** : sur la page {{link:Modules/Workflows|Workflows}}, filtre « Système », vous
 les modifiez ou les désactivez ; ils ne se suppriment pas, et « Rétablir l'original » les
 remet. D'autres y attendent, désactivés : le questionnaire avec l'IA à l'import du CCAP,
@@ -350,13 +351,12 @@ Rien ne quitte votre réseau : les questions vont au serveur que vous avez régl
 Avec le module {{link:Modules/Workflows|Workflows}}, l'analyse se traite seule : ses
 automatismes sont des **workflows système** (page Workflows, filtre « Système ») que vous
 pouvez modifier, désactiver, et rétablir — la note de l'analyse, le calendrier à l'import,
-le contrôle des exigences extraites, le rappel des remises et celui du rangement ; et, en
+le contrôle des exigences extraites, les rappels de chaque jour et celui du rangement ; et, en
 plus :
 
 | Workflow système | Quand | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Rappel des questions et de la visite | chaque jour à 8 h | prévient à J-3, J-1 et le jour même de la date limite des questions et de la visite de site | activé |
-| Rappel de la fin de validité des offres | chaque jour à 8 h | une fois la remise passée, prévient à J-7 et J-1 de la fin de validité des offres | désactivé |
+| Rappels des appels d'offres, chaque jour | chaque jour à 8 h | une étape par échéance, chacune avec ses jours : les **dates limites de remise** (J-7, J-3, J-1, le jour même), la date limite des **questions** et la **visite** de site (J-3, J-1, le jour même), la **fin de validité** des offres une fois la remise passée (J-7, J-1) — rien n'est dit s'il n'y a rien ; retirez une étape pour ne plus avoir ce rappel | activé |
 | Extraire les exigences du CCTP à l'import | un CCTP importé | ouvre l'aperçu d'extraction de ses exigences : vous cochez, puis importez | désactivé |
 
 Les jours de chaque rappel se règlent dans son action. Vous pouvez aussi écrire les vôtres : déclencheurs *analyse créée*, *pièces

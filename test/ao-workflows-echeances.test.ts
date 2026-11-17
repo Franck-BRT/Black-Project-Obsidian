@@ -82,10 +82,18 @@ afterEach(async () => {
 })
 
 describe('les nouveaux workflows système de l’analyse d’appels d’offres', () => {
-  it('créés : le rappel des questions et de la visite actif ; la validité et l’extraction désactivées', async () => {
+  it('créés : les rappels quotidiens, un seul workflow (remises, questions et visite, validité) ; l’extraction désactivée', async () => {
     const { system } = await start(memoryPlatform())
-    expect(system('rappel-echeances')).toMatchObject({ enabled: true, name: 'Rappel des questions et de la visite', trigger: { kind: 'planifie', every: 'day', time: '08:00' }, actions: [{ kind: 'ao.rappel-echeances', fields: { jours: '3, 1, 0' } }] })
-    expect(system('validite-offres')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'day', time: '08:00' }, actions: [{ kind: 'ao.validite-offres', fields: { jours: '7, 1' } }] })
+    expect(system('rappels-quotidiens')).toMatchObject({
+      enabled: true,
+      name: 'Rappels des appels d’offres, chaque jour : dates limites de remise, questions et visite, fin de validité des offres',
+      trigger: { kind: 'planifie', every: 'day', time: '08:00' },
+      actions: [
+        { kind: 'ao.rappel-remises', fields: { jours: '7, 3, 1, 0' } },
+        { kind: 'ao.rappel-echeances', fields: { jours: '3, 1, 0' } },
+        { kind: 'ao.validite-offres', fields: { jours: '7, 1' } }
+      ]
+    })
     expect(system('extraire-cctp')).toMatchObject({
       enabled: false,
       trigger: { kind: 'ao.pieces-importees' },
@@ -102,7 +110,7 @@ describe('les nouveaux workflows système de l’analyse d’appels d’offres',
         `# Règlement de la consultation\n\nLes questions des candidats doivent parvenir au plus tard le ${written(3)}.\n\nUne visite du site est organisée le ${written(1)}.\n\nLa date limite de remise des offres est fixée au ${written(20)}.\n`
       )
     })
-    await runByHand('rappel-echeances')
+    await runByHand('rappels-quotidiens')
     expect(platform.notices).toContain(`Station sol : Questions des candidats dans 3 jour(s), le ${iso(3)}. Station sol : Visite dans 1 jour(s), le ${iso(1)}.`)
   })
 
@@ -110,7 +118,7 @@ describe('les nouveaux workflows système de l’analyse d’appels d’offres',
     const platform = memoryPlatform()
     const { deposit, runByHand, journal } = await start(platform)
     await deposit({ 'RC.md': enc(`# RC\n\nUne visite du site est organisée le ${written(9)}.\n`) })
-    await runByHand('rappel-echeances')
+    await runByHand('rappels-quotidiens')
     expect(platform.notices.some((notice) => /Visite dans/.test(notice))).toBe(false)
     expect(journal()).toContain('Aucune question ni visite à rappeler aujourd’hui.')
   })
@@ -122,7 +130,7 @@ describe('les nouveaux workflows système de l’analyse d’appels d’offres',
     await deposit({
       'RC.md': enc(`# RC\n\nLa date limite de remise des offres est fixée au ${written(-113)}.\n\nLe délai de validité des offres est de 120 jours à compter de la date limite de remise des offres.\n`)
     })
-    await runByHand('validite-offres')
+    await runByHand('rappels-quotidiens')
     expect(platform.notices).toContain(`Station sol : les offres ne sont plus valables dans 7 jour(s), le ${iso(7)}.`)
   })
 
@@ -130,7 +138,7 @@ describe('les nouveaux workflows système de l’analyse d’appels d’offres',
     const platform = memoryPlatform()
     const { deposit, runByHand, journal } = await start(platform)
     await deposit({ 'RC.md': enc(`# RC\n\nLa date limite de remise des offres est fixée au ${written(10)}.\n\nLe délai de validité des offres est de 120 jours.\n`) })
-    await runByHand('validite-offres')
+    await runByHand('rappels-quotidiens')
     expect(journal()).toContain('Aucune fin de validité à rappeler aujourd’hui.')
   })
 
