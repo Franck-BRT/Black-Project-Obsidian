@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Affichage et Regrouper par sur une ligne (v0.146.0)
+
+- [ ] Bibliothèque › Documents : « Affichage » (Liste, Cartes, Tableau) et « Regrouper par : Aucun »
+      sur la même ligne
+- [ ] « Regrouper par » › Type de pièce : une section par type ; le choix est gardé en revenant sur la page
+- [ ] Même chose sur Prompts (Catégorie, Favoris, Répertoire, Aucun), Exigences, Analyses
+- [ ] Fenêtre étroite : les deux passent l'un sous l'autre, rien ne déborde
+
 ## Les lignes allégées de la liste des documents (v0.145.0)
 
 - [ ] Bibliothèque › Documents (en explorateur, vue Liste) : chaque ligne, son nom puis, à droite,

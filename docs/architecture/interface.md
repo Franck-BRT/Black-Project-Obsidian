@@ -351,6 +351,9 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
+- **Affichage et Regrouper par, sur une ligne** *(0.146.0)* : « Regrouper par » est un menu déroulant
+  (`GroupingMenu`, comme « Filtrer »), à côté des boutons Liste / Cartes / Tableau ; un choix redessine
+  la page.
 - **Une ligne discrète** *(0.145.0)* : `Card.line` remplace, en vue liste, les faits d'une carte par
   une ligne de détails (« CCTP · 2026-11-17 · 172 o ») ; les faits restent les colonnes du tableau.
   `Card.search` : du texte de plus pour la recherche, pas montré.

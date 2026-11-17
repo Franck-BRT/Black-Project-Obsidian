@@ -9,7 +9,7 @@ import { ViewsRegistry, type Card, type HomeBlock } from '../core/views'
 import { BlockView, BreadcrumbNav, LayoutContext } from './components'
 import { readDropped } from './drop'
 import type { AppHost } from './host'
-import { FilterMenu, filterBlocks, fold } from './page'
+import { FilterMenu, filterBlocks, fold, GroupingMenu } from './page'
 import { App } from './shell'
 
 const card = (id: string, title: string, subtitle: string, tags: string[]): Card => ({ id, title, subtitle, tags, badges: [{ label: tags[0] ?? '', tone: 'info' }] })
@@ -294,11 +294,21 @@ describe('les filtres d’une page', () => {
   ]
   it('un menu déroulant : « Filtrer : Tout », puis chaque filtre ; celui choisi, marqué', () => {
     const none = renderToString(<FilterMenu filters={filters} filter={null} setFilter={() => undefined} t={t} />)
-    expect(none).toMatch(/^<label class="bp-page-filter"><svg[^>]*>.*?<\/svg><span class="bp-page-filter-label">Filtrer :<\/span><select class="bp-select" aria-label="Filtres">/)
+    expect(none).toMatch(/^<label class="bp-page-select bp-page-filter"><svg[^>]*>.*?<\/svg><span class="bp-page-filter-label">Filtrer :<\/span><select class="bp-select" aria-label="Filtres">/)
     expect([...none.matchAll(/<option([^>]*)>([^<]+)<\/option>/g)].map((found) => found[2])).toEqual(['Tout', 'Langue à confirmer', 'Dernières versions'])
     expect(none).toMatch(/<option[^>]*selected[^>]*>Tout<\/option>/)
     const chosen = renderToString(<FilterMenu filters={filters} filter="a-jour" setFilter={() => undefined} t={t} />)
-    expect(chosen).toContain('<label class="bp-page-filter is-active">')
+    expect(chosen).toContain('<label class="bp-page-select bp-page-filter is-active">')
     expect(chosen).toMatch(/<option(?=[^>]*value="a-jour")(?=[^>]*selected)[^>]*>Dernières versions<\/option>/)
+  })
+})
+
+describe('regrouper les cartes d’une page', () => {
+  it('un menu déroulant « Regrouper par », le choix en cours sélectionné', () => {
+    const grouping = { label: 'Regrouper par', current: 'aucun', options: [{ id: 'origine', label: 'Origine', run: () => undefined }, { id: 'aucun', label: 'Aucun', run: () => undefined }] }
+    const html = renderToString(<GroupingMenu grouping={grouping} />)
+    expect(html).toMatch(/^<label class="bp-page-select bp-page-group"><svg[^>]*>.*?<\/svg><span class="bp-page-filter-label">Regrouper par<\/span><select class="bp-select" aria-label="Regrouper par">/)
+    expect([...html.matchAll(/<option[^>]*>([^<]+)<\/option>/g)].map((found) => found[1])).toEqual(['Origine', 'Aucun'])
+    expect(html).toMatch(/<option(?=[^>]*value="aucun")(?=[^>]*selected)[^>]*>Aucun<\/option>/)
   })
 })

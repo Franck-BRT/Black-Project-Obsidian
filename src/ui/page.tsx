@@ -261,14 +261,8 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
               ))}
             </div>
           )}
-          {view.grouping && (
-            <div class="bp-segmented" role="group" aria-label={view.grouping.label}>
-              <span class="bp-segmented-label">{view.grouping.label}</span>
-              {view.grouping.options.map((option) => (
-                <GroupingButton key={option.id} option={option} pressed={option.id === view.grouping!.current} />
-              ))}
-            </div>
-          )}
+          {/* Regrouper par : un menu déroulant, sur la même ligne que l'affichage. */}
+          {view.grouping && <GroupingMenu grouping={view.grouping} />}
         </div>
       )}
       {narrowed && (
@@ -310,7 +304,7 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
 /** Les filtres d'une page : un menu déroulant (« Filtrer : Tout »), marqué quand l'un est choisi. */
 export function FilterMenu({ filters, filter, setFilter, t }: { filters: readonly { id: string; label: string }[]; filter: string | null; setFilter: (filter: string | null) => void; t: AppHost['t'] }) {
   return (
-    <label class={`bp-page-filter${filter ? ' is-active' : ''}`}>
+    <label class={`bp-page-select bp-page-filter${filter ? ' is-active' : ''}`}>
       <Icon name="filter" />
       <span class="bp-page-filter-label">{t('ui.page.filter')}</span>
       <select class="bp-select" aria-label={t('ui.page.filters')} value={filter ?? ''} onChange={(event) => setFilter(event.currentTarget.value || null)}>
@@ -325,21 +319,30 @@ export function FilterMenu({ filters, filter, setFilter, t }: { filters: readonl
   )
 }
 
-/** Un choix de regroupement : un bouton à bascule, qui demande à la page de se redessiner. */
-function GroupingButton({ option, pressed }: { option: ViewAction; pressed: boolean }) {
+/** Regrouper par : un menu déroulant (« Regrouper par : Aucun ») ; un choix redessine la page. */
+export function GroupingMenu({ grouping }: { grouping: NonNullable<PageView['grouping']> }) {
   const after = useContext(AfterAction)
   return (
-    <button
-      type="button"
-      class="bp-segment"
-      aria-pressed={pressed}
-      onClick={async () => {
-        await option.run()
-        after()
-      }}
-    >
-      {option.icon && <Icon name={option.icon} />}
-      {option.label}
-    </button>
+    <label class="bp-page-select bp-page-group">
+      <Icon name="layers" />
+      <span class="bp-page-filter-label">{grouping.label}</span>
+      <select
+        class="bp-select"
+        aria-label={grouping.label}
+        value={grouping.current}
+        onChange={async (event) => {
+          const option = grouping.options.find((each) => each.id === event.currentTarget.value)
+          if (!option) return
+          await option.run()
+          after()
+        }}
+      >
+        {grouping.options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }

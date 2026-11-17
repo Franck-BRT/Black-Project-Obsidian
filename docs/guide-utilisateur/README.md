@@ -12,7 +12,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.145.0)
+## Aujourd'hui (version 0.146.0)
+
+- **Affichage et Regrouper par sur une seule ligne** : « Regrouper par » est devenu un menu déroulant,
+  à côté des boutons Liste / Cartes / Tableau — sur toutes les pages qui proposent un regroupement.
 
 - **Des lignes plus légères dans la liste des documents** : le nom, puis le type de pièce, la date
   d'ajout et la taille, sur une ligne ; une seule pastille, et seulement s'il y a quelque chose à faire
