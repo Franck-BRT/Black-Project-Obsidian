@@ -18,6 +18,8 @@ import { runOpeningWorkflows, workflowsModule, type Workflow } from '../src/modu
 
 const MODULES = [iaModule, workflowsModule]
 const json = (body: unknown) => ({ status: 200, text: JSON.stringify(body) })
+/** La réponse à la demande minuscule chronométrée (la vitesse du serveur, 3e étape de la vérification). */
+const quick = () => json({ choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] })
 
 async function start(platform: MemoryPlatform, ia: Record<string, unknown>) {
   const i18n = createI18n('fr')
@@ -49,10 +51,10 @@ describe('vérifier la connexion à l’IA, à l’ouverture (workflow système)
     const platform = memoryPlatform()
     const { settings, views, journal } = await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small' })
     const system = (settings.workflows!.workflows as Workflow[]).find((each) => each.system === 'sys.ia.verifier-connexion')
-    // Une étape de plus : les nouveaux modèles du serveur (« Signaler les nouveaux modèles » y est fondu).
-    expect(system).toMatchObject({ enabled: true, name: 'Vérifier la connexion à l’IA et signaler ses nouveaux modèles, à l’ouverture', trigger: { kind: 'ouverture' }, actions: [{ kind: 'ia.verifier' }, { kind: 'ia.nouveaux-modeles' }] })
-    expect((settings.workflows!.workflows as Workflow[]).some((each) => each.system === 'sys.ia.nouveaux-modeles')).toBe(false)
-    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }, { id: 'bge-m3' }] }))
+    // Trois étapes : la connexion, les nouveaux modèles du serveur, sa vitesse (« Signaler les nouveaux modèles » et « … un serveur d'IA lent » y sont fondus).
+    expect(system).toMatchObject({ enabled: true, name: 'Vérifier l’IA à l’ouverture : la connexion, les nouveaux modèles, la vitesse du serveur', trigger: { kind: 'ouverture' }, actions: [{ kind: 'ia.verifier' }, { kind: 'ia.nouveaux-modeles' }, { kind: 'ia.temps-reponse', fields: { seuil: '5' } }] })
+    expect((settings.workflows!.workflows as Workflow[]).some((each) => each.system === 'sys.ia.nouveaux-modeles' || each.system === 'sys.ia.temps-reponse')).toBe(false)
+    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }, { id: 'bge-m3' }] }), quick())
     await runOpeningWorkflows()
     expect(platform.notices).toEqual([])
     expect(settings.ia!.modelesServeur).toEqual(['mistral-small', 'bge-m3'])
@@ -64,7 +66,7 @@ describe('vérifier la connexion à l’IA, à l’ouverture (workflow système)
   it('un modèle choisi n’est plus sur le serveur : c’est dit', async () => {
     const platform = memoryPlatform()
     await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small', modeleEmbeddings: 'bge-m3' })
-    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }] }))
+    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }] }), quick())
     await runOpeningWorkflows()
     expect(platform.notices).toEqual(['IA : modèle(s) choisi(s) absent(s) du serveur — bge-m3. Choisissez-en un autre sur la page IA.'])
   })
@@ -74,8 +76,8 @@ describe('vérifier la connexion à l’IA, à l’ouverture (workflow système)
     const { journal } = await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small' })
     platform.httpAnswers.push({ status: 401, text: 'unauthorized' })
     await runOpeningWorkflows()
-    expect(platform.notices.at(-1)).toMatch(/Vérifier la connexion à l’IA et signaler ses nouveaux modèles, à l’ouverture.*le serveur d’IA ne répond pas/)
-    expect(journal()).toMatch(/❌ échec · \*\*Vérifier la connexion à l’IA et signaler ses nouveaux modèles, à l’ouverture\*\*/)
+    expect(platform.notices.at(-1)).toMatch(/Vérifier l’IA à l’ouverture : la connexion, les nouveaux modèles, la vitesse du serveur.*Étape 1.*le serveur d’IA ne répond pas/)
+    expect(journal()).toMatch(/❌ échec · \*\*Vérifier l’IA à l’ouverture : la connexion, les nouveaux modèles, la vitesse du serveur\*\*/)
   })
 
   it('aucune adresse réglée : rien à vérifier, rien n’est dit, aucun appel', async () => {
@@ -92,7 +94,7 @@ describe('les nouveaux modèles du serveur, à l’ouverture (une étape de la v
   it('la première fois, la liste est retenue sans rien dire', async () => {
     const platform = memoryPlatform()
     const { settings, journal } = await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small' })
-    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }] }))
+    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }] }), quick())
     await runOpeningWorkflows()
     expect(platform.notices).toEqual([])
     expect(settings.ia!.modelesConnus).toEqual(['mistral-small'])
@@ -102,22 +104,18 @@ describe('les nouveaux modèles du serveur, à l’ouverture (une étape de la v
   it('de nouveaux modèles : nommés, avec l’usage qui leur conviendrait', async () => {
     const platform = memoryPlatform()
     const { settings } = await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small', modelesConnus: ['mistral-small'] })
-    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }, { id: 'bge-m3' }, { id: 'qwen2.5-vl' }] }))
+    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }, { id: 'bge-m3' }, { id: 'qwen2.5-vl' }] }), quick())
     await runOpeningWorkflows()
     expect(platform.notices).toEqual(['IA : 2 nouveau(x) modèle(s) sur le serveur — bge-m3 (vecteurs), qwen2.5-vl (analyse, traduction, lecture OCR, lecture par vision). À choisir pour un usage sur la page IA.'])
     expect(settings.ia!.modelesConnus).toEqual(['mistral-small', 'bge-m3', 'qwen2.5-vl'])
   })
 })
 
-describe('un serveur d’IA lent, à l’ouverture (workflow système)', () => {
-  it('créé désactivé ; activé : une demande minuscule, un message au-delà du seuil', async () => {
+describe('un serveur d’IA lent, à l’ouverture (une étape de la vérification)', () => {
+  it('une demande minuscule, un message au-delà du seuil', async () => {
     const platform = memoryPlatform()
-    const { settings } = await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small', modelesConnus: ['mistral-small'] })
-    const workflows = settings.workflows!.workflows as Workflow[]
-    const slow = workflows.find((each) => each.system === 'sys.ia.temps-reponse')!
-    expect(slow).toMatchObject({ enabled: false, actions: [{ kind: 'ia.temps-reponse', fields: { seuil: '5' } }] })
-    slow.enabled = true
-    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }] }), json({ choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] }))
+    await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small', modelesConnus: ['mistral-small'] })
+    platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }] }), quick())
     // La réponse met 7,5 s (l'horloge, avancée pendant la demande).
     const clock = vi.spyOn(Date, 'now')
     let calls = 0

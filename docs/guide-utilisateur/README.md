@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.8)
+## Aujourd'hui (version 0.136.9)
+
+- **Les vérifications de l'IA à l'ouverture en un seul workflow** : « Vérifier l'IA à l'ouverture :
+  la connexion, les nouveaux modèles, la vitesse du serveur » — trois étapes ; retirez celle de la
+  vitesse pour ne pas faire de demande au modèle à chaque ouverture.
 
 - **Les signalements à l'import d'une analyse en un seul workflow** : « Signaler les pièces à
   problème, à l'import » nomme les pièces illisibles (et que faire), sans texte (des scans) et sans

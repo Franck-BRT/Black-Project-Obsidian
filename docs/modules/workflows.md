@@ -196,8 +196,7 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |
 | Relire les nouvelles exigences (IA) | exigence créée | relecture par l'IA, écrite dans la note | désactivé |
-| Vérifier la connexion à l'IA et signaler ses nouveaux modèles, à l'ouverture (v0.60.0 ; les nouveaux modèles fondus en 0.136.4) | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas, si un modèle choisi n'y est plus, ou s'il en porte de nouveaux | actif |
-| Signaler un serveur d'IA lent, à l'ouverture | à l'ouverture d'Obsidian | prévient si l'IA met plus de 5 s à répondre | désactivé |
+| Vérifier l'IA à l'ouverture : la connexion, les nouveaux modèles, la vitesse du serveur | à l'ouverture d'Obsidian | trois étapes : met à jour la liste des modèles (dit si le serveur ne répond pas ou si un modèle choisi n'y est plus) ; nomme les nouveaux modèles ; prévient si l'IA met plus de 5 s à répondre | actif |
 
 **La bibliothèque de documents, en workflows système (v0.12.0, Black Projects 0.62.0)** :
 

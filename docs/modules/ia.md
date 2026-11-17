@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.31.0 (Black Projects 0.136.4) |
+| Version | 0.32.0 (Black Projects 0.136.9) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,17 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Les vérifications à l'ouverture en un seul workflow (v0.32.0, Black Projects 0.136.9)
+
+- `sys.ia.temps-reponse` (« Signaler un serveur d'IA lent, à l'ouverture », désactivé) fondu dans
+  `sys.ia.verifier-connexion` : « Vérifier l'IA à l'ouverture : la connexion, les nouveaux modèles,
+  la vitesse du serveur », trois étapes — `ia.verifier`, `ia.nouveaux-modeles`, `ia.temps-reponse`
+  (champ « seuil », 5 s). `replaces: ['sys.ia.nouveaux-modeles', 'sys.ia.temps-reponse']`. Le
+  serveur muet : la première étape échoue, les autres ne passent pas ; le modèle muet (la liste
+  répond, pas la demande) : la troisième échoue, et c'est dit.
+- La vitesse, désactivée avant, en est une étape : retirez-la pour ne pas faire cette demande à
+  chaque ouverture.
 
 ## Deux doublons fondus (v0.31.0, Black Projects 0.136.4)
 
@@ -28,7 +39,7 @@ Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
   et signaler ses nouveaux modèles, à l'ouverture », a deux étapes : `ia.verifier`, puis
   `ia.nouveaux-modeles` (le serveur muet : la première échoue, la seconde ne passe pas).
   `replaces: ['sys.ia.nouveaux-modeles']`.
-- Restent distincts, à dessein : `sys.ia.temps-reponse` (désactivé : une demande chronométrée au
+- (0.31.0) Restaient distincts, à dessein : `sys.ia.temps-reponse` (désactivé : une demande chronométrée au
   modèle, pas la liste des modèles).
 
 ## Le circuit, seul workflow de l'IA actif d'origine (v0.30.2, Black Projects 0.136.0)
@@ -249,7 +260,7 @@ Tests : `test/ia-workflows.test.ts`.
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
 | Signaler les nouveaux modèles du serveur, à l'ouverture (`sys.ia.nouveaux-modeles`) | à l'ouverture (après la vérification, qui met la liste à jour) | `ia.nouveaux-modeles` (`newModels`) : la liste du serveur (`LISTED_KEY`) comparée aux modèles déjà vus (`KNOWN_KEY`, `modelesConnus`) ; les nouveaux nommés avec les usages qui leur conviendraient (`usesOf`) ; la première fois, la liste est seulement retenue | actif |
-| Signaler un serveur d'IA lent, à l'ouverture (`sys.ia.temps-reponse`) | à l'ouverture | `ia.temps-reponse` (champ « seuil », 5 s) : une demande minuscule au modèle d'analyse (`max_tokens` 1), chronométrée ; au-delà du seuil, un message | désactivé |
+| Signaler un serveur d'IA lent, à l'ouverture (`sys.ia.temps-reponse` ; depuis 0.32.0, une étape de `verifier-connexion`) | à l'ouverture | `ia.temps-reponse` (champ « seuil », 5 s) : une demande minuscule au modèle d'analyse (`max_tokens` 1), chronométrée ; au-delà du seuil, un message | désactivé |
 
 **Les personas (v0.9.0, Black Projects 0.70.0)** : `AiClient.withPersona(consignes)` rend
 le même client, qui met les consignes d'un persona de la [bibliothèque](bibliotheque.md) en

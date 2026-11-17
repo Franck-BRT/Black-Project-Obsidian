@@ -675,6 +675,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.6 : **les rappels du lundi des exigences en un seul workflow** — la qualité de la bibliothèque et les traductions à revoir : trois étapes d'un même workflow (les deux anciens retirés des coffres existants)
 - v0.136.7 : **les rappels quotidiens des appels d'offres en un seul workflow** — remises, questions et visite, fin de validité : trois étapes d'un même workflow, chacune ses jours (les trois anciens retirés des coffres existants)
 - v0.136.8 : **les signalements à l'import d'une analyse en un seul workflow** — pièces illisibles, sans texte, sans type reconnu : trois étapes d'un workflow de l'analyse d'appels d'offres (les trois anciens, de la lecture de fichiers et du typage des pièces, retirés des coffres existants)
+- v0.136.9 : **les vérifications de l'IA à l'ouverture en un seul workflow** — la connexion, les nouveaux modèles, la vitesse du serveur : trois étapes (« Signaler un serveur d'IA lent » retiré des coffres existants)
 - v0.134.0 : **le circuit des documents, version A** — skills exécutables (contexte, sortie, seuil), étape « Exécuter un skill », **À contrôler** (accepter, choisir ailleurs, écarter)
 - Conception : **le circuit des documents** — tout dépôt dans À classer, puis ingestion, analyse et liens, rangement par des skills exécutables ; ce qui n'est pas sûr va dans À contrôler ([architecture/circuit-des-documents.md](architecture/circuit-des-documents.md))
 

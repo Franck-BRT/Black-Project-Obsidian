@@ -13,7 +13,7 @@
  */
 
 import { CIRCUIT_WORKFLOW, setAiProofread, setAiResearch, setAiVision, type ResearchField } from '../bibliotheque'
-import { OPENING, registerAction, registerAiGuidance, registerSystemWorkflow } from '../workflows'
+import { OPENING, registerAction, registerAiGuidance, registerSystemWorkflow, type WorkflowAction } from '../workflows'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import type { ActionsField, BlackModule, ModuleContext, ModuleDetails, ModuleFeature, SecretField, TextField } from '../../core/modules/module'
@@ -302,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.31.0',
+  version: '0.32.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -364,9 +364,10 @@ export const iaModule: BlackModule = {
       id: 'sys.ia.verifier-connexion',
       moduleKey: 'ia.name',
       enabledByDefault: true,
-      // Puis les nouveaux modèles du serveur (la liste que la vérification vient de relever) :
-      // « Signaler les nouveaux modèles du serveur » y est fondu.
-      replaces: ['sys.ia.nouveaux-modeles'],
+      // Puis les nouveaux modèles du serveur (la liste que la vérification vient de relever), puis
+      // sa vitesse (une demande minuscule, chronométrée) : « Signaler les nouveaux modèles du
+      // serveur » et « Signaler un serveur d'IA lent » y sont fondus.
+      replaces: ['sys.ia.nouveaux-modeles', 'sys.ia.temps-reponse'],
       make: (tr) => ({
         name: tr('ia.sys.verifier-connexion'),
         mode: 'auto',
@@ -374,11 +375,12 @@ export const iaModule: BlackModule = {
         conditions: [],
         actions: [
           { kind: 'ia.verifier', fields: {} },
-          { kind: 'ia.nouveaux-modeles', fields: {} }
-        ]
+          { kind: 'ia.nouveaux-modeles', fields: {} },
+          { kind: 'ia.temps-reponse', fields: { seuil: '5' } }
+        ] as WorkflowAction[]
       })
     })
-    // Les nouveaux modèles du serveur (une étape de la vérification) ; le temps de réponse (désactivé).
+    // Les nouveaux modèles du serveur, le temps de réponse : des étapes de la vérification.
     registerAction({
       id: 'ia.nouveaux-modeles',
       labelKey: 'ia.wf.action.newModels',
@@ -542,12 +544,6 @@ export const iaModule: BlackModule = {
           { kind: 'ia.executer-skill', fields: { fiche: '{fiche}', skill: tr('ia.sys.circuit.file'), seuil: '' } }
         ]
       })
-    })
-    registerSystemWorkflow({
-      id: 'sys.ia.temps-reponse',
-      moduleKey: 'ia.name',
-      enabledByDefault: false,
-      make: (tr) => ({ name: tr('ia.sys.temps-reponse'), mode: 'auto', trigger: { kind: OPENING }, conditions: [], actions: [{ kind: 'ia.temps-reponse', fields: { seuil: '5' } }] })
     })
 
     context.commands.register({

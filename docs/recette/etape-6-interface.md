@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les vérifications de l'IA à l'ouverture en un seul workflow (v0.136.9)
+
+- [ ] Workflows › Système › IA : **Vérifier l'IA à l'ouverture : la connexion, les nouveaux modèles,
+      la vitesse du serveur** (trois étapes) ; « Signaler un serveur d'IA lent » n'y est plus
+- [ ] L'activer, relancer Obsidian (IA réglée) : rien n'est dit si tout va bien ; le journal garde
+      les trois étapes, dont le temps de réponse
+- [ ] Serveur coupé : l'échec à l'étape 1 est dit, les autres ne passent pas
+
 ## Les signalements à l'import en un seul workflow (v0.136.8)
 
 - [ ] Workflows › Système › Analyse d'appels d'offres : **Signaler les pièces à problème, à

@@ -59,13 +59,15 @@ du tableau de bord ouvrent la **page IA**, dans l'onglet Black Projects :
 **Tester la connexion** depuis la tuile ou le tableau de bord mène à la page IA, où le
 résultat se lit ; depuis la page, on y reste. Depuis la palette, le message, comme avant.
 
-**À chaque ouverture d'Obsidian**, le workflow système *Vérifier la connexion à l'IA et
-signaler ses nouveaux modèles, à l'ouverture* interroge le serveur sans rien vous demander : la
+**À chaque ouverture d'Obsidian**, le workflow système *Vérifier l'IA à l'ouverture : la
+connexion, les nouveaux modèles, la vitesse du serveur* interroge le serveur sans rien vous demander : la
 liste de ses modèles est mise à jour, et rien n'est dit si tout va bien (le journal des workflows
 le garde, la page IA montre le dernier test). Il vous prévient si le serveur ne répond pas, si
 un modèle que vous avez choisi n'y est plus, ou s'il en porte de **nouveaux** (nommés avec
 l'usage qui leur conviendrait, à choisir sur la page IA ; la première fois, la liste est
-seulement retenue). Sans adresse réglée, il ne fait rien. Vous
+seulement retenue). Enfin, il chronomètre une demande minuscule au modèle d'analyse et vous
+prévient s'il met plus de 5 s à répondre (le seuil se règle dans cette étape) : le serveur est
+peut-être chargé, ou le modèle se charge. Une étape chacune : retirez-en une pour ne plus l'avoir. Sans adresse réglée, il ne fait rien. Vous
 le désactivez ou le modifiez sur la page {{link:Modules/Workflows|Workflows}} (filtre
 « Système »).
 
@@ -144,12 +146,6 @@ pages sont lues, une à une. Les formules mathématiques sont écrites en LaTeX.
 Ces workflows servent aussi au bouton **Relancer la recherche** d'un champ, sur la fiche
 d'un document de la bibliothèque : quand la recherche sans IA n'est pas sûre, celui du champ
 est exécuté pour ce document (désactivé, l'IA n'est pas demandée, et c'est dit).
-
-Un autre workflow système le suit (désactivé d'origine tant que seuls les essentiels sont actifs — le réglage du module {{link:Modules/Workflows|Workflows}} ; seul le **Circuit des documents** l'est) :
-
-| Workflow système | Ce qu'il fait | D'origine |
-| --- | --- | --- |
-| Signaler un serveur d'IA lent, à l'ouverture | chronomètre une demande minuscule au modèle d'analyse et prévient au-delà du seuil (5 s, réglable dans son action) | désactivé |
 
 ## 2. Ce que l'IA fait
 

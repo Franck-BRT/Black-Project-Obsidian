@@ -116,8 +116,7 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |
 | Relire les nouvelles exigences (IA) | exigence créée | relecture par l'IA, écrite dans la note | désactivé |
-| Vérifier la connexion à l'IA et signaler ses nouveaux modèles, à l'ouverture | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas, si un modèle choisi n'y est plus, ou s'il en porte de nouveaux (avec leur usage) | actif |
-| Signaler un serveur d'IA lent, à l'ouverture | à l'ouverture d'Obsidian | prévient si l'IA met plus de 5 s à répondre | désactivé |
+| Vérifier l'IA à l'ouverture : la connexion, les nouveaux modèles, la vitesse du serveur | à l'ouverture d'Obsidian | trois étapes : met à jour la liste des modèles (dit si le serveur ne répond pas ou si un modèle choisi n'y est plus) ; nomme les nouveaux modèles ; prévient si l'IA met plus de 5 s à répondre | actif |
 | Ranger les fichiers et pièces importés dans la bibliothèque | des pièces importées dans une analyse, un import d'exigences, de types ou de workflows | les range dans la bibliothèque de documents | actif |
 | Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |
 | Rappels de la bibliothèque, chaque lundi | lundi à 8 h | une étape par rappel : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables — chacune muette s'il n'y a rien | actif |
