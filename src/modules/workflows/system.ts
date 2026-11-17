@@ -47,13 +47,17 @@ export function seedSystem(workflows: readonly Workflow[], specs: readonly Syste
     const enabled = enabledOf(spec, defaults)
     const at = out.findIndex((each) => each.system === spec.id)
     if (at === -1) {
-      out.push({ ...definition, id: spec.id, enabled, created: now.toISOString(), system: spec.id, base: print, defaults })
+      out.push({ ...definition, id: spec.id, enabled, created: now.toISOString(), system: spec.id, base: print, defaults, ...(spec.essential ? { essential: true } : {}) })
       changed = true
       continue
     }
     // Le choix d'origine a changé (ou n'avait jamais été appliqué) : l'état suit la nouvelle origine, une fois.
     if (out[at]!.defaults !== defaults) {
-      out[at] = { ...out[at]!, enabled, defaults }
+      out[at] = { ...out[at]!, enabled, defaults, ...(spec.essential ? { essential: true } : {}) }
+      changed = true
+    } else if (spec.essential && !out[at]!.essential) {
+      // Devenu essentiel après coup (le choix d'origine déjà appliqué) : actif quand seuls les essentiels le sont — une fois.
+      out[at] = { ...out[at]!, ...(defaults === 'essentiels' ? { enabled: spec.enabledByDefault } : {}), essential: true }
       changed = true
     }
     const current = out[at]!

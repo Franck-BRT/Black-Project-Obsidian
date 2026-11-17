@@ -94,7 +94,8 @@ vues.
 **D'origine, seuls les essentiels sont actifs** (réglage du module, oui par défaut) : le
 circuit des documents (le circuit, sa relance à l'ouverture, le rappel des documents à
 contrôler), ce sans quoi rien n'entre dans la bibliothèque (ranger les fichiers et pièces
-importés, verser le dossier « À classer ») et « Signaler les workflows cassés ». Tous les
+importés, verser le dossier « À classer »), la **note de l'analyse** d'un appel d'offres (son
+tableau des pièces, sa liste des exigences) et « Signaler les workflows cassés ». Tous les
 autres sont **désactivés** : activez-les un par un, au besoin. La colonne *D'origine*
 ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 

@@ -249,6 +249,10 @@ type : chaque pièce avec son lien, son type, son état de lecture et la taille 
 texte. Ne modifiez pas ce tableau ; écrivez vos remarques dans la section **Notes**, que
 Black Projects ne touche jamais.
 
+C'est le workflow système **Note de l'analyse : le tableau des pièces et la liste des
+exigences, à chaque mise à jour** (essentiel : actif d'origine) qui la tient à jour ; désactivé
+sur la page {{link:Modules/Workflows|Workflows}}, la note n'est plus réécrite.
+
 ## 6. Extraire les exigences d'une pièce
 
 Ouvrez la note d'une pièce — le CCTP, surtout —, puis commande **Extraire les exigences

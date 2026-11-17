@@ -454,11 +454,14 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
   })
 
   // ── Les workflows système : les automatismes de l'analyse d'appels d'offres ──
+  // Essentielle : la note de l'analyse (son tableau des pièces, sa liste des exigences) suit chaque mise à jour.
+  const essential = new Set(['note-analyse'])
   const system = (id: string, enabledByDefault: boolean, make: (tr: Translate) => { mode?: 'auto' | 'ask'; trigger: { kind: string; every?: 'day'; time?: string }; conditions?: { field: string; op: 'contains' | 'is'; value: string }[]; actions: WorkflowAction[] }, replaces: string[] = []) =>
     registerSystemWorkflow({
       id: `sys.ao.${id}`,
       moduleKey: 'ao.name',
       enabledByDefault,
+      ...(essential.has(id) ? { essential: true } : {}),
       ...(replaces.length ? { replaces: replaces.map((each) => `sys.ao.${each}`) } : {}),
       make: (tr) => {
         const made = make(tr)

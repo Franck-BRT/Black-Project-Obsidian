@@ -94,6 +94,12 @@ export interface Workflow {
    * à la nouvelle origine — une fois.
    */
   defaults?: SystemDefaults
+  /**
+   * Un workflow système **essentiel** dont l'état d'origine a été appliqué (actif, quand seuls
+   * les essentiels le sont). Devenu essentiel après coup (une nouvelle version), il est activé
+   * une fois ; ce que l'utilisateur en fait ensuite est gardé.
+   */
+  essential?: boolean
 }
 
 /** Ce qui est actif d'origine parmi les workflows système : les seuls essentiels, ou ce que prévoit chaque module. */

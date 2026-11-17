@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.12)
+## Aujourd'hui (version 0.136.13)
+
+- **La note de l'analyse est un workflow essentiel** : actif d'origine, son tableau des pièces et
+  sa liste des exigences suivent chaque import et chaque extraction. Dans un coffre existant, il
+  est activé une fois ; vous pouvez le désactiver sur la page Workflows.
 
 - **La note de l'analyse : un seul workflow** — « Note de l'analyse : le tableau des pièces et la
   liste des exigences, à chaque mise à jour » (à l'import des pièces comme à l'extraction des

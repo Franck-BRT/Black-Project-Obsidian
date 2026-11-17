@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.40.0 (Black Projects 0.136.12) |
+| Version | 0.40.1 (Black Projects 0.136.13) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,13 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## La note de l'analyse, essentielle (v0.40.1, Black Projects 0.136.13)
+
+- `sys.ao.note-analyse` est marqué `essential: true` : actif d'origine même quand seuls les
+  essentiels le sont (réglage du module Workflows) — sans lui, ni l'import ni l'extraction ne
+  réécrivent la note (`noteByWorkflow`). Un coffre existant l'a activé une fois (voir
+  [Workflows](workflows.md), « Devenu essentiel après coup »).
 
 ## La note de l'analyse : un seul workflow (v0.40.0, Black Projects 0.136.12)
 

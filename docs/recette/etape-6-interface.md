@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La note de l'analyse, essentielle (v0.136.13)
+
+- [ ] Nouveau coffre, ou coffre existant mis à jour : **Note de l'analyse : le tableau des pièces et la
+      liste des exigences, à chaque mise à jour** actif ; 7 workflows système actifs
+- [ ] Importer des pièces : le tableau des pièces de la note à jour ; extraire les exigences : leur liste
+- [ ] Le désactiver, relancer Obsidian : il reste désactivé
+
 ## La note de l'analyse : un seul workflow (v0.136.12)
 
 - [ ] Workflows › Système › Analyse d'appels d'offres : **Note de l'analyse : le tableau des pièces et

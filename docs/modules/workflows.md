@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.25.0 (Black Projects 0.136.11) |
+| Version | 0.26.0 (Black Projects 0.136.13) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -275,6 +275,14 @@ champ avec l'IA, depuis la fiche d'un document.
   `WorkflowFicheDeps.remove`, la confirmation de `deleteWorkflow`. Pas pour un workflow système
   (il se désactive, ou se rétablit sur sa fiche).
 
+## Devenu essentiel après coup (v0.26.0, Black Projects 0.136.13)
+
+- `Workflow.essential` : un workflow système essentiel dont l'état d'origine a été appliqué.
+  `seedSystem` : un workflow déjà enregistré, dont la déclaration devient `essential` (une
+  nouvelle version) alors que le choix d'origine était déjà appliqué, est **activé une fois**
+  (quand seuls les essentiels le sont) et marqué ; désactivé ensuite par l'utilisateur, il le
+  reste. Premier usage : la note de l'analyse d'appels d'offres (`sys.ao.note-analyse`).
+
 ## À heure fixe, et à l'ouverture (v0.25.0, Black Projects 0.136.11)
 
 - `WorkflowTrigger.atOpening` (déclencheur *À heure fixe*) : aussi à l'ouverture d'Obsidian.
@@ -306,7 +314,7 @@ champ avec l'IA, depuis la fiche d'un document.
   **oui** par défaut) : un workflow système est actif d'origine s'il est prévu actif par son
   module **et** marqué `essential: true` (`SystemWorkflowSpec`) — `enabledOf(spec, defaults)`.
   Réglage désactivé : ce que chaque module prévoit (`enabledByDefault`), comme avant.
-- Les essentiels : le **circuit des documents** (`sys.ia.circuit`,
+- Les essentiels (et, depuis 0.136.13, `sys.ao.note-analyse`, la note de l'analyse) : le **circuit des documents** (`sys.ia.circuit`,
   `sys.bibliotheque.relancer-circuit`, `sys.bibliotheque.rappel-a-controler`), ce sans quoi rien
   n'entre dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`, avec `rappels-lundi`,
   `depot` — à l'ouverture et chaque jour, depuis 0.136.11) et `sys.workflows.casses` (on voit ce qui casse). Les 41

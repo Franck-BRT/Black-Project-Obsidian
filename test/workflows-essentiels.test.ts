@@ -105,6 +105,31 @@ describe('d’origine, seuls les workflows essentiels sont actifs', () => {
     expect(again.state()['sys.test.ordinaire']).toBe(true)
   })
 
+  it('un workflow devenu essentiel après coup (une nouvelle version) : activé une fois ; désactivé ensuite, il le reste', async () => {
+    declare()
+    const settings: Record<string, unknown> = {}
+    const first = await start(settings)
+    expect(first.state()['sys.test.ordinaire']).toBe(false)
+    await workflowsModule.deactivate?.()
+    // La nouvelle version : « ordinaire » devient essentiel.
+    forgetDeclarations('sys.test')
+    registerTrigger({ id: 'test.arrive', labelKey: 'test.sys', descKey: 'test.sys', fields: [] })
+    registerSystemWorkflow({
+      id: 'sys.test.ordinaire',
+      moduleKey: 'test.name',
+      enabledByDefault: true,
+      essential: true,
+      make: () => ({ name: 'ordinaire', mode: 'auto', trigger: { kind: 'test.arrive' }, conditions: [], actions: [{ kind: 'notifier', fields: { message: 'ordinaire' } }] })
+    })
+    const second = await start(settings)
+    expect(second.state()['sys.test.ordinaire']).toBe(true)
+    // L'utilisateur le désactive : gardé aux activations suivantes.
+    settings.workflows = (settings.workflows as Workflow[]).map((each) => (each.id === 'sys.test.ordinaire' ? { ...each, enabled: false } : each))
+    await workflowsModule.deactivate?.()
+    const third = await start(settings)
+    expect(third.state()['sys.test.ordinaire']).toBe(false)
+  })
+
   it('le réglage désactivé : chaque module active ce qu’il prévoit ; réactivé : retour aux essentiels', async () => {
     declare()
     const settings: Record<string, unknown> = {}
@@ -136,6 +161,7 @@ describe('d’origine, seuls les workflows essentiels sont actifs', () => {
     for (const module of [...MODULES].reverse()) await module.deactivate?.()
     expect(active.sort()).toEqual(
       [
+        'sys.ao.note-analyse',
         'sys.bibliotheque.depot',
         'sys.bibliotheque.rappels-lundi',
         'sys.bibliotheque.ranger-fichiers',
