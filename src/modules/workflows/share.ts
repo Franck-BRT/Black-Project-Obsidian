@@ -49,6 +49,7 @@ function readTrigger(raw: unknown, known: Known): WorkflowTrigger | null {
   const trigger: WorkflowTrigger = { kind: text(raw.kind) }
   if ((SCHEDULE_EVERY as readonly string[]).includes(text(raw.every))) trigger.every = text(raw.every) as WorkflowTrigger['every']
   if (/^\d{1,2}:\d{2}$/.test(text(raw.time))) trigger.time = text(raw.time)
+  if (raw.atOpening === true) trigger.atOpening = true
   for (const key of ['weekday', 'monthDay'] as const) {
     const number = Number(raw[key])
     if (raw[key] !== undefined && Number.isFinite(number)) trigger[key] = number

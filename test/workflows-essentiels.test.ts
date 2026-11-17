@@ -136,8 +136,7 @@ describe('d’origine, seuls les workflows essentiels sont actifs', () => {
     for (const module of [...MODULES].reverse()) await module.deactivate?.()
     expect(active.sort()).toEqual(
       [
-        'sys.bibliotheque.depot-ouverture',
-        'sys.bibliotheque.depot-quotidien',
+        'sys.bibliotheque.depot',
         'sys.bibliotheque.rappels-lundi',
         'sys.bibliotheque.ranger-fichiers',
         'sys.bibliotheque.relancer-circuit',

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.24.0 (Black Projects 0.136.10) |
+| Version | 0.25.0 (Black Projects 0.136.11) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -33,7 +33,7 @@ réglable), la plus récente en tête, 300 gardées.
 
 Le module ne connaît d'avance que ce qu'il fait lui-même : déclencheurs **À la main**
 (`manuel`) et **À heure fixe** (`planifie` : chaque jour, jours ouvrés, chaque semaine,
-chaque mois, à HH:MM) ; actions **Prévenir** (`notifier`), **Écrire une note**
+chaque mois, à HH:MM ; **et à l'ouverture d'Obsidian**, en option depuis 0.25.0) ; actions **Prévenir** (`notifier`), **Écrire une note**
 (`creer-note`), **Ajouter à une note** (`ajouter-note`). Le reste est **déclaré par les
 modules** à leur activation, par l'interface publique :
 
@@ -205,8 +205,7 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Ranger les fichiers et pièces importés dans la bibliothèque | fichiers déposés dans l'application (pièces d'analyse, import d'exigences, de types, de workflows) | verse le dépôt | actif |
 | Repérer les nouvelles versions probables | documents versés (une fois par versement) | marque la version précédente probable | actif |
 | Rappels de la bibliothèque, chaque lundi (0.136.5 : les cinq rappels du lundi fondus) | lundi à 8 h | documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables — une étape chacun | actif |
-| Verser le dossier « À verser », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
-| Verser le dossier « À verser », chaque jour | chaque jour à 8 h | idem | actif |
+| Verser le dossier « À classer », à l'ouverture et chaque jour (0.136.11 : les deux fondus) | chaque jour à 8 h, et à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
 
 **L'entretien des workflows (v0.13.0, Black Projects 0.67.0)** : le module n'avait pas
 d'automatisme à convertir — ce qu'il fait seul est le moteur (le journal tenu à 300
@@ -277,6 +276,18 @@ champ avec l'IA, depuis la fiche d'un document.
   `WorkflowFicheDeps.remove`, la confirmation de `deleteWorkflow`. Pas pour un workflow système
   (il se désactive, ou se rétablit sur sa fiche).
 
+## À heure fixe, et à l'ouverture (v0.25.0, Black Projects 0.136.11)
+
+- `WorkflowTrigger.atOpening` (déclencheur *À heure fixe*) : aussi à l'ouverture d'Obsidian.
+  `matches` : un workflow planifié `atOpening` répond à l'évènement `ouverture`. Après une
+  exécution à l'ouverture, `scheduleDue` ne le relance pas avant le prochain moment demandé (sa
+  dernière exécution est plus récente). Dans la fenêtre *À heure fixe* : l'interrupteur « Aussi à
+  l'ouverture d'Obsidian » ; dit « Chaque jour à 08:00, et à l'ouverture d'Obsidian »
+  (`workflows.schedule.andOpening`) ; repris à l'export/import (`share.ts`).
+- Premier usage : « Verser le dossier « À classer », à l'ouverture et chaque jour »
+  (`sys.bibliotheque.depot`), qui remplace les deux workflows d'avant (voir
+  [bibliothèque](bibliotheque.md)).
+
 ## Le bilan du lundi, une étape des bilans de la lecture de fichiers (v0.24.0, Black Projects 0.136.10)
 
 - `sys.workflows.bilan-hebdo` n'est plus déclaré par l'entretien (`upkeep.ts`) : son action
@@ -299,7 +310,7 @@ champ avec l'IA, depuis la fiche d'un document.
 - Les essentiels : le **circuit des documents** (`sys.ia.circuit`,
   `sys.bibliotheque.relancer-circuit`, `sys.bibliotheque.rappel-a-controler`), ce sans quoi rien
   n'entre dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`, avec `rappels-lundi`,
-  `depot-ouverture`, `depot-quotidien`) et `sys.workflows.casses` (on voit ce qui casse). Les 41
+  `depot` — à l'ouverture et chaque jour, depuis 0.136.11) et `sys.workflows.casses` (on voit ce qui casse). Les 41
   autres sont désactivés ; on les active un par un, sur la page Workflows.
 - Chaque workflow système garde le choix d'origine qui a fixé son état (`Workflow.defaults` :
   `essentiels` | `complet`). `seedSystem(…, defaults)` : différent (un coffre d'avant, sans

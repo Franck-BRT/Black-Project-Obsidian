@@ -39,6 +39,8 @@ export interface WorkflowTrigger {
   time?: string
   weekday?: number
   monthDay?: number
+  /** À heure fixe : aussi à l'ouverture d'Obsidian (ce qui est arrivé, Obsidian fermé, est pris aussitôt). */
+  atOpening?: boolean
 }
 
 export type ConditionOp = 'is' | 'is-not' | 'contains' | 'not-contains' | 'empty' | 'not-empty' | 'gt' | 'gte' | 'lt' | 'lte'
@@ -185,7 +187,10 @@ export function conditionsHold(conditions: readonly WorkflowCondition[], subject
 
 /** Un workflow répond-il à un évènement : actif, du même déclencheur, ses conditions tenues. */
 export function matches(workflow: Workflow, event: WorkflowEvent, today = dayOf(new Date())): boolean {
-  if (!workflow.enabled || workflow.trigger.kind !== event.trigger) return false
+  if (!workflow.enabled) return false
+  // Un workflow à heure fixe « et à l'ouverture » répond aussi à l'ouverture d'Obsidian.
+  const atOpening = event.trigger === OPENING && workflow.trigger.kind === SCHEDULE && workflow.trigger.atOpening === true
+  if (workflow.trigger.kind !== event.trigger && !atOpening) return false
   return conditionsHold(workflow.conditions, event.subject, today)
 }
 

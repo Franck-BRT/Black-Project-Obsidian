@@ -8,7 +8,7 @@ demandé, et écrit chaque exécution dans un journal.
 
 | Partie | Ce que c'est | Exemples |
 | --- | --- | --- |
-| **Déclencheur** | quand il s'exécute | à la main ; à heure fixe (chaque jour, les jours ouvrés, chaque semaine, chaque mois) ; *AO : pièces importées* ; *AO : exigences extraites* ; *AO : analyse créée* ; *Exigences : exigence créée* |
+| **Déclencheur** | quand il s'exécute | à la main ; à heure fixe (chaque jour, les jours ouvrés, chaque semaine, chaque mois — et, en option, à l'ouverture d'Obsidian) ; *AO : pièces importées* ; *AO : exigences extraites* ; *AO : analyse créée* ; *Exigences : exigence créée* |
 | **Conditions** | sur ce qui est arrivé (facultatives) | *Types des pièces* **est** « CCAP, CCTP » ; *Places* **contient** « Appel d'offres » ; *Nombre* **est au moins** « 3 » |
 | **Actions** | ce qu'il fait, à la suite | relever le calendrier ; analyser la qualité ; vérifier la cohérence ou la couverture ; interroger le dossier ou remplir le questionnaire (IA) ; relire une exigence (IA) ; demander à l'IA ; écrire une note ; ajouter à une note ; prévenir |
 | **Mode** | seul ou après accord | **Demander d'abord** : il dit ce qu'il va faire et attend « Exécuter » ; **Tout seul** : il agit dès que le déclencheur arrive |
@@ -119,8 +119,7 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Ranger les fichiers et pièces importés dans la bibliothèque | des pièces importées dans une analyse, un import d'exigences, de types ou de workflows | les range dans la bibliothèque de documents | actif |
 | Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |
 | Rappels de la bibliothèque, chaque lundi | lundi à 8 h | une étape par rappel : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables — chacune muette s'il n'y a rien | actif |
-| Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
-| Verser le dossier « À classer », chaque jour | chaque jour à 8 h | idem | actif |
+| Verser le dossier « À classer », à l'ouverture et chaque jour | chaque jour à 8 h, et à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
 | Signaler les formats non lus, au dépôt de fichiers | des fichiers déposés dans l'application | dit ceux dont le format n'est pas lu, et où déclarer une extension équivalente | actif |
 | Signaler les pièces à problème, à l'import | des pièces illisibles, sans texte ou sans type reconnu importées | une étape chacune : les nomme, et dit que faire | actif |
 | Bilans du lundi : les formats des fichiers du coffre, les workflows | lundi à 8 h | deux étapes : les fichiers du coffre par format et les extensions non lues ; les exécutions de workflows des 7 derniers jours, les échecs et lesquels | désactivé |

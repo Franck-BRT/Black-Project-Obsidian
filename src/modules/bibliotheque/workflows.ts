@@ -343,7 +343,7 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
 
   // ── Les workflows système de la bibliothèque ──
   // Les essentiels : ce sans quoi rien n'entre dans la bibliothèque, et le circuit des documents.
-  const essential = new Set(['ranger-fichiers', 'depot-ouverture', 'depot-quotidien', 'relancer-circuit', 'rappels-lundi'])
+  const essential = new Set(['ranger-fichiers', 'depot', 'relancer-circuit', 'rappels-lundi'])
   const system = (id: string, enabledByDefault: boolean, trigger: WorkflowTrigger, actions: WorkflowAction[], conditions: WorkflowCondition[] = [], replaces: string[] = []) =>
     registerSystemWorkflow({
       id: `sys.bibliotheque.${id}`,
@@ -359,8 +359,9 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   system('ranger-fichiers', true, { kind: TRIGGER_DEPOSITED }, pour, [], [SYS_PIECES_RETIRED])
   system('nouvelles-versions', true, { kind: TRIGGER_BATCH }, [{ kind: 'bibliotheque.versions', fields: {} }])
   const inbox: WorkflowAction[] = [{ kind: 'bibliotheque.depot', fields: {} }]
-  system('depot-ouverture', true, { kind: OPENING }, inbox)
-  system('depot-quotidien', true, { kind: SCHEDULE, every: 'day', time: '08:00' }, inbox)
+  // Le dossier « À classer » : versé à l'ouverture et chaque jour à 8 h — un seul workflow (« à heure
+  // fixe, et à l'ouverture ») ; les deux d'avant y sont fondus.
+  system('depot', true, { kind: SCHEDULE, every: 'day', time: '08:00', atOpening: true }, inbox, [], ['sys.bibliotheque.depot-ouverture', 'sys.bibliotheque.depot-quotidien'])
   system('fantome', true, { kind: TRIGGER_KNOWN }, [{ kind: 'bibliotheque.fantome', fields: { quoi: 'demander', fiche: '{fiche}', dossier: '{dossier}' } }])
   // Le circuit des documents : ceux qui s'y sont arrêtés (IA coupée, Obsidian fermé) reprennent à l'ouverture.
   system('relancer-circuit', true, { kind: OPENING }, [{ kind: 'bibliotheque.relancer-circuit', fields: {} }])

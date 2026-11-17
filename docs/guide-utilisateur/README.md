@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.10)
+## Aujourd'hui (version 0.136.11)
+
+- **Verser « À classer » : un seul workflow** — « Verser le dossier « À classer », à l'ouverture et
+  chaque jour ». Pour vos propres workflows *À heure fixe* : l'interrupteur **Aussi à l'ouverture
+  d'Obsidian** les lance en plus à chaque ouverture.
 
 - **Les bilans du lundi en un seul workflow** : « Bilans du lundi : les formats des fichiers du
   coffre, les workflows » — le bilan des formats, puis celui des workflows de la semaine. Désactivé

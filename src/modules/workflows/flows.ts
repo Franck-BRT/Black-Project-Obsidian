@@ -52,15 +52,17 @@ const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7]
 export function describeTrigger(trigger: WorkflowTrigger, t: Translate): string {
   if (trigger.kind === SCHEDULE) {
     const time = trigger.time ?? '08:00'
+    // « … et à l'ouverture d'Obsidian ».
+    const withOpening = (text: string) => (trigger.atOpening ? t('workflows.schedule.andOpening', { schedule: text }) : text)
     switch (trigger.every ?? 'day') {
       case 'weekdays':
-        return t('workflows.schedule.weekdays', { time })
+        return withOpening(t('workflows.schedule.weekdays', { time }))
       case 'week':
-        return t('workflows.schedule.week', { day: t(`workflows.weekday.${trigger.weekday ?? 1}`), time })
+        return withOpening(t('workflows.schedule.week', { day: t(`workflows.weekday.${trigger.weekday ?? 1}`), time }))
       case 'month':
-        return t('workflows.schedule.month', { day: trigger.monthDay ?? 1, time })
+        return withOpening(t('workflows.schedule.month', { day: trigger.monthDay ?? 1, time }))
       default:
-        return t('workflows.schedule.day', { time })
+        return withOpening(t('workflows.schedule.day', { time }))
     }
   }
   const spec = triggerSpec(trigger.kind)
@@ -283,7 +285,8 @@ async function askSchedule(session: Session, trigger: WorkflowTrigger): Promise<
         label: t('workflows.schedule.monthDay'),
         description: t('workflows.schedule.monthDay.desc'),
         value: String(trigger.monthDay ?? 1)
-      }
+      },
+      { kind: 'toggle', key: 'atOpening', label: t('workflows.schedule.atOpening'), description: t('workflows.schedule.atOpening.desc'), value: trigger.atOpening === true }
     ],
     submit: t('workflows.save'),
     validate: (values) => (/^\d{1,2}:\d{2}$/.test((values.time ?? '').trim()) ? null : t('workflows.schedule.badTime'))
@@ -296,7 +299,8 @@ async function askSchedule(session: Session, trigger: WorkflowTrigger): Promise<
     every,
     time: values.time!.trim().padStart(5, '0'),
     ...(every === 'week' ? { weekday: Number(values.weekday) || 1 } : {}),
-    ...(every === 'month' ? { monthDay } : {})
+    ...(every === 'month' ? { monthDay } : {}),
+    ...(values.atOpening === 'true' ? { atOpening: true } : {})
   }
 }
 

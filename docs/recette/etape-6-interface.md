@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Verser « À classer » : un seul workflow (v0.136.11)
+
+- [ ] Workflows › Système › Bibliothèque : **Verser le dossier « À classer », à l'ouverture et chaque
+      jour** (« Chaque jour à 08:00, et à l'ouverture d'Obsidian ») ; les deux anciens n'y sont plus ;
+      6 workflows système actifs
+- [ ] Un fichier posé dans `Bibliothèque/À classer` Obsidian fermé : versé à l'ouverture
+- [ ] Un workflow à soi *À heure fixe* : l'interrupteur **Aussi à l'ouverture d'Obsidian** ; coché,
+      il s'exécute à l'ouverture, puis à son heure
+
 ## Les bilans du lundi en un seul workflow (v0.136.10)
 
 - [ ] Workflows › Système › Lecture de fichiers : **Bilans du lundi : les formats des fichiers du
@@ -153,7 +162,7 @@ Sur le coffre de test.
 ## D'origine, seuls les workflows essentiels (v0.136.0)
 
 - [ ] Nouveau coffre, ou coffre existant mis à jour : page Workflows › Système, **7 actifs** (8 avant 0.136.3) —
-      Ranger les fichiers et pièces importés, Verser « À classer » (ouverture
+      Ranger les fichiers et pièces importés, Verser « À classer » (à l'ouverture
       et chaque jour), Relancer le circuit, Rappeler les documents à contrôler, Circuit des
       documents, Signaler les workflows cassés ; tous les autres désactivés
 - [ ] Activer un autre workflow système à la main, relancer Obsidian : il reste actif

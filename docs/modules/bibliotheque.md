@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.52.0 (Black Projects 0.136.5) |
+| Version | 0.53.0 (Black Projects 0.136.11) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Verser « À classer » : un seul workflow (v0.53.0, Black Projects 0.136.11)
+
+- `sys.bibliotheque.depot` : « Verser le dossier « À classer », à l'ouverture et chaque jour »,
+  déclencheur *À heure fixe* (chaque jour à 8 h) avec `atOpening` (voir [Workflows](workflows.md)) ;
+  essentiel. Il remplace (`replaces`) `depot-ouverture` et `depot-quotidien` : retirés des coffres
+  existants.
 
 ## Les rappels du lundi en un seul workflow (v0.52.0, Black Projects 0.136.5)
 
@@ -57,8 +64,8 @@ Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/d
 ## Les workflows essentiels (v0.50.2, Black Projects 0.136.0)
 
 - Marqués `essential: true` (actifs d'origine quand seuls les essentiels le sont, le réglage du
-  module [Workflows](workflows.md)) : `ranger-fichiers`, `depot-ouverture`,
-  `depot-quotidien`, `relancer-circuit`, `rappel-a-controler`. Les autres workflows système de la
+  module [Workflows](workflows.md)) : `ranger-fichiers`, `depot` (depuis 0.53.0 ; avant,
+  `depot-ouverture` et `depot-quotidien`), `relancer-circuit`, `rappel-a-controler`. Les autres workflows système de la
   bibliothèque sont désactivés d'origine.
 
 ## Ménage des workflows (v0.50.1, Black Projects 0.135.1)
@@ -373,8 +380,7 @@ Sans le module Workflows, la bibliothèque range et repère elle-même, comme en
 
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Verser le dossier « À verser », à l'ouverture (`sys.bibliotheque.depot-ouverture`) | à l'ouverture | `bibliotheque.depot` : `LibraryStore.pourInbox` | actif |
-| Verser le dossier « À verser », chaque jour (`sys.bibliotheque.depot-quotidien`) | chaque jour à 8 h | `bibliotheque.depot` | actif |
+| Verser le dossier « À classer », à l'ouverture et chaque jour (`sys.bibliotheque.depot`, 0.53.0 ; avant, `depot-ouverture` et `depot-quotidien`) | chaque jour à 8 h, et à l'ouverture (`atOpening`) | `bibliotheque.depot` : `LibraryStore.pourInbox` | actif (essentiel) |
 | Proposer un fantôme d'un document déjà dans la bibliothèque (`sys.bibliotheque.fantome`, v0.9.0) | *Bibliothèque : document déjà là* | `bibliotheque.fantome` (*Demander*) : une fenêtre — « Ne rien faire » ou « Placer un fantôme ici » | actif |
 
 `pourInbox` : le dossier `<dossier>/À verser` (`INBOX_FOLDER`, jamais parcouru comme des

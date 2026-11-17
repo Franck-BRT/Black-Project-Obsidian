@@ -150,8 +150,7 @@ dans la bibliothèque est mis de côté dans `_retirés`. Les **versions à conf
 
 | Workflow système | Quand | D'origine |
 | --- | --- | --- |
-| Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | activé (essentiel) |
-| Verser le dossier « À classer », chaque jour | chaque jour à 8 h | activé (essentiel) |
+| Verser le dossier « À classer », à l'ouverture et chaque jour | à l'ouverture d'Obsidian, et chaque jour à 8 h | activé (essentiel) |
 | Proposer un fantôme d'un document déjà dans la bibliothèque | vous déposez un document déjà là, rangé ailleurs | activé |
 
 Le désactiver, c'est ne plus ranger ce que les modules déposent (pour écarter les seules pièces

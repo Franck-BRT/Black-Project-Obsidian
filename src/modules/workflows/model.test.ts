@@ -11,6 +11,8 @@ import {
   lastSlot,
   matches,
   newWorkflow,
+  NO_SUBJECT,
+  OPENING,
   resolveDay,
   SCHEDULE,
   scheduleDue,
@@ -66,6 +68,13 @@ describe('les conditions', () => {
     expect(matches(rule({ enabled: false, trigger: { kind: 'ao.pieces-importees' } }), event)).toBe(false)
     expect(matches(rule({ trigger: { kind: 'ao.pieces-importees' }, conditions: [{ field: 'types', op: 'is', value: 'BPU' }] }), event)).toBe(false)
   })
+
+  it('à heure fixe « et à l’ouverture » : il répond aussi à l’ouverture d’Obsidian ; sans l’option, non', () => {
+    const opening = { trigger: OPENING, subject: NO_SUBJECT }
+    expect(matches(rule({ trigger: { kind: SCHEDULE, every: 'day', time: '08:00', atOpening: true } }), opening)).toBe(true)
+    expect(matches(rule({ trigger: { kind: SCHEDULE, every: 'day', time: '08:00' } }), opening)).toBe(false)
+    expect(matches(rule({ enabled: false, trigger: { kind: SCHEDULE, every: 'day', time: '08:00', atOpening: true } }), opening)).toBe(false)
+  })
 })
 
 describe('les planifications', () => {
@@ -109,5 +118,20 @@ describe('les textes et les jours', () => {
   it('les résultats d’une étape à l’autre', () => {
     expect(stepsReferred('{step1.link} — {step3.text} {step1.path} {analyse}')).toEqual([1, 3])
     expect(stepVariable(2, 'path')).toBe('step2.path')
+  })
+})
+
+describe('à heure fixe, et à l’ouverture', () => {
+  it('se dit, s’exporte et se reprend à l’import', async () => {
+    const { describeTrigger } = await import('./flows')
+    const { exportWorkflows, importWorkflows } = await import('./share')
+    const t = (key: string, vars?: Record<string, string | number>) =>
+      key === 'workflows.schedule.day' ? `Chaque jour à ${vars?.time}` : key === 'workflows.schedule.andOpening' ? `${vars?.schedule}, et à l’ouverture d’Obsidian` : key
+    const trigger = { kind: SCHEDULE, every: 'day' as const, time: '08:00', atOpening: true }
+    expect(describeTrigger(trigger, t)).toBe('Chaque jour à 08:00, et à l’ouverture d’Obsidian')
+    expect(describeTrigger({ ...trigger, atOpening: undefined }, t)).toBe('Chaque jour à 08:00')
+    const workflow: Workflow = { id: 'w', name: 'Verser', enabled: true, mode: 'auto', trigger, conditions: [], actions: [{ kind: 'notifier', fields: { message: 'x' } }], created: '2026-01-01T00:00:00.000Z' }
+    const back = importWorkflows(exportWorkflows([workflow]), { trigger: () => true, action: () => true })
+    expect(typeof back === 'object' && back.workflows[0]!.trigger).toEqual(trigger)
   })
 })

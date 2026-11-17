@@ -209,8 +209,10 @@ describe('les workflows système de la bibliothèque', () => {
 describe('le dossier de dépôt et les rappels du lundi (workflows système)', () => {
   it('créés : le dépôt à l’ouverture et chaque jour ; les rappels du lundi, un seul workflow d’une étape par rappel', async () => {
     const { system } = await start(memoryPlatform())
-    expect(system('depot-ouverture')).toMatchObject({ enabled: true, name: 'Verser le dossier « À classer », à l’ouverture', trigger: { kind: 'ouverture' }, actions: [{ kind: 'bibliotheque.depot' }] })
-    expect(system('depot-quotidien')).toMatchObject({ enabled: true, trigger: { kind: 'planifie', every: 'day', time: '08:00' }, actions: [{ kind: 'bibliotheque.depot' }] })
+    // Un seul workflow : chaque jour à 8 h, et à l'ouverture (les deux d'avant y sont fondus).
+    expect(system('depot')).toMatchObject({ enabled: true, name: 'Verser le dossier « À classer », à l’ouverture et chaque jour', trigger: { kind: 'planifie', every: 'day', time: '08:00', atOpening: true }, actions: [{ kind: 'bibliotheque.depot' }] })
+    expect(system('depot-ouverture')).toBeUndefined()
+    expect(system('depot-quotidien')).toBeUndefined()
     expect(system('rappels-lundi')).toMatchObject({
       enabled: true,
       name: 'Rappels de la bibliothèque, chaque lundi : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables',
@@ -252,6 +254,21 @@ describe('le dossier de dépôt et les rappels du lundi (workflows système)', (
       })
     const weekly = (settings.workflows!.workflows as Workflow[]).filter((each) => each.system?.startsWith('sys.bibliotheque.') && each.trigger.kind === 'planifie' && each.trigger.every === 'week')
     expect(weekly.map((each) => each.system)).toEqual(['sys.bibliotheque.rappels-lundi'])
+  })
+
+  it('chaque jour à 8 h aussi : ce qui y est posé pendant la session entre ; à l’ouverture puis à l’heure, pas deux fois de suite', async () => {
+    const platform = memoryPlatform()
+    const { system, journal } = await start(platform)
+    await runOpeningWorkflows()
+    const after = (journal().match(/Verser le dossier « À classer », à l’ouverture et chaque jour/g) ?? []).length
+    // Juste après l'ouverture, l'heure n'est pas revenue : pas une seconde fois.
+    await runDueWorkflows()
+    expect((journal().match(/Verser le dossier « À classer », à l’ouverture et chaque jour/g) ?? []).length).toBe(after)
+    // Le lendemain (la dernière exécution, la veille) : il verse ce qui a été posé entre-temps.
+    system('depot').lastRun = '2020-01-01T00:00:00.000Z'
+    await platform.fs.writeBinary('Bibliothèque/À classer/Note de calcul.pdf', enc('ndc').buffer)
+    await runDueWorkflows()
+    expect(platform.notices).toContain('Bibliothèque : 1 document(s) versé(s) depuis Bibliothèque/À classer.')
   })
 
   it('à l’ouverture : le dossier créé s’il manque, rien n’est dit', async () => {
