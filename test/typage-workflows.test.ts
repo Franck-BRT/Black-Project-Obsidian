@@ -44,7 +44,7 @@ async function start(platform: MemoryPlatform, options: { typage?: Record<string
     await module.activate(context)
   }
   const services = { fs: platform.fs, t: i18n.t.bind(i18n), root: "Appels d'offres", today: () => '2026-11-06' }
-  const system = () => ((settings.workflows?.workflows ?? []) as Workflow[]).find((each) => each.system === 'sys.typage-pieces.sans-type')
+  const system = () => ((settings.workflows?.workflows ?? []) as Workflow[]).find((each) => each.system === 'sys.ao.signalements-import')
   const journal = () => (platform.files.has(JOURNAL) ? new TextDecoder().decode(platform.files.get(JOURNAL)) : '')
   // Des pièces déposées dans l'analyse, puis « Mettre à jour l'analyse » : l'évènement « pièces importées ».
   const importInto = async (names: string[]) => {
@@ -63,15 +63,11 @@ afterEach(async () => {
 const untyped = (platform: MemoryPlatform) => platform.notices.filter((notice) => notice.includes('sans type reconnu'))
 
 describe('signaler les pièces sans type reconnu (workflow système)', () => {
-  it('créé actif, à l’import des pièces, quand il y en a sans type', async () => {
+  it('une étape des pièces à problème, à l’import (actif) : quand il y en a sans type', async () => {
     const { system } = await start(memoryPlatform())
-    expect(system()).toMatchObject({
-      enabled: true,
-      name: 'Signaler les pièces sans type reconnu, à l’import',
-      trigger: { kind: 'ao.pieces-importees' },
-      conditions: [{ field: 'nontypees', op: 'not-empty' }],
-      actions: [{ kind: 'typage-pieces.sans-type', fields: { pieces: '{nontypees}' } }]
-    })
+    expect(system()).toMatchObject({ enabled: true, name: 'Signaler les pièces à problème, à l’import : illisibles, sans texte (scans), sans type reconnu', trigger: { kind: 'ao.pieces-importees' } })
+    expect(system()!.conditions).toContainEqual({ field: 'nontypees', op: 'not-empty', value: '', join: 'or' })
+    expect(system()!.actions).toContainEqual({ kind: 'typage-pieces.sans-type', fields: { pieces: '{nontypees}' } })
   })
 
   it('une pièce classée « Autre » : nommée, avec comment la typer ; le journal le garde', async () => {
@@ -79,7 +75,7 @@ describe('signaler les pièces sans type reconnu (workflow système)', () => {
     const { importInto, journal } = await start(platform)
     await importInto(['CCTP.md', 'SPEC_sol_v2.md'])
     expect(untyped(platform)).toEqual([`Station sol — 1 pièce(s) sans type reconnu : SPEC_sol_v2. ${HOW}`])
-    expect(journal()).toMatch(/✅ fait · \*\*Signaler les pièces sans type reconnu, à l’import\*\* · sur « Station sol ».*SPEC_sol_v2/)
+    expect(journal()).toMatch(/✅ fait · \*\*Signaler les pièces à problème, à l’import : illisibles, sans texte \(scans\), sans type reconnu\*\* · sur « Station sol ».*SPEC_sol_v2/)
   })
 
   it('toutes typées : il ne s’exécute pas', async () => {
@@ -87,7 +83,7 @@ describe('signaler les pièces sans type reconnu (workflow système)', () => {
     const { importInto, journal } = await start(platform)
     await importInto(['CCTP.md', 'RC.md'])
     expect(untyped(platform)).toEqual([])
-    expect(journal()).not.toContain('Signaler les pièces sans type reconnu')
+    expect(journal()).not.toContain('Signaler les pièces à problème')
   })
 
   it('un mot-clé ajouté (« spec » → CCTP) : la pièce est reconnue, rien n’est dit', async () => {

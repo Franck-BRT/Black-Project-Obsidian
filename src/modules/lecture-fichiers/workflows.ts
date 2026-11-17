@@ -23,11 +23,7 @@ import { isImage } from './readers/fileText'
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 export const SYS_UNREAD = 'sys.lecture-fichiers.formats-non-lus'
-export const SYS_UNREADABLE = 'sys.lecture-fichiers.illisibles'
-export const SYS_NO_TEXT = 'sys.lecture-fichiers.sans-texte'
 export const SYS_FORMATS = 'sys.lecture-fichiers.bilan-formats'
-/** « Pièces importées » (analyse d'appels d'offres) : ses pièces illisibles, sans texte. */
-const TRIGGER_IMPORTED = 'ao.pieces-importees'
 
 const split = (text: string): string[] =>
   text
@@ -108,6 +104,7 @@ export function registerLectureWorkflows(t: Translate, readable: (extension: str
   })
 
   // Les pièces d'une analyse qui n'ont pas pu être lues, ou sans texte : nommées, avec que faire.
+  // (Le workflow système qui les signale à l'import est déclaré par l'analyse d'appels d'offres.)
   const named = (id: string, labelKey: string, defaultValue: string, found: string, how: string) =>
     registerAction({
       id,
@@ -151,30 +148,6 @@ export function registerLectureWorkflows(t: Translate, readable: (extension: str
     }
   })
 
-  registerSystemWorkflow({
-    id: SYS_UNREADABLE,
-    moduleKey: 'lecture-fichiers.name',
-    enabledByDefault: true,
-    make: (tr) => ({
-      name: tr('lecture-fichiers.sys.illisibles'),
-      mode: 'auto',
-      trigger: { kind: TRIGGER_IMPORTED },
-      conditions: [{ field: 'illisibles', op: 'not-empty', value: '' }],
-      actions: [{ kind: 'lecture-fichiers.illisibles', fields: { pieces: '{illisibles}' } }]
-    })
-  })
-  registerSystemWorkflow({
-    id: SYS_NO_TEXT,
-    moduleKey: 'lecture-fichiers.name',
-    enabledByDefault: false,
-    make: (tr) => ({
-      name: tr('lecture-fichiers.sys.sans-texte'),
-      mode: 'auto',
-      trigger: { kind: TRIGGER_IMPORTED },
-      conditions: [{ field: 'sanstexte', op: 'not-empty', value: '' }],
-      actions: [{ kind: 'lecture-fichiers.sans-texte', fields: { pieces: '{sanstexte}' } }]
-    })
-  })
   registerSystemWorkflow({
     id: SYS_FORMATS,
     moduleKey: 'lecture-fichiers.name',

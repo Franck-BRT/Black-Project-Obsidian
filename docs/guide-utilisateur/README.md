@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.7)
+## Aujourd'hui (version 0.136.8)
+
+- **Les signalements à l'import d'une analyse en un seul workflow** : « Signaler les pièces à
+  problème, à l'import » nomme les pièces illisibles (et que faire), sans texte (des scans) et sans
+  type reconnu (et comment les typer) — rien s'il n'y en a pas. Retirez une étape pour ne plus
+  avoir ce signalement.
 
 - **Les rappels quotidiens des appels d'offres en un seul workflow** : « Rappels des appels
   d'offres, chaque jour » rappelle les dates limites de remise, la date limite des questions et la

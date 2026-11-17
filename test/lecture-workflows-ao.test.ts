@@ -42,7 +42,7 @@ async function start(platform: MemoryPlatform, options: { typage?: Record<string
     await module.activate(context)
   }
   const services = { fs: platform.fs, t: i18n.t.bind(i18n), root: "Appels d'offres", today: () => '2026-11-06' }
-  const system = (id: string) => ((settings.workflows?.workflows ?? []) as Workflow[]).find((each) => each.system === `sys.lecture-fichiers.${id}`)!
+  const system = (id: string) => ((settings.workflows?.workflows ?? []) as Workflow[]).find((each) => each.system === (id === 'signalements-import' ? 'sys.ao.signalements-import' : `sys.lecture-fichiers.${id}`))!
   const journal = () => (platform.files.has(JOURNAL) ? new TextDecoder().decode(platform.files.get(JOURNAL)) : '')
   // Des pièces déposées dans l'analyse, puis « Mettre à jour l'analyse » : l'évènement « pièces importées ».
   const importInto = async (files: Record<string, Uint8Array>) => {
@@ -61,10 +61,21 @@ afterEach(async () => {
 const notices = (platform: MemoryPlatform, word: RegExp) => platform.notices.filter((notice) => word.test(notice))
 
 describe('les pièces illisibles et sans texte (workflows système)', () => {
-  it('créés : illisibles actif, sans texte et bilan des formats désactivés', async () => {
+  it('créés : les pièces à problème, un seul workflow (illisibles, sans texte, sans type) ; le bilan des formats désactivé', async () => {
     const { system } = await start(memoryPlatform())
-    expect(system('illisibles')).toMatchObject({ enabled: true, name: 'Signaler les pièces illisibles, à l’import', trigger: { kind: 'ao.pieces-importees' }, conditions: [{ field: 'illisibles', op: 'not-empty' }] })
-    expect(system('sans-texte')).toMatchObject({ enabled: false, trigger: { kind: 'ao.pieces-importees' }, conditions: [{ field: 'sanstexte', op: 'not-empty' }] })
+    expect(system('signalements-import')).toMatchObject({
+      enabled: true,
+      name: 'Signaler les pièces à problème, à l’import : illisibles, sans texte (scans), sans type reconnu',
+      trigger: { kind: 'ao.pieces-importees' },
+      conditions: [{ field: 'illisibles', op: 'not-empty' }, { field: 'sanstexte', op: 'not-empty', join: 'or' }, { field: 'nontypees', op: 'not-empty', join: 'or' }],
+      actions: [
+        { kind: 'lecture-fichiers.illisibles', fields: { pieces: '{illisibles}' } },
+        { kind: 'lecture-fichiers.sans-texte', fields: { pieces: '{sanstexte}' } },
+        { kind: 'typage-pieces.sans-type', fields: { pieces: '{nontypees}' } }
+      ]
+    })
+    expect(system('illisibles')).toBeUndefined()
+    expect(system('sans-texte')).toBeUndefined()
     expect(system('bilan-formats')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
   })
 
@@ -75,21 +86,20 @@ describe('les pièces illisibles et sans texte (workflows système)', () => {
     expect(notices(platform, /illisible/)).toEqual([
       'Station sol — 1 pièce(s) illisible(s) : RC.docx. Le fichier est peut-être abîmé, ou protégé par un mot de passe d’ouverture : demandez-en une version lisible, ou déposez-en une à la main puis « Mettre à jour l’analyse ».'
     ])
-    expect(journal()).toMatch(/✅ fait · \*\*Signaler les pièces illisibles, à l’import\*\*/)
+    expect(journal()).toMatch(/✅ fait · \*\*Signaler les pièces à problème, à l’import/)
   })
 
-  it('toutes lisibles : il ne s’exécute pas', async () => {
+  it('toutes lisibles et typées : il ne s’exécute pas', async () => {
     const platform = memoryPlatform()
     const { importInto, journal } = await start(platform)
     await importInto({ 'CCTP.md': enc('# CCTP\n\nTexte.') })
     expect(notices(platform, /illisible/)).toEqual([])
-    expect(journal()).not.toContain('Signaler les pièces illisibles')
+    expect(journal()).not.toContain('Signaler les pièces à problème')
   })
 
-  it('une pièce sans texte, une fois activé : nommée', async () => {
+  it('une pièce sans texte : nommée (une étape du même workflow)', async () => {
     const platform = memoryPlatform()
-    const { importInto, system } = await start(platform)
-    system('sans-texte').enabled = true
+    const { importInto } = await start(platform)
     await importInto({ 'Scan.txt': enc('   \n  ') })
     expect(notices(platform, /^Station sol — .*sans texte lisible/)).toEqual([expect.stringMatching(/^Station sol — 1 pièce\(s\) sans texte lisible : Scan\.txt\. Un scan, sans doute/)])
   })

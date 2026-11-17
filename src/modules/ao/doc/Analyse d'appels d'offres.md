@@ -357,6 +357,7 @@ plus :
 | Workflow système | Quand | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
 | Rappels des appels d'offres, chaque jour | chaque jour à 8 h | une étape par échéance, chacune avec ses jours : les **dates limites de remise** (J-7, J-3, J-1, le jour même), la date limite des **questions** et la **visite** de site (J-3, J-1, le jour même), la **fin de validité** des offres une fois la remise passée (J-7, J-1) — rien n'est dit s'il n'y a rien ; retirez une étape pour ne plus avoir ce rappel | activé |
+| Signaler les pièces à problème, à l'import | des pièces importées, dont certaines illisibles, sans texte ou sans type reconnu | une étape chacune : les pièces **illisibles** (et que faire), **sans texte** (des scans), **sans type reconnu** (et comment les typer) — rien s'il n'y en a pas ; retirez une étape pour ne plus avoir ce signalement | activé |
 | Extraire les exigences du CCTP à l'import | un CCTP importé | ouvre l'aperçu d'extraction de ses exigences : vous cochez, puis importez | désactivé |
 
 Les jours de chaque rappel se règlent dans son action. Vous pouvez aussi écrire les vôtres : déclencheurs *analyse créée*, *pièces

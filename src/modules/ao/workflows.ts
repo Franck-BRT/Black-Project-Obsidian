@@ -490,6 +490,31 @@ export function registerAoWorkflows(services: () => Services, t: Translate, remi
     ['rappel-remises', 'rappel-echeances', 'validite-offres']
   )
   system('rappel-rangement', true, () => ({ trigger: { kind: OPENING }, actions: [{ kind: 'ao.rappel-rangement', fields: {} }] }))
+  // Les pièces à problème, à l'import : illisibles, sans texte (scans), sans type reconnu — un seul
+  // workflow, une étape chacune (les actions de la lecture de fichiers et du typage des pièces, que
+  // l'analyse requiert), muette s'il n'y en a pas. Les trois d'avant y sont fondus.
+  registerSystemWorkflow({
+    id: 'sys.ao.signalements-import',
+    moduleKey: 'ao.name',
+    enabledByDefault: true,
+    replaces: ['sys.lecture-fichiers.illisibles', 'sys.lecture-fichiers.sans-texte', 'sys.typage-pieces.sans-type'],
+    make: (tr) => ({
+      name: tr('ao.sys.signalements-import'),
+      mode: 'auto',
+      trigger: { kind: TRIGGER_IMPORTED },
+      // Au moins une pièce à signaler (rien au journal sinon).
+      conditions: [
+        { field: 'illisibles', op: 'not-empty', value: '' },
+        { field: 'sanstexte', op: 'not-empty', value: '', join: 'or' },
+        { field: 'nontypees', op: 'not-empty', value: '', join: 'or' }
+      ],
+      actions: [
+        { kind: 'lecture-fichiers.illisibles', fields: { pieces: '{illisibles}' } },
+        { kind: 'lecture-fichiers.sans-texte', fields: { pieces: '{sanstexte}' } },
+        { kind: 'typage-pieces.sans-type', fields: { pieces: '{nontypees}' } }
+      ]
+    })
+  })
   system('extraire-cctp', false, () => ({
     trigger: { kind: TRIGGER_IMPORTED },
     conditions: [{ field: 'types', op: 'contains', value: 'CCTP' }],

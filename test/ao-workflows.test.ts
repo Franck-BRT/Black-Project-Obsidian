@@ -75,6 +75,7 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
       'sys.ao.questionnaire-ia:false',
       'sys.ao.rappel-rangement:true',
       'sys.ao.rappels-quotidiens:true',
+      'sys.ao.signalements-import:true',
       'sys.exigences.controle-import:true',
       'sys.exigences.rappels-lundi:false',
       'sys.exigences.relire-nouvelles:false',
@@ -92,9 +93,6 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
       'sys.ia.verifier-connexion:true',
       'sys.lecture-fichiers.bilan-formats:false',
       'sys.lecture-fichiers.formats-non-lus:true',
-      'sys.lecture-fichiers.illisibles:true',
-      'sys.lecture-fichiers.sans-texte:false',
-      'sys.typage-pieces.sans-type:true',
       'sys.workflows.archiver-journal:false',
       'sys.workflows.bilan-hebdo:false',
       'sys.workflows.casses:true'

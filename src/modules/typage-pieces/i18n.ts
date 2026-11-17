@@ -137,8 +137,7 @@ export const typageFr: Record<string, string> = {
   'typage-pieces.wf.untyped.found': '{count} pièce(s) sans type reconnu : {names}.',
   'typage-pieces.wf.untyped.found.in': '{where} — {count} pièce(s) sans type reconnu : {names}.',
   'typage-pieces.wf.untyped.how': 'Pour celles-ci : « Changer le type de la pièce ». Pour les suivantes : un mot-clé dans Types de pièces.',
-  'typage-pieces.wf.untyped.none': 'Toutes les pièces ont un type reconnu.',
-  'typage-pieces.sys.sans-type': 'Signaler les pièces sans type reconnu, à l’import'
+  'typage-pieces.wf.untyped.none': 'Toutes les pièces ont un type reconnu.'
 }
 
 export const typageEn: Record<string, string> = {
@@ -275,6 +274,5 @@ export const typageEn: Record<string, string> = {
   'typage-pieces.wf.untyped.found': '{count} document(s) with no recognised type: {names}.',
   'typage-pieces.wf.untyped.found.in': '{where} — {count} document(s) with no recognised type: {names}.',
   'typage-pieces.wf.untyped.how': 'For these: “Change the document type”. For the next ones: a keyword in Document types.',
-  'typage-pieces.wf.untyped.none': 'All documents have a recognised type.',
-  'typage-pieces.sys.sans-type': 'Report documents with no recognised type, on import'
+  'typage-pieces.wf.untyped.none': 'All documents have a recognised type.'
 }

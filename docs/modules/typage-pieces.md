@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `typage-pieces` |
-| Version | 0.9.0 (Black Projects 0.98.0) |
+| Version | 0.10.0 (Black Projects 0.136.8) |
 | Emplacement | `src/modules/typage-pieces/` |
 | Interface publique | `src/modules/typage-pieces/index.ts` |
 | Guide de maintenance | [`src/modules/typage-pieces/README.md`](../../src/modules/typage-pieces/README.md) |
@@ -13,6 +13,12 @@
 | Utilisé par | Analyse d'appels d'offres (`ao`) |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/typage-pieces/doc/Typage des pièces.md`.
+
+## Les pièces sans type : une étape d'un workflow de l'analyse (v0.10.0, Black Projects 0.136.8)
+
+- `sys.typage-pieces.sans-type` n'est plus déclaré ici : son action `typage-pieces.sans-type` est
+  une étape du workflow système de l'[analyse d'appels d'offres](ao.md) « Signaler les pièces à problème, à l'import : illisibles, sans texte (scans), sans type reconnu »
+  (`sys.ao.signalements-import`), qui le remplace (`replaces`). `SYS_UNTYPED` retiré.
 
 Sorti du module AO en v0.4.0 : la reconnaissance des types de pièces est désormais un
 module à part, réutilisable, avec sa ligne dans les réglages et sa fenêtre **Types de
@@ -150,7 +156,7 @@ cohérence des réglages (renommages suivis, migration). Il en gagne un, écrit 
 
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
-| Signaler les pièces sans type reconnu, à l'import (`sys.typage-pieces.sans-type`) | *Pièces importées* (analyse d'appels d'offres), condition `nontypees` non vide | `typage-pieces.sans-type` : nomme les pièces classées « Autre », avec comment les typer | actif |
+| Signaler les pièces sans type reconnu, à l'import (`sys.typage-pieces.sans-type` ; depuis 0.10.0, une étape de `sys.ao.signalements-import`) | *Pièces importées* (analyse d'appels d'offres), condition `nontypees` non vide | `typage-pieces.sans-type` : nomme les pièces classées « Autre », avec comment les typer | actif |
 
 - L'analyse d'appels d'offres donne au déclencheur la liste `nontypees` (les pièces
   classées `AUTRE`, nouvelle variable « Pièces sans type reconnu »).

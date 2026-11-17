@@ -51,11 +51,12 @@ de la bibliothèque de documents : sans elle, il ne se déclenche pas. Voir
 
 ### Être prévenu d'une pièce illisible ou sans texte
 
-À l'import des pièces d'une analyse, le workflow système **Signaler les pièces
-illisibles** (activé d'origine) nomme celles qui n'ont pas pu être lues — fichier abîmé,
-ou protégé par un mot de passe d'ouverture — et dit que faire. **Signaler les pièces sans
-texte (scans)** (désactivé d'origine) nomme celles sans texte lisible, que l'extraction des
-exigences et l'IA ne voient pas. **Bilan des formats du coffre, chaque lundi** (désactivé)
+À l'import des pièces d'une analyse, le workflow système **Signaler les pièces à problème,
+à l'import** (de l'{{link:Modules/Analyse d'appels d'offres|analyse d'appels d'offres}}) nomme
+celles qui n'ont pas pu être lues — fichier abîmé, ou protégé par un mot de passe d'ouverture —
+et dit que faire ; puis celles sans texte lisible (des scans), que l'extraction des exigences et
+l'IA ne voient pas ; puis celles sans type reconnu. Une étape chacune, muette s'il n'y a rien :
+retirez-en une pour ne plus avoir ce signalement. **Bilan des formats du coffre, chaque lundi** (désactivé)
 compte les fichiers du coffre par format et nomme les extensions non lues. Voir la page
 {{link:Modules/Workflows|Workflows}}, filtre *Système*.
 

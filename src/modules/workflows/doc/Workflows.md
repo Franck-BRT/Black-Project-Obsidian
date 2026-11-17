@@ -124,10 +124,8 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Verser le dossier « À classer », à l'ouverture | à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
 | Verser le dossier « À classer », chaque jour | chaque jour à 8 h | idem | actif |
 | Signaler les formats non lus, au dépôt de fichiers | des fichiers déposés dans l'application | dit ceux dont le format n'est pas lu, et où déclarer une extension équivalente | actif |
-| Signaler les pièces illisibles, à l'import | des pièces illisibles importées | les nomme, et dit que faire | actif |
-| Signaler les pièces sans texte (scans), à l'import | des pièces sans texte importées | les nomme | désactivé |
+| Signaler les pièces à problème, à l'import | des pièces illisibles, sans texte ou sans type reconnu importées | une étape chacune : les nomme, et dit que faire | actif |
 | Bilan des formats du coffre, chaque lundi | lundi à 8 h | les fichiers par format, les extensions non lues | désactivé |
-| Signaler les pièces sans type reconnu, à l'import | des pièces importées, quand certaines sont classées « Autre » | les nomme, et dit comment les typer | actif |
 
 - **Modifiables** : nom, mode, déclencheur, conditions, actions, comme les autres.
 - **Désactivables** : désactivé, l'automatisme ne se fait plus (la note de l'analyse, par

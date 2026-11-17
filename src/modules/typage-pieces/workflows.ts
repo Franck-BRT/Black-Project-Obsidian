@@ -2,22 +2,17 @@
 // Logiciel propriétaire — voir le fichier LICENSE.
 
 /**
- * Le workflow système du typage des pièces : **signaler les pièces sans type reconnu**
- * (activé d'origine). À l'import des pièces d'une analyse, celles qu'aucun mot-clé n'a
- * reconnues (classées « Autre ») sont nommées, avec comment les typer : un mot-clé pour la
- * suite, « Changer le type de la pièce » pour celles-ci.
- *
- * Le déclencheur est celui de l'analyse d'appels d'offres (« Pièces importées »), désigné
- * par son identifiant : sans elle, ce workflow ne se déclenche pas.
+ * L'action du typage des pièces pour les workflows : **signaler les pièces sans type reconnu**.
+ * À l'import des pièces d'une analyse, celles qu'aucun mot-clé n'a reconnues (classées
+ * « Autre ») sont nommées, avec comment les typer : un mot-clé pour la suite, « Changer le
+ * type de la pièce » pour celles-ci. Le workflow système qui s'en sert (« Signaler les pièces
+ * à problème, à l'import ») est déclaré par l'analyse d'appels d'offres.
  */
 
-import { registerAction, registerSystemWorkflow } from '../workflows'
+import { registerAction } from '../workflows'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
-export const SYS_UNTYPED = 'sys.typage-pieces.sans-type'
-/** « Pièces importées » (analyse d'appels d'offres) : ses pièces sans type reconnu dans `nontypees`. */
-const TRIGGER_IMPORTED = 'ao.pieces-importees'
 
 const split = (text: string): string[] =>
   text
@@ -44,18 +39,5 @@ export function registerTypingWorkflows(t: Translate): void {
       notifier.notify(`${text} ${t('typage-pieces.wf.untyped.how')}`, 15000)
       return { lines: [text], results: { text } }
     }
-  })
-
-  registerSystemWorkflow({
-    id: SYS_UNTYPED,
-    moduleKey: 'typage-pieces.name',
-    enabledByDefault: true,
-    make: (tr) => ({
-      name: tr('typage-pieces.sys.sans-type'),
-      mode: 'auto',
-      trigger: { kind: TRIGGER_IMPORTED },
-      conditions: [{ field: 'nontypees', op: 'not-empty', value: '' }],
-      actions: [{ kind: 'typage-pieces.sans-type', fields: { pieces: '{nontypees}' } }]
-    })
   })
 }

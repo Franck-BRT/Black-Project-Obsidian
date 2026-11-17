@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les signalements à l'import en un seul workflow (v0.136.8)
+
+- [ ] Workflows › Système › Analyse d'appels d'offres : **Signaler les pièces à problème, à
+      l'import** (trois étapes, conditions liées par « ou ») ; « Signaler les pièces illisibles »,
+      « … sans texte (scans) » (Lecture de fichiers) et « … sans type reconnu » (Typage des pièces)
+      n'y sont plus
+- [ ] Importer un Word abîmé et une pièce au nom inconnu : les deux signalés ; des pièces toutes
+      lisibles et typées : rien, rien au journal
+
 ## Les rappels quotidiens des appels d'offres en un seul workflow (v0.136.7)
 
 - [ ] Workflows › Système › Analyse d'appels d'offres : **Rappels des appels d'offres, chaque jour**

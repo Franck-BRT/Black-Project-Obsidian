@@ -63,8 +63,8 @@ l'ont déjà le gardent, marqué « (désactivé) » dans le tableau de leur ana
 
 ## Être prévenu d'une pièce sans type
 
-Le workflow système **Signaler les pièces sans type reconnu, à l'import** (activé
-d'origine) nomme, à chaque import dans une analyse, les pièces qu'aucun mot-clé n'a
+Le workflow système **Signaler les pièces à problème, à l'import** (de l'analyse d'appels
+d'offres ; son étape « sans type reconnu ») nomme, à chaque import dans une analyse, les pièces qu'aucun mot-clé n'a
 reconnues (classées « Autre pièce ») : « Station sol — 1 pièce(s) sans type reconnu :
 SPEC_sol_v2. » Pour celles-ci, « Changer le type de la pièce » ; pour les suivantes,
 ajoutez un mot-clé (ci-dessus). Quand toutes sont typées, il ne s'exécute pas.

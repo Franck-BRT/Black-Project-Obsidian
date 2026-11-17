@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.38.0 (Black Projects 0.136.7) |
+| Version | 0.39.0 (Black Projects 0.136.8) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,17 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## Les pièces à problème, à l'import : un seul workflow (v0.39.0, Black Projects 0.136.8)
+
+- `sys.ao.signalements-import` : « Signaler les pièces à problème, à l'import : illisibles, sans texte (scans), sans type reconnu », au déclencheur *Pièces importées* ; conditions
+  `{illisibles}` **ou** `{sanstexte}` **ou** `{nontypees}` non vide (rien au journal sinon) ; trois
+  étapes, muettes s'il n'y a rien — `lecture-fichiers.illisibles`, `lecture-fichiers.sans-texte`,
+  `typage-pieces.sans-type` (actions de la lecture de fichiers et du typage des pièces, que
+  l'analyse requiert : déclaré ici, il ne peut pas perdre ses étapes).
+- Il remplace (`replaces`) `sys.lecture-fichiers.illisibles`, `sys.lecture-fichiers.sans-texte` et
+  `sys.typage-pieces.sans-type` : retirés des coffres existants. Les pièces sans texte, désactivées
+  avant, en sont une étape : retirez-la pour ne plus les avoir.
 
 ## Les rappels quotidiens en un seul workflow (v0.38.0, Black Projects 0.136.7)
 
