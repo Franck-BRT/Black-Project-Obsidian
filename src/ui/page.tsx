@@ -227,41 +227,30 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
           <MoreMenu actions={view.actions.filter((action) => action.more)} t={t} />
         </div>
       )}
-      {view.drop?.hint && (
-        <p class="bp-drop-hint">
-          <Icon name="upload" />
-          {view.drop.hint}
-        </p>
-      )}
-      {(view.search || !!view.filters?.length) && (
-        <div class="bp-page-tools" role="search">
+      {/* L'aide du glisser-déposer : pour les lecteurs d'écran seulement (le bandeau le dit quand on glisse). */}
+      {view.drop?.hint && <p class="bp-sr">{view.drop.hint}</p>}
+      {/* Une seule barre : la recherche, le filtre, l'affichage (en icônes), le regroupement. */}
+      {(view.search || !!view.filters?.length || layouts.length > 1 || view.grouping) && (
+        <div class="bp-page-bar">
           {view.search && (
-            <div class="bp-page-search">
+            <div class="bp-page-search" role="search">
               <label class="bp-sr" for={searchId}>
                 {view.search.label}
               </label>
               <Icon name="search" />
-              <input id={searchId} class="bp-input" type="search" value={query} placeholder={view.search.placeholder ?? view.search.label} onInput={(event) => setQuery(event.currentTarget.value)} />
+              <input id={searchId} class="bp-input" type="search" value={query} placeholder={view.search.placeholder ?? view.search.label} title={view.search.label} onInput={(event) => setQuery(event.currentTarget.value)} />
             </div>
           )}
-          {/* Les filtres : un menu déroulant (« Filtrer : Tout »), marqué quand l'un est choisi. */}
           {!!view.filters?.length && <FilterMenu filters={view.filters} filter={filter} setFilter={setFilter} t={t} />}
-        </div>
-      )}
-      {(layouts.length > 1 || view.grouping) && (
-        <div class="bp-page-views">
           {layouts.length > 1 && (
-            <div class="bp-segmented" role="group" aria-label={t('ui.page.layout')}>
-              <span class="bp-segmented-label">{t('ui.page.layout')}</span>
+            <div class="bp-segmented is-icons" role="group" aria-label={t('ui.page.layout')}>
               {layouts.map((each) => (
-                <button key={each} type="button" class="bp-segment" aria-pressed={layout === each} onClick={() => choose(each)}>
+                <button key={each} type="button" class="bp-segment" aria-pressed={layout === each} aria-label={t(`ui.page.layout.${each}`)} title={t(`ui.page.layout.${each}`)} onClick={() => choose(each)}>
                   <Icon name={LAYOUT_ICON[each]} />
-                  {t(`ui.page.layout.${each}`)}
                 </button>
               ))}
             </div>
           )}
-          {/* Regrouper par : un menu déroulant, sur la même ligne que l'affichage. */}
           {view.grouping && <GroupingMenu grouping={view.grouping} />}
         </div>
       )}
@@ -304,9 +293,10 @@ function PageBody({ view, spec, t, host, query, setQuery, filter, setFilter, lay
 /** Les filtres d'une page : un menu déroulant (« Filtrer : Tout »), marqué quand l'un est choisi. */
 export function FilterMenu({ filters, filter, setFilter, t }: { filters: readonly { id: string; label: string }[]; filter: string | null; setFilter: (filter: string | null) => void; t: AppHost['t'] }) {
   return (
-    <label class={`bp-page-select bp-page-filter${filter ? ' is-active' : ''}`}>
+    <label class={`bp-page-select bp-page-filter${filter ? ' is-active' : ''}`} title={t('ui.page.filters')}>
       <Icon name="filter" />
-      <span class="bp-page-filter-label">{t('ui.page.filter')}</span>
+      {/* L'entonnoir le dit ; le mot, pour les lecteurs d'écran. */}
+      <span class="bp-sr">{t('ui.page.filter')}</span>
       <select class="bp-select" aria-label={t('ui.page.filters')} value={filter ?? ''} onChange={(event) => setFilter(event.currentTarget.value || null)}>
         <option value="">{t('ui.page.all')}</option>
         {filters.map((each) => (

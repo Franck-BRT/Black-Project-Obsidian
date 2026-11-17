@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.146.0)
+## Aujourd'hui (version 0.147.0)
+
+- **Une seule barre en haut des listes** : la recherche, le filtre (l'entonnoir), l'affichage (Liste,
+  Cartes, Tableau, en icônes) et « Regrouper par », sur une ligne. La phrase « Ou glissez-déposez des
+  fichiers… » a disparu : le glisser-déposer marche toujours, un bandeau le dit quand on glisse.
 
 - **Affichage et Regrouper par sur une seule ligne** : « Regrouper par » est devenu un menu déroulant,
   à côté des boutons Liste / Cartes / Tableau — sur toutes les pages qui proposent un regroupement.

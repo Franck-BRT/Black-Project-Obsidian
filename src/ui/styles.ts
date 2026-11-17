@@ -116,6 +116,14 @@ const COMPONENTS_CSS = String.raw`
 .bp-page-filter.is-active { border-color: var(--bp-accent); background: var(--bp-accent-soft); color: var(--bp-accent); }
 .bp-page-filter.is-active .bp-select { color: var(--bp-accent); }
 .bp-page-views { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.bp-page-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.bp-page-bar .bp-page-search { flex: 1 1 200px; max-width: 300px; }
+.bp-page-bar .bp-segmented { flex-wrap: nowrap; }
+.bp-segmented.is-icons { gap: 2px; }
+.bp-segmented.is-icons .bp-segment { padding: 4px 9px; }
+.bp-page-filter .bp-select { max-width: 11em; text-overflow: ellipsis; }
+.bp-page-bar .bp-page-select { gap: 6px; padding-left: 10px; }
+.bp-page-bar .bp-page-select .bp-select { min-width: 7em; }
 .bp-page-views .bp-segmented { flex-wrap: nowrap; }
 .bp-page-group .bp-select { min-width: 9em; }
 .bp-segmented { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius); background: var(--bp-surface); }

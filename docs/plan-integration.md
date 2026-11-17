@@ -683,6 +683,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
 - v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
+- v0.147.0 : **l'interface reprise, 7** : recherche, filtre, affichage (icônes) et regroupement sur une seule barre ; la ligne d'aide du glisser-déposer retirée
 - v0.146.0 : **l'interface reprise, 6** : « Affichage » et « Regrouper par » (devenu un menu déroulant) sur une ligne
 - v0.145.0 : **l'interface reprise, 5** : les lignes de la liste des documents allégées (nom ; type, date, taille ; une pastille s'il y a à faire ; plus de boutons)
 - v0.144.0 : **l'interface reprise, 4** : les actions secondaires de la bibliothèque dans un menu « … »

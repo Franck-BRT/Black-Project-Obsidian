@@ -294,11 +294,11 @@ describe('les filtres d’une page', () => {
   ]
   it('un menu déroulant : « Filtrer : Tout », puis chaque filtre ; celui choisi, marqué', () => {
     const none = renderToString(<FilterMenu filters={filters} filter={null} setFilter={() => undefined} t={t} />)
-    expect(none).toMatch(/^<label class="bp-page-select bp-page-filter"><svg[^>]*>.*?<\/svg><span class="bp-page-filter-label">Filtrer :<\/span><select class="bp-select" aria-label="Filtres">/)
+    expect(none).toMatch(/^<label class="bp-page-select bp-page-filter" title="Filtres"><svg[^>]*>.*?<\/svg><span class="bp-sr">Filtrer :<\/span><select class="bp-select" aria-label="Filtres">/)
     expect([...none.matchAll(/<option([^>]*)>([^<]+)<\/option>/g)].map((found) => found[2])).toEqual(['Tout', 'Langue à confirmer', 'Dernières versions'])
     expect(none).toMatch(/<option[^>]*selected[^>]*>Tout<\/option>/)
     const chosen = renderToString(<FilterMenu filters={filters} filter="a-jour" setFilter={() => undefined} t={t} />)
-    expect(chosen).toContain('<label class="bp-page-select bp-page-filter is-active">')
+    expect(chosen).toContain('<label class="bp-page-select bp-page-filter is-active" title="Filtres">')
     expect(chosen).toMatch(/<option(?=[^>]*value="a-jour")(?=[^>]*selected)[^>]*>Dernières versions<\/option>/)
   })
 })

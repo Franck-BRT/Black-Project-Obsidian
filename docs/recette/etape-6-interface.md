@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Une seule barre, sans la ligne d'aide (v0.147.0)
+
+- [ ] Bibliothèque › Documents : recherche (« Chercher un document… »), filtre (entonnoir, « Tout »),
+      affichage (trois icônes), « Regrouper par » — sur une ligne
+- [ ] Survoler une icône d'affichage : son nom (Liste, Cartes, Tableau) ; le choix marche
+- [ ] Plus de phrase « Ou glissez-déposez des fichiers… » ; glisser un fichier sur la page : le bandeau
+      « Déposer pour verser… » apparaît, le fichier est versé
+- [ ] Exigences, Workflows, Analyses : la même barre
+- [ ] Fenêtre étroite : la barre passe sur plusieurs lignes, rien ne déborde
+
 ## Affichage et Regrouper par sur une ligne (v0.146.0)
 
 - [ ] Bibliothèque › Documents : « Affichage » (Liste, Cartes, Tableau) et « Regrouper par : Aucun »

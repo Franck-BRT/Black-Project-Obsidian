@@ -351,6 +351,11 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
+- **Une seule barre** *(0.147.0)* : la recherche, le filtre (l'entonnoir, sans le mot), l'affichage
+  (Liste / Cartes / Tableau en icônes, leur nom en infobulle et pour les lecteurs d'écran) et le
+  regroupement, sur une ligne (`.bp-page-bar`, qui passe à la ligne sur un écran étroit). L'aide du
+  glisser-déposer (`drop.hint`) n'est plus affichée : lue par les lecteurs d'écran seulement ; le
+  bandeau le dit quand on glisse des fichiers.
 - **Affichage et Regrouper par, sur une ligne** *(0.146.0)* : « Regrouper par » est un menu déroulant
   (`GroupingMenu`, comme « Filtrer »), à côté des boutons Liste / Cartes / Tableau ; un choix redessine
   la page.
