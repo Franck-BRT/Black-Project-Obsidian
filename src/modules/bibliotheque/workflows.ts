@@ -115,6 +115,8 @@ export interface LibraryWorkflowDeps {
   /** Le circuit des documents : relancer ceux qui s'y sont arrêtés (rend combien) ; ceux qui attendent d'être contrôlés. */
   relaunchCircuit(): Promise<number>
   toControl(): Promise<LibraryDoc[]>
+  /** L'entretien des liens des documents (le circuit, version C). */
+  maintainLinks(): Promise<{ dropped: number; restored: number; docs: string[] }>
 }
 
 /** Le sujet d'un document déjà là : lui, où il est rangé, et le lieu où on l'a déposé. */
@@ -292,6 +294,24 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
   })
 
   registerAction({
+    id: 'bibliotheque.entretien-liens',
+    labelKey: 'bibliotheque.wf.action.links',
+    descKey: 'bibliotheque.wf.action.links.desc',
+    fields: [],
+    results: ['text'],
+    async run({ notifier }) {
+      const done = await deps.maintainLinks()
+      if (!done.dropped && !done.restored) {
+        const text = t('bibliotheque.wf.links.none')
+        return { lines: [text], results: { text } }
+      }
+      const text = t('bibliotheque.wf.links.done', { dropped: done.dropped, restored: done.restored })
+      notifier.notify(text, 15000)
+      return { lines: [text], paths: done.docs, results: { text } }
+    }
+  })
+
+  registerAction({
     id: 'bibliotheque.a-classer',
     labelKey: 'bibliotheque.wf.action.unclassified',
     descKey: 'bibliotheque.wf.action.unclassified.desc',
@@ -371,7 +391,7 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
     'rappels-lundi',
     true,
     { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' },
-    ['bibliotheque.rappel-a-controler', 'bibliotheque.versions-a-confirmer', 'bibliotheque.langues-a-confirmer', 'bibliotheque.a-classer', 'bibliotheque.introuvables'].map((kind) => ({ kind, fields: {} })),
+    ['bibliotheque.rappel-a-controler', 'bibliotheque.versions-a-confirmer', 'bibliotheque.langues-a-confirmer', 'bibliotheque.a-classer', 'bibliotheque.introuvables', 'bibliotheque.entretien-liens'].map((kind) => ({ kind, fields: {} })),
     [],
     MONDAY_RETIRED
   )

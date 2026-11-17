@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le circuit des documents, version C : les liens (v0.137.0)
+
+- [ ] Une entreprise (code CNES), une personne, un projet, une norme (avec sa référence) dans la
+      bibliothèque ; verser un document qui les cite : à l'analyse, la fiche a une section **Liens**
+      (chaque note citée, et pourquoi) ; sa page, la section **Liens (n)**, d'où on les ouvre
+- [ ] La note de l'entreprise (de la personne, du projet, de la norme) : une ligne dans **Liens (Black
+      Projects)** ; le reste de la note inchangé
+- [ ] Le document rangé ailleurs : les rétroliens pointent vers sa nouvelle place ; supprimé : ils partent
+- [ ] L'analyse peu sûre : aucun lien écrit
+- [ ] Une note citée supprimée, un rétrolien effacé à la main ; lundi (ou **Exécuter** les rappels de
+      la bibliothèque) : le lien retiré, le rétrolien rétabli
+- [ ] Bibliothèque › Skills › « Analyser un document » : il reçoit « Les liens possibles » ; modifié
+      avant, il est gardé tel quel
+
 ## Le circuit activé d'origine (v0.136.14)
 
 - [ ] Nouveau coffre, IA réglée : Paramètres › Bibliothèque › **Le circuit des documents (IA)**

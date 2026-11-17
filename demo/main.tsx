@@ -148,8 +148,18 @@ platform.http = {
     const folders = [...asked.matchAll(/^- (\S[^\n]*?) — /gm)].map((match) => match[1]!).filter((folder) => !folder.endsWith('.md'))
     // L'analyse : sans IA réelle, le premier projet de la liste (s'il y en a), sans certitude.
     const projects = [...asked.matchAll(/^- (Programmes\/[^\n]*?\.md) — /gm)].map((match) => match[1]!)
+    // Les liens : sans IA réelle, tous les liens possibles (les entités que le texte cite, trouvées sans IA).
+    const possible = (asked.split('## Les liens possibles')[1] ?? '').split('\n## ')[0]!
+    const candidates = [...possible.matchAll(/^- (\S[^\n]*?\.md) — /gm)].map((match) => match[1]!)
     const content = analysing
-      ? JSON.stringify({ typePiece: '', emetteur: '', projet: projects[0] ?? '', confiance: 0.6, raison: 'Démonstration, sans IA réelle : le projet est deviné, pas lu.' })
+      ? JSON.stringify({
+          typePiece: '',
+          emetteur: '',
+          projet: projects[0] ?? '',
+          liens: candidates.map((path) => ({ vers: path, pourquoi: 'cité dans le texte (démonstration, sans IA réelle)' })),
+          confiance: candidates.length ? 0.8 : 0.6,
+          raison: candidates.length ? 'Démonstration, sans IA réelle : les entités citées dans le texte.' : 'Démonstration, sans IA réelle : le projet est deviné, pas lu.'
+        })
       : filing
       ? JSON.stringify({
           dossier: folders.find((folder) => folder.includes('/')) ?? folders[0] ?? '',

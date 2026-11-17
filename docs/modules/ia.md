@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.32.1 (Black Projects 0.136.14) |
+| Version | 0.32.2 (Black Projects 0.137.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,11 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## L'analyse et ses liens (v0.32.2, Black Projects 0.137.0)
+
+- `ia.executer-skill`, sortie `analyse` : la réponse relue avec les liens possibles du document
+  (`linkCandidatesFor`) — un lien hors de ceux-là est écarté.
 
 ## Le circuit, dès qu'une IA est réglée (v0.32.1, Black Projects 0.136.14)
 

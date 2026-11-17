@@ -190,7 +190,7 @@ describe('le workflow système « Circuit des documents »', () => {
       ]
     })
     expect(workflows().find((workflow) => workflow.system === 'sys.bibliotheque.relancer-circuit')).toMatchObject({ enabled: true, trigger: { kind: 'ouverture' } })
-    expect(workflows().find((workflow) => workflow.system === 'sys.bibliotheque.rappels-lundi')).toMatchObject({ enabled: true, actions: [{ kind: 'bibliotheque.rappel-a-controler' }, {}, {}, {}, {}] })
+    expect(workflows().find((workflow) => workflow.system === 'sys.bibliotheque.rappels-lundi')).toMatchObject({ enabled: true, actions: [{ kind: 'bibliotheque.rappel-a-controler' }, {}, {}, {}, {}, { kind: 'bibliotheque.entretien-liens' }] })
     // Ses trois skills : dans la bibliothèque des skills dès l'activation (son workflow les nomme).
     expect((await libraryEntries('skill')).map((entry) => entry.name).sort()).toEqual(['Analyser un document', 'Ingérer un document', 'Ranger un document'])
     answers.analyse = () => ({ status: 500, text: 'panne' })
@@ -213,7 +213,13 @@ describe('le workflow système « Circuit des documents »', () => {
     expect(record).toMatch(/\ncircuit: range\n/)
     expect(record).toMatch(/\ncircuit-projet: "\[\[Programmes\/Spatial\/Station sol\/Station sol\.md\]\]"\n/)
     expect(record).toMatch(/· Ingérer un document — ingéré : /)
-    expect(record).toMatch(/· Analyser un document — type de pièce CCTP, projet Station sol · confiance 86 %\n/)
+    expect(record).toMatch(/· Analyser un document — type de pièce CCTP, projet Station sol, 1 lien\(s\) · confiance 86 %\n/)
+    // Le projet reconnu : un lien de la fiche (en-tête, section Liens), et un rétrolien dans sa note — qui a suivi le rangement.
+    expect(record).toMatch(/\nliens:\n- "\[\[Programmes\/Spatial\/Station sol\/Station sol\.md\]\]"\n/)
+    expect(record).toContain('## Liens\n\n- [[Programmes/Spatial/Station sol/Station sol|Station sol]] — le projet qu’il concerne\n')
+    const projectNote = read(platform, 'Programmes/Spatial/Station sol/Station sol.md')
+    expect(projectNote).toMatch(/\n## Liens \(Black Projects\)\n\n- \d{4}-\d{2}-\d{2} · \[\[Bibliothèque\/Projets\/Spatial\/Station sol\/Offre\/Technique\/Pièce 3\|Pièce 3\]\] — le projet qu’il concerne\n/)
+    expect(projectNote).not.toContain('À classer/Pièce 3')
     expect(record).toMatch(/· Ranger un document — rangé dans .*Technique \(confiance 92 %\)\n/)
     // Ce que l'analyse et le rangement ont reçu : les projets, et le répertoire proposé d'office.
     expect(asked.map((each) => each.kind)).toEqual(['relecture', 'analyse', 'rangement'])

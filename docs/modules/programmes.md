@@ -5,13 +5,19 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.13.0 (Black Projects 0.135.0) |
+| Version | 0.14.0 (Black Projects 0.137.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les projets, des liens possibles (v0.14.0, Black Projects 0.137.0)
+
+- `registerLinkSource({ key: 'projets' })` : chaque projet (sa note, « Programme › Projet », son
+  nom) est cherché dans le texte des documents du circuit ; cité, il peut devenir un lien — et la
+  note du projet reçoit le rétrolien (voir [bibliothèque](bibliotheque.md)).
 
 ## Les projets pour le circuit des documents (v0.13.0, Black Projects 0.135.0)
 

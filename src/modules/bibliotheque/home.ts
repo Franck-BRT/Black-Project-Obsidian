@@ -937,6 +937,24 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             })
           ]
         : []),
+      // Ses liens (le circuit, version C) : les notes qu'il cite, chacune avec sa raison ; un clic l'ouvre.
+      ...(doc.links?.length
+        ? await (async () => {
+            const links = await deps.store.linksOf(doc.record)
+            const name = (path: string) => path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, '')
+            return [
+              fold('liens', t('bibliotheque.links.section', { count: links.length }), links.map((each) => name(each.path)).join(' · '), 'link', {
+                kind: 'list' as const,
+                items: links.map((link) => ({
+                  id: `lien-${link.path}`,
+                  title: name(link.path),
+                  ...(link.why ? { detail: link.why } : {}),
+                  open: { id: 'open', label: t('bibliotheque.links.open'), run: () => deps.showNote(link.path) }
+                }))
+              })
+            ]
+          })()
+        : []),
       // Qui l'appelle : toujours pour un document de référence ; pour un autre, s'il est appelé.
       ...(isReference || callers.length
         ? [

@@ -172,11 +172,12 @@ const SKILLS: Record<Language, EntryDraft[]> = {
           '1. Son **type de pièce** : un code de la liste des types de pièce (CCTP, CCAP…), sinon vide.',
           '2. Son **émetteur** : une entreprise de la liste (son code), sinon vide.',
           '3. Le **projet** qu’il concerne : le chemin exact d’un projet de la liste (son nom, son client, sa référence apparaissent dans le document), sinon vide.',
-          '4. Ta **confiance**, de 0 à 1, et ta **raison** en une phrase.',
+          '4. Ses **liens** : parmi « Les liens possibles », ceux qui comptent vraiment pour ce document (une norme ou un autre document cité, l’entreprise qui l’émet, une personne, le projet…) — le chemin exact, et une phrase pourquoi ; aucun autre.',
+          '5. Ta **confiance**, de 0 à 1, et ta **raison** en une phrase.',
           'N’invente rien : ce qui n’est pas dans les listes reste vide.'
         ].join('\n')
       ),
-      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets'],
+      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets', 'candidats'],
       'analyse'
     ),
     executable(
@@ -249,11 +250,12 @@ const SKILLS: Record<Language, EntryDraft[]> = {
           '1. Its **document type**: a code from the list of document types, otherwise empty.',
           '2. Its **issuer**: a company from the list (its code), otherwise empty.',
           '3. The **project** it concerns: the exact path of a project from the list (its name, client or reference appear in the document), otherwise empty.',
-          '4. Your **confidence**, from 0 to 1, and your **reason** in one sentence.',
+          '4. Its **links**: among “The possible links”, those that really matter for this document (a standard or another document cited, the issuing company, a person, the project…) — the exact path, and one sentence why; no other.',
+          '5. Your **confidence**, from 0 to 1, and your **reason** in one sentence.',
           'Invent nothing: what is not in the lists stays empty.'
         ].join('\n')
       ),
-      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets'],
+      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets', 'candidats'],
       'analyse'
     ),
     executable(
@@ -284,4 +286,40 @@ export function startersFor(kind: EntryKind, language: string): EntryDraft[] {
   // Les émetteurs sont ceux de chacun : pas d'exemples.
   if (kind === 'issuer' || kind === 'tag' || kind === 'person') return []
   return (kind === 'prompt' ? PROMPTS : kind === 'persona' ? PERSONAS : SKILLS)[lang]
+}
+
+/**
+ * Le texte d'avant de skills livrés (une nouvelle version les change) : un skill encore tel
+ * quel — pas modifié par l'utilisateur — est mis à jour ; modifié, il est gardé.
+ */
+const PREVIOUS: Record<Language, Record<string, string[]>> = {
+  fr: {
+    'Analyser un document': [
+      [
+        'Tu analyses un document qui entre dans la bibliothèque. Lis sa fiche et le début de son texte, puis :',
+        '1. Son **type de pièce** : un code de la liste des types de pièce (CCTP, CCAP…), sinon vide.',
+        '2. Son **émetteur** : une entreprise de la liste (son code), sinon vide.',
+        '3. Le **projet** qu’il concerne : le chemin exact d’un projet de la liste (son nom, son client, sa référence apparaissent dans le document), sinon vide.',
+        '4. Ta **confiance**, de 0 à 1, et ta **raison** en une phrase.',
+        'N’invente rien : ce qui n’est pas dans les listes reste vide.'
+      ].join('\n')
+    ]
+  },
+  en: {
+    'Analyse a document': [
+      [
+        'You analyse a document entering the library. Read its record and the beginning of its text, then:',
+        '1. Its **document type**: a code from the list of document types, otherwise empty.',
+        '2. Its **issuer**: a company from the list (its code), otherwise empty.',
+        '3. The **project** it concerns: the exact path of a project from the list (its name, client or reference appear in the document), otherwise empty.',
+        '4. Your **confidence**, from 0 to 1, and your **reason** in one sentence.',
+        'Invent nothing: what is not in the lists stays empty.'
+      ].join('\n')
+    ]
+  }
+}
+
+/** Les textes d'avant d'un skill livré (pour le mettre à jour s'il est resté tel quel). */
+export function previousStarterTexts(name: string, language: string): readonly string[] {
+  return PREVIOUS[language === 'en' ? 'en' : 'fr'][name] ?? []
 }

@@ -302,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.32.1',
+  version: '0.32.2',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),

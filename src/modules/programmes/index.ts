@@ -9,7 +9,7 @@
  */
 
 import { localToday } from '../../core/dates'
-import { canCreatePieceType, chooseReferenceDocuments, createPieceType, documentsIn, removeLibraryDirectory, dropDocumentsInto, libraryActive, libraryDocPage, libraryDocument, libraryFolderPage, libraryPieceTypes, pieceTypeText, pourDocumentsInto, projectDocumentsFolder, registerReferenceCallers, libraryDoc, projectDocumentsPath, registerSkillContext } from '../bibliotheque'
+import { canCreatePieceType, chooseReferenceDocuments, createPieceType, documentsIn, removeLibraryDirectory, dropDocumentsInto, libraryActive, libraryDocPage, libraryDocument, libraryFolderPage, libraryPieceTypes, pieceTypeText, pourDocumentsInto, projectDocumentsFolder, registerReferenceCallers, libraryDoc, projectDocumentsPath, registerLinkSource, registerSkillContext } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
 import page from './doc/Programmes.md'
 import type { BlackModule, ModuleContext, TextField } from '../../core/modules/module'
@@ -60,7 +60,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.13.0',
+  version: '0.14.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -434,6 +434,16 @@ export const programmesModule: BlackModule = {
     // Le circuit des documents : les projets, et leurs répertoires attendus, pour les skills qui les demandent.
     for (const stop of stopContexts) stop()
     stopContexts = [
+      // Les liens d'un document : les projets dont le nom apparaît dans son texte.
+      registerLinkSource({
+        key: 'projets',
+        label: t('programmes.links.kind.project'),
+        items: async () => {
+          const items: { path: string; label: string; names: string[] }[] = []
+          for (const programme of await store.programmes()) for (const project of await store.projects(programme)) items.push({ path: project.path, label: `${programme.name} › ${project.name}`, names: [project.name] })
+          return items
+        }
+      }),
       registerSkillContext({
         key: 'projets',
         label: t('programmes.skill.context.projets'),

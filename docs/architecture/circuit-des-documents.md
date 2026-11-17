@@ -187,9 +187,9 @@ nom : un skill modifié est gardé tel quel). Leur procédure est en français ;
 
 ### Analyse et liens
 
-*Livré en B (0.135.0) : le type de pièce, l'émetteur, le projet, la confiance et la raison
-(sortie `analyse`, sans `personnes` ni `liens`). Les candidats, les personnes et les liens : la
-version C.*
+*Livré en B (0.135.0) : le type de pièce, l'émetteur, le projet, la confiance et la raison. En C
+(0.137.0) : les candidats et les `liens` (les personnes connues en sont : un lien vers leur note ;
+la liste `personnes` à part n'est pas reprise).*
 
 - **Déterministe avant** : les candidats — entités connues trouvées dans le texte par leur nom
   ou un alias, documents de même référence ou de même émetteur, projets dont le nom apparaît.
@@ -254,7 +254,7 @@ encore).
 | **Circuit des documents** | un document entre dans À classer (`bibliotheque.document-verse`) | Ingestion → Analyse et liens → Rangement, chacun par `ia.executer-skill` ; le seuil décide |
 | **Relancer le circuit** | à l'ouverture | les fiches restées `a-classer` ou `ingere` (IA coupée) reprennent là où elles étaient |
 | **À contrôler en attente** | chaque lundi | prévient s'il y a des documents à contrôler, avec le lien vers la page — depuis 0.136.5, la première étape des « Rappels de la bibliothèque, chaque lundi » |
-| **Entretien des liens** (plus tard) | chaque semaine | liens vers des notes disparues, doublons probables, rétroliens manquants : signalés |
+| **Entretien des liens** *(0.137.0)* | chaque lundi (une étape des rappels de la bibliothèque) | liens vers des notes disparues retirés, rétroliens manquants rétablis |
 
 Comme les autres workflows système : désactivables, modifiables, rétablissables ; non
 supprimables.
@@ -307,9 +307,9 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
 | À classer (unifié avec « À verser »), À contrôler et sa page | existe *(À contrôler, A, 0.134.0 ; À classer, B, 0.135.0)* |
 | Trois skills livrés : Ingestion, Analyse, Rangement | existent *(B, 0.135.0 ; dans la bibliothèque des skills dès l'activation, 0.136.1)* — l'Analyse donne le type de pièce, l'émetteur, le projet ; les **liens** viendront avec la version C |
 | Workflows système du circuit, relance, rappel À contrôler | existent *(B, 0.135.0 ; le rappel, une étape des « Rappels de la bibliothèque, chaque lundi » depuis 0.136.5)* |
-| Candidats de liens et entités (recherche déterministe) | **à faire** *(C)* |
-| Liens, rétroliens | **à faire** *(C)* |
-| Entretien des liens (workflow système) | **à faire** *(C)* |
+| Candidats de liens et entités (recherche déterministe) | existe *(C, 0.137.0)* : documents (référence), entreprises, personnes, projets |
+| Liens, rétroliens | existent *(C, 0.137.0)* |
+| Entretien des liens (workflow système) | existe *(C, 0.137.0)* : une étape des rappels du lundi |
 
 ## Le découpage proposé
 
@@ -322,7 +322,10 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
    sans lieu précis y entrent), les trois skills livrés, le workflow système « Circuit des
    documents » (déclaré par le module IA après ses passes sur les documents), la relance à
    l'ouverture, le rappel du lundi, « En cours dans le circuit » et la section Circuit de la fiche.
-3. **Version C — les liens** : candidats et entités, liens dans la fiche, rétroliens, entretien.
+3. **Version C — les liens** ✅ *(0.137.0)* : candidats (documents par leur référence, entreprises,
+   personnes, projets), liens choisis par l'IA parmi eux dans la fiche, rétroliens dans les notes
+   citées (qui suivent le document), entretien du lundi. Restent pour plus tard : les exigences et
+   les notes libres comme sources de liens, les personnes et entreprises **inconnues** proposées.
 
 Chaque version : tests (avec une IA simulée qui rend des réponses sûres, peu sûres,
 illisibles), démo, banc Obsidian, docs, comme d'habitude.

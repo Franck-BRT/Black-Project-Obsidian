@@ -5,13 +5,37 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.54.0 (Black Projects 0.136.14) |
+| Version | 0.55.0 (Black Projects 0.137.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le circuit des documents, version C : les liens (v0.55.0, Black Projects 0.137.0)
+
+- `links.ts` (pur) : `findCandidates` (les entités dont un nom apparaît dans le texte — mot entier,
+  sans accents ni majuscules, trois caractères au moins, pas que des chiffres ; ni le document
+  lui-même), `candidatePath` (le lien rendu par l'IA, parmi les candidats), `withLinkSection` (la
+  section **Liens** de la fiche, avant le texte extrait), `withBacklink` / `withoutBacklink` /
+  `hasBacklink` (la section réservée **Liens (Black Projects)** d'une note citée, à sa fin).
+- `registerLinkSource` : où chercher les liens — la bibliothèque, ses `documents` (par leur
+  référence, quatre caractères au moins), `entreprises` (code, nom, autres noms), `personnes` ; le
+  module Programmes, ses `projets`. `linkCandidatesFor(record)` ; le contexte de skill `candidats`
+  (« Les liens possibles »).
+- L'analyse (`ANALYSIS_SCHEMA`) rend `liens: [{ vers, pourquoi }]` ; `readAnalysisAnswer` ne garde
+  que les candidats (`lists.candidates`). `applyAnalysis`, sûre seulement : ces liens et le projet
+  reconnu (« le projet qu'il concerne ») — `LibraryStore.setLinks` : l'en-tête `liens:` (des liens),
+  la section Liens (`[[chemin|nom]] — pourquoi`), un rétrolien dans chaque note citée
+  (`date · [[document|titre]] — pourquoi`), celui des notes plus citées retiré. Une note qui n'existe
+  pas n'est jamais liée.
+- `LibraryStore.move` : les rétroliens suivent (`retargetBacklinks`) ; `deleteDoc` : ils partent.
+  `maintainLinks` (action `bibliotheque.entretien-liens`, sixième étape des rappels du lundi) :
+  les liens vers des notes disparues retirés, les rétroliens qui manquent rétablis.
+- La page d'un document : la section **Liens (n)**, chaque lien avec sa raison, qu'on ouvre.
+- Le skill livré « Analyser un document » reçoit `candidats` et dit ses liens ; celui d'avant,
+  resté tel quel, est mis à jour à l'activation (`previousStarterTexts`) — modifié, il est gardé.
 
 ## Le circuit activé d'origine (v0.54.0, Black Projects 0.136.14)
 
@@ -363,7 +387,7 @@ Les automatismes de la bibliothèque sont des [workflows système](workflows.md)
 | --- | --- | --- | --- |
 | Ranger les fichiers et pièces importés dans la bibliothèque (`sys.bibliotheque.ranger-fichiers`) | fichiers déposés dans l'application, quel que soit le module (`ao`, `exigences`, `typage-pieces`, `workflows`) — sans condition depuis 0.51.0 (`ranger-pieces` y est fondu) | `bibliotheque.verser` : verse le dépôt | actif (essentiel) |
 | Repérer les nouvelles versions probables (`sys.bibliotheque.nouvelles-versions`) | documents versés (une fois par versement) | `bibliotheque.versions` : `markLikelyVersions` sur les fiches du versement | actif |
-| Rappels de la bibliothèque, chaque lundi (`sys.bibliotheque.rappels-lundi`, 0.52.0) | chaque lundi à 8 h | cinq étapes : `bibliotheque.rappel-a-controler`, `bibliotheque.versions-a-confirmer`, `bibliotheque.langues-a-confirmer`, `bibliotheque.a-classer`, `bibliotheque.introuvables` (`missingFiles`) — chacune muette s'il n'y a rien | actif (essentiel) |
+| Rappels de la bibliothèque, chaque lundi (`sys.bibliotheque.rappels-lundi`, 0.52.0) | chaque lundi à 8 h | cinq étapes : `bibliotheque.rappel-a-controler`, `bibliotheque.versions-a-confirmer`, `bibliotheque.langues-a-confirmer`, `bibliotheque.a-classer`, `bibliotheque.introuvables` (`missingFiles`), `bibliotheque.entretien-liens` (0.55.0) — chacune muette s'il n'y a rien | actif (essentiel) |
 
 **Le dépôt** : le module Workflows actif (`systemWorkflowManages` d'un des deux « Ranger »),
 `pourIntoLibrary` d'un autre module que la bibliothèque ne verse pas lui-même : il garde

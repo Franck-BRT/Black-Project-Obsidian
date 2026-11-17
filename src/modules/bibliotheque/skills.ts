@@ -12,8 +12,10 @@
  * Des fonctions pures.
  */
 
+import { candidatePath } from './links'
+
 /** Ce qu'un skill peut recevoir, livré par la bibliothèque (d'autres modules en ajoutent). */
-export const SKILL_CONTEXTS = ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'dossiers', 'regles-de-rangement'] as const
+export const SKILL_CONTEXTS = ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'candidats', 'dossiers', 'regles-de-rangement'] as const
 
 /**
  * Ce qu'un skill peut rendre : rien (une réponse libre), ou une décision de forme fixée —
@@ -102,6 +104,8 @@ export interface AnalysisDecision {
   issuer: string
   /** La note du projet concerné (un chemin), vide : aucun. */
   project: string
+  /** Ses liens : parmi les candidats seulement (les autres écartés), chacun avec sa raison. */
+  links: { path: string; why: string }[]
   confidence: number
   reason: string
 }
@@ -115,10 +119,14 @@ export const ANALYSIS_SCHEMA = {
       typePiece: { type: 'string' },
       emetteur: { type: 'string' },
       projet: { type: 'string' },
+      liens: {
+        type: 'array',
+        items: { type: 'object', properties: { vers: { type: 'string' }, pourquoi: { type: 'string' } }, required: ['vers', 'pourquoi'], additionalProperties: false }
+      },
       confiance: { type: 'number' },
       raison: { type: 'string' }
     },
-    required: ['typePiece', 'emetteur', 'projet', 'confiance', 'raison'],
+    required: ['typePiece', 'emetteur', 'projet', 'liens', 'confiance', 'raison'],
     additionalProperties: false
   }
 }
@@ -134,12 +142,17 @@ const fold = (value: string): string =>
 /**
  * Relire la réponse d'analyse : un type de pièce de la liste (par son code ou son libellé,
  * « CCTP — Cahier… » aussi), un émetteur de la liste (code, nom ou autre nom), le chemin d'un
- * projet tel quel (l'application vérifie qu'il existe). Ce qui n'est pas de la liste est
- * laissé vide. `null` : illisible.
+ * projet tel quel (l'application vérifie qu'il existe), les liens parmi les candidats (par leur
+ * chemin ou leur nom ; les autres écartés). Ce qui n'est pas de la liste est laissé vide.
+ * `null` : illisible.
  */
 export function readAnalysisAnswer(
   answer: unknown,
-  lists: { types: readonly { code: string; label: string }[]; issuers: readonly { code: string; name: string; aliases: readonly string[] }[] }
+  lists: {
+    types: readonly { code: string; label: string }[]
+    issuers: readonly { code: string; name: string; aliases: readonly string[] }[]
+    candidates?: readonly { path: string; label: string }[]
+  }
 ): AnalysisDecision | null {
   if (typeof answer !== 'object' || answer === null) return null
   const data = answer as Record<string, unknown>
@@ -149,10 +162,17 @@ export function readAnalysisAnswer(
   const head = (value: string) => fold(value.split(/\s+[—–(-]\s*/)[0] ?? value)
   const type = said.type ? lists.types.find((each) => [each.code, each.label].some((name) => fold(name) === fold(said.type) || fold(name) === head(said.type))) : undefined
   const issuer = said.issuer ? lists.issuers.find((each) => [each.code, each.name, ...each.aliases].some((name) => fold(name) === fold(said.issuer) || fold(name) === head(said.issuer))) : undefined
+  const links: { path: string; why: string }[] = []
+  for (const raw of Array.isArray(data.liens) ? data.liens : []) {
+    const item = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+    const path = candidatePath(text(item.vers), lists.candidates ?? [])
+    if (path && !links.some((each) => each.path === path)) links.push({ path, why: text(item.pourquoi) })
+  }
   return {
     category: type?.code ?? '',
     issuer: issuer?.code ?? '',
     project: said.project.replace(/^\[\[|\]\]$/g, '').trim(),
+    links,
     confidence: readConfidence(data.confiance),
     reason: said.reason
   }

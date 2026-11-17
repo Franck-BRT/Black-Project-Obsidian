@@ -203,7 +203,7 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | --- | --- | --- | --- |
 | Ranger les fichiers et pièces importés dans la bibliothèque | fichiers déposés dans l'application (pièces d'analyse, import d'exigences, de types, de workflows) | verse le dépôt | actif |
 | Repérer les nouvelles versions probables | documents versés (une fois par versement) | marque la version précédente probable | actif |
-| Rappels de la bibliothèque, chaque lundi (0.136.5 : les cinq rappels du lundi fondus) | lundi à 8 h | documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables — une étape chacun | actif |
+| Rappels de la bibliothèque, chaque lundi (0.136.5 : les cinq rappels du lundi fondus) | lundi à 8 h | documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables, entretien des liens (0.137.0) — une étape chacun | actif |
 | Verser le dossier « À classer », à l'ouverture et chaque jour (0.136.11 : les deux fondus) | chaque jour à 8 h, et à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
 
 **L'entretien des workflows (v0.13.0, Black Projects 0.67.0)** : le module n'avait pas

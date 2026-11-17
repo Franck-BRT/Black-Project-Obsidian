@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.14)
+## Aujourd'hui (version 0.137.0)
+
+- **Le circuit des documents relie les documents** : à l'analyse, il repère les entreprises, les
+  personnes, les projets et les autres documents (par leur référence) que le document cite ; l'IA
+  choisit ceux qui comptent. La fiche a une section **Liens** ; chaque note citée reçoit une ligne
+  dans sa section **Liens (Black Projects)**. Chaque lundi, l'entretien des liens remet tout
+  d'aplomb.
 
 - **Le circuit des documents est activé d'origine** : dès qu'une IA est réglée (page IA), chaque
   document versé sans lieu précis entre dans « À classer », puis l'IA l'ingère, l'analyse et le

@@ -139,7 +139,7 @@ ci-dessous ; les autres sont désactivés tant que vous ne les activez pas.
 | --- | --- | --- | --- |
 | Ranger les fichiers et pièces importés dans la bibliothèque | des pièces importées dans une analyse, un import d'exigences, de types de pièces ou de workflows | les range dans la bibliothèque | activé (essentiel) |
 | Repérer les nouvelles versions probables | des documents entrent dans la bibliothèque | marque la version précédente probable, à confirmer sur la fiche | activé |
-| Rappels de la bibliothèque, chaque lundi | le lundi à 8 h | une étape par rappel : documents **à contrôler**, **versions** et **langues à confirmer**, documents **sans type de pièce**, fichiers **introuvables** (plus dans le coffre) — chacune muette s'il n'y a rien à dire ; retirez une étape pour ne plus avoir ce rappel | activé (essentiel) |
+| Rappels de la bibliothèque, chaque lundi | le lundi à 8 h | une étape par rappel : documents **à contrôler**, **versions** et **langues à confirmer**, documents **sans type de pièce**, fichiers **introuvables** (plus dans le coffre), et l'**entretien des liens** — chacune muette s'il n'y a rien à dire ; retirez une étape pour ne plus avoir ce rappel | activé (essentiel) |
 
 **Le dossier de dépôt** : posez des fichiers dans le dossier `À classer` de la bibliothèque (par défaut `Bibliothèque/À classer`)
 — par l'explorateur de fichiers, une synchronisation —, ils entrent dans la bibliothèque à
@@ -231,6 +231,23 @@ avec **Ranger moi-même…**. Chaque lundi, un rappel dit s'il reste des documen
 fiche d'un document du circuit a une section **Circuit** : où il en est, ce qui a été fait.
 
 L'ancien dossier `À verser` est repris : il devient `À classer`.
+
+### Les liens
+
+À l'**analyse**, le circuit cherche d'abord, **sans IA**, les entités connues que le document cite :
+les **entreprises** (leur code, leur nom, leurs autres noms), les **personnes**, les **projets**, les
+**autres documents** (par leur référence, « ECSS-E-ST-10C »). L'IA choisit parmi elles celles qui
+comptent — elle n'en invente pas — et dit pourquoi. Si elle est assez sûre :
+
+- la fiche du document a une section **Liens** (chaque note citée, et pourquoi), et sur sa page la
+  section **Liens**, d'où on les ouvre ;
+- chaque note citée (l'entreprise, la personne, le projet, l'autre document) reçoit une ligne dans
+  sa section **Liens (Black Projects)** : le document qui la cite, et pourquoi. Black Projects
+  n'écrit que dans cette section ; le reste de la note n'est jamais touché.
+
+Quand le document est rangé ailleurs, ses rétroliens le suivent ; supprimé, ils partent. Chaque
+lundi, l'**entretien des liens** (une étape des rappels de la bibliothèque) retire les liens vers
+des notes disparues et rétablit les rétroliens effacés à la main.
 
 Pour un document du circuit, les workflows « Relire avec l'IA le texte… » (la vision pour un scan),
 « Identifier avec l'IA le type de pièce… » et « … l'entreprise qui émet… » ne passent pas : ses

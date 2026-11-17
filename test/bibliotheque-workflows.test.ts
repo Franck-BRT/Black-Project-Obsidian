@@ -215,9 +215,9 @@ describe('le dossier de dépôt et les rappels du lundi (workflows système)', (
     expect(system('depot-quotidien')).toBeUndefined()
     expect(system('rappels-lundi')).toMatchObject({
       enabled: true,
-      name: 'Rappels de la bibliothèque, chaque lundi : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables',
+      name: 'Rappels de la bibliothèque, chaque lundi : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables, entretien des liens',
       trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
-      actions: [{ kind: 'bibliotheque.rappel-a-controler' }, { kind: 'bibliotheque.versions-a-confirmer' }, { kind: 'bibliotheque.langues-a-confirmer' }, { kind: 'bibliotheque.a-classer' }, { kind: 'bibliotheque.introuvables' }]
+      actions: [{ kind: 'bibliotheque.rappel-a-controler' }, { kind: 'bibliotheque.versions-a-confirmer' }, { kind: 'bibliotheque.langues-a-confirmer' }, { kind: 'bibliotheque.a-classer' }, { kind: 'bibliotheque.introuvables' }, { kind: 'bibliotheque.entretien-liens' }]
     })
   })
 

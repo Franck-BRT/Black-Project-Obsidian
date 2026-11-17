@@ -20,6 +20,7 @@ import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghost
 import { CATEGORY_TYPER, guessDocCategory, guessDocDate, type KnownIssuer, type KnownTag, type PieceTyper, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, shelfOfPath, type Shelf } from './shelves'
+import { hasBacklink, sectionLines, withBacklink, withLinkSection, withoutBacklink, wikiLink, type DocLink } from './links'
 import {
   baseName,
   familyOf,
@@ -77,6 +78,9 @@ export interface StoreDeps {
   target?(): string
   /** Le circuit des documents est-il actif (un versement de la bibliothèque, sans lieu précis, y entre alors) ? */
   circuit?(): boolean
+  /** Les titres des sections des liens : celle de la fiche (« Liens »), celle des rétroliens dans les notes citées. */
+  linksHeading?(): string
+  backlinksHeading?(): string
   /**
    * Le texte d'un fichier (la lecture de fichiers) : `null` quand il n'est pas lu (format non
    * lu, illisible) ; absent, rien n'est lu. Pour deviner sa langue.
@@ -728,11 +732,104 @@ export class LibraryStore {
     this.deps.moving?.(record, target)
     await fs.rename(record, target)
     for (const { ghost } of ghosts) if (!inPlace(ghost.path)) await fs.writeText(ghost.path, (await fs.readText(ghost.path)).split(`[[${record}`).join(`[[${target}`))
+    // Ses rétroliens, dans les notes qu'il cite, le suivent.
+    await this.retargetBacklinks(doc.links ?? [], record, target)
     for (const other of await this.all()) {
       if (other.previous !== record && other.likelyPrevious !== record) continue
       await this.save({ ...other, ...(other.previous === record ? { previous: target } : {}), ...(other.likelyPrevious === record ? { likelyPrevious: target } : {}) })
     }
     return target
+  }
+
+  // ── Les liens (le circuit des documents, version C) ──
+
+  private linksTitle = (): string => this.deps.linksHeading?.() ?? 'Liens'
+  private backlinksTitle = (): string => this.deps.backlinksHeading?.() ?? 'Liens (Black Projects)'
+
+  /** Les liens d'un document, avec leur raison (lue dans la section Liens de sa note). */
+  async linksOf(record: string): Promise<DocLink[]> {
+    const doc = await this.load(record)
+    if (!doc?.links?.length) return []
+    const lines = sectionLines(readYamlFrontmatter(this.deps.yaml, await this.deps.fs.readText(record)).body, this.linksTitle())
+    return doc.links.map((path) => {
+      const target = path.replace(/\.md$/, '')
+      const line = lines.find((each) => each.includes(`[[${target}|`) || each.includes(`[[${target}]]`))
+      return { path, why: line?.split(' — ').slice(1).join(' — ').trim() ?? '' }
+    })
+  }
+
+  /**
+   * Les liens d'un document : ceux vers des notes qui existent, écrits dans sa fiche (l'en-tête,
+   * la section Liens) ; un rétrolien dans chaque note citée (sa section réservée) ; ceux qui ne
+   * sont plus cités perdent le leur. Rend les liens écrits.
+   */
+  async setLinks(record: string, links: readonly DocLink[]): Promise<DocLink[]> {
+    const { fs, yaml } = this.deps
+    const doc = await this.load(record)
+    if (!doc) return []
+    const kept: DocLink[] = []
+    for (const link of links) if (link.path !== record && !kept.some((each) => each.path === link.path) && (await fs.exists(link.path))) kept.push(link)
+    const before = doc.links ?? []
+    const next: LibraryDoc = { ...doc }
+    if (kept.length) next.links = kept.map((each) => each.path)
+    else delete next.links
+    const label = (path: string) => baseName(path).replace(/\.md$/, '')
+    const body = withLinkSection(readYamlFrontmatter(yaml, await fs.readText(record)).body, this.linksTitle(), kept.map((each) => `${wikiLink(each.path, label(each.path))}${each.why ? ` — ${each.why}` : ''}`))
+    await fs.writeText(record, recordContent(next, this.deps.notesHeading(), body))
+    for (const link of kept) await this.writeBacklink(link, record, doc.title)
+    await this.dropBacklinks(before.filter((path) => !kept.some((each) => each.path === path)), record)
+    return kept
+  }
+
+  private async writeBacklink(link: DocLink, record: string, title: string): Promise<void> {
+    const { fs } = this.deps
+    if (!(await fs.exists(link.path))) return
+    const line = `${this.deps.today()} · ${wikiLink(record, title)}${link.why ? ` — ${link.why}` : ''}`
+    await fs.writeText(link.path, withBacklink(await fs.readText(link.path), this.backlinksTitle(), record, line))
+  }
+
+  private async dropBacklinks(targets: readonly string[], record: string): Promise<void> {
+    const { fs } = this.deps
+    for (const path of targets) if (await fs.exists(path)) await fs.writeText(path, withoutBacklink(await fs.readText(path), this.backlinksTitle(), record))
+  }
+
+  private async retargetBacklinks(targets: readonly string[], from: string, to: string): Promise<void> {
+    const { fs } = this.deps
+    const old = from.replace(/\.md$/, '')
+    const now = to.replace(/\.md$/, '')
+    for (const path of targets) {
+      if (!(await fs.exists(path))) continue
+      const content = await fs.readText(path)
+      const next = content.split(`[[${old}|`).join(`[[${now}|`).split(`[[${old}]]`).join(`[[${now}]]`)
+      if (next !== content) await fs.writeText(path, next)
+    }
+  }
+
+  /**
+   * L'entretien des liens : ceux vers des notes disparues retirés des fiches ; les rétroliens
+   * qui manquent (une note citée modifiée à la main) rétablis. Rend combien de chaque.
+   */
+  async maintainLinks(): Promise<{ dropped: number; restored: number; docs: string[] }> {
+    const { fs } = this.deps
+    let dropped = 0
+    let restored = 0
+    const docs: string[] = []
+    for (const doc of await this.all()) {
+      if (!doc.links?.length) continue
+      const links = await this.linksOf(doc.record)
+      const alive: DocLink[] = []
+      for (const link of links) if (await fs.exists(link.path)) alive.push(link)
+      // Les rétroliens qui manquent (comptés avant : réécrire les liens les rétablit aussi).
+      const missing: DocLink[] = []
+      for (const link of alive) if (!hasBacklink(await fs.readText(link.path), this.backlinksTitle(), doc.record)) missing.push(link)
+      restored += missing.length
+      if (alive.length !== links.length) {
+        dropped += links.length - alive.length
+        await this.setLinks(doc.record, alive)
+      } else for (const link of missing) await this.writeBacklink(link, doc.record, doc.title)
+      if (alive.length !== links.length || missing.length) docs.push(doc.record)
+    }
+    return { dropped, restored, docs }
   }
 
   async load(record: string): Promise<LibraryDoc | null> {
@@ -1151,6 +1248,8 @@ export class LibraryStore {
     const texts = this.textVersionsFolder(doc)
     if (await fs.exists(texts)) await fs.trash(texts)
     if (doc.copied && (await fs.exists(doc.file))) await fs.trash(doc.file)
+    // Ses rétroliens, dans les notes qu'il citait, retirés.
+    await this.dropBacklinks(doc.links ?? [], record)
     await fs.trash(record)
     for (const other of await this.all()) {
       if (other.previous !== record && other.likelyPrevious !== record) continue

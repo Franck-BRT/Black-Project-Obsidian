@@ -317,6 +317,8 @@ export interface LibraryDoc {
   circuitAlternatives?: string[]
   /** Le projet que l'analyse du circuit a reconnu (la note du projet) : le rangement s'en sert. */
   circuitProject?: string
+  /** Ses liens (le circuit, version C) : les notes qu'il cite — leur raison est dans la section Liens de la note. */
+  links?: string[]
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
@@ -405,7 +407,8 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.circuit && doc.circuitProposal ? { 'circuit-proposition': doc.circuitProposal } : {}),
     ...(doc.circuit && doc.circuitConfidence !== undefined ? { 'circuit-confiance': doc.circuitConfidence } : {}),
     ...(doc.circuit && doc.circuitAlternatives?.length ? { 'circuit-alternatives': doc.circuitAlternatives } : {}),
-    ...(doc.circuitProject ? { 'circuit-projet': link(doc.circuitProject) } : {})
+    ...(doc.circuitProject ? { 'circuit-projet': link(doc.circuitProject) } : {}),
+    ...(doc.links?.length ? { liens: doc.links.map(link) } : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -478,7 +481,8 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
           ...(Array.isArray(data['circuit-alternatives']) && data['circuit-alternatives'].length ? { circuitAlternatives: data['circuit-alternatives'].map(text).filter(Boolean) } : {})
         }
       : {}),
-    ...(unlink(data['circuit-projet']) ? { circuitProject: unlink(data['circuit-projet']) } : {})
+    ...(unlink(data['circuit-projet']) ? { circuitProject: unlink(data['circuit-projet']) } : {}),
+    ...(Array.isArray(data.liens) && data.liens.map(unlink).filter(Boolean).length ? { links: data.liens.map(unlink).filter(Boolean) } : {})
   }
 }
 

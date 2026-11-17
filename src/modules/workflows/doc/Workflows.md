@@ -118,7 +118,7 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Vérifier l'IA à l'ouverture : la connexion, les nouveaux modèles, la vitesse du serveur | à l'ouverture d'Obsidian | trois étapes : met à jour la liste des modèles (dit si le serveur ne répond pas ou si un modèle choisi n'y est plus) ; nomme les nouveaux modèles ; prévient si l'IA met plus de 5 s à répondre | actif |
 | Ranger les fichiers et pièces importés dans la bibliothèque | des pièces importées dans une analyse, un import d'exigences, de types ou de workflows | les range dans la bibliothèque de documents | actif |
 | Repérer les nouvelles versions probables | des documents versés dans la bibliothèque | marque la version précédente probable | actif |
-| Rappels de la bibliothèque, chaque lundi | lundi à 8 h | une étape par rappel : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables — chacune muette s'il n'y a rien | actif |
+| Rappels de la bibliothèque, chaque lundi | lundi à 8 h | une étape par rappel : documents à contrôler, versions et langues à confirmer, documents sans type de pièce, fichiers introuvables, entretien des liens — chacune muette s'il n'y a rien | actif |
 | Verser le dossier « À classer », à l'ouverture et chaque jour | chaque jour à 8 h, et à l'ouverture d'Obsidian | ce qui y est posé entre dans la bibliothèque | actif |
 | Signaler les formats non lus, au dépôt de fichiers | des fichiers déposés dans l'application | dit ceux dont le format n'est pas lu, et où déclarer une extension équivalente | actif |
 | Signaler les pièces à problème, à l'import | des pièces illisibles, sans texte ou sans type reconnu importées | une étape chacune : les nomme, et dit que faire | actif |

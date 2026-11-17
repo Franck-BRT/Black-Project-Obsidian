@@ -28,8 +28,9 @@ import page from './doc/Bibliothèque.md'
 import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
 import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
-import { startersFor } from './starters'
+import { previousStarterTexts, startersFor } from './starters'
 import { DEFAULT_THRESHOLD, readThreshold, SKILL_CONTEXTS, SKILL_OUTPUTS, thresholdLabel, type AnalysisDecision, type FilingDecision } from './skills'
+import { findCandidates, type LinkCandidate, type LinkSourceItem } from './links'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, readRecord, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
@@ -402,6 +403,39 @@ export async function skillContextFor(record: string, keys: readonly string[]): 
   }
   return parts.join('\n\n')
 }
+
+// ── Les liens (le circuit des documents, version C) ─────────────────────────────
+
+/** Des entités où chercher les liens d'un document : la bibliothèque les siennes ; un autre module, les siennes (les projets…). */
+export interface LinkSource {
+  key: string
+  /** Leur sorte, en mots (« Entreprise », « Projet »…). */
+  label: string
+  items(): Promise<{ path: string; label: string; names: readonly string[] }[]>
+}
+
+const linkSources = new Map<string, LinkSource>()
+
+/** Déclarer des entités où chercher les liens ; rend de quoi l'oublier. */
+export function registerLinkSource(source: LinkSource): () => void {
+  linkSources.set(source.key, source)
+  return () => {
+    if (linkSources.get(source.key) === source) linkSources.delete(source.key)
+  }
+}
+
+/** Les liens possibles d'un document : les entités connues dont un nom apparaît dans son titre ou son texte. */
+export async function linkCandidatesFor(record: string): Promise<LinkCandidate[]> {
+  if (!active) return []
+  const doc = await active.store.load(record)
+  if (!doc) return []
+  const text = `${doc.title}\n${(await active.store.textOfRecord(record)) ?? ''}`
+  const items: LinkSourceItem[] = []
+  for (const source of linkSources.values()) for (const item of await source.items()) items.push({ ...item, kind: source.label })
+  return findCandidates(text, items, record)
+}
+
+export { candidatePath, findCandidates, withBacklink, withLinkSection, withoutBacklink, type DocLink, type LinkCandidate } from './links'
 
 /** Les dossiers où l'on peut ranger un document (ce que le skill de rangement peut choisir), chacun en mots. */
 export async function filingFolders(): Promise<{ folder: string; label: string }[]> {
@@ -1006,7 +1040,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.54.0',
+  version: '0.55.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1043,6 +1077,8 @@ export const bibliothequeModule: BlackModule = {
       yaml: platform.yaml,
       folder: mainFolder.document,
       circuit: () => circuitOn(settings.get()),
+      linksHeading: () => t('bibliotheque.links.heading'),
+      backlinksHeading: () => t('bibliotheque.links.backHeading'),
       today: localToday,
       notesHeading: () => t('bibliotheque.notes'),
       ghostLine: (link, where) => t('bibliotheque.ghost.line', { link, where }),
@@ -1200,7 +1236,15 @@ export const bibliothequeModule: BlackModule = {
     // Les skills du circuit des documents (Ingérer, Analyser, Ranger un document) : là dès le départ,
     // puisque son workflow système les nomme ; recréés s'ils manquent.
     try {
-      await entries.skill.addStarters(startersFor('skill', i18n.language).filter((draft) => !!draft.output))
+      const circuitSkills = startersFor('skill', i18n.language).filter((draft) => !!draft.output)
+      await entries.skill.addStarters(circuitSkills)
+      // Un skill livré resté tel quel (pas modifié) suit sa nouvelle version (le texte, le contexte).
+      for (const draft of circuitSkills) {
+        const previous = previousStarterTexts(draft.name, i18n.language)
+        if (!previous.length) continue
+        const current = (await entries.skill.all()).find((entry) => entry.name === draft.name)
+        if (current && previous.some((text) => text.trim() === current.text.trim())) await entries.skill.update(current.path, { ...draft, favorite: current.favorite, category: current.category, description: current.description, ...(current.threshold !== undefined ? { threshold: current.threshold } : {}) })
+      }
     } catch (error) {
       console.error('[Black Projects] bibliothèque', error)
     }
@@ -1264,6 +1308,11 @@ export const bibliothequeModule: BlackModule = {
         return pending.length
       },
       toControl: async () => (await store.all()).filter((doc) => doc.circuit === 'a-controler'),
+      maintainLinks: async () => {
+        const done = await store.maintainLinks()
+        if (done.docs.length) pagesChanged()
+        return done
+      },
       pourNow,
       // Le dossier de dépôt : versé, puis annoncé (le versement, chaque document) comme un autre.
       pourInbox: async () => {
@@ -1756,6 +1805,35 @@ export const bibliothequeModule: BlackModule = {
         }
       }),
       registerSkillContext({
+        key: 'candidats',
+        label: t('bibliotheque.skill.context.candidats'),
+        provide: async (record) => {
+          const found = await linkCandidatesFor(record)
+          return found.length ? [t('bibliotheque.circuit.ctx.candidates'), ...found.map((each) => `- ${each.path} — ${each.kind} : ${each.label} (« ${each.found} »)`)].join('\n') : t('bibliotheque.circuit.ctx.noCandidates')
+        }
+      }),
+      // Où chercher les liens : les autres documents (par leur référence), les entreprises, les personnes.
+      registerLinkSource({
+        key: 'documents',
+        label: t('bibliotheque.links.kind.document'),
+        items: async () => (await store.all()).filter((doc) => doc.reference.trim().length >= 4).map((doc) => ({ path: doc.record, label: [doc.reference, doc.title].filter(Boolean).join(' — '), names: [doc.reference] }))
+      }),
+      registerLinkSource({
+        key: 'entreprises',
+        label: t('bibliotheque.links.kind.issuer'),
+        items: async () =>
+          (await entries.issuer.all()).map((entry) => ({
+            path: entry.path,
+            label: entry.code ? `${entry.code} — ${entry.name}` : entry.name,
+            names: [entry.code ?? '', entry.name, ...entry.text.split('\n').map((line) => line.replace(/^[-*•]\s*/, '').trim())].filter(Boolean)
+          }))
+      }),
+      registerLinkSource({
+        key: 'personnes',
+        label: t('bibliotheque.links.kind.person'),
+        items: async () => (await entries.person.all()).map((entry) => ({ path: entry.path, label: entry.name, names: [entry.name] }))
+      }),
+      registerSkillContext({
         key: 'dossiers',
         label: t('bibliotheque.skill.context.dossiers'),
         provide: async () => [t('bibliotheque.circuit.ctx.folders'), ...(await filingFoldersNow()).map((each) => `- ${each.folder} — ${each.label}`)].join('\n')
@@ -1822,6 +1900,15 @@ export const bibliothequeModule: BlackModule = {
         done.push(t('bibliotheque.circuit.analysis.issuer', { issuer: decision.issuer }))
       }
       if (project) done.push(t('bibliotheque.circuit.analysis.project', { project: baseName(project).replace(/\.md$/, '') }))
+      // Ses liens (sûre seulement) : ceux que l'IA a choisis parmi les candidats, et le projet reconnu ; un rétrolien dans chaque note citée.
+      if (sure) {
+        const links = [...decision.links]
+        if (project && !links.some((each) => each.path === project)) links.push({ path: project, why: t('bibliotheque.links.projectWhy') })
+        if (links.length) {
+          const written = await store.setLinks(record, links)
+          if (written.length) done.push(t('bibliotheque.circuit.analysis.links', { count: written.length }))
+        }
+      }
       const summary = !decision
         ? t('bibliotheque.circuit.reason.unreadable')
         : [done.join(', ') || t('bibliotheque.circuit.analysis.nothing'), `${t('bibliotheque.circuit.analysis.confidence', { confidence: percent(decision.confidence) })}${sure ? '' : ` — ${t('bibliotheque.circuit.analysis.unsure', { threshold: percent(threshold) })}`}`].join(' · ')

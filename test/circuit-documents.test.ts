@@ -125,7 +125,7 @@ describe('un skill exécutable', () => {
     platform.forms.push({ name: 'Ranger un document', category: 'Circuit', description: '', text: 'Range.', favorite: 'false', 'contexte:fiche': 'true', 'contexte:texte': 'false', 'contexte:dossiers': 'true', 'contexte:regles-de-rangement': 'true', sortie: 'rangement', seuil: '80 %' })
     await page.actions!.find((action) => action.id === 'edit')!.run()
     const form = platform.asked.at(-1)!
-    expect(form.fields.filter((field) => field.key.startsWith('contexte:')).map((field) => field.label)).toEqual(['Sa fiche', 'Son texte', 'Les types de pièce', 'Les entreprises connues', 'Les dossiers où ranger', 'Les règles de rangement', 'Les projets en cours', 'Les répertoires attendus des projets'])
+    expect(form.fields.filter((field) => field.key.startsWith('contexte:')).map((field) => field.label)).toEqual(['Sa fiche', 'Son texte', 'Les types de pièce', 'Les entreprises connues', 'Les liens possibles', 'Les dossiers où ranger', 'Les règles de rangement', 'Les projets en cours', 'Les répertoires attendus des projets'])
     expect(form.fields.find((field) => field.key === 'sortie')).toMatchObject({ kind: 'choice', value: 'rangement' })
     expect(form.fields.find((field) => field.key === 'seuil')).toMatchObject({ value: '0,7' })
     expect((await libraryEntries('skill')).find((entry) => entry.name === 'Ranger un document')).toMatchObject({ context: ['fiche', 'dossiers', 'regles-de-rangement'], output: 'rangement', threshold: 0.8, text: 'Range.' })
