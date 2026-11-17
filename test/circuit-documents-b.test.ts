@@ -116,9 +116,9 @@ describe('le circuit, activé d’origine', () => {
     const { pour, answers } = await start(platform, undefined)
     answers.analyse = () => ({ status: 500, text: 'panne' })
     const report = await pour('A.txt', 'Un document.')
-    expect(report.added[0]!.record).toBe('Bibliothèque/À classer/A.md')
+    expect(report.added[0]!.record).toBe('Bibliothèque/Circuit/À classer/A.md')
     await workflowsIdle()
-    expect(read(platform, 'Bibliothèque/À classer/A.md')).toMatch(/\ncircuit: ingere\n/)
+    expect(read(platform, 'Bibliothèque/Circuit/À classer/A.md')).toMatch(/\ncircuit: ingere\n/)
   })
 
   it('sans IA réglée : le document est versé directement, comme avant (pas de circuit)', async () => {
@@ -145,12 +145,12 @@ describe('« À classer » et le réglage du circuit', () => {
     const { pour, answers } = await start(platform)
     // Le circuit s'arrête à l'analyse (IA en panne) : on voit où le document est entré.
     answers.analyse = () => ({ status: 500, text: 'panne' })
-    expect((await pour('A.txt', 'Premier.')).added[0]!.record).toBe('Bibliothèque/À classer/A.md')
-    expect((await pour('B.txt', 'Second.', 'Bibliothèque')).added[0]!.record).toBe('Bibliothèque/À classer/B.md')
+    expect((await pour('A.txt', 'Premier.')).added[0]!.record).toBe('Bibliothèque/Circuit/À classer/A.md')
+    expect((await pour('B.txt', 'Second.', 'Bibliothèque')).added[0]!.record).toBe('Bibliothèque/Circuit/À classer/B.md')
     await platform.fs.ensureFolder('Bibliothèque/Normes')
     expect((await pour('C.txt', 'Troisième.', 'Bibliothèque/Normes')).added[0]!.record).toBe('Bibliothèque/Normes/C.md')
     expect((await pour('D.txt', 'Quatrième.', undefined, 'ao')).added[0]!.record).toBe('Bibliothèque/D.md')
-    expect(read(platform, 'Bibliothèque/À classer/A.md')).toMatch(/\ncircuit: ingere\n/)
+    expect(read(platform, 'Bibliothèque/Circuit/À classer/A.md')).toMatch(/\ncircuit: ingere\n/)
     expect(read(platform, 'Bibliothèque/Normes/C.md')).not.toContain('circuit')
   })
 
@@ -160,16 +160,16 @@ describe('« À classer » et le réglage du circuit', () => {
     await platform.fs.writeBinary('Bibliothèque/À verser/Devis.txt', bytes('Un devis.').slice().buffer)
     const { answers } = await start(platform)
     expect(await platform.fs.exists('Bibliothèque/À verser')).toBe(false)
-    expect(await platform.fs.exists('Bibliothèque/À classer/Devis.txt')).toBe(true)
+    expect(await platform.fs.exists('Bibliothèque/Circuit/À classer/Devis.txt')).toBe(true)
     answers.analyse = () => ({ status: 500, text: 'panne' })
     await runOpeningWorkflows()
     await workflowsIdle()
-    expect(await platform.fs.exists('Bibliothèque/À classer/Devis.txt')).toBe(false)
-    expect(read(platform, 'Bibliothèque/À classer/Devis.md')).toMatch(/\ncircuit: ingere\n/)
+    expect(await platform.fs.exists('Bibliothèque/Circuit/À classer/Devis.txt')).toBe(false)
+    expect(read(platform, 'Bibliothèque/Circuit/À classer/Devis.md')).toMatch(/\ncircuit: ingere\n/)
     // À l'ouverture suivante : la fiche reste une fiche (pas un fichier à verser).
     await runOpeningWorkflows()
     await workflowsIdle()
-    expect([...platform.files.keys()].filter((path) => path.includes('Devis')).sort()).toEqual(['Bibliothèque/_fichiers/Devis.txt', 'Bibliothèque/À classer/Devis.md'])
+    expect([...platform.files.keys()].filter((path) => path.includes('Devis')).sort()).toEqual(['Bibliothèque/Circuit/À classer/Devis.md', 'Bibliothèque/_fichiers/Devis.txt'])
   })
 })
 
@@ -206,7 +206,7 @@ describe('le workflow système « Circuit des documents »', () => {
     answers.analyse = () => chat({ typePiece: 'CCTP', emetteur: '', projet: 'Programmes/Spatial/Station sol/Station sol.md', confiance: 0.86, raison: 'Le CCTP de la Station sol.' })
     answers.rangement = () => chat({ dossier: 'Bibliothèque/Projets/Spatial/Station sol/Offre/Technique', confiance: 0.92, raison: 'Répertoire attendu pour un CCTP.', alternatives: [] })
     const report = await pour('Pièce 3.txt', 'Cahier des clauses techniques particulières de la Station sol.\nLe titulaire doit livrer l’antenne.')
-    expect(report.added[0]!.record).toBe('Bibliothèque/À classer/Pièce 3.md')
+    expect(report.added[0]!.record).toBe('Bibliothèque/Circuit/À classer/Pièce 3.md')
     const filed = 'Bibliothèque/Projets/Spatial/Station sol/Offre/Technique/Pièce 3.md'
     const record = read(platform, filed)
     expect(record).toMatch(/\ncategorie: CCTP\n/)
@@ -239,7 +239,7 @@ describe('le workflow système « Circuit des documents »', () => {
     answers.analyse = () => chat({ typePiece: 'CCAP', emetteur: '', projet: '', confiance: 0.4, raison: 'Peut-être un CCAP.' })
     answers.rangement = () => chat({ dossier: 'Bibliothèque/Normes', confiance: 0.5, raison: 'Hésitation.', alternatives: ['Bibliothèque'] })
     await pour('Note.txt', 'Une note qui hésite.')
-    const record = read(platform, 'Bibliothèque/À contrôler/Note.md')
+    const record = read(platform, 'Bibliothèque/Circuit/À contrôler/Note.md')
     expect(record).not.toMatch(/\ncategorie: CCAP\n/)
     expect(record).toMatch(/· Analyser un document — rien de sûr à donner · confiance 40 % — pas assez sûr pour changer la fiche \(seuil 70 %\)\n/)
     expect(record).toMatch(/\ncircuit: a-controler\n/)
@@ -252,7 +252,7 @@ describe('le workflow système « Circuit des documents »', () => {
     await platform.fs.ensureFolder('Bibliothèque/Normes')
     answers.analyse = () => ({ status: 500, text: 'panne' })
     await pour('Norme.txt', 'ECSS-E-ST-10C.')
-    expect(read(platform, 'Bibliothèque/À classer/Norme.md')).toMatch(/\ncircuit: ingere\n/)
+    expect(read(platform, 'Bibliothèque/Circuit/À classer/Norme.md')).toMatch(/\ncircuit: ingere\n/)
     const library = await load('bibliotheque.documents')
     expect(library.blocks[0]).toMatchObject({ kind: 'message', tone: 'info', text: '1 document(s) en cours dans le circuit (à classer, à analyser, à ranger).' })
     const control = await load('bibliotheque.a-controler')
@@ -281,5 +281,54 @@ describe('le workflow système « Circuit des documents »', () => {
     await pour('X.txt', 'Un document.')
     expect((await runIt()).lines).toEqual(['1 document(s) à contrôler : X.'])
     expect(platform.notices.at(-1)).toBe('1 document(s) à contrôler : X.')
+  })
+})
+
+describe('la bibliothèque « Circuit » : À classer et À contrôler', () => {
+  it('sur l’accueil, une bibliothèque de plus ; sa page : ses deux répertoires (combien chacun), ni nouveau répertoire ni échange ; on n’y range pas', async () => {
+    const platform = memoryPlatform()
+    const { pour, answers, load } = await start(platform)
+    answers.analyse = () => ({ status: 500, text: 'panne' })
+    await pour('A.txt', 'Un document en attente.')
+    await workflowsIdle()
+    const hub = await load('bibliotheque.accueil')
+    // Une seule bibliothèque à soi : une carte « Circuit » à côté de « Documents ».
+    const card = cards(hub).find((each) => each.id === 'circuit')!
+    expect(card).toMatchObject({ title: 'Circuit', subtitle: '1 document(s)', icon: 'flow' })
+    expect(cards(hub).find((each) => each.id === 'documents')).toMatchObject({ subtitle: '0 document(s)' })
+    const page = await load('bibliotheque.documents?circuit')
+    expect(cards(page).filter((each) => each.id.startsWith('dir:')).map((each) => [each.title, each.subtitle])).toEqual([
+      ['À classer', '1 document(s)'],
+      ['À contrôler', '0 document(s)']
+    ])
+    expect(page.actions?.map((action) => action.id)).not.toContain('new-directory')
+    expect(page.actions?.map((action) => action.id)).not.toContain('remove-shelf')
+    expect(page.actions?.map((action) => action.id)).not.toContain('new-shelf')
+    expect(page.subtitle).toContain('À contrôler')
+    // La bibliothèque principale ne les montre plus comme répertoires.
+    const main = await load('bibliotheque.documents?principale')
+    expect(cards(main).filter((each) => each.id.startsWith('dir:')).map((each) => each.title)).not.toContain('À classer')
+  })
+
+  it('un coffre d’avant (À classer, À contrôler à la racine) : repris dans Circuit — les fiches déplacées, leurs rétroliens suivent ; les anciens dossiers partent', async () => {
+    const platform = memoryPlatform()
+    // Une première activation pour écrire une fiche, puis la remettre à l'ancienne place.
+    const first = await start(platform, false)
+    const report = await first.pour('Vieux.txt', 'Un vieux document.', 'Bibliothèque/Normes')
+    for (const module of [...ALL].reverse()) await module.deactivate?.()
+    const record = report.added[0]!.record
+    const old = 'Bibliothèque/À contrôler/Vieux.md'
+    await platform.fs.ensureFolder('Bibliothèque/À contrôler')
+    await platform.fs.writeText(old, read(platform, record).replace(/\n---\n/, '\nliens:\n- "[[Bibliothèque/Entreprises/ACME.md]]"\n---\n'))
+    platform.files.delete(record)
+    await platform.fs.writeText('Bibliothèque/Entreprises/ACME.md', '---\nbp-type: bibliotheque-emetteur\nnom: ACME\n---\n\n## Liens (Black Projects)\n\n- 2026-11-01 · [[Bibliothèque/À contrôler/Vieux|Vieux]] — cité\n')
+    await platform.fs.ensureFolder('Bibliothèque/À classer')
+    await platform.fs.writeBinary('Bibliothèque/À classer/Posé.txt', bytes('posé là').slice().buffer)
+    await start(platform)
+    expect(platform.files.has('Bibliothèque/Circuit/À contrôler/Vieux.md')).toBe(true)
+    expect(platform.files.has('Bibliothèque/Circuit/À classer/Posé.txt')).toBe(true)
+    expect(await platform.fs.exists('Bibliothèque/À contrôler')).toBe(false)
+    expect(await platform.fs.exists('Bibliothèque/À classer')).toBe(false)
+    expect(read(platform, 'Bibliothèque/Entreprises/ACME.md')).toContain('[[Bibliothèque/Circuit/À contrôler/Vieux|Vieux]] — cité')
   })
 })

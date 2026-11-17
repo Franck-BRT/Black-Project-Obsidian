@@ -13,7 +13,7 @@ qualité, et un assistant IA local.
 
 ## État
 
-**Version 0.138.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
+**Version 0.139.0 — étape 6 ter du [plan d'intégration](docs/plan-integration.md) :
 l'accueil et l'interface.** L'accueil est une grille de tuiles que chacun compose (avec
 leurs pastilles : prochaine remise, exigences faibles…) ; les informations sont dans un
 tableau de bord et une barre de gauche que chacun range aussi (Accueil toujours en haut,
@@ -24,7 +24,7 @@ système, modifiables ; la lecture de fichiers prévient, de même, d'un format 
 sans type reconnu, les exigences de celles qu'un import fait entrer faibles, l'analyse
 d'appels d'offres rappelle la date limite des questions et la visite, les workflows
 signalent ceux d'entre eux qui sont cassés, l'IA les nouveaux modèles de son serveur, et la bibliothèque verse
-seule ce qui est posé dans son dossier « À classer ». D'origine, seuls les workflows
+seule ce qui est posé dans son dossier « À classer » (dans la bibliothèque « Circuit », avec « À contrôler »). D'origine, seuls les workflows
 système essentiels sont actifs (le circuit des documents, l'entrée dans la bibliothèque, la note
 de l'analyse d'un appel d'offres, le signalement des workflows cassés) ; les autres s'activent un par un. La bibliothèque tient aussi vos
 **prompts**, vos **personas** (le rôle dans lequel l'IA répond) et vos **skills** (un

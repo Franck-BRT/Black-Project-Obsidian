@@ -34,7 +34,7 @@ import { DEFAULT_THRESHOLD, readThreshold, SKILL_CONTEXTS, SKILL_OUTPUTS, thresh
 import { findCandidates, type LinkCandidate, type LinkSourceItem } from './links'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, readRecord, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
-import { LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
+import { CIRCUIT_FOLDER, LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
 import { allPlaces, placePageOf, type ShelfPlacesDeps } from './places'
 import { archive, ARCHIVE_FILES, archiveName, EXCHANGE_FORMAT, MANIFEST, readManifest, WHOLE, type Manifest, type WholePart } from './exchange'
 import type { ZipEntry } from '../../core/formats/zip'
@@ -1041,7 +1041,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.56.0',
+  version: '0.57.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1071,7 +1071,16 @@ export const bibliothequeModule: BlackModule = {
     const ownMoves = new Set<string>()
     const projectsFolder = () => folderOf(settings.get(), PROJECTS_FOLDER_KEY, DEFAULT_PROJECTS_FOLDER)
     const shelves = (kind: ShelfKind): Shelf[] =>
-      shelvesOf(settings.get(), kind, mainFolder[kind](), t(`bibliotheque.shelf.main.${kind}`), { folder: referencesFolder(), name: t('bibliotheque.shelf.references') }, { folder: projectsFolder(), name: t('bibliotheque.shelf.projects') })
+      shelvesOf(
+        settings.get(),
+        kind,
+        mainFolder[kind](),
+        t(`bibliotheque.shelf.main.${kind}`),
+        { folder: referencesFolder(), name: t('bibliotheque.shelf.references') },
+        { folder: projectsFolder(), name: t('bibliotheque.shelf.projects') },
+        // Le circuit des documents : À classer et À contrôler, dans leur bibliothèque.
+        { folder: `${mainFolder.document()}/${CIRCUIT_FOLDER}`, name: t('bibliotheque.shelf.circuit') }
+      )
     const defaultShelf = (kind: ShelfKind): Shelf => defaultShelfOf(settings.get(), kind, shelves(kind))
     const store = new LibraryStore({
       fs: platform.fs,
@@ -1734,7 +1743,8 @@ export const bibliothequeModule: BlackModule = {
     /** Choisir où ranger : chaque bibliothèque de la sorte, chacun de ses répertoires (sauf là où c'est déjà). */
     const pickPlace = async (kind: ShelfKind, current: string, title: string): Promise<string | null> => {
       const options = (await allPlaces(shelves(kind), subdirectories(kind)))
-        .filter((place) => place.folder !== current)
+        // Pas dans le circuit : on n'y range pas (le circuit y met ce qu'il trie).
+        .filter((place) => place.folder !== current && !place.shelf.circuit)
         .map((place) => ({ value: place.folder, label: [place.shelf.name, ...place.directory.split('/').filter(Boolean)].join(' › '), description: place.folder }))
       if (!options.length) {
         platform.notifier.notify(t('bibliotheque.move.none'), 6000)
@@ -1746,7 +1756,7 @@ export const bibliothequeModule: BlackModule = {
     // ── Le circuit des documents : les contextes des skills, les décisions, À contrôler ──
     /** Les dossiers où ranger un document : chaque bibliothèque de documents, chacun de ses répertoires. */
     const filingFoldersNow = async (): Promise<{ folder: string; label: string }[]> =>
-      (await allPlaces(shelves('document'), subdirectories('document'))).map((place) => ({ folder: place.folder, label: [place.shelf.name, ...place.directory.split('/').filter(Boolean)].join(' › ') }))
+      (await allPlaces(shelves('document'), subdirectories('document'))).filter((place) => !place.shelf.circuit).map((place) => ({ folder: place.folder, label: [place.shelf.name, ...place.directory.split('/').filter(Boolean)].join(' › ') }))
     /** « 2026-11-16 10:42 » : quand, pour l'historique d'une fiche. */
     const momentNow = (): string => {
       const now = new Date()

@@ -294,7 +294,7 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     breadcrumb: top.breadcrumb,
     title: place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : severalShelves(deps.places.shelves()) || builtInShelf(place.shelf) ? place.shelf.name : t('bibliotheque.page.title'),
     ...(param ? { back: { id: 'back', label: t('bibliotheque.back.up'), run: () => deps.showPage?.(place.directory ? placePageOf(LIBRARY_PAGE, { shelf: place.shelf.id, directory: place.directory.split('/').slice(0, -1).join('/') }) : HUB_PAGE) } } : {}),
-    subtitle: t('bibliotheque.page.subtitle', { folder: top.folder }) + top.note,
+    subtitle: t(place.shelf.circuit ? 'bibliotheque.page.subtitle.circuit' : 'bibliotheque.page.subtitle', { folder: top.folder }) + top.note,
     // Des fichiers glissés-déposés sur la page : versés là où l'on est.
     ...(deps.places.dropInto
       ? { drop: { ...deps.places.dropInto(top.folder, place.directory ? place.directory.slice(place.directory.lastIndexOf('/') + 1) : place.shelf.name), hint: t('bibliotheque.drop.hint') } }

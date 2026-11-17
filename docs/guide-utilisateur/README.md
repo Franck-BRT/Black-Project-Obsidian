@@ -12,7 +12,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.138.0)
+## Aujourd'hui (version 0.139.0)
+
+- **La bibliothèque « Circuit »** : sur l'accueil de la bibliothèque, une carte **Circuit** à côté des
+  documents, des documents de référence et des documents projet. Sa page a deux répertoires :
+  **À classer** (les documents déposés, en attente) et **À contrôler** (ceux que l'IA n'a pas su
+  ranger). Le dossier de dépôt est désormais `Bibliothèque/Circuit/À classer` ; les anciens dossiers
+  `Bibliothèque/À classer` et `Bibliothèque/À contrôler` sont repris seuls à l'ouverture (leurs liens
+  suivent). On n'y range rien soi-même : « Déplacer… » et l'IA ne la proposent pas.
 
 - **Les entreprises et personnes inconnues, proposées** : quand un document cite une entreprise ou
   une personne que la bibliothèque ne connaît pas, l'IA propose de la créer — jamais seule. La fiche

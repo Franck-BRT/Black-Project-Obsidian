@@ -141,7 +141,7 @@ ci-dessous ; les autres sont désactivés tant que vous ne les activez pas.
 | Repérer les nouvelles versions probables | des documents entrent dans la bibliothèque | marque la version précédente probable, à confirmer sur la fiche | activé |
 | Rappels de la bibliothèque, chaque lundi | le lundi à 8 h | une étape par rappel : documents **à contrôler**, **versions** et **langues à confirmer**, documents **sans type de pièce**, fichiers **introuvables** (plus dans le coffre), et l'**entretien des liens** — chacune muette s'il n'y a rien à dire ; retirez une étape pour ne plus avoir ce rappel | activé (essentiel) |
 
-**Le dossier de dépôt** : posez des fichiers dans le dossier `À classer` de la bibliothèque (par défaut `Bibliothèque/À classer`)
+**Le dossier de dépôt** : posez des fichiers dans le dossier `À classer` de la bibliothèque « Circuit » (par défaut `Bibliothèque/Circuit/À classer`)
 — par l'explorateur de fichiers, une synchronisation —, ils entrent dans la bibliothèque à
 l'ouverture d'Obsidian et chaque jour à 8 h, rangés dans `_fichiers` ; un fichier déjà
 dans la bibliothèque est mis de côté dans `_retirés`. Les **versions à confirmer**, les
@@ -211,7 +211,7 @@ IA) le lance sur un document : l'IA décide, l'application exécute.
 Dans les **Paramètres** du module, **Le circuit des documents (IA)** : activé d'origine, il ne
 prend les documents que si une IA est réglée (page {{link:Modules/IA|IA}}) — sans IA, ils sont versés
 directement. Désactivez-le pour ne pas envoyer le texte des documents à l'IA. Activé, chaque document que vous versez **sans lieu précis** (ou à la racine de la bibliothèque) — par
-**Verser**, en le glissant sur la page, ou en le posant dans `Bibliothèque/À classer` — entre dans
+**Verser**, en le glissant sur la page, ou en le posant dans `Bibliothèque/Circuit/À classer` — entre dans
 **À classer** ; puis le workflow système **Circuit des documents** (module IA) enchaîne trois skills
 livrés, à modifier à votre goût — ils sont dans **Bibliothèque › Skills** dès le départ (recréés
 s'ils manquent, puisque le workflow les appelle par leur nom) :
@@ -231,6 +231,14 @@ avec **Ranger moi-même…**. Chaque lundi, un rappel dit s'il reste des documen
 fiche d'un document du circuit a une section **Circuit** : où il en est, ce qui a été fait.
 
 L'ancien dossier `À verser` est repris : il devient `À classer`.
+
+**La bibliothèque « Circuit »** : sur l'accueil de la bibliothèque, sa carte compte les documents
+dans le circuit ; sa page a deux répertoires, **À classer** (déposés, en attente) et **À contrôler**
+(ce que l'IA n'a pas su ranger) — dossier `Bibliothèque/Circuit`. On y verse comme ailleurs, mais on
+n'y crée rien et on n'y range rien : « Déplacer… » et le rangement par l'IA ne la proposent jamais.
+Un document écarté part dans les retirés de la bibliothèque principale (`Bibliothèque/_retirés`).
+Les anciens dossiers `Bibliothèque/À classer` et `Bibliothèque/À contrôler` sont repris à l'ouverture :
+leurs documents passent dans `Bibliothèque/Circuit`, leurs liens suivent.
 
 ### Les liens
 
@@ -265,7 +273,7 @@ autres (langue, titre, date, référence, étiquettes) passent comme pour tout d
 
 Quand l'IA n'est **pas assez sûre** (confiance sous le seuil), qu'elle propose un dossier qui
 n'existe pas, ou que sa réponse est illisible, le document n'est pas rangé au hasard : il va
-dans `Bibliothèque/À contrôler`, avec la **proposition** de l'IA, sa **raison** et sa
+dans `Bibliothèque/Circuit/À contrôler`, avec la **proposition** de l'IA, sa **raison** et sa
 **confiance**. La page des documents le signale (« 1 document(s) à contrôler », **Contrôler**) ;
 la page **À contrôler** les montre, et sa fiche aussi. Pour chacun :
 

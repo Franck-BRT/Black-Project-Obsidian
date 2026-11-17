@@ -207,12 +207,12 @@ describe('le circuit, version C : les liens', () => {
     expect(analysis).toContain(`- ${MARIE} — Personne : Marie Durand (« Marie Durand »)`)
     expect(analysis).toContain(`- ${norme} — Document : ECSS-E-ST-10C`)
     // Rangé dans À contrôler (pas sûr) : les liens écrits avant ont suivi.
-    const record = 'Bibliothèque/À contrôler/CCTP.md'
+    const record = 'Bibliothèque/Circuit/À contrôler/CCTP.md'
     const note = read(platform, record)
     expect(note).toMatch(/· Analyser un document — projet Station sol, 4 lien\(s\) · confiance 90 %/)
     expect(note).not.toContain('Inventé')
     expect(note).toContain(`## Liens\n\n- [[${CNES.replace('.md', '')}|Centre national d’études spatiales]] — le client\n- [[${MARIE.replace('.md', '')}|Marie Durand]] — le contact\n`)
-    for (const cited of [CNES, MARIE, norme, PROJECT]) expect(read(platform, cited)).toMatch(/\n## Liens \(Black Projects\)\n\n- \d{4}-\d{2}-\d{2} · \[\[Bibliothèque\/À contrôler\/CCTP\|CCTP\]\] — /)
+    for (const cited of [CNES, MARIE, norme, PROJECT]) expect(read(platform, cited)).toMatch(/\n## Liens \(Black Projects\)\n\n- \d{4}-\d{2}-\d{2} · \[\[Bibliothèque\/Circuit\/À contrôler\/CCTP\|CCTP\]\] — /)
     expect(read(platform, MARIE)).toContain('Ses notes à elle.')
     // La fiche du document : sa section Liens.
     const page = await load(`bibliotheque.document?${encodeURIComponent(record)}`)
@@ -228,7 +228,7 @@ describe('le circuit, version C : les liens', () => {
     harness.answers.rangement = () => chat({ dossier: '', confiance: 0.2, raison: '—', alternatives: [] })
     await harness.pour('CCTP.txt', CCTP)
     await workflowsIdle()
-    expect(read(platform, 'Bibliothèque/À contrôler/CCTP.md')).not.toMatch(/\nliens:/)
+    expect(read(platform, 'Bibliothèque/Circuit/À contrôler/CCTP.md')).not.toMatch(/\nliens:/)
     expect(read(platform, CNES)).not.toContain('Liens (Black Projects)')
   })
 
@@ -240,7 +240,7 @@ describe('le circuit, version C : les liens', () => {
     harness.answers.rangement = () => chat({ dossier: '', confiance: 0.2, raison: '—', alternatives: [] })
     await harness.pour('CCTP.txt', CCTP)
     await workflowsIdle()
-    const record = 'Bibliothèque/À contrôler/CCTP.md'
+    const record = 'Bibliothèque/Circuit/À contrôler/CCTP.md'
     platform.files.delete(MARIE)
     await platform.fs.writeText(CNES, '---\nbp-type: bibliotheque-emetteur\nnom: Centre national d’études spatiales\ncode: CNES\n---\n\n')
     const monday = (harness.workflows() as Workflow[]).find((each) => each.system === 'sys.bibliotheque.rappels-lundi')!
@@ -250,7 +250,7 @@ describe('le circuit, version C : les liens', () => {
     const note = read(platform, record)
     expect(note).not.toContain('[[Bibliothèque/Personnes/Marie Durand')
     expect(note).toContain('[[Bibliothèque/Entreprises/Centre national d’études spatiales|Centre national d’études spatiales]] — le client')
-    expect(read(platform, CNES)).toContain('[[Bibliothèque/À contrôler/CCTP|CCTP]] — le client')
+    expect(read(platform, CNES)).toContain('[[Bibliothèque/Circuit/À contrôler/CCTP|CCTP]] — le client')
     // Supprimé : son rétrolien part de la note de l'entreprise.
     await harness.run(await harness.load(`bibliotheque.document?${encodeURIComponent(record)}`), 'delete')
     expect(read(platform, CNES)).not.toContain('Liens (Black Projects)')
@@ -337,7 +337,7 @@ describe('les entreprises et personnes inconnues : proposées, jamais créées s
     answers.rangement = () => chat({ dossier: '', confiance: 0.2, raison: '—', alternatives: [] })
     await pour('CCTP.txt', `${CCTP}\nCosigné par l’ESA (Jean Martin).`)
     await workflowsIdle()
-    const record = 'Bibliothèque/À contrôler/CCTP.md'
+    const record = 'Bibliothèque/Circuit/À contrôler/CCTP.md'
     const note = read(platform, record)
     expect(note).toContain('entites-proposees:\n- sorte: entreprise\n  nom: Agence spatiale européenne\n  code: ESA\n  pourquoi: cosignataire du marché\n- sorte: personne\n  nom: Jean Martin\n  entreprise: ESA\n  pourquoi: le signataire\n')
     expect(note).toMatch(/· Analyser un document — 2 entreprise\(s\) ou personne\(s\) à créer, proposée\(s\) · confiance 40 %/)
@@ -367,7 +367,7 @@ describe('les entreprises et personnes inconnues : proposées, jamais créées s
     await (first.kind === 'message' ? first.actions! : []).find((action) => action.label === 'Créer')!.run()
     const esa = 'Bibliothèque/Entreprises/Agence spatiale européenne.md'
     expect(read(platform, esa)).toMatch(/^---\nbp-type: bibliotheque-emetteur\nnom: Agence spatiale européenne\ncode: ESA\n/)
-    expect(read(platform, esa)).toContain('[[Bibliothèque/À contrôler/CCTP|CCTP]] — cosignataire du marché')
+    expect(read(platform, esa)).toContain('[[Bibliothèque/Circuit/À contrôler/CCTP|CCTP]] — cosignataire du marché')
     expect(platform.notices).toContain('Entreprise « Agence spatiale européenne » créée, liée à « CCTP ».')
     const after = read(platform, record)
     expect(after).toContain('[[Bibliothèque/Entreprises/Agence spatiale européenne|Agence spatiale européenne]] — cosignataire du marché')

@@ -14,7 +14,7 @@ import { startersFor } from './starters'
 import { ENTRY_KINDS, entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, shelfCards, type ShelfPlacesDeps } from './places'
-import { PROJECT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
+import { CIRCUIT_SHELF, PROJECT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
 import { plainText } from '../../core/markdown'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
@@ -31,7 +31,7 @@ export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = {
 export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag', person: 'bibliotheque.person' }
 export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(ENTRY_PAGE[kind], encodeURIComponent(path))
 
-type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase'
+type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow'
 const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user' }
 
 export interface EntriesHomeDeps {
@@ -411,6 +411,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const projectShelf = deps.places.document.shelves().find((shelf) => shelf.project)
   const references = placed.filter((item) => item.shelf === REFERENCE_SHELF).length
   const projects = placed.filter((item) => item.shelf === PROJECT_SHELF).length
+  const circuitShelf = deps.places.document.shelves().find((shelf) => shelf.circuit)
+  const inCircuit = placed.filter((item) => item.shelf === CIRCUIT_SHELF).length
   /** Les cartes d'un groupe, et de quoi créer une bibliothèque de chacune de ses sortes. */
   const cards = (list: Card[], kinds: readonly ('document' | EntryKind)[]): HomeBlock[] => [
     {
@@ -429,9 +431,10 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         'book',
         cards(
           [
-            card('documents', 'book', documents.count - references - projects, deps.documentsPage, documents.likely ? t('bibliotheque.home.likely', { count: documents.likely }) : ''),
+            card('documents', 'book', documents.count - references - projects - inCircuit, deps.documentsPage, documents.likely ? t('bibliotheque.home.likely', { count: documents.likely }) : ''),
             ...(referenceShelf ? [card('references', 'star', references, placePageOf(deps.documentsPage, { shelf: REFERENCE_SHELF, directory: '' }))] : []),
-            ...(projectShelf ? [card('projects', 'briefcase', projects, placePageOf(deps.documentsPage, { shelf: PROJECT_SHELF, directory: '' }))] : [])
+            ...(projectShelf ? [card('projects', 'briefcase', projects, placePageOf(deps.documentsPage, { shelf: PROJECT_SHELF, directory: '' }))] : []),
+            ...(circuitShelf ? [card('circuit', 'flow', inCircuit, placePageOf(deps.documentsPage, { shelf: CIRCUIT_SHELF, directory: '' }))] : [])
           ],
           ['document']
         ),

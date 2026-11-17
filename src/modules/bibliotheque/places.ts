@@ -109,7 +109,7 @@ export async function placeView(
       open: { id: 'open', label: t('bibliotheque.place.open'), run: go(directory) },
       actions: [
         { id: 'see', label: t('bibliotheque.place.open'), icon: 'chevron', run: go(directory) },
-        ...(deps.removeDirectory ? [{ id: 'remove-directory', label: t('bibliotheque.place.remove'), tooltip: t('bibliotheque.place.remove.tip', { name: name(path) }), icon: 'trash' as const, run: async () => void (await deps.removeDirectory!(kind, path)) }] : [])
+        ...(deps.removeDirectory && !place.shelf.circuit ? [{ id: 'remove-directory', label: t('bibliotheque.place.remove'), tooltip: t('bibliotheque.place.remove.tip', { name: name(path) }), icon: 'trash' as const, run: async () => void (await deps.removeDirectory!(kind, path)) }] : [])
       ],
       ...(deps.dropInto ? { drop: deps.dropInto(path, name(path)) } : {})
     }
@@ -125,8 +125,10 @@ export async function placeView(
     }
   }
   const isDefault = deps.defaultShelf().id === place.shelf.id
+  // La bibliothèque du circuit : ses deux répertoires, tenus par le circuit — ni nouveau répertoire, ni échange, ni suppression.
+  const circuit = !!place.shelf.circuit
   const removeHere: ViewAction[] =
-    place.directory && deps.removeDirectory
+    place.directory && deps.removeDirectory && !circuit
       ? [
           {
             id: 'remove-directory',
@@ -140,8 +142,8 @@ export async function placeView(
         ]
       : []
   const actions: ViewAction[] = [
-    newDirectory,
-    ...(deps.canCreateShelves === false
+    ...(circuit ? [] : [newDirectory]),
+    ...(deps.canCreateShelves === false || circuit
       ? []
       : [
           {
@@ -155,10 +157,10 @@ export async function placeView(
             }
           }
         ]),
-    ...(deps.exportPlace
+    ...(deps.exportPlace && !circuit
       ? [{ id: 'export-shelf', label: t('bibliotheque.exchange.export'), tooltip: t('bibliotheque.exchange.export.tip', { where: place.directory || place.shelf.name }), icon: 'archive' as const, run: () => deps.exportPlace!(kind, place.shelf, place.directory) }]
       : []),
-    ...(deps.importInto ? [{ id: 'import-shelf', label: t('bibliotheque.exchange.import'), tooltip: t('bibliotheque.exchange.import.tip', { folder }), icon: 'upload' as const, run: () => deps.importInto!(kind, folder) }] : []),
+    ...(deps.importInto && !circuit ? [{ id: 'import-shelf', label: t('bibliotheque.exchange.import'), tooltip: t('bibliotheque.exchange.import.tip', { folder }), icon: 'upload' as const, run: () => deps.importInto!(kind, folder) }] : []),
     ...(several && !isDefault && !builtInShelf(place.shelf)
       ? [{ id: 'default-shelf', label: t('bibliotheque.shelf.makeDefault'), tooltip: t(`bibliotheque.shelf.makeDefault.${kind}.tip`), icon: 'star' as const, run: () => deps.setDefault(kind, place.shelf.id) }]
       : []),
@@ -188,7 +190,7 @@ export async function placeView(
 }
 
 /** Les cartes des bibliothèques d'une sorte, pour l'accueil : combien chacune contient, laquelle est par défaut. */
-export function shelfCards(deps: Pick<ShelfPlacesDeps, 't' | 'kind' | 'page' | 'shelves' | 'defaultShelf' | 'showPage'>, items: readonly Placed[], icon: 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase'): Card[] {
+export function shelfCards(deps: Pick<ShelfPlacesDeps, 't' | 'kind' | 'page' | 'shelves' | 'defaultShelf' | 'showPage'>, items: readonly Placed[], icon: 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow'): Card[] {
   const { t, kind } = deps
   const chosen = deps.defaultShelf().id
   const several = severalShelves(deps.shelves())
@@ -199,11 +201,12 @@ export function shelfCards(deps: Pick<ShelfPlacesDeps, 't' | 'kind' | 'page' | '
       title: shelf.name,
       subtitle: t(`bibliotheque.place.${kind}.count`, { count: items.filter((item) => item.shelf === shelf.id).length }),
       // Les documents de référence : une étoile, et ce qu'ils sont.
-      icon: shelf.reference ? ('star' as const) : shelf.project ? ('briefcase' as const) : icon,
+      icon: shelf.reference ? ('star' as const) : shelf.project ? ('briefcase' as const) : shelf.circuit ? ('flow' as const) : icon,
       badges: [
         ...(several && shelf.id === chosen ? [{ label: t('bibliotheque.shelf.default'), tone: 'info' as const }] : []),
         ...(shelf.reference ? [{ label: t('bibliotheque.references.badge'), tone: 'info' as const }] : []),
-        ...(shelf.project ? [{ label: t('bibliotheque.projects.badge'), tone: 'info' as const }] : [])
+        ...(shelf.project ? [{ label: t('bibliotheque.projects.badge'), tone: 'info' as const }] : []),
+        ...(shelf.circuit ? [{ label: t('bibliotheque.circuit.badge'), tone: 'info' as const }] : [])
       ],
       text: shelf.folder,
       open: go,

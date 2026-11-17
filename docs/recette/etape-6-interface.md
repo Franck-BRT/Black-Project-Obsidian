@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La bibliothèque « Circuit » (v0.139.0)
+
+- [ ] L'accueil de la bibliothèque : une carte **Circuit** (icône du circuit), avec le nombre de
+      documents dans le circuit ; la carte **Documents** ne les compte plus
+- [ ] Sa page : deux répertoires, **À classer** et **À contrôler**, chacun avec son nombre ; ni
+      « Nouveau répertoire », ni « Nouvelle bibliothèque », ni export, import ou suppression
+- [ ] Poser un fichier dans `Bibliothèque/Circuit/À classer` (Obsidian fermé) : versé à l'ouverture
+- [ ] Un document à contrôler : dans **Circuit › À contrôler** ; « Écarter » l'envoie dans
+      `Bibliothèque/_retirés`
+- [ ] « Déplacer… » sur une fiche, et le rangement par l'IA : la bibliothèque « Circuit » n'est pas proposée
+- [ ] Un coffre d'avant (des fiches dans `Bibliothèque/À contrôler`, des fichiers dans
+      `Bibliothèque/À classer`) : à l'ouverture, tout passe dans `Bibliothèque/Circuit/…`, les
+      anciens dossiers à la corbeille ; les rétroliens des notes citées suivent
+
 ## Les entreprises et personnes inconnues, proposées (v0.138.0)
 
 - [ ] Verser un document qui cite une entreprise et une personne inconnues : aucune note créée ; la

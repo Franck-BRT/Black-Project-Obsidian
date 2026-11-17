@@ -138,7 +138,7 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
     const { pour, runSkill, reply, asked } = await start(platform)
     await addStarterEntries('skill', 'fr')
     await platform.fs.ensureFolder('Bibliothèque/Normes')
-    await platform.fs.ensureFolder('Bibliothèque/À contrôler')
+    await platform.fs.ensureFolder('Bibliothèque/Circuit/À contrôler')
     platform.files.set('Bibliothèque/Règles de rangement.md', bytes('# Règles\n\nLes normes vont dans Normes.\n'))
     const doc = await pour('ECSS-E-ST-10C.txt', 'ECSS-E-ST-10C — Space engineering, system engineering general requirements.')
     reply({ dossier: 'Bibliothèque/Normes', confiance: 0.93, raison: 'Une norme ECSS.', alternatives: ['Bibliothèque'] })
@@ -168,9 +168,9 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
     const doc = await pour('Note.txt', 'Une note sur la station.')
     reply({ dossier: 'Bibliothèque/Offres', confiance: 0.55, raison: 'Parle d’une offre, sans certitude.', alternatives: ['Bibliothèque/Normes'] })
     const outcome = await runSkill(doc.record)
-    expect(outcome.results).toMatchObject({ decision: 'a-controler', fiche: 'Bibliothèque/À contrôler/Note.md' })
+    expect(outcome.results).toMatchObject({ decision: 'a-controler', fiche: 'Bibliothèque/Circuit/À contrôler/Note.md' })
     expect(outcome.lines).toEqual(['« Note » : pas assez sûr (confiance 55 %, seuil 70 %) — à contrôler.', 'Seuil : 70 %.'])
-    expect(read(platform, 'Bibliothèque/À contrôler/Note.md')).toMatch(
+    expect(read(platform, 'Bibliothèque/Circuit/À contrôler/Note.md')).toMatch(
       /\ncircuit: a-controler\ncircuit-raison: "Parle d’une offre, sans certitude\."\ncircuit-proposition: Bibliothèque\/Offres\ncircuit-confiance: 0\.55\ncircuit-alternatives:\n- Bibliothèque\/Normes\n/
     )
     // La page des documents le signale ; À contrôler n'y est pas une carte de répertoire.
@@ -183,7 +183,7 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
     expect(card).toMatchObject({ title: 'Note', subtitle: 'Proposé : Offres (55 %)', text: 'Parle d’une offre, sans certitude.', badges: [{ label: 'Confiance 55 %', tone: 'warning' }] })
     expect(card.actions!.map((action) => action.id)).toEqual(['control-accept', 'control-elsewhere', 'control-discard'])
     // Sur sa fiche aussi.
-    const fiche = await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/À contrôler/Note.md')}`)
+    const fiche = await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Circuit/À contrôler/Note.md')}`)
     expect(fiche.blocks[0]).toMatchObject({ kind: 'message', tone: 'warning', text: 'À contrôler — Proposé : Offres (55 %) — Parle d’une offre, sans certitude.' })
     await (fiche.blocks[0]!.kind === 'message' ? fiche.blocks[0]!.actions![0]!.run() : null)
     expect(shown.at(-1)).toBe(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Offres/Note.md')}`)
@@ -203,11 +203,11 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
     const a = await pour('A.txt', 'Premier document.')
     reply('Je pense que c’est une norme.')
     expect((await runSkill(a.record)).results).toMatchObject({ decision: 'a-controler', confiance: '0' })
-    expect(read(platform, 'Bibliothèque/À contrôler/A.md')).toMatch(/\ncircuit-raison: "?La réponse de l’IA était illisible\."?\ncircuit-confiance: 0\n/)
+    expect(read(platform, 'Bibliothèque/Circuit/À contrôler/A.md')).toMatch(/\ncircuit-raison: "?La réponse de l’IA était illisible\."?\ncircuit-confiance: 0\n/)
     const b = await pour('B.txt', 'Second document.')
     reply({ dossier: 'Bibliothèque/Inventé', confiance: 0.99, raison: 'Évident.', alternatives: ['Bibliothèque/Normes'] })
     await runSkill(b.record)
-    expect(read(platform, 'Bibliothèque/À contrôler/B.md')).toMatch(/\ncircuit-raison: "?Aucun des dossiers proposés — Évident\."?\ncircuit-confiance: 0\ncircuit-alternatives:\n- Bibliothèque\/Normes\n/)
+    expect(read(platform, 'Bibliothèque/Circuit/À contrôler/B.md')).toMatch(/\ncircuit-raison: "?Aucun des dossiers proposés — Évident\."?\ncircuit-confiance: 0\ncircuit-alternatives:\n- Bibliothèque\/Normes\n/)
     const control = cards(await load('bibliotheque.a-controler'))
     expect(control.map((card) => [card.title, card.subtitle])).toEqual([
       ['A', 'Aucune proposition'],
@@ -234,8 +234,8 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
     reply({ dossier: 'Bibliothèque/Normes', confiance: 0.8, raison: 'Plutôt une norme.', alternatives: [] })
     expect((await runSkill(doc.record, 'Ranger un document', '90 %')).results).toMatchObject({ decision: 'a-controler' })
     fail()
-    await expect(runSkill('Bibliothèque/À contrôler/C.md')).rejects.toThrow()
-    expect(await platform.fs.exists('Bibliothèque/À contrôler/C.md')).toBe(true)
+    await expect(runSkill('Bibliothèque/Circuit/À contrôler/C.md')).rejects.toThrow()
+    expect(await platform.fs.exists('Bibliothèque/Circuit/À contrôler/C.md')).toBe(true)
   })
 
   it('un skill sans sortie : une réponse libre, rien ne bouge ; un document déjà à contrôler compte pour les doublons', async () => {
@@ -252,6 +252,6 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
     await runSkill(doc.record)
     const again = (await pourIntoLibrary([{ name: 'D bis.txt', bytes: bytes('Un document à résumer.') }], { module: 'bibliotheque', label: '' }))!
     expect(again.added).toEqual([])
-    expect(again.already.map((each) => each.record)).toEqual(['Bibliothèque/À contrôler/D.md'])
+    expect(again.already.map((each) => each.record)).toEqual(['Bibliothèque/Circuit/À contrôler/D.md'])
   })
 })

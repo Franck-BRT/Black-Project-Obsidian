@@ -32,6 +32,8 @@ export interface Shelf {
   reference?: boolean
   /** La bibliothèque des documents projet (des documents seulement), un répertoire par programme et par projet. */
   project?: boolean
+  /** La bibliothèque du circuit des documents (des documents seulement) : ses répertoires À classer et À contrôler. */
+  circuit?: boolean
 }
 
 export const SHELVES_KEY = 'bibliotheques'
@@ -41,9 +43,11 @@ export const MAIN_SHELF = 'principale'
 export const REFERENCE_SHELF = 'references'
 /** L'identifiant de la bibliothèque des documents projet. */
 export const PROJECT_SHELF = 'projets'
+/** L'identifiant de la bibliothèque du circuit des documents (À classer, À contrôler). */
+export const CIRCUIT_SHELF = 'circuit'
 
 /** Une bibliothèque toujours là (les documents de référence, les documents projet) : ni retirée, ni par défaut, son nom toujours dit. */
-export const builtInShelf = (shelf: Shelf | undefined): boolean => !!shelf && (!!shelf.reference || !!shelf.project)
+export const builtInShelf = (shelf: Shelf | undefined): boolean => !!shelf && (!!shelf.reference || !!shelf.project || !!shelf.circuit)
 
 type Settings = Readonly<Record<string, unknown>>
 
@@ -58,7 +62,7 @@ function storedShelves(settings: Settings, kind: ShelfKind): Shelf[] {
     const id = typeof raw.id === 'string' ? raw.id : ''
     const name = typeof raw.name === 'string' ? raw.name.trim() : ''
     const folder = typeof raw.folder === 'string' ? cleanFolder(raw.folder) : ''
-    return id && name && folder && id !== MAIN_SHELF && id !== REFERENCE_SHELF && id !== PROJECT_SHELF ? [{ id, name, folder, main: false }] : []
+    return id && name && folder && id !== MAIN_SHELF && id !== REFERENCE_SHELF && id !== PROJECT_SHELF && id !== CIRCUIT_SHELF ? [{ id, name, folder, main: false }] : []
   })
 }
 
@@ -72,13 +76,15 @@ export function shelvesOf(
   mainFolder: string,
   mainName: string,
   reference?: { folder: string; name: string },
-  project?: { folder: string; name: string }
+  project?: { folder: string; name: string },
+  circuit?: { folder: string; name: string }
 ): Shelf[] {
   const builtIn: Shelf[] =
     kind === 'document'
       ? [
           ...(reference?.folder ? [{ id: REFERENCE_SHELF, name: reference.name, folder: reference.folder, main: false, reference: true }] : []),
-          ...(project?.folder ? [{ id: PROJECT_SHELF, name: project.name, folder: project.folder, main: false, project: true }] : [])
+          ...(project?.folder ? [{ id: PROJECT_SHELF, name: project.name, folder: project.folder, main: false, project: true }] : []),
+          ...(circuit?.folder ? [{ id: CIRCUIT_SHELF, name: circuit.name, folder: circuit.folder, main: false, circuit: true }] : [])
         ]
       : []
   return [{ id: MAIN_SHELF, name: mainName, folder: mainFolder, main: true }, ...builtIn, ...storedShelves(settings, kind).sort((a, b) => a.name.localeCompare(b.name, 'fr'))]

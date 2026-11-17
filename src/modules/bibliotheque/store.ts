@@ -60,6 +60,11 @@ export const LEGACY_INBOX_FOLDER = 'À verser'
  * n'est pas un répertoire où l'on range (ni carte, ni choix de destination).
  */
 export const CONTROL_FOLDER = 'À contrôler'
+/**
+ * La bibliothèque du **circuit** (depuis 0.139.0) : un dossier de la bibliothèque principale où sont
+ * À classer et À contrôler — avant, à sa racine (repris à l'activation).
+ */
+export const CIRCUIT_FOLDER = 'Circuit'
 
 export interface StoreDeps {
   fs: FileSystem
@@ -594,7 +599,12 @@ export class LibraryStore {
   /** Le dossier où verser sans lieu précis. */
   /** Le dossier des documents à contrôler (dans la bibliothèque principale). */
   get controlFolder(): string {
-    return `${this.root}/${CONTROL_FOLDER}`
+    return `${this.circuitFolder}/${CONTROL_FOLDER}`
+  }
+
+  /** Le dossier de la bibliothèque du circuit (À classer, À contrôler). */
+  get circuitFolder(): string {
+    return `${this.root}/${CIRCUIT_FOLDER}`
   }
 
   /**
@@ -647,7 +657,7 @@ export class LibraryStore {
     const { fs } = this.deps
     if (!(await fs.exists(folder))) return []
     return (await fs.list(folder))
-      .folders.filter((sub) => this.walkable(sub) && sub !== this.controlFolder && sub !== this.inbox)
+      .folders.filter((sub) => this.walkable(sub))
       .sort((a, b) => baseName(a).localeCompare(baseName(b), 'fr'))
   }
 
@@ -1022,7 +1032,7 @@ export class LibraryStore {
   async pour(items: readonly PourItem[], origin: DocOrigin, options: PourOptions = {}): Promise<PourReport> {
     const { fs } = this.deps
     // Le circuit des documents : versé par la bibliothèque sans lieu précis (ou à sa racine), le document attend dans À classer.
-    const inCircuit = !!this.deps.circuit?.() && origin.module === 'bibliotheque' && (!options.folder || options.folder === this.target)
+    const inCircuit = !!this.deps.circuit?.() && origin.module === 'bibliotheque' && (!options.folder || options.folder === this.target || options.folder === this.inbox)
     const folder = inCircuit ? this.inbox : (options.folder ?? this.target)
     const report: PourReport = { added: [], already: [], failed: [], folder }
     const known = await this.all()
@@ -1122,30 +1132,57 @@ export class LibraryStore {
   }
 
   /**
-   * L'ancienne entrée « À verser » : renommée « À classer » (s'il n'y en a pas encore), sinon
-   * son contenu y passe. Rend s'il y avait quelque chose à reprendre.
+   * Les dossiers du circuit, repris : l'ancienne entrée « À verser », et (avant 0.139.0) À classer et
+   * À contrôler à la racine, passent dans la bibliothèque du circuit (`Circuit/`) ; ses deux
+   * répertoires créés s'ils manquent. Rend s'il y avait quelque chose à reprendre.
    */
   async migrateInbox(): Promise<boolean> {
     const { fs } = this.deps
-    const legacy = `${this.root}/${LEGACY_INBOX_FOLDER}`
-    if (!(await fs.exists(legacy))) return false
-    if (!(await fs.exists(this.inbox))) {
-      await fs.rename(legacy, this.inbox)
-      return true
-    }
+    let moved = false
+    // Avant 0.139.0 : À classer, À contrôler à la racine ; avant 0.135.0, « À verser ».
+    for (const [old, now] of [
+      [`${this.root}/${LEGACY_INBOX_FOLDER}`, this.inbox],
+      [`${this.root}/${INBOX_FOLDER}`, this.inbox],
+      [`${this.root}/${CONTROL_FOLDER}`, this.controlFolder]
+    ] as const)
+      if (await this.migrateFolder(old, now)) moved = true
+    // Ses deux répertoires, toujours là : la bibliothèque du circuit les montre.
+    await fs.ensureFolder(this.inbox)
+    await fs.ensureFolder(this.controlFolder)
+    return moved
+  }
+
+  /**
+   * Reprendre un ancien dossier : ses fiches déplacées (leurs fantômes, leurs rétroliens suivent),
+   * ses autres fichiers aussi (à la même place relative) ; le dossier vide, mis à la corbeille.
+   */
+  private async migrateFolder(old: string, now: string): Promise<boolean> {
+    const { fs, yaml } = this.deps
+    if (!(await fs.exists(old))) return false
     const files: string[] = []
     const walk = async (folder: string): Promise<void> => {
       const listing = await fs.list(folder)
       files.push(...listing.files)
       for (const sub of listing.folders) await walk(sub)
     }
-    await walk(legacy)
-    for (const path of files) await fs.rename(path, await this.free(`${this.inbox}/${path.slice(legacy.length + 1)}`))
+    await walk(old)
+    for (const path of files) {
+      const relative = path.slice(old.length + 1)
+      const folder = `${now}${relative.includes('/') ? `/${relative.slice(0, relative.lastIndexOf('/'))}` : ''}`
+      const record = path.endsWith('.md') ? readRecord(path, readYamlFrontmatter(yaml, await fs.readText(path)).data) : null
+      if (record) {
+        await this.move(path, folder)
+        continue
+      }
+      await fs.ensureFolder(folder)
+      await fs.rename(path, await this.free(`${folder}/${baseName(path)}`))
+    }
+    if (fs.trash && (await fs.exists(old))) await fs.trash(old)
     return files.length > 0
   }
 
   get inbox(): string {
-    return `${this.root}/${INBOX_FOLDER}`
+    return `${this.circuitFolder}/${INBOX_FOLDER}`
   }
 
   /**
@@ -1271,8 +1308,9 @@ export class LibraryStore {
     const { fs } = this.deps
     const doc = await this.load(record)
     if (!doc) return false
-    // Mis de côté dans les retirés de sa bibliothèque.
-    const shelf = (shelfOfPath(this.shelves(), record) ?? this.shelves()[0]!)
+    // Mis de côté dans les retirés de sa bibliothèque (ceux du circuit : dans ceux de la principale).
+    const found = shelfOfPath(this.shelves(), record)
+    const shelf = found && !found.circuit ? found : this.shelves()[0]!
     const aside = `${shelf.folder}/${SET_ASIDE_FOLDER}`
     // Ses fantômes n'ont plus rien à montrer.
     for (const { ghost } of await this.ghostsOf(doc)) await this.removeGhost(ghost.path)

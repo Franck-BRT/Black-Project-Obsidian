@@ -5,13 +5,34 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.56.0 (Black Projects 0.138.0) |
+| Version | 0.57.0 (Black Projects 0.139.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La bibliothèque « Circuit » (v0.57.0, Black Projects 0.139.0)
+
+- Une troisième bibliothèque intégrée, après les documents de référence et les documents projet :
+  `CIRCUIT_SHELF` (`circuit`), dossier `<racine>/Circuit` (`CIRCUIT_FOLDER`, `store.circuitFolder`),
+  `Shelf.circuit`, `builtInShelf` ; elle n'est jamais enregistrée (`storedShelves` l'écarte).
+- Ses deux répertoires, tenus par le circuit : `Circuit/À classer` (`store.inbox`, l'entrée unique)
+  et `Circuit/À contrôler` (`store.controlFolder`) — créés à l'activation, pour que les deux cartes
+  soient toujours là.
+- Sa page : ni nouveau répertoire, ni nouvelle bibliothèque, ni export, ni import, ni suppression
+  (d'une bibliothèque, d'un répertoire) ; un sous-titre propre (`bibliotheque.page.subtitle.circuit`) ;
+  icône `flow`, badge `bibliotheque.circuit.badge`. L'accueil de la bibliothèque : la carte **Circuit**
+  (les documents dans le circuit), décomptés de la carte **Documents**.
+- Jamais une destination : `pickPlace` (« Déplacer… ») et `filingFoldersNow` (le rangement par l'IA)
+  l'écartent. `subdirectories` ne filtre plus que par `walkable` (le dossier d'une bibliothèque n'est
+  pas un répertoire d'une autre).
+- `pour` : un document versé dans `inbox` est dans le circuit. `setAside` : un document du circuit
+  écarté va dans les `_retirés` de la bibliothèque principale.
+- Reprise : `migrateInbox` déplace `Bibliothèque/À verser`, `Bibliothèque/À classer` et
+  `Bibliothèque/À contrôler` vers `Circuit/…` (`migrateFolder`) — les fiches par `store.move`
+  (fantômes et rétroliens suivent), les autres fichiers renommés ; l'ancien dossier à la corbeille.
 
 ## Les entreprises et personnes inconnues, proposées (v0.56.0, Black Projects 0.138.0)
 

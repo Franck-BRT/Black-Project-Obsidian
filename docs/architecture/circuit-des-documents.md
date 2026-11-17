@@ -75,7 +75,7 @@ se journalise.
  [déterministe] doublon ?  ── oui ──▶ déjà là : fantôme proposé (existe)
         │ non
         ▼
- Bibliothèque/À classer            état : a-classer
+ Bibliothèque/Circuit/À classer            état : a-classer
         │  workflow système « Circuit des documents » (déclencheur : document versé)
         ▼
  skill Ingestion                   état : ingere      (texte, qualité ★ %)
@@ -88,7 +88,7 @@ se journalise.
         │
    confiance ≥ seuil et dossier valide ?
         ├── oui ──▶ [déterministe] rangé, liens écrits     état : range
-        └── non ──▶ Bibliothèque/À contrôler                état : a-controler
+        └── non ──▶ Bibliothèque/Circuit/À contrôler                état : a-controler
                         │  l'utilisateur : Accepter · Choisir ailleurs · Laisser
                         ▼
                      rangé (sa décision est journalisée)
@@ -101,8 +101,9 @@ et le workflow d'entretien relance ce qui attend.
 
 | Dossier | Rôle |
 |---|---|
-| `Bibliothèque/À classer` | l'entrée unique ; remplace le dossier de dépôt actuel « À verser » (voir question 4) |
-| `Bibliothèque/À contrôler` | ce que l'IA n'a pas su ranger avec assez de confiance ; chaque fiche dit pourquoi |
+| `Bibliothèque/Circuit/À classer` | l'entrée unique ; a remplacé l'ancien dossier de dépôt « À verser » (voir question 4) |
+| `Bibliothèque/Circuit/À contrôler` | ce que l'IA n'a pas su ranger avec assez de confiance ; chaque fiche dit pourquoi |
+| la bibliothèque « Circuit » (`Bibliothèque/Circuit`) | ces deux répertoires, sur une page à eux (0.139.0) ; jamais une destination (ni « Déplacer… », ni le rangement par l'IA) ; les anciens `Bibliothèque/À classer` et `Bibliothèque/À contrôler` y sont repris |
 | les bibliothèques et leurs répertoires | la destination : documents, références, documents projet (`Bibliothèque/Projets/<Programme>/<Projet>/…`) |
 
 Les fichiers eux-mêmes ne bougent pas : seules les fiches se déplacent (comme aujourd'hui,
@@ -311,6 +312,8 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
 | Candidats de liens et entités (recherche déterministe) | existe *(C, 0.137.0)* : documents (référence), entreprises, personnes, projets |
 | Liens, rétroliens | existent *(C, 0.137.0)* |
 | Entretien des liens (workflow système) | existe *(C, 0.137.0)* : une étape des rappels du lundi |
+| Entreprises et personnes inconnues, proposées | existe *(0.138.0)* : créées d'un clic sur la page À contrôler |
+| Bibliothèque « Circuit » (À classer et À contrôler sur une page à eux) | existe *(0.139.0)* |
 
 ## Le découpage proposé
 
