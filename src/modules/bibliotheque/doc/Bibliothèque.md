@@ -497,7 +497,25 @@ pas ; son dossier se règle (`Bibliothèque/Références` d'origine).
 - Les programmes et les projets **appellent** ces documents : voir {{link:Programmes|Programmes}}.
   Une fiche déplacée, ses appels suivent.
 
+## 10 bis. Le glossaire
+
+Une bibliothèque de **termes** : chacun son nom, son **sigle** s'il en a un (« CCTP »), sa
+**définition**, un domaine (catégorie) et des notes. Menu **Bibliothèque › Glossaire** (dans les
+bibliothèques système) : **Nouveau terme**, ou **Ajouter les exemples** (des termes courants des appels
+d'offres et des projets : CCTP, CCAP, RC, BPU, DPGF, DCE, AE, mémoire technique, exigence, recette).
+Une note par terme, dans `Bibliothèque/Glossaire`.
+
+**Les liens avec les documents** :
+
+- la fiche d'un document a une section **Glossaire (n)** : les termes qu'il emploie (dans son titre ou
+  son texte, le terme ou son sigle, en mot entier), chacun avec sa définition ; un clic ouvre le terme ;
+- la page d'un terme dit **Documents qui l'emploient (n)** ; un clic ouvre leur fiche ;
+- le circuit des documents propose les termes cités comme liens possibles : l'IA peut les relier (le
+  lien dans la fiche, un rétrolien dans la note du terme).
+
 ## 11. Réglages
+
+**Dossier du glossaire** (par défaut `Bibliothèque/Glossaire`).
 
 **Les bibliothèques en explorateur de fichiers** (activé d'origine) : la colonne de gauche et les
 documents en liste ; désactivé, l'affichage en cartes (voir la section 4).

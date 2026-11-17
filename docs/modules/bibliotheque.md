@@ -5,13 +5,28 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.64.0 (Black Projects 0.150.0) |
+| Version | 0.65.0 (Black Projects 0.151.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le glossaire (v0.65.0, Black Projects 0.151.0)
+
+- Une sorte d'entrées de plus, `glossary` (`EntryKind`, `ShelfKind`) : `bp-type: bibliotheque-glossaire`,
+  dossier `Bibliothèque/Glossaire` (réglage `dossierGlossaire`), pages `bibliotheque.glossaire` /
+  `bibliotheque.terme`, icône `bulb`, dans le groupe « Bibliothèques système » (accueil, explorateur).
+  Un terme : `name`, `code` (sigle, facultatif), `description` (la définition, obligatoire), `category`
+  (domaine), `text` (notes, facultatives). Exemples livrés (`startersFor('glossary')`) : 10 termes en
+  français, 7 en anglais.
+- Les liens : `glossaryOf(record)` — les termes qu'un document emploie (`findCandidates` sur son titre et
+  son texte : le terme ou son sigle, en mot entier ; plus ceux que le circuit y a reliés), dans l'ordre du
+  texte → la section **Glossaire (n)** de sa fiche ; `documentsUsing(path)` — les documents qui emploient
+  un terme → **Documents qui l'emploient (n)** sur sa page. La source de liens `glossaire`
+  (`registerLinkSource`) : un terme cité est un candidat de lien du circuit (lien et rétrolien).
+- `documentsUsing` lit le texte de chaque document : à revoir si la bibliothèque devient très grande.
 
 ## Relancer une étape, ou tout le circuit (v0.64.0, Black Projects 0.150.0)
 

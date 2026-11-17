@@ -282,11 +282,37 @@ const SKILLS: Record<Language, EntryDraft[]> = {
   ]
 }
 
+/** Le glossaire : des termes courants des appels d'offres et des projets, à compléter de ceux du métier. */
+const GLOSSARY: Record<Language, EntryDraft[]> = {
+  fr: [
+    { name: 'Cahier des clauses techniques particulières', text: '', category: 'Marchés', description: 'Pièce du marché qui décrit le besoin technique : ce qui est attendu, les performances, les exigences à respecter.', favorite: false, code: 'CCTP' },
+    { name: 'Cahier des clauses administratives particulières', text: '', category: 'Marchés', description: 'Pièce du marché qui fixe ses règles administratives et financières : délais, pénalités, paiement, réception.', favorite: false, code: 'CCAP' },
+    { name: 'Règlement de la consultation', text: '', category: 'Marchés', description: 'Pièce qui dit comment répondre : le contenu de l’offre, la date limite, les critères de choix.', favorite: false, code: 'RC' },
+    { name: 'Bordereau des prix unitaires', text: '', category: 'Marchés', description: 'Liste des prix à l’unité de chaque prestation, que le candidat remplit.', favorite: false, code: 'BPU' },
+    { name: 'Décomposition du prix global et forfaitaire', text: '', category: 'Marchés', description: 'Détail d’un prix forfaitaire, poste par poste.', favorite: false, code: 'DPGF' },
+    { name: 'Dossier de consultation des entreprises', text: '', category: 'Marchés', description: 'L’ensemble des pièces qu’un acheteur met à la disposition des candidats (RC, CCAP, CCTP, BPU…).', favorite: false, code: 'DCE' },
+    { name: 'Acte d’engagement', text: '', category: 'Marchés', description: 'Pièce que le candidat signe : il s’y engage sur son offre et son prix.', favorite: false, code: 'AE' },
+    { name: 'Mémoire technique', text: '', category: 'Offre', description: 'Document où le candidat explique comment il réalisera la prestation : moyens, méthode, planning.', favorite: false },
+    { name: 'Exigence', text: '', category: 'Ingénierie', description: 'Ce que le produit ou la prestation doit faire ou respecter, formulé pour pouvoir être vérifié.', favorite: false },
+    { name: 'Recette', text: '', category: 'Ingénierie', description: 'Vérification, avec le client, que ce qui est livré répond aux exigences ; elle conclut à l’acceptation ou non.', favorite: false },
+  ],
+  en: [
+    { name: 'Statement of work', text: '', category: 'Procurement', description: 'Document describing the work to be done: what is expected, the deliverables, the requirements to meet.', favorite: false, code: 'SOW' },
+    { name: 'Request for proposal', text: '', category: 'Procurement', description: 'Invitation to suppliers to submit an offer, with the rules for answering and the selection criteria.', favorite: false, code: 'RFP' },
+    { name: 'Bill of quantities', text: '', category: 'Procurement', description: 'List of items with their unit prices, filled in by the bidder.', favorite: false, code: 'BoQ' },
+    { name: 'Tender documents', text: '', category: 'Procurement', description: 'All the documents a buyer gives to bidders (rules, contract terms, statement of work, price schedule…).', favorite: false },
+    { name: 'Technical proposal', text: '', category: 'Offer', description: 'Document where the bidder explains how it will deliver: means, method, schedule.', favorite: false },
+    { name: 'Requirement', text: '', category: 'Engineering', description: 'What the product or service must do or meet, worded so it can be verified.', favorite: false },
+    { name: 'Acceptance', text: '', category: 'Engineering', description: 'Verification, with the customer, that what is delivered meets the requirements; it ends in acceptance or not.', favorite: false },
+  ]
+}
+
 /** Les exemples d'une bibliothèque, dans la langue de l'utilisateur. */
 export function startersFor(kind: EntryKind, language: string): EntryDraft[] {
   const lang: Language = language === 'en' ? 'en' : 'fr'
   // Les émetteurs sont ceux de chacun : pas d'exemples.
   if (kind === 'issuer' || kind === 'tag' || kind === 'person') return []
+  if (kind === 'glossary') return GLOSSARY[lang]
   return (kind === 'prompt' ? PROMPTS : kind === 'persona' ? PERSONAS : SKILLS)[lang]
 }
 

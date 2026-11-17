@@ -27,13 +27,14 @@ export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = {
   skill: 'bibliotheque.skills',
   issuer: 'bibliotheque.issuers',
   tag: 'bibliotheque.tags',
-  person: 'bibliotheque.persons'
+  person: 'bibliotheque.persons',
+  glossary: 'bibliotheque.glossaire'
 }
-export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag', person: 'bibliotheque.person' }
+export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag', person: 'bibliotheque.person', glossary: 'bibliotheque.terme' }
 export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(ENTRY_PAGE[kind], encodeURIComponent(path))
 
-type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow'
-const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user' }
+type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow' | 'bulb'
+const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user', glossary: 'bulb' }
 
 export interface EntriesHomeDeps {
   t: Translate
@@ -67,6 +68,10 @@ export interface EntriesHomeDeps {
   remove?(kind: EntryKind, path: string): Promise<boolean>
   /** Écrire les exemples qui manquent. */
   addStarters(kind: EntryKind): Promise<void>
+  /** Un terme du glossaire : les documents qui l'emploient (le terme ou son sigle, ou reliés par le circuit). */
+  documentsUsing?(path: string): Promise<{ record: string; title: string; detail: string }[]>
+  /** Ouvrir la fiche d'un document. */
+  showDocument?(record: string): void
 }
 
 const slug = (category: string): string =>
@@ -317,6 +322,26 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
     blocks: [
       ...(entry.description && kind !== 'person' ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
       ...contact,
+      // Un terme du glossaire : les documents qui l'emploient, un clic ouvre leur fiche.
+      ...(kind === 'glossary' && deps.documentsUsing
+        ? await (async () => {
+            const docs = await deps.documentsUsing!(entry.path)
+            return [
+              {
+                kind: 'list' as const,
+                title: t('bibliotheque.glossary.usedIn', { count: docs.length }),
+                items: docs.map((doc) => ({
+                  id: `document-${doc.record}`,
+                  title: doc.title,
+                  detail: doc.detail,
+                  icon: 'file' as const,
+                  ...(deps.showDocument ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showDocument!(doc.record) } } : {})
+                })),
+                empty: t('bibliotheque.glossary.usedIn.none')
+              }
+            ]
+          })()
+        : []),
       ...staff,
       // Le texte mis en forme : titres, listes, gras… (un prompt, un skill s'écrivent en Markdown).
       { kind: 'markdown', title: t(`bibliotheque.${kind}.text`), text: entry.text ?? '', empty: t('bibliotheque.entry.noText') },
@@ -348,6 +373,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   const skills = await deps.stores.skill.all()
   const issuers = await deps.stores.issuer.all()
   const tags = await deps.stores.tag.all()
+  const glossary = await deps.stores.glossary.all()
   const persons = await deps.stores.person.all()
   const go = (page: string): ViewAction => ({ id: 'open', label: t('bibliotheque.hub.open'), run: () => deps.showPage?.(page) })
   /** Créer une bibliothèque, puis l'ouvrir (sa page la montre aussitôt, vide). */
@@ -369,7 +395,8 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
       { label: t('bibliotheque.hub.skills'), value: String(skills.length), icon: 'list' },
       { label: t('bibliotheque.hub.issuers'), value: String(issuers.length), icon: 'building' },
       { label: t('bibliotheque.hub.persons'), value: String(persons.length), icon: 'user' },
-      { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' }
+      { label: t('bibliotheque.hub.tags'), value: String(tags.length), icon: 'tag' },
+      { label: t('bibliotheque.hub.glossarys'), value: String(glossary.length), icon: 'bulb' }
     ]
   }
   const likely: HomeBlock[] = documents.likely ? [{ kind: 'message', tone: 'warning', text: t('bibliotheque.home.likely', { count: documents.likely }) }] : []
@@ -389,7 +416,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
   })
   // Plusieurs bibliothèques d'une sorte (la bibliothèque des documents de référence, toujours là, ne compte pas) :
   // dans chaque groupe, les cartes de ses bibliothèques, sorte par sorte.
-  const several = (['document', 'prompt', 'persona', 'skill', 'issuer', 'person', 'tag'] as const).some((kind) => severalShelves(deps.places[kind].shelves()))
+  const several = (['document', 'prompt', 'persona', 'skill', 'issuer', 'person', 'tag', 'glossary'] as const).some((kind) => severalShelves(deps.places[kind].shelves()))
   if (several) {
     const placed = await deps.placedDocuments()
     const shelvesOf = (kind: 'document' | EntryKind, icon: KindIcon, items: readonly { shelf?: string; directory?: string }[]): HomeBlock => ({
@@ -407,7 +434,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         ...likely,
         group('documents', 'book', [shelvesOf('document', 'book', placed)], documents.count),
         group('ia', 'spark', [shelvesOf('prompt', 'chat', prompts), shelvesOf('persona', 'spark', personas), shelvesOf('skill', 'list', skills)], prompts.length + personas.length + skills.length),
-        group('systeme', 'tag', [shelvesOf('tag', 'tag', tags)], tags.length),
+        group('systeme', 'tag', [shelvesOf('tag', 'tag', tags), shelvesOf('glossary', 'bulb', glossary)], tags.length + glossary.length),
         group('annuaire', 'user', [shelvesOf('issuer', 'building', issuers), shelvesOf('person', 'user', persons)], issuers.length + persons.length)
       ]
     }
@@ -457,7 +484,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         documents.count
       ),
       group('ia', 'spark', cards([card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt), card('personas', 'spark', personas.length, ENTRIES_PAGE.persona), card('skills', 'list', skills.length, ENTRIES_PAGE.skill)], []), prompts.length + personas.length + skills.length),
-      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag)], []), tags.length),
+      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag), card('glossarys', 'bulb', glossary.length, ENTRIES_PAGE.glossary)], []), tags.length + glossary.length),
       group('annuaire', 'user', cards([card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer), card('persons', 'user', persons.length, ENTRIES_PAGE.person)], ['issuer', 'person']), issuers.length + persons.length)
     ]
   }
@@ -486,7 +513,7 @@ export function registerEntriesHome(views: ViewsRegistrar | undefined, deps: Ent
       icon: ICON[kind],
       color: 'teal',
       group: t('bibliotheque.name'),
-      order: { prompt: 28, persona: 29, skill: 30, issuer: 31, tag: 32, person: 33 }[kind],
+      order: { prompt: 28, persona: 29, skill: 30, issuer: 31, tag: 32, person: 33, glossary: 34 }[kind],
       description: t(`bibliotheque.${kind}.tile`),
       page: ENTRIES_PAGE[kind],
       run: () => show(ENTRIES_PAGE[kind])

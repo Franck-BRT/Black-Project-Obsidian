@@ -10,7 +10,7 @@
 
 import { pageWith, type Explorer, type Badge, type Card, type HomeBlock, type IconName, type HomeSectionView, type ListItem, type PageView, type Stat, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { baseName, FAMILIES, readableSize, versionLabel, type DocFamily, type AiReading, type LibraryDoc, type TextVersion } from './model'
-import { HUB_PAGE } from './entriesHome'
+import { entryPageOf, HUB_PAGE } from './entriesHome'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
 import type { GhostEntry, LibraryStore, ResearchField } from './store'
 import { CONTROL_FOLDER } from './store'
@@ -39,6 +39,8 @@ export interface LibraryHomeDeps {
   store: LibraryStore
   /** L'arborescence des bibliothèques (la colonne de gauche), le lieu montré marqué ; absente : l'affichage en cartes. */
   explorer?(current: ExplorerPlace): Promise<Explorer | undefined>
+  /** Les termes du glossaire qu'un document emploie (son titre, son texte ; et ceux que le circuit y a reliés). */
+  glossaryOf?(record: string): Promise<{ path: string; label: string; definition: string }[]>
   /** Où une fiche a été déplacée (le circuit l'a rangée pendant qu'on la regardait), s'il le sait. */
   movedTo?(record: string): string | undefined
   /** Le circuit des documents : les documents à contrôler, et ce qu'on en fait. */
@@ -1124,6 +1126,23 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             })
           ]
         : []),
+      // Le glossaire : les termes qu'il emploie, leur définition ; un clic ouvre le terme.
+      ...(await (async () => {
+        const terms = (await deps.glossaryOf?.(doc.record)) ?? []
+        if (!terms.length) return []
+        return [
+          fold('glossaire', t('bibliotheque.glossary.section', { count: terms.length }), terms.map((term) => term.label).join(' · '), 'bulb', {
+            kind: 'list' as const,
+            items: terms.map((term) => ({
+              id: `glossaire-${term.path}`,
+              title: term.label,
+              ...(term.definition ? { detail: term.definition } : {}),
+              icon: 'bulb' as const,
+              open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('glossary', term.path)) }
+            }))
+          })
+        ]
+      })()),
       // Ses liens (le circuit, version C) : les notes qu'il cite, chacune avec sa raison ; un clic l'ouvre.
       ...(doc.links?.length
         ? await (async () => {

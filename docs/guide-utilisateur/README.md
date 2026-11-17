@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.150.0)
+## Aujourd'hui (version 0.151.0)
+
+- **Le glossaire** : une bibliothèque de termes (son sigle, sa définition), dans Bibliothèque ›
+  Glossaire ; « Ajouter les exemples » en met dix courants (CCTP, CCAP, RC, BPU…). La fiche d'un document
+  montre les termes qu'il emploie (section **Glossaire**), la page d'un terme les documents qui
+  l'emploient ; un clic passe de l'un à l'autre. Le circuit peut aussi relier un document à un terme.
 
 - **Relancer une étape** : dans « Le parcours du document », chaque ligne a un bouton ⟳ qui ne refait
   que cette étape (relire le texte, refaire l'analyse, chercher de nouveau un champ, réécrire les liens,

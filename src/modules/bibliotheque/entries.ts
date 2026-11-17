@@ -20,8 +20,8 @@ import { readYamlFrontmatter, toYaml, type YamlReader } from '../../core/yaml'
 import { MAIN_SHELF, type Shelf } from './shelves'
 import { readThreshold } from './skills'
 
-export type EntryKind = 'prompt' | 'persona' | 'skill' | 'issuer' | 'tag' | 'person'
-export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill', 'issuer', 'tag', 'person']
+export type EntryKind = 'prompt' | 'persona' | 'skill' | 'issuer' | 'tag' | 'person' | 'glossary'
+export const ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill', 'issuer', 'tag', 'person', 'glossary']
 /** Celles qui servent à l'IA (les champs Prompt, Persona, Skill des étapes de workflow). */
 export const AI_ENTRY_KINDS: readonly EntryKind[] = ['prompt', 'persona', 'skill']
 export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = {
@@ -30,7 +30,8 @@ export const ENTRY_TYPE: Readonly<Record<EntryKind, string>> = {
   skill: 'bibliotheque-skill',
   issuer: 'bibliotheque-emetteur',
   tag: 'bibliotheque-etiquette',
-  person: 'bibliotheque-personne'
+  person: 'bibliotheque-personne',
+  glossary: 'bibliotheque-glossaire'
 }
 
 export interface LibraryEntry {

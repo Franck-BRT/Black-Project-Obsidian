@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le glossaire (v0.151.0)
+
+- [ ] Bibliothèque : « Glossaire » dans les bibliothèques système (colonne de gauche, accueil)
+- [ ] Glossaire vide : « Ajouter les exemples » — dix termes (CCTP — Cahier des clauses techniques
+      particulières, CCAP, RC, BPU, DPGF, DCE, AE, mémoire technique, exigence, recette)
+- [ ] « Nouveau terme » : terme, sigle, domaine, définition (obligatoire), notes
+- [ ] Verser un document qui cite « CCTP » et « recette » : sa fiche, section « Glossaire (2) », chaque
+      terme avec sa définition ; un clic ouvre le terme
+- [ ] La page du terme : « Documents qui l'emploient (1) » ; un clic ouvre la fiche du document
+- [ ] Un terme qu'aucun document n'emploie : « Aucun document de la bibliothèque n'emploie ce terme… »
+- [ ] IA réglée, circuit actif : à l'analyse, un terme cité peut devenir un lien (section Liens de la fiche,
+      rétrolien dans la note du terme)
+
 ## Relancer une étape, ou tout le circuit (v0.150.0)
 
 - [ ] La fiche d'un document du circuit : un bouton ⟳ devant chaque ligne du parcours ; son infobulle

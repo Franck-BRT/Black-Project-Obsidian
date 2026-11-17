@@ -91,11 +91,11 @@ describe('les bibliothèques de prompts et de personas', () => {
     await pourIntoLibrary([{ name: 'Plan.pdf', bytes: new TextEncoder().encode('p') }], { module: 'bibliotheque', label: 'Versé à la main' })
     const hub = await page('bibliotheque.accueil').load()
     const stats = hub.blocks.find((block) => block.kind === 'stats')
-    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Documents=1', 'Prompts=0', 'Personas=0', 'Skills=3', 'Entreprises=0', 'Personnes=0', 'Étiquettes=0'])
+    expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Documents=1', 'Prompts=0', 'Personas=0', 'Skills=3', 'Entreprises=0', 'Personnes=0', 'Étiquettes=0', 'Glossaire=0'])
     const cards = cardsOf(hub)
     // Par groupe : les documents, l'IA, le système, les personnelles — chacun une section qu'on déplie ou replie.
     expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title}|${block.collapsed ?? false}`] : []))).toEqual(['Bibliothèques de documents|false', 'Bibliothèques système IA|false', 'Bibliothèques système|false', 'Annuaire|false'])
-    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Documents projet', 'Circuit', 'Prompts', 'Personas', 'Skills', 'Étiquettes', 'Entreprises', 'Personnes'])
+    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Documents projet', 'Circuit', 'Prompts', 'Personas', 'Skills', 'Étiquettes', 'Glossaire', 'Entreprises', 'Personnes'])
     // Chaque groupe : de quoi créer une bibliothèque de chacune de ses sortes.
     expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).flatMap((block) => (block.kind === 'cards' ? (block.actions ?? []).map((action) => action.label) : []))).toEqual([
       'Nouvelle bibliothèque de documents',

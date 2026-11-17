@@ -33,11 +33,11 @@ export interface ExplorerDeps {
 const GROUPS: readonly { id: string; icon: IconName; kinds: readonly ShelfKind[] }[] = [
   { id: 'documents', icon: 'book', kinds: ['document'] },
   { id: 'ia', icon: 'spark', kinds: ['prompt', 'persona', 'skill'] },
-  { id: 'systeme', icon: 'tag', kinds: ['tag'] },
+  { id: 'systeme', icon: 'tag', kinds: ['tag', 'glossary'] },
   { id: 'annuaire', icon: 'user', kinds: ['issuer', 'person'] }
 ]
 
-const KIND_ICON: Readonly<Record<ShelfKind, IconName>> = { document: 'book', prompt: 'chat', persona: 'spark', skill: 'list', tag: 'tag', issuer: 'building', person: 'user' }
+const KIND_ICON: Readonly<Record<ShelfKind, IconName>> = { document: 'book', prompt: 'chat', persona: 'spark', skill: 'list', tag: 'tag', issuer: 'building', person: 'user', glossary: 'bulb' }
 
 const shelfIcon = (kind: ShelfKind, shelf: Shelf): IconName => (shelf.reference ? 'star' : shelf.project ? 'briefcase' : shelf.circuit ? 'flow' : KIND_ICON[kind])
 

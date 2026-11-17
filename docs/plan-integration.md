@@ -683,6 +683,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
 - v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
+- v0.151.0 : **le glossaire** : une bibliothèque de termes (sigle, définition), reliée aux fiches (les termes qu'un document emploie, les documents qui emploient un terme ; un lien possible du circuit)
 - v0.150.0 : **relancer une étape** du parcours d'un document (elle seule), ou **tout le circuit** ; `runActionNow` (Workflows), `refaire` (IA)
 - v0.149.0 : **le parcours de chaque document** sur sa fiche : toutes les étapes du circuit (doublons et fantômes, À classer, ingestion, analyse champ par champ, liens, rangement), en couleur
 - v0.148.2 : le message d'une bibliothèque vide sans le bouton « Verser des documents » en double (« Nouveau… » de même pour les prompts, personas…)

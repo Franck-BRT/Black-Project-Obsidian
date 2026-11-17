@@ -67,6 +67,9 @@ export const DEFAULT_ISSUERS_FOLDER = 'Bibliothèque/Entreprises'
 export const FORMER_ISSUERS_FOLDER = 'Bibliothèque/Émetteurs'
 export const TAGS_FOLDER_KEY = 'dossierEtiquettes'
 export const DEFAULT_TAGS_FOLDER = 'Bibliothèque/Étiquettes'
+/** Le glossaire : un terme par note (son sigle, sa définition). */
+export const GLOSSARY_FOLDER_KEY = 'dossierGlossaire'
+export const DEFAULT_GLOSSARY_FOLDER = 'Bibliothèque/Glossaire'
 export const PERSONS_FOLDER_KEY = 'dossierPersonnes'
 export const DEFAULT_PERSONS_FOLDER = 'Bibliothèque/Personnes'
 /** Le dossier de la bibliothèque des documents de référence (réglage), et son dossier d'origine. */
@@ -991,7 +994,8 @@ const FOLDER_KEYS: Readonly<Record<EntryKind, readonly [string, string]>> = {
   skill: [SKILLS_FOLDER_KEY, DEFAULT_SKILLS_FOLDER],
   issuer: [ISSUERS_FOLDER_KEY, DEFAULT_ISSUERS_FOLDER],
   tag: [TAGS_FOLDER_KEY, DEFAULT_TAGS_FOLDER],
-  person: [PERSONS_FOLDER_KEY, DEFAULT_PERSONS_FOLDER]
+  person: [PERSONS_FOLDER_KEY, DEFAULT_PERSONS_FOLDER],
+  glossary: [GLOSSARY_FOLDER_KEY, DEFAULT_GLOSSARY_FOLDER]
 }
 
 const entriesFolderField = (kind: EntryKind): TextField => ({
@@ -1064,11 +1068,11 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.64.0',
+  version: '0.65.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
-  settingsFields: [folderField, explorerField, circuitField, referencesFolderField, projectsFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag')],
+  settingsFields: [folderField, explorerField, circuitField, referencesFolderField, projectsFolderField, entriesFolderField('prompt'), entriesFolderField('persona'), entriesFolderField('skill'), entriesFolderField('issuer'), entriesFolderField('person'), entriesFolderField('tag'), entriesFolderField('glossary')],
   docs: ({ folder }) => [{ path: 'Modules/Bibliothèque.md', content: fillTemplate(page, folder) }],
   async activate(context: ModuleContext) {
     const { platform, i18n, settings } = context
@@ -1087,7 +1091,8 @@ export const bibliothequeModule: BlackModule = {
       skill: skillsFolder,
       issuer: issuersFolder,
       tag: tagsFolder,
-      person: () => folderOf(settings.get(), PERSONS_FOLDER_KEY, DEFAULT_PERSONS_FOLDER)
+      person: () => folderOf(settings.get(), PERSONS_FOLDER_KEY, DEFAULT_PERSONS_FOLDER),
+      glossary: () => folderOf(settings.get(), GLOSSARY_FOLDER_KEY, DEFAULT_GLOSSARY_FOLDER)
     }
     const referencesFolder = () => folderOf(settings.get(), REFERENCES_FOLDER_KEY, DEFAULT_REFERENCES_FOLDER)
     /** Les fiches que la bibliothèque déplace elle-même : leur renommage n'est pas un geste de l'utilisateur. */
@@ -1151,7 +1156,7 @@ export const bibliothequeModule: BlackModule = {
     })
     const entryStore = (kind: EntryKind) =>
       new EntryStore(kind, { fs: platform.fs, yaml: platform.yaml, folder: mainFolder[kind], shelves: () => shelves(kind), target: () => defaultShelf(kind).folder })
-    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona'), skill: entryStore('skill'), issuer: entryStore('issuer'), tag: entryStore('tag'), person: entryStore('person') }
+    const entries: Record<EntryKind, EntryStore> = { prompt: entryStore('prompt'), persona: entryStore('persona'), skill: entryStore('skill'), issuer: entryStore('issuer'), tag: entryStore('tag'), person: entryStore('person'), glossary: entryStore('glossary') }
     const subdirectories = (kind: ShelfKind) => (folder: string) => (kind === 'document' ? store.subdirectories(folder) : entries[kind].subdirectories(folder))
     /** Un dossier d'une bibliothèque de documents, en mots : « Normes › ECSS » (son nom d'abord quand il y en a plusieurs). */
     const placeOfFolder = (folder: string): string => {
@@ -1370,7 +1375,7 @@ export const bibliothequeModule: BlackModule = {
     })
 
     // ── Les bibliothèques et leurs répertoires ──
-    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills', issuer: 'bibliotheque.issuers', tag: 'bibliotheque.tags', person: 'bibliotheque.persons' }
+    const KIND_PAGE: Record<ShelfKind, string> = { document: LIBRARY_PAGE, prompt: 'bibliotheque.prompts', persona: 'bibliotheque.personas', skill: 'bibliotheque.skills', issuer: 'bibliotheque.issuers', tag: 'bibliotheque.tags', person: 'bibliotheque.persons', glossary: 'bibliotheque.glossaire' }
     const SHELF_ROOT: Record<ShelfKind, string> = {
       document: 'Bibliothèques/Documents',
       prompt: 'Bibliothèques/Prompts',
@@ -1378,7 +1383,8 @@ export const bibliothequeModule: BlackModule = {
       skill: 'Bibliothèques/Skills',
       issuer: 'Bibliothèques/Entreprises',
       tag: 'Bibliothèques/Étiquettes',
-      person: 'Bibliothèques/Personnes'
+      person: 'Bibliothèques/Personnes',
+      glossary: 'Bibliothèques/Glossaire'
     }
     const allShelfFolders = () => SHELF_KINDS.flatMap((kind) => shelves(kind).map((shelf) => shelf.folder))
     /** Une nouvelle bibliothèque : son nom, son dossier (proposé d'après le nom), par défaut ou non. */
@@ -1773,7 +1779,7 @@ export const bibliothequeModule: BlackModule = {
       exportPlace,
       importInto
     })
-    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill'), issuer: placesOf('issuer'), tag: placesOf('tag'), person: placesOf('person') }
+    const places = { document: placesOf('document'), prompt: placesOf('prompt'), persona: placesOf('persona'), skill: placesOf('skill'), issuer: placesOf('issuer'), tag: placesOf('tag'), person: placesOf('person'), glossary: placesOf('glossary') }
     /** L'arborescence des bibliothèques (en explorateur de fichiers, le réglage d'origine) ; sinon rien : l'affichage en cartes. */
     const explorerFor = async (current: ExplorerPlace) =>
       settings.get()[EXPLORER_KEY] === false
@@ -1883,6 +1889,12 @@ export const bibliothequeModule: BlackModule = {
         key: 'personnes',
         label: t('bibliotheque.links.kind.person'),
         items: async () => (await entries.person.all()).map((entry) => ({ path: entry.path, label: entry.name, names: [entry.name] }))
+      }),
+      // Le glossaire : un terme (ou son sigle) que le document emploie — le circuit peut l'y relier.
+      registerLinkSource({
+        key: 'glossaire',
+        label: t('bibliotheque.links.kind.glossary'),
+        items: async () => (await entries.glossary.all()).map((entry) => ({ path: entry.path, label: entryTitle(entry), names: [entry.name, entry.code ?? ''].filter(Boolean) }))
       }),
       registerSkillContext({
         key: 'dossiers',
@@ -2693,9 +2705,39 @@ export const bibliothequeModule: BlackModule = {
       return continueCircuit(record)
     }
 
+    /**
+     * **Le glossaire et les documents** : les termes qu'un document emploie (son titre et son texte,
+     * le terme ou son sigle, en mot entier), et les documents qui emploient un terme (ceux qui le
+     * citent, et ceux que le circuit y a reliés).
+     */
+    const glossaryItems = async (): Promise<(LinkSourceItem & { entry: LibraryEntry })[]> =>
+      (await entries.glossary.all()).map((entry) => ({ path: entry.path, label: entryTitle(entry), kind: 'glossary', names: [entry.name, entry.code ?? ''].filter(Boolean), entry }))
+    const docText = async (doc: LibraryDoc): Promise<string> => [doc.title, doc.reading === 'lue' ? ((await store.transcriptText(doc.record)) ?? '') : ''].join('\n')
+    const glossaryOf = async (record: string): Promise<{ path: string; label: string; definition: string }[]> => {
+      const doc = await store.load(record)
+      if (!doc) return []
+      const items = await glossaryItems()
+      if (!items.length) return []
+      // Dans l'ordre où le document les emploie ; puis ceux que le circuit y a reliés.
+      const found = new Set(findCandidates(await docText(doc), items, '', 200).map((candidate) => candidate.path))
+      for (const link of doc.links ?? []) if (items.some((item) => item.path === link)) found.add(link)
+      return [...found].map((path) => items.find((item) => item.path === path)!).map((item) => ({ path: item.path, label: item.label, definition: item.entry.description }))
+    }
+    const documentsUsing = async (path: string): Promise<{ record: string; title: string; detail: string }[]> => {
+      const item = (await glossaryItems()).find((each) => each.path === path)
+      if (!item) return []
+      const out: { record: string; title: string; detail: string }[] = []
+      for (const doc of await store.all()) {
+        const linked = (doc.links ?? []).includes(path)
+        if (linked || findCandidates(await docText(doc), [item], doc.record, 1).length) out.push({ record: doc.record, title: doc.title, detail: placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/'))) })
+      }
+      return out.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+    }
+
     registerLibraryHome(context.views, {
       t,
       store,
+      glossaryOf,
       explorer: explorerFor,
       movedTo: (record) => movedRecords.get(record),
       control: {
@@ -2942,10 +2984,14 @@ export const bibliothequeModule: BlackModule = {
           ...(kind === 'issuer'
             ? [{ kind: 'text' as const, key: 'code', label: t('bibliotheque.issuer.field.code'), required: true, value: current?.code ?? preset.code ?? '', placeholder: t('bibliotheque.issuer.field.code.placeholder'), description: t('bibliotheque.issuer.field.code.desc') }]
             : []),
-          { kind: 'text', key: 'name', label: t(kind === 'issuer' || kind === 'tag' ? `bibliotheque.${kind}.field.name` : 'bibliotheque.entry.field.name'), required: true, value: current?.name ?? preset.name ?? '', ...(kind === 'issuer' ? { placeholder: t('bibliotheque.issuer.field.name.placeholder') } : {}) },
+          { kind: 'text', key: 'name', label: t(kind === 'issuer' || kind === 'tag' || kind === 'glossary' ? `bibliotheque.${kind}.field.name` : 'bibliotheque.entry.field.name'), required: true, value: current?.name ?? preset.name ?? '', ...(kind === 'issuer' || kind === 'glossary' ? { placeholder: t(`bibliotheque.${kind}.field.name.placeholder`) } : {}) },
+          // Un terme du glossaire : son sigle ou son abréviation, s'il en a un.
+          ...(kind === 'glossary'
+            ? [{ kind: 'text' as const, key: 'code', label: t('bibliotheque.glossary.field.code'), value: current?.code ?? preset.code ?? '', placeholder: t('bibliotheque.glossary.field.code.placeholder'), description: t('bibliotheque.glossary.field.code.desc') }]
+            : []),
           { kind: 'text', key: 'category', label: t('bibliotheque.entry.field.category'), value: current?.category ?? '', ...(categories.length ? { description: t('bibliotheque.entry.field.category.known', { list: categories.join(', ') }) } : {}) },
-          { kind: 'text', key: 'description', label: t('bibliotheque.entry.field.description'), value: current?.description ?? '', placeholder: t(`bibliotheque.${kind}.field.description.placeholder`) },
-          { kind: 'textarea', key: 'text', label: t(`bibliotheque.${kind}.text`), required: kind !== 'issuer' && kind !== 'tag', value: current?.text ?? '', placeholder: t(`bibliotheque.${kind}.field.text.placeholder`), tooltip: t(`bibliotheque.${kind}.field.text.tip`) },
+          { kind: kind === 'glossary' ? ('textarea' as const) : ('text' as const), key: 'description', label: t(kind === 'glossary' ? 'bibliotheque.glossary.field.description' : 'bibliotheque.entry.field.description'), required: kind === 'glossary', value: current?.description ?? '', placeholder: t(`bibliotheque.${kind}.field.description.placeholder`) },
+          { kind: 'textarea', key: 'text', label: t(`bibliotheque.${kind}.text`), required: kind !== 'issuer' && kind !== 'tag' && kind !== 'glossary', value: current?.text ?? '', placeholder: t(`bibliotheque.${kind}.field.text.placeholder`), tooltip: t(`bibliotheque.${kind}.field.text.tip`) },
           { kind: 'toggle', key: 'favorite', label: t('bibliotheque.entry.favorite'), value: current?.favorite ?? false, tooltip: t(`bibliotheque.${kind}.field.favorite.tip`) },
           // Un skill exécutable : ce qu'il reçoit, ce qu'il rend, son seuil.
           ...(kind === 'skill' ? skillFormFields(current) : [])
@@ -2955,8 +3001,8 @@ export const bibliothequeModule: BlackModule = {
       const name = values?.name?.trim()
       const text = values?.text?.trim() ?? ''
       const code = (values?.code ?? '').trim().replace(/\s+/g, ' ')
-      if (!values || !name || (!text && kind !== 'issuer' && kind !== 'tag') || (kind === 'issuer' && !code)) return null
-      return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true', ...(kind === 'issuer' ? { code } : {}), ...(kind === 'skill' ? skillDraft(values) : {}) }
+      if (!values || !name || (!text && kind !== 'issuer' && kind !== 'tag' && kind !== 'glossary') || (kind === 'issuer' && !code) || (kind === 'glossary' && !(values.description ?? '').trim())) return null
+      return { name, text, category: (values.category ?? '').trim(), description: (values.description ?? '').trim(), favorite: values.favorite === 'true', ...(kind === 'issuer' || (kind === 'glossary' && code) ? { code } : {}), ...(kind === 'skill' ? skillDraft(values) : {}) }
     }
     /** Les champs d'un skill exécutable : un interrupteur par contexte, la sortie, le seuil. */
     const skillFormFields = (current?: LibraryEntry): FormField[] => [
@@ -3060,6 +3106,8 @@ export const bibliothequeModule: BlackModule = {
       return path
     }
     registerEntriesHome(context.views, {
+      documentsUsing,
+      showDocument: (record: string) => showPage?.(docPageOf(record)),
       explorer: explorerFor,
       t,
       stores: entries,
