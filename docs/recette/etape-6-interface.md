@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les étapes du circuit en couleur, « Continuer le circuit » (v0.140.0)
+
+- [ ] IA réglée, mais en panne à l'analyse : verser un document — dans **Circuit**, la section « Les
+      étapes du circuit, document par document » : Versé et Ingérer en vert, **Analyser en rouge**
+      (l'erreur du serveur dite), Ranger en gris ; la fiche dit « échec » dans sa section Circuit
+- [ ] L'IA revient : **Continuer le circuit** — analysé puis rangé, sans relire le texte une seconde fois
+- [ ] Un document à contrôler avec une proposition : **Ranger en orange**, « À décider », la proposition
+      dite ; **Continuer le circuit** redemande le rangement à l'IA
+- [ ] **Tout continuer (n)** : chaque document qui attend (pas ceux à contrôler)
+- [ ] Le circuit désactivé, ou sans IA : le bouton grisé, son infobulle dit pourquoi
+- [ ] La fiche d'un document : **Modifier…** (et non plus « Classer… ») ouvre la fenêtre « Modifier « … » »
+
 ## La bibliothèque « Circuit » (v0.139.0)
 
 - [ ] L'accueil de la bibliothèque : une carte **Circuit** (icône du circuit), avec le nombre de

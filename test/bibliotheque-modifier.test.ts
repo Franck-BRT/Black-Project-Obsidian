@@ -5,7 +5,7 @@
  * Modifier un champ de la fiche d'un document, seul : dans la section *Identification*,
  * chaque champ a un bouton (à gauche de son icône) qui ouvre une petite fenêtre. Enregistré,
  * le champ est confirmé — plus « à confirmer », plus « identifié par l'IA ». Le lieu ouvre
- * *Déplacer…*, la langue *Langue…*, ce qui reste à confirmer de la référence *Classer…*.
+ * *Déplacer…*, la langue *Langue…*, ce qui reste à confirmer de la référence *Modifier…*.
  */
 
 import { afterEach, describe, expect, it } from 'vitest'

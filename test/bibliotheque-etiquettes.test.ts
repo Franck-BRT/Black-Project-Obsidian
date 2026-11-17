@@ -88,7 +88,7 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(doc.tagsToConfirm).toBeUndefined()
   })
 
-  it('pas sûres : à confirmer — « Prendre ces étiquettes », ou aucune, ou « Classer… »', async () => {
+  it('pas sûres : à confirmer — « Prendre ces étiquettes », ou aucune, ou « Modifier… »', async () => {
     const platform = memoryPlatform()
     const { page, pour } = await start(platform, [lectureFichiersModule, bibliothequeModule])
     const doc = await pour('Rapport.txt', TEXT)
@@ -97,7 +97,7 @@ describe('à l’entrée, et sur la fiche', () => {
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Étiquettes à confirmer'))
     expect(message).toMatchObject({ tone: 'warning', text: 'Étiquettes à confirmer : le texte du document suggère « antenne, maintenance, station » (lu sans certitude).' })
-    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre ces étiquettes', 'Pas d’étiquettes', 'Classer…'])
+    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre ces étiquettes', 'Pas d’étiquettes', 'Modifier…'])
     expect((await page('bibliotheque.documents').load()).filters?.map((filter) => filter.id)).toContain('etiquettes-a-confirmer')
     await (message?.kind === 'message' ? message.actions![0]!.run() : null)
     expect(platform.notices.at(-1)).toBe('Étiquettes confirmées : antenne, maintenance, station.')
@@ -106,7 +106,7 @@ describe('à l’entrée, et sur la fiche', () => {
     const other = await pour('Maquette.dwg', 'binaire')
     const view = await page('bibliotheque.document').load(encodeURIComponent(other.record))
     const none = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Étiquettes à confirmer'))
-    expect(none?.kind === 'message' && none.actions!.map((action) => action.label)).toEqual(['Pas d’étiquettes', 'Classer…'])
+    expect(none?.kind === 'message' && none.actions!.map((action) => action.label)).toEqual(['Pas d’étiquettes', 'Modifier…'])
     await (none?.kind === 'message' ? none.actions![0]!.run() : null)
     expect(platform.notices.at(-1)).toBe('« Maquette » : sans étiquettes.')
     expect(read(platform, other.record)).not.toMatch(/etiquettesAConfirmer/)

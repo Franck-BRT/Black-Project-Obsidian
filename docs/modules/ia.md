@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.32.3 (Black Projects 0.138.0) |
+| Version | 0.32.4 (Black Projects 0.140.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,12 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## L'échec d'une étape du circuit, dit sur la fiche (v0.32.4, Black Projects 0.140.0)
+
+- `ia.executer-skill` : une erreur (l'IA injoignable, le serveur, un skill absent) est écrite sur la
+  fiche du document du circuit (`markCircuitError`) avant d'être levée — l'étape s'y montre en rouge,
+  « Continuer le circuit » la reprend.
 
 ## Les entités proposées (v0.32.3, Black Projects 0.138.0)
 

@@ -5,13 +5,32 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.57.0 (Black Projects 0.139.0) |
+| Version | 0.58.0 (Black Projects 0.140.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les étapes du circuit, en couleur ; « Continuer le circuit » (v0.58.0, Black Projects 0.140.0)
+
+- `circuitSteps.ts` : `circuitSteps(t, doc, place)` — Versé, Ingérer, Analyser, Ranger, chacune
+  `done` (vert), `waiting` (orange), `decide` (orange : à contrôler avec une proposition), `failed`
+  (rouge `rose` : l'erreur, ou à contrôler sans proposition), `later` (gris) ; `circuitJourney` en
+  fait un bloc `journey` (pastille de l'état, légende sur la fiche, boutons) ; `inCircuit(doc)`.
+- L'échec d'une étape : `LibraryDoc.circuitError` (`circuit-erreur`), écrit par `markCircuitError`
+  (l'action `ia.executer-skill` qui échoue), avec une ligne « échec » dans la section Circuit ;
+  `setCircuit` l'oublie dès qu'une étape passe.
+- `ControlDeps.cannotContinue` / `continueCircuit` / `continueAll` : l'échec oublié, le workflow du
+  circuit relancé (`runSystemWorkflow`) ; à contrôler : remis « analysé », le rangement redemandé
+  (le workflow coupé : il reste à contrôler, et c'est dit). « Tout continuer » : ceux qui attendent.
+- Où : la fiche (après le message À contrôler), la bibliothèque « Circuit » (section
+  `bibliotheque.circuit.etapes`, légende et « Tout continuer »), la page À contrôler (« En cours dans
+  le circuit » : un parcours par document, avec « Ranger moi-même… » ; les cartes à contrôler :
+  « Continuer le circuit »).
+- Le bloc `journey` a des `actions` (des boutons sous ses étapes).
+- Le bouton « Classer… » de la fiche s'appelle **Modifier…** (sa fenêtre : « Modifier « … » »).
 
 ## La bibliothèque « Circuit » (v0.57.0, Black Projects 0.139.0)
 

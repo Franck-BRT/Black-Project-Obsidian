@@ -29,7 +29,7 @@ origines s'ajoutent). Une fiche sans empreinte (écrite à la main) est reconnue
   présentations, images, messages, notes, autres), son **type de pièce** — reconnu au nom du
   fichier et au début du texte (CCTP, RC, BPU… : la liste du module *Typage des pièces*, vos
   types compris), ou donné par l'analyse —,
-  sa référence, son édition, sa révision, sa date, son entreprise, ses étiquettes : **Classer…**
+  sa référence, son édition, sa révision, sa date, son entreprise, ses étiquettes : **Modifier…**
   pour tout reprendre, ou le **crayon** à gauche d'un champ pour ne modifier que lui (il est
   alors confirmé ; le crayon de *Rangé* ouvre *Déplacer…*, celui de *Langue*, *Langue…*) ;
   le bouton à côté du crayon **relance la recherche** de ce champ dans le document — sans
@@ -280,7 +280,19 @@ la page **À contrôler** les montre, et sa fiche aussi. Pour chacun :
 - **Accepter** : il est rangé dans le dossier proposé ;
 - **Choisir ailleurs…** : les autres propositions de l'IA d'abord, puis tous les dossiers ;
 - **Écarter** : mis de côté dans les retirés (rien n'est effacé) ;
+- **Continuer le circuit** : redemander le rangement à l'IA — après avoir complété la fiche
+  (**Modifier…** : type de pièce, entreprise…), par exemple ;
 - ou le laisser là, pour plus tard.
+
+**Les étapes du circuit**, en couleur : pour chaque document encore dans **À classer** ou **À
+contrôler** — sur sa fiche, sur la page de la bibliothèque **Circuit** (« Les étapes du circuit,
+document par document ») et dans **En cours dans le circuit** —, ses quatre étapes : **Versé**,
+**Ingérer**, **Analyser**, **Ranger**. **Vert** : faite ; **orange** : en attente, ou à votre
+décision (la proposition de l'IA est dite) ; **rouge** : en échec (l'IA injoignable, une erreur du
+serveur : l'erreur est dite), ou à contrôler sans proposition ; **gris** : à venir. Le bouton
+**Continuer le circuit** reprend là où il s'est arrêté (les étapes faites ne sont pas refaites) ;
+**Tout continuer** le fait pour tous ceux qui attendent (pas ceux à contrôler). Grisé, il dit
+pourquoi : pas d'IA réglée, ou le circuit désactivé.
 
 Chaque décision s'écrit sur la fiche, dans la section **Circuit** (« rangé dans Normes
 (confiance 93 %) », « Contrôlé — proposition acceptée »). Une note `Bibliothèque/Règles de
@@ -296,7 +308,7 @@ elle est donnée — un badge *Français* sur sa carte. Sinon — texte trop cou
 bilingue, fichier dont le texte n'est pas lu —, il n'y a **pas de langue** : elle est **à
 confirmer** (badge orange). Sur sa fiche, **Confirmer : …** donne d'un clic la langue la
 plus probable ; **Langue…** en choisit une, la détecte de nouveau, ou dit « sans langue ».
-« Classer… » permet aussi de la choisir. Filtres par langue, et « Regrouper par ›
+« Modifier… » permet aussi de la choisir. Filtres par langue, et « Regrouper par ›
 Langue ». Une image n'a pas de langue à confirmer.
 
 Quand la détection sans IA n'est pas sûre et que l'{{link:Modules/IA|IA}} est réglée, une
@@ -307,14 +319,14 @@ reste à confirmer.
 **Le titre** est lu à l'entrée lui aussi : dit par le document (« Titre : … », « Objet :
 … », un titre de note « # … »), il remplace celui tiré du nom du fichier. Sinon il reste
 celui du nom du fichier, **à confirmer** : la fiche propose le titre lu au début du
-document (**Prendre « … »**), **Garder le titre actuel**, ou **Classer…** ; l'IA, si elle
+document (**Prendre « … »**), **Garder le titre actuel**, ou **Modifier…** ; l'IA, si elle
 est réglée, le cherche d'abord. Filtre *Titre à confirmer*.
 
 **Le type de pièce** aussi (l'ancienne « catégorie ») — dans la liste du module *Typage des
 pièces*, vos types compris : donné par l'analyse (le type d'une pièce), dit par le document
 (« Type de document : »), ou le nom du fichier et le texte d'accord : il est sûr. Sinon
 celui du nom du fichier reste, **à confirmer** : la fiche propose celui que le texte suggère
-(**Prendre « CCTP »**), **Garder le type actuel**, ou **Classer…** ; l'IA, si elle
+(**Prendre « CCTP »**), **Garder le type actuel**, ou **Modifier…** ; l'IA, si elle
 est réglée, choisit d'abord dans la liste des types. Le crayon du champ ouvre la liste. Un
 type **hors de la liste** (une ancienne catégorie) est dit tel ; le bouton **+** de sa ligne
 l'ajoute aux types de pièce du module *Typage des pièces* (un code proposé) : il devient le
@@ -330,7 +342,7 @@ y ajoute.
 
 **Les étiquettes** aussi : dites par le document (« Mots-clés : », « Étiquettes : »), elles
 sont données. Sinon elles sont **à confirmer** : la fiche propose les mots qui reviennent le
-plus au début du texte (**Prendre ces étiquettes**), **Pas d'étiquettes**, ou **Classer…** ;
+plus au début du texte (**Prendre ces étiquettes**), **Pas d'étiquettes**, ou **Modifier…** ;
 l'IA, si elle est réglée, en donne d'abord de 3 à 6, en reprenant celles déjà employées dans
 la bibliothèque. Filtre *Étiquettes à confirmer*.
 
@@ -338,7 +350,7 @@ la bibliothèque. Filtre *Étiquettes à confirmer*.
 dite par le document (« Date : », « Émis le », « Toulouse, le 1er mars 2026 »), ou le nom du
 fichier et le texte d'accord, elle est donnée. Sinon elle est **à confirmer** : la fiche
 propose la première date du texte — jamais une date limite ou une échéance — (**Prendre
-« 12 février 2026 »**), **Pas de date**, ou **Classer…**, où on l'écrit comme on veut
+« 12 février 2026 »**), **Pas de date**, ou **Modifier…**, où on l'écrit comme on veut
 (« 12/02/2026 », « 12 février 2026 ») ; l'IA, si elle est réglée, la cherche d'abord.
 Filtre *Date à confirmer*.
 
@@ -349,7 +361,7 @@ européenne ») — et, s'il le faut, les autres noms sous lesquels elle signe, 
 `Bibliothèque/Entreprises` (un coffre qui avait encore `Bibliothèque/Émetteurs` le voit renommé
 à l'ouverture, ses notes avec). L'entreprise
 d'un document y est **reconnue** (son nom, un autre nom, ou son code en tête du document),
-**s'y choisit** (le crayon du champ, *Classer…* : une liste, et « ＋ Ajouter une entreprise à
+**s'y choisit** (le crayon du champ, *Modifier…* : une liste, et « ＋ Ajouter une entreprise à
 la liste… », son nom proposé) et se lit « ESA — Agence spatiale européenne ». Une entreprise
 **hors de la liste** est dite telle sur la fiche ; le bouton **+** de sa ligne l'y ajoute (son
 nom et un code proposés — « TAS » pour Thales Alenia Space) : elle devient l'entreprise du
@@ -368,13 +380,13 @@ bibliothèques, **Déplacer…**, **Retirer**, **Supprimer**.
 **L'entreprise** aussi : dite par le document (« Émetteur : », « Émis par », « Pouvoir
 adjudicateur : »…), elle est donnée. Sinon elle est **à confirmer** : la fiche propose
 l'organisme lu au début du document (**Prendre « … »**), **Pas d'entreprise**, ou
-**Classer…** ; l'IA, si elle est réglée, la cherche d'abord. Filtre *Entreprise à confirmer*.
+**Modifier…** ; l'IA, si elle est réglée, la cherche d'abord. Filtre *Entreprise à confirmer*.
 
 **La référence et la version** (édition, révision) sont aussi lues à l'entrée : au début du
 document (« Réf. : … », « Édition 2 », « Indice B », « Version 2.1 »), sinon dans le nom du
 fichier. Lues clairement dans le document : données. Sinon, elles sont **à confirmer** —
 l'IA, si elle est réglée, les cherche ; sur la fiche, **C'est juste** les confirme telles
-quelles, ou **Classer…** les corrige. Filtre *Référence et version à confirmer*.
+quelles, ou **Modifier…** les corrige. Filtre *Référence et version à confirmer*.
 
 ## 8. Les fantômes
 

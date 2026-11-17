@@ -611,11 +611,13 @@ export class LibraryStore {
    * L'état d'un document dans le circuit, changé (une clé à `undefined` : ôtée), et une ligne
    * de plus dans l'historique de sa note (`history` : le titre de la section, la ligne).
    */
-  async setCircuit(record: string, patch: Partial<Pick<LibraryDoc, 'circuit' | 'circuitReason' | 'circuitProposal' | 'circuitConfidence' | 'circuitAlternatives' | 'circuitProject'>>, history?: { heading: string; line: string }): Promise<LibraryDoc | null> {
+  async setCircuit(record: string, patch: Partial<Pick<LibraryDoc, 'circuit' | 'circuitReason' | 'circuitProposal' | 'circuitConfidence' | 'circuitAlternatives' | 'circuitProject' | 'circuitError'>>, history?: { heading: string; line: string }): Promise<LibraryDoc | null> {
     const { fs, yaml } = this.deps
     const doc = await this.load(record)
     if (!doc) return null
     const next: LibraryDoc = { ...doc }
+    // Une étape qui passe (tout changement qui ne dit rien de l'échec) : l'échec d'avant est oublié.
+    if (!('circuitError' in patch)) delete next.circuitError
     for (const [key, value] of Object.entries(patch) as [keyof typeof patch, unknown][]) {
       if (value === undefined) delete next[key]
       else (next as unknown as Record<string, unknown>)[key] = value

@@ -39,6 +39,7 @@ import { allPlaces, placePageOf, type ShelfPlacesDeps } from './places'
 import { archive, ARCHIVE_FILES, archiveName, EXCHANGE_FORMAT, MANIFEST, readManifest, WHOLE, type Manifest, type WholePart } from './exchange'
 import type { ZipEntry } from '../../core/formats/zip'
 import { isLanguage, LANGUAGES, type LanguageCode } from './language'
+import { inCircuit } from './circuitSteps'
 import { builtInShelf, defaultShelfOf, folderName, REFERENCE_SHELF, severalShelves, shelfOfPath, SHELF_KINDS, shelvesOf, withDefaultShelf, withoutShelf, withShelf, type Shelf, type ShelfKind } from './shelves'
 import { batchSubject, depositSubject, dropDeposit, holdDeposit, knownSubject, registerLibraryWorkflows, SYS_FILES, SYS_GHOST, SYS_VERSIONS, TRIGGER_BATCH, TRIGGER_DEPOSITED, TRIGGER_KNOWN, type Deposit } from './workflows'
 
@@ -118,6 +119,7 @@ let active: {
   applyFiling(record: string, decision: FilingDecision | null, threshold: number, skill: string): Promise<FilingOutcome | null>
   applyAnalysis(record: string, decision: AnalysisDecision | null, threshold: number, skill: string): Promise<string | null>
   markIngested(record: string, skill: string, detail: string): Promise<void>
+  markCircuitError(record: string, skill: string, error: string): Promise<void>
   circuitActive(): boolean
   /** Les skills du circuit (ingérer, analyser, ranger) : ajoutés s'ils manquent. */
   ensureCircuitSkills(): Promise<void>
@@ -462,6 +464,7 @@ export async function applyFilingDecision(record: string, decision: FilingDecisi
 }
 
 export { ANALYSIS_SCHEMA, DEFAULT_THRESHOLD, FILING_SCHEMA, readAnalysisAnswer, readFilingAnswer, readThreshold, thresholdLabel, type AnalysisDecision, type FilingDecision } from './skills'
+export { circuitJourney, circuitSteps, inCircuit, type CircuitStep, type CircuitStepState } from './circuitSteps'
 
 /**
  * Une analyse (rendue par un skill) : le projet reconnu gardé sur la fiche (s'il existe), pour
@@ -476,6 +479,11 @@ export async function applyAnalysisDecision(record: string, decision: AnalysisDe
 /** L'ingestion d'un document faite (sa relecture, `detail`) : l'état devient « ingéré » (dans le circuit), dit sur sa fiche. */
 export async function markIngested(record: string, skill: string, detail: string): Promise<void> {
   await active?.markIngested(record, skill, detail)
+}
+
+/** Une étape du circuit a échoué (l'IA injoignable, une erreur du serveur) : dit sur sa fiche, l'étape montrée en rouge. */
+export async function markCircuitError(record: string, skill: string, error: string): Promise<void> {
+  await active?.markCircuitError(record, skill, error)
 }
 
 /** L'IA a-t-elle déjà relu le texte de ce document (une version du texte « relue par l'IA ») ? */
@@ -1041,7 +1049,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.57.0',
+  version: '0.58.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1279,6 +1287,12 @@ export const bibliothequeModule: BlackModule = {
         const doc = await store.load(record)
         if (!doc) return
         await store.setCircuit(record, doc.circuit === 'a-classer' ? { circuit: 'ingere' } : {}, circuitLine('bibliotheque.circuit.line.ingested', { skill, detail }))
+        pagesChanged()
+      },
+      markCircuitError: async (record, skill, error) => {
+        const doc = await store.load(record)
+        if (!doc?.circuit) return
+        await store.setCircuit(record, { circuitError: error }, circuitLine('bibliotheque.circuit.line.failed', { skill, error }))
         pagesChanged()
       },
       circuitActive: () => circuitOn(settings.get()),
@@ -1977,6 +1991,48 @@ export const bibliothequeModule: BlackModule = {
       pagesChanged()
       return true
     }
+    /** Pourquoi on ne peut pas continuer le circuit (le réglage coupé, pas d'IA) ; `null` : on peut. */
+    const cannotContinue = (): string | null =>
+      settings.get()[CIRCUIT_KEY] === false ? t('bibliotheque.circuit.continue.off') : aiCircuitReady?.() === true ? null : t('bibliotheque.circuit.continue.noAi')
+    /**
+     * Continuer le circuit d'un document, là où il s'est arrêté : son échec oublié, le workflow du
+     * circuit relancé (les étapes faites sont passées). À contrôler : le rangement redemandé à l'IA
+     * (s'il ne peut pas l'être — le workflow coupé —, il reste à contrôler).
+     */
+    const continueCircuit = async (record: string, quiet = false): Promise<boolean> => {
+      if (cannotContinue()) return false
+      const doc = await store.load(record)
+      if (!doc || !inCircuit(doc)) return false
+      await ensureCircuitSkills()
+      const control = doc.circuit === 'a-controler'
+      const ready = await store.setCircuit(
+        record,
+        { ...(control ? { circuit: 'analyse' as const, circuitReason: undefined, circuitProposal: undefined, circuitConfidence: undefined, circuitAlternatives: undefined } : {}), circuitError: undefined },
+        circuitLine('bibliotheque.circuit.line.continued', {})
+      )
+      if (!ready) return false
+      pagesChanged()
+      if (!quiet) platform.notifier.notify(t('bibliotheque.circuit.continued', { title: doc.title }), 5000)
+      const subject = pouredSubject(ready, await knownIssuers())
+      const run = runSystemWorkflow(CIRCUIT_WORKFLOW, TRIGGER_POURED, { ...subject, vars: { ...subject.vars, relance: t('bibliotheque.read.yes') } })
+      // Un workflow s'exécute déjà : sans l'attendre (il le bloquerait), le circuit passera à la suite.
+      if (workflowRunning()) return true
+      const ran = await run
+      if (!ran && control) {
+        await store.setCircuit(record, { circuit: 'a-controler', circuitReason: doc.circuitReason, circuitProposal: doc.circuitProposal, circuitConfidence: doc.circuitConfidence, circuitAlternatives: doc.circuitAlternatives })
+        platform.notifier.notify(t('bibliotheque.circuit.continue.notRun'), 6000)
+      }
+      pagesChanged()
+      return ran
+    }
+    /** Continuer le circuit de tous ceux qui attendent (pas ceux à contrôler : ils attendent votre décision). */
+    const continueAll = async (): Promise<number> => {
+      if (cannotContinue()) return 0
+      const waiting = (await store.all()).filter((doc) => inCircuit(doc) && doc.circuit !== 'a-controler')
+      for (const doc of waiting) await continueCircuit(doc.record, true)
+      if (waiting.length) platform.notifier.notify(t('bibliotheque.circuit.continuedAll', { count: waiting.length }), 5000)
+      return waiting.length
+    }
     /** Les documents à contrôler. */
     const toControl = async (): Promise<LibraryDoc[]> => (await store.all()).filter((doc) => doc.circuit === 'a-controler')
 
@@ -2550,7 +2606,10 @@ export const bibliothequeModule: BlackModule = {
         discard: discardControlled,
         entities: allProposals,
         createEntity: createProposed,
-        dismissEntity: dismissProposed
+        dismissEntity: dismissProposed,
+        cannotContinue,
+        continueCircuit: (record) => continueCircuit(record),
+        continueAll
       },
       today: localToday,
       locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR',

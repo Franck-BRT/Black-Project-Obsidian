@@ -573,6 +573,13 @@ function Journey({ block, t, narrowed }: { block: Extract<HomeBlock, { kind: 'jo
         </div>
       )}
       {open && block.legend && <p class="bp-journey-legend">{block.legend}</p>}
+      {open && !compact && block.actions && block.actions.length > 0 && (
+        <div class="bp-journey-actions">
+          {block.actions.map((action) => (
+            <ActionButton key={action.id} action={action} />
+          ))}
+        </div>
+      )}
     </figure>
   )
 }

@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem, PageImages } from '../../core/ports'
-import { aiProofreadAlready, ANALYSIS_SCHEMA, applyAnalysisDecision, applyFilingDecision, DEFAULT_THRESHOLD, libraryEntries, linkCandidatesFor, FILING_SCHEMA, filingFolders, markIngested, readAnalysisAnswer, readFilingAnswer, readThreshold, skillContextFor, thresholdLabel, IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { aiProofreadAlready, ANALYSIS_SCHEMA, applyAnalysisDecision, applyFilingDecision, DEFAULT_THRESHOLD, libraryEntries, linkCandidatesFor, FILING_SCHEMA, filingFolders, markCircuitError, markIngested, readAnalysisAnswer, readFilingAnswer, readThreshold, skillContextFor, thresholdLabel, IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
 import { actionSpec, registerAction } from '../workflows'
 import type { AiClient } from './client'
@@ -755,85 +755,91 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       const doc = record ? await libraryDoc(record) : null
       const done = (text: string, decision = '', confiance = '', fiche = record) => ({ lines: [text], results: { text, decision, confiance, fiche } })
       if (!doc) return done(t('ia.wf.language.noDoc', { record }))
-      const skill = await namedEntry('skill', fields.skill)
-      if (!skill) throw new Error(t('ia.wf.skill.none'))
-      // Les consignes du skill (sa procédure) arrivent par `guidance`, avec le persona choisi.
-      const ai = client()?.withInstructions(guidance)
-      if (!ai) throw new Error(t('ia.unavailable'))
-      const threshold = readThreshold(fields.seuil) ?? skill.threshold ?? DEFAULT_THRESHOLD
-      // L'ingestion : le texte relu par l'IA (la procédure du skill guide la relecture) — sauf s'il l'a déjà été, ou si le document a passé cette étape.
-      if (skill.output === 'ingestion') {
-        if (doc.circuit && doc.circuit !== 'a-classer') return done(t('ia.wf.skill.ingested.already', { title: doc.title }), 'ingere')
-        // Le seul endroit où un document du circuit est relu (les workflows de relecture l'écartent).
-        const scan = doc.reading === 'sans-texte' || doc.reading === 'image'
-        let detail: string
-        if (await aiProofreadAlready(record)) detail = t('ia.wf.skill.ingested.read')
-        else if (doc.reading !== 'lue' && !scan) detail = t('ia.wf.skill.ingested.noText')
-        else {
-          const proofread = actionSpec('ia.relire-texte')
-          const outcome = proofread ? await proofread.run({ ...context, fields: { fiche: record, mode: 'auto', skill: skill.name } }) : null
-          detail = outcome?.lines.at(-1) ?? t('ia.wf.skill.ingested.read')
-        }
-        await markIngested(record, skill.name, detail)
-        return done(t('ia.wf.skill.ingested', { title: doc.title, detail }), 'ingere')
-      }
-      const skillContext = await skillContextFor(record, skill.context ?? [])
-      const user = [t('ia.wf.skill.document', { title: doc.title }), skillContext].filter(Boolean).join('\n\n')
-      // L'analyse : type de pièce, émetteur, projet — relue, puis appliquée (ce qui est sûr) ; illisible : rien, le circuit continue.
-      if (skill.output === 'analyse') {
-        if (doc.circuit && doc.circuit !== 'a-classer' && doc.circuit !== 'ingere') return done(t('ia.wf.skill.analysed.already', { title: doc.title }), 'analyse')
-        let answer: unknown = null
-        try {
-          answer = await ai.chatJson<unknown>({ messages: [{ role: 'system', content: t('ia.wf.skill.system.analyse') }, { role: 'user', content: user }], temperature: 0, schema: ANALYSIS_SCHEMA })
-        } catch (error) {
-          if (!(error instanceof LlmError && error.kind === 'shape')) throw new Error(describe(error))
-        }
-        const decision = readAnalysisAnswer(answer, { types: libraryPieceTypes(), issuers: await libraryIssuers(), candidates: await linkCandidatesFor(record), persons: (await libraryEntries('person')).map((entry) => entry.name) })
-        const text = (await applyAnalysisDecision(record, decision, threshold, skill.name)) ?? t('ia.wf.language.noDoc', { record })
-        return done(text, 'analyse', String(decision?.confidence ?? 0))
-      }
-      if (skill.output === 'rangement') {
-        let answer: unknown = null
-        try {
-          answer = await ai.chatJson<unknown>({
-            messages: [
-              { role: 'system', content: t('ia.wf.skill.system.rangement') },
-              { role: 'user', content: user }
-            ],
-            temperature: 0,
-            schema: FILING_SCHEMA
-          })
-        } catch (error) {
-          // Une réponse qui n'est pas le JSON demandé : illisible, donc pas sûre (À contrôler). Le reste (serveur…) : l'étape échoue.
-          if (!(error instanceof LlmError && error.kind === 'shape')) throw new Error(describe(error))
-        }
-        const decision = readFilingAnswer(answer, (await filingFolders()).map((each) => each.folder))
-        const outcome = await applyFilingDecision(record, decision, threshold, skill.name)
-        if (!outcome) {
-          const text = t('ia.wf.language.noDoc', { record })
-          return { lines: [text], results: { text, decision: '', confiance: '', fiche: record } }
-        }
-        return {
-          lines: [outcome.message, ...(outcome.outcome === 'a-controler' ? [t('ia.wf.skill.threshold', { threshold: thresholdLabel(threshold) })] : [])],
-          paths: [outcome.record],
-          results: { text: outcome.message, decision: outcome.outcome, confiance: String(decision?.confidence ?? 0), fiche: outcome.record }
-        }
-      }
-      let text: string
       try {
-        text = (
-          await ai.chat({
-            messages: [
-              { role: 'system', content: t('ia.wf.system') },
-              { role: 'user', content: user }
-            ],
-            temperature: 0.2
-          })
-        ).trim()
+        const skill = await namedEntry('skill', fields.skill)
+        if (!skill) throw new Error(t('ia.wf.skill.none'))
+        // Les consignes du skill (sa procédure) arrivent par `guidance`, avec le persona choisi.
+        const ai = client()?.withInstructions(guidance)
+        if (!ai) throw new Error(t('ia.unavailable'))
+        const threshold = readThreshold(fields.seuil) ?? skill.threshold ?? DEFAULT_THRESHOLD
+        // L'ingestion : le texte relu par l'IA (la procédure du skill guide la relecture) — sauf s'il l'a déjà été, ou si le document a passé cette étape.
+        if (skill.output === 'ingestion') {
+          if (doc.circuit && doc.circuit !== 'a-classer') return done(t('ia.wf.skill.ingested.already', { title: doc.title }), 'ingere')
+          // Le seul endroit où un document du circuit est relu (les workflows de relecture l'écartent).
+          const scan = doc.reading === 'sans-texte' || doc.reading === 'image'
+          let detail: string
+          if (await aiProofreadAlready(record)) detail = t('ia.wf.skill.ingested.read')
+          else if (doc.reading !== 'lue' && !scan) detail = t('ia.wf.skill.ingested.noText')
+          else {
+            const proofread = actionSpec('ia.relire-texte')
+            const outcome = proofread ? await proofread.run({ ...context, fields: { fiche: record, mode: 'auto', skill: skill.name } }) : null
+            detail = outcome?.lines.at(-1) ?? t('ia.wf.skill.ingested.read')
+          }
+          await markIngested(record, skill.name, detail)
+          return done(t('ia.wf.skill.ingested', { title: doc.title, detail }), 'ingere')
+        }
+        const skillContext = await skillContextFor(record, skill.context ?? [])
+        const user = [t('ia.wf.skill.document', { title: doc.title }), skillContext].filter(Boolean).join('\n\n')
+        // L'analyse : type de pièce, émetteur, projet — relue, puis appliquée (ce qui est sûr) ; illisible : rien, le circuit continue.
+        if (skill.output === 'analyse') {
+          if (doc.circuit && doc.circuit !== 'a-classer' && doc.circuit !== 'ingere') return done(t('ia.wf.skill.analysed.already', { title: doc.title }), 'analyse')
+          let answer: unknown = null
+          try {
+            answer = await ai.chatJson<unknown>({ messages: [{ role: 'system', content: t('ia.wf.skill.system.analyse') }, { role: 'user', content: user }], temperature: 0, schema: ANALYSIS_SCHEMA })
+          } catch (error) {
+            if (!(error instanceof LlmError && error.kind === 'shape')) throw new Error(describe(error))
+          }
+          const decision = readAnalysisAnswer(answer, { types: libraryPieceTypes(), issuers: await libraryIssuers(), candidates: await linkCandidatesFor(record), persons: (await libraryEntries('person')).map((entry) => entry.name) })
+          const text = (await applyAnalysisDecision(record, decision, threshold, skill.name)) ?? t('ia.wf.language.noDoc', { record })
+          return done(text, 'analyse', String(decision?.confidence ?? 0))
+        }
+        if (skill.output === 'rangement') {
+          let answer: unknown = null
+          try {
+            answer = await ai.chatJson<unknown>({
+              messages: [
+                { role: 'system', content: t('ia.wf.skill.system.rangement') },
+                { role: 'user', content: user }
+              ],
+              temperature: 0,
+              schema: FILING_SCHEMA
+            })
+          } catch (error) {
+            // Une réponse qui n'est pas le JSON demandé : illisible, donc pas sûre (À contrôler). Le reste (serveur…) : l'étape échoue.
+            if (!(error instanceof LlmError && error.kind === 'shape')) throw new Error(describe(error))
+          }
+          const decision = readFilingAnswer(answer, (await filingFolders()).map((each) => each.folder))
+          const outcome = await applyFilingDecision(record, decision, threshold, skill.name)
+          if (!outcome) {
+            const text = t('ia.wf.language.noDoc', { record })
+            return { lines: [text], results: { text, decision: '', confiance: '', fiche: record } }
+          }
+          return {
+            lines: [outcome.message, ...(outcome.outcome === 'a-controler' ? [t('ia.wf.skill.threshold', { threshold: thresholdLabel(threshold) })] : [])],
+            paths: [outcome.record],
+            results: { text: outcome.message, decision: outcome.outcome, confiance: String(decision?.confidence ?? 0), fiche: outcome.record }
+          }
+        }
+        let text: string
+        try {
+          text = (
+            await ai.chat({
+              messages: [
+                { role: 'system', content: t('ia.wf.system') },
+                { role: 'user', content: user }
+              ],
+              temperature: 0.2
+            })
+          ).trim()
+        } catch (error) {
+          throw new Error(describe(error))
+        }
+        return { lines: [t('ia.wf.answered', { length: text.length })], results: { text, decision: '', confiance: '', fiche: record } }
       } catch (error) {
-        throw new Error(describe(error))
+        // Une étape du circuit qui échoue (l'IA injoignable, une erreur du serveur) : dite sur la fiche — l'étape en rouge, « Continuer le circuit » la reprend.
+        if (doc.circuit) await markCircuitError(record, fields.skill?.trim() || '', error instanceof Error ? error.message : String(error))
+        throw error
       }
-      return { lines: [t('ia.wf.answered', { length: text.length })], results: { text, decision: '', confiance: '', fiche: record } }
     }
   })
 }

@@ -102,7 +102,7 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(list?.kind === 'list' && list.items.find((item) => item.id === 'date')).toMatchObject({ title: 'Date du document', detail: '1 mars 2026' })
   })
 
-  it('pas sûre : à confirmer — « Prendre « … » », « Pas de date », « Classer… »', async () => {
+  it('pas sûre : à confirmer — « Prendre « … » », « Pas de date », « Modifier… »', async () => {
     const platform = memoryPlatform()
     const { page, pour } = await start(platform, [lectureFichiersModule, bibliothequeModule])
     const doc = await pour('Note.txt', NOTE)
@@ -112,7 +112,7 @@ describe('à l’entrée, et sur la fiche', () => {
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Date à confirmer'))
     expect(message).toMatchObject({ tone: 'warning', text: 'Date à confirmer : la date lue au début du document est « 12 février 2026 » (lu sans certitude).' })
-    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « 12 février 2026 »', 'Pas de date', 'Classer…'])
+    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « 12 février 2026 »', 'Pas de date', 'Modifier…'])
     expect((await page('bibliotheque.documents').load()).filters?.map((filter) => filter.id)).toContain('date-a-confirmer')
     await (message?.kind === 'message' ? message.actions![0]!.run() : null)
     expect(platform.notices.at(-1)).toBe('Date confirmée : 12 février 2026.')
@@ -122,12 +122,12 @@ describe('à l’entrée, et sur la fiche', () => {
     const other = await pour('Maquette.dwg', 'binaire')
     const view = await page('bibliotheque.document').load(encodeURIComponent(other.record))
     const none = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Date à confirmer'))
-    expect(none?.kind === 'message' && none.actions!.map((action) => action.label)).toEqual(['Pas de date', 'Classer…'])
+    expect(none?.kind === 'message' && none.actions!.map((action) => action.label)).toEqual(['Pas de date', 'Modifier…'])
     await (none?.kind === 'message' ? none.actions![0]!.run() : null)
     expect(platform.notices.at(-1)).toBe('« Maquette » : sans date.')
   })
 
-  it('« Classer… » : une date écrite comme on veut ; illisible, celle d’avant reste et c’est dit', async () => {
+  it('« Modifier… » : une date écrite comme on veut ; illisible, celle d’avant reste et c’est dit', async () => {
     const platform = memoryPlatform()
     const { page, pour } = await start(platform, [lectureFichiersModule, bibliothequeModule])
     const doc = await pour('Note.txt', NOTE)

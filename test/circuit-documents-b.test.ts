@@ -258,7 +258,17 @@ describe('le workflow système « Circuit des documents »', () => {
     const control = await load('bibliotheque.a-controler')
     const section = deep(control.blocks).find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.circuit.en-cours')!
     expect(section).toMatchObject({ title: 'En cours dans le circuit', subtitle: '1 document(s)' })
-    expect(cards(control).find((card) => card.title === 'Norme')).toMatchObject({ subtitle: 'Ingéré, à analyser' })
+    // Ses étapes : versé et ingéré (vert), l'analyse en échec (rouge, avec l'erreur), le rangement à venir.
+    const journey = section.blocks.find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey' && block.title === 'Norme')!
+    expect(journey.badge).toMatchObject({ label: 'Ingéré, à analyser', tone: 'danger' })
+    expect(journey.stages.map((stage) => [stage.phases[0]!.label, stage.phases[0]!.color, stage.phases[0]!.status!.label])).toEqual([
+      ['Versé', 'green', 'Fait'],
+      ['Ingérer', 'green', 'Fait'],
+      ['Analyser', 'rose', 'Échec'],
+      ['Ranger', 'slate', 'À venir']
+    ])
+    expect(journey.stages[2]!.phases[0]!.detail).toBeTruthy()
+    expect(journey.actions!.map((action) => action.id)).toEqual(['circuit-continue', 'control-elsewhere'])
     // L'IA revient : à l'ouverture, il reprend — sans relire son texte une seconde fois.
     const relectures = asked.filter((each) => each.kind === 'relecture').length
     answers.analyse = () => chat({ typePiece: '', emetteur: '', projet: '', confiance: 0.9, raison: 'Une norme.' })
@@ -268,6 +278,62 @@ describe('le workflow système « Circuit des documents »', () => {
     await workflowsIdle()
     expect(read(platform, 'Bibliothèque/Normes/Norme.md')).toMatch(/\ncircuit: range\n/)
     expect(asked.filter((each) => each.kind === 'relecture').length).toBe(relectures)
+  })
+
+  it('« Continuer le circuit » : reprend une étape en échec, redemande le rangement d’un document à contrôler', async () => {
+    const platform = memoryPlatform()
+    const { pour, answers, load } = await start(platform)
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    const journeyOf = (page: PageView, title: string) => deep(page.blocks).find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey' && block.title === title)!
+    // L'analyse échoue : l'étape en rouge, sur la fiche (sans titre de document) et dans la bibliothèque « Circuit ».
+    answers.analyse = () => ({ status: 500, text: 'panne' })
+    await pour('Norme.txt', 'ECSS-E-ST-10C.')
+    expect(read(platform, 'Bibliothèque/Circuit/À classer/Norme.md')).toMatch(/\ncircuit-erreur: /)
+    const fiche = await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Circuit/À classer/Norme.md')}`)
+    const onFiche = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
+    expect(onFiche).toMatchObject({ title: 'Les étapes du circuit', legend: 'Vert : fait · orange : en attente, ou à votre décision · rouge : en échec · gris : à venir' })
+    expect(onFiche.stages.map((stage) => stage.phases[0]!.color)).toEqual(['green', 'green', 'rose', 'slate'])
+    const shelf = await load('bibliotheque.documents?circuit')
+    const section = deep(shelf.blocks).find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.circuit.etapes')!
+    expect(section).toMatchObject({ title: 'Les étapes du circuit, document par document', subtitle: '1 document(s)' })
+    expect(section.blocks[0]).toMatchObject({ kind: 'message', actions: [{ id: 'circuit-continue-all', label: 'Tout continuer (1)' }] })
+    // L'IA revient, mais hésite au rangement : « Continuer le circuit » — analysé, puis à contrôler.
+    answers.analyse = () => chat({ typePiece: '', emetteur: '', projet: '', confiance: 0.9, raison: 'Une norme.' })
+    answers.rangement = () => chat({ dossier: 'Bibliothèque/Normes', confiance: 0.5, raison: 'Hésitation.', alternatives: [] })
+    await journeyOf(shelf, 'Norme').actions![0]!.run()
+    await workflowsIdle()
+    const held = read(platform, 'Bibliothèque/Circuit/À contrôler/Norme.md')
+    expect(held).toMatch(/\ncircuit: a-controler\n/)
+    expect(held).not.toContain('circuit-erreur')
+    expect(held).toMatch(/· Analyser un document — échec : /)
+    expect(held).toMatch(/· Continuer le circuit — demandé\n/)
+    // À contrôler, avec une proposition : le rangement en orange, « À décider ».
+    const control = journeyOf(await load('bibliotheque.documents?circuit'), 'Norme')
+    expect(control.stages.map((stage) => [stage.phases[0]!.color, stage.phases[0]!.status!.label])).toEqual([
+      ['green', 'Fait'],
+      ['green', 'Fait'],
+      ['green', 'Fait'],
+      ['orange', 'À décider']
+    ])
+    expect(control.stages[3]!.phases[0]!.detail).toBe('Proposé : Normes (50 %)')
+    // Le document complété, on redemande : cette fois sûre — rangé, sans refaire l'analyse.
+    answers.analyse = () => ({ status: 500, text: 'ne doit pas être appelée' })
+    answers.rangement = () => chat({ dossier: 'Bibliothèque/Normes', confiance: 0.95, raison: 'Une norme.', alternatives: [] })
+    await control.actions![0]!.run()
+    await workflowsIdle()
+    expect(read(platform, 'Bibliothèque/Normes/Norme.md')).toMatch(/\ncircuit: range\n/)
+    expect(platform.notices).toContain('« Norme » : le circuit reprend.')
+  })
+
+  it('« Continuer le circuit » grisé, avec sa raison, quand le circuit est coupé', async () => {
+    const platform = memoryPlatform()
+    const { pour, answers, load, settings } = await start(platform)
+    answers.analyse = () => ({ status: 500, text: 'panne' })
+    await pour('Norme.txt', 'ECSS-E-ST-10C.')
+    settings.bibliotheque = { ...settings.bibliotheque, circuit: false }
+    const fiche = await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Circuit/À classer/Norme.md')}`)
+    const journey = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'journey' }> => block.kind === 'journey')!
+    expect(journey.actions![0]).toMatchObject({ id: 'circuit-continue', disabled: true, tooltip: 'Le circuit des documents est désactivé (Paramètres › Bibliothèque › Le circuit des documents (IA))' })
   })
 
   it('le rappel du lundi : les documents à contrôler, s’il y en a', async () => {

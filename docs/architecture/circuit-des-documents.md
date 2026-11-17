@@ -243,7 +243,12 @@ Pour chaque document : son titre, la proposition de l'IA, sa raison, sa confianc
 
 - **Accepter** : la proposition est appliquée (rangé, liens écrits) ;
 - **Choisir ailleurs** : les alternatives de l'IA, puis tous les dossiers ;
-- **Laisser** : reste à contrôler ; **Écarter** : la fiche est retirée (`_retirés`).
+- **Laisser** : reste à contrôler ; **Écarter** : la fiche est retirée (`_retirés`) ;
+- **Continuer le circuit** *(0.140.0)* : le rangement redemandé à l'IA.
+
+Les étapes de chaque document encore dans À classer ou À contrôler se voient en couleur *(0.140.0)* :
+vert (faite), orange (en attente, ou à décider), rouge (en échec — l'erreur est gardée sur la fiche —,
+ou sans proposition), gris (à venir), avec **Continuer le circuit**.
 
 Chaque décision de l'utilisateur est journalisée sur la fiche. Plus tard, ces décisions
 pourront servir d'exemples aux skills (on garde la trace dès maintenant ; on ne s'en sert pas
@@ -314,6 +319,7 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
 | Entretien des liens (workflow système) | existe *(C, 0.137.0)* : une étape des rappels du lundi |
 | Entreprises et personnes inconnues, proposées | existe *(0.138.0)* : créées d'un clic sur la page À contrôler |
 | Bibliothèque « Circuit » (À classer et À contrôler sur une page à eux) | existe *(0.139.0)* |
+| Les étapes de chaque document en couleur, l'échec gardé, « Continuer le circuit » | existe *(0.140.0)* |
 
 ## Le découpage proposé
 

@@ -236,6 +236,7 @@ button.bp-journey-tile:focus-visible { outline: 3px solid var(--bp-focus); outli
 .bp-journey-label { font-size: 0.88em; font-weight: 600; line-height: 1.2; }
 .bp-journey-detail { font-size: 0.76em; color: var(--bp-text-muted); }
 .bp-journey-tools { display: flex; gap: 2px; justify-content: center; }
+.bp-journey-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .bp-journey-tools .bp-button-icon { min-width: 0; width: 28px; height: 28px; padding: 0; }
 .bp-journey-arrow { position: relative; display: block; align-self: center; height: 2px; margin: 0 4px; background: var(--bp-text-muted); }
 .bp-journey-arrow::after { content: ""; position: absolute; right: -2px; top: 50%; transform: translateY(-50%); border: 6px solid transparent; border-left: 8px solid var(--bp-text-muted); border-right: 0; }

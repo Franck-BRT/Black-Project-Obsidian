@@ -95,7 +95,7 @@ describe('la première passe, sans IA', () => {
 })
 
 describe('à l’entrée, et sur la fiche', () => {
-  it('la liste du module Typage des pièces : sûr, ou à confirmer — « Prendre » le suggéré, « Pas de type de pièce », « Classer… »', async () => {
+  it('la liste du module Typage des pièces : sûr, ou à confirmer — « Prendre » le suggéré, « Pas de type de pièce », « Modifier… »', async () => {
     const platform = memoryPlatform()
     const { page, pour } = await start(platform, [lectureFichiersModule, typagePiecesModule, bibliothequeModule])
     const sure = await pour('CCTP station.txt', COVER)
@@ -108,7 +108,7 @@ describe('à l’entrée, et sur la fiche', () => {
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Type de pièce à confirmer'))
     expect(message).toMatchObject({ tone: 'warning', text: 'Type de pièce à confirmer : le texte du document suggère « CCTP » (lu sans certitude).' })
-    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « CCTP »', 'Pas de type de pièce', 'Classer…'])
+    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « CCTP »', 'Pas de type de pièce', 'Modifier…'])
     expect((await page('bibliotheque.documents').load()).filters?.find((filter) => filter.id === 'categorie-a-confirmer')?.label).toBe('Type de pièce à confirmer')
     await (message?.kind === 'message' ? message.actions![0]!.run() : null)
     expect(platform.notices.at(-1)).toBe('Type de pièce confirmé : « CCTP ».')
@@ -144,7 +144,7 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(field).toMatchObject({ value: 'Devis' })
     expect(read(platform, doc.record)).toMatch(/\ncategorie: RC\n/)
     expect(platform.notices.at(-1)).toBe('Type de pièce : RC — Règlement de la consultation.')
-    // « Classer… » aussi : une liste.
+    // « Modifier… » aussi : une liste.
     platform.forms.push(null)
     await fiche.actions!.find((action) => action.id === 'classify')!.run()
     expect(platform.asked.at(-1)!.fields.find((each) => each.key === 'category')?.kind).toBe('choice')

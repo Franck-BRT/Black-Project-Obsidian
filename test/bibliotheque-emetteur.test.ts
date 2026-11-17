@@ -81,7 +81,7 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(doc.issuerToConfirm).toBeUndefined()
   })
 
-  it('pas sûr : à confirmer — « Prendre » le probable, « Pas d’émetteur », « Classer… »', async () => {
+  it('pas sûr : à confirmer — « Prendre » le probable, « Pas d’émetteur », « Modifier… »', async () => {
     const platform = memoryPlatform()
     const { page, pour } = await start(platform, [lectureFichiersModule, bibliothequeModule])
     const doc = await pour('CCTP.txt', COVER)
@@ -90,7 +90,7 @@ describe('à l’entrée, et sur la fiche', () => {
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Entreprise à confirmer'))
     expect(message).toMatchObject({ tone: 'warning', text: 'Entreprise à confirmer : le document semble émis par « Agence spatiale européenne » (lu sans certitude).' })
-    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « Agence spatiale européenne »', 'Pas d’entreprise', 'Classer…'])
+    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « Agence spatiale européenne »', 'Pas d’entreprise', 'Modifier…'])
     expect((await page('bibliotheque.documents').load()).filters?.map((filter) => filter.id)).toContain('emetteur-a-confirmer')
     await (message?.kind === 'message' ? message.actions![0]!.run() : null)
     expect(platform.notices.at(-1)).toBe('Entreprise confirmée : « Agence spatiale européenne ».')

@@ -173,7 +173,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     expect(platform.notices.at(-1)).toBe('1 document(s) versé(s) dans la bibliothèque, 0 y étai(en)t déjà.')
   })
 
-  it('la fiche : identification, fichier, origines (un clic y mène), « Classer… », « Retirer » (mis de côté)', async () => {
+  it('la fiche : identification, fichier, origines (un clic y mène), « Modifier… », « Retirer » (mis de côté)', async () => {
     const platform = memoryPlatform()
     const { page, noted, shown } = await start(platform)
     const doc = (await pourIntoLibrary([{ name: 'Courrier acheteur.pdf', bytes: enc('c') }], { module: 'ao', label: 'Station sol', link: "Appels d'offres/Station sol/Station sol.md" }))!.added[0]!

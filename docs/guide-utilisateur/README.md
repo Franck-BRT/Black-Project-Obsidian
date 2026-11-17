@@ -12,7 +12,15 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.139.0)
+## Aujourd'hui (version 0.140.0)
+
+- **Les étapes du circuit, en couleur** : pour chaque document encore dans « À classer » ou « À
+  contrôler » (sur sa fiche, sur la page de la bibliothèque **Circuit**, et sur la page **À
+  contrôler**), ses étapes — Versé, Ingérer, Analyser, Ranger — en **vert** (faite), **orange** (en
+  attente, ou à votre décision), **rouge** (en échec : l'erreur est dite) ou gris (à venir). Le
+  bouton **Continuer le circuit** reprend là où il s'est arrêté ; pour un document à contrôler, il
+  redemande le rangement à l'IA. **Tout continuer** le fait pour tous ceux qui attendent.
+- Sur la fiche d'un document, le bouton **Classer…** s'appelle désormais **Modifier…**.
 
 - **La bibliothèque « Circuit »** : sur l'accueil de la bibliothèque, une carte **Circuit** à côté des
   documents, des documents de référence et des documents projet. Sa page a deux répertoires :

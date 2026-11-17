@@ -20,6 +20,7 @@ import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 import { builtInShelf, REFERENCE_SHELF, severalShelves } from './shelves'
 import { CONTROL_PAGE, controlMessage, controlPage, proposalMessages, type ControlDeps } from './controlHome'
+import { circuitJourney, inCircuit } from './circuitSteps'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
 export const DOC_PAGE = 'bibliotheque.document'
@@ -323,6 +324,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
       // Le circuit : des documents attendent qu'on les contrôle.
       ...(await controlNotice(deps)),
       ...top.blocks,
+      // La bibliothèque « Circuit » : les étapes de chacun de ses documents, et de quoi continuer.
+      ...(place.shelf.circuit && deps.control ? circuitStepsSection(deps, under.filter(inCircuit)) : []),
       ...(under.length || ghostsHere.length
         ? [
             { kind: 'stats' as const, stats },
@@ -332,6 +335,47 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
         : [empty])
     ]
   }
+}
+
+/** Les étapes du circuit, document par document (la bibliothèque « Circuit ») : une section, et « Tout continuer ». */
+function circuitStepsSection(deps: LibraryHomeDeps, docs: LibraryDoc[]): HomeBlock[] {
+  const { t } = deps
+  const control = deps.control
+  if (!control || !docs.length) return []
+  const open = deps.showPage ? (record: string) => deps.showPage?.(docPageOf(record)) : undefined
+  const blocked = control.cannotContinue?.() ?? null
+  const waiting = docs.filter((doc) => doc.circuit !== 'a-controler').length
+  return [
+    {
+      kind: 'section',
+      id: 'bibliotheque.circuit.etapes',
+      title: t('bibliotheque.circuit.steps.section'),
+      subtitle: t('bibliotheque.group.count', { count: docs.length }),
+      icon: 'flow',
+      blocks: [
+        {
+          kind: 'message',
+          tone: blocked ? 'warning' : 'info',
+          text: [t('bibliotheque.circuit.steps.legend'), blocked].filter(Boolean).join(' — '),
+          ...(control.continueAll && waiting
+            ? {
+                actions: [
+                  {
+                    id: 'circuit-continue-all',
+                    label: t('bibliotheque.circuit.continueAll', { count: waiting }),
+                    tooltip: blocked ?? t('bibliotheque.circuit.continueAll.tip'),
+                    icon: 'play' as const,
+                    ...(blocked ? { disabled: true } : {}),
+                    run: async () => void (await control.continueAll!())
+                  }
+                ]
+              }
+            : {})
+        },
+        ...docs.map((doc) => circuitJourney(t, { ...control, ...(open ? { open } : {}) }, doc))
+      ]
+    }
+  ]
 }
 
 /** Une section repliable de la fiche, repliée d'origine (l'interface se souvient ensuite de ce qu'on en a fait, le temps de la session). */
@@ -566,7 +610,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
           }
         ]
       : []),
-    // Sa référence et sa version n'ont pas été lues sûrement : à confirmer (telles quelles, ou « Classer… »).
+    // Sa référence et sa version n'ont pas été lues sûrement : à confirmer (telles quelles, ou « Modifier… »).
     ...(doc.identityToConfirm
       ? [
           {
@@ -874,6 +918,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     blocks: [
       // Le circuit : l'IA n'a pas su le ranger — sa proposition, sa raison, et quoi faire.
       ...(doc.circuit === 'a-controler' && deps.control ? [controlMessage(t, deps.control, doc, (moved) => deps.showPage?.(moved ? docPageOf(moved) : CONTROL_PAGE))] : []),
+      // Encore dans le circuit : ses étapes, en couleur, et « Continuer le circuit ».
+      ...(inCircuit(doc) && deps.control ? [circuitJourney(t, deps.control, doc, false)] : []),
       // Les entreprises et personnes inconnues qu'il cite : à créer, ou à écarter.
       ...(deps.control ? proposalMessages(t, deps.control, doc) : []),
       ...(present ? [] : [{ kind: 'message' as const, tone: 'danger' as const, text: t('bibliotheque.doc.fileMissing', { file: doc.file }) }]),
@@ -896,7 +942,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
       { kind: 'stats', stats },
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
-      // Chaque champ : un bouton pour le modifier, seul (le lieu : Déplacer… ; la langue : Langue… ; à confirmer : Classer…).
+      // Chaque champ : un bouton pour le modifier, seul (le lieu : Déplacer… ; la langue : Langue… ; à confirmer : Modifier…).
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
         items: withEdits([{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), { ...field('date', doc.date ? docDateLabel(doc.date, deps.locale) : ''), ...(doc.dateToConfirm ? { detail: (doc.date ? t('bibliotheque.date.detail.toConfirm', { date: docDateLabel(doc.date, deps.locale) }) : t('bibliotheque.detail.toConfirm')) } : doc.dateByAi && doc.date ? { detail: t('bibliotheque.date.detail.byAi', { date: docDateLabel(doc.date, deps.locale) }) } : {}) },

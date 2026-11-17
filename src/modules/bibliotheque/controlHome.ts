@@ -9,6 +9,7 @@
 
 import type { Card, HomeBlock, PageView, ViewAction } from '../../core/views'
 import type { EntityProposal, LibraryDoc } from './model'
+import { circuitJourney, continueAction } from './circuitSteps'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -34,6 +35,12 @@ export interface ControlDeps {
   createEntity?(record: string, index: number): Promise<string | null>
   /** Écarter la proposition. */
   dismissEntity?(record: string, index: number): Promise<void>
+  /** Pourquoi on ne peut pas continuer le circuit (pas d'IA, le circuit coupé) ; `null` : on peut. */
+  cannotContinue?(): string | null
+  /** Continuer le circuit pour un document, là où il s'est arrêté (à contrôler : le rangement redemandé à l'IA). */
+  continueCircuit?(record: string): Promise<boolean>
+  /** Continuer le circuit pour tous ceux qui attendent (pas ceux à contrôler) ; rend combien. */
+  continueAll?(): Promise<number>
 }
 
 /** Une proposition en mots : « l'entreprise « ESA — Agence spatiale européenne » », « la personne « Marie Durand » (ESA) ». */
@@ -155,18 +162,12 @@ export async function controlPage(t: Translate, deps: ControlDeps, open: ((recor
     ...(doc.circuitReason ? { text: doc.circuitReason } : {}),
     badges: [{ label: t('bibliotheque.control.confidence', { confidence: percent(doc.circuitConfidence) }), tone: (doc.circuitConfidence ?? 0) >= 0.5 ? ('warning' as const) : ('danger' as const) }],
     ...(open ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => open(doc.record) } } : {}),
-    actions: controlActions(t, deps, doc)
+    actions: [...controlActions(t, deps, doc), ...[continueAction(t, deps, doc)].filter((action): action is ViewAction => !!action).map((action) => ({ ...action, primary: false }))]
   }))
   // En cours dans le circuit : où chacun en est ; on peut le ranger soi-même sans attendre.
   const pending = (await deps.pending?.()) ?? []
-  const pendingCards: Card[] = pending.map((doc) => ({
-    id: doc.record,
-    title: doc.title,
-    subtitle: t(`bibliotheque.control.state.${doc.circuit ?? 'a-classer'}`),
-    icon: 'clock',
-    badges: [{ label: t(`bibliotheque.control.state.${doc.circuit ?? 'a-classer'}`), tone: 'info' as const }],
-    ...(open ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => open(doc.record) } } : {}),
-    actions: [
+  const pendingJourneys: HomeBlock[] = pending.map((doc) =>
+    circuitJourney(t, { ...deps, ...(open ? { open } : {}) }, doc, true, [
       {
         id: 'control-elsewhere',
         label: t('bibliotheque.control.fileMyself'),
@@ -176,8 +177,8 @@ export async function controlPage(t: Translate, deps: ControlDeps, open: ((recor
           await deps.elsewhere(doc.record)
         }
       }
-    ]
-  }))
+    ])
+  )
   // Les entreprises et personnes inconnues que des documents citent : à créer (liées) ou à écarter.
   const proposed = (await deps.entities?.()) ?? []
   const entityCards: Card[] = proposed.map(({ doc, proposal, index }) => ({
@@ -208,15 +209,15 @@ export async function controlPage(t: Translate, deps: ControlDeps, open: ((recor
             }
           ]
         : []),
-      ...(pendingCards.length
+      ...(pendingJourneys.length
         ? [
             {
               kind: 'section' as const,
               id: 'bibliotheque.circuit.en-cours',
               title: t('bibliotheque.control.pending'),
-              subtitle: t('bibliotheque.control.pending.count', { count: pendingCards.length }),
+              subtitle: t('bibliotheque.control.pending.count', { count: pendingJourneys.length }),
               icon: 'clock' as const,
-              blocks: [{ kind: 'cards' as const, cards: pendingCards }]
+              blocks: [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.circuit.steps.legend') }, ...pendingJourneys]
             }
           ]
         : [])

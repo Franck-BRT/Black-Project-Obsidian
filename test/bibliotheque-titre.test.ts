@@ -105,7 +105,7 @@ describe('à l’entrée, et sur la fiche', () => {
     const other = await pour('Maquette.dwg', 'binaire')
     const view = await page('bibliotheque.document').load(encodeURIComponent(other.record))
     const keep = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Titre à confirmer'))
-    expect(keep?.kind === 'message' && keep.actions!.map((action) => action.label)).toEqual(['C’est juste', 'Classer…'])
+    expect(keep?.kind === 'message' && keep.actions!.map((action) => action.label)).toEqual(['C’est juste', 'Modifier…'])
     await (keep?.kind === 'message' ? keep.actions![0]!.run() : null)
     expect(read(platform, other.record)).not.toMatch(/titreAConfirmer/)
   })

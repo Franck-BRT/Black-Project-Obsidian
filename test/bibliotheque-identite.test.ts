@@ -96,7 +96,7 @@ describe('à l’entrée dans la bibliothèque', () => {
     expect(identityOf(await page('bibliotheque.document').load(encodeURIComponent(doc.record)))).toMatchObject({ reference: 'DLA-NM-0000000-01-PSP', edition: '2', revision: '15' })
   })
 
-  it('sans IA, du nom du fichier : à confirmer — « C’est juste » les confirme ; « Classer… » aussi', async () => {
+  it('sans IA, du nom du fichier : à confirmer — « C’est juste » les confirme ; « Modifier… » aussi', async () => {
     const platform = memoryPlatform()
     const { page, pour } = await start(platform, [lectureFichiersModule, bibliothequeModule])
     const doc = await pour('ECSS-E-ST-10C_ed2_rev15.dwg', 'binaire')
@@ -112,7 +112,7 @@ describe('à l’entrée dans la bibliothèque', () => {
     view = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(view.blocks.flatMap(unfold).some((block) => block.kind === 'message' && block.text.startsWith('Référence et version à confirmer'))).toBe(false)
     expect(read(platform, doc.record)).toMatch(/\nreference: ECSS-E-ST-10C\n/)
-    // Classer… : confirmé.
+    // Modifier… : confirmé.
     const other = await pour('Note.txt', 'Rien à dire.')
     expect(other.identityToConfirm).toBe(true)
     platform.forms.push({ title: 'Note', category: '', reference: 'NT-2026-01', edition: '1', revision: '', issuer: '', tags: '' })

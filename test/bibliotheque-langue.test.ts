@@ -143,7 +143,7 @@ describe('la langue des documents de la bibliothèque', () => {
     expect(read(platform, doc.record)).toMatch(/\nlangueAConfirmer: true\n/)
   })
 
-  it('« Classer… » : la langue choisie est confirmée', async () => {
+  it('« Modifier… » : la langue choisie est confirmée', async () => {
     const platform = memoryPlatform()
     const { page, pour } = await start(platform)
     const doc = await pour('Note.txt', 'Le rapport est dans le dossier.')

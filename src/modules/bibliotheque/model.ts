@@ -315,6 +315,8 @@ export interface LibraryDoc {
   circuitProposal?: string
   circuitConfidence?: number
   circuitAlternatives?: string[]
+  /** Son étape suivante a échoué (l'IA injoignable, une erreur du serveur) : pourquoi. Ôté dès qu'une étape passe, ou qu'on continue le circuit. */
+  circuitError?: string
   /** Le projet que l'analyse du circuit a reconnu (la note du projet) : le rangement s'en sert. */
   circuitProject?: string
   /** Ses liens (le circuit, version C) : les notes qu'il cite — leur raison est dans la section Liens de la note. */
@@ -423,6 +425,7 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.circuit && doc.circuitProposal ? { 'circuit-proposition': doc.circuitProposal } : {}),
     ...(doc.circuit && doc.circuitConfidence !== undefined ? { 'circuit-confiance': doc.circuitConfidence } : {}),
     ...(doc.circuit && doc.circuitAlternatives?.length ? { 'circuit-alternatives': doc.circuitAlternatives } : {}),
+    ...(doc.circuit && doc.circuitError ? { 'circuit-erreur': doc.circuitError } : {}),
     ...(doc.circuitProject ? { 'circuit-projet': link(doc.circuitProject) } : {}),
     ...(doc.links?.length ? { liens: doc.links.map(link) } : {}),
     ...(doc.proposals?.length
@@ -497,7 +500,8 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
           ...(text(data['circuit-raison']) ? { circuitReason: text(data['circuit-raison']) } : {}),
           ...(text(data['circuit-proposition']) ? { circuitProposal: text(data['circuit-proposition']) } : {}),
           ...(Number.isFinite(Number(data['circuit-confiance'])) && data['circuit-confiance'] !== null && data['circuit-confiance'] !== '' ? { circuitConfidence: Number(data['circuit-confiance']) } : {}),
-          ...(Array.isArray(data['circuit-alternatives']) && data['circuit-alternatives'].length ? { circuitAlternatives: data['circuit-alternatives'].map(text).filter(Boolean) } : {})
+          ...(Array.isArray(data['circuit-alternatives']) && data['circuit-alternatives'].length ? { circuitAlternatives: data['circuit-alternatives'].map(text).filter(Boolean) } : {}),
+          ...(text(data['circuit-erreur']) ? { circuitError: text(data['circuit-erreur']) } : {})
         }
       : {}),
     ...(unlink(data['circuit-projet']) ? { circuitProject: unlink(data['circuit-projet']) } : {}),

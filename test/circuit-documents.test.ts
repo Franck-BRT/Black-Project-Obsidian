@@ -181,7 +181,7 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
     const control = await load('bibliotheque.a-controler')
     const card = cards(control)[0]!
     expect(card).toMatchObject({ title: 'Note', subtitle: 'Proposé : Offres (55 %)', text: 'Parle d’une offre, sans certitude.', badges: [{ label: 'Confiance 55 %', tone: 'warning' }] })
-    expect(card.actions!.map((action) => action.id)).toEqual(['control-accept', 'control-elsewhere', 'control-discard'])
+    expect(card.actions!.map((action) => action.id)).toEqual(['control-accept', 'control-elsewhere', 'control-discard', 'circuit-continue'])
     // Sur sa fiche aussi.
     const fiche = await load(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Circuit/À contrôler/Note.md')}`)
     expect(fiche.blocks[0]).toMatchObject({ kind: 'message', tone: 'warning', text: 'À contrôler — Proposé : Offres (55 %) — Parle d’une offre, sans certitude.' })
@@ -213,7 +213,7 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
       ['A', 'Aucune proposition'],
       ['B', 'Aucune proposition']
     ])
-    expect(control[0]!.actions!.map((action) => action.id)).toEqual(['control-elsewhere', 'control-discard'])
+    expect(control[0]!.actions!.map((action) => action.id)).toEqual(['control-elsewhere', 'control-discard', 'circuit-continue'])
     // Choisir ailleurs : l'alternative de l'IA d'abord.
     platform.choices.push('Bibliothèque/Normes')
     await control[1]!.actions!.find((action) => action.id === 'control-elsewhere')!.run()

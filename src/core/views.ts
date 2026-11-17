@@ -230,6 +230,8 @@ export type HomeBlock =
       subtitle?: string
       /** Une pastille à côté du titre. */
       badge?: Badge
+      /** Des boutons sous ses étapes (« Continuer le circuit »). */
+      actions?: ViewAction[]
     }
   /**
    * Une **section repliable** : un intitulé (un clic la replie ou la déplie) et ses blocs —
