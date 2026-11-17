@@ -919,6 +919,28 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     detail: origin.label || '—',
     ...(origin.link ? { open: { id: 'open', label: t('bibliotheque.origin.open'), run: () => deps.showNote(origin.link!) } } : {})
   }))
+  /**
+   * Le bouton qui relance seulement une étape du parcours : les doublons, un champ, les liens écrits —
+   * toujours ; les étapes du circuit (À classer, ingestion, analyse, rangement…) — pour un document du
+   * circuit, et grisé (sa raison) sans IA ou le circuit coupé.
+   */
+  const CIRCUIT_STEPS = new Set(['a-classer', 'ingestion', 'analyse', 'projet', 'liens', 'rangement'])
+  const relaunchStepAction = (id: string, title: string): ViewAction | null => {
+    const control = deps.control
+    if (!control?.relaunchStep) return null
+    const circuitStep = CIRCUIT_STEPS.has(id)
+    if (circuitStep && !doc.circuit) return null
+    const blocked = circuitStep ? (control.cannotContinue?.() ?? null) : null
+    const tip = id === 'doublons' ? 'dedupe' : id === 'a-classer' ? 'inbox' : id === 'liens-crees' ? 'links' : id === 'analyse' || id === 'projet' || id === 'liens' ? 'analyse' : circuitStep ? 'ai' : 'field'
+    return {
+      id: `relancer-${id}`,
+      label: t('bibliotheque.steps.redo', { step: title }),
+      tooltip: blocked ?? `${t('bibliotheque.steps.redo', { step: title })} — ${t(`bibliotheque.steps.redo.tip.${tip}`)}`,
+      icon: 'refresh',
+      ...(blocked ? { disabled: true } : {}),
+      run: () => control.relaunchStep!(doc.record, id)
+    }
+  }
   const explorer = await deps.explorer?.({ kind: 'document', shelf: doc.shelf ?? '', directory: doc.directory ?? '' })
   return {
     ...(explorer ? { explorer } : {}),
@@ -1020,7 +1042,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         t('bibliotheque.steps.section'),
         doc.circuit ? t(`bibliotheque.control.state.${doc.circuit}`) : t('bibliotheque.steps.outside'),
         'flow',
-        {
+        [
+          {
           kind: 'list',
           items: documentSteps(t, doc, {
             place: (folder) => deps.control?.place(folder) ?? folder,
@@ -1030,9 +1053,29 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             date: (value) => docDateLabel(value, deps.locale),
             links: doc.links?.length ?? 0,
             proposals: doc.proposals?.length ?? 0,
-            continueAction: inCircuit(doc) && deps.control ? continueAction(t, deps.control, doc) : null
+            continueAction: inCircuit(doc) && deps.control ? continueAction(t, deps.control, doc) : null,
+            relaunch: (id, title) => relaunchStepAction(id, title)
           })
         },
+          // Tout recommencer : remis au début du circuit (après une question).
+          ...(deps.control?.relaunchAll
+            ? [
+                {
+                  kind: 'actions' as const,
+                  actions: [
+                    {
+                      id: 'circuit-restart',
+                      label: t('bibliotheque.steps.restart'),
+                      tooltip: deps.control.cannotContinue?.() ?? t('bibliotheque.steps.restart.tip'),
+                      icon: 'refresh' as const,
+                      ...(deps.control.cannotContinue?.() ? { disabled: true } : {}),
+                      run: async () => void (await deps.control!.relaunchAll!(doc.record))
+                    }
+                  ]
+                }
+              ]
+            : [])
+        ],
         true
       ),
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.

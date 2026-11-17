@@ -23,7 +23,7 @@ import { fillTemplate } from '../../core/docs'
 import type { BlackModule, BooleanField, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import type { Choice, FormField, Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
-import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, runSystemWorkflow, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
+import { emitWorkflowEvent, NO_SUBJECT, registerFieldSource, registerTrigger, runActionNow, runSystemWorkflow, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
 import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
 import { entryPageOf, entryTitle, HUB_PAGE as ENTRIES_HUB_PAGE, registerEntriesHome } from './entriesHome'
@@ -1064,7 +1064,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.63.0',
+  version: '0.64.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2619,6 +2619,80 @@ export const bibliothequeModule: BlackModule = {
       platform.notifier.notify(chosen ? t('bibliotheque.related', { title: doc.title }) : t('bibliotheque.unlinked', { title: doc.title }), 5000)
     }
 
+    /**
+     * **Relancer une seule étape** du parcours d'un document (un bouton de sa fiche) : les doublons
+     * revérifiés ; remis dans « À classer » (sans lancer la suite) ; l'ingestion, l'analyse (et ce qu'elle
+     * donne : le projet, les liens) ou le rangement refaits par leur skill (« Refaire », même déjà faits) ;
+     * un champ cherché de nouveau ; les liens réécrits avec leurs rétroliens.
+     */
+    const RESEARCH_STEP: Readonly<Record<string, ResearchField>> = { type: 'category', entreprise: 'issuer', titre: 'title', date: 'date', langue: 'language', reference: 'identity', etiquettes: 'tags' }
+    const skillFor = async (output: 'ingestion' | 'analyse' | 'rangement'): Promise<string> => {
+      await ensureCircuitSkills()
+      return (await entries.skill.all()).find((entry) => entry.output === output)?.name ?? ''
+    }
+    const relaunchStep = async (record: string, step: string): Promise<void> => {
+      const doc = await store.load(record)
+      if (!doc) return
+      const tell = (text: string) => platform.notifier.notify(text, 7000)
+      if (step === 'doublons') {
+        const twins = doc.hash ? (await store.all()).filter((other) => other.record !== record && other.hash === doc.hash) : []
+        tell(twins.length ? t('bibliotheque.steps.redo.twins', { title: doc.title, others: twins.map((other) => other.title).join(', ') }) : t('bibliotheque.steps.redo.noTwin', { title: doc.title }))
+        return
+      }
+      const field = RESEARCH_STEP[step]
+      if (field) {
+        await researchField(record, field)
+        return
+      }
+      if (step === 'liens-crees') {
+        const written = await store.setLinks(record, await store.linksOf(record))
+        pagesChanged()
+        tell(t('bibliotheque.steps.redo.relinked', { title: doc.title, count: written.length }))
+        return
+      }
+      const blocked = cannotContinue()
+      if (blocked) return tell(blocked)
+      if (step === 'a-classer') {
+        await platform.fs.ensureFolder(store.inbox)
+        const moved = (await store.move(record, store.inbox)) ?? record
+        await store.setCircuit(moved, { circuit: 'a-classer', circuitReason: undefined, circuitProposal: undefined, circuitConfidence: undefined, circuitAlternatives: undefined, circuitError: undefined }, circuitLine('bibliotheque.circuit.line.backToInbox', {}))
+        pagesChanged()
+        tell(t('bibliotheque.steps.redo.inbox', { title: doc.title }))
+        return
+      }
+      const skill = await skillFor(step === 'ingestion' ? 'ingestion' : step === 'rangement' ? 'rangement' : 'analyse')
+      try {
+        const outcome = await runActionNow('ia.executer-skill', { fiche: record, skill, seuil: '', refaire: 'oui' })
+        tell(outcome ? outcome.lines.join(' ') : t('bibliotheque.steps.redo.noWorkflows'))
+      } catch (error) {
+        tell(t('bibliotheque.steps.redo.failed', { reason: error instanceof Error ? error.message : String(error) }))
+      }
+      pagesChanged()
+    }
+    /** **Relancer tout le circuit** d'un document (après une question) : remis au début (« À classer »), puis le circuit le reprend. */
+    const relaunchAll = async (record: string): Promise<boolean> => {
+      const blocked = cannotContinue()
+      if (blocked) {
+        platform.notifier.notify(blocked, 7000)
+        return false
+      }
+      const doc = await store.load(record)
+      if (!doc) return false
+      const agreed = await platform.ui.confirm({
+        title: t('bibliotheque.steps.restart.title', { title: doc.title }),
+        message: t('bibliotheque.steps.restart.message'),
+        confirm: t('bibliotheque.steps.restart'),
+        cancel: t('bibliotheque.steps.restart.cancel')
+      })
+      if (!agreed) return false
+      await store.setCircuit(
+        record,
+        { circuit: 'a-classer', circuitReason: undefined, circuitProposal: undefined, circuitConfidence: undefined, circuitAlternatives: undefined, circuitError: undefined, circuitProject: undefined },
+        circuitLine('bibliotheque.circuit.line.restarted', {})
+      )
+      return continueCircuit(record)
+    }
+
     registerLibraryHome(context.views, {
       t,
       store,
@@ -2636,7 +2710,9 @@ export const bibliothequeModule: BlackModule = {
         dismissEntity: dismissProposed,
         cannotContinue,
         continueCircuit: (record) => continueCircuit(record),
-        continueAll
+        continueAll,
+        relaunchStep,
+        relaunchAll
       },
       today: localToday,
       locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR',

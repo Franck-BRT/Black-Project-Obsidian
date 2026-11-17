@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.149.0)
+## Aujourd'hui (version 0.150.0)
+
+- **Relancer une étape** : dans « Le parcours du document », chaque ligne a un bouton ⟳ qui ne refait
+  que cette étape (relire le texte, refaire l'analyse, chercher de nouveau un champ, réécrire les liens,
+  redemander le rangement…). **Relancer tout le circuit**, sous la liste, le reprend depuis le début.
 
 - **Le parcours de chaque document**, sur sa fiche dès sa création : une ligne par étape, en couleur
   (vert fait, orange en attente ou à confirmer, rouge en échec, gris à venir) — contrôle des doublons

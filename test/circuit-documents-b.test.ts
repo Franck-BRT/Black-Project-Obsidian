@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
+import { ViewsRegistry, type Card, type HomeBlock, type ListItem, type PageView } from '../src/core/views'
 import { bibliothequeModule, libraryEntries, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { iaModule } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
@@ -361,6 +361,59 @@ describe('le workflow système « Circuit des documents »', () => {
     expect(fiche.title).toBe('Norme')
   })
 
+  it('« Relancer » une seule étape (et pas les autres) ; « Relancer tout le circuit » repart du début', async () => {
+    const platform = memoryPlatform()
+    const { pour, answers, asked, load } = await start(platform)
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    answers.analyse = () => chat({ typePiece: '', emetteur: '', projet: '', confiance: 0.9, raison: 'Une norme.' })
+    answers.rangement = () => chat({ dossier: 'Bibliothèque/Normes', confiance: 0.95, raison: 'Une norme.', alternatives: [] })
+    await pour('Norme.txt', 'ECSS-E-ST-10C, la norme des essais.')
+    const record = 'Bibliothèque/Normes/Norme.md'
+    expect(read(platform, record)).toMatch(/\ncircuit: range\n/)
+    const stepsOf = async () => {
+      const fiche = await load(`bibliotheque.document?${encodeURIComponent(record)}`)
+      const section = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.parcours')!
+      return { section, lines: section.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])) }
+    }
+    const tool = (lines: ListItem[], title: string) => lines.find((line) => line.title === title)!.tools![0]!
+    let { lines, section } = await stepsOf()
+    // Un bouton « Relancer » par étape ; « Relancer tout le circuit » sous la liste.
+    expect(lines.filter((line) => line.tools?.length).map((line) => line.title)).toEqual([
+      'Contrôle des doublons', 'Mise dans « À classer »', 'Ingestion', 'Analyse', 'Type de pièce', 'Entreprise', 'Titre', 'Date du document', 'Langue', 'Référence et version', 'Étiquettes', 'Projet', 'Analyse des liens', 'Création des liens', 'Rangement'
+    ])
+    expect(tool(lines, 'Ingestion')).toMatchObject({ id: 'relancer-ingestion', label: 'Relancer : Ingestion', icon: 'refresh' })
+    expect(section.blocks.find((block) => block.kind === 'actions')).toMatchObject({ actions: [{ id: 'circuit-restart', label: 'Relancer tout le circuit' }] })
+    // L'ingestion seule : son texte relu de nouveau ; ni analyse, ni rangement ; il reste rangé.
+    const count = (kind: string) => asked.filter((each) => each.kind === kind).length
+    const before = { relecture: count('relecture'), analyse: count('analyse'), rangement: count('rangement') }
+    await tool(lines, 'Ingestion').run()
+    expect(count('relecture')).toBe(before.relecture + 1)
+    expect(count('analyse')).toBe(before.analyse)
+    expect(count('rangement')).toBe(before.rangement)
+    expect(read(platform, record)).toMatch(/\ncircuit: range\n/)
+    // Le rangement seul : redemandé, ni relu ni analysé.
+    ;({ lines } = await stepsOf())
+    await tool(lines, 'Rangement').run()
+    expect(count('rangement')).toBe(before.rangement + 1)
+    expect(count('analyse')).toBe(before.analyse)
+    expect(count('relecture')).toBe(before.relecture + 1)
+    // Les doublons revérifiés : dit.
+    ;({ lines } = await stepsOf())
+    await tool(lines, 'Contrôle des doublons').run()
+    expect(platform.notices.at(-1)).toBe('« Norme » : aucun autre document au contenu identique.')
+    // Tout le circuit : après une question, il repart du début (analyse et rangement refaits).
+    ;({ section } = await stepsOf())
+    const restart = section.blocks.find((block): block is Extract<HomeBlock, { kind: 'actions' }> => block.kind === 'actions')!.actions[0]!
+    platform.confirmations.push(true)
+    await restart.run()
+    await workflowsIdle()
+    expect(platform.confirmed.at(-1)!.title).toBe('Relancer tout le circuit pour « Norme » ?')
+    expect(count('analyse')).toBe(before.analyse + 1)
+    expect(count('rangement')).toBe(before.rangement + 2)
+    expect(read(platform, record)).toMatch(/\ncircuit: range\n/)
+    expect(read(platform, record)).toMatch(/· Tout le circuit relancé\n/)
+  })
+
   it('« Continuer le circuit » grisé, avec sa raison, quand le circuit est coupé', async () => {
     const platform = memoryPlatform()
     const { pour, answers, load, settings } = await start(platform)
@@ -371,6 +424,11 @@ describe('le workflow système « Circuit des documents »', () => {
     const steps = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.parcours')!
     const failed = steps.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).find((line) => line.tone === 'danger')!
     expect(failed.actions![0]).toMatchObject({ id: 'circuit-continue', disabled: true, tooltip: 'Le circuit des documents est désactivé (Paramètres › Bibliothèque › Le circuit des documents (IA))' })
+    // Les relances des étapes du circuit : grisées, leur raison dite ; un champ se cherche toujours.
+    const lines = steps.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    expect(lines.find((line) => line.title === 'Rangement')!.tools![0]).toMatchObject({ disabled: true, tooltip: 'Le circuit des documents est désactivé (Paramètres › Bibliothèque › Le circuit des documents (IA))' })
+    expect(lines.find((line) => line.title === 'Type de pièce')!.tools![0]).not.toHaveProperty('disabled')
+    expect(steps.blocks.find((block) => block.kind === 'actions')).toMatchObject({ actions: [{ id: 'circuit-restart', disabled: true }] })
   })
 
   it('le rappel du lundi : les documents à contrôler, s’il y en a', async () => {

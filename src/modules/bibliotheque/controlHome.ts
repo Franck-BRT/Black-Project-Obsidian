@@ -41,6 +41,10 @@ export interface ControlDeps {
   continueCircuit?(record: string): Promise<boolean>
   /** Continuer le circuit pour tous ceux qui attendent (pas ceux à contrôler) ; rend combien. */
   continueAll?(): Promise<number>
+  /** Relancer une seule étape du parcours d'un document (son identifiant : « ingestion », « type »…). */
+  relaunchStep?(record: string, step: string): Promise<void>
+  /** Relancer tout le circuit d'un document (après une question) ; vrai s'il a repris. */
+  relaunchAll?(record: string): Promise<boolean>
 }
 
 /** Une proposition en mots : « l'entreprise « ESA — Agence spatiale européenne » », « la personne « Marie Durand » (ESA) ». */

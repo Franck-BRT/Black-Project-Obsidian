@@ -23,10 +23,11 @@ import {
   SCHEDULE,
   stepVariable,
   variablesOf,
+  type Subject,
   type Workflow,
   type WorkflowEvent
 } from './model'
-import { actionSpec, guidanceFor, triggerSpec, type Translate } from './registry'
+import { actionSpec, guidanceFor, triggerSpec, type ActionOutcome, type Translate } from './registry'
 import { usable } from './system'
 
 export type Outcome = 'done' | 'failed' | 'declined' | 'stopped'
@@ -85,6 +86,20 @@ export class WorkflowEngine {
   private running = 0
 
   constructor(private readonly deps: EngineDeps) {}
+
+  /**
+   * Une action seule, hors d'un workflow (une étape du circuit des documents relancée d'un bouton) :
+   * ses champs donnés (les autres : leur valeur d'origine), ses consignes d'IA comme dans un workflow.
+   * Une erreur est levée telle quelle ; rien n'est écrit au journal.
+   */
+  async runAction(kind: string, given: Readonly<Record<string, string>>, subject: Subject): Promise<ActionOutcome> {
+    const { t, ui, notifier } = this.deps
+    const spec = actionSpec(kind)
+    if (!spec) throw new Error(t('workflows.step.unknown', { step: 1, kind }))
+    const fields = Object.fromEntries(spec.fields.map((field) => [field.key, (given[field.key] ?? field.defaultValue ?? '').trim()]))
+    const guidance = spec.aiAdded?.length ? await guidanceFor(Object.fromEntries(spec.aiAdded.map((key) => [key, fields[key] ?? '']))) : ''
+    return spec.run({ fields, subject, vars: {}, t, ui, notifier, ...(guidance ? { guidance } : {}) })
+  }
 
   /** Un évènement : les workflows qui y répondent s'exécutent, à la suite. */
   emit(event: WorkflowEvent): Promise<void> {

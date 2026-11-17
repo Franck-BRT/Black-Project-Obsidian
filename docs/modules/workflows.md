@@ -5,13 +5,14 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.26.0 (Black Projects 0.136.13) |
+| Version | 0.27.0 (Black Projects 0.150.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
 | Interface publique | `src/modules/workflows/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/workflows/doc/Workflows.md`.
+
 
 ## Ce qu'il fait
 
@@ -275,6 +276,11 @@ champ avec l'IA, depuis la fiche d'un document.
   `WorkflowFicheDeps.remove`, la confirmation de `deleteWorkflow`. Pas pour un workflow système
   (il se désactive, ou se rétablit sur sa fiche).
 
+## Une action seule, hors d'un workflow (v0.27.0, Black Projects 0.150.0)
+
+- `runActionNow(kind, fields, subject?)` (`WorkflowEngine.runAction`) : exécute une action seule — ses
+  champs donnés, les autres à leur valeur d'origine, ses consignes d'IA comme dans un workflow ; rien au
+  journal, une erreur levée. La bibliothèque s'en sert pour relancer une étape du circuit d'un document.
 ## Devenu essentiel après coup (v0.26.0, Black Projects 0.136.13)
 
 - `Workflow.essential` : un workflow système essentiel dont l'état d'origine a été appliqué.

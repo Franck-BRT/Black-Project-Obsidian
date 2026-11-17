@@ -5,13 +5,30 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.63.0 (Black Projects 0.149.0) |
+| Version | 0.64.0 (Black Projects 0.150.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Relancer une étape, ou tout le circuit (v0.64.0, Black Projects 0.150.0)
+
+- Chaque ligne du parcours a un bouton **Relancer : …** (`DocStepsContext.relaunch`, en `tools`) qui ne
+  refait **que cette étape** (`ControlDeps.relaunchStep`) :
+  - Contrôle des doublons : revérifié (un autre document au même contenu ?), dit ;
+  - Mise dans « À classer » : remis dans « À classer » (état `a-classer`), sans lancer la suite ;
+  - Ingestion, Analyse (et Projet, Analyse des liens, qu'elle donne), Rangement : leur skill exécuté seul
+    (`runActionNow('ia.executer-skill', { refaire: 'oui' })`), même si l'étape a été faite ;
+  - un champ (type, entreprise, titre, date, langue, référence, étiquettes) : sa recherche relancée
+    (`researchField`) ;
+  - Création des liens : les liens réécrits, avec leurs rétroliens (`setLinks(linksOf)`).
+  Les étapes du circuit : pour un document du circuit seulement, grisées (leur raison) sans IA ou le
+  circuit coupé.
+- **Relancer tout le circuit** (`relaunchAll`, après une question) : remis au début (`a-classer`, sa
+  proposition, son projet, son échec oubliés), puis le circuit le reprend (`continueCircuit`). Le texte
+  déjà relu par l'IA n'est pas relu de nouveau (« Relancer : Ingestion » le fait).
 
 ## Le parcours d'un document, sur sa fiche (v0.63.0, Black Projects 0.149.0)
 

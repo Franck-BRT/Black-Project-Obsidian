@@ -746,7 +746,19 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
     fields: [
       { key: 'fiche', labelKey: 'ia.wf.field.record', kind: 'text', required: true, defaultValue: '{fiche}' },
       { key: 'skill', labelKey: 'ia.wf.field.skill', kind: 'text', required: true, tooltipKey: 'ia.wf.field.skill.tip' },
-      { key: 'seuil', labelKey: 'ia.wf.field.threshold.skill', kind: 'text', tooltipKey: 'ia.wf.field.threshold.skill.tip' }
+      { key: 'seuil', labelKey: 'ia.wf.field.threshold.skill', kind: 'text', tooltipKey: 'ia.wf.field.threshold.skill.tip' },
+      // Refaire l'étape même si le document l'a passée (un bouton « Relancer » de sa fiche) : d'origine, non.
+      {
+        key: 'refaire',
+        labelKey: 'ia.wf.field.redo',
+        kind: 'choice',
+        tooltipKey: 'ia.wf.field.redo.tip',
+        defaultValue: 'non',
+        options: [
+          { value: 'non', labelKey: 'ia.wf.field.redo.no' },
+          { value: 'oui', labelKey: 'ia.wf.field.redo.yes' }
+        ]
+      }
     ],
     results: ['text', 'decision', 'confiance', 'fiche'],
     async run(context) {
@@ -755,6 +767,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
       const doc = record ? await libraryDoc(record) : null
       const done = (text: string, decision = '', confiance = '', fiche = record) => ({ lines: [text], results: { text, decision, confiance, fiche } })
       if (!doc) return done(t('ia.wf.language.noDoc', { record }))
+      const redo = fields.refaire === 'oui'
       try {
         const skill = await namedEntry('skill', fields.skill)
         if (!skill) throw new Error(t('ia.wf.skill.none'))
@@ -764,11 +777,11 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
         const threshold = readThreshold(fields.seuil) ?? skill.threshold ?? DEFAULT_THRESHOLD
         // L'ingestion : le texte relu par l'IA (la procédure du skill guide la relecture) — sauf s'il l'a déjà été, ou si le document a passé cette étape.
         if (skill.output === 'ingestion') {
-          if (doc.circuit && doc.circuit !== 'a-classer') return done(t('ia.wf.skill.ingested.already', { title: doc.title }), 'ingere')
+          if (!redo && doc.circuit && doc.circuit !== 'a-classer') return done(t('ia.wf.skill.ingested.already', { title: doc.title }), 'ingere')
           // Le seul endroit où un document du circuit est relu (les workflows de relecture l'écartent).
           const scan = doc.reading === 'sans-texte' || doc.reading === 'image'
           let detail: string
-          if (await aiProofreadAlready(record)) detail = t('ia.wf.skill.ingested.read')
+          if (!redo && (await aiProofreadAlready(record))) detail = t('ia.wf.skill.ingested.read')
           else if (doc.reading !== 'lue' && !scan) detail = t('ia.wf.skill.ingested.noText')
           else {
             const proofread = actionSpec('ia.relire-texte')
@@ -782,7 +795,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
         const user = [t('ia.wf.skill.document', { title: doc.title }), skillContext].filter(Boolean).join('\n\n')
         // L'analyse : type de pièce, émetteur, projet — relue, puis appliquée (ce qui est sûr) ; illisible : rien, le circuit continue.
         if (skill.output === 'analyse') {
-          if (doc.circuit && doc.circuit !== 'a-classer' && doc.circuit !== 'ingere') return done(t('ia.wf.skill.analysed.already', { title: doc.title }), 'analyse')
+          if (!redo && doc.circuit && doc.circuit !== 'a-classer' && doc.circuit !== 'ingere') return done(t('ia.wf.skill.analysed.already', { title: doc.title }), 'analyse')
           let answer: unknown = null
           try {
             answer = await ai.chatJson<unknown>({ messages: [{ role: 'system', content: t('ia.wf.skill.system.analyse') }, { role: 'user', content: user }], temperature: 0, schema: ANALYSIS_SCHEMA })

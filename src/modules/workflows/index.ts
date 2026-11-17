@@ -55,6 +55,7 @@ import { JOURNAL_PAGE, lastRunLine, openWorkflows, registerWorkflowsHome, runPag
 import { pageWith } from '../../core/views'
 import { allSystemWorkflows, systemWorkflowSpec, triggerSpec, whenSystemDeclared } from './registry'
 import { NO_SUBJECT, OPENING, type Subject, type Workflow } from './model'
+import type { ActionOutcome } from './registry'
 import { restoreSystem, seedSystem, systemOrigin, systemState, usable } from './system'
 
 // ── Interface publique ────────────────────────────────────────────────────────────
@@ -118,6 +119,14 @@ export async function runSystemWorkflow(id: string, trigger: string, subject: Su
     console.error('[Black Projects] workflows', error)
     return false
   }
+}
+
+/**
+ * Exécuter une action seule, hors d'un workflow (une étape du circuit relancée d'un bouton) : ses
+ * consignes d'IA comme dans un workflow. Sans le module Workflows actif : `null`. Une erreur est levée.
+ */
+export async function runActionNow(kind: string, fields: Readonly<Record<string, string>>, subject: Subject = NO_SUBJECT): Promise<ActionOutcome | null> {
+  return engine ? engine.runAction(kind, fields, subject) : null
 }
 
 /** Exécute les workflows planifiés dont l'heure est venue (la minuterie le fait ; les tests aussi). */
@@ -213,7 +222,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.26.0',
+  version: '0.27.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),

@@ -70,6 +70,20 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Relancer une étape, ou tout le circuit (v0.150.0)
+
+- [ ] La fiche d'un document du circuit : un bouton ⟳ devant chaque ligne du parcours ; son infobulle
+      dit ce qu'il refait
+- [ ] ⟳ Ingestion : le texte relu de nouveau par l'IA, rien d'autre (il reste rangé)
+- [ ] ⟳ Rangement : seul le rangement redemandé (le document peut changer de place)
+- [ ] ⟳ Type de pièce : seule sa recherche relancée
+- [ ] ⟳ Création des liens : les liens réécrits, les rétroliens remis dans les notes citées
+- [ ] ⟳ Contrôle des doublons : « aucun autre document au contenu identique » (ou lesquels)
+- [ ] « Relancer tout le circuit » : une question, puis le circuit repart du début (analyse, rangement)
+- [ ] Le circuit coupé, ou sans IA : les ⟳ des étapes du circuit grisés (leur raison), ceux des champs non
+- [ ] Un document hors circuit : ⟳ pour les doublons, les champs, les liens ; « Relancer tout le circuit »
+      le fait entrer dans le circuit
+
 ## Le parcours de chaque document (v0.149.0)
 
 - [ ] Un document versé dans le circuit, rangé : « Le parcours du document » déplié — doublons, À classer,

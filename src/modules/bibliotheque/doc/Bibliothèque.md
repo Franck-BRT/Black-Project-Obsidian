@@ -82,6 +82,12 @@ classer », l'ingestion, l'analyse et chacun de ses champs (type de pièce, entr
 langue, référence, étiquettes, projet), l'analyse des liens, leur création, le rangement. Là où le
 circuit s'est arrêté : **Continuer le circuit**.
 
+Chaque étape a son bouton **⟳ Relancer** (devant sa ligne) : il ne refait **que cette étape** — les
+doublons revérifiés, remis dans « À classer », l'ingestion (le texte relu de nouveau par l'IA),
+l'analyse (qui donne aussi le projet et les liens), un champ cherché de nouveau, les liens réécrits,
+le rangement redemandé. Sous la liste, **Relancer tout le circuit** (après une question) le reprend
+depuis le début. Sans IA, ou le circuit coupé, les boutons des étapes du circuit sont grisés.
+
 **La fiche d'un document** : sous son titre, une ligne dit ce qu'il est (famille, type de pièce,
 version, taille, date d'ajout). Ce qui reste à confirmer est en tête, **une ligne chacun** — le nom,
 la raison, les boutons (« Confirmer : Français », « Pas de date », « Modifier… »). **Identification**

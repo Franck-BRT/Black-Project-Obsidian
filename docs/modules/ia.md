@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.32.4 (Black Projects 0.140.0) |
+| Version | 0.33.0 (Black Projects 0.150.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -14,6 +14,12 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
 
+
+## « Refaire même si c'est déjà fait » (v0.33.0, Black Projects 0.150.0)
+
+- `ia.executer-skill` : un champ `refaire` (`non` d'origine, `oui`) — l'ingestion et l'analyse sont
+  refaites même si le document les a passées (le texte relu de nouveau par l'IA) ; la bibliothèque
+  s'en sert pour « Relancer : … » une étape depuis la fiche.
 ## L'échec d'une étape du circuit, dit sur la fiche (v0.32.4, Black Projects 0.140.0)
 
 - `ia.executer-skill` : une erreur (l'IA injoignable, le serveur, un skill absent) est écrite sur la

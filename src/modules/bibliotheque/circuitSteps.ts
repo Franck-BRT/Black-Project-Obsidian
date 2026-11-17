@@ -151,6 +151,8 @@ export interface DocStepsContext {
   proposals: number
   /** « Continuer le circuit » (absent : pas de bouton). */
   continueAction?: ViewAction | null
+  /** Le bouton qui relance seulement cette étape (son identifiant, son nom) ; `null` : pas de bouton. */
+  relaunch?(id: string, title: string): ViewAction | null
 }
 
 /**
@@ -164,16 +166,21 @@ export function documentSteps(t: Translate, doc: LibraryDoc, context: DocStepsCo
   const circuit = !!doc.circuit
   const state = doc.circuit ?? ''
   const label = (key: DocStepState | 'confirm' | 'none'): string => t(`bibliotheque.steps.state.${key}`)
-  const item = (id: string, title: string, stepState: DocStepState, detail = '', level = 0, extra: Partial<ListItem> = {}): ListItem => ({
-    id: `parcours-${id}`,
-    title,
-    ...(detail ? { detail } : {}),
-    tone: STEP_TONE[stepState],
-    icon: STEP_ICON[stepState],
-    when: label(stepState),
-    ...(level ? { level } : {}),
-    ...extra
-  })
+  const item = (id: string, title: string, stepState: DocStepState, detail = '', level = 0, extra: Partial<ListItem> = {}): ListItem => {
+    // Relancer seulement cette étape : un petit bouton, devant la ligne.
+    const relaunch = context.relaunch?.(id, title) ?? null
+    return {
+      id: `parcours-${id}`,
+      title,
+      ...(detail ? { detail } : {}),
+      tone: STEP_TONE[stepState],
+      icon: STEP_ICON[stepState],
+      when: label(stepState),
+      ...(level ? { level } : {}),
+      ...(relaunch ? { tools: [relaunch] } : {}),
+      ...extra
+    }
+  }
   // L'étape où le circuit s'est arrêté (en échec, en attente, à décider) : « Continuer le circuit » y est.
   const resume = (stepState: DocStepState): Partial<ListItem> =>
     circuit && context.continueAction && (stepState === 'failed' || stepState === 'waiting' || (stepState === 'decide' && state === 'a-controler')) ? { actions: [context.continueAction] } : {}
