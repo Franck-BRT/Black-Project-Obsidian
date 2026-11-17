@@ -194,10 +194,9 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Signaler les workflows cassés, à l'ouverture | à l'ouverture d'Obsidian | dit les workflows actifs au déclencheur ou à l'action d'un module désactivé | actif |
 | Bilan des workflows, chaque lundi | lundi à 8 h | exécutions et échecs des 7 derniers jours | désactivé |
 | Archiver le journal des workflows, chaque mois | le 1er du mois à 8 h | les exécutions de plus de 30 jours dans une note d'archive | désactivé |
-| Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
+| Rappels des exigences, chaque lundi | lundi à 8 h | le rapport de qualité de la bibliothèque, puis les traductions absentes, en retard ou à relire — une étape chacun | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |
-| Traductions à revoir, chaque lundi | lundi à 8 h | compte les traductions absentes, en retard ou à relire | désactivé |
 | Relire les nouvelles exigences (IA) | exigence créée | relecture par l'IA, écrite dans la note | désactivé |
 | Vérifier la connexion à l'IA et signaler ses nouveaux modèles, à l'ouverture (v0.60.0 ; les nouveaux modèles fondus en 0.136.4) | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas, si un modèle choisi n'y est plus, ou s'il en porte de nouveaux | actif |
 | Signaler un serveur d'IA lent, à l'ouverture | à l'ouverture d'Obsidian | prévient si l'IA met plus de 5 s à répondre | désactivé |

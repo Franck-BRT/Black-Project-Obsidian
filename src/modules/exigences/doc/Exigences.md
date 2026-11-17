@@ -255,8 +255,7 @@ les modifier, les désactiver, et revenir à l'original :
 | Workflow système | Quand | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
 | Contrôler la qualité des exigences importées | après un import d'exigences | nomme les exigences faibles (moins de 3 étoiles) ; aucune : rien n'est dit | activé |
-| Qualité de la bibliothèque d'exigences, chaque lundi | le lundi à 8 h | écrit la note « Qualité des exigences » | désactivé |
-| Traductions à revoir, chaque lundi | le lundi à 8 h | compte les traductions absentes, en retard sur la source ou à relire | désactivé |
+| Rappels des exigences, chaque lundi | le lundi à 8 h | une étape par rappel : écrit la note « Qualité des exigences » et le dit, puis compte les traductions absentes, en retard sur la source ou à relire (rien n'est dit s'il n'y en a pas) ; retirez une étape pour ne plus avoir ce rappel | désactivé |
 | Traduire les nouvelles exigences (IA) | une exigence créée | la traduit dans les autres langues, « à relire » | désactivé |
 | Relire les nouvelles exigences (IA) | une exigence créée | la fait relire par l'IA ; la relecture est écrite dans sa note | désactivé |
 

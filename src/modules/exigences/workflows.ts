@@ -242,18 +242,23 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
   })
 
   // ── Les workflows système des exigences ──
+  // Les rappels du lundi, en un seul workflow : la qualité de la bibliothèque (le rapport, puis ce
+  // qu'il dit), les traductions à revoir (muette s'il n'y en a pas). « Qualité de la bibliothèque
+  // d'exigences, chaque lundi » et « Traductions à revoir, chaque lundi » y sont fondus.
   registerSystemWorkflow({
-    id: 'sys.exigences.qualite-hebdo',
+    id: 'sys.exigences.rappels-lundi',
     moduleKey: 'exigences.name',
     enabledByDefault: false,
+    replaces: ['sys.exigences.qualite-hebdo', 'sys.exigences.traductions-hebdo'],
     make: (tr) => ({
-      name: tr('exigences.sys.qualite-hebdo'),
+      name: tr('exigences.sys.rappels-lundi'),
       mode: 'auto',
       trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
       conditions: [],
       actions: [
         { kind: 'exigences.qualite', fields: {} },
-        { kind: 'notifier', fields: { message: tr('exigences.wf.template.weekly.message') } }
+        { kind: 'notifier', fields: { message: tr('exigences.wf.template.weekly.message') } },
+        { kind: 'exigences.traductions-retard', fields: {} }
       ] as WorkflowAction[]
     })
   })
@@ -274,18 +279,6 @@ export function registerExigencesWorkflows(session: () => Session, t: Translate,
     moduleKey: 'exigences.name',
     enabledByDefault: true,
     make: (tr) => ({ name: tr('exigences.sys.controle-import'), mode: 'auto', trigger: { kind: TRIGGER_IMPORTED }, conditions: [], actions: [{ kind: 'exigences.controle-import', fields: {} }] })
-  })
-  registerSystemWorkflow({
-    id: 'sys.exigences.traductions-hebdo',
-    moduleKey: 'exigences.name',
-    enabledByDefault: false,
-    make: (tr) => ({
-      name: tr('exigences.sys.traductions-hebdo'),
-      mode: 'auto',
-      trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
-      conditions: [],
-      actions: [{ kind: 'exigences.traductions-retard', fields: {} }]
-    })
   })
   registerSystemWorkflow({
     id: 'sys.exigences.relire-nouvelles',

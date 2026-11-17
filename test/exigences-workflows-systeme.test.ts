@@ -25,10 +25,10 @@ const MODULES = [lectureFichiersModule, typagePiecesModule, bibliothequeModule, 
 const enc = (text: string) => new TextEncoder().encode(text)
 const JOURNAL = 'Black Projects/Workflows/Journal des workflows.md'
 
-async function start(platform: MemoryPlatform, modules: readonly BlackModule[] = MODULES) {
+async function start(platform: MemoryPlatform, modules: readonly BlackModule[] = MODULES, existing?: Record<string, Record<string, unknown>>) {
   const i18n = createI18n('fr')
   for (const module of MODULES) i18n.register('fr', module.texts.fr)
-  const settings: Record<string, Record<string, unknown>> = { workflows: { essentielsSeulement: false }, ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false } }
+  const settings: Record<string, Record<string, unknown>> = existing ?? { workflows: { essentielsSeulement: false }, ao: { dossier: "Appels d'offres", accueilVu: true, rappelOuverture: false } }
   const commands = new Map<string, ModuleCommand>()
   for (const module of modules) {
     const context: ModuleContext = {
@@ -51,7 +51,7 @@ async function start(platform: MemoryPlatform, modules: readonly BlackModule[] =
     platform.forms.push({ category: 'cli' })
     await commands.get('exigences-importer')!.run()
   }
-  return { system, journal, importCsv }
+  return { system, journal, importCsv, settings }
 }
 
 afterEach(async () => {
@@ -64,7 +64,13 @@ describe('les nouveaux workflows système des exigences', () => {
   it('créés : le contrôle des importées actif ; les traductions du lundi et la relecture IA désactivées', async () => {
     const { system } = await start(memoryPlatform())
     expect(system('controle-import')).toMatchObject({ enabled: true, name: 'Contrôler la qualité des exigences importées', trigger: { kind: 'exigences.importees' }, actions: [{ kind: 'exigences.controle-import' }] })
-    expect(system('traductions-hebdo')).toMatchObject({ enabled: false, name: 'Traductions à revoir, chaque lundi', trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
+    // Les rappels du lundi : un seul workflow, la qualité de la bibliothèque puis les traductions à revoir.
+    expect(system('rappels-lundi')).toMatchObject({
+      enabled: false,
+      name: 'Rappels des exigences, chaque lundi : qualité de la bibliothèque, traductions à revoir',
+      trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
+      actions: [{ kind: 'exigences.qualite' }, { kind: 'notifier' }, { kind: 'exigences.traductions-retard' }]
+    })
     expect(system('relire-nouvelles')).toMatchObject({ enabled: false, name: 'Relire les nouvelles exigences (IA)', trigger: { kind: 'exigences.creee' }, actions: [{ kind: 'exigences.relire', fields: { exigence: '{chemin}' } }] })
   })
 
@@ -94,21 +100,35 @@ describe('les nouveaux workflows système des exigences', () => {
     expect(weakNotices(platform)).toEqual([])
   })
 
-  it('les traductions à revoir, une fois activé : comptées et dites', async () => {
+  it('les rappels du lundi, une fois activés : la qualité à jour, les traductions à revoir comptées et dites', async () => {
     const platform = memoryPlatform()
     const { importCsv, system, journal } = await start(platform)
     await importCsv('Exigences.csv', ['Le système doit démarrer en 5 s.', 'Le système doit peser moins de 20 kg.'])
-    Object.assign(system('traductions-hebdo'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
+    Object.assign(system('rappels-lundi'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
     await runDueWorkflows()
+    expect(platform.notices.some((notice) => notice.startsWith('Qualité des exigences à jour'))).toBe(true)
     expect(platform.notices.at(-1)).toBe('Traductions à revoir sur 2 exigence(s) : 2 absente(s), 0 en retard, 0 à relire. Page Exigences → « Traductions à relire ».')
-    expect(journal()).toContain('**Traductions à revoir, chaque lundi**')
+    expect(journal()).toContain('**Rappels des exigences, chaque lundi : qualité de la bibliothèque, traductions à revoir**')
   })
 
-  it('désactivés d’origine : la planification ne lance pas les traductions', async () => {
+  it('désactivés d’origine : la planification ne lance pas les rappels du lundi', async () => {
     const platform = memoryPlatform()
     const { system, journal } = await start(platform)
-    system('traductions-hebdo').created = '2020-01-01T00:00:00.000Z'
+    system('rappels-lundi').created = '2020-01-01T00:00:00.000Z'
     await runDueWorkflows()
-    expect(journal()).not.toContain('Traductions à revoir')
+    expect(journal()).not.toContain('Rappels des exigences')
+  })
+
+  it('un coffre d’avant : la qualité et les traductions du lundi retirées, fondues en un', async () => {
+    const platform = memoryPlatform()
+    const { settings } = await start(platform)
+    const old = ['qualite-hebdo', 'traductions-hebdo'].map((id) => ({
+      id: `sys.exigences.${id}`, system: `sys.exigences.${id}`, name: id, enabled: true, created: '2026-11-01T00:00:00.000Z', mode: 'auto' as const,
+      trigger: { kind: 'planifie', every: 'week' as const, weekday: 1, time: '08:00' }, conditions: [], actions: []
+    }))
+    settings.workflows!.workflows = [...(settings.workflows!.workflows as Workflow[]), ...old]
+    for (const module of [...MODULES].reverse()) await module.deactivate?.()
+    await start(platform, MODULES, settings)
+    expect((settings.workflows!.workflows as Workflow[]).filter((each) => each.system?.startsWith('sys.exigences.') && each.trigger.kind === 'planifie').map((each) => each.system)).toEqual(['sys.exigences.rappels-lundi'])
   })
 })

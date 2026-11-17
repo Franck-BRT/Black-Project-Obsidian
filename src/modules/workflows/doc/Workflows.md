@@ -114,10 +114,9 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Signaler les workflows cassés, à l'ouverture | à l'ouverture d'Obsidian | dit les workflows actifs dont le déclencheur ou une action vient d'un module désactivé | actif |
 | Bilan des workflows, chaque lundi | lundi à 8 h | les exécutions des 7 derniers jours, les échecs et lesquels | désactivé |
 | Archiver le journal des workflows, chaque mois | le 1er du mois à 8 h | les exécutions de plus de 30 jours rangées dans une note d'archive du mois | désactivé |
-| Qualité de la bibliothèque d'exigences, chaque lundi | lundi à 8 h | rapport de qualité de la bibliothèque | désactivé |
+| Rappels des exigences, chaque lundi | lundi à 8 h | le rapport de qualité de la bibliothèque, puis les traductions absentes, en retard ou à relire — une étape chacun | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
 | Contrôler la qualité des exigences importées | exigences importées | nomme les faibles (moins de 3 étoiles) | actif |
-| Traductions à revoir, chaque lundi | lundi à 8 h | compte les traductions absentes, en retard ou à relire | désactivé |
 | Relire les nouvelles exigences (IA) | exigence créée | relecture par l'IA, écrite dans la note | désactivé |
 | Vérifier la connexion à l'IA et signaler ses nouveaux modèles, à l'ouverture | à l'ouverture d'Obsidian | met à jour la liste des modèles ; dit si le serveur ne répond pas, si un modèle choisi n'y est plus, ou s'il en porte de nouveaux (avec leur usage) | actif |
 | Signaler un serveur d'IA lent, à l'ouverture | à l'ouverture d'Obsidian | prévient si l'IA met plus de 5 s à répondre | désactivé |

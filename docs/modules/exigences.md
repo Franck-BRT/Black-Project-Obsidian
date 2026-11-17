@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.26.0 (Black Projects 0.86.0) |
+| Version | 0.27.0 (Black Projects 0.136.6) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -14,6 +14,15 @@
 | Étape | 3 du [plan d'intégration](../plan-integration.md) — le socle des exigences |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/exigences/doc/Exigences.md`.
+
+## Les rappels du lundi en un seul workflow (v0.27.0, Black Projects 0.136.6)
+
+- `sys.exigences.rappels-lundi` : « Rappels des exigences, chaque lundi : qualité de la
+  bibliothèque, traductions à revoir », lundi à 8 h, désactivé d'origine ; trois étapes —
+  `exigences.qualite` (la note « Qualité des exigences »), `notifier` (« Qualité des exigences à
+  jour : {step1.text} {step1.link} »), `exigences.traductions-retard` (muette s'il n'y a rien).
+- Il remplace (`replaces`) `sys.exigences.qualite-hebdo` et `sys.exigences.traductions-hebdo` :
+  retirés des coffres existants. On retire une étape pour ne plus avoir ce rappel.
 
 ## Ce qu'il fait
 
@@ -292,7 +301,7 @@ vient de l'ordinateur, en place s'il est dans le coffre ; origine « Import d'ex
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
 | Contrôler la qualité des exigences importées (`sys.exigences.controle-import`) | *Exigences : exigences importées* (nouveau) | `exigences.controle-import` : la qualité (sans IA, `assessAll`) des exigences de l'import ; les faibles (moins de 3 étoiles) nommées avec leurs étoiles et la moyenne ; aucune : rien n'est dit | actif |
-| Traductions à revoir, chaque lundi (`sys.exigences.traductions-hebdo`) | lundi à 8 h | `exigences.traductions-retard` : `laggingTranslations` — absentes, en retard sur la source (`fromRev < rev`), automatiques à relire — comptées et dites | désactivé |
+| Traductions à revoir, chaque lundi (`sys.exigences.traductions-hebdo` ; depuis 0.27.0, une étape de `rappels-lundi`) | lundi à 8 h | `exigences.traductions-retard` : `laggingTranslations` — absentes, en retard sur la source (`fromRev < rev`), automatiques à relire — comptées et dites | désactivé |
 | Relire les nouvelles exigences (IA) (`sys.exigences.relire-nouvelles`) | *Exigences : exigence créée* | `exigences.relire` (`{chemin}`) : la relecture écrite dans la note, rien d'appliqué | désactivé |
 
 Le déclencheur `exigences.importees` est émis après un import réussi (`importFromFile`,

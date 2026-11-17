@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.5)
+## Aujourd'hui (version 0.136.6)
+
+- **Les rappels du lundi des exigences en un seul workflow** : « Rappels des exigences, chaque
+  lundi » écrit la note « Qualité des exigences », puis dit les traductions à revoir. Désactivé
+  d'origine ; activez-le sur la page Workflows, retirez une étape pour ne garder que l'autre.
 
 - **Les rappels du lundi de la bibliothèque en un seul workflow** : « Rappels de la bibliothèque,
   chaque lundi » dit, s'il y en a, les documents à contrôler, les versions et les langues à

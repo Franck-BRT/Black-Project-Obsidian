@@ -70,6 +70,14 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les rappels du lundi des exigences en un seul workflow (v0.136.6)
+
+- [ ] Workflows › Système › Exigences : **Rappels des exigences, chaque lundi** (désactivé, trois
+      étapes) ; « Qualité de la bibliothèque d'exigences, chaque lundi » et « Traductions à revoir,
+      chaque lundi » n'y sont plus (coffre existant compris)
+- [ ] L'activer, **Exécuter** : la note « Qualité des exigences » écrite et dite ; les traductions à
+      revoir dites s'il y en a
+
 ## Les rappels du lundi en un seul workflow (v0.136.5)
 
 - [ ] Workflows › Système › Bibliothèque : **Rappels de la bibliothèque, chaque lundi** (actif, cinq
