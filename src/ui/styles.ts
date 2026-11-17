@@ -112,6 +112,8 @@ const COMPONENTS_CSS = String.raw`
 .bp-page-select { flex: 0 0 auto; width: auto; display: inline-flex; align-items: center; gap: 8px; padding: 0 4px 0 12px; min-height: 40px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius-small); background: var(--bp-surface); color: var(--bp-text-muted); font-size: 0.92em; }
 .bp-page-select svg.bp-icon { flex: none; width: 16px; height: 16px; }
 .bp-page-select .bp-select { width: auto; min-width: 12em; max-width: 22em; min-height: 32px; padding: 4px 8px; border: 0; background: transparent; color: var(--bp-text); font-weight: 600; cursor: pointer; }
+/* Le style des menus d'Obsidian (bordure, ombre, fond) : pas dans nos menus de barre, qui ont leur cadre. */
+.bp-ui .bp-page-select select.bp-select, .bp-ui .bp-page-select select.bp-select:hover, .bp-ui .bp-page-select select.bp-select:focus { border: 0; box-shadow: none; background-color: transparent; outline: none; }
 .bp-page-select:focus-within { border-color: var(--bp-focus); }
 .bp-page-filter.is-active { border-color: var(--bp-accent); background: var(--bp-accent-soft); color: var(--bp-accent); }
 .bp-page-filter.is-active .bp-select { color: var(--bp-accent); }
@@ -653,7 +655,10 @@ button.bp-journey-tile:focus-visible { outline: 3px solid var(--bp-focus); outli
 
 /* L'arborescence d'une page (un explorateur de fichiers) : une colonne à gauche, la page à droite. */
 .bp-explorer-layout { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: 22px; align-items: start; }
-.bp-explorer-main { min-width: 0; }
+.bp-explorer-main { min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+/* À droite de l'arborescence : le sous-titre en haut de la colonne, un peu plus près de ses boutons. */
+.bp-explorer-main > .bp-page-sub:first-child { margin-top: 0; }
+.bp-explorer-main > .bp-page-sub + .bp-page-actions { margin-top: -8px; }
 .bp-explorer { position: sticky; top: 0; max-height: calc(100vh - 150px); overflow: auto; padding: 8px 6px; border: 1px solid var(--bp-border); border-radius: var(--bp-radius); background: var(--bp-surface); }
 .bp-explorer-list { list-style: none; margin: 0; padding: 0; }
 .bp-explorer-row { display: flex; align-items: center; gap: 2px; min-height: 32px; border-radius: var(--bp-radius-small); }

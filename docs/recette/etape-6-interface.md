@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les espacements à droite de l'arborescence (v0.148.1)
+
+- [ ] Bibliothèque (en explorateur) : entre le sous-titre, les boutons, la barre et la liste, un espace
+      régulier (plus rien de collé)
+- [ ] Les menus « Tout » et « Regrouper par » : un seul cadre (pas de seconde bordure ni d'ombre dans
+      le cadre), même dans Obsidian
+
 ## La fiche d'un document reprise (v0.148.0)
 
 - [ ] Sous le titre : « famille · type de pièce · taille · ajouté le … » ; plus de tuiles de chiffres

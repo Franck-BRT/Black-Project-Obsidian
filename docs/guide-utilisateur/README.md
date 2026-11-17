@@ -12,7 +12,9 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.148.0)
+## Aujourd'hui (version 0.148.1)
+
+- Les éléments à droite de la colonne de la bibliothèque ne sont plus collés : un espace régulier entre le sous-titre, les boutons, la barre et la liste ; les menus de la barre n'ont plus de double cadre dans Obsidian.
 
 - **La fiche d'un document, plus claire** : ce qui reste à confirmer, une ligne chacun (le nom, la
   raison, les boutons) au lieu de grands encadrés ; sa famille, son type, sa taille, sa date d'ajout
