@@ -115,6 +115,8 @@ export interface LibraryWorkflowDeps {
   /** Le circuit des documents : relancer ceux qui s'y sont arrêtés (rend combien) ; ceux qui attendent d'être contrôlés. */
   relaunchCircuit(): Promise<number>
   toControl(): Promise<LibraryDoc[]>
+  /** Les entreprises et personnes proposées à créer (leur nom), en attente. */
+  pendingEntities?(): Promise<string[]>
   /** L'entretien des liens des documents (le circuit, version C). */
   maintainLinks(): Promise<{ dropped: number; restored: number; docs: string[] }>
 }
@@ -283,11 +285,16 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
     results: ['text'],
     async run({ notifier }) {
       const pending = (await deps.toControl()).sort((a, b) => a.title.localeCompare(b.title, 'fr'))
-      if (!pending.length) {
+      // Et les entreprises et personnes que l'analyse propose de créer.
+      const entities = [...new Set((await deps.pendingEntities?.()) ?? [])]
+      if (!pending.length && !entities.length) {
         const text = t('bibliotheque.wf.toControl.none')
         return { lines: [text], results: { text } }
       }
-      const text = t('bibliotheque.wf.toControl.found', { count: pending.length, titles: someTitles(pending) })
+      const text = [
+        ...(pending.length ? [t('bibliotheque.wf.toControl.found', { count: pending.length, titles: someTitles(pending) })] : []),
+        ...(entities.length ? [t('bibliotheque.wf.toControl.entities', { count: entities.length, names: entities.slice(0, 5).join(', ') + (entities.length > 5 ? '…' : '') })] : [])
+      ].join(' ')
       notifier.notify(text, 15000)
       return { lines: [text], paths: pending.map((doc) => doc.record), results: { text } }
     }

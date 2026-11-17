@@ -682,6 +682,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.13 : **la note de l'analyse, workflow essentiel** (actif d'origine) ; un workflow devenu essentiel après coup est activé une fois dans un coffre existant
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
+- v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
 - v0.134.0 : **le circuit des documents, version A** — skills exécutables (contexte, sortie, seuil), étape « Exécuter un skill », **À contrôler** (accepter, choisir ailleurs, écarter)
 - Conception : **le circuit des documents** — tout dépôt dans À classer, puis ingestion, analyse et liens, rangement par des skills exécutables ; ce qui n'est pas sûr va dans À contrôler ([architecture/circuit-des-documents.md](architecture/circuit-des-documents.md))
 

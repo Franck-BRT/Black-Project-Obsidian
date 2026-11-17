@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.137.0)
+## Aujourd'hui (version 0.138.0)
+
+- **Les entreprises et personnes inconnues, proposées** : quand un document cite une entreprise ou
+  une personne que la bibliothèque ne connaît pas, l'IA propose de la créer — jamais seule. La fiche
+  du document le dit, la page **À contrôler** les rassemble (« Entreprises et personnes à créer ») :
+  **Créer** fait sa note, liée au document ; **Écarter** ôte la proposition.
 
 - **Le circuit des documents relie les documents** : à l'analyse, il repère les entreprises, les
   personnes, les projets et les autres documents (par leur référence) que le document cite ; l'IA

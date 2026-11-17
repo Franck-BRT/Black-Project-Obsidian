@@ -213,7 +213,8 @@ la liste `personnes` à part n'est pas reprise).*
 ```
 
 - Une entreprise ou une personne **inconnue** n'est pas créée seule : elle est proposée
-  (notabilité de gbrain : dans le doute, ne pas créer).
+  (notabilité de gbrain : dans le doute, ne pas créer). *Fait en 0.138.0 : sortie `nouveaux`,
+  gardée sur la fiche (`entites-proposees`), « Créer » ou « Écarter » sur la fiche et dans À contrôler.*
 
 ### Rangement
 
@@ -325,7 +326,9 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
 3. **Version C — les liens** ✅ *(0.137.0)* : candidats (documents par leur référence, entreprises,
    personnes, projets), liens choisis par l'IA parmi eux dans la fiche, rétroliens dans les notes
    citées (qui suivent le document), entretien du lundi. Restent pour plus tard : les exigences et
-   les notes libres comme sources de liens, les personnes et entreprises **inconnues** proposées.
+   les notes libres comme sources de liens. *Les entreprises et personnes **inconnues** citées :
+   proposées (0.138.0) — gardées sur la fiche, rassemblées dans À contrôler, créées (liées) ou
+   écartées par l'utilisateur.*
 
 Chaque version : tests (avec une IA simulée qui rend des réponses sûres, peu sûres,
 illisibles), démo, banc Obsidian, docs, comme d'habitude.

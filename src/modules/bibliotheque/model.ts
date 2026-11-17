@@ -319,12 +319,28 @@ export interface LibraryDoc {
   circuitProject?: string
   /** Ses liens (le circuit, version C) : les notes qu'il cite — leur raison est dans la section Liens de la note. */
   links?: string[]
+  /** Les entreprises et personnes **inconnues** qu'il cite, que l'analyse propose de créer (l'utilisateur décide). */
+  proposals?: EntityProposal[]
   /** Où est sa fiche (calculé au parcours, pas écrit) : la bibliothèque, le répertoire (vide : sa racine). */
   shelf?: string
   directory?: string
 }
 
 export const RECORD_TYPE = 'bibliotheque-document'
+
+/**
+ * Une entreprise ou une personne citée par un document, que la bibliothèque ne connaît pas : l'IA
+ * la propose, l'utilisateur la crée (une note, liée au document) ou l'écarte. Jamais créée seule.
+ */
+export interface EntityProposal {
+  kind: 'issuer' | 'person'
+  name: string
+  /** Une entreprise : son code court (« ESA »), s'il est cité. */
+  code?: string
+  /** Une personne : son entreprise (un code ou un nom), si elle est dite. */
+  company?: string
+  why: string
+}
 
 /** Où en est un document dans le circuit : à classer, ingéré, analysé, rangé, à contrôler, écarté. */
 export type CircuitState = 'a-classer' | 'ingere' | 'analyse' | 'range' | 'a-controler' | 'ecarte'
@@ -408,7 +424,10 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.circuit && doc.circuitConfidence !== undefined ? { 'circuit-confiance': doc.circuitConfidence } : {}),
     ...(doc.circuit && doc.circuitAlternatives?.length ? { 'circuit-alternatives': doc.circuitAlternatives } : {}),
     ...(doc.circuitProject ? { 'circuit-projet': link(doc.circuitProject) } : {}),
-    ...(doc.links?.length ? { liens: doc.links.map(link) } : {})
+    ...(doc.links?.length ? { liens: doc.links.map(link) } : {}),
+    ...(doc.proposals?.length
+      ? { 'entites-proposees': doc.proposals.map((each) => ({ sorte: each.kind === 'issuer' ? 'entreprise' : 'personne', nom: each.name, ...(each.code ? { code: each.code } : {}), ...(each.company ? { entreprise: each.company } : {}), ...(each.why ? { pourquoi: each.why } : {}) })) }
+      : {})
   }
   return `---\n${toYaml(data)}\n---\n${body ?? `\n# ${doc.title}\n\n## ${notesHeading}\n\n`}`
 }
@@ -482,8 +501,28 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
         }
       : {}),
     ...(unlink(data['circuit-projet']) ? { circuitProject: unlink(data['circuit-projet']) } : {}),
-    ...(Array.isArray(data.liens) && data.liens.map(unlink).filter(Boolean).length ? { links: data.liens.map(unlink).filter(Boolean) } : {})
+    ...(Array.isArray(data.liens) && data.liens.map(unlink).filter(Boolean).length ? { links: data.liens.map(unlink).filter(Boolean) } : {}),
+    ...(readProposals(data['entites-proposees']).length ? { proposals: readProposals(data['entites-proposees']) } : {})
   }
+}
+
+/** Les entités proposées, relues de l'en-tête (ce qui n'a pas de nom est laissé). */
+function readProposals(value: unknown): EntityProposal[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((raw) => {
+    const item = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+    const name = text(item.nom).trim()
+    if (!name) return []
+    return [
+      {
+        kind: item.sorte === 'personne' ? ('person' as const) : ('issuer' as const),
+        name,
+        ...(text(item.code).trim() ? { code: text(item.code).trim() } : {}),
+        ...(text(item.entreprise).trim() ? { company: text(item.entreprise).trim() } : {}),
+        why: text(item.pourquoi).trim()
+      }
+    ]
+  })
 }
 
 /** Une taille lisible : « 12 Ko », « 3,4 Mo ». */

@@ -19,7 +19,7 @@ import { docDateLabel, type KnownIssuer, type KnownTag } from './identity'
 import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 import { builtInShelf, REFERENCE_SHELF, severalShelves } from './shelves'
-import { CONTROL_PAGE, controlMessage, controlPage, type ControlDeps } from './controlHome'
+import { CONTROL_PAGE, controlMessage, controlPage, proposalMessages, type ControlDeps } from './controlHome'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
 export const DOC_PAGE = 'bibliotheque.document'
@@ -874,6 +874,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     blocks: [
       // Le circuit : l'IA n'a pas su le ranger — sa proposition, sa raison, et quoi faire.
       ...(doc.circuit === 'a-controler' && deps.control ? [controlMessage(t, deps.control, doc, (moved) => deps.showPage?.(moved ? docPageOf(moved) : CONTROL_PAGE))] : []),
+      // Les entreprises et personnes inconnues qu'il cite : à créer, ou à écarter.
+      ...(deps.control ? proposalMessages(t, deps.control, doc) : []),
       ...(present ? [] : [{ kind: 'message' as const, tone: 'danger' as const, text: t('bibliotheque.doc.fileMissing', { file: doc.file }) }]),
       // Une version précédente probable : à relier, ou à oublier.
       ...(likely

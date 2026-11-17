@@ -5,13 +5,31 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.55.0 (Black Projects 0.137.0) |
+| Version | 0.56.0 (Black Projects 0.138.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les entreprises et personnes inconnues, proposées (v0.56.0, Black Projects 0.138.0)
+
+- L'analyse (`ANALYSIS_SCHEMA`) rend `nouveaux: [{ sorte, nom, code, entreprise, pourquoi }]` ;
+  `readAnalysisAnswer` (`AnalysisDecision.proposals`, `EntityProposal`) écarte une entreprise connue
+  (code, nom, autre nom) ou une personne connue (`lists.persons`), et les doublons.
+- `applyAnalysis` (quelle que soit la confiance : c'est l'utilisateur qui décide) : les propositions
+  gardées sur la fiche (`entites-proposees` dans l'en-tête), sans doublon ni entité connue
+  (`addProposals`). Jamais une note créée seule.
+- `createProposed` : la note de l'entreprise (code) ou de la personne (entreprise) créée — ou celle
+  qui existe déjà —, liée au document (`setLinks`, rétrolien compris), la proposition ôtée ;
+  `dismissProposed` : ôtée. `ControlDeps.entities` / `createEntity` / `dismissEntity`.
+- La page À contrôler : la section **Entreprises et personnes à créer** (`bibliotheque.circuit.a-creer`,
+  une carte par proposition : Créer, Écarter, ouvrir le document) ; la fiche d'un document : un
+  message par proposition (`proposalMessages`). Le rappel du lundi (`bibliotheque.rappel-a-controler`)
+  les compte (`pendingEntities`).
+- Le skill livré « Analyser un document » : une étape 5 (les entreprises et personnes nouvelles) ;
+  celui de la version C, resté tel quel, suit (`previousStarterTexts`).
 
 ## Le circuit des documents, version C : les liens (v0.55.0, Black Projects 0.137.0)
 

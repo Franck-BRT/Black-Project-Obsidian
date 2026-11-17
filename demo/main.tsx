@@ -157,6 +157,11 @@ platform.http = {
           emetteur: '',
           projet: projects[0] ?? '',
           liens: candidates.map((path) => ({ vers: path, pourquoi: 'cité dans le texte (démonstration, sans IA réelle)' })),
+          // Les entreprises nouvelles : les sigles du texte (3 à 5 capitales) qui ne sont ni des types de pièce, ni des entités connues.
+          nouveaux: [...new Set([...((asked.split('## Son texte')[1] ?? '').split('\n## ')[0] ?? '').matchAll(/\b([A-Z]{3,5})\b/g)].map((match) => match[1]!))]
+            .filter((code) => !asked.includes(`- ${code} —`) && !asked.includes(`- ${code}\n`) && !possible.includes(code))
+            .slice(0, 3)
+            .map((code) => ({ sorte: 'entreprise', nom: code, code, entreprise: '', pourquoi: 'sigle cité dans le texte (démonstration, sans IA réelle)' })),
           confiance: candidates.length ? 0.8 : 0.6,
           raison: candidates.length ? 'Démonstration, sans IA réelle : les entités citées dans le texte.' : 'Démonstration, sans IA réelle : le projet est deviné, pas lu.'
         })

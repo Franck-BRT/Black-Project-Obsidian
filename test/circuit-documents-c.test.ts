@@ -5,7 +5,8 @@
  * **Le circuit des documents, version C — les liens** : les candidats trouvés sans IA (les
  * entités connues que le texte cite) ; l'analyse qui choisit parmi eux ; les liens dans la
  * fiche et les rétroliens dans les notes citées (qui suivent le document quand il bouge, et
- * partent quand il est supprimé) ; l'entretien du lundi ; le skill livré mis à jour.
+ * partent quand il est supprimé) ; l'entretien du lundi ; le skill livré mis à jour ; les
+ * entreprises et personnes inconnues que le document cite, proposées — jamais créées seules.
  */
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -283,5 +284,99 @@ describe('le circuit, version C : les liens', () => {
     await start(platform)
     again = (await libraryEntries('skill')).find((entry) => entry.name === 'Analyser un document')!
     expect(again.text).toBe('Ma propre méthode.')
+  })
+})
+
+describe('les entreprises et personnes inconnues : proposées, jamais créées seules', () => {
+  it('la réponse d’analyse : ni une entreprise connue (code, nom, autre nom), ni une personne connue ; une fois chacune', () => {
+    const decision = readAnalysisAnswer(
+      {
+        typePiece: '',
+        emetteur: '',
+        projet: '',
+        liens: [],
+        nouveaux: [
+          { sorte: 'entreprise', nom: 'Agence spatiale européenne', code: 'ESA', entreprise: '', pourquoi: 'le client' },
+          { sorte: 'entreprise', nom: 'Centre national d’Études spatiales', code: '', entreprise: '', pourquoi: 'connue' },
+          { sorte: 'entreprise', nom: 'Autre', code: 'CNES', entreprise: '', pourquoi: 'connue par son code' },
+          { sorte: 'personne', nom: 'Marie Durand', code: '', entreprise: 'CNES', pourquoi: 'connue' },
+          { sorte: 'personne', nom: 'Jean Martin', code: '', entreprise: 'ESA', pourquoi: 'le signataire' },
+          { sorte: 'personne', nom: 'jean martin', code: '', entreprise: '', pourquoi: 'doublon' },
+          { sorte: 'chose', nom: 'Rien', code: '', entreprise: '', pourquoi: '?' }
+        ],
+        confiance: 0.9,
+        raison: 'r'
+      },
+      { types: [], issuers: [{ code: 'CNES', name: 'Centre national d’études spatiales', aliases: [] }], persons: ['Marie Durand'] }
+    )
+    expect(decision!.proposals).toEqual([
+      { kind: 'issuer', name: 'Agence spatiale européenne', code: 'ESA', why: 'le client' },
+      { kind: 'person', name: 'Jean Martin', company: 'ESA', why: 'le signataire' }
+    ])
+  })
+
+  it('gardées sur la fiche, même l’analyse peu sûre ; À contrôler et la fiche les montrent ; « Créer » fait la note, liée au document ; « Écarter » l’ôte', async () => {
+    const platform = memoryPlatform()
+    const harness = await start(platform)
+    await entities(harness, platform)
+    const { pour, answers, load } = harness
+    answers.analyse = () =>
+      chat({
+        typePiece: '',
+        emetteur: '',
+        projet: '',
+        liens: [],
+        nouveaux: [
+          { sorte: 'entreprise', nom: 'Agence spatiale européenne', code: 'ESA', entreprise: '', pourquoi: 'cosignataire du marché' },
+          { sorte: 'personne', nom: 'Jean Martin', code: '', entreprise: 'ESA', pourquoi: 'le signataire' },
+          { sorte: 'entreprise', nom: 'CNES', code: '', entreprise: '', pourquoi: 'déjà connue' }
+        ],
+        confiance: 0.4,
+        raison: 'Je doute.'
+      })
+    answers.rangement = () => chat({ dossier: '', confiance: 0.2, raison: '—', alternatives: [] })
+    await pour('CCTP.txt', `${CCTP}\nCosigné par l’ESA (Jean Martin).`)
+    await workflowsIdle()
+    const record = 'Bibliothèque/À contrôler/CCTP.md'
+    const note = read(platform, record)
+    expect(note).toContain('entites-proposees:\n- sorte: entreprise\n  nom: Agence spatiale européenne\n  code: ESA\n  pourquoi: cosignataire du marché\n- sorte: personne\n  nom: Jean Martin\n  entreprise: ESA\n  pourquoi: le signataire\n')
+    expect(note).toMatch(/· Analyser un document — 2 entreprise\(s\) ou personne\(s\) à créer, proposée\(s\) · confiance 40 %/)
+    // Aucune note créée seule.
+    expect(platform.files.has('Bibliothèque/Entreprises/Agence spatiale européenne.md')).toBe(false)
+    // Le rappel du lundi les dit aussi.
+    Object.assign((harness.workflows() as Workflow[]).find((each) => each.system === 'sys.bibliotheque.rappels-lundi')!, { enabled: true, created: '2020-01-01T00:00:00.000Z' })
+    await runDueWorkflows()
+    expect(platform.notices).toContain('1 document(s) à contrôler : CCTP. 2 entreprise(s) ou personne(s) proposée(s) à créer : Agence spatiale européenne, Jean Martin. Page « À contrôler ».')
+    // La page À contrôler : une section, une carte par proposition.
+    const control = await load('bibliotheque.a-controler')
+    const section = deep(control.blocks).find((block) => block.kind === 'section' && block.id === 'bibliotheque.circuit.a-creer')!
+    expect(section).toMatchObject({ title: 'Entreprises et personnes à créer', subtitle: '2 proposée(s) par l’analyse des documents' })
+    const cardsOf = (block: HomeBlock) => (block.kind === 'section' ? block.blocks.flatMap((each) => (each.kind === 'cards' ? each.cards : [])) : [])
+    expect(cardsOf(section).map((card) => [card.title, card.subtitle])).toEqual([
+      ['Entreprise « ESA — Agence spatiale européenne »', 'Citée dans « CCTP »'],
+      ['Personne « Jean Martin » (ESA)', 'Citée dans « CCTP »']
+    ])
+    // La fiche du document : un message par proposition ; « Créer » l'entreprise.
+    const fiche = await load(`bibliotheque.document?${encodeURIComponent(record)}`)
+    const messages = fiche.blocks.filter((block) => block.kind === 'message' && block.text.startsWith('L’IA propose de créer'))
+    expect(messages.map((block) => (block.kind === 'message' ? block.text : ''))).toEqual([
+      'L’IA propose de créer : Entreprise « ESA — Agence spatiale européenne » — cosignataire du marché',
+      'L’IA propose de créer : Personne « Jean Martin » (ESA) — le signataire'
+    ])
+    const first = messages[0]!
+    await (first.kind === 'message' ? first.actions! : []).find((action) => action.label === 'Créer')!.run()
+    const esa = 'Bibliothèque/Entreprises/Agence spatiale européenne.md'
+    expect(read(platform, esa)).toMatch(/^---\nbp-type: bibliotheque-emetteur\nnom: Agence spatiale européenne\ncode: ESA\n/)
+    expect(read(platform, esa)).toContain('[[Bibliothèque/À contrôler/CCTP|CCTP]] — cosignataire du marché')
+    expect(platform.notices).toContain('Entreprise « Agence spatiale européenne » créée, liée à « CCTP ».')
+    const after = read(platform, record)
+    expect(after).toContain('[[Bibliothèque/Entreprises/Agence spatiale européenne|Agence spatiale européenne]] — cosignataire du marché')
+    expect(after).not.toContain('nom: Agence spatiale européenne')
+    // « Écarter » la personne (depuis À contrôler) : plus de proposition.
+    const again = deep((await load('bibliotheque.a-controler')).blocks).find((block) => block.kind === 'section' && block.id === 'bibliotheque.circuit.a-creer')!
+    await cardsOf(again)[0]!.actions!.find((action) => action.label === 'Écarter')!.run()
+    expect(read(platform, record)).not.toContain('entites-proposees')
+    expect(platform.files.has('Bibliothèque/Personnes/Jean Martin.md')).toBe(false)
+    expect(deep((await load('bibliotheque.a-controler')).blocks).some((block) => block.kind === 'section' && block.id === 'bibliotheque.circuit.a-creer')).toBe(false)
   })
 })

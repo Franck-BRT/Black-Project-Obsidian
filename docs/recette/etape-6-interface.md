@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les entreprises et personnes inconnues, proposées (v0.138.0)
+
+- [ ] Verser un document qui cite une entreprise et une personne inconnues : aucune note créée ; la
+      fiche dit « L'IA propose de créer : … » (Créer, Écarter)
+- [ ] À contrôler : la section **Entreprises et personnes à créer**, une carte par proposition
+- [ ] **Créer** l'entreprise : sa note dans Entreprises (avec son code), liée au document (section Liens,
+      rétrolien) ; la proposition disparaît
+- [ ] **Écarter** la personne : la proposition disparaît, pas de note
+- [ ] Une entreprise déjà connue (par son code ou son nom) n'est pas proposée
+- [ ] Le rappel du lundi : « … entreprise(s) ou personne(s) proposée(s) à créer »
+
 ## Le circuit des documents, version C : les liens (v0.137.0)
 
 - [ ] Une entreprise (code CNES), une personne, un projet, une norme (avec sa référence) dans la

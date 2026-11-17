@@ -8,7 +8,7 @@
  */
 
 import type { Card, HomeBlock, PageView, ViewAction } from '../../core/views'
-import type { LibraryDoc } from './model'
+import type { EntityProposal, LibraryDoc } from './model'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -28,6 +28,63 @@ export interface ControlDeps {
   elsewhere(record: string): Promise<string | null>
   /** Écarté : la fiche mise de côté. */
   discard(record: string): Promise<boolean>
+  /** Les entreprises et personnes inconnues que des documents citent, proposées par l'analyse. */
+  entities?(): Promise<{ doc: LibraryDoc; proposal: EntityProposal; index: number }[]>
+  /** Créer l'entité proposée (liée au document) ; rend sa note. */
+  createEntity?(record: string, index: number): Promise<string | null>
+  /** Écarter la proposition. */
+  dismissEntity?(record: string, index: number): Promise<void>
+}
+
+/** Une proposition en mots : « l'entreprise « ESA — Agence spatiale européenne » », « la personne « Marie Durand » (ESA) ». */
+export function proposalLabel(t: Translate, proposal: EntityProposal): string {
+  const name = proposal.kind === 'issuer' && proposal.code && proposal.code !== proposal.name ? `${proposal.code} — ${proposal.name}` : proposal.name
+  return t(`bibliotheque.proposals.label.${proposal.kind}`, { name, company: proposal.company ?? '' }).replace(/ \(\)$/, '')
+}
+
+/** Ce qu'on fait d'une proposition : la créer, l'écarter. */
+function entityActions(t: Translate, deps: ControlDeps, record: string, index: number, after?: () => void): ViewAction[] {
+  return [
+    ...(deps.createEntity
+      ? [
+          {
+            id: `entity-create-${index}`,
+            label: t('bibliotheque.proposals.create'),
+            tooltip: t('bibliotheque.proposals.create.tip'),
+            icon: 'plus' as const,
+            primary: true,
+            run: async () => {
+              await deps.createEntity!(record, index)
+              after?.()
+            }
+          }
+        ]
+      : []),
+    ...(deps.dismissEntity
+      ? [
+          {
+            id: `entity-dismiss-${index}`,
+            label: t('bibliotheque.proposals.dismiss'),
+            tooltip: t('bibliotheque.proposals.dismiss.tip'),
+            icon: 'cross' as const,
+            run: async () => {
+              await deps.dismissEntity!(record, index)
+              after?.()
+            }
+          }
+        ]
+      : [])
+  ]
+}
+
+/** Sur la fiche d'un document : une ligne par entité proposée, à créer ou écarter. */
+export function proposalMessages(t: Translate, deps: ControlDeps, doc: LibraryDoc, after?: () => void): HomeBlock[] {
+  return (doc.proposals ?? []).map((proposal, index) => ({
+    kind: 'message' as const,
+    tone: 'info' as const,
+    text: [t('bibliotheque.proposals.message', { what: proposalLabel(t, proposal) }), proposal.why].filter(Boolean).join(' — '),
+    actions: entityActions(t, deps, doc.record, index, after)
+  }))
 }
 
 const percent = (value: number | undefined): string => `${Math.round((value ?? 0) * 100)} %`
@@ -121,6 +178,17 @@ export async function controlPage(t: Translate, deps: ControlDeps, open: ((recor
       }
     ]
   }))
+  // Les entreprises et personnes inconnues que des documents citent : à créer (liées) ou à écarter.
+  const proposed = (await deps.entities?.()) ?? []
+  const entityCards: Card[] = proposed.map(({ doc, proposal, index }) => ({
+    id: `${doc.record}#${index}`,
+    title: proposalLabel(t, proposal),
+    subtitle: t('bibliotheque.proposals.citedIn', { title: doc.title }),
+    icon: proposal.kind === 'issuer' ? ('building' as const) : ('user' as const),
+    ...(proposal.why ? { text: proposal.why } : {}),
+    ...(open ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => open(doc.record) } } : {}),
+    actions: entityActions(t, deps, doc.record, index)
+  }))
   return {
     title: t('bibliotheque.control.title'),
     subtitle: t('bibliotheque.control.subtitle'),
@@ -128,6 +196,18 @@ export async function controlPage(t: Translate, deps: ControlDeps, open: ((recor
       ...(cards.length
         ? [{ kind: 'stats' as const, stats: [{ label: t('bibliotheque.control.count'), value: String(cards.length), icon: 'flag' as const, tone: 'warning' as const }] }, { kind: 'cards' as const, cards }]
         : [{ kind: 'message' as const, tone: 'success' as const, text: t('bibliotheque.control.empty') }]),
+      ...(entityCards.length
+        ? [
+            {
+              kind: 'section' as const,
+              id: 'bibliotheque.circuit.a-creer',
+              title: t('bibliotheque.proposals.section'),
+              subtitle: t('bibliotheque.proposals.section.count', { count: entityCards.length }),
+              icon: 'plus' as const,
+              blocks: [{ kind: 'cards' as const, cards: entityCards }]
+            }
+          ]
+        : []),
       ...(pendingCards.length
         ? [
             {

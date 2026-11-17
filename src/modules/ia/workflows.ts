@@ -8,7 +8,7 @@
  */
 
 import type { FileSystem, PageImages } from '../../core/ports'
-import { aiProofreadAlready, ANALYSIS_SCHEMA, applyAnalysisDecision, applyFilingDecision, DEFAULT_THRESHOLD, linkCandidatesFor, FILING_SCHEMA, filingFolders, markIngested, readAnalysisAnswer, readFilingAnswer, readThreshold, skillContextFor, thresholdLabel, IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
+import { aiProofreadAlready, ANALYSIS_SCHEMA, applyAnalysisDecision, applyFilingDecision, DEFAULT_THRESHOLD, libraryEntries, linkCandidatesFor, FILING_SCHEMA, filingFolders, markIngested, readAnalysisAnswer, readFilingAnswer, readThreshold, skillContextFor, thresholdLabel, IDENTITY_HEAD, LANGUAGES, addTextVersionByAi, aiReadingEnded, aiReadingPartial, aiReadingProgress, dateFoundIn, issuerLabelIn, knownIssuerCode, libraryDateLabel, libraryIssuers, libraryPieceTypes, libraryTranscript, type KnownIssuer, libraryDoc, libraryDocText, libraryTags, parseDocDate, setCategoryByAi, setDateByAi, setTagsByAi, tagsFoundIn, namedEntry, personaInstructions, referenceFoundIn, setIdentityByAi, setIssuerByAi, setLanguageByAi, setTitleByAi, issuerFoundIn, titleFoundIn, type LanguageCode } from '../bibliotheque'
 import { imageDataUrl, isImage, pdfPageTexts } from '../lecture-fichiers'
 import { actionSpec, registerAction } from '../workflows'
 import type { AiClient } from './client'
@@ -788,7 +788,7 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
         } catch (error) {
           if (!(error instanceof LlmError && error.kind === 'shape')) throw new Error(describe(error))
         }
-        const decision = readAnalysisAnswer(answer, { types: libraryPieceTypes(), issuers: await libraryIssuers(), candidates: await linkCandidatesFor(record) })
+        const decision = readAnalysisAnswer(answer, { types: libraryPieceTypes(), issuers: await libraryIssuers(), candidates: await linkCandidatesFor(record), persons: (await libraryEntries('person')).map((entry) => entry.name) })
         const text = (await applyAnalysisDecision(record, decision, threshold, skill.name)) ?? t('ia.wf.language.noDoc', { record })
         return done(text, 'analyse', String(decision?.confidence ?? 0))
       }

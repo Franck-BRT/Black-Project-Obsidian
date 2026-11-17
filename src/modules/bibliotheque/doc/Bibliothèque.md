@@ -249,6 +249,13 @@ Quand le document est rangé ailleurs, ses rétroliens le suivent ; supprimé, i
 lundi, l'**entretien des liens** (une étape des rappels de la bibliothèque) retire les liens vers
 des notes disparues et rétablit les rétroliens effacés à la main.
 
+**Une entreprise ou une personne inconnue** que le document cite clairement (son émetteur, son
+client, un signataire, un contact) n'est **jamais créée seule** : l'IA la **propose**. La fiche du
+document le dit (« L'IA propose de créer : Entreprise « ESA » — … »), et la page **À contrôler** les
+rassemble dans **Entreprises et personnes à créer**. **Créer** fait sa note (dans Entreprises ou
+Personnes, avec son code ou son entreprise) et la lie au document ; **Écarter** ôte la proposition.
+Le rappel du lundi les compte avec les documents à contrôler.
+
 Pour un document du circuit, les workflows « Relire avec l'IA le texte… » (la vision pour un scan),
 « Identifier avec l'IA le type de pièce… » et « … l'entreprise qui émet… » ne passent pas : ses
 étapes **Ingérer** et **Analyser** s'en chargent (une seule relecture, une seule analyse). Les

@@ -29,6 +29,7 @@ import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type 
 import { entryPageOf, entryTitle, registerEntriesHome } from './entriesHome'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { previousStarterTexts, startersFor } from './starters'
+import type { EntityProposal } from './model'
 import { DEFAULT_THRESHOLD, readThreshold, SKILL_CONTEXTS, SKILL_OUTPUTS, thresholdLabel, type AnalysisDecision, type FilingDecision } from './skills'
 import { findCandidates, type LinkCandidate, type LinkSourceItem } from './links'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
@@ -1040,7 +1041,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.55.0',
+  version: '0.56.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1308,6 +1309,7 @@ export const bibliothequeModule: BlackModule = {
         return pending.length
       },
       toControl: async () => (await store.all()).filter((doc) => doc.circuit === 'a-controler'),
+      pendingEntities: async () => (await store.all()).flatMap((doc) => (doc.proposals ?? []).map((proposal) => proposal.name)),
       maintainLinks: async () => {
         const done = await store.maintainLinks()
         if (done.docs.length) pagesChanged()
@@ -1909,6 +1911,11 @@ export const bibliothequeModule: BlackModule = {
           if (written.length) done.push(t('bibliotheque.circuit.analysis.links', { count: written.length }))
         }
       }
+      // Les entreprises et personnes inconnues qu'il cite : proposées (gardées sur sa fiche), jamais créées seules.
+      if (decision?.proposals.length) {
+        const added = await addProposals(record, decision.proposals)
+        if (added) done.push(t('bibliotheque.circuit.analysis.proposals', { count: added }))
+      }
       const summary = !decision
         ? t('bibliotheque.circuit.reason.unreadable')
         : [done.join(', ') || t('bibliotheque.circuit.analysis.nothing'), `${t('bibliotheque.circuit.analysis.confidence', { confidence: percent(decision.confidence) })}${sure ? '' : ` — ${t('bibliotheque.circuit.analysis.unsure', { threshold: percent(threshold) })}`}`].join(' · ')
@@ -1962,6 +1969,69 @@ export const bibliothequeModule: BlackModule = {
     }
     /** Les documents à contrôler. */
     const toControl = async (): Promise<LibraryDoc[]> => (await store.all()).filter((doc) => doc.circuit === 'a-controler')
+
+    // ── Les entreprises et personnes inconnues, proposées par l'analyse ──
+    const sameName = (a: string, b: string) => a.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim() === b.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
+    /** Déjà connue (une note d'entreprise ou de personne) : son chemin ; sinon `null`. */
+    const knownEntity = async (proposal: EntityProposal): Promise<string | null> => {
+      const all = await entries[proposal.kind].all()
+      const found = all.find((entry) => sameName(entry.name, proposal.name) || (proposal.kind === 'issuer' && !!proposal.code && !!entry.code && sameName(entry.code, proposal.code)))
+      return found?.path ?? null
+    }
+    /** Ajouter des propositions à une fiche (pas celles qu'elle a déjà, ni les entités connues) ; rend combien. */
+    const addProposals = async (record: string, proposals: readonly EntityProposal[]): Promise<number> => {
+      const doc = await store.load(record)
+      if (!doc) return 0
+      const kept = [...(doc.proposals ?? [])]
+      let added = 0
+      for (const proposal of proposals) {
+        if (kept.some((each) => each.kind === proposal.kind && sameName(each.name, proposal.name))) continue
+        if (await knownEntity(proposal)) continue
+        kept.push(proposal)
+        added++
+      }
+      if (added) await store.save({ ...doc, proposals: kept })
+      return added
+    }
+    const withoutProposal = async (record: string, index: number): Promise<{ doc: LibraryDoc; proposal: EntityProposal } | null> => {
+      const doc = await store.load(record)
+      const proposal = doc?.proposals?.[index]
+      if (!doc || !proposal) return null
+      const rest = doc.proposals!.filter((_, at) => at !== index)
+      const next: LibraryDoc = { ...doc }
+      if (rest.length) next.proposals = rest
+      else delete next.proposals
+      await store.save(next)
+      return { doc, proposal }
+    }
+    /** Créer l'entité proposée (une note d'entreprise ou de personne ; déjà là, celle-ci), liée au document. Rend sa note. */
+    const createProposed = async (record: string, index: number): Promise<string | null> => {
+      const taken = await withoutProposal(record, index)
+      if (!taken) return null
+      const { doc, proposal } = taken
+      const path =
+        (await knownEntity(proposal)) ??
+        (await entries[proposal.kind].create({
+          name: proposal.name,
+          category: '',
+          description: '',
+          text: '',
+          favorite: false,
+          ...(proposal.kind === 'issuer' && proposal.code ? { code: proposal.code } : {}),
+          ...(proposal.kind === 'person' && proposal.company ? { company: proposal.company } : {})
+        }))
+      const links = await store.linksOf(record)
+      await store.setLinks(record, [...links.filter((each) => each.path !== path), { path, why: proposal.why || t('bibliotheque.proposals.citedWhy') }])
+      platform.notifier.notify(t(`bibliotheque.proposals.created.${proposal.kind}`, { name: proposal.name, title: doc.title }), 6000)
+      pagesChanged()
+      return path
+    }
+    const dismissProposed = async (record: string, index: number): Promise<void> => {
+      if (await withoutProposal(record, index)) pagesChanged()
+    }
+    /** Toutes les propositions en attente, document par document. */
+    const allProposals = async (): Promise<{ doc: LibraryDoc; proposal: EntityProposal; index: number }[]> =>
+      (await store.all()).flatMap((doc) => (doc.proposals ?? []).map((proposal, index) => ({ doc, proposal, index })))
 
     /** Verser des documents soi-même : de l'ordinateur (copiés) ou du coffre (laissés à leur place) ; dans un dossier, sinon la bibliothèque par défaut. */
     const pour = async (folder?: string): Promise<PourReport | null> => {
@@ -2467,7 +2537,10 @@ export const bibliothequeModule: BlackModule = {
         place: placeOfFolder,
         accept: acceptProposal,
         elsewhere: fileElsewhere,
-        discard: discardControlled
+        discard: discardControlled,
+        entities: allProposals,
+        createEntity: createProposed,
+        dismissEntity: dismissProposed
       },
       today: localToday,
       locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR',

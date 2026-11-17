@@ -13,6 +13,7 @@
  */
 
 import { candidatePath } from './links'
+import type { EntityProposal } from './model'
 
 /** Ce qu'un skill peut recevoir, livré par la bibliothèque (d'autres modules en ajoutent). */
 export const SKILL_CONTEXTS = ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'candidats', 'dossiers', 'regles-de-rangement'] as const
@@ -106,6 +107,8 @@ export interface AnalysisDecision {
   project: string
   /** Ses liens : parmi les candidats seulement (les autres écartés), chacun avec sa raison. */
   links: { path: string; why: string }[]
+  /** Les entreprises et personnes citées que la bibliothèque ne connaît pas : proposées, jamais créées seules. */
+  proposals: EntityProposal[]
   confidence: number
   reason: string
 }
@@ -123,10 +126,19 @@ export const ANALYSIS_SCHEMA = {
         type: 'array',
         items: { type: 'object', properties: { vers: { type: 'string' }, pourquoi: { type: 'string' } }, required: ['vers', 'pourquoi'], additionalProperties: false }
       },
+      nouveaux: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { sorte: { type: 'string', enum: ['entreprise', 'personne'] }, nom: { type: 'string' }, code: { type: 'string' }, entreprise: { type: 'string' }, pourquoi: { type: 'string' } },
+          required: ['sorte', 'nom', 'code', 'entreprise', 'pourquoi'],
+          additionalProperties: false
+        }
+      },
       confiance: { type: 'number' },
       raison: { type: 'string' }
     },
-    required: ['typePiece', 'emetteur', 'projet', 'liens', 'confiance', 'raison'],
+    required: ['typePiece', 'emetteur', 'projet', 'liens', 'nouveaux', 'confiance', 'raison'],
     additionalProperties: false
   }
 }
@@ -152,6 +164,8 @@ export function readAnalysisAnswer(
     types: readonly { code: string; label: string }[]
     issuers: readonly { code: string; name: string; aliases: readonly string[] }[]
     candidates?: readonly { path: string; label: string }[]
+    /** Les personnes connues (leur nom) : une proposée qui en est une est écartée. */
+    persons?: readonly string[]
   }
 ): AnalysisDecision | null {
   if (typeof answer !== 'object' || answer === null) return null
@@ -168,11 +182,26 @@ export function readAnalysisAnswer(
     const path = candidatePath(text(item.vers), lists.candidates ?? [])
     if (path && !links.some((each) => each.path === path)) links.push({ path, why: text(item.pourquoi) })
   }
+  // Les inconnues proposées : ni une entreprise, ni une personne connues ; une fois chacune.
+  const proposals: EntityProposal[] = []
+  const knownIssuer = (name: string) => lists.issuers.some((each) => [each.code, each.name, ...each.aliases].some((known) => fold(known) === fold(name)))
+  const knownPerson = (name: string) => (lists.persons ?? []).some((known) => fold(known) === fold(name))
+  for (const raw of Array.isArray(data.nouveaux) ? data.nouveaux : []) {
+    const item = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+    const kind = item.sorte === 'personne' ? ('person' as const) : item.sorte === 'entreprise' ? ('issuer' as const) : null
+    const name = text(item.nom)
+    const code = text(item.code)
+    if (!kind || !name) continue
+    if (kind === 'issuer' ? knownIssuer(name) || (!!code && knownIssuer(code)) : knownPerson(name)) continue
+    if (proposals.some((each) => each.kind === kind && fold(each.name) === fold(name))) continue
+    proposals.push({ kind, name, ...(kind === 'issuer' && code ? { code } : {}), ...(kind === 'person' && text(item.entreprise) ? { company: text(item.entreprise) } : {}), why: text(item.pourquoi) })
+  }
   return {
     category: type?.code ?? '',
     issuer: issuer?.code ?? '',
     project: said.project.replace(/^\[\[|\]\]$/g, '').trim(),
     links,
+    proposals,
     confidence: readConfidence(data.confiance),
     reason: said.reason
   }
