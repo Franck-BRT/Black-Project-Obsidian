@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'un terme du glossaire (v0.155.0)
+
+- [ ] Glossaire avec ses exemples ; deux documents qui citent « CCTP », versés hors du circuit
+- [ ] La fiche de « CCTP » : la définition en tête ; « Le terme » — Terme, Sigle, Domaine, Autres
+      formes, Rangé, chacun avec son bouton
+- [ ] « Documents qui l'emploient (2) » — « 2 cité(s) sans lien », chacun « Cité (« CCTP »), pas encore
+      relié » avec « Relier » ; « Tout relier (2) » : ils passent en vert, « Relié (lien et rétrolien) »
+- [ ] « Dans le même domaine : Marchés » : les autres termes ; un clic ouvre le terme
+- [ ] « Notes » : sans la liste « Liens (Black Projects) » (elle reste dans la note, dans Obsidian)
+
 ## Le document en cours de traitement ; « Arrêter le circuit » (v0.154.0)
 
 - [ ] IA réglée (lente, ou un gros document), circuit actif : poser un document dans « À classer »

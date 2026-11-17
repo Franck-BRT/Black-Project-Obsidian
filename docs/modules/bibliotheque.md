@@ -5,13 +5,26 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.68.0 (Black Projects 0.154.0) |
+| Version | 0.69.0 (Black Projects 0.155.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La fiche d'un terme du glossaire reprise (v0.69.0, Black Projects 0.155.0)
+
+- Sa page à elle (`termPage`, `entriesHome.ts`) : la définition en tête (bloc `text`, ou un message
+  avec « Modifier » si elle manque) ; les sections `bibliotheque.terme.terme` (nom, sigle, domaine,
+  autres formes, rangé — lignes `fields`, chacune avec son outil : « Modifier : … », « Déplacer… »),
+  `bibliotheque.terme.documents` (reliés d'abord, en vert ; puis cités sans lien, avec la forme
+  employée et « Relier » ; « Tout relier (n) » s'ils sont plusieurs), `bibliotheque.terme.domaine`
+  (les autres termes du même domaine, repliée), `bibliotheque.terme.notes`.
+- `documentsUsing` rend aussi `linked` et `found` (`TermUse`) ; `linkTermIn(record)` : la recherche
+  dans le glossaire pour ce document (`searchGlossary`).
+- Les notes d'une entrée (terme, entreprise, personne…) sont montrées sans la section des rétroliens
+  (`withLinkSection(text, heading, [])`) : Black Projects la tient à jour, la page les dit ailleurs.
 
 ## Le document en cours de traitement ; « Arrêter le circuit » (v0.68.0, Black Projects 0.154.0)
 

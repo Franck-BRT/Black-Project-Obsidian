@@ -88,15 +88,16 @@ describe('le glossaire', () => {
     expect(shown.at(-1)).toMatch(/^bibliotheque\.terme\?/)
     // La page du terme : les documents qui l'emploient ; un clic ouvre leur fiche.
     const term = await load(shown.at(-1)!)
-    const used = term.blocks.find((block): block is Extract<HomeBlock, { kind: 'list' }> => block.kind === 'list' && (block.title ?? '').startsWith('Documents qui l’emploient'))!
-    expect(used.title).toBe('Documents qui l’emploient (1)')
-    expect(used.items.map((item) => item.title)).toEqual(['Note station'])
-    await used.items[0]!.open!.run()
+    const usedSection = sections(term.blocks).find((section) => section.id === 'bibliotheque.terme.documents')!
+    expect(usedSection).toMatchObject({ title: 'Documents qui l’emploient (1)', subtitle: '1 cité(s) sans lien' })
+    const used = usedSection.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    expect(used.map((item) => [item.title, item.detail])).toEqual([['Note station', 'Documents · Cité (« CCTP »), pas encore relié']])
+    await used[0]!.open!.run()
     expect(shown.at(-1)).toBe(`bibliotheque.document?${encodeURIComponent(record)}`)
     // Un terme qu'aucun document n'emploie : dit.
     const bpu = (await libraryEntries('glossary')).find((each) => each.code === 'BPU')!
     const none = await load(`bibliotheque.terme?${encodeURIComponent(bpu.path)}`)
-    expect(none.blocks.find((block) => block.kind === 'list' && (block.title ?? '').startsWith('Documents qui'))).toMatchObject({ items: [], empty: 'Aucun document de la bibliothèque n’emploie ce terme (ni son sigle, ni une autre forme) pour l’instant.' })
+    expect(sections(none.blocks).find((section) => section.id === 'bibliotheque.terme.documents')!.blocks.find((block) => block.kind === 'list')).toMatchObject({ items: [], empty: 'Aucun document de la bibliothèque n’emploie ce terme (ni son sigle, ni une autre forme) pour l’instant.' })
     // Le circuit : un terme cité est un lien possible (l'IA peut l'y relier, avec un rétrolien).
     expect((await linkCandidatesFor(record)).filter((candidate) => candidate.kind === 'Terme du glossaire').map((candidate) => candidate.found)).toEqual(['CCTP', 'Recette'])
   })
@@ -115,7 +116,8 @@ describe('le glossaire', () => {
     expect(glossary.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).map((item) => item.title)).toEqual(['Exigence'])
     // Sa page et sa carte disent ses autres formes.
     const term = await load(`bibliotheque.terme?${encodeURIComponent(exigence.path)}`)
-    expect(term.subtitle).toContain('Autres formes : exigences')
+    const fields = sections(term.blocks).find((section) => section.id === 'bibliotheque.terme.terme')!.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    expect(fields.find((item) => item.title === 'Autres formes')!.detail).toBe('exigences')
     expect(cardsIn((await load('bibliotheque.glossaire')).blocks).find((card) => card.title === 'Exigence')!.text).toBe('Autres formes : exigences')
   })
 
@@ -127,5 +129,56 @@ describe('le glossaire', () => {
     await page.actions!.find((action) => action.id === 'new')!.run()
     const created = (await libraryEntries('glossary')).find((term) => term.code === 'PMP')!
     expect(created.aliases).toEqual(['plans de management', 'plan de management du projet'])
+  })
+
+  it('la fiche d’un terme : sa définition en tête ; le terme ; les documents reliés ou seulement cités (« Relier ») ; son domaine ; ses notes sans les rétroliens', async () => {
+    const platform = memoryPlatform()
+    const { load, shown } = await start(platform)
+    await addStarterEntries('glossary', 'fr')
+    const cctp = (await libraryEntries('glossary')).find((term) => term.code === 'CCTP')!
+    const first = (await pourIntoLibrary([{ name: 'Note station.txt', bytes: enc('Le CCTP de la station sol.') }], { module: 'bibliotheque', label: 'Versé à la main' }))!.added[0]!.record
+    const second = (await pourIntoLibrary([{ name: 'Revue.txt', bytes: enc('Revue du CCTP.') }], { module: 'bibliotheque', label: 'Versé à la main' }))!.added[0]!.record
+    const page = async () => load(`bibliotheque.terme?${encodeURIComponent(cctp.path)}`)
+    let term = await page()
+    expect(term).toMatchObject({ title: 'CCTP — Cahier des clauses techniques particulières', subtitle: 'Terme du glossaire · Marchés' })
+    // Sa définition, en tête.
+    expect(term.blocks[0]).toMatchObject({ kind: 'text', title: 'Définition', paragraphs: [cctp.description] })
+    // Le terme : son nom, son sigle, son domaine, ses autres formes, où il est rangé.
+    const ids = sections(term.blocks).map((section) => section.id)
+    expect(ids).toEqual(['bibliotheque.terme.terme', 'bibliotheque.terme.documents', 'bibliotheque.terme.domaine', 'bibliotheque.terme.notes'])
+    const fields = sections(term.blocks)[0]!.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    expect(fields.map((item) => [item.title, item.detail])).toEqual([
+      ['Terme', 'Cahier des clauses techniques particulières'],
+      ['Sigle ou abréviation', 'CCTP'],
+      ['Domaine', 'Marchés'],
+      ['Autres formes', 'Aucune (un pluriel, une variante : « Modifier » les ajoute)'],
+      ['Rangé', 'Glossaire']
+    ])
+    expect(fields.find((item) => item.title === 'Rangé')!.tools![0]).toMatchObject({ id: 'move' })
+    // Les documents : deux qui le citent sans y être reliés — « Tout relier (2) ».
+    let documents = sections(term.blocks).find((section) => section.id === 'bibliotheque.terme.documents')!
+    expect(documents.blocks[0]).toMatchObject({ kind: 'message', text: '2 document(s) le citent sans y être reliés.', actions: [{ id: 'relier-tous', label: 'Tout relier (2)' }] })
+    // « Relier » le premier : il passe en tête, relié ; un rétrolien dans la note du terme.
+    const rows = documents.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    await rows.find((item) => item.title === 'Note station')!.actions![0]!.run()
+    expect(new TextDecoder().decode(platform.files.get(cctp.path))).toContain('[[Bibliothèque/Note station|Note station]]')
+    term = await page()
+    documents = sections(term.blocks).find((section) => section.id === 'bibliotheque.terme.documents')!
+    expect(documents.subtitle).toBe('1 relié(s) · 1 cité(s) sans lien')
+    expect(documents.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).map((item) => [item.title, item.tone, item.detail])).toEqual([
+      ['Note station', 'success', 'Documents · Relié (lien et rétrolien)'],
+      ['Revue', 'neutral', 'Documents · Cité (« CCTP »), pas encore relié']
+    ])
+    expect(second).toBeTruthy()
+    // Son domaine : les autres termes « Marchés » ; un clic ouvre le terme.
+    const domain = sections(term.blocks).find((section) => section.id === 'bibliotheque.terme.domaine')!
+    expect(domain.title).toMatch(/^Dans le même domaine : Marchés \(\d+\)$/)
+    const neighbour = domain.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))[0]!
+    await neighbour.open!.run()
+    expect(shown.at(-1)).toMatch(/^bibliotheque\.terme\?/)
+    // Ses notes : sans la section des rétroliens (montrée au-dessus).
+    const notes = sections(term.blocks).find((section) => section.id === 'bibliotheque.terme.notes')!
+    expect(JSON.stringify(notes)).not.toContain('Liens (Black Projects)')
+    expect(first).toBeTruthy()
   })
 })

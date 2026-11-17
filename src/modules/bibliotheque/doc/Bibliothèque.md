@@ -529,10 +529,18 @@ cherchées comme lui ; sa carte et sa page les disent (« Autres formes : … »
 
 - la fiche d'un document a une section **Glossaire (n)** : les termes qu'il emploie (dans son titre ou
   son texte, le terme, son sigle ou une autre forme, en mot entier), chacun avec sa définition ; un clic ouvre le terme ;
-- la page d'un terme dit **Documents qui l'emploient (n)** ; un clic ouvre leur fiche ;
+- la page d'un terme dit **Documents qui l'emploient (n)** ; un clic ouvre leur fiche (voir sa fiche ci-dessous) ;
 - le circuit des documents les **relie lui-même**, sans IA, à l'étape **Recherche dans le glossaire**
   (après l'ingestion) : le lien dans la fiche, un rétrolien dans la note du terme ; pour un document
   versé hors du circuit, le bouton ⟳ de cette étape, dans son parcours, le fait.
+
+**La fiche d'un terme** : sa **définition** en tête ; **Le terme** — son nom, son sigle, son domaine,
+ses autres formes et où il est rangé, chaque ligne avec son bouton (modifier, déplacer) ; **Documents
+qui l'emploient (n)** — ceux qui y sont **reliés** (lien dans leur fiche, rétrolien dans la note du
+terme) en vert, puis ceux qui le **citent** sans y être reliés, avec la forme qu'ils emploient et un
+bouton **Relier** (ou **Tout relier** s'ils sont plusieurs ; sans IA) ; **Dans le même domaine** — les
+autres termes de son domaine, un clic les ouvre ; ses **Notes** (les rétroliens n'y sont plus
+répétés : ils sont dans la liste des documents).
 
 ## 11. Réglages
 

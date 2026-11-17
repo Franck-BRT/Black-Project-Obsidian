@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.154.0)
+## Aujourd'hui (version 0.155.0)
+
+- **La fiche d'un terme du glossaire reprise** : sa définition en tête ; le terme en lignes (sigle,
+  domaine, autres formes, où il est rangé) ; les documents qui l'emploient — reliés en vert, ou
+  seulement cités, à **Relier** d'un clic ; les autres termes de son domaine ; ses notes, sans la liste
+  des rétroliens.
 
 - **Le document en cours de traitement** : celui que le circuit traite en ce moment est signalé en
   bleu — un bandeau en tête de sa fiche (l'étape : « Analyse — L'IA l'analyse… »), l'étape en cours

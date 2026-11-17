@@ -26,7 +26,7 @@ import { cleanFolder } from '../../core/settings'
 import { emitWorkflowEvent, NO_SUBJECT, onRunningChange, registerFieldSource, registerTrigger, runActionNow, runningSteps, runSystemWorkflow, stopRunning, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
 import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
-import { entryPageOf, entryTitle, HUB_PAGE as ENTRIES_HUB_PAGE, registerEntriesHome } from './entriesHome'
+import { entryPageOf, entryTitle, HUB_PAGE as ENTRIES_HUB_PAGE, registerEntriesHome, type TermUse } from './entriesHome'
 import { libraryExplorer, type ExplorerPlace } from './explorer'
 import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVersionLabel, type EditableField } from './home'
 import { previousStarterTexts, startersFor } from './starters'
@@ -1070,7 +1070,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.68.0',
+  version: '0.69.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2745,13 +2745,14 @@ export const bibliothequeModule: BlackModule = {
       for (const link of doc.links ?? []) if (items.some((item) => item.path === link)) found.add(link)
       return [...found].map((path) => items.find((item) => item.path === path)!).map((item) => ({ path: item.path, label: item.label, definition: item.entry.description }))
     }
-    const documentsUsing = async (path: string): Promise<{ record: string; title: string; detail: string }[]> => {
+    const documentsUsing = async (path: string): Promise<TermUse[]> => {
       const item = (await glossaryItems()).find((each) => each.path === path)
       if (!item) return []
-      const out: { record: string; title: string; detail: string }[] = []
+      const out: TermUse[] = []
       for (const doc of await store.all()) {
         const linked = (doc.links ?? []).includes(path)
-        if (linked || findCandidates(await docText(doc), [item], doc.record, 1).length) out.push({ record: doc.record, title: doc.title, detail: placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/'))) })
+        const found = findCandidates(await docText(doc), [item], doc.record, 1)[0]?.found
+        if (linked || found) out.push({ record: doc.record, title: doc.title, detail: placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/'))), linked, ...(found ? { found } : {}) })
       }
       return out.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
     }
@@ -3210,6 +3211,7 @@ export const bibliothequeModule: BlackModule = {
     }
     registerEntriesHome(context.views, {
       documentsUsing,
+      linkTermIn: async (record: string) => void (await searchGlossary(record)),
       showDocument: (record: string) => showPage?.(docPageOf(record)),
       explorer: explorerFor,
       t,

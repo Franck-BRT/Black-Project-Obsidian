@@ -9,7 +9,8 @@
  */
 
 import { DEFAULT_THRESHOLD } from './skills'
-import { pageWith, type Card, type Explorer, type HomeBlock, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Card, type Explorer, type HomeBlock, type ListItem, type PageView, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { withLinkSection } from './links'
 import { startersFor } from './starters'
 import { ENTRY_KINDS, entryCategories, type EntryKind, type EntryStore, type LibraryEntry } from './entries'
 import { grouped, groupingOf, groupingSelector } from '../../core/grouping'
@@ -35,6 +36,15 @@ export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(E
 
 type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow' | 'bulb'
 const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user', glossary: 'bulb' }
+
+/** Un document qui emploie un terme du glossaire : où il est, s'il y est relié (lien et rétrolien), la forme qu'il emploie. */
+export interface TermUse {
+  record: string
+  title: string
+  detail: string
+  linked: boolean
+  found?: string
+}
 
 export interface EntriesHomeDeps {
   t: Translate
@@ -68,8 +78,10 @@ export interface EntriesHomeDeps {
   remove?(kind: EntryKind, path: string): Promise<boolean>
   /** Écrire les exemples qui manquent. */
   addStarters(kind: EntryKind): Promise<void>
-  /** Un terme du glossaire : les documents qui l'emploient (le terme ou son sigle, ou reliés par le circuit). */
-  documentsUsing?(path: string): Promise<{ record: string; title: string; detail: string }[]>
+  /** Un terme du glossaire : les documents qui l'emploient (le terme, son sigle ou une autre forme, ou reliés par le circuit). */
+  documentsUsing?(path: string): Promise<TermUse[]>
+  /** Relier à un document les termes du glossaire qu'il emploie (la recherche dans le glossaire, sans IA). */
+  linkTermIn?(record: string): Promise<void>
   /** Ouvrir la fiche d'un document. */
   showDocument?(record: string): void
 }
@@ -220,6 +232,126 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
   }
 }
 
+/** Son texte à soi : sans la section des rétroliens (que Black Projects tient à jour, montrée à part). */
+const ownText = (deps: EntriesHomeDeps, entry: LibraryEntry): string => withLinkSection(entry.text ?? '', deps.t('bibliotheque.links.backHeading'), []).trim()
+
+/**
+ * **La fiche d'un terme du glossaire** : sa définition en tête ; le terme (son nom, son sigle, son
+ * domaine, ses autres formes, où il est rangé) ; les documents qui l'emploient — reliés (lien et
+ * rétrolien) ou seulement cités, à relier d'un clic ; les autres termes de son domaine ; ses notes
+ * (sans les rétroliens, déjà dits au-dessus).
+ */
+async function termPage(deps: EntriesHomeDeps, entry: LibraryEntry, page: { back: ViewAction; actions: ViewAction[]; explorer?: Explorer }): Promise<PageView> {
+  const { t } = deps
+  const section = (id: string, title: string, subtitle: string, icon: 'info' | 'file' | 'bulb' | 'book', blocks: HomeBlock[], open = true): HomeBlock => ({
+    kind: 'section',
+    id: `bibliotheque.terme.${id}`,
+    title,
+    ...(subtitle ? { subtitle } : {}),
+    icon,
+    collapsed: !open,
+    blocks
+  })
+  const move = page.actions.find((action) => action.id === 'move')
+  const edit = page.actions.find((action) => action.id === 'edit')
+  const editTool = (field: string): ViewAction[] => (edit ? [{ ...edit, id: `edit-${field}`, label: t('bibliotheque.term.editField', { field: t(`bibliotheque.term.field.${field}`) }), primary: false }] : [])
+  const row = (id: string, value: string, tools: ViewAction[] = []): ListItem => ({ id, title: t(`bibliotheque.term.field.${id}`), detail: value || '—', ...(tools.length ? { tools } : {}) })
+  const forms = entry.aliases ?? []
+  // Les documents qui l'emploient : reliés d'abord, puis ceux qui le citent sans y être reliés.
+  const uses = deps.documentsUsing ? await deps.documentsUsing(entry.path) : []
+  const linked = uses.filter((use) => use.linked)
+  const cited = uses.filter((use) => !use.linked)
+  const useItem = (use: TermUse): ListItem => ({
+    id: `document-${use.record}`,
+    title: use.title,
+    detail: [use.detail, use.linked ? t('bibliotheque.term.linked') : t('bibliotheque.term.cited', { form: use.found ?? entry.name })].filter(Boolean).join(' · '),
+    icon: use.linked ? 'link' : 'file',
+    tone: use.linked ? 'success' : 'neutral',
+    ...(deps.showDocument ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showDocument!(use.record) } } : {}),
+    ...(!use.linked && deps.linkTermIn ? { actions: [{ id: `relier-${use.record}`, label: t('bibliotheque.term.link'), tooltip: t('bibliotheque.term.link.tip'), icon: 'link' as const, run: () => deps.linkTermIn!(use.record) }] } : {})
+  })
+  // Les autres termes de son domaine : pour passer de l'un à l'autre.
+  const neighbours = entry.category ? (await deps.stores.glossary.all()).filter((each) => each.path !== entry.path && each.category === entry.category).sort((a, b) => a.name.localeCompare(b.name, 'fr')) : []
+  const notes = ownText(deps, entry)
+  return {
+    title: entryTitle(entry),
+    ...(page.explorer ? { explorer: page.explorer } : {}),
+    back: page.back,
+    subtitle: [t('bibliotheque.glossary.one'), entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
+    actions: page.actions,
+    blocks: [
+      // Sa définition, en tête.
+      entry.description
+        ? { kind: 'text', title: t('bibliotheque.glossary.field.description'), paragraphs: [entry.description] }
+        : { kind: 'message', tone: 'warning', text: t('bibliotheque.term.noDefinition'), ...(edit ? { actions: [edit] } : {}) },
+      // Le terme : ce qui le désigne, et où il est.
+      section('terme', t('bibliotheque.term.section'), [entry.code, forms.length ? t('bibliotheque.term.forms.count', { count: forms.length }) : ''].filter(Boolean).join(' · '), 'info', [
+        {
+          kind: 'list',
+          fields: true,
+          items: [
+            row('name', entry.name, editTool('name')),
+            row('code', entry.code ?? '', editTool('code')),
+            row('category', entry.category, editTool('category')),
+            { ...row('aliases', forms.join(', '), editTool('aliases')), ...(forms.length ? {} : { detail: t('bibliotheque.term.noForms') }) },
+            row('place', placeName(deps.places.glossary.shelves(), entry.shelf, entry.directory) || placeLabel(deps.places.glossary, entry), move ? [{ ...move, primary: false }] : [])
+          ]
+        }
+      ]),
+      // Les documents qui l'emploient.
+      section('documents', t('bibliotheque.glossary.usedIn', { count: uses.length }), [linked.length ? t('bibliotheque.term.uses.linked', { count: linked.length }) : '', cited.length ? t('bibliotheque.term.uses.cited', { count: cited.length }) : ''].filter(Boolean).join(' · '), 'file', [
+        ...(cited.length > 1 && deps.linkTermIn
+          ? [
+              {
+                kind: 'message' as const,
+                tone: 'info' as const,
+                text: t('bibliotheque.term.citedOnly', { count: cited.length }),
+                actions: [
+                  {
+                    id: 'relier-tous',
+                    label: t('bibliotheque.term.linkAll', { count: cited.length }),
+                    tooltip: t('bibliotheque.term.link.tip'),
+                    icon: 'link' as const,
+                    run: async () => {
+                      for (const use of cited) await deps.linkTermIn!(use.record)
+                    }
+                  }
+                ]
+              }
+            ]
+          : []),
+        { kind: 'list', items: [...linked, ...cited].map(useItem), empty: t('bibliotheque.glossary.usedIn.none') }
+      ]),
+      // Les autres termes de son domaine.
+      ...(neighbours.length
+        ? [
+            section(
+              'domaine',
+              t('bibliotheque.term.neighbours', { category: entry.category, count: neighbours.length }),
+              neighbours.slice(0, 6).map((each) => each.code || each.name).join(' · '),
+              'bulb',
+              [
+                {
+                  kind: 'list',
+                  items: neighbours.map((each) => ({
+                    id: `terme-${each.path}`,
+                    title: entryTitle(each),
+                    ...(each.description ? { detail: each.description } : {}),
+                    icon: 'bulb' as const,
+                    ...(deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('glossary', each.path)) } } : {})
+                  }))
+                }
+              ],
+              false
+            )
+          ]
+        : []),
+      // Ses notes : exemples, références (sans les rétroliens).
+      section('notes', t('bibliotheque.glossary.text'), notes ? '' : t('bibliotheque.entry.noText'), 'book', [{ kind: 'markdown', text: notes, empty: t('bibliotheque.entry.noText') }], !!notes)
+    ]
+  }
+}
+
 /** La fiche d'un prompt ou d'un persona. */
 export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: string | undefined): Promise<PageView> {
   const { t } = deps
@@ -271,6 +403,57 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
         ]
       : []
   const explorer = await deps.explorer?.({ kind, shelf: entry.shelf ?? '', directory: entry.directory ?? '' })
+  const actions: ViewAction[] = [
+    {
+      id: 'edit',
+      label: t('bibliotheque.entry.edit'),
+      icon: 'edit',
+      primary: true,
+      run: async () => {
+        const moved = await deps.edit(kind, entry.path)
+        if (moved && moved !== entry.path) deps.showPage?.(entryPageOf(kind, moved))
+      }
+    },
+    { id: 'favorite', label: t(entry.favorite ? 'bibliotheque.entry.unfavorite' : 'bibliotheque.entry.makeFavorite'), icon: 'star', run: () => deps.toggleFavorite(kind, entry.path) },
+    {
+      id: 'move',
+      label: t('bibliotheque.move'),
+      tooltip: t(`bibliotheque.move.${kind}.tip`),
+      icon: 'folder',
+      run: async () => {
+        const moved = await deps.move(kind, entry.path)
+        if (moved && moved !== entry.path) deps.showPage?.(entryPageOf(kind, moved))
+      }
+    },
+    // Les actions secondaires : dans le menu « … ».
+    { id: 'note', label: t('bibliotheque.entry.note'), icon: 'book', more: true, run: () => deps.showNote(entry.path) },
+    {
+      id: 'aside',
+      label: t('bibliotheque.entry.setAside'),
+      tooltip: t('bibliotheque.entry.setAside.tip'),
+      icon: 'archive',
+      more: true,
+      run: async () => {
+        if (await deps.setAside(kind, entry.path)) deps.showPage?.(home)
+      }
+    },
+    ...(deps.remove
+      ? [
+          {
+            id: 'delete',
+            label: t('bibliotheque.entry.delete'),
+            tooltip: t('bibliotheque.entry.delete.tip'),
+            icon: 'trash' as const,
+            more: true,
+            run: async () => {
+              if (await deps.remove!(kind, entry.path)) deps.showPage?.(home)
+            }
+          }
+        ]
+      : [])
+  ]
+  // Un terme du glossaire : sa page à lui.
+  if (kind === 'glossary') return termPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   return {
     title: entryTitle(entry),
     ...(explorer ? { explorer } : {}),
@@ -279,86 +462,17 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
       t(`bibliotheque.${kind}.one`),
       kind === 'person' ? personLine(entry, companies) : '',
       entry.category,
-      kind === 'glossary' && entry.aliases?.length ? t('bibliotheque.glossary.aliases', { forms: entry.aliases.join(', ') }) : '',
       entry.favorite ? t('bibliotheque.entry.favorite') : ''
     ]
       .filter(Boolean)
       .join(' · '),
-    actions: [
-      {
-        id: 'edit',
-        label: t('bibliotheque.entry.edit'),
-        icon: 'edit',
-        primary: true,
-        run: async () => {
-          const moved = await deps.edit(kind, entry.path)
-          if (moved && moved !== entry.path) deps.showPage?.(entryPageOf(kind, moved))
-        }
-      },
-      { id: 'favorite', label: t(entry.favorite ? 'bibliotheque.entry.unfavorite' : 'bibliotheque.entry.makeFavorite'), icon: 'star', run: () => deps.toggleFavorite(kind, entry.path) },
-      {
-        id: 'move',
-        label: t('bibliotheque.move'),
-        tooltip: t(`bibliotheque.move.${kind}.tip`),
-        icon: 'folder',
-        run: async () => {
-          const moved = await deps.move(kind, entry.path)
-          if (moved && moved !== entry.path) deps.showPage?.(entryPageOf(kind, moved))
-        }
-      },
-      // Les actions secondaires : dans le menu « … ».
-      { id: 'note', label: t('bibliotheque.entry.note'), icon: 'book', more: true, run: () => deps.showNote(entry.path) },
-      {
-        id: 'aside',
-        label: t('bibliotheque.entry.setAside'),
-        tooltip: t('bibliotheque.entry.setAside.tip'),
-        icon: 'archive',
-        more: true,
-        run: async () => {
-          if (await deps.setAside(kind, entry.path)) deps.showPage?.(home)
-        }
-      },
-      ...(deps.remove
-        ? [
-            {
-              id: 'delete',
-              label: t('bibliotheque.entry.delete'),
-              tooltip: t('bibliotheque.entry.delete.tip'),
-              icon: 'trash' as const,
-              more: true,
-              run: async () => {
-                if (await deps.remove!(kind, entry.path)) deps.showPage?.(home)
-              }
-            }
-          ]
-        : [])
-    ],
+    actions,
     blocks: [
       ...(entry.description && kind !== 'person' ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
       ...contact,
-      // Un terme du glossaire : les documents qui l'emploient, un clic ouvre leur fiche.
-      ...(kind === 'glossary' && deps.documentsUsing
-        ? await (async () => {
-            const docs = await deps.documentsUsing!(entry.path)
-            return [
-              {
-                kind: 'list' as const,
-                title: t('bibliotheque.glossary.usedIn', { count: docs.length }),
-                items: docs.map((doc) => ({
-                  id: `document-${doc.record}`,
-                  title: doc.title,
-                  detail: doc.detail,
-                  icon: 'file' as const,
-                  ...(deps.showDocument ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showDocument!(doc.record) } } : {})
-                })),
-                empty: t('bibliotheque.glossary.usedIn.none')
-              }
-            ]
-          })()
-        : []),
       ...staff,
       // Le texte mis en forme : titres, listes, gras… (un prompt, un skill s'écrivent en Markdown).
-      { kind: 'markdown', title: t(`bibliotheque.${kind}.text`), text: entry.text ?? '', empty: t('bibliotheque.entry.noText') },
+      { kind: 'markdown', title: t(`bibliotheque.${kind}.text`), text: ownText(deps, entry), empty: t('bibliotheque.entry.noText') },
       // Un skill exécutable (le circuit des documents) : ce qu'il reçoit, ce qu'il rend, son seuil.
       ...(kind === 'skill' && (entry.context?.length || entry.output)
         ? [
