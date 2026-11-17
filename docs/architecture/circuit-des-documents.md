@@ -183,9 +183,13 @@ nom : un skill modifié est gardé tel quel). Leur procédure est en français ;
   scan (sans texte : lecture par la vision).
 - **IA** : la chaîne de lecture IA actuelle — relecture, correction, contrôles, qualité.
 - **Sortie** (`ingestion`) : `{ qualite, langue, confiance, raison }`.
-- **Échec** (illisible, IA indisponible) : la fiche reste `a-classer`, l'entretien la relancera.
+- **Échec** (illisible, IA indisponible) : la fiche reste `a-classer`, la relance à l'ouverture la reprendra.
 
 ### Analyse et liens
+
+*Livré en B (0.135.0) : le type de pièce, l'émetteur, le projet, la confiance et la raison
+(sortie `analyse`, sans `personnes` ni `liens`). Les candidats, les personnes et les liens : la
+version C.*
 
 - **Déterministe avant** : les candidats — entités connues trouvées dans le texte par leur nom
   ou un alias, documents de même référence ou de même émetteur, projets dont le nom apparaît.
@@ -248,7 +252,7 @@ encore).
 | Workflow | Déclencheur | Ce qu'il fait |
 |---|---|---|
 | **Circuit des documents** | un document entre dans À classer (`bibliotheque.document-verse`) | Ingestion → Analyse et liens → Rangement, chacun par `ia.executer-skill` ; le seuil décide |
-| **Relancer le circuit** | à l'ouverture, puis chaque jour | les fiches restées `a-classer` ou `ingere` (IA coupée) reprennent là où elles étaient |
+| **Relancer le circuit** | à l'ouverture | les fiches restées `a-classer` ou `ingere` (IA coupée) reprennent là où elles étaient |
 | **À contrôler en attente** | chaque lundi | prévient s'il y a des documents à contrôler, avec le lien vers la page — depuis 0.136.5, la première étape des « Rappels de la bibliothèque, chaque lundi » |
 | **Entretien des liens** (plus tard) | chaque semaine | liens vers des notes disparues, doublons probables, rétroliens manquants : signalés |
 
@@ -297,13 +301,14 @@ On respecte les frontières actuelles (un module n'appelle un autre que par son 
 | Passes IA isolées (titre, date, émetteur, catégorie, étiquettes, identité, langue) | existent (actions `ia.*-document`) |
 | Skills en bibliothèque, champs prompt/persona/skill des étapes IA | existent |
 | Répertoires attendus d'un projet par type de pièce | existe |
-| `ia.executer-skill` (contexte déclaré, sortie JSON validée, confiance, seuil) | **à faire** |
-| État `circuit` des fiches, section Circuit | **à faire** |
-| À classer (unifié avec « À verser »), À contrôler et sa page | **à faire** |
-| Trois skills livrés : Ingestion, Analyse et liens, Rangement | **à faire** |
-| Candidats de liens et entités (recherche déterministe) | **à faire** |
-| Liens, rétroliens | **à faire** |
-| Workflows système du circuit, relance, rappel À contrôler, entretien | **à faire** |
+| `ia.executer-skill` (contexte déclaré, sortie JSON validée, confiance, seuil) | existe *(A, 0.134.0)* |
+| État `circuit` des fiches, section Circuit | existe *(A, 0.134.0 ; section Circuit, B, 0.135.0)* |
+| À classer (unifié avec « À verser »), À contrôler et sa page | existe *(À contrôler, A, 0.134.0 ; À classer, B, 0.135.0)* |
+| Trois skills livrés : Ingestion, Analyse, Rangement | existent *(B, 0.135.0 ; dans la bibliothèque des skills dès l'activation, 0.136.1)* — l'Analyse donne le type de pièce, l'émetteur, le projet ; les **liens** viendront avec la version C |
+| Workflows système du circuit, relance, rappel À contrôler | existent *(B, 0.135.0 ; le rappel, une étape des « Rappels de la bibliothèque, chaque lundi » depuis 0.136.5)* |
+| Candidats de liens et entités (recherche déterministe) | **à faire** *(C)* |
+| Liens, rétroliens | **à faire** *(C)* |
+| Entretien des liens (workflow système) | **à faire** *(C)* |
 
 ## Le découpage proposé
 
