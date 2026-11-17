@@ -59,11 +59,13 @@ du tableau de bord ouvrent la **page IA**, dans l'onglet Black Projects :
 **Tester la connexion** depuis la tuile ou le tableau de bord mène à la page IA, où le
 résultat se lit ; depuis la page, on y reste. Depuis la palette, le message, comme avant.
 
-**À chaque ouverture d'Obsidian**, le workflow système *Vérifier la connexion à l'IA, à
-l'ouverture* (actif d'origine) interroge le serveur sans rien vous demander : la liste de
-ses modèles est mise à jour, et rien n'est dit si tout va bien (le journal des workflows le
-garde, la page IA montre le dernier test). Il vous prévient si le serveur ne répond pas, ou
-si un modèle que vous avez choisi n'y est plus. Sans adresse réglée, il ne fait rien. Vous
+**À chaque ouverture d'Obsidian**, le workflow système *Vérifier la connexion à l'IA et
+signaler ses nouveaux modèles, à l'ouverture* interroge le serveur sans rien vous demander : la
+liste de ses modèles est mise à jour, et rien n'est dit si tout va bien (le journal des workflows
+le garde, la page IA montre le dernier test). Il vous prévient si le serveur ne répond pas, si
+un modèle que vous avez choisi n'y est plus, ou s'il en porte de **nouveaux** (nommés avec
+l'usage qui leur conviendrait, à choisir sur la page IA ; la première fois, la liste est
+seulement retenue). Sans adresse réglée, il ne fait rien. Vous
 le désactivez ou le modifiez sur la page {{link:Modules/Workflows|Workflows}} (filtre
 « Système »).
 
@@ -88,7 +90,7 @@ Pour un document du **circuit des documents** (voir {{link:Modules/Bibliothèque
 relecture, le type de pièce et l'entreprise sont faits par ses étapes **Ingérer** et **Analyser** :
 les workflows ci-dessous qui s'en chargent d'habitude ne passent pas sur lui.
 
-**« Relire avec l'IA le texte extrait d'un document… »** (activé) : le texte extrait d'un
+**« Relire avec l'IA le texte d'un document versé (la vision pour un scan)… »** : le texte extrait d'un
 document versé est relu — sa cohérence, sa mise en forme, ce que l'extraction a abîmé —, sans
 en changer le sens ; avec le prompt, le persona, le skill choisis dans son étape. Le texte relu
 est une nouvelle version du texte du document : l'extraite est gardée, on les compare.
@@ -131,9 +133,10 @@ Sur la fiche, **Relire avec l'IA** fait choisir le modèle : **simple** (le text
 la vision** (la lecture complète ci-dessus — plus sûr, plus lent) ; l'étape du workflow a le même
 choix (champ *Modèle* : **Automatique** d'origine, la vision quand le document se montre en
 images). Un document sans texte (un
-scan, une image) est **lu avec la vision dès son dépôt** — le workflow système « Lire avec la
-vision un document versé sans texte… » (activé), par le modèle d'OCR, sinon celui de vision ;
-désactivé, la fiche propose **Lire avec la vision (IA)**. Le modèle : celui d'OCR, sinon de vision, sinon celui d'analyse
+scan, une image) est **lu avec la vision dès son dépôt** — par le même workflow système, « Relire
+avec l'IA le texte d'un document versé (la vision pour un scan)… », par le modèle d'OCR, sinon celui
+de vision ; la fiche propose aussi **Lire avec la vision (IA)** (le workflow désactivé, une notice
+le dit). Le modèle : celui d'OCR, sinon de vision, sinon celui d'analyse
 (beaucoup de modèles récents voient). Si le serveur refuse les images pour ce modèle, une notice
 le dit une fois ; choisissez alors un modèle qui voit sur la page IA. Toutes les
 pages sont lues, une à une. Les formules mathématiques sont écrites en LaTeX.
@@ -142,11 +145,10 @@ Ces workflows servent aussi au bouton **Relancer la recherche** d'un champ, sur 
 d'un document de la bibliothèque : quand la recherche sans IA n'est pas sûre, celui du champ
 est exécuté pour ce document (désactivé, l'IA n'est pas demandée, et c'est dit).
 
-Deux autres workflows système le suivent (désactivés d'origine tant que seuls les essentiels sont actifs — le réglage du module {{link:Modules/Workflows|Workflows}} ; seul le **Circuit des documents** l'est) :
+Un autre workflow système le suit (désactivé d'origine tant que seuls les essentiels sont actifs — le réglage du module {{link:Modules/Workflows|Workflows}} ; seul le **Circuit des documents** l'est) :
 
 | Workflow système | Ce qu'il fait | D'origine |
 | --- | --- | --- |
-| Signaler les nouveaux modèles du serveur, à l'ouverture | nomme les modèles apparus sur le serveur depuis la dernière fois, avec l'usage qui leur conviendrait (à choisir sur la page IA) ; rien de nouveau : rien n'est dit | activé |
 | Signaler un serveur d'IA lent, à l'ouverture | chronomètre une demande minuscule au modèle d'analyse et prévient au-delà du seuil (5 s, réglable dans son action) | désactivé |
 
 ## 2. Ce que l'IA fait

@@ -109,9 +109,14 @@ describe('la relecture par l’IA, au versement', () => {
     const { workflows } = await start(memoryPlatform(), () => FIXED)
     expect(workflows().find((each) => each.system === 'sys.ia.relire-textes')).toMatchObject({
       enabled: true,
-      name: 'Relire avec l’IA le texte extrait d’un document : cohérence, mise en forme, corrections',
+      name: 'Relire avec l’IA le texte d’un document versé (la vision pour un scan) : cohérence, mise en forme, corrections',
       trigger: { kind: 'bibliotheque.document-verse' },
-      conditions: [{ field: 'texteextrait', op: 'not-empty', value: '' }, { field: 'circuit', op: 'empty', value: '' }],
+      conditions: [
+        { field: 'texteextrait', op: 'not-empty', value: '' },
+        { field: 'circuit', op: 'empty', value: '' },
+        { field: 'scan', op: 'not-empty', value: '', join: 'or' },
+        { field: 'circuit', op: 'empty', value: '' }
+      ],
       actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}' } }]
     })
   })
@@ -247,7 +252,7 @@ describe('extraire de nouveau, relire avec l’IA', () => {
     expect((await textVersions(doc.record)).map((item) => item.title)[0]).toBe('Texte 3 — relu par l’IA')
     workflows().find((each) => each.system === 'sys.ia.relire-textes')!.enabled = false
     await actions.find((action) => action.id === 'proofread')!.run()
-    expect(platform.notices.at(-1)).toBe('La relecture par l’IA n’a pas été lancée : son workflow système « Relire le texte extrait avec l’IA » est désactivé, ou le module Workflows n’est pas actif.')
+    expect(platform.notices.at(-1)).toBe('La relecture par l’IA n’a pas été lancée : son workflow système « Relire avec l’IA le texte d’un document versé » est désactivé, ou le module Workflows n’est pas actif.')
   })
 })
 

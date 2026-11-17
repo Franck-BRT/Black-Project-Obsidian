@@ -281,8 +281,8 @@ async function checkConnection(context: ModuleContext): Promise<string> {
 /** Le workflow système qui relit le texte extrait d'un document avec l'IA. */
 const PROOFREAD_SYSTEM = 'sys.ia.relire-textes'
 
-/** Le workflow système qui lit un scan versé avec la vision. */
-const SCAN_SYSTEM = 'sys.ia.lire-scans'
+/** L'ancien workflow système qui lisait un scan versé avec la vision : fondu dans la relecture (0.136.4). */
+const SCAN_SYSTEM_RETIRED = 'sys.ia.lire-scans'
 
 /** Les champs d'un document de la bibliothèque, et le workflow système qui les cherche avec l'IA. */
 const AI_RESEARCH: Readonly<Record<ResearchField, string>> = {
@@ -302,7 +302,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.30.2',
+  version: '0.31.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -364,9 +364,21 @@ export const iaModule: BlackModule = {
       id: 'sys.ia.verifier-connexion',
       moduleKey: 'ia.name',
       enabledByDefault: true,
-      make: (tr) => ({ name: tr('ia.sys.verifier-connexion'), mode: 'auto', trigger: { kind: OPENING }, conditions: [], actions: [{ kind: 'ia.verifier', fields: {} }] })
+      // Puis les nouveaux modèles du serveur (la liste que la vérification vient de relever) :
+      // « Signaler les nouveaux modèles du serveur » y est fondu.
+      replaces: ['sys.ia.nouveaux-modeles'],
+      make: (tr) => ({
+        name: tr('ia.sys.verifier-connexion'),
+        mode: 'auto',
+        trigger: { kind: OPENING },
+        conditions: [],
+        actions: [
+          { kind: 'ia.verifier', fields: {} },
+          { kind: 'ia.nouveaux-modeles', fields: {} }
+        ]
+      })
     })
-    // Les nouveaux modèles du serveur, après la vérification (actif) ; le temps de réponse (désactivé).
+    // Les nouveaux modèles du serveur (une étape de la vérification) ; le temps de réponse (désactivé).
     registerAction({
       id: 'ia.nouveaux-modeles',
       labelKey: 'ia.wf.action.newModels',
@@ -389,12 +401,6 @@ export const iaModule: BlackModule = {
         const text = await responseTime(context, Number.isFinite(threshold) && threshold > 0 ? threshold : 5)
         return { lines: [text], results: { text } }
       }
-    })
-    registerSystemWorkflow({
-      id: 'sys.ia.nouveaux-modeles',
-      moduleKey: 'ia.name',
-      enabledByDefault: true,
-      make: (tr) => ({ name: tr('ia.sys.nouveaux-modeles'), mode: 'auto', trigger: { kind: OPENING }, conditions: [], actions: [{ kind: 'ia.nouveaux-modeles', fields: {} }] })
     })
     // La langue d'un document versé, quand la détection sans IA n'a pas été sûre : l'IA la dit (actif).
     registerSystemWorkflow({
@@ -465,37 +471,26 @@ export const iaModule: BlackModule = {
         actions: [{ kind: 'ia.date-document', fields: { fiche: '{fiche}' } }]
       })
     })
-    // Le texte extrait d'un document versé, relu par l'IA : cohérence, mise en forme, corrections (une nouvelle version du texte).
+    // Le texte d'un document versé relu par l'IA (cohérence, mise en forme, corrections : une nouvelle
+    // version du texte) — ou, sans texte (un scan, une image), lu avec la vision : l'action choisit
+    // d'elle-même (mode « auto »). « Lire avec la vision un document versé sans texte » y est fondu.
     registerSystemWorkflow({
       id: PROOFREAD_SYSTEM,
       moduleKey: 'ia.name',
       enabledByDefault: true,
+      replaces: [SCAN_SYSTEM_RETIRED],
       make: (tr) => ({
         name: tr('ia.sys.relire-textes'),
         mode: 'auto',
         trigger: { kind: 'bibliotheque.document-verse' },
-        // Un document du circuit : relu par son étape « Ingérer » (pas deux fois).
+        // Un texte extrait, ou un scan ; pas un document du circuit (relu par son étape « Ingérer »).
         conditions: [
           { field: 'texteextrait', op: 'not-empty', value: '' },
+          { field: 'circuit', op: 'empty', value: '' },
+          { field: 'scan', op: 'not-empty', value: '', join: 'or' },
           { field: 'circuit', op: 'empty', value: '' }
         ],
         actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}' } }]
-      })
-    })
-    // Un scan versé (sans texte : un PDF scanné, une image) : lu par le modèle de vision, ses pages en images (actif).
-    registerSystemWorkflow({
-      id: SCAN_SYSTEM,
-      moduleKey: 'ia.name',
-      enabledByDefault: true,
-      make: (tr) => ({
-        name: tr('ia.sys.lire-scans'),
-        mode: 'auto',
-        trigger: { kind: 'bibliotheque.document-verse' },
-        conditions: [
-          { field: 'scan', op: 'not-empty', value: '' },
-          { field: 'circuit', op: 'empty', value: '' }
-        ],
-        actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}', mode: 'vision' } }]
       })
     })
     // Les étiquettes d'un document versé, quand la première passe sans IA ne les a pas lues sûrement (actif).

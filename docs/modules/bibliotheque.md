@@ -5,13 +5,18 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.51.0 (Black Projects 0.136.3) |
+| Version | 0.51.1 (Black Projects 0.136.4) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La notice « relecture non lancée » (v0.51.1, Black Projects 0.136.4)
+
+- `bibliotheque.text.proofread.off` nomme le workflow système fusionné du module IA (« Relire avec
+  l'IA le texte d'un document versé »), qui lit aussi les scans depuis 0.136.4.
 
 ## Un seul workflow pour ranger ce que les modules déposent (v0.51.0, Black Projects 0.136.3)
 
@@ -490,7 +495,7 @@ Typage des pièces actif. Le module Programmes s'en sert dans la fenêtre des do
 Le sujet d'un *document versé* a une variable `{scan}` : « oui » quand le document n'a pas de
 texte (`sans-texte`, `image`) et qu'un modèle de vision peut le regarder (`setAiVision`). Le
 workflow système du module IA `sys.ia.lire-scans` la prend pour condition : un scan versé est
-lu avec la vision aussitôt.
+lu avec la vision aussitôt. (Depuis 0.136.4 : `sys.ia.relire-textes`, « ou {scan} non vide ».)
 
 ## Relire avec un modèle simple ou avec la vision ; lire un scan (v0.34.0, Black Projects 0.106.0)
 

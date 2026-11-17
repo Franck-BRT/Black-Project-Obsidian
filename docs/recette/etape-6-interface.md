@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Deux autres doublons fondus (v0.136.4)
+
+- [ ] Workflows › Système › IA : « Lire avec la vision un document versé sans texte » et « Signaler
+      les nouveaux modèles du serveur » n'y sont plus (coffre existant compris) ; « Relire avec l'IA
+      le texte d'un document versé (la vision pour un scan) » a deux groupes de conditions liés par
+      **ou** ; « Vérifier la connexion à l'IA et signaler ses nouveaux modèles » a deux étapes
+- [ ] La relecture activée : un PDF avec texte est relu ; une image (un scan) est lue avec la vision
+- [ ] La relecture désactivée : sur la fiche d'un scan, **Lire avec la vision (IA)** dit que le
+      workflow est désactivé
+- [ ] Un nouveau modèle sur le serveur, la vérification activée : nommé à l'ouverture
+
 ## Un seul workflow pour ranger ce qui est importé (v0.136.3)
 
 - [ ] Workflows › Système › Bibliothèque : **Ranger les fichiers et pièces importés dans la

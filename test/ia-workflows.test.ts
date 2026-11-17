@@ -49,7 +49,9 @@ describe('vérifier la connexion à l’IA, à l’ouverture (workflow système)
     const platform = memoryPlatform()
     const { settings, views, journal } = await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small' })
     const system = (settings.workflows!.workflows as Workflow[]).find((each) => each.system === 'sys.ia.verifier-connexion')
-    expect(system).toMatchObject({ enabled: true, name: 'Vérifier la connexion à l’IA, à l’ouverture', trigger: { kind: 'ouverture' } })
+    // Une étape de plus : les nouveaux modèles du serveur (« Signaler les nouveaux modèles » y est fondu).
+    expect(system).toMatchObject({ enabled: true, name: 'Vérifier la connexion à l’IA et signaler ses nouveaux modèles, à l’ouverture', trigger: { kind: 'ouverture' }, actions: [{ kind: 'ia.verifier' }, { kind: 'ia.nouveaux-modeles' }] })
+    expect((settings.workflows!.workflows as Workflow[]).some((each) => each.system === 'sys.ia.nouveaux-modeles')).toBe(false)
     platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }, { id: 'bge-m3' }] }))
     await runOpeningWorkflows()
     expect(platform.notices).toEqual([])
@@ -72,8 +74,8 @@ describe('vérifier la connexion à l’IA, à l’ouverture (workflow système)
     const { journal } = await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small' })
     platform.httpAnswers.push({ status: 401, text: 'unauthorized' })
     await runOpeningWorkflows()
-    expect(platform.notices.at(-1)).toMatch(/Vérifier la connexion à l’IA, à l’ouverture.*le serveur d’IA ne répond pas/)
-    expect(journal()).toMatch(/❌ échec · \*\*Vérifier la connexion à l’IA, à l’ouverture\*\*/)
+    expect(platform.notices.at(-1)).toMatch(/Vérifier la connexion à l’IA et signaler ses nouveaux modèles, à l’ouverture.*le serveur d’IA ne répond pas/)
+    expect(journal()).toMatch(/❌ échec · \*\*Vérifier la connexion à l’IA et signaler ses nouveaux modèles, à l’ouverture\*\*/)
   })
 
   it('aucune adresse réglée : rien à vérifier, rien n’est dit, aucun appel', async () => {
@@ -86,12 +88,10 @@ describe('vérifier la connexion à l’IA, à l’ouverture (workflow système)
   })
 })
 
-describe('les nouveaux modèles du serveur, à l’ouverture (workflow système)', () => {
-  it('créé actif ; la première fois, la liste est retenue sans rien dire', async () => {
+describe('les nouveaux modèles du serveur, à l’ouverture (une étape de la vérification)', () => {
+  it('la première fois, la liste est retenue sans rien dire', async () => {
     const platform = memoryPlatform()
     const { settings, journal } = await start(platform, { adresse: 'https://ia.exemple.fr/v1', modele: 'mistral-small' })
-    const system = (settings.workflows!.workflows as Workflow[]).find((each) => each.system === 'sys.ia.nouveaux-modeles')
-    expect(system).toMatchObject({ enabled: true, name: 'Signaler les nouveaux modèles du serveur, à l’ouverture', trigger: { kind: 'ouverture' } })
     platform.httpAnswers.push(json({ data: [{ id: 'mistral-small' }] }))
     await runOpeningWorkflows()
     expect(platform.notices).toEqual([])

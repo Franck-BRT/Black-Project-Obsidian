@@ -670,6 +670,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.1 : **les skills du circuit dès l'activation** — Ingérer, Analyser, Ranger un document dans la bibliothèque des skills sans attendre le premier document (le workflow du circuit les nomme)
 - v0.136.2 : **le texte des prompts, personas, skills mis en forme** (Markdown) sur leur fiche ; l'extrait de leur carte sans syntaxe
 - v0.136.3 : **un seul workflow pour ranger ce que les modules déposent** — « Ranger les pièces importées » fondu dans « Ranger les fichiers et pièces importés » (`replaces` : l'ancien retiré des coffres existants)
+- v0.136.4 : **deux autres doublons fondus** — la lecture des scans dans la relecture par l'IA (conditions « texte extrait ou scan », l'action choisit la vision) ; les nouveaux modèles du serveur dans la vérification de la connexion (deux étapes) ; les anciens retirés des coffres existants
 - v0.134.0 : **le circuit des documents, version A** — skills exécutables (contexte, sortie, seuil), étape « Exécuter un skill », **À contrôler** (accepter, choisir ailleurs, écarter)
 - Conception : **le circuit des documents** — tout dépôt dans À classer, puis ingestion, analyse et liens, rangement par des skills exécutables ; ce qui n'est pas sûr va dans À contrôler ([architecture/circuit-des-documents.md](architecture/circuit-des-documents.md))
 

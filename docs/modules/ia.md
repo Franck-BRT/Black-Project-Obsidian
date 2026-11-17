@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.30.2 (Black Projects 0.136.0) |
+| Version | 0.31.0 (Black Projects 0.136.4) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -13,6 +13,23 @@
 | Étape | 6 du [plan d'intégration](../plan-integration.md) — IA locale |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
+
+## Deux doublons fondus (v0.31.0, Black Projects 0.136.4)
+
+- `sys.ia.lire-scans` (« Lire avec la vision un document versé sans texte », action `ia.relire-texte`
+  mode `vision`, condition `{scan}`) fondu dans `sys.ia.relire-textes` : même déclencheur, même
+  action. Le workflow fusionné, « Relire avec l'IA le texte d'un document versé (la vision pour un
+  scan)… », a pour conditions `{texteextrait}` non vide **ou** `{scan}` non vide (chacune avec
+  `{circuit}` vide ; `join: 'or'`), et l'action en mode `auto` (la vision sans texte, ou quand le
+  document se montre en images). `replaces: ['sys.ia.lire-scans']`. Le bouton **Lire avec la vision
+  (IA)** de la fiche passe par lui (`aiProofread`) : désactivé, une notice le dit.
+- `sys.ia.nouveaux-modeles` fondu dans `sys.ia.verifier-connexion` : il ne faisait que relire la
+  liste que la vérification vient de relever. Le workflow fusionné, « Vérifier la connexion à l'IA
+  et signaler ses nouveaux modèles, à l'ouverture », a deux étapes : `ia.verifier`, puis
+  `ia.nouveaux-modeles` (le serveur muet : la première échoue, la seconde ne passe pas).
+  `replaces: ['sys.ia.nouveaux-modeles']`.
+- Restent distincts, à dessein : `sys.ia.temps-reponse` (désactivé : une demande chronométrée au
+  modèle, pas la liste des modèles).
 
 ## Le circuit, seul workflow de l'IA actif d'origine (v0.30.2, Black Projects 0.136.0)
 

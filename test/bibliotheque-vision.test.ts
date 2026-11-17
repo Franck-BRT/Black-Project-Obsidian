@@ -408,12 +408,18 @@ describe('un document sans texte : la vision seule', () => {
   it('un scan versé (une image) : lu aussitôt par le modèle d’OCR (ou de vision), son workflow système ; texte 1, la fiche le montre', async () => {
     const platform = memoryPlatform()
     const { pour, seen, textActions, textVersions, workflows } = await start(platform, () => '# Procès-verbal\n\nRéception prononcée le 12 mars 2026.')
-    expect(workflows().find((each) => each.system === 'sys.ia.lire-scans')).toMatchObject({
+    // Le même workflow que la relecture : un texte extrait, ou (« ou ») un scan ; l'action choisit la vision sans texte.
+    expect(workflows().some((each) => each.system === 'sys.ia.lire-scans')).toBe(false)
+    expect(workflows().find((each) => each.system === 'sys.ia.relire-textes')).toMatchObject({
       enabled: true,
-      name: 'Lire avec la vision un document versé sans texte (un scan, une image)',
       trigger: { kind: 'bibliotheque.document-verse' },
-      conditions: [{ field: 'scan', op: 'not-empty', value: '' }, { field: 'circuit', op: 'empty', value: '' }],
-      actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}', mode: 'vision' } }]
+      conditions: [
+        { field: 'texteextrait', op: 'not-empty', value: '' },
+        { field: 'circuit', op: 'empty', value: '' },
+        { field: 'scan', op: 'not-empty', value: '', join: 'or' },
+        { field: 'circuit', op: 'empty', value: '' }
+      ],
+      actions: [{ kind: 'ia.relire-texte', fields: { fiche: '{fiche}' } }]
     })
     const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
     expect(seen).toHaveLength(1)
@@ -431,16 +437,21 @@ describe('un document sans texte : la vision seule', () => {
     expect((await textActions(doc.record)).map((action) => action.id)).toEqual(['extract', 'proofread', 'text-note'])
   })
 
-  it('son workflow désactivé : rien au dépôt ; la fiche propose seulement « Lire avec la vision (IA) », sans question', async () => {
+  it('son workflow (la relecture) désactivé : rien au dépôt ; la fiche propose « Lire avec la vision (IA) », qui dit le workflow désactivé', async () => {
     const platform = memoryPlatform()
     const { pour, seen, textActions, textVersions, workflows } = await start(platform, () => 'Texte lu')
-    workflows().find((each) => each.system === 'sys.ia.lire-scans')!.enabled = false
+    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.enabled = false
     const doc = await pour('Scan PV.png', new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
     expect(seen).toHaveLength(0)
     const actions = await textActions(doc.record)
     expect(actions.map((action) => action.label)).toEqual(['Extraire de nouveau', 'Lire avec la vision (IA)', 'Ouvrir sa note'])
     await actions.find((action) => action.id === 'vision')!.run()
     expect(platform.offered).toHaveLength(0)
+    expect(seen).toHaveLength(0)
+    expect(platform.notices.at(-1)).toMatch(/^La relecture par l’IA n’a pas été lancée : son workflow système « Relire avec l’IA le texte d’un document versé » est désactivé/)
+    // Réactivé : la fiche le lance.
+    workflows().find((each) => each.system === 'sys.ia.relire-textes')!.enabled = true
+    await (await textActions(doc.record)).find((action) => action.id === 'vision')!.run()
     expect(seen).toHaveLength(1)
     expect((await textVersions(doc.record)).map((item) => item.title)).toEqual(['Texte 1 — lu par l’IA avec la vision'])
   })

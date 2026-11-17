@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.3)
+## Aujourd'hui (version 0.136.4)
+
+- **Deux autres doublons fondus dans les workflows** : la relecture du texte par l'IA et la
+  lecture des scans avec la vision deviennent **un seul** workflow (« Relire avec l'IA le texte d'un
+  document versé (la vision pour un scan) ») ; la vérification de la connexion à l'IA et le
+  signalement de ses nouveaux modèles aussi (« Vérifier la connexion à l'IA et signaler ses
+  nouveaux modèles, à l'ouverture »). Les anciens disparaissent de la page Workflows.
 
 - **Un seul workflow pour ranger ce qui est importé** : « Ranger les pièces importées » et
   « Ranger les fichiers importés » faisaient la même chose ; ils deviennent **Ranger les fichiers

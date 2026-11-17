@@ -234,7 +234,7 @@ fiche d'un document du circuit a une section **Circuit** : où il en est, ce qui
 
 L'ancien dossier `À verser` est repris : il devient `À classer`.
 
-Pour un document du circuit, les workflows « Relire avec l'IA le texte… », « Lire avec la vision… »,
+Pour un document du circuit, les workflows « Relire avec l'IA le texte… » (la vision pour un scan),
 « Identifier avec l'IA le type de pièce… » et « … l'entreprise qui émet… » ne passent pas : ses
 étapes **Ingérer** et **Analyser** s'en chargent (une seule relecture, une seule analyse). Les
 autres (langue, titre, date, référence, étiquettes) passent comme pour tout document.
