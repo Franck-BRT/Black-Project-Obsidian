@@ -16,7 +16,7 @@ import { candidatePath } from './links'
 import type { EntityProposal } from './model'
 
 /** Ce qu'un skill peut recevoir, livré par la bibliothèque (d'autres modules en ajoutent). */
-export const SKILL_CONTEXTS = ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'candidats', 'dossiers', 'regles-de-rangement'] as const
+export const SKILL_CONTEXTS = ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'glossaire', 'candidats', 'dossiers', 'regles-de-rangement'] as const
 
 /**
  * Ce qu'un skill peut rendre : rien (une réponse libre), ou une décision de forme fixée —

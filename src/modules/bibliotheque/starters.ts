@@ -178,7 +178,7 @@ const SKILLS: Record<Language, EntryDraft[]> = {
           'N’invente rien : ce qui n’est pas dans les listes reste vide.'
         ].join('\n')
       ),
-      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets', 'candidats'],
+      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets', 'glossaire', 'candidats'],
       'analyse'
     ),
     executable(
@@ -257,7 +257,7 @@ const SKILLS: Record<Language, EntryDraft[]> = {
           'Invent nothing: what is not in the lists stays empty.'
         ].join('\n')
       ),
-      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets', 'candidats'],
+      ['fiche', 'texte', 'types-de-piece', 'emetteurs', 'projets', 'glossaire', 'candidats'],
       'analyse'
     ),
     executable(

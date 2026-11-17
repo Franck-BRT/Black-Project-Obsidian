@@ -5,13 +5,31 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.66.0 (Black Projects 0.152.0) |
+| Version | 0.67.0 (Black Projects 0.153.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La recherche dans le glossaire, une étape du circuit (v0.67.0, Black Projects 0.153.0)
+
+- Une action de workflow `bibliotheque.glossaire` (« Rechercher dans le glossaire », champ `fiche`),
+  sans IA : `searchGlossary(record)` cherche les termes du glossaire dans le titre et le texte du
+  document (`findCandidates` : le terme, son sigle ou une autre forme), relie à sa fiche ceux qui ne
+  le sont pas (`setLinks`, raison « Terme du glossaire employé (« … ») », un rétrolien dans la note du
+  terme), garde ses autres liens, note `glossaire-termes: n` (`LibraryDoc.glossarySearched`) et une
+  ligne au journal du circuit. Refaite, elle ne double rien.
+- Le workflow système « Circuit des documents » (module IA) l'enchaîne entre l'ingestion et l'analyse
+  (mis à jour d'office s'il n'a pas été modifié).
+- L'analyse garde les liens vers le glossaire déjà écrits (avant : ses liens remplaçaient ceux de la
+  fiche).
+- Un contexte de skill `glossaire` (« Les termes du glossaire qu'il emploie ») : chaque terme et sa
+  définition. Coché dans le skill d'analyse livré (les skills déjà dans le coffre ne changent pas).
+- Le parcours de la fiche : la ligne **Recherche dans le glossaire** après l'ingestion (faite : les
+  termes reliés ; pas encore faite hors du circuit : les termes employés, « pas encore reliés ») ;
+  son ⟳ la refait (toujours possible : sans IA).
 
 ## Les autres formes d’un terme du glossaire (v0.66.0, Black Projects 0.152.0)
 

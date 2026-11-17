@@ -1068,7 +1068,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.66.0',
+  version: '0.67.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1358,6 +1358,7 @@ export const bibliothequeModule: BlackModule = {
       },
       toControl: async () => (await store.all()).filter((doc) => doc.circuit === 'a-controler'),
       pendingEntities: async () => (await store.all()).flatMap((doc) => (doc.proposals ?? []).map((proposal) => proposal.name)),
+      searchGlossary: (record) => searchGlossary(record),
       maintainLinks: async () => {
         const done = await store.maintainLinks()
         if (done.docs.length) pagesChanged()
@@ -1869,6 +1870,15 @@ export const bibliothequeModule: BlackModule = {
           return found.length ? [t('bibliotheque.circuit.ctx.candidates'), ...found.map((each) => `- ${each.path} — ${each.kind} : ${each.label} (« ${each.found} »)`)].join('\n') : t('bibliotheque.circuit.ctx.noCandidates')
         }
       }),
+      // Le glossaire : les termes que le document emploie, et leur définition — pour que l'IA le comprenne.
+      registerSkillContext({
+        key: 'glossaire',
+        label: t('bibliotheque.skill.context.glossaire'),
+        provide: async (record) => {
+          const terms = await glossaryOf(record)
+          return terms.length ? [t('bibliotheque.circuit.ctx.glossary'), ...terms.map((term) => `- ${term.label} : ${term.definition}`)].join('\n') : t('bibliotheque.circuit.ctx.noGlossary')
+        }
+      }),
       // Où chercher les liens : les autres documents (par leur référence), les entreprises, les personnes.
       registerLinkSource({
         key: 'documents',
@@ -1967,6 +1977,9 @@ export const bibliothequeModule: BlackModule = {
       if (sure) {
         const links = [...decision.links]
         if (project && !links.some((each) => each.path === project)) links.push({ path: project, why: t('bibliotheque.links.projectWhy') })
+        // Les termes que la recherche dans le glossaire a déjà reliés : gardés.
+        const terms = new Set((await entries.glossary.all()).map((entry) => entry.path))
+        for (const link of await store.linksOf(record)) if (terms.has(link.path) && !links.some((each) => each.path === link.path)) links.push(link)
         if (links.length) {
           const written = await store.setLinks(record, links)
           if (written.length) done.push(t('bibliotheque.circuit.analysis.links', { count: written.length }))
@@ -2656,6 +2669,11 @@ export const bibliothequeModule: BlackModule = {
         await researchField(record, field)
         return
       }
+      if (step === 'glossaire') {
+        const found = await searchGlossary(record)
+        if (found) tell(t('bibliotheque.steps.redo.glossary', { title: doc.title, count: found.terms.length }))
+        return
+      }
       if (step === 'liens-crees') {
         const written = await store.setLinks(record, await store.linksOf(record))
         pagesChanged()
@@ -2732,6 +2750,27 @@ export const bibliothequeModule: BlackModule = {
         if (linked || findCandidates(await docText(doc), [item], doc.record, 1).length) out.push({ record: doc.record, title: doc.title, detail: placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/'))) })
       }
       return out.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+    }
+    /**
+     * **La recherche dans le glossaire** (une étape du circuit, sans IA) : les termes que le document
+     * emploie (son titre et son texte ; le terme, son sigle ou une autre forme), reliés à sa fiche
+     * (section Liens), avec un rétrolien dans la note du terme. Ses autres liens sont gardés ; refaite,
+     * elle ne double rien.
+     */
+    const searchGlossary = async (record: string): Promise<{ title: string; terms: string[] } | null> => {
+      const doc = await store.load(record)
+      if (!doc) return null
+      const items = await glossaryItems()
+      const found = items.length ? findCandidates(await docText(doc), items, record, 200) : []
+      const links = await store.linksOf(record)
+      const added = found.filter((candidate) => !links.some((link) => link.path === candidate.path)).map((candidate) => ({ path: candidate.path, why: t('bibliotheque.glossary.why', { found: candidate.found }) }))
+      if (added.length) await store.setLinks(record, [...links, ...added])
+      const after = await store.load(record)
+      if (after) await store.save({ ...after, glossarySearched: found.length })
+      const terms = found.map((candidate) => candidate.label)
+      if (after?.circuit) await store.setCircuit(record, {}, circuitLine('bibliotheque.circuit.line.glossary', { count: found.length, terms: terms.length ? ` (${terms.join(', ')})` : '' }))
+      pagesChanged()
+      return { title: doc.title, terms }
     }
 
     registerLibraryHome(context.views, {

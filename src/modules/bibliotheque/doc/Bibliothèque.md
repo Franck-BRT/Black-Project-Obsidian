@@ -78,12 +78,13 @@ plus récent ; le filtre **Dernières versions** les cache.
 **Le parcours du document**, sur chaque fiche, dès sa création : une ligne par étape, en couleur —
 **vert** fait, **orange** en attente ou à confirmer, **rouge** en échec, **gris** à venir ou sans
 objet. Le contrôle des doublons (et ses fantômes, un bouton mène à chacun), la mise dans « À
-classer », l'ingestion, l'analyse et chacun de ses champs (type de pièce, entreprise, titre, date,
+classer », l'ingestion, la **recherche dans le glossaire**, l'analyse et chacun de ses champs (type de pièce, entreprise, titre, date,
 langue, référence, étiquettes, projet), l'analyse des liens, leur création, le rangement. Là où le
 circuit s'est arrêté : **Continuer le circuit**.
 
 Chaque étape a son bouton **⟳ Relancer** (devant sa ligne) : il ne refait **que cette étape** — les
-doublons revérifiés, remis dans « À classer », l'ingestion (le texte relu de nouveau par l'IA),
+doublons revérifiés, remis dans « À classer », l'ingestion (le texte relu de nouveau par l'IA), les
+termes du glossaire cherchés de nouveau (sans IA, toujours possible),
 l'analyse (qui donne aussi le projet et les liens), un champ cherché de nouveau, les liens réécrits,
 le rangement redemandé. Sous la liste, **Relancer tout le circuit** (après une question) le reprend
 depuis le début. Sans IA, ou le circuit coupé, les boutons des étapes du circuit sont grisés.
@@ -251,12 +252,17 @@ directement. Désactivez-le pour ne pas envoyer le texte des documents à l'IA. 
 **Verser**, en le glissant sur la page, ou en le posant dans `Bibliothèque/Circuit/À classer` — entre dans
 **À classer** ; puis le workflow système **Circuit des documents** (module IA) enchaîne trois skills
 livrés, à modifier à votre goût — ils sont dans **Bibliothèque › Skills** dès le départ (recréés
-s'ils manquent, puisque le workflow les appelle par leur nom) :
+s'ils manquent, puisque le workflow les appelle par leur nom) —, avec entre l'ingestion et l'analyse
+une recherche sans IA :
 
 1. **Ingérer un document** : son texte relu par l'IA (s'il ne l'a pas déjà été à l'entrée) ;
-2. **Analyser un document** : son type de pièce, son entreprise (donnés s'ils manquaient ou étaient
+2. **Rechercher dans le glossaire** (sans IA) : les termes du glossaire que le document emploie
+   (le terme, son sigle ou une autre forme) sont reliés à sa fiche (section Liens), avec un rétrolien
+   dans la note du terme ; l'analyse reçoit leur définition (le contexte « Les termes du glossaire
+   qu'il emploie », à cocher dans un skill à vous) ;
+3. **Analyser un document** : son type de pièce, son entreprise (donnés s'ils manquaient ou étaient
    à confirmer, et si l'IA est assez sûre), le **projet** qu'il concerne ;
-3. **Ranger un document** : son dossier — le répertoire du projet reconnu qui attend ce type de
+4. **Ranger un document** : son dossier — le répertoire du projet reconnu qui attend ce type de
    pièce est proposé d'office ; sinon les règles de rangement, sinon le sujet principal.
 
 Assez sûr : rangé. Sinon : **À contrôler** (ci-dessous). Ce qui est versé dans un répertoire choisi,
@@ -514,8 +520,9 @@ cherchées comme lui ; sa carte et sa page les disent (« Autres formes : … »
 - la fiche d'un document a une section **Glossaire (n)** : les termes qu'il emploie (dans son titre ou
   son texte, le terme, son sigle ou une autre forme, en mot entier), chacun avec sa définition ; un clic ouvre le terme ;
 - la page d'un terme dit **Documents qui l'emploient (n)** ; un clic ouvre leur fiche ;
-- le circuit des documents propose les termes cités comme liens possibles : l'IA peut les relier (le
-  lien dans la fiche, un rétrolien dans la note du terme).
+- le circuit des documents les **relie lui-même**, sans IA, à l'étape **Recherche dans le glossaire**
+  (après l'ingestion) : le lien dans la fiche, un rétrolien dans la note du terme ; pour un document
+  versé hors du circuit, le bouton ⟳ de cette étape, dans son parcours, le fait.
 
 ## 11. Réglages
 

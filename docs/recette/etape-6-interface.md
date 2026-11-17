@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La recherche dans le glossaire, dans le circuit (v0.153.0)
+
+- [ ] Workflows : « Circuit des documents » — Ingérer, **Rechercher dans le glossaire**, Analyser, Ranger
+- [ ] Glossaire avec ses exemples ; IA réglée, circuit actif ; poser dans « À classer » un document qui
+      cite « CCTP », « exigences » et « recette »
+- [ ] Sa fiche, « Le parcours du document » : après Ingestion, « Recherche dans le glossaire » en vert —
+      « 3 terme(s) relié(s) : CCTP — …, Exigence, Recette »
+- [ ] Sa section Liens : les trois termes, « Terme du glossaire employé (« … ») » ; dans la note de
+      chaque terme, un rétrolien vers le document
+- [ ] Un document versé hors du circuit : la ligne dit « n terme(s) employé(s), pas encore relié(s) » ;
+      ⟳ les relie (sans IA)
+- [ ] Ajouter un terme au glossaire, puis ⟳ sur la ligne : relié, rien n'est doublé
+
 ## Les autres formes d’un terme (v0.152.0)
 
 - [ ] « Nouveau terme » : le champ « Autres formes (une par ligne) » ; y mettre le sigle ou un doublon :

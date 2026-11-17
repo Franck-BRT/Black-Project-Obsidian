@@ -201,6 +201,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
       ['Contrôle des doublons', 'Fait'],
       ['Mise dans « À classer »', 'Sans objet'],
       ['Ingestion', 'Échec'],
+      ['Recherche dans le glossaire', 'Sans objet'],
       ['Analyse', 'Fait'],
       ['Analyse des liens', 'Sans objet'],
       ['Création des liens', 'Sans objet'],

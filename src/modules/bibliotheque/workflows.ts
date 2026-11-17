@@ -119,6 +119,8 @@ export interface LibraryWorkflowDeps {
   pendingEntities?(): Promise<string[]>
   /** L'entretien des liens des documents (le circuit, version C). */
   maintainLinks(): Promise<{ dropped: number; restored: number; docs: string[] }>
+  /** La recherche dans le glossaire (une étape du circuit) : les termes qu'un document emploie, reliés à sa fiche ; `null` : fiche introuvable. */
+  searchGlossary?(record: string): Promise<{ title: string; terms: string[] } | null>
 }
 
 /** Le sujet d'un document déjà là : lui, où il est rangé, et le lieu où on l'a déposé. */
@@ -365,6 +367,22 @@ export function registerLibraryWorkflows(deps: LibraryWorkflowDeps): void {
       const ghost = await deps.offerGhost(fields.fiche ?? '', fields.dossier ?? '', fields.quoi !== 'toujours', ui)
       const text = ghost ? t('bibliotheque.wf.ghost.done', { path: ghost }) : t('bibliotheque.wf.ghost.nothing')
       return { lines: [text], ...(ghost ? { paths: [ghost], results: { path: ghost } } : {}) }
+    }
+  })
+
+  // La recherche dans le glossaire (le circuit, entre l'ingestion et l'analyse) : sans IA.
+  registerAction({
+    id: 'bibliotheque.glossaire',
+    labelKey: 'bibliotheque.wf.action.glossary',
+    descKey: 'bibliotheque.wf.action.glossary.desc',
+    fields: [{ key: 'fiche', labelKey: 'bibliotheque.wf.field.ghost.record', kind: 'text', defaultValue: '{fiche}', required: true }],
+    results: ['text'],
+    async run({ fields }) {
+      const record = fields.fiche ?? ''
+      const found = deps.searchGlossary ? await deps.searchGlossary(record) : null
+      if (!found) throw new Error(t('bibliotheque.wf.glossary.missing', { record }))
+      const text = t('bibliotheque.wf.glossary.done', { count: found.terms.length, title: found.title, terms: found.terms.length ? ` : ${found.terms.join(', ')}` : '' })
+      return { lines: [text], paths: [record], results: { text } }
     }
   })
 

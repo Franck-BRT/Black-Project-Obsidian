@@ -521,6 +521,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
   if (!doc) return { title: t('bibliotheque.doc.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.doc.missing') }] }
   const present = await deps.exists(doc.file)
   const ghosts = await deps.store.ghostsOf(doc)
+  // Les termes du glossaire qu'il emploie : son parcours (l'étape de recherche) et sa section Glossaire.
+  const glossaryTerms = (await deps.glossaryOf?.(doc.record)) ?? []
   // Un document de référence : qui l'appelle (programmes, projets).
   const isReference = doc.shelf === REFERENCE_SHELF
   const callers = (await deps.callers?.(doc.record)) ?? []
@@ -922,9 +924,9 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     ...(origin.link ? { open: { id: 'open', label: t('bibliotheque.origin.open'), run: () => deps.showNote(origin.link!) } } : {})
   }))
   /**
-   * Le bouton qui relance seulement une étape du parcours : les doublons, un champ, les liens écrits —
-   * toujours ; les étapes du circuit (À classer, ingestion, analyse, rangement…) — pour un document du
-   * circuit, et grisé (sa raison) sans IA ou le circuit coupé.
+   * Le bouton qui relance seulement une étape du parcours : les doublons, le glossaire, un champ, les
+   * liens écrits — toujours ; les étapes du circuit (À classer, ingestion, analyse, rangement…) — pour
+   * un document du circuit, et grisé (sa raison) sans IA ou le circuit coupé.
    */
   const CIRCUIT_STEPS = new Set(['a-classer', 'ingestion', 'analyse', 'projet', 'liens', 'rangement'])
   const relaunchStepAction = (id: string, title: string): ViewAction | null => {
@@ -933,7 +935,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     const circuitStep = CIRCUIT_STEPS.has(id)
     if (circuitStep && !doc.circuit) return null
     const blocked = circuitStep ? (control.cannotContinue?.() ?? null) : null
-    const tip = id === 'doublons' ? 'dedupe' : id === 'a-classer' ? 'inbox' : id === 'liens-crees' ? 'links' : id === 'analyse' || id === 'projet' || id === 'liens' ? 'analyse' : circuitStep ? 'ai' : 'field'
+    const tip = id === 'doublons' ? 'dedupe' : id === 'a-classer' ? 'inbox' : id === 'liens-crees' ? 'links' : id === 'glossaire' ? 'glossary' : id === 'analyse' || id === 'projet' || id === 'liens' ? 'analyse' : circuitStep ? 'ai' : 'field'
     return {
       id: `relancer-${id}`,
       label: t('bibliotheque.steps.redo', { step: title }),
@@ -1055,6 +1057,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             date: (value) => docDateLabel(value, deps.locale),
             links: doc.links?.length ?? 0,
             proposals: doc.proposals?.length ?? 0,
+            glossary: glossaryTerms.map((term) => term.label),
             continueAction: inCircuit(doc) && deps.control ? continueAction(t, deps.control, doc) : null,
             relaunch: (id, title) => relaunchStepAction(id, title)
           })
@@ -1128,7 +1131,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         : []),
       // Le glossaire : les termes qu'il emploie, leur définition ; un clic ouvre le terme.
       ...(await (async () => {
-        const terms = (await deps.glossaryOf?.(doc.record)) ?? []
+        const terms = glossaryTerms
         if (!terms.length) return []
         return [
           fold('glossaire', t('bibliotheque.glossary.section', { count: terms.length }), terms.map((term) => term.label).join(' · '), 'bulb', {

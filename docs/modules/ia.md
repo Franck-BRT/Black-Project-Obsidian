@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.33.0 (Black Projects 0.150.0) |
+| Version | 0.34.0 (Black Projects 0.153.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -14,6 +14,12 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
 
+
+## La recherche dans le glossaire dans le circuit (v0.34.0, Black Projects 0.153.0)
+
+- Le workflow système « Circuit des documents » a une étape de plus, entre l'ingestion et l'analyse :
+  `bibliotheque.glossaire` (« Rechercher dans le glossaire », sans IA) — les termes du glossaire que
+  le document emploie, reliés à sa fiche. Un workflow non modifié est mis à jour d'office.
 
 ## « Refaire même si c'est déjà fait » (v0.33.0, Black Projects 0.150.0)
 

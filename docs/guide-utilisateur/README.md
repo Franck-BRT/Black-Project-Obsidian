@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.152.0)
+## Aujourd'hui (version 0.153.0)
+
+- **La recherche dans le glossaire, dans le circuit** : après l'ingestion, le circuit cherche (sans
+  IA) les termes du glossaire que le document emploie et les relie à sa fiche, avec un lien retour dans
+  la note du terme ; l'analyse de l'IA reçoit leur définition. Une ligne de plus dans « Le parcours du
+  document », avec son bouton ⟳ (aussi pour un document versé hors du circuit).
 
 - **Les autres formes d’un terme** : comme pour les étiquettes, un terme du glossaire a ses autres formes
   (un pluriel, une variante : « exigences » pour « Exigence »), une par ligne dans son formulaire. Un

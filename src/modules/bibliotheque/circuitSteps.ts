@@ -149,6 +149,8 @@ export interface DocStepsContext {
   /** Combien de liens il a, et d'entreprises ou personnes proposées à créer. */
   links: number
   proposals: number
+  /** Les termes du glossaire qu'il emploie (en mots), pour l'étape « Recherche dans le glossaire ». */
+  glossary?: readonly string[]
   /** « Continuer le circuit » (absent : pas de bouton). */
   continueAction?: ViewAction | null
   /** Le bouton qui relance seulement cette étape (son identifiant, son nom) ; `null` : pas de bouton. */
@@ -158,8 +160,9 @@ export interface DocStepsContext {
 /**
  * **Le parcours d'un document**, dès sa création, une ligne par étape, chacune en couleur selon où
  * il en est : le contrôle des doublons (et ses fantômes), l'entrée dans « À classer », l'ingestion
- * (son texte lu), l'analyse — puis, en retrait, chaque champ (type de pièce, entreprise, titre, date,
- * langue, référence, étiquettes, projet) —, l'analyse des liens, leur création, le rangement. Hors du
+ * (son texte lu), la recherche dans le glossaire (les termes qu'il emploie, reliés à sa fiche),
+ * l'analyse — puis, en retrait, chaque champ (type de pièce, entreprise, titre, date, langue,
+ * référence, étiquettes, projet) —, l'analyse des liens, leur création, le rangement. Hors du
  * circuit (versé dans un répertoire choisi, ou le circuit coupé), ce qui a été fait à l'entrée.
  */
 export function documentSteps(t: Translate, doc: LibraryDoc, context: DocStepsContext): ListItem[] {
@@ -200,6 +203,21 @@ export function documentSteps(t: Translate, doc: LibraryDoc, context: DocStepsCo
   const readState: DocStepState = doc.reading === 'lue' ? 'done' : doc.reading === 'sans-texte' || doc.reading === 'image' ? 'decide' : doc.reading === 'illisible' ? 'failed' : 'later'
   const ingestState: DocStepState = circuit ? (state === 'a-classer' ? (error ? 'failed' : 'waiting') : 'done') : readState
   items.push(item('ingestion', t('bibliotheque.steps.ingest'), ingestState, ingestState === 'failed' && error ? error : readDetail, 0, resume(ingestState)))
+  // 3 bis. La recherche dans le glossaire (sans IA) : les termes qu'il emploie, reliés à sa fiche.
+  const terms = context.glossary ?? []
+  const termsText = (count: number): string => (terms.length ? `${t('bibliotheque.steps.glossary.found', { count })} : ${terms.join(', ')}` : t('bibliotheque.steps.glossary.found', { count }))
+  const searched = doc.glossarySearched
+  items.push(
+    searched !== undefined
+      ? searched > 0 || terms.length
+        ? item('glossaire', t('bibliotheque.steps.glossary'), 'done', termsText(Math.max(searched, terms.length)))
+        : item('glossaire', t('bibliotheque.steps.glossary'), 'skipped', t('bibliotheque.steps.glossary.none'), 0, { when: label('none') })
+      : circuit && (state === 'a-classer' || state === 'ingere' || state === 'analyse' || state === 'a-controler')
+        ? state === 'a-classer'
+          ? item('glossaire', t('bibliotheque.steps.glossary'), 'later')
+          : item('glossaire', t('bibliotheque.steps.glossary'), 'waiting', '', 0, resume('waiting'))
+        : item('glossaire', t('bibliotheque.steps.glossary'), 'skipped', terms.length ? t('bibliotheque.steps.glossary.notLinked', { count: terms.length, terms: terms.join(', ') }) : t('bibliotheque.steps.glossary.notSearched'))
+  )
   // 4. L'analyse, puis chacun de ses champs.
   const analysed = !circuit || (state !== 'a-classer' && state !== 'ingere')
   const analysisState: DocStepState = !circuit ? 'done' : analysed ? 'done' : state === 'ingere' ? (error ? 'failed' : 'waiting') : 'later'

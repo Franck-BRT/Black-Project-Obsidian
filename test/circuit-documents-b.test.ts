@@ -185,6 +185,7 @@ describe('le workflow système « Circuit des documents »', () => {
       conditions: [{ field: 'circuitencours', op: 'not-empty', value: '' }],
       actions: [
         { kind: 'ia.executer-skill', fields: { skill: 'Ingérer un document' } },
+        { kind: 'bibliotheque.glossaire', fields: { fiche: '{fiche}' } },
         { kind: 'ia.executer-skill', fields: { skill: 'Analyser un document' } },
         { kind: 'ia.executer-skill', fields: { skill: 'Ranger un document' } }
       ]
@@ -299,6 +300,7 @@ describe('le workflow système « Circuit des documents »', () => {
       ['Contrôle des doublons', 'success', 'Fait', 0],
       ['Mise dans « À classer »', 'success', 'Fait', 0],
       ['Ingestion', 'success', 'Fait', 0],
+      ['Recherche dans le glossaire', 'neutral', 'Aucun', 0],
       ['Analyse', 'danger', 'Échec', 0],
       ['Type de pièce', 'neutral', 'À venir', 1],
       ['Entreprise', 'neutral', 'À venir', 1],
@@ -379,7 +381,7 @@ describe('le workflow système « Circuit des documents »', () => {
     let { lines, section } = await stepsOf()
     // Un bouton « Relancer » par étape ; « Relancer tout le circuit » sous la liste.
     expect(lines.filter((line) => line.tools?.length).map((line) => line.title)).toEqual([
-      'Contrôle des doublons', 'Mise dans « À classer »', 'Ingestion', 'Analyse', 'Type de pièce', 'Entreprise', 'Titre', 'Date du document', 'Langue', 'Référence et version', 'Étiquettes', 'Projet', 'Analyse des liens', 'Création des liens', 'Rangement'
+      'Contrôle des doublons', 'Mise dans « À classer »', 'Ingestion', 'Recherche dans le glossaire', 'Analyse', 'Type de pièce', 'Entreprise', 'Titre', 'Date du document', 'Langue', 'Référence et version', 'Étiquettes', 'Projet', 'Analyse des liens', 'Création des liens', 'Rangement'
     ])
     expect(tool(lines, 'Ingestion')).toMatchObject({ id: 'relancer-ingestion', label: 'Relancer : Ingestion', icon: 'refresh' })
     expect(section.blocks.find((block) => block.kind === 'actions')).toMatchObject({ actions: [{ id: 'circuit-restart', label: 'Relancer tout le circuit' }] })
