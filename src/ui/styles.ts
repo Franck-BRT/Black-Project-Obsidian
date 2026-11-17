@@ -145,6 +145,20 @@ const COMPONENTS_CSS = String.raw`
 .bp-cardrow-facts { display: flex; gap: 14px; margin: 0; color: var(--bp-text-muted); font-size: 0.88em; }
 .bp-cardrow-facts div { display: flex; flex-direction: column; white-space: nowrap; }
 .bp-cardrow-facts { flex: none; }
+.bp-fields { padding: 0; }
+.bp-field-row { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 6px 4px; border-top: 1px solid var(--bp-border); }
+.bp-field-row:first-child { border-top: 0; }
+.bp-field-name { flex: 0 0 190px; color: var(--bp-text-muted); font-size: 0.92em; }
+.bp-field-value { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.bp-field-link { all: unset; color: var(--bp-accent); cursor: pointer; overflow-wrap: anywhere; }
+.bp-field-link:hover { text-decoration: underline; }
+.bp-field-link:focus-visible { outline: 3px solid var(--bp-focus); outline-offset: 2px; border-radius: 3px; }
+.bp-field-tools { display: flex; gap: 4px; flex: none; opacity: 0.55; transition: opacity var(--bp-speed); }
+.bp-field-row:hover .bp-field-tools, .bp-field-row:focus-within .bp-field-tools { opacity: 1; }
+.bp-field-tools .bp-button-icon { min-width: 0; width: 30px; height: 30px; padding: 0; }
+.bp-tone-text-danger .bp-field-value { color: var(--bp-danger); }
+.bp-list-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; flex: 0 1 auto; }
+.bp-list-actions .bp-button { min-height: 30px; padding: 4px 10px; font-size: 0.86em; }
 .bp-cardrow-line { flex: none; color: var(--bp-text-muted); font-size: 0.88em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .bp-cardrow-facts dt { font-size: 0.85em; }
 .bp-cardrow-facts dd { margin: 0; color: var(--bp-text); font-weight: 600; }

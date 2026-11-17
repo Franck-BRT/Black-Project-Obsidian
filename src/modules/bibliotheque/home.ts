@@ -420,13 +420,13 @@ function circuitStepsSection(deps: LibraryHomeDeps, docs: LibraryDoc[]): HomeBlo
 }
 
 /** Une section repliable de la fiche, repliée d'origine (l'interface se souvient ensuite de ce qu'on en a fait, le temps de la session). */
-const fold = (id: string, title: string, subtitle: string, icon: IconName, list: HomeBlock | HomeBlock[]): HomeBlock => ({
+const fold = (id: string, title: string, subtitle: string, icon: IconName, list: HomeBlock | HomeBlock[], open = false): HomeBlock => ({
   kind: 'section',
   id: `bibliotheque.document.${id}`,
   title,
   ...(subtitle ? { subtitle } : {}),
   icon,
-  collapsed: true,
+  collapsed: !open,
   blocks: Array.isArray(list) ? list : [list]
 })
 
@@ -838,10 +838,20 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     doc.dateToConfirm ? t('bibliotheque.field.date') : '',
     doc.identityToConfirm ? t('bibliotheque.field.identity') : ''
   ].filter(Boolean)
-  const confirmBlocks: HomeBlock[] =
-    confirming.length > 1
-      ? [{ kind: 'section', id: 'bibliotheque.document.a-confirmer', title: t('bibliotheque.toConfirm.section', { count: confirming.length }), subtitle: confirmNames.join(' · '), icon: 'alert', blocks: confirming }]
-      : confirming
+  /**
+   * Ce qui reste à confirmer, **une ligne chacun** : son nom, la raison en court (sans « … à confirmer : »
+   * ni « « Modifier… » pour le donner », que la ligne et ses boutons disent déjà), ses boutons au bout.
+   */
+  const shortReason = (text: string): string => {
+    const short = text.replace(/^[^:]{2,60}? à confirmer\s*:\s*/, '').replace(/\s*« [^»]+ » pour (?:le|la|les) donner\.?$/, '').trim()
+    return short.charAt(0).toUpperCase() + short.slice(1)
+  }
+  const confirmItems: ListItem[] = confirming.flatMap((block, index) =>
+    block.kind === 'message' ? [{ id: `a-confirmer-${index}`, title: confirmNames[index] ?? '', detail: shortReason(block.text), tone: 'warning' as const, actions: block.actions ?? [] }] : []
+  )
+  const confirmBlocks: HomeBlock[] = confirmItems.length
+    ? [{ kind: 'section', id: 'bibliotheque.document.a-confirmer', title: t('bibliotheque.toConfirm.section', { count: confirmItems.length }), subtitle: confirmNames.join(' · '), icon: 'alert', blocks: [{ kind: 'list', items: confirmItems }] }]
+    : []
   const byRecord = new Map(all.map((each) => [each.record, each]))
   const open = (other: LibraryDoc): ViewAction => ({ id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showPage?.(docPageOf(other.record)) })
 
@@ -913,7 +923,17 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
     ...(explorer ? { explorer } : {}),
     title: doc.title,
     back,
-    subtitle: [isReference ? `★ ${t('bibliotheque.references.star')}` : '', t(`bibliotheque.family.${doc.family}`), doc.category].filter(Boolean).join(' · '),
+    // Ce qu'il est, en une ligne : famille, type de pièce, version, taille, date d'ajout (les chiffres d'avant, en tuiles).
+    subtitle: [
+      isReference ? `★ ${t('bibliotheque.references.star')}` : '',
+      t(`bibliotheque.family.${doc.family}`),
+      doc.category,
+      versionLabel(doc) || (older.length ? `v${older.length + 1}` : ''),
+      readableSize(doc.size, deps.locale),
+      doc.added ? t('bibliotheque.doc.addedOn', { date: doc.added }) : ''
+    ]
+      .filter(Boolean)
+      .join(' · '),
     actions: [
       ...(present ? [{ id: 'file', label: t('bibliotheque.doc.file'), icon: 'file' as const, primary: true, run: () => deps.openFile(doc.file) }] : []),
       { id: 'classify', label: t('bibliotheque.classify'), icon: 'edit', run: () => deps.classify(doc.record) },
@@ -993,11 +1013,13 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         : []),
       ...confirmBlocks,
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
-      { kind: 'stats', stats },
+      // Ses fantômes (montré aussi ailleurs) : les seuls chiffres qui restent en tête.
+      ...(ghosts.length ? [{ kind: 'stats' as const, stats: stats.filter((stat) => stat.icon === 'ghost') }] : []),
       // Le détail, en sections repliables — repliées d'origine : leur en-tête en dit l'essentiel.
       // Chaque champ : un bouton pour le modifier, seul (le lieu : Déplacer… ; la langue : Langue… ; à confirmer : Modifier…).
       fold('identite', t('bibliotheque.section.identity'), [doc.category, doc.reference, versionLabel(doc), doc.language ? t(`bibliotheque.lang.${doc.language}`) : ''].filter(Boolean).join(' · '), 'info', {
         kind: 'list',
+        fields: true,
         items: withEdits([{ ...field('title', doc.title), ...(doc.titleToConfirm ? { detail: t('bibliotheque.title.detail.toConfirm', { title: doc.title }) } : doc.titleByAi ? { detail: t('bibliotheque.title.detail.byAi', { title: doc.title }) } : {}) }, field('place', placeLabel(deps.places, doc)), field('language', doc.language ? (doc.languageByAi ? t('bibliotheque.lang.byAi', { language: t(`bibliotheque.lang.${doc.language}`) }) : t(`bibliotheque.lang.${doc.language}`)) : doc.languageToConfirm ? t('bibliotheque.lang.toConfirm') : ''), field('reference', doc.reference), field('edition', doc.edition), field('revision', doc.revision), { ...field('date', doc.date ? docDateLabel(doc.date, deps.locale) : ''), ...(doc.dateToConfirm ? { detail: (doc.date ? t('bibliotheque.date.detail.toConfirm', { date: docDateLabel(doc.date, deps.locale) }) : t('bibliotheque.detail.toConfirm')) } : doc.dateByAi && doc.date ? { detail: t('bibliotheque.date.detail.byAi', { date: docDateLabel(doc.date, deps.locale) }) } : {}) },
           ...(doc.identityToConfirm || doc.identityByAi ? [field('identity', t(doc.identityToConfirm ? 'bibliotheque.identity.toConfirm' : 'bibliotheque.identity.byAi'))] : []), { ...field('category', doc.category ? deps.typeText(doc.category) : ''), ...(outsideType ? { detail: t('bibliotheque.category.detail.outside', { category: doc.category }) } : doc.categoryToConfirm ? { detail: (doc.category ? t('bibliotheque.category.detail.toConfirm', { category: deps.typeText(doc.category) }) : t('bibliotheque.detail.toConfirm')) } : doc.categoryByAi ? { detail: t('bibliotheque.category.detail.byAi', { category: doc.category ? deps.typeText(doc.category) : '—' }) } : {}) }, { ...field('issuer', issuerText(doc.issuer)), ...(outsideIssuer ? { detail: t('bibliotheque.issuer.detail.outside', { issuer: doc.issuer }) } : doc.issuerToConfirm ? { detail: (doc.issuer ? t('bibliotheque.issuer.detail.toConfirm', { issuer: issuerText(doc.issuer) }) : t('bibliotheque.detail.toConfirm')) } : doc.issuerByAi ? { detail: t('bibliotheque.issuer.detail.byAi', { issuer: issuerText(doc.issuer) || '—' }) } : {}) }, {
             ...field('tags', doc.tags.join(', ')),
@@ -1010,9 +1032,10 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                 }
               : doc.tagsToConfirm ? { detail: (doc.tags.length ? t('bibliotheque.tags.detail.toConfirm', { tags: doc.tags.join(', ') }) : t('bibliotheque.detail.toConfirm')) } : doc.tagsByAi ? { detail: t('bibliotheque.tags.detail.byAi', { tags: doc.tags.join(', ') || '—' }) } : {})
           }])
-      }),
+      }, true),
       fold('fichier', t('bibliotheque.section.file'), present ? baseName(doc.file) : t('bibliotheque.section.file.missing', { name: baseName(doc.file) }), 'file', {
         kind: 'list',
+        fields: true,
         items: [
           {
             ...field('file', doc.file),

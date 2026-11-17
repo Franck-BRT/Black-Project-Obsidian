@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type HomeBlock } from '../src/core/views'
+import { ViewsRegistry, type ListItem, type HomeBlock } from '../src/core/views'
 import { bibliothequeModule, guessIssuer, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { iaModule, readIssuerAnswer } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
@@ -20,6 +20,10 @@ import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
 /** Les blocs d'une page, ceux de ses sections compris (les messages « à confirmer » y sont regroupés). */
 const unfold = (block: HomeBlock): HomeBlock[] => (block.kind === 'section' ? [block, ...block.blocks] : [block])
+
+/** Ce qui reste à confirmer sur une fiche : une ligne chacun — son nom, sa raison en court, ses boutons. */
+const confirmOf = (blocks: readonly HomeBlock[], name: string): ListItem | undefined =>
+  blocks.flatMap(unfold).flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.id.startsWith('a-confirmer-') && item.title === name)
 
 const ALL = [lectureFichiersModule, bibliothequeModule, workflowsModule, iaModule]
 const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' }
@@ -88,20 +92,20 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(doc).toMatchObject({ issuer: '', issuerToConfirm: true, issuerProbable: 'Agence spatiale européenne' })
     expect(read(platform, doc.record)).toMatch(/\nemetteurAConfirmer: true\nemetteurProbable: Agence spatiale européenne\n/)
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Entreprise à confirmer'))
-    expect(message).toMatchObject({ tone: 'warning', text: 'Entreprise à confirmer : le document semble émis par « Agence spatiale européenne » (lu sans certitude).' })
-    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « Agence spatiale européenne »', 'Pas d’entreprise', 'Modifier…'])
+    const message = confirmOf(fiche.blocks, 'Entreprise')
+    expect(message).toMatchObject({ tone: 'warning', detail: 'Le document semble émis par « Agence spatiale européenne » (lu sans certitude).' })
+    expect(message!.actions!.map((action) => action.label)).toEqual(['Prendre « Agence spatiale européenne »', 'Pas d’entreprise', 'Modifier…'])
     expect((await page('bibliotheque.documents').load()).filters?.map((filter) => filter.id)).toContain('emetteur-a-confirmer')
-    await (message?.kind === 'message' ? message.actions![0]!.run() : null)
+    await message!.actions![0]!.run()
     expect(platform.notices.at(-1)).toBe('Entreprise confirmée : « Agence spatiale européenne ».')
     expect(read(platform, doc.record)).toMatch(/\nemetteur: Agence spatiale européenne\n/)
     expect(read(platform, doc.record)).not.toMatch(/emetteurAConfirmer/)
     // Aucun probable : « Pas d'émetteur » le confirme vide.
     const other = await pour('Plan.txt', 'Rapport de recette des antennes')
     const view = await page('bibliotheque.document').load(encodeURIComponent(other.record))
-    const none = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Entreprise à confirmer'))
-    expect(none?.kind === 'message' && none.actions!.map((action) => action.id)).toEqual(['keep-issuer', 'classify-issuer'])
-    await (none?.kind === 'message' ? none.actions![0]!.run() : null)
+    const none = confirmOf(view.blocks, 'Entreprise')
+    expect(none!.actions!.map((action) => action.id)).toEqual(['keep-issuer', 'classify-issuer'])
+    await none!.actions![0]!.run()
     expect(platform.notices.at(-1)).toBe('« Plan » : sans entreprise.')
     expect(read(platform, other.record)).not.toMatch(/emetteurAConfirmer/)
   })

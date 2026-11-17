@@ -5,13 +5,25 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.61.0 (Black Projects 0.145.0) |
+| Version | 0.62.0 (Black Projects 0.148.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La fiche d'un document reprise (v0.62.0, Black Projects 0.148.0)
+
+- **À confirmer** : une section (dépliée), une liste — une ligne par chose à confirmer : son nom (Langue,
+  Titre, Type de pièce, Étiquettes, Entreprise, Date du document, Référence et version), la raison en
+  court (sans « … à confirmer : » ni « « Modifier… » pour le donner »), ses boutons au bout
+  (`ListItem.actions`) ; même une seule.
+- Les tuiles des chiffres (famille, taille, ajouté le, version) remplacées par le sous-titre : « Notes et
+  pages · CCTP · 172 o · ajouté le 2026-11-17 » (la version s'il y en a une) ; seule la tuile des
+  fantômes reste, s'il y en a.
+- **Identification** dépliée d'origine ; ses champs et ceux du **Fichier** en lignes compactes
+  (`fields`) : le nom, la valeur, les boutons modifier et relancer au bout.
 
 ## Les lignes allégées de la liste des documents (v0.61.0, Black Projects 0.145.0)
 

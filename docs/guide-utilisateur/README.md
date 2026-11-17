@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.147.0)
+## Aujourd'hui (version 0.148.0)
+
+- **La fiche d'un document, plus claire** : ce qui reste à confirmer, une ligne chacun (le nom, la
+  raison, les boutons) au lieu de grands encadrés ; sa famille, son type, sa taille, sa date d'ajout
+  dans une ligne sous le titre ; l'identification dépliée d'origine, un champ par ligne.
 
 - **Une seule barre en haut des listes** : la recherche, le filtre (l'entonnoir), l'affichage (Liste,
   Cartes, Tableau, en icônes) et « Regrouper par », sur une ligne. La phrase « Ou glissez-déposez des

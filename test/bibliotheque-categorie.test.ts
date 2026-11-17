@@ -15,7 +15,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type HomeBlock } from '../src/core/views'
+import { ViewsRegistry, type ListItem, type HomeBlock } from '../src/core/views'
 import { bibliothequeModule, guessDocCategory, pieceTypeCode, pourIntoLibrary, suggestTypeCode, type PieceTyper } from '../src/modules/bibliotheque'
 import { iaModule, readCategoryAnswer } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
@@ -24,6 +24,10 @@ import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
 /** Les blocs d'une page, ceux de ses sections compris (les messages « à confirmer » y sont regroupés). */
 const unfold = (block: HomeBlock): HomeBlock[] => (block.kind === 'section' ? [block, ...block.blocks] : [block])
+
+/** Ce qui reste à confirmer sur une fiche : une ligne chacun — son nom, sa raison en court, ses boutons. */
+const confirmOf = (blocks: readonly HomeBlock[], name: string): ListItem | undefined =>
+  blocks.flatMap(unfold).flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.id.startsWith('a-confirmer-') && item.title === name)
 
 const ALL = [lectureFichiersModule, typagePiecesModule, bibliothequeModule, workflowsModule, iaModule]
 const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' }
@@ -106,11 +110,11 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(doc).toMatchObject({ category: '', categoryToConfirm: true, categoryProbable: 'CCTP' })
     expect(read(platform, doc.record)).toMatch(/\ncategorieAConfirmer: true\ncategorieProbable: CCTP\n/)
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Type de pièce à confirmer'))
-    expect(message).toMatchObject({ tone: 'warning', text: 'Type de pièce à confirmer : le texte du document suggère « CCTP » (lu sans certitude).' })
-    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « CCTP »', 'Pas de type de pièce', 'Modifier…'])
+    const message = confirmOf(fiche.blocks, 'Type de pièce')
+    expect(message).toMatchObject({ tone: 'warning', detail: 'Le texte du document suggère « CCTP » (lu sans certitude).' })
+    expect(message!.actions!.map((action) => action.label)).toEqual(['Prendre « CCTP »', 'Pas de type de pièce', 'Modifier…'])
     expect((await page('bibliotheque.documents').load()).filters?.find((filter) => filter.id === 'categorie-a-confirmer')?.label).toBe('Type de pièce à confirmer')
-    await (message?.kind === 'message' ? message.actions![0]!.run() : null)
+    await message!.actions![0]!.run()
     expect(platform.notices.at(-1)).toBe('Type de pièce confirmé : « CCTP ».')
     expect(read(platform, doc.record)).toMatch(/\ncategorie: CCTP\n/)
     expect(read(platform, doc.record)).not.toMatch(/categorieAConfirmer/)

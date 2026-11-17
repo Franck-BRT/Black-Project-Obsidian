@@ -188,6 +188,8 @@ export interface ListItem {
   open?: ViewAction
   /** De petits boutons (icône seule), avant sa marque, qui se disent au survol : modifier un champ d'une fiche, relancer sa recherche. */
   tools?: ViewAction[]
+  /** De petits boutons avec leur mot, au bout de la ligne (« Confirmer : Français », « Modifier… »). */
+  actions?: ViewAction[]
   /** Les filtres d'une page auxquels l'élément répond (comme `Card.tags`). */
   tags?: string[]
 }
@@ -196,7 +198,17 @@ export type HomeBlock =
   | { kind: 'actions'; actions: ViewAction[] }
   | { kind: 'cards'; cards: Card[]; empty?: string; /** Un intitulé au-dessus des cartes. */ title?: string; /** Des boutons à côté de l'intitulé (« Ajouter une action »). */ actions?: ViewAction[] }
   | { kind: 'stats'; stats: Stat[] }
-  | { kind: 'list'; items: ListItem[]; empty?: string; /** Un intitulé au-dessus de la liste. */ title?: string; /** Du texte avant la liste, dans le même cadre (l'introduction d'une section). */ intro?: string[] }
+  | {
+      kind: 'list'
+      items: ListItem[]
+      empty?: string
+      /** Un intitulé au-dessus de la liste. */
+      title?: string
+      /** Du texte avant la liste, dans le même cadre (l'introduction d'une section). */
+      intro?: string[]
+      /** Des **champs** (la fiche d'un document) : une ligne chacun — son nom à gauche, sa valeur à droite, ses petits boutons au bout ; sans marque. */
+      fields?: boolean
+    }
   | { kind: 'message'; tone: Tone; text: string; actions?: ViewAction[] }
   /** Du texte à lire, en paragraphes (une note produite) ; la recherche ne garde que ceux qui répondent. */
   /** Deux textes comparés, paragraphe par paragraphe : gardés, retirés, ajoutés (les gardés, repliables). */

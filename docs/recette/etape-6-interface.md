@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'un document reprise (v0.148.0)
+
+- [ ] Sous le titre : « famille · type de pièce · taille · ajouté le … » ; plus de tuiles de chiffres
+- [ ] « À confirmer (n) » : une ligne par chose (Langue, Titre, Étiquettes, Entreprise, Date…), sa raison
+      en court, ses boutons au bout ; « Pas de date » sur sa ligne : la ligne disparaît
+- [ ] « Confirmer : Français » sur la ligne Langue : la langue est donnée, la ligne disparaît
+- [ ] Identification dépliée : un champ par ligne (nom, valeur) ; au survol, les boutons modifier et
+      relancer ; le fichier : son chemin s'ouvre d'un clic
+- [ ] Un document sans rien à confirmer : pas de section « À confirmer »
+
 ## Une seule barre, sans la ligne d'aide (v0.147.0)
 
 - [ ] Bibliothèque › Documents : recherche (« Chercher un document… »), filtre (entonnoir, « Tout »),

@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type HomeBlock } from '../src/core/views'
+import { ViewsRegistry, type ListItem, type HomeBlock } from '../src/core/views'
 import { bibliothequeModule, dateFoundIn, docDateLabel, guessDocDate, parseDocDate, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { iaModule, readDateAnswer } from '../src/modules/ia'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
@@ -21,6 +21,10 @@ import { workflowsModule, type Workflow } from '../src/modules/workflows'
 
 /** Les blocs d'une page, ceux de ses sections compris (les messages « à confirmer » y sont regroupés). */
 const unfold = (block: HomeBlock): HomeBlock[] => (block.kind === 'section' ? [block, ...block.blocks] : [block])
+
+/** Ce qui reste à confirmer sur une fiche : une ligne chacun — son nom, sa raison en court, ses boutons. */
+const confirmOf = (blocks: readonly HomeBlock[], name: string): ListItem | undefined =>
+  blocks.flatMap(unfold).flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.id.startsWith('a-confirmer-') && item.title === name)
 
 const ALL = [lectureFichiersModule, bibliothequeModule, workflowsModule, iaModule]
 const SERVEUR = { adresse: 'http://ia.exemple.fr/v1', modele: 'mistral-small' }
@@ -110,20 +114,20 @@ describe('à l’entrée, et sur la fiche', () => {
     expect(doc.date).toBeUndefined()
     expect(read(platform, doc.record)).toMatch(/\ndateAConfirmer: true\ndateProbable: "2026-02-12"\n/)
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    const message = fiche.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Date à confirmer'))
-    expect(message).toMatchObject({ tone: 'warning', text: 'Date à confirmer : la date lue au début du document est « 12 février 2026 » (lu sans certitude).' })
-    expect(message?.kind === 'message' && message.actions!.map((action) => action.label)).toEqual(['Prendre « 12 février 2026 »', 'Pas de date', 'Modifier…'])
+    const message = confirmOf(fiche.blocks, 'Date du document')
+    expect(message).toMatchObject({ tone: 'warning', detail: 'La date lue au début du document est « 12 février 2026 » (lu sans certitude).' })
+    expect(message!.actions!.map((action) => action.label)).toEqual(['Prendre « 12 février 2026 »', 'Pas de date', 'Modifier…'])
     expect((await page('bibliotheque.documents').load()).filters?.map((filter) => filter.id)).toContain('date-a-confirmer')
-    await (message?.kind === 'message' ? message.actions![0]!.run() : null)
+    await message!.actions![0]!.run()
     expect(platform.notices.at(-1)).toBe('Date confirmée : 12 février 2026.')
     expect(read(platform, doc.record)).toMatch(/\ndateDocument: "2026-02-12"\n/)
     expect(read(platform, doc.record)).not.toMatch(/dateAConfirmer|dateProbable/)
     // Sans date lue : « Pas de date » le confirme.
     const other = await pour('Maquette.dwg', 'binaire')
     const view = await page('bibliotheque.document').load(encodeURIComponent(other.record))
-    const none = view.blocks.flatMap(unfold).find((block) => block.kind === 'message' && block.text.startsWith('Date à confirmer'))
-    expect(none?.kind === 'message' && none.actions!.map((action) => action.label)).toEqual(['Pas de date', 'Modifier…'])
-    await (none?.kind === 'message' ? none.actions![0]!.run() : null)
+    const none = confirmOf(view.blocks, 'Date du document')
+    expect(none!.actions!.map((action) => action.label)).toEqual(['Pas de date', 'Modifier…'])
+    await none!.actions![0]!.run()
     expect(platform.notices.at(-1)).toBe('« Maquette » : sans date.')
   })
 
@@ -185,7 +189,7 @@ describe('la seconde passe, avec l’IA', () => {
     expect(read(platform, doc.record)).toMatch(/\ndateIdentifieePar: ia\n/)
     expect(journal()).toContain('« Note » : date 12 février 2026, identifiée par l’IA.')
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
-    expect(fiche.blocks.flatMap(unfold).some((block) => block.kind === 'message' && block.text.startsWith('Date à confirmer'))).toBe(false)
+    expect(!!confirmOf(fiche.blocks, 'Date du document')).toBe(false)
     const identity = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.identite')
     const list = identity?.blocks[0]
     expect(list?.kind === 'list' && list.items.find((item) => item.id === 'date')?.detail).toBe('12 février 2026 — identifiée par l’IA')

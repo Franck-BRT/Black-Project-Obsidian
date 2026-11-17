@@ -181,15 +181,24 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(fiche.title).toBe('Courrier acheteur')
     expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'language', 'version', 'move', 'to-references', 'note', 'aside', 'delete'])
-    // Identification, le fichier, d'où il vient, les versions : des sections repliables, repliées d'origine, leur en-tête en dit l'essentiel.
+    // Identification (dépliée d'origine : l'essentiel), le fichier, d'où il vient, les versions : des sections repliables, leur en-tête en dit l'essentiel.
     // Ce qui reste à confirmer : ensemble, dans une section dépliée, que l'en-tête résume.
     expect(fiche.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')).toMatchObject({
       title: expect.stringMatching(/^À confirmer \(\d\)$/),
       subtitle: expect.stringContaining('Langue')
     })
     expect(fiche.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')).not.toHaveProperty('collapsed')
+    // Une ligne par chose à confirmer : son nom, sa raison en court, ses boutons au bout.
+    const confirmSection = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')!
+    const lines = confirmSection.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    expect(lines.length).toBeGreaterThan(1)
+    expect(lines.every((item) => item.tone === 'warning' && !!item.actions?.length && !/à confirmer :/.test(item.detail ?? ''))).toBe(true)
+    expect(lines.find((item) => item.title === 'Langue')).toBeDefined()
+    // Ses chiffres (famille, taille, ajouté le), dans le sous-titre ; plus de tuiles.
+    expect(fiche.subtitle).toMatch(/ · \d+ o · ajouté le \d{4}-\d{2}-\d{2}$/)
+    expect(fiche.blocks.some((block) => block.kind === 'stats')).toBe(false)
     expect(fiche.blocks.flatMap((block) => (block.kind === 'section' && block.id !== 'bibliotheque.document.a-confirmer' ? [[block.id, block.title, block.subtitle ?? '', block.collapsed]] : []))).toEqual([
-      ['bibliotheque.document.identite', 'Identification', '', true],
+      ['bibliotheque.document.identite', 'Identification', '', false],
       ['bibliotheque.document.fichier', 'Le fichier', 'Courrier acheteur.pdf', true],
       ['bibliotheque.document.origines', 'D’où il vient (1)', "Analyse d'appels d'offres — Station sol", true],
       ['bibliotheque.document.versions', 'Versions', 'Aucune autre version reliée.', true],

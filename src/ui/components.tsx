@@ -173,8 +173,31 @@ export function StatView({ stat }: { stat: StatView }) {
 }
 
 /** Un élément de liste ; `slots` : les petits boutons de l'élément qui en a le plus — leur place est gardée, les marques s'alignent. */
-function ListItemView({ item, slots = 0 }: { item: ListItem; slots?: number }) {
+function ListItemView({ item, slots = 0, fields = false }: { item: ListItem; slots?: number; fields?: boolean }) {
   const tone: Tone = item.tone ?? 'neutral'
+  // Un champ : son nom, sa valeur (son état), ses petits boutons au bout.
+  if (fields)
+    return (
+      <li class={`bp-field-row${item.tone && item.tone !== 'neutral' ? ` bp-tone-text-${item.tone}` : ''}`}>
+        <span class="bp-field-name">{item.title}</span>
+        <span class="bp-field-value">
+          {item.open ? (
+            <button type="button" class="bp-field-link" onClick={() => void item.open!.run()}>
+              {item.detail || '—'}
+            </button>
+          ) : (
+            item.detail || '—'
+          )}
+        </span>
+        {!!item.tools?.length && (
+          <span class="bp-field-tools">
+            {item.tools.map((tool) => (
+              <ActionButton key={tool.id} action={{ icon: 'edit', ...tool }} compact />
+            ))}
+          </span>
+        )}
+      </li>
+    )
   return (
     <li class={`bp-list-item${item.tools?.length ? ' bp-list-editable' : ''}`}>
       {slots > 0 && (
@@ -200,6 +223,13 @@ function ListItemView({ item, slots = 0 }: { item: ListItem; slots?: number }) {
         {item.detail && <div class="bp-list-detail">{item.detail}</div>}
       </div>
       {item.when && <span class="bp-list-when">{item.when}</span>}
+      {!!item.actions?.length && (
+        <span class="bp-list-actions">
+          {item.actions.map((action) => (
+            <ActionButton key={action.id} action={action} />
+          ))}
+        </span>
+      )}
     </li>
   )
 }
@@ -705,9 +735,9 @@ export function BlockView({ block, t, now, locale, narrowed }: { block: HomeBloc
       )
     case 'list': {
       const list = block.items.length ? (
-        <ul class="bp-list">
+        <ul class={block.fields ? 'bp-list bp-fields' : 'bp-list'}>
           {block.items.map((item) => (
-            <ListItemView key={item.id} item={item} slots={Math.max(0, ...block.items.map((each) => each.tools?.length ?? 0))} />
+            <ListItemView key={item.id} item={item} slots={block.fields ? 0 : Math.max(0, ...block.items.map((each) => each.tools?.length ?? 0))} fields={block.fields === true} />
           ))}
         </ul>
       ) : (

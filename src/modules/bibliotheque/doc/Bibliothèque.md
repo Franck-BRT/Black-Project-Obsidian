@@ -75,6 +75,11 @@ plus récent ; le filtre **Dernières versions** les cache.
 
 ## 4. La page Bibliothèque
 
+**La fiche d'un document** : sous son titre, une ligne dit ce qu'il est (famille, type de pièce,
+version, taille, date d'ajout). Ce qui reste à confirmer est en tête, **une ligne chacun** — le nom,
+la raison, les boutons (« Confirmer : Français », « Pas de date », « Modifier… »). **Identification**
+est dépliée : chaque champ sur une ligne, ses boutons (modifier, relancer la recherche) au bout.
+
 **Les lignes de la liste** (en explorateur) : le nom du document, puis à droite son type de pièce, sa
 date d'ajout et sa taille ; une pastille seulement s'il y a quelque chose à faire (« À confirmer (n) »,
 une version à relier, un fichier introuvable). Un clic sur la ligne ouvre la fiche. La recherche

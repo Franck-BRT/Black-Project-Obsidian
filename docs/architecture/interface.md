@@ -351,6 +351,10 @@ testée seule) :
   par défaut), puis toutes les tuiles des modules (à ajouter), sans double emploi avec une
   entrée ni avec Accueil ou Paramètres ; une entrée tirée d'une tuile a l'identifiant
   `tuile:<id de la tuile>` ;
+- **Des lignes compactes** *(0.148.0)* : `ListItem.actions` — de petits boutons avec leur mot, au bout
+  d'une ligne de liste (« Confirmer : Français », « Modifier… ») ; une liste `fields` — des champs, une
+  ligne chacun : le nom à gauche, la valeur à droite, les petits boutons au bout (plus visibles au
+  survol), sans marque.
 - **Une seule barre** *(0.147.0)* : la recherche, le filtre (l'entonnoir, sans le mot), l'affichage
   (Liste / Cartes / Tableau en icônes, leur nom en infobulle et pour les lecteurs d'écran) et le
   regroupement, sur une ligne (`.bp-page-bar`, qui passe à la ligne sur un écran étroit). L'aide du
