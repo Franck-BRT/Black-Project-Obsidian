@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.23.0 (Black Projects 0.136.3) |
+| Version | 0.24.0 (Black Projects 0.136.10) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -190,7 +190,7 @@ Les modèles prêts à l'emploi de l'AO et des exigences sont devenus des workfl
 | Vérifier la couverture d'une réponse importée | pièces de réponse importées | couverture de la réponse | désactivé |
 | Extraire les exigences du CCTP à l'import | un CCTP importé | l'aperçu d'extraction, puis les exigences | désactivé |
 | Signaler les workflows cassés, à l'ouverture | à l'ouverture d'Obsidian | dit les workflows actifs au déclencheur ou à l'action d'un module désactivé | actif |
-| Bilan des workflows, chaque lundi | lundi à 8 h | exécutions et échecs des 7 derniers jours | désactivé |
+| Bilans du lundi : les formats des fichiers du coffre, les workflows | lundi à 8 h | deux étapes : les fichiers du coffre par format et les extensions non lues ; les exécutions de workflows des 7 derniers jours, les échecs et lesquels | désactivé |
 | Archiver le journal des workflows, chaque mois | le 1er du mois à 8 h | les exécutions de plus de 30 jours dans une note d'archive | désactivé |
 | Rappels des exigences, chaque lundi | lundi à 8 h | le rapport de qualité de la bibliothèque, puis les traductions absentes, en retard ou à relire — une étape chacun | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
@@ -217,7 +217,7 @@ système), qu'un workflow ne peut pas piloter. Il gagne trois workflows système
 | Workflow système | Déclencheur | Ce qu'il fait | D'origine |
 | --- | --- | --- | --- |
 | Signaler les workflows cassés, à l'ouverture (`sys.workflows.casses`) | à l'ouverture d'Obsidian | `workflows.verifier` : les workflows actifs (et utilisables) dont le déclencheur ou une action n'est déclaré par aucun module actif (`brokenParts`) ; aucun : rien n'est dit. Depuis la v0.17.0, un workflow **système** dont le déclencheur vient d'un module inactif n'est pas dit cassé : il dort, et se réveille avec le module | actif |
-| Bilan des workflows, chaque lundi (`sys.workflows.bilan-hebdo`) | lundi à 8 h | `workflows.bilan` (champ « jours », `7`) : d'après le journal (`journalRuns`), combien d'exécutions, d'échecs, et lesquels | désactivé |
+| Bilan des workflows, chaque lundi (`sys.workflows.bilan-hebdo` ; depuis 0.24.0, une étape de `sys.lecture-fichiers.bilans-lundi`) | lundi à 8 h | `workflows.bilan` (champ « jours », `7`) : d'après le journal (`journalRuns`), combien d'exécutions, d'échecs, et lesquels | désactivé |
 | Archiver le journal des workflows, chaque mois (`sys.workflows.archiver-journal`) | le 1er du mois à 8 h | `workflows.archiver` (champ « jours », `30`) : les lignes plus anciennes quittent le journal pour `Journal des workflows — archive AAAA-MM.md` (`bp-type: workflows-journal-archive`), la plus récente en tête | désactivé |
 
 Les tests des autres fonctions du module écartent ces trois-là
@@ -276,6 +276,13 @@ champ avec l'IA, depuis la fiche d'un document.
 - La carte d'un workflow, sur la page « Workflows », a l'action `delete` (« Supprimer… ») :
   `WorkflowFicheDeps.remove`, la confirmation de `deleteWorkflow`. Pas pour un workflow système
   (il se désactive, ou se rétablit sur sa fiche).
+
+## Le bilan du lundi, une étape des bilans de la lecture de fichiers (v0.24.0, Black Projects 0.136.10)
+
+- `sys.workflows.bilan-hebdo` n'est plus déclaré par l'entretien (`upkeep.ts`) : son action
+  `workflows.bilan` est la seconde étape de « Bilans du lundi : les formats des fichiers du coffre,
+  les workflows » (`sys.lecture-fichiers.bilans-lundi`, déclaré par la [lecture de
+  fichiers](lecture-fichiers.md), qui le remplace — `replaces`).
 
 ## Un workflow système qui en remplace d'autres (v0.23.0, Black Projects 0.136.3)
 

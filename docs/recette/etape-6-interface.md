@@ -70,6 +70,13 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les bilans du lundi en un seul workflow (v0.136.10)
+
+- [ ] Workflows › Système › Lecture de fichiers : **Bilans du lundi : les formats des fichiers du
+      coffre, les workflows** (deux étapes) ; « Bilan des formats du coffre » et « Bilan des
+      workflows » n'y sont plus
+- [ ] L'activer, **Exécuter** : le bilan des formats, puis celui des workflows des 7 derniers jours
+
 ## Les vérifications de l'IA à l'ouverture en un seul workflow (v0.136.9)
 
 - [ ] Workflows › Système › IA : **Vérifier l'IA à l'ouverture : la connexion, les nouveaux modèles,

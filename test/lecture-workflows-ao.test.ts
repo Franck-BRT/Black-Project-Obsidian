@@ -61,7 +61,7 @@ afterEach(async () => {
 const notices = (platform: MemoryPlatform, word: RegExp) => platform.notices.filter((notice) => word.test(notice))
 
 describe('les pièces illisibles et sans texte (workflows système)', () => {
-  it('créés : les pièces à problème, un seul workflow (illisibles, sans texte, sans type) ; le bilan des formats désactivé', async () => {
+  it('créés : les pièces à problème, un seul workflow (illisibles, sans texte, sans type) ; les bilans du lundi désactivés', async () => {
     const { system } = await start(memoryPlatform())
     expect(system('signalements-import')).toMatchObject({
       enabled: true,
@@ -76,7 +76,13 @@ describe('les pièces illisibles et sans texte (workflows système)', () => {
     })
     expect(system('illisibles')).toBeUndefined()
     expect(system('sans-texte')).toBeUndefined()
-    expect(system('bilan-formats')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' } })
+    // Les bilans du lundi : les formats du coffre, puis les workflows (« Bilan des workflows » y est fondu).
+    expect(system('bilans-lundi')).toMatchObject({
+      enabled: false,
+      name: 'Bilans du lundi : les formats des fichiers du coffre, les workflows',
+      trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
+      actions: [{ kind: 'lecture-fichiers.bilan-formats', fields: { ignorer: '' } }, { kind: 'workflows.bilan', fields: { jours: '7' } }]
+    })
   })
 
   it('une pièce illisible (un Word abîmé) : nommée, avec que faire ; le journal le garde', async () => {
@@ -105,7 +111,7 @@ describe('les pièces illisibles et sans texte (workflows système)', () => {
   })
 })
 
-describe('le bilan des formats du coffre (workflow système)', () => {
+describe('le bilan des formats du coffre (une étape des bilans du lundi)', () => {
   it('une fois activé : les fichiers par format, les extensions non lues ; les dossiers cachés ignorés', async () => {
     const platform = memoryPlatform()
     const { system } = await start(platform)
@@ -120,7 +126,7 @@ describe('le bilan des formats du coffre (workflow système)', () => {
       '.obsidian/app.json': '{}'
     }))
       await platform.fs.writeText(path, text)
-    Object.assign(system('bilan-formats'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
+    Object.assign(system('bilans-lundi'), { enabled: true, created: '2020-01-01T00:00:00.000Z' })
     await runDueWorkflows()
     const said = notices(platform, /^Coffre :/)
     expect(said).toHaveLength(1)

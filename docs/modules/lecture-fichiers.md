@@ -8,7 +8,7 @@
 | Emplacement | **`src/modules/lecture-fichiers/`** — tout le code de lecture, et rien d'autre |
 | Interface publique | `src/modules/lecture-fichiers/index.ts` |
 | Guide de maintenance | [`src/modules/lecture-fichiers/README.md`](../../src/modules/lecture-fichiers/README.md) |
-| Version | 0.15.0 (Black Projects 0.136.8) |
+| Version | 0.16.0 (Black Projects 0.136.10) |
 | Requiert | — |
 | Utilisé par | Analyse d'appels d'offres (`ao`) ; tout futur module qui lit des documents |
 | Étape | 1 (v0.2.0), devenu module en v0.2.1 |
@@ -16,6 +16,16 @@
 
 Le module transforme un document en texte que l'outil, puis l'IA, peuvent lire : paragraphes, titres avec leur niveau, listes, et **tableaux gardés en lignes et
 colonnes** — c'est là que sont souvent les exigences et les prix.
+
+## Les bilans du lundi en un seul workflow (v0.16.0, Black Projects 0.136.10)
+
+- `sys.lecture-fichiers.bilans-lundi` (`SYS_DIGESTS`) : « Bilans du lundi : les formats des
+  fichiers du coffre, les workflows », lundi à 8 h, désactivé ; deux étapes —
+  `lecture-fichiers.bilan-formats` (champ « ignorer »), `workflows.bilan` (champ « jours », 7).
+- Il remplace (`replaces`) `sys.lecture-fichiers.bilan-formats` et `sys.workflows.bilan-hebdo` :
+  retirés des coffres existants. Déclaré ici : l'étape des formats a besoin de ce module ; celle
+  des workflows, de l'action du module Workflows, là dès qu'un workflow s'exécute. `SYS_FORMATS`
+  retiré.
 
 ## Les pièces illisibles et sans texte : un seul workflow, déclaré par l'analyse (v0.15.0, Black Projects 0.136.8)
 
@@ -251,7 +261,7 @@ demande). Il en gagne un, écrit en [workflow système](workflows.md) (`workflow
 | --- | --- | --- | --- |
 | Signaler les pièces illisibles, à l'import (`sys.lecture-fichiers.illisibles` ; depuis 0.15.0, une étape de `sys.ao.signalements-import`) | *Pièces importées*, `illisibles` non vide | `lecture-fichiers.illisibles` : nomme les pièces illisibles (fichier abîmé, protégé par un mot de passe d'ouverture), et que faire | actif |
 | Signaler les pièces sans texte (scans), à l'import (`sys.lecture-fichiers.sans-texte` ; depuis 0.15.0, une étape de `sys.ao.signalements-import`) | *Pièces importées*, `sanstexte` non vide | `lecture-fichiers.sans-texte` : nomme les pièces sans texte lisible, que l'extraction et l'IA ne voient pas | désactivé |
-| Bilan des formats du coffre, chaque lundi (`sys.lecture-fichiers.bilan-formats`) | lundi à 8 h | `lecture-fichiers.bilan-formats` (`formatsOf`) : les fichiers du coffre, sans ses dossiers cachés, par format — notes, lus, images, archives, non lus — et les extensions non lues (champ « ignorer ») | désactivé |
+| Bilan des formats du coffre, chaque lundi (`sys.lecture-fichiers.bilan-formats` ; depuis 0.16.0, une étape de `bilans-lundi`) | lundi à 8 h | `lecture-fichiers.bilan-formats` (`formatsOf`) : les fichiers du coffre, sans ses dossiers cachés, par format — notes, lus, images, archives, non lus — et les extensions non lues (champ « ignorer ») | désactivé |
 
 L'analyse d'appels d'offres donne au déclencheur *Pièces importées* deux nouvelles listes :
 `illisibles` et `sanstexte` (le nom du fichier de chaque pièce dans cet état).

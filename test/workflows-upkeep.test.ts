@@ -3,8 +3,8 @@
 
 /**
  * L'entretien des workflows, en workflows système du module Workflows : **signaler les
- * workflows cassés, à l'ouverture** (activé), **bilan des workflows, chaque lundi**
- * (désactivé), **archiver le journal, chaque mois** (désactivé).
+ * workflows cassés, à l'ouverture** (activé), **archiver le journal, chaque mois** (désactivé) ;
+ * l'action **bilan des workflows** (une étape des « Bilans du lundi » de la lecture de fichiers).
  */
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -57,7 +57,11 @@ async function start(platform: MemoryPlatform, stored: Workflow[] = []) {
     await commands.get('executer')!.run()
   }
   const read = (path: string) => (platform.files.has(path) ? new TextDecoder().decode(platform.files.get(path)) : '')
-  return { system, runByHand, read }
+  const runMine = async (id: string) => {
+    platform.choices.push(id)
+    await commands.get('executer')!.run()
+  }
+  return { system, runByHand, runMine, read }
 }
 
 afterEach(async () => {
@@ -65,10 +69,10 @@ afterEach(async () => {
 })
 
 describe('l’entretien des workflows (workflows système)', () => {
-  it('créés : les workflows cassés à l’ouverture actif ; le bilan du lundi et l’archive du mois désactivés', async () => {
+  it('créés : les workflows cassés à l’ouverture actif ; l’archive du mois désactivée ; plus de bilan du lundi à part', async () => {
     const { system } = await start(memoryPlatform())
     expect(system('casses')).toMatchObject({ enabled: true, name: 'Signaler les workflows cassés, à l’ouverture', trigger: { kind: 'ouverture' }, actions: [{ kind: 'workflows.verifier' }] })
-    expect(system('bilan-hebdo')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' }, actions: [{ kind: 'workflows.bilan', fields: { jours: '7' } }] })
+    expect(system('bilan-hebdo')).toBeUndefined()
     expect(system('archiver-journal')).toMatchObject({ enabled: false, trigger: { kind: 'planifie', every: 'month', monthDay: 1, time: '08:00' }, actions: [{ kind: 'workflows.archiver', fields: { jours: '30' } }] })
   })
 
@@ -97,8 +101,10 @@ describe('l’entretien des workflows (workflows système)', () => {
   it('le bilan : les exécutions des 7 derniers jours, les échecs et lesquels', async () => {
     const platform = memoryPlatform()
     platform.files.set(JOURNAL, new TextEncoder().encode(journalOf([line(0, true, 'Rappel'), line(-1, false, 'Rappel du matin'), line(-3, true, 'Rappel'), line(-20, false, 'Ancien')])))
-    const { runByHand } = await start(platform)
-    await runByHand('bilan-hebdo')
+    // L'action, dans un workflow à soi (le système la met dans les « Bilans du lundi » de la lecture de fichiers).
+    const digest: Workflow = { ...mine('w-bilan', 'Bilan', 'manuel', []), actions: [{ kind: 'workflows.bilan', fields: { jours: '7' } }] }
+    const { runMine } = await start(platform, [digest])
+    await runMine('w-bilan')
     expect(platform.notices).toContain('Workflows, les 7 derniers jours : 3 exécution(s), 1 échec(s) — « Rappel du matin » (1).')
   })
 

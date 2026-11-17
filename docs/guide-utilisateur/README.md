@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.136.9)
+## Aujourd'hui (version 0.136.10)
+
+- **Les bilans du lundi en un seul workflow** : « Bilans du lundi : les formats des fichiers du
+  coffre, les workflows » — le bilan des formats, puis celui des workflows de la semaine. Désactivé
+  d'origine ; retirez une étape pour ne garder que l'autre.
 
 - **Les vérifications de l'IA à l'ouverture en un seul workflow** : « Vérifier l'IA à l'ouverture :
   la connexion, les nouveaux modèles, la vitesse du serveur » — trois étapes ; retirez celle de la

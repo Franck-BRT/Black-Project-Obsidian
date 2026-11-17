@@ -61,7 +61,7 @@ async function start(settings: Record<string, unknown>) {
   }
   await (workflowsModule as BlackModule).activate(context)
   const state = () =>
-    Object.fromEntries((settings.workflows as Workflow[]).filter((each) => each.system?.startsWith('sys.test.') || each.system === 'sys.workflows.casses' || each.system === 'sys.workflows.bilan-hebdo').map((each) => [each.id, each.enabled]))
+    Object.fromEntries((settings.workflows as Workflow[]).filter((each) => each.system?.startsWith('sys.test.') || each.system === 'sys.workflows.casses' || each.system === 'sys.workflows.archiver-journal').map((each) => [each.id, each.enabled]))
   const change = async (values: Record<string, unknown>) => {
     Object.assign(settings, values)
     listeners.forEach((listener) => listener(settings))
@@ -80,7 +80,7 @@ describe('d’origine, seuls les workflows essentiels sont actifs', () => {
   it('par défaut : les essentiels actifs (dont le signalement des workflows cassés), les autres désactivés', async () => {
     declare()
     const { state } = await start({})
-    expect(state()).toEqual({ 'sys.workflows.casses': true, 'sys.workflows.bilan-hebdo': false, 'sys.test.essentiel': true, 'sys.test.ordinaire': false, 'sys.test.inactif': false })
+    expect(state()).toEqual({ 'sys.workflows.casses': true, 'sys.workflows.archiver-journal': false, 'sys.test.essentiel': true, 'sys.test.ordinaire': false, 'sys.test.inactif': false })
   })
 
   it('un coffre existant (créé avant ce réglage) est ramené aux essentiels, une fois', async () => {

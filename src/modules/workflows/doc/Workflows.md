@@ -110,7 +110,6 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Vérifier la couverture d'une réponse importée | pièces de réponse importées | couverture de la réponse | désactivé |
 | Extraire les exigences du CCTP à l'import | un CCTP importé | l'aperçu d'extraction, puis les exigences | désactivé |
 | Signaler les workflows cassés, à l'ouverture | à l'ouverture d'Obsidian | dit les workflows actifs dont le déclencheur ou une action vient d'un module désactivé | actif |
-| Bilan des workflows, chaque lundi | lundi à 8 h | les exécutions des 7 derniers jours, les échecs et lesquels | désactivé |
 | Archiver le journal des workflows, chaque mois | le 1er du mois à 8 h | les exécutions de plus de 30 jours rangées dans une note d'archive du mois | désactivé |
 | Rappels des exigences, chaque lundi | lundi à 8 h | le rapport de qualité de la bibliothèque, puis les traductions absentes, en retard ou à relire — une étape chacun | désactivé |
 | Traduire les nouvelles exigences (IA) | exigence créée | traduit dans les autres langues, « à relire » | désactivé |
@@ -124,7 +123,7 @@ ci-dessous dit ce que chaque module prévoit, quand ce réglage est désactivé.
 | Verser le dossier « À classer », chaque jour | chaque jour à 8 h | idem | actif |
 | Signaler les formats non lus, au dépôt de fichiers | des fichiers déposés dans l'application | dit ceux dont le format n'est pas lu, et où déclarer une extension équivalente | actif |
 | Signaler les pièces à problème, à l'import | des pièces illisibles, sans texte ou sans type reconnu importées | une étape chacune : les nomme, et dit que faire | actif |
-| Bilan des formats du coffre, chaque lundi | lundi à 8 h | les fichiers par format, les extensions non lues | désactivé |
+| Bilans du lundi : les formats des fichiers du coffre, les workflows | lundi à 8 h | deux étapes : les fichiers du coffre par format et les extensions non lues ; les exécutions de workflows des 7 derniers jours, les échecs et lesquels | désactivé |
 
 - **Modifiables** : nom, mode, déclencheur, conditions, actions, comme les autres.
 - **Désactivables** : désactivé, l'automatisme ne se fait plus (la note de l'analyse, par

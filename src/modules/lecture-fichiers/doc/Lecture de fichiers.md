@@ -56,8 +56,9 @@ de la bibliothèque de documents : sans elle, il ne se déclenche pas. Voir
 celles qui n'ont pas pu être lues — fichier abîmé, ou protégé par un mot de passe d'ouverture —
 et dit que faire ; puis celles sans texte lisible (des scans), que l'extraction des exigences et
 l'IA ne voient pas ; puis celles sans type reconnu. Une étape chacune, muette s'il n'y a rien :
-retirez-en une pour ne plus avoir ce signalement. **Bilan des formats du coffre, chaque lundi** (désactivé)
-compte les fichiers du coffre par format et nomme les extensions non lues. Voir la page
+retirez-en une pour ne plus avoir ce signalement. **Bilans du lundi** (désactivé) compte les
+fichiers du coffre par format et nomme les extensions non lues, puis fait le bilan des workflows
+de la semaine (exécutions, échecs et lesquels) — une étape chacun. Voir la page
 {{link:Modules/Workflows|Workflows}}, filtre *Système*.
 
 ## Les formats

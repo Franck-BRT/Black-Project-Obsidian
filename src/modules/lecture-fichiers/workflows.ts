@@ -15,7 +15,7 @@
 
 import type { FileSystem } from '../../core/ports'
 import { TRIGGER_DEPOSITED } from '../bibliotheque'
-import { registerAction, registerSystemWorkflow } from '../workflows'
+import { registerAction, registerSystemWorkflow, type WorkflowAction } from '../workflows'
 import { isArchive } from './archive'
 import { extensionOf } from './lecture'
 import { isImage } from './readers/fileText'
@@ -23,7 +23,8 @@ import { isImage } from './readers/fileText'
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 export const SYS_UNREAD = 'sys.lecture-fichiers.formats-non-lus'
-export const SYS_FORMATS = 'sys.lecture-fichiers.bilan-formats'
+/** Les bilans du lundi : les formats du coffre, puis les workflows (depuis 0.136.10). */
+export const SYS_DIGESTS = 'sys.lecture-fichiers.bilans-lundi'
 
 const split = (text: string): string[] =>
   text
@@ -148,16 +149,23 @@ export function registerLectureWorkflows(t: Translate, readable: (extension: str
     }
   })
 
+  // Les bilans du lundi, en un seul workflow : les formats du coffre, puis les workflows (l'action du
+  // module Workflows, toujours là quand un workflow s'exécute). « Bilan des formats du coffre » et
+  // « Bilan des workflows » y sont fondus. Déclaré ici : son étape des formats a besoin de ce module.
   registerSystemWorkflow({
-    id: SYS_FORMATS,
+    id: SYS_DIGESTS,
     moduleKey: 'lecture-fichiers.name',
     enabledByDefault: false,
+    replaces: ['sys.lecture-fichiers.bilan-formats', 'sys.workflows.bilan-hebdo'],
     make: (tr) => ({
-      name: tr('lecture-fichiers.sys.bilan-formats'),
+      name: tr('lecture-fichiers.sys.bilans-lundi'),
       mode: 'auto',
       trigger: { kind: 'planifie', every: 'week', weekday: 1, time: '08:00' },
       conditions: [],
-      actions: [{ kind: 'lecture-fichiers.bilan-formats', fields: { ignorer: '' } }]
+      actions: [
+        { kind: 'lecture-fichiers.bilan-formats', fields: { ignorer: '' } },
+        { kind: 'workflows.bilan', fields: { jours: '7' } }
+      ] as WorkflowAction[]
     })
   })
 

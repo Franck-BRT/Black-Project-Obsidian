@@ -160,6 +160,6 @@ export function registerUpkeep(deps: UpkeepDeps): void {
       make: (tr) => ({ name: tr(`workflows.sys.${id}`), mode: 'auto', conditions: [], ...make(tr) })
     })
   system('casses', true, () => ({ trigger: { kind: OPENING }, actions: [{ kind: 'workflows.verifier', fields: {} }] }))
-  system('bilan-hebdo', false, () => ({ trigger: { kind: SCHEDULE, every: 'week', weekday: 1, time: '08:00' }, actions: [{ kind: 'workflows.bilan', fields: { jours: '7' } }] }))
+  // Le bilan du lundi (action `workflows.bilan`) : une étape des « Bilans du lundi » de la lecture de fichiers.
   system('archiver-journal', false, () => ({ trigger: { kind: SCHEDULE, every: 'month', monthDay: 1, time: '08:00' }, actions: [{ kind: 'workflows.archiver', fields: { jours: '30' } }] }))
 }

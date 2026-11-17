@@ -90,10 +90,9 @@ describe('les workflows et l’analyse d’appels d’offres', () => {
       'sys.ia.relire-textes:true',
       'sys.ia.titre-documents:true',
       'sys.ia.verifier-connexion:true',
-      'sys.lecture-fichiers.bilan-formats:false',
+      'sys.lecture-fichiers.bilans-lundi:false',
       'sys.lecture-fichiers.formats-non-lus:true',
       'sys.workflows.archiver-journal:false',
-      'sys.workflows.bilan-hebdo:false',
       'sys.workflows.casses:true'
     ])
 
