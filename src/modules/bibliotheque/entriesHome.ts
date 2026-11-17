@@ -203,7 +203,8 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
             (count) => t(`bibliotheque.${kind}.group.count`, { count })
           )
         ]
-      : [{ kind: 'message' as const, tone: 'info' as const, text: t(top.blocks.length ? 'bibliotheque.place.empty' : `bibliotheque.${kind}.empty`), actions: [create, { ...starters, primary: false, more: false }] }])
+      : [{ kind: 'message' as const, tone: 'info' as const, text: t(top.blocks.length ? 'bibliotheque.place.empty' : `bibliotheque.${kind}.empty`), // « Nouveau… » est en tête de page ; reste « Ajouter les exemples » (rangé sinon dans « … »).
+        actions: [{ ...starters, primary: false, more: false }] }])
     ]
   }
 }

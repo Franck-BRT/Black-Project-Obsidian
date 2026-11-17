@@ -683,6 +683,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
 - v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
+- v0.148.2 : le message d'une bibliothèque vide sans le bouton « Verser des documents » en double (« Nouveau… » de même pour les prompts, personas…)
 - v0.148.1 : les espacements à droite de l'arborescence ; les menus de la barre sans le style des menus d'Obsidian
 - v0.148.0 : **l'interface reprise, 8** : la fiche d'un document — ce qui reste à confirmer en lignes, les chiffres sous le titre, l'identification dépliée en lignes compactes
 - v0.147.0 : **l'interface reprise, 7** : recherche, filtre, affichage (icônes) et regroupement sur une seule barre ; la ligne d'aide du glisser-déposer retirée

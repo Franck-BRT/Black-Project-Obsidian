@@ -335,6 +335,11 @@ describe('les bibliothèques en explorateur de fichiers (le réglage d’origine
     await nodeOf(explorer.nodes, 'Normes')!.open!.run()
     const normes = await page('bibliotheque.documents').load(shown.at(-1)!.split('?')[1])
     expect(currents(normes.explorer!.nodes)).toEqual(['Normes'])
+    // Vide : un message, sans bouton (« Verser des documents » est en tête de page).
+    const emptyNote = normes.blocks.find((block) => block.kind === 'message')
+    expect(emptyNote).toMatchObject({ kind: 'message', tone: 'info' })
+    expect(emptyNote).not.toHaveProperty('actions')
+    expect(normes.actions!.find((action) => action.id === 'pour')).toBeDefined()
     // Ailleurs dans la bibliothèque : la fiche d'un document (son lieu), l'accueil, les prompts.
     const doc = cardsOf(view).find((card) => card.title === 'Devis 2026')!
     // Une ligne allégée : une ligne de détails (type de pièce ou famille, ajouté le, taille), pas de boutons,

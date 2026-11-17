@@ -70,6 +70,12 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Sans le bouton en double (v0.148.2)
+
+- [ ] Une bibliothèque ou un répertoire vide : le message « Aucun document… » sans bouton ; « Verser des
+      documents » une seule fois, en tête de page
+- [ ] Prompts (ou personas…) vides : le message garde « Ajouter les exemples », plus « Nouveau… » en double
+
 ## Les espacements à droite de l'arborescence (v0.148.1)
 
 - [ ] Bibliothèque (en explorateur) : entre le sous-titre, les boutons, la barre et la liste, un espace

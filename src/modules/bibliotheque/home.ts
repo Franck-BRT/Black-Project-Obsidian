@@ -322,7 +322,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     { label: t('bibliotheque.stat.likely'), value: String(likely), icon: 'flow', ...(likely ? { tone: 'warning' as const, hint: t('bibliotheque.stat.likely.hint') } : {}) },
     ...(ghostsHere.length ? [{ label: t('bibliotheque.stat.ghosts'), value: String(ghostsHere.length), icon: 'ghost' as const, hint: t('bibliotheque.stat.ghosts.hint') }] : [])
   ]
-  const empty: HomeBlock = { kind: 'message', tone: 'info', text: t(top.blocks.length ? 'bibliotheque.place.empty' : 'bibliotheque.empty'), actions: [{ id: 'pour', label: t('bibliotheque.pour'), icon: 'upload', run: pourHere }] }
+  // Vide : dit seulement — « Verser des documents » est juste au-dessus, en tête de page.
+  const empty: HomeBlock = { kind: 'message', tone: 'info', text: t(top.blocks.length ? 'bibliotheque.place.empty' : 'bibliotheque.empty') }
   const groupOf = docGrouping === 'repertoire' ? directoryGroupOf(t, place.directory) : docGroupOf(deps, docGrouping)
   // Les documents et les fantômes, ensemble, du plus récent au plus ancien ; un fantôme se range par son document (par répertoire : là où il est).
   const listed: { doc: LibraryDoc; ghost?: LibraryGhost }[] = [...docs.map((doc) => ({ doc })), ...ghostsHere.map(({ ghost, doc }) => ({ doc, ghost }))].sort(
