@@ -284,6 +284,66 @@ describe('le journal, en page', () => {
   })
 })
 
+describe('valider les échecs', () => {
+  const statsOf = (view: PageView) => {
+    const stats = view.blocks.find((block) => block.kind === 'stats')
+    return stats?.kind === 'stats' ? stats.stats : []
+  }
+
+  it('« Valider les échecs » de la page Workflows : ils ne comptent plus, ils restent au journal, marqués', async () => {
+    const platform = memoryPlatform()
+    const { views, settings } = await start(platform, true)
+    const list = views.pages().find((each) => each.id === 'workflows.liste')!
+    const before = await list.load()
+    const validate = before.actions!.find((action) => action.id === 'validate-failures')!
+    expect(validate.label).toBe('Valider les échecs')
+    expect(validate.tooltip).toMatch(/^1 échec\(s\) vu/)
+    await validate.run()
+    expect(platform.notices.at(-1)).toBe('1 échec(s) validé(s).')
+    expect(settings.workflows?.echecsValides).toEqual([JOURNAL_LINES[0]])
+    // La page : plus d'échec récent, plus de badge, plus de bouton.
+    const after = await list.load()
+    expect(statsOf(after).find((stat) => stat.label === 'Échecs récents')).toMatchObject({ value: '0', tone: 'success' })
+    const morning = cardsOf(after).find((card) => card.title === 'Rappel du matin')!
+    expect(morning.badges?.map((badge) => badge.label)).not.toContain('Dernière exécution en échec')
+    expect(morning.tags).not.toContain('en-echec')
+    expect(after.actions?.some((action) => action.id === 'validate-failures')).toBe(false)
+    // La pastille de la tuile s'éteint.
+    expect(await views.allTiles().find((each) => each.id === 'workflows.liste')!.badge!()).toBeNull()
+    // Le journal : l'échec y est toujours, « Échec validé », plus en rouge ; les chiffres le disent.
+    const journal = await views.pages().find((each) => each.id === 'workflows.journal')!.load()
+    expect(statsOf(journal).find((stat) => stat.label === 'Échecs')).toMatchObject({ value: '1', tone: 'success', hint: 'dont 1 validé(s)' })
+    const day = journal.blocks.find((block) => block.kind === 'list')
+    const item = day?.kind === 'list' ? day.items[0]! : null
+    expect(item).toMatchObject({ title: 'Rappel du matin', tone: 'neutral', tags: ['echecs'] })
+    expect(item!.detail).toMatch(/^Échec validé · /)
+    expect(journal.actions?.some((action) => action.id === 'validate-failures')).toBe(false)
+  })
+
+  it('« Valider cet échec » sur la fiche de l’exécution ; un nouvel échec compte de nouveau', async () => {
+    const platform = memoryPlatform()
+    const { views, settings } = await start(platform, true)
+    const page = views.pages().find((each) => each.id === 'workflows.execution')!
+    const failed = await page.load(encodeURIComponent(JOURNAL_LINES[0]!))
+    await failed.actions!.find((action) => action.id === 'validate-failure')!.run()
+    const again = await page.load(encodeURIComponent(JOURNAL_LINES[0]!))
+    expect(again.actions?.some((action) => action.id === 'validate-failure')).toBe(false)
+    expect(statsOf(again)[0]).toMatchObject({ value: 'Échec', tone: 'neutral', hint: 'Échec validé' })
+    // Une réussite : rien à valider.
+    expect((await page.load(encodeURIComponent(JOURNAL_LINES[1]!))).actions?.some((action) => action.id === 'validate-failure')).toBe(false)
+    // Un nouvel échec : il compte, la page propose de nouveau de le valider ; l'ancien reste validé.
+    const fresh = '- 2026-11-06 08:30 · ❌ échec · **Rappel du matin** — Étape 1 (Prévenir) a échoué : toujours rien'
+    await platform.fs.writeText('Black Projects/Workflows/Journal des workflows.md', `# Journal\n\n${[fresh, ...JOURNAL_LINES].join('\n')}\n`)
+    const list = await views.pages().find((each) => each.id === 'workflows.liste')!.load()
+    expect(statsOf(list).find((stat) => stat.label === 'Échecs récents')?.value).toBe('1')
+    expect(list.actions?.find((action) => action.id === 'validate-failures')?.tooltip).toMatch(/^1 échec/)
+    // Les lignes sorties du journal sont oubliées à la validation suivante.
+    await platform.fs.writeText('Black Projects/Workflows/Journal des workflows.md', `# Journal\n\n${fresh}\n`)
+    await list.actions!.find((action) => action.id === 'validate-failures')!.run()
+    expect(settings.workflows?.echecsValides).toEqual([fresh])
+  })
+})
+
 describe('la fiche d’une exécution, en page', () => {
   it('issue, heure, sujet, étapes (l’échec en rouge), notes écrites, autres exécutions', async () => {
     const { views, shown } = await start(memoryPlatform(), true)
@@ -292,7 +352,7 @@ describe('la fiche d’une exécution, en page', () => {
     const failed = await page.load(encodeURIComponent(JOURNAL_LINES[0]!))
     expect(failed.title).toBe('Rappel du matin — 2026-11-05 08:30')
     expect(failed.subtitle).toBe('sur « Station sol » · 2026-11-05 08:30')
-    expect(failed.actions?.map((action) => action.id)).toEqual(['workflow', 'again', 'subject', 'journal'])
+    expect(failed.actions?.map((action) => action.id)).toEqual(['workflow', 'again', 'subject', 'validate-failure', 'journal'])
     expect(failed.actions?.find((action) => action.id === 'again')?.primary).toBe(true)
     const stats = failed.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Issue=Échec', 'Heure=08:30', 'Étapes=1', 'Notes écrites=0'])

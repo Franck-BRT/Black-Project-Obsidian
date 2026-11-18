@@ -67,6 +67,11 @@ Palette de commandes :
   exigence sa fiche — et sinon dans le coffre ; une
   recherche et des filtres par issue ; « Ouvrir la note du journal » montre la note, avec
   ses liens vers ce que chaque exécution a écrit ;
+- **Valider les échecs** — en tête de la page Workflows et du journal, quand il y a des
+  échecs à voir : vus et traités, ils ne comptent plus (« Échecs récents », la pastille de
+  la tuile, « Dernière exécution en échec ») mais **restent au journal**, marqués « Échec
+  validé ». Sur la fiche d'une exécution en échec : **Valider cet échec**. Un nouvel échec
+  compte de nouveau ;
 - **Exporter des workflows** / **Importer des workflows** — un fichier JSON pour un autre
   coffre ; un workflow importé arrive **désactivé**, à relire avant de l'activer. Depuis la
   page Workflows, **Importer** finit sur la fiche du workflow importé (s'il n'y en a qu'un)

@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Valider les échecs des workflows (v0.162.0)
+
+- [ ] Workflows avec un échec dans le journal : « Échecs récents 1 », pastille rouge sur la tuile,
+      « Valider les échecs » en tête ; un clic : « 1 échec(s) validé(s). », « Échecs récents 0 », plus
+      de badge ni de pastille, le bouton disparaît
+- [ ] Journal : l'échec est toujours là, « Échec validé · … », plus en rouge ; « Échecs 1, dont 1
+      validé(s) »
+- [ ] La fiche d'une exécution en échec : « Valider cet échec » ; validé, l'issue dit « Échec validé »
+- [ ] Un nouvel échec : il compte de nouveau
+
 ## Le type « Sécurité SI » (v0.161.1)
 
 - [ ] Exigences › REQ-SEC-0001 : la case « Type » dit « Sécurité SI » (plus « security ») ;

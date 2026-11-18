@@ -136,6 +136,39 @@ async function readJournal(deps: { t: Translate; fs: FileSystem; folder(): strin
   return (await deps.fs.exists(path)) ? deps.fs.readText(path) : ''
 }
 
+/** Les échecs validés (vus, traités) : leur ligne du journal. */
+const validatedOf = (deps: HomeDeps): ReadonlySet<string> => deps.failures?.validated() ?? new Set<string>()
+type Logline = { tone?: Tone | undefined; line: string; detail?: string | undefined }
+/** Un échec encore à voir : en échec, et pas encore validé. */
+const openFailure = (item: Logline, validated: ReadonlySet<string>): boolean => item.tone === 'danger' && !validated.has(item.line)
+/** L'issue d'une exécution pour les compteurs : un échec validé ne compte plus comme échec. */
+const openTone = (item: Logline, validated: ReadonlySet<string>): Tone => (item.tone === 'danger' && validated.has(item.line) ? 'neutral' : (item.tone ?? 'neutral'))
+/** Une ligne du journal, à l'affichage : un échec validé n'est plus en rouge et le dit. */
+function shown<T extends Logline>(item: T, validated: ReadonlySet<string>, t: Translate): T {
+  if (item.tone !== 'danger' || !validated.has(item.line)) return item
+  return { ...item, tone: 'neutral', detail: [t('workflows.failures.validatedTag'), item.detail].filter(Boolean).join(' · ') }
+}
+
+/**
+ * « Valider les échecs » : ces échecs sont vus, ils ne comptent plus (chiffres, pastille,
+ * « Dernière exécution en échec ») mais restent au journal. Les lignes validées qui ne sont
+ * plus dans le journal récent sont oubliées.
+ */
+async function validateFailures(deps: HomeDeps, lines: readonly string[]): Promise<void> {
+  if (!deps.failures || !lines.length) return
+  const present = new Set(journalRuns(await readJournal(deps), 500).map((run) => run.line))
+  const next = [...new Set([...deps.failures.validated(), ...lines])].filter((line) => present.has(line))
+  await deps.failures.save(next)
+  deps.failures.notify?.(deps.t('workflows.failures.done', { count: lines.length }))
+}
+
+/** Le bouton « Valider les échecs », quand il y en a encore à voir parmi `items`. */
+function validateAction(deps: HomeDeps, items: readonly Logline[], validated: ReadonlySet<string>): ViewAction[] {
+  const open = items.filter((item) => openFailure(item, validated)).map((item) => item.line)
+  if (!deps.failures || !open.length) return []
+  return [{ id: 'validate-failures', label: deps.t('workflows.failures.validate'), tooltip: deps.t('workflows.failures.validate.tooltip', { count: open.length }), icon: 'check', run: () => validateFailures(deps, open) }]
+}
+
 /**
  * Un clic sur une ligne du journal : la fiche de cette exécution, quand la plateforme a
  * des pages ; sinon la note du journal.
@@ -165,6 +198,8 @@ type HomeDeps = {
   create?(): Promise<string | null>
   /** Importer des workflows depuis l'interface (puis les montrer), et ceux du dernier import. */
   imports?: { run(): Promise<void>; last(): readonly string[] }
+  /** Les échecs validés : leurs lignes du journal, les enregistrer, le dire. */
+  failures?: { validated(): ReadonlySet<string>; save(lines: readonly string[]): Promise<void>; notify?(text: string): void }
 }
 
 /** La dernière ligne du journal d'un workflow (son nom), pour retrouver l'exécution qu'on vient de lancer. */
@@ -244,15 +279,17 @@ function workflowCard(deps: WorkflowsPageDeps, workflow: Workflow, logged: Logge
 export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }): Promise<PageView> {
   const { t } = deps
   const workflows = deps.page.load()
-  const recent = journalItems(await readJournal(deps), 20)
-  // Ce que le journal dit de chaque workflow : le plus récent est en tête.
+  const all = journalItems(await readJournal(deps), 500)
+  const recent = all.slice(0, 20)
+  const validated = validatedOf(deps)
+  // Ce que le journal dit de chaque workflow : le plus récent est en tête (un échec validé ne compte plus).
   const logged = new Map<string, Logged>()
   for (const item of recent) {
     const known = logged.get(item.title)
     if (known) known.count++
-    else logged.set(item.title, { tone: item.tone ?? 'neutral', when: item.when ?? '', count: 1 })
+    else logged.set(item.title, { tone: openTone(item, validated), when: item.when ?? '', count: 1 })
   }
-  const failures = recent.filter((item) => item.tone === 'danger').length
+  const failures = recent.filter((item) => openFailure(item, validated)).length
   const active = workflows.filter((each) => each.enabled).length
   // Ceux du dernier import (en tête), et combien attendent encore d'être relus puis activés.
   const imported = new Set((deps.imports?.last() ?? []).filter((id) => workflows.some((each) => each.id === id)))
@@ -263,7 +300,9 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
       { id: 'new', label: t('workflows.command.new'), icon: 'plus', primary: true, run: newWorkflow(deps) },
       { id: 'import', label: t('workflows.list.import'), icon: 'upload', run: () => (deps.showPage && deps.imports ? deps.imports.run() : deps.run('importer')) },
       { id: 'export', label: t('workflows.list.export'), icon: 'copy', run: () => deps.run('exporter') },
-      { id: 'journal', label: t('workflows.home.journal'), icon: 'book', run: openJournalPage(deps) }
+      { id: 'journal', label: t('workflows.home.journal'), icon: 'book', run: openJournalPage(deps) },
+      // Les échecs vus et traités : ils ne comptent plus (ils restent au journal).
+      ...validateAction(deps, all, validated)
     ],
     search: { label: t('workflows.page.search'), placeholder: t('workflows.page.search.placeholder') },
     // Trois vues pour les cartes, et quatre façons de les regrouper.
@@ -297,7 +336,7 @@ export async function workflowsPage(deps: HomeDeps & { page: WorkflowsPageDeps }
         ]
       },
       ...workflowSections(deps, workflows, imported, logged, grouping),
-      { kind: 'list', title: t('workflows.page.journal'), items: recent.slice(0, 10).map((item) => ({ ...item, open: runOpen(deps, item.line) })), empty: t('workflows.journal.none') }
+      { kind: 'list', title: t('workflows.page.journal'), items: recent.slice(0, 10).map((item) => ({ ...shown(item, validated, t), open: runOpen(deps, item.line) })), empty: t('workflows.journal.none') }
     ]
   }
 }
@@ -403,7 +442,7 @@ export async function workflowPage(deps: HomeDeps & { page: WorkflowsPageDeps & 
   const system = page.system?.(workflow) ?? null
   const history = journalItems(await readJournal(deps), 200).filter((item) => item.title === workflow.name)
   const last = workflow.lastRun ? page.stamp(workflow.lastRun) : (history[0]?.when ?? '—')
-  const failed = history[0]?.tone === 'danger'
+  const failed = history[0] ? openFailure(history[0], validatedOf(deps)) : false
   const count = workflow.actions.length
   return {
     title: workflow.name,
@@ -575,6 +614,8 @@ export function workflowFlowchart(deps: { t: Translate; page: WorkflowsPageDeps 
 export async function journalPage(deps: HomeDeps): Promise<PageView> {
   const { t } = deps
   const items = journalItems(await readJournal(deps), 500)
+  const validated = validatedOf(deps)
+  const open = items.filter((item) => openFailure(item, validated)).length
   // Les exécutions des workflows système (par leur nom), pour les filtrer.
   const systemNames = new Set(deps.load().filter((each) => each.system).map((each) => each.name))
   const count = (tone: Tone) => items.filter((item) => item.tone === tone).length
@@ -582,7 +623,7 @@ export async function journalPage(deps: HomeDeps): Promise<PageView> {
   const days = new Map<string, ListItem[]>()
   for (const item of items) {
     const day = (item.when ?? '').slice(0, 10)
-    days.set(day, [...(days.get(day) ?? []), { ...item, when: (item.when ?? '').slice(11), open: runOpen(deps, item.line), tags: [OUTCOME_TAG[item.tone ?? 'neutral'], ...(systemNames.has(item.title) ? ['systeme'] : [])] }])
+    days.set(day, [...(days.get(day) ?? []), { ...shown(item, validated, t), when: (item.when ?? '').slice(11), open: runOpen(deps, item.line), tags: [OUTCOME_TAG[item.tone ?? 'neutral'], ...(systemNames.has(item.title) ? ['systeme'] : [])] }])
   }
   const dayTitle = (day: string) => {
     const date = new Date(`${day}T12:00:00`)
@@ -592,7 +633,8 @@ export async function journalPage(deps: HomeDeps): Promise<PageView> {
     subtitle: t('workflows.journal.subtitle', { count: items.length }),
     actions: [
       { id: 'note', label: t('workflows.journal.note'), icon: 'book', run: deps.openJournal },
-      ...(deps.showPage ? [{ id: 'all', label: t('workflows.home.all'), icon: 'flow' as const, run: () => deps.showPage?.(WORKFLOWS_PAGE) }] : [])
+      ...(deps.showPage ? [{ id: 'all', label: t('workflows.home.all'), icon: 'flow' as const, run: () => deps.showPage?.(WORKFLOWS_PAGE) }] : []),
+      ...validateAction(deps, items, validated)
     ],
     search: { label: t('workflows.journal.search'), placeholder: t('workflows.journal.search.placeholder') },
     filters: [
@@ -609,7 +651,7 @@ export async function journalPage(deps: HomeDeps): Promise<PageView> {
             stats: [
               { label: t('workflows.journal.stat.runs'), value: String(items.length), icon: 'play' },
               { label: t('workflows.journal.filter.done'), value: String(count('success')), icon: 'check', tone: 'success' },
-              { label: t('workflows.journal.filter.failed'), value: String(count('danger')), icon: 'alert', tone: count('danger') ? 'danger' : 'success' },
+              { label: t('workflows.journal.filter.failed'), value: String(count('danger')), icon: 'alert', tone: open ? 'danger' : 'success', ...(count('danger') > open ? { hint: t('workflows.failures.validatedCount', { count: count('danger') - open }) } : {}) },
               { label: t('workflows.journal.stat.other'), value: String(count('neutral') + count('warning')), icon: 'hide', hint: t('workflows.journal.stat.other.hint') }
             ]
           },
@@ -633,13 +675,14 @@ export async function runPage(deps: HomeDeps & { page: WorkflowsPageDeps }, para
   const back: ViewAction = { id: 'back', label: t('workflows.journal.title'), run: () => deps.showPage?.(JOURNAL_PAGE) }
   if (!run) return { title: t('workflows.run.missing.title'), back, blocks: [{ kind: 'message', tone: 'warning', text: t('workflows.run.missing') }] }
   const workflow = deps.page.load().find((each) => each.name === run.name)
+  const validated = validatedOf(deps)
   const failed = (step: string) => /a échoué|failed|manque|missing|inconnue|unknown/i.test(step)
   const stepItems: ListItem[] = run.steps.map((step, index) => ({ id: `step-${index}`, title: step.replace(/^\d+\.\s*/, ''), when: t('workflows.run.step', { step: index + 1 }), tone: failed(step) ? 'danger' : 'success' }))
   const noteItems: ListItem[] = run.paths.map((path) => ({ id: path, title: path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, ''), detail: path, open: { id: 'open', label: t('workflows.run.note'), run: () => deps.openNote(path) } }))
   const others: ListItem[] = runs
     .filter((each) => each.name === run.name && each.line !== run.line)
     .slice(0, 10)
-    .map((each, index) => ({ id: `other-${index}`, title: `${each.outcome} — ${each.subject || t('workflows.run.noSubject')}`, when: each.when, tone: each.tone, open: runOpen(deps, each.line) }))
+    .map((each, index) => ({ id: `other-${index}`, title: `${each.outcome} — ${each.subject || t('workflows.run.noSubject')}`, when: each.when, tone: openTone(each, validated), open: runOpen(deps, each.line) }))
   return {
     title: t('workflows.run.title', { name: run.name, when: run.when }),
     back,
@@ -648,6 +691,8 @@ export async function runPage(deps: HomeDeps & { page: WorkflowsPageDeps }, para
       ...(workflow && deps.showPage ? [{ id: 'workflow', label: t('workflows.run.workflow'), icon: 'flow' as const, run: () => deps.showPage?.(pageWith(WORKFLOW_PAGE, workflow.id)) }] : []),
       ...(workflow ? [{ id: 'again', label: t('workflows.run.again'), icon: 'play' as const, primary: run.tone === 'danger', run: () => deps.page.runNow(workflow.id) }] : []),
       ...(run.subjectPath ? [{ id: 'subject', label: t('workflows.run.subject'), icon: 'file' as const, run: () => deps.openNote(run.subjectPath) }] : []),
+      // Cet échec vu et traité : il ne compte plus.
+      ...(deps.failures && openFailure(run, validated) ? [{ id: 'validate-failure', label: t('workflows.failures.validateOne'), tooltip: t('workflows.failures.validateOne.tooltip'), icon: 'check' as const, run: () => validateFailures(deps, [run.line]) }] : []),
       { id: 'journal', label: t('workflows.journal.note'), icon: 'book', run: deps.openJournal }
     ],
     blocks: [
@@ -655,7 +700,7 @@ export async function runPage(deps: HomeDeps & { page: WorkflowsPageDeps }, para
       {
         kind: 'stats',
         stats: [
-          { label: t('workflows.run.outcome'), value: run.outcome.charAt(0).toUpperCase() + run.outcome.slice(1), icon: run.tone === 'success' ? 'check' : run.tone === 'danger' ? 'alert' : 'hide', tone: run.tone },
+          { label: t('workflows.run.outcome'), value: run.outcome.charAt(0).toUpperCase() + run.outcome.slice(1), icon: run.tone === 'success' ? 'check' : run.tone === 'danger' ? 'alert' : 'hide', tone: openTone(run, validated), ...(run.tone === 'danger' && validated.has(run.line) ? { hint: t('workflows.failures.validatedTag') } : {}) },
           { label: t('workflows.run.when'), value: run.when.slice(11), icon: 'clock', hint: run.when.slice(0, 10) },
           { label: t('workflows.run.steps'), value: String(run.steps.length), icon: 'flow' },
           { label: t('workflows.run.notes'), value: String(run.paths.length), icon: 'file' }
@@ -687,7 +732,8 @@ export function registerWorkflowsHome(views: ViewsRegistrar | undefined, deps: H
     area: 'side',
     async load(): Promise<HomeSectionView> {
       const workflows = deps.load()
-      const items = journalItems(await readJournal(deps), 5).map((item) => ({ ...item, open: runOpen(deps, item.line) }))
+      const validated = validatedOf(deps)
+      const items = journalItems(await readJournal(deps), 5).map((item) => ({ ...shown(item, validated, t), open: runOpen(deps, item.line) }))
       return {
         title: t('workflows.home.title'),
         subtitle: t('workflows.home.subtitle', { active: workflows.filter((each) => each.enabled).length, count: workflows.length }),
@@ -733,7 +779,8 @@ export function registerWorkflowsHome(views: ViewsRegistrar | undefined, deps: H
     run: open,
     async badge() {
       // Un échec parmi les dernières exécutions : à voir.
-      const failed = journalItems(await readJournal(deps), 10).filter((item) => item.tone === 'danger').length
+      const validated = validatedOf(deps)
+      const failed = journalItems(await readJournal(deps), 10).filter((item) => openFailure(item, validated)).length
       return failed ? { text: String(failed), tone: 'danger', label: t('workflows.tile.failed', { count: failed }) } : null
     }
   })

@@ -683,6 +683,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
 - v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
+- v0.162.0 : **valider les échecs des workflows** : « Valider les échecs » (page Workflows, journal) et « Valider cet échec » (fiche d'une exécution) ; vus et traités, ils ne comptent plus mais restent au journal, marqués
 - v0.161.1 : **le type d'exigence « Sécurité SI »** (« security ») : en français sur la fiche et dans les menus ; reconnu à l'import
 - v0.161.0 : **les pages AO et Exigences reprises** : la fiche d'une analyse avec ses pièces en lignes par destination et des sections repliables, la fiche d'une exigence en sections repliables, des cartes plus légères, actions secondaires dans « … »
 - v0.160.0 : **les pages Programmes, programme et projet reprises** : chiffres en tête, les phases dépliées, les affaires en lignes, le programme et le projet en lignes, « Modifier » un projet, actions secondaires dans « … »

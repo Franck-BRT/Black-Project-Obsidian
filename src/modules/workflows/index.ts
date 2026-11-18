@@ -85,6 +85,8 @@ export type { RunningStep } from './engine'
 export const WORKFLOWS = 'workflows'
 export const WORKFLOWS_KEY = 'workflows'
 export const FOLDER_KEY = 'dossier'
+/** Les échecs validés (vus, traités) : leurs lignes du journal. */
+export const VALIDATED_KEY = 'echecsValides'
 export const DEFAULT_FOLDER = 'Black Projects/Workflows'
 
 /** Vérifier les workflows planifiés toutes les minutes. */
@@ -242,7 +244,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.29.0',
+  version: '0.30.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -305,6 +307,14 @@ export const workflowsModule: BlackModule = {
         await context.commands.run?.(id)
       },
       openJournal: () => openJournal(current),
+      failures: {
+        validated: () => {
+          const stored = settings.get()[VALIDATED_KEY]
+          return new Set(Array.isArray(stored) ? stored.filter((line): line is string => typeof line === 'string') : [])
+        },
+        save: (lines) => settings.save({ ...settings.get(), [VALIDATED_KEY]: [...lines] }),
+        notify: (text) => platform.notifier.notify(text)
+      },
       // Le sujet d'une exécution, les notes qu'elle a écrites : leur page quand un module en a une.
       openNote: (path) => (context.showNote ? context.showNote(path) : platform.ui.openNote(path)),
       ...(showPage

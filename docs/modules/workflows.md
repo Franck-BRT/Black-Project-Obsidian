@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.29.0 (Black Projects 0.159.0) |
+| Version | 0.30.0 (Black Projects 0.162.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -13,6 +13,18 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/workflows/doc/Workflows.md`.
 
+
+## Valider les échecs (v0.30.0, Black Projects 0.162.0)
+
+- **Valider les échecs**, en tête de la page Workflows et du journal (quand il y a des échecs à
+  voir) : les échecs vus et traités ne comptent plus — « Échecs récents », la pastille de la tuile
+  Workflows, « Dernière exécution en échec » sur la carte et la fiche du workflow, le filtre « En
+  échec ». Ils **restent au journal**, marqués « Échec validé » (plus en rouge) ; le chiffre « Échecs »
+  du journal dit « dont n validé(s) ».
+- **Valider cet échec**, sur la fiche d'une exécution en échec.
+- Un nouvel échec compte de nouveau. Les échecs validés sont gardés dans les réglages du module
+  (`echecsValides` : leurs lignes du journal) ; ceux sortis du journal sont oubliés à la validation
+  suivante. La note du journal n'est pas modifiée.
 
 ## Qui se sert d'une entrée de la bibliothèque (v0.29.0, Black Projects 0.159.0)
 

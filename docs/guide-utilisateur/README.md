@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.161.1)
+## Aujourd'hui (version 0.162.0)
+
+- **Valider les échecs des workflows** : « Valider les échecs » (page Workflows, journal) et
+  « Valider cet échec » (fiche d'une exécution) : les échecs vus et traités ne comptent plus
+  (chiffres, pastille de la tuile, badge du workflow) ; ils restent au journal, marqués « Échec
+  validé ».
 
 - **Le type d'exigence « Sécurité SI »** : il s'affiche en français (plus « security ») et se choisit
   dans « Modifier la fiche » ; à l'import, « cybersécurité » ou « SSI » le donnent.
