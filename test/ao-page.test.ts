@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
 import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
-import { ViewsRegistry, type Card, type PageView } from '../src/core/views'
+import { ViewsRegistry, type Card, type HomeBlock, type ListItem, type PageView } from '../src/core/views'
 import { aoModule, createAnalysis, importFiles } from '../src/modules/ao'
 import { exigencesModule, requirementsAt } from '../src/modules/exigences'
 import { iaModule } from '../src/modules/ia'
@@ -63,6 +63,13 @@ async function start(platform: MemoryPlatform, withPages: boolean, ia: Record<st
 }
 
 const cardsOf = (view: PageView): Card[] => view.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+/** Les blocs d'une page, ses sections ouvertes. */
+const flat = (blocks: readonly HomeBlock[]): HomeBlock[] => blocks.flatMap((block) => (block.kind === 'section' ? flat(block.blocks) : [block]))
+/** La liste d'une section, par le titre de la section. */
+const listOf = (view: PageView, title: string) => view.blocks.flatMap((block) => (block.kind === 'section' && block.title === title ? block.blocks : [])).find((block): block is Extract<HomeBlock, { kind: 'list' }> => block.kind === 'list')
+/** Les pièces de la fiche d'une analyse : une ligne chacune, avec le titre de leur section. */
+const piecesIn = (view: PageView): (ListItem & { group: string })[] =>
+  view.blocks.flatMap((block) => (block.kind === 'section' && block.id.startsWith('ao.fiche.pieces.') ? block.blocks.flatMap((inner) => (inner.kind === 'list' ? inner.items.map((item) => ({ ...item, group: block.title })) : [])) : []))
 
 afterEach(async () => {
   for (const module of [...MODULES].reverse()) await module.deactivate?.()
@@ -132,17 +139,23 @@ describe('la fiche d’une analyse, en page', () => {
     expect(view.back?.label).toBe('Toutes les analyses')
     expect(view.subtitle).toBe('Candidat · Agence spatiale · AO-118')
     expect(view.actions?.map((action) => action.id)).toEqual(['import', 'update', 'calendar', 'verify', 'quality', 'note'])
+    // Importer, vérifier : en vue ; le reste dans « … ».
+    expect(view.actions?.filter((action) => !action.more).map((action) => action.id)).toEqual(['import', 'verify'])
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => stat.value)).toEqual(['J-12', '1', '0', '—'])
-    const pieces = view.blocks.find((block) => block.kind === 'cards')
-    expect(pieces?.kind === 'cards' && pieces.title).toBe('Appel d’offres (1)')
-    const rc = pieces?.kind === 'cards' ? pieces.cards[0]! : null
-    expect(rc!.title).toBe('RC.md')
-    expect(rc!.actions?.map((action) => action.id)).toEqual(['type', 'move', 'extract'])
-    expect(rc!.tags).toEqual(['lues', 'appel-d-offres'])
-    const lists = view.blocks.filter((block) => block.kind === 'list')
-    expect(lists.map((block) => block.kind === 'list' && block.title)).toEqual(['Calendrier (1 date(s))', 'Exigences (0), les plus faibles d’abord', 'Ce que l’analyse a produit'])
-    expect(lists[0]!.kind === 'list' && lists[0]!.items[0]!.title).toBe('Date limite de remise des offres')
+    // Les pièces : une section par destination, une ligne chacune ; son état au bout, ses boutons devant.
+    const rc = piecesIn(view)[0]!
+    expect(rc).toMatchObject({ group: 'Appel d’offres (1)', title: 'RC.md', when: 'Lue', tone: 'success' })
+    expect(rc.tools?.map((action) => action.id)).toEqual(['type', 'move', 'extract'])
+    expect(rc.tags).toEqual(['lues', 'appel-d-offres'])
+    const sections = view.blocks.filter((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section')
+    expect(sections.map((block) => [block.title, !!block.collapsed])).toEqual([
+      ['Appel d’offres (1)', false],
+      ['Calendrier (1 date(s))', false],
+      ['Exigences (0), les plus faibles d’abord', true],
+      ['Ce que l’analyse a produit', true]
+    ])
+    expect(listOf(view, 'Calendrier (1 date(s))')!.items[0]!.title).toBe('Date limite de remise des offres')
   })
 
   it('chaque bouton agit sur cette analyse, sans demander laquelle', async () => {
@@ -163,7 +176,7 @@ describe('la fiche d’une analyse, en page', () => {
     expect(asked).not.toContain('Dans quelle analyse ?')
     // Le calendrier écrit : il apparaît dans ce que l'analyse a produit.
     const again = await page.load(encodeURIComponent(station.note))
-    const produced = again.blocks.filter((block) => block.kind === 'list')[2]
+    const produced = listOf(again, 'Ce que l’analyse a produit')
     expect(produced?.kind === 'list' && produced.items.map((item) => item.title)).toEqual(['Calendrier'])
   })
 
@@ -178,8 +191,7 @@ describe('la fiche d’une pièce, en page', () => {
   async function fiche() {
     const run = await start(memoryPlatform(), true)
     const analysis = await run.views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(run.station.note))
-    const pieces = analysis.blocks.find((block) => block.kind === 'cards')
-    const rc = pieces?.kind === 'cards' ? pieces.cards[0]! : null
+    const rc = piecesIn(analysis)[0] ?? null
     return { ...run, rc: rc!, page: run.views.pages().find((each) => each.id === 'ao.piece')! }
   }
 
@@ -217,7 +229,7 @@ describe('le texte d’une pièce, lisible', () => {
     const md = '### CCTP\n\n| Identifiant | Exigence |\n|---|---|\n| EX-1 | Le titulaire doit fournir une antenne. |\n\nLa livraison intervient sous 15 jours après la notification.\n'
     await run.importInto(md)
     const analysis = await run.views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(run.station.note))
-    const cards = analysis.blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+    const cards = piecesIn(analysis)
     const cctp = cards.find((card) => card.title === 'CCTP.md')!
     const view = await run.views.pages().find((each) => each.id === 'ao.piece')!.load(encodeURIComponent(cctp.id))
     const text = view.blocks.find((block) => block.kind === 'cards')
@@ -259,8 +271,8 @@ describe('la fiche d’un candidat (émetteur), en page', () => {
     expect(view.back?.label).toBe('L’analyse « Maintenance antennes »')
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => `${stat.label}=${stat.value}`)).toEqual(['Exigences couvertes=50 %', 'À vérifier=0', 'Absentes=1', 'Pièces=1'])
-    const response = view.blocks.find((block) => block.kind === 'cards')
-    expect(response?.kind === 'cards' && response.cards.map((card) => card.title)).toEqual(['Mémoire technique.md'])
+    const response = view.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'ao.candidat.reponse')!
+    expect(flat(response.blocks).flatMap((block) => (block.kind === 'list' ? block.items.map((item) => item.title) : []))).toEqual(['Mémoire technique.md'])
     const coverage = view.blocks.find((block) => block.kind === 'list')
     expect(coverage?.kind === 'list' && coverage.items.map((item) => `${item.title.split(' — ')[1]}:${item.tone}`)).toEqual(['Astreinte:danger', 'Antenne:success'])
   })
@@ -334,8 +346,8 @@ describe('une note produite par l’analyse, en page', () => {
     )
     const fiche = run.views.pages().find((each) => each.id === 'ao.fiche')!
     const view = await fiche.load(encodeURIComponent(run.station.note))
-    const produced = view.blocks.filter((block) => block.kind === 'list')[2]
-    const item = produced?.kind === 'list' ? produced.items[0]! : null
+    const produced = listOf(view, 'Ce que l’analyse a produit')
+    const item = produced ? produced.items[0]! : null
     return { ...run, platform, opened, item: item!, path, page: run.views.pages().find((each) => each.id === 'ao.note') }
   }
 
@@ -483,10 +495,9 @@ describe('une question au dossier, en page', () => {
   it('la fiche de l’analyse liste les questions posées ; la note produite d’une question mène à sa page', async () => {
     const { fiche, station, path, shown, views } = await asked()
     const view = await fiche.load(encodeURIComponent(station.note))
-    const lists = view.blocks.filter((block) => block.kind === 'list')
-    const produced = lists.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    const produced = listOf(view, 'Ce que l’analyse a produit')
     expect(produced?.kind === 'list' && produced.items).toEqual([])
-    const questions = lists.find((block) => block.kind === 'list' && block.title === 'Questions au dossier (1)')
+    const questions = listOf(view, 'Questions au dossier (1)')
     const item = questions?.kind === 'list' ? questions.items[0]! : null
     expect(item).toMatchObject({ title: QUESTION, when: TODAY, detail: '1 source(s) citée(s) sur 1', tone: 'success' })
     await item!.open!.run()
@@ -577,7 +588,7 @@ describe('le questionnaire, en page', () => {
     expect(view.actions?.map((action) => action.id)).toEqual(['fill', 'note', 'analysis'])
     // La note du questionnaire, dans « Ce que l'analyse a produit », mène à cette page.
     const analysis = await fiche.load(encodeURIComponent(station.note))
-    const produced = analysis.blocks.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    const produced = listOf(analysis, 'Ce que l’analyse a produit')
     await (produced?.kind === 'list' ? produced.items : []).find((item) => item.title === 'Questionnaire')!.open!.run()
     expect(shown.at(-1)).toBe(`ao.questionnaire?${encodeURIComponent(path)}`)
   })
@@ -689,7 +700,7 @@ describe('la qualité des exigences, en page', () => {
     const after = await page.load(encodeURIComponent(path))
     expect(after.actions?.map((action) => `${action.id}:${action.label}`)).toEqual(['report:Mettre à jour le rapport', 'note:Ouvrir le rapport', 'analysis:Ouvrir l’analyse'])
     expect(after.blocks.some((block) => block.kind === 'message')).toBe(false)
-    const produced = (await fiche.load(encodeURIComponent(station.note))).blocks.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    const produced = listOf(await fiche.load(encodeURIComponent(station.note)), 'Ce que l’analyse a produit')
     await (produced?.kind === 'list' ? produced.items : []).find((item) => item.title === 'Qualité des exigences')!.open!.run()
     expect(shown.at(-1)).toBe(`ao.qualite?${encodeURIComponent(path)}`)
   })
@@ -770,7 +781,7 @@ describe('la vérification des exigences, en page', () => {
     expect(platform.opened).toEqual([])
     const after = await page.load(encodeURIComponent(path(maintenance)))
     expect(after.actions?.map((action) => `${action.id}:${action.primary ?? false}`)).toEqual(['all:false', 'note:false', 'analysis:false'])
-    const produced = (await fiche.load(encodeURIComponent(maintenance.note))).blocks.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    const produced = listOf(await fiche.load(encodeURIComponent(maintenance.note)), 'Ce que l’analyse a produit')
     await (produced?.kind === 'list' ? produced.items : []).find((item) => item.title === 'Vérification des exigences')!.open!.run()
     expect(shown.at(-1)).toBe(`ao.verification?${encodeURIComponent(path(maintenance))}`)
     expect((await page.load(encodeURIComponent('Appels d’offres/X/Analyse/Vérification des exigences.md'))).title).toBe('Vérification introuvable')
@@ -827,7 +838,7 @@ describe('le calendrier, en page', () => {
     expect(platform.opened).toEqual([])
     const after = await page.load(encodeURIComponent(path(station)))
     expect(after.actions?.map((action) => `${action.id}:${action.label}`)).toEqual(['write:Mettre à jour la note', 'note:Ouvrir la note', 'analysis:Ouvrir l’analyse'])
-    const produced = (await fiche.load(encodeURIComponent(station.note))).blocks.find((block) => block.kind === 'list' && block.title === 'Ce que l’analyse a produit')
+    const produced = listOf(await fiche.load(encodeURIComponent(station.note)), 'Ce que l’analyse a produit')
     await (produced?.kind === 'list' ? produced.items : []).find((item) => item.title === 'Calendrier')!.open!.run()
     expect(shown.at(-1)).toBe(`ao.calendrier?${encodeURIComponent(path(station))}`)
   })
@@ -889,10 +900,14 @@ describe('les raccourcis du tableau de bord et de l’accueil ouvrent les pages'
     expect(platform.opened).toEqual([])
   })
 
-  it('le bouton Calendrier d’une carte : la page de son calendrier, sans rien demander', async () => {
-    const { cards, asked, shown, station } = await dashboard()
+  it('une carte ouvre la fiche de l’analyse (ses boutons y sont, la carte reste légère) ; son calendrier, sans rien demander', async () => {
+    const { cards, asked, shown, station, views } = await dashboard()
     const card = cards.find((each) => each.title === 'Station sol')!
-    await card.actions!.find((action) => action.id === 'calendar')!.run()
+    expect(card.actions).toEqual([])
+    await card.open!.run()
+    expect(shown.at(-1)).toBe(`ao.fiche?${encodeURIComponent(station.note)}`)
+    const fiche = await views.pages().find((each) => each.id === 'ao.fiche')!.load(encodeURIComponent(station.note))
+    await fiche.actions!.find((action) => action.id === 'calendar')!.run()
     expect(asked).toEqual([])
     expect(shown.at(-1)).toBe(calendarOf(station))
   })
@@ -981,7 +996,7 @@ describe('mettre à jour l’analyse depuis sa fiche', () => {
     const run = await start(platform, true)
     const { station, views, shown } = run
     const fiche = views.pages().find((each) => each.id === 'ao.fiche')!
-    const piecesOf = async () => (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards.map((card) => card.title) : []))
+    const piecesOf = async () => piecesIn(await fiche.load(encodeURIComponent(station.note))).map((card) => card.title)
     expect(await piecesOf()).toEqual(['RC.md'])
     // Déposé à la main dans les originaux de l'appel d'offres.
     await platform.fs.writeText(`${station.folder}/Pièces/Appel d'offres/Originaux/CCAP.md`, '# CCAP\n\nPénalités : 500 € par jour de retard.\n')
@@ -1003,7 +1018,7 @@ describe('extraire les exigences depuis l’interface : on reste sur la page', (
     const run = await start(platform, true)
     await run.importInto('# CCTP\n\n| Identifiant | Exigence |\n|---|---|\n| EX-1 | Le titulaire doit fournir une antenne de 3,7 m. |\n| EX-2 | Le titulaire doit assurer la maintenance. |\n')
     const fiche = run.views.pages().find((each) => each.id === 'ao.fiche')!
-    const cards = (await fiche.load(encodeURIComponent(run.station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : []))
+    const cards = piecesIn(await fiche.load(encodeURIComponent(run.station.note)))
     const cctp = cards.find((card) => card.title === 'CCTP.md')!
     const piece = run.views.pages().find((each) => each.id === 'ao.piece')!
     const requirementsOf = async () => {
@@ -1015,10 +1030,9 @@ describe('extraire les exigences depuis l’interface : on reste sur la page', (
     expect(await requirementsOf()).toBe('2')
     expect(platform.opened).toEqual([])
     // Depuis la carte de la pièce, sur la fiche de l'analyse : de même, la fiche montre les exigences.
-    await cctp.actions!.find((action) => action.id === 'extract')!.run()
+    await cctp.tools!.find((action) => action.id === 'extract')!.run()
     expect(platform.opened).toEqual([])
-    const lists = (await fiche.load(encodeURIComponent(run.station.note))).blocks.filter((block) => block.kind === 'list')
-    expect(lists.some((block) => block.kind === 'list' && block.title === 'Exigences (2), les plus faibles d’abord')).toBe(true)
+    expect(listOf(await fiche.load(encodeURIComponent(run.station.note)), 'Exigences (2), les plus faibles d’abord')).toBeDefined()
     // La palette de commandes, sur la note d'une autre pièce : la note, comme avant.
     await platform.fs.writeText(`${run.station.folder}/Pièces/Appel d'offres/Originaux/Annexe.md`, '# Annexe\n\n| Identifiant | Exigence |\n|---|---|\n| EX-9 | Le titulaire doit fournir un plan. |\n')
     platform.active = run.station.note
@@ -1037,7 +1051,7 @@ describe('déplacer une pièce depuis l’interface', () => {
     const { station, views, shown } = run
     const fiche = views.pages().find((each) => each.id === 'ao.fiche')!
     const piece = views.pages().find((each) => each.id === 'ao.piece')!
-    const groups = async () => (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' && block.title ? [`${block.title}:${block.cards.map((card) => card.title).join(',')}`] : []))
+    const groups = async () => ((pieces) => [...new Set(pieces.map((piece) => piece.group))].map((group) => `${group}:${pieces.filter((piece) => piece.group === group).map((piece) => piece.title).join(',')}`))(piecesIn(await fiche.load(encodeURIComponent(station.note))))
     const rc = `${station.folder}/Pièces/Appel d'offres/RC.md`
     // Depuis la fiche de la pièce : avec la réponse.
     platform.choices.push('1')
@@ -1050,10 +1064,10 @@ describe('déplacer une pièce depuis l’interface', () => {
     // « Retour » vers l'ancienne place : la même pièce, là où elle est maintenant.
     expect((await piece.load(encodeURIComponent(rc))).subtitle).toMatch(/· Réponse · Station sol$/)
     // Depuis sa carte, sur la fiche de l'analyse : de retour avec l'appel d'offres, on reste sur la fiche.
-    const card = (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((each) => each.title === 'RC.md')!
+    const card = piecesIn(await fiche.load(encodeURIComponent(station.note))).find((each) => each.title === 'RC.md')!
     const before = shown.length
     platform.choices.push('0')
-    await card.actions!.find((action) => action.id === 'move')!.run()
+    await card.tools!.find((action) => action.id === 'move')!.run()
     expect(shown.length).toBe(before)
     expect(await groups()).toEqual(['Appel d’offres (1):RC.md'])
     expect(platform.opened).toEqual([])
@@ -1077,12 +1091,12 @@ describe('changer le type d’une pièce depuis l’interface', () => {
     await (await piece.load(encodeURIComponent(rc))).actions!.find((action) => action.id === 'type')!.run()
     expect((await piece.load(encodeURIComponent(rc))).subtitle).toMatch(/^CCTP — /)
     const fiche = views.pages().find((each) => each.id === 'ao.fiche')!
-    const card = (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((each) => each.title === 'RC.md')!
-    expect(card.subtitle).toMatch(/^CCTP — /)
+    const card = piecesIn(await fiche.load(encodeURIComponent(station.note))).find((each) => each.title === 'RC.md')!
+    expect(card.detail).toMatch(/^CCTP — /)
     platform.choices.push('RC')
-    await card.actions!.find((action) => action.id === 'type')!.run()
-    const again = (await fiche.load(encodeURIComponent(station.note))).blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : [])).find((each) => each.title === 'RC.md')!
-    expect(again.subtitle).toMatch(/^RC — /)
+    await card.tools!.find((action) => action.id === 'type')!.run()
+    const again = piecesIn(await fiche.load(encodeURIComponent(station.note))).find((each) => each.title === 'RC.md')!
+    expect(again.detail).toMatch(/^RC — /)
     expect(shown.length).toBe(before)
     expect(platform.opened).toEqual([])
   })
@@ -1129,13 +1143,13 @@ describe('changer le type : proposer de déplacer la pièce selon le routage du 
     const run = await start(platform, true, {}, ROUTAGE)
     await run.respond('Acme', 'Mémoire.md', '# Mémoire\n\nNous fournissons une antenne.\n')
     const fiche = run.views.pages().find((each) => each.id === 'ao.fiche')!
-    const cardOf = async () => (await fiche.load(encodeURIComponent(run.maintenance.note))).blocks.flatMap((block) => (block.kind === 'cards' && block.title !== 'Candidats (1)' ? block.cards.map((card) => ({ ...card, group: block.title })) : [])).find((card) => card.title === 'Mémoire.md')!
+    const cardOf = async () => piecesIn(await fiche.load(encodeURIComponent(run.maintenance.note))).find((card) => card.title === 'Mémoire.md')!
     expect((await cardOf()).group).toBe('Réponse — Acme (1)')
     platform.choices.push('RC', 'move')
-    await (await cardOf()).actions!.find((action) => action.id === 'type')!.run()
+    await (await cardOf()).tools!.find((action) => action.id === 'type')!.run()
     expect((await cardOf()).group).toBe('Appel d’offres (1)')
     platform.choices.push('CCTP', 'c:Acme')
-    await (await cardOf()).actions!.find((action) => action.id === 'type')!.run()
+    await (await cardOf()).tools!.find((action) => action.id === 'type')!.run()
     expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Déplacer avec la réponse de Acme', 'La réponse d’un nouveau candidat…', 'La laisser avec Appel d’offres'])
     expect((await cardOf()).group).toBe('Réponse — Acme (1)')
     expect(platform.opened).toEqual([])

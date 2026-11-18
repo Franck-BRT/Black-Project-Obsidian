@@ -166,7 +166,8 @@ async function analysisCard(deps: HomeDeps, analysis: Analysis, ai: boolean): Pr
       open: deps.showPage
         ? { id: 'open', label: t('ao.fiche.open'), tooltip: t('ao.fiche.open.tip'), run: () => deps.showPage?.(analysisPageOf(analysis)) }
         : { id: 'open', label: t('ao.home.open'), tooltip: t('ao.home.open.tip'), run: () => deps.ui.openNote(analysis.note) },
-      actions
+      // Avec des pages, ses boutons sont sur sa fiche (la carte reste légère) ; sinon, sur la carte.
+      actions: deps.showPage ? [] : actions
     }
   }
 }
@@ -281,7 +282,8 @@ export async function analysesPage(deps: HomeDeps): Promise<PageView> {
   const weak = cards.reduce((sum, each) => sum + each.weak, 0)
   return {
     subtitle: t('ao.page.subtitle', { folder: deps.services().root }),
-    actions: quickActions(deps, ai),
+    // Créer, importer : en vue ; le reste dans « … ».
+    actions: quickActions(deps, ai).map((action, index) => (index < 2 ? action : { ...action, more: true })),
     layouts: ['cards', 'list', 'table'],
     search: { label: t('ao.page.search'), placeholder: t('ao.page.search.placeholder') },
     filters: [
@@ -313,32 +315,43 @@ const STATE_TONE: Record<ReadingState, Tone> = { lue: 'success', 'sans-texte': '
 const baseName = (path: string) => path.slice(path.lastIndexOf('/') + 1)
 const daysUntil = (date: string, today: string) => Math.round((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000)
 
-/** La carte d'une pièce de la fiche. */
-function pieceCard(deps: HomeDeps, piece: PieceRow): Card {
+/** Une pièce de la fiche, en ligne : son nom, son type, ce qui en a été lu ; son état au bout ; ses boutons devant. */
+function pieceItem(deps: HomeDeps, piece: PieceRow): ListItem {
   const { t } = deps
-  // Depuis l'interface (`stay`) : extraire ne quitte pas la page pour la note de la pièce.
   const run = (id: string) => () => deps.runFor?.(id, { note: piece.note, stay: true }) ?? Promise.resolve()
   return {
     id: piece.note,
     title: baseName(piece.original || piece.note),
-    subtitle: `${piece.type} — ${typeLabel(piece.type, t)}`,
+    detail: [`${piece.type} — ${typeLabel(piece.type, t)}`, piece.characters ? t('ao.fiche.piece.characters', { count: piece.characters.toLocaleString('fr-FR') }) : ''].filter(Boolean).join(' · '),
     icon: 'file',
-    badges: [{ label: t(`ao.state.${piece.state}`), tone: STATE_TONE[piece.state] }],
-    ...(piece.characters ? { facts: [{ label: t('ao.fiche.characters'), value: piece.characters.toLocaleString('fr-FR') }] } : {}),
-    // Sa fiche, quand la plateforme a des pages ; sinon sa note.
+    tone: STATE_TONE[piece.state] === 'info' ? 'neutral' : STATE_TONE[piece.state],
+    when: t(`ao.state.${piece.state}`),
     open: deps.showPage
-      ? { id: 'open', label: t('ao.piece.fiche.open'), tooltip: t('ao.piece.fiche.open'), run: () => deps.showPage?.(piecePageOf(piece.note)) }
-      : { id: 'open', label: t('ao.fiche.piece.open'), tooltip: t('ao.fiche.piece.open'), run: () => deps.ui.openNote(piece.note) },
-    actions: deps.runFor
-      ? [
-          { id: 'type', label: t('ao.fiche.piece.type'), icon: 'edit', run: run('type-piece') },
-          { id: 'move', label: t('ao.fiche.piece.move'), icon: 'flow', run: run('deplacer-piece') },
-          ...(piece.state === 'lue' ? [{ id: 'extract', label: t('ao.fiche.piece.extract'), icon: 'list' as const, run: run('extraire-exigences') }] : [])
-        ]
-      : [],
+      ? { id: 'open', label: t('ao.piece.fiche.open'), run: () => deps.showPage?.(piecePageOf(piece.note)) }
+      : { id: 'open', label: t('ao.fiche.piece.open'), run: () => deps.ui.openNote(piece.note) },
+    ...(deps.runFor
+      ? {
+          tools: [
+            { id: 'type', label: t('ao.fiche.piece.type'), icon: 'edit' as const, run: run('type-piece') },
+            { id: 'move', label: t('ao.fiche.piece.move'), icon: 'flow' as const, run: run('deplacer-piece') },
+            ...(piece.state === 'lue' ? [{ id: 'extract', label: t('ao.fiche.piece.extract'), icon: 'list' as const, run: run('extraire-exigences') }] : [])
+          ]
+        }
+      : {}),
     tags: [piece.state === 'lue' ? 'lues' : 'a-lire', piece.destination.place === 'appel-d-offres' ? 'appel-d-offres' : 'reponse']
   }
 }
+
+/** Une section repliable de la fiche d'une analyse (dépliée d'origine si `open`). */
+const fold = (id: string, title: string, subtitle: string, icon: IconName, block: HomeBlock, open = true): HomeBlock => ({
+  kind: 'section',
+  id: `ao.fiche.${id}`,
+  title,
+  ...(subtitle ? { subtitle } : {}),
+  icon,
+  ...(open ? {} : { collapsed: true }),
+  blocks: [block]
+})
 
 /**
  * La **fiche** d'une analyse, en page : en tête, ce qu'on fait sur elle (importer, mettre à
@@ -375,23 +388,23 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     ? [
         { id: 'import', label: t('ao.home.import'), icon: 'upload', primary: pieces.length === 0, run: () => deps.importInto(analysis) },
         // Les fichiers déposés dans les originaux : lus et rangés, la fiche se redessine (sa note ne s'ouvre pas).
-        { id: 'update', label: t('ao.fiche.update'), icon: 'refresh', run: () => deps.runFor?.('mettre-a-jour', { analysis, stay: true }) ?? Promise.resolve() },
+        { id: 'update', label: t('ao.fiche.update'), icon: 'refresh', more: true, run: () => deps.runFor?.('mettre-a-jour', { analysis, stay: true }) ?? Promise.resolve() },
         // Le calendrier a sa page : relevé à l'ouverture, la note s'écrit de là.
-        { id: 'calendar', label: t('ao.home.calendar'), icon: 'calendar', run: deps.showPage ? () => deps.showPage?.(calendarPageOf(calendarPath(analysis))) : run('calendrier') },
+        { id: 'calendar', label: t('ao.home.calendar'), icon: 'calendar', more: true, run: deps.showPage ? () => deps.showPage?.(calendarPageOf(calendarPath(analysis))) : run('calendrier') },
         // La vérification a sa page : calculée à l'ouverture, le rapport s'écrit de là.
         { id: 'verify', label: t('ao.tile.verify'), icon: 'check', run: deps.showPage ? () => deps.showPage?.(verificationPageOf(reportPath(analysis))) : run('verifier-exigences') },
         // La qualité a sa page : calculée à l'ouverture, le rapport s'écrit de là.
-        { id: 'quality', label: t('ao.tile.quality'), icon: 'star', run: deps.showPage ? () => deps.showPage?.(qualityPageOf(qualityPath(analysis))) : run('qualite-exigences') },
+        { id: 'quality', label: t('ao.tile.quality'), icon: 'star', more: true, run: deps.showPage ? () => deps.showPage?.(qualityPageOf(qualityPath(analysis))) : run('qualite-exigences') },
         ...(ai
           ? [
               { id: 'ask', label: t('ao.home.ask'), icon: 'chat' as const, run: () => deps.ask(analysis) },
               // Le questionnaire a sa page : on y remplit les thèmes, on y lit les réponses.
-              { id: 'questionnaire', label: t('ao.tile.questionnaire'), icon: 'list' as const, run: deps.showPage ? () => deps.showPage?.(questionnairePageOf(questionnairePath(analysis))) : run('questionnaire') },
+              { id: 'questionnaire', label: t('ao.tile.questionnaire'), icon: 'list' as const, more: true, run: deps.showPage ? () => deps.showPage?.(questionnairePageOf(questionnairePath(analysis))) : run('questionnaire') },
               // Relues : la page Qualité les montre, chacune avec sa relecture.
-              { id: 'review', label: t('ao.tile.review'), icon: 'spark' as const, run: () => deps.runFor?.('relire-exigences-ia', { analysis, stay: true }) ?? Promise.resolve() }
+              { id: 'review', label: t('ao.tile.review'), icon: 'spark' as const, more: true, run: () => deps.runFor?.('relire-exigences-ia', { analysis, stay: true }) ?? Promise.resolve() }
             ]
           : []),
-        { id: 'note', label: t('ao.home.open.tip'), icon: 'file', run: () => deps.ui.openNote(analysis.note) }
+        { id: 'note', label: t('ao.home.open.tip'), icon: 'file', more: true, run: () => deps.ui.openNote(analysis.note) }
       ]
     : [{ id: 'note', label: t('ao.home.open.tip'), icon: 'file', run: () => deps.ui.openNote(analysis.note) }]
 
@@ -416,9 +429,20 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
     const label = destinationLabel(piece.destination, t)
     groups.set(label, [...(groups.get(label) ?? []), piece])
   }
+  // Chaque destination : une section, ses pièces une ligne chacune.
   const pieceBlocks: HomeBlock[] = groups.size
-    ? [...groups].map(([label, list]) => ({ kind: 'cards', title: t('ao.fiche.pieces', { place: label, count: list.length }), cards: list.map((piece) => pieceCard(deps, piece)) }))
-    : [{ kind: 'cards', title: t('ao.fiche.pieces.none.title'), actions: [{ id: 'import', label: t('ao.home.import'), icon: 'upload', primary: true, run: () => deps.importInto(analysis) }], empty: t('ao.fiche.pieces.none'), cards: [] }]
+    ? [...groups].map(([label, list], index) => {
+        const toRead = list.filter((piece) => piece.state !== 'lue').length
+        return {
+          kind: 'section' as const,
+          id: `ao.fiche.pieces.${index}`,
+          title: t('ao.fiche.pieces', { place: label, count: list.length }),
+          subtitle: toRead ? t('ao.home.unread', { count: toRead }) : t('ao.fiche.pieces.allRead'),
+          icon: 'file' as const,
+          blocks: [{ kind: 'list' as const, items: list.map((piece) => pieceItem(deps, piece)) }]
+        }
+      })
+    : [{ kind: 'message', tone: 'info', text: t('ao.fiche.pieces.none'), actions: [{ id: 'import', label: t('ao.home.import'), icon: 'upload', primary: true, run: () => deps.importInto(analysis) }] }]
 
   // L'émetteur : une carte par candidat, qui ouvre sa fiche (sa réponse, sa couverture).
   const candidates = position === 'emetteur' ? await listCandidates(services.fs, analysis) : []
@@ -521,10 +545,10 @@ export async function analysisPage(deps: HomeDeps, param: string | undefined): P
       { kind: 'stats', stats },
       ...candidateBlocks,
       ...pieceBlocks,
-      { kind: 'list', title: t('ao.fiche.calendar', { count: calendar.dates.length }), items: dates, empty: t('ao.fiche.calendar.none') },
-      { kind: 'list', title: t('ao.fiche.requirements', { count: requirements.length }), items: reqItems, empty: t('ao.home.noRequirement') },
-      { kind: 'list', title: t('ao.fiche.notes'), items: notes, empty: t('ao.fiche.notes.none') },
-      ...(questionItems.length || ai ? [{ kind: 'list' as const, title: t('ao.question.list', { count: questionItems.length }), items: questionItems, empty: t('ao.question.none') }] : [])
+      fold('calendrier', t('ao.fiche.calendar', { count: calendar.dates.length }), due ? t('ao.fiche.dueOn', { date: due }) : '', 'calendar', { kind: 'list', items: dates, empty: t('ao.fiche.calendar.none') }, calendar.dates.length > 0),
+      fold('exigences', t('ao.fiche.requirements', { count: requirements.length }), reqItems.filter((item) => item.tone === 'warning').length ? t('ao.home.weak', { count: reqItems.filter((item) => item.tone === 'warning').length }) : '', 'list', { kind: 'list', items: reqItems, empty: t('ao.home.noRequirement') }, requirements.length > 0),
+      ...(questionItems.length || ai ? [fold('questions', t('ao.question.list', { count: questionItems.length }), '', 'chat', { kind: 'list' as const, items: questionItems, empty: t('ao.question.none') }, questionItems.length > 0)] : []),
+      fold('notes', t('ao.fiche.notes'), t('ao.fiche.notes.count', { count: notes.length }), 'book', { kind: 'list', items: notes, empty: t('ao.fiche.notes.none') }, false)
     ]
   }
 }
@@ -591,7 +615,7 @@ export async function candidatePage(deps: HomeDeps, param: string | undefined): 
           { label: t('ao.home.pieces'), value: unread ? t('ao.home.piecesRead', { count: pieces.length, read: pieces.length - unread }) : String(pieces.length), icon: 'file', ...(unread ? { tone: 'warning' as const } : {}) }
         ]
       },
-      { kind: 'cards', title: t('ao.candidat.response', { count: pieces.length }), empty: t('ao.candidat.noPiece'), cards: pieces.map((piece) => pieceCard(deps, piece)) },
+      { kind: 'section', id: 'ao.candidat.reponse', title: t('ao.candidat.response', { count: pieces.length }), icon: 'file', blocks: [{ kind: 'list', empty: t('ao.candidat.noPiece'), items: pieces.map((piece) => pieceItem(deps, piece)) }] },
       { kind: 'list', title: t('ao.candidat.coverage', { count: rows.length }), items, empty: t(pieces.length ? 'ao.verif.couverture.noRequirements' : 'ao.candidat.noPiece') }
     ]
   }

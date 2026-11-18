@@ -41,10 +41,10 @@ et fiches** ouvrent la **page de la bibliothèque**, dans l'onglet Black Project
 
 - en chiffres : le nombre d'exigences, la note moyenne, les faibles, les traductions à
   revoir ;
-- les actions : nouvelle exigence, importer, analyser la qualité, et **Traduire (IA)**
-  (plusieurs exigences d'un coup) quand l'IA est réglée ;
+- les actions : nouvelle exigence, importer ; dans le menu « … » : analyser la qualité,
+  et **Traduire (IA)** (plusieurs exigences d'un coup) quand l'IA est réglée ;
 - une **carte par exigence**, les plus faibles d'abord : identifiant et titre, catégorie,
-  type, statut, criticité, sa formulation, sa note en étoiles, et ce qui reste à revoir
+  statut, criticité si elle est haute, sa formulation, sa qualité, et ce qui reste à revoir
   (traduction absente, en retard ou à relire, lien à revoir). Son titre ouvre la note ;
   **Modifier** ouvre la fiche ; **Relire (IA)** et **Traduire (IA)** quand l'IA est réglée
   (la traduction faite, la fiche de l'exigence s'ouvre) ;
@@ -56,7 +56,8 @@ et fiches** ouvrent la **page de la bibliothèque**, dans l'onglet Black Project
 Un clic sur une exigence (son nom, sur la page Exigences ou sur la fiche d'une analyse)
 ouvre sa **fiche en page**, où tout se voit :
 
-- en tête **Modifier la fiche**, **Relire (IA)**, **Traduire (IA)**, **Ouvrir la note** ;
+- en tête **Modifier la fiche**, **Relire (IA)** ; dans le menu « … » **Traduire (IA)**,
+  **Ouvrir la note** ; ce qui suit est en sections repliables ;
 - ses chiffres : la qualité de la formulation, le type, le statut, la criticité ;
 - ses **formulations**, une carte par langue : la langue source, et chaque traduction à
   jour, en retard sur la source, à relire (machine) ou absente — avec **Traduire (IA)**

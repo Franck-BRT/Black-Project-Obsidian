@@ -48,6 +48,17 @@ async function start(platform: MemoryPlatform, withPages: boolean, withAi = fals
 // Les cartes, sections repliables comprises (la page des exigences les regroupe).
 const cardsIn = (blocks: readonly HomeBlock[]): Card[] => blocks.flatMap((block) => (block.kind === 'cards' ? block.cards : block.kind === 'section' ? cardsIn(block.blocks) : []))
 const cardsOf = (view: PageView): Card[] => cardsIn(view.blocks)
+// Tous les blocs, à plat (ceux des sections repliables compris).
+const flat = (blocks: readonly HomeBlock[]): HomeBlock[] => blocks.flatMap((block) => (block.kind === 'section' ? [block, ...flat(block.blocks)] : [block]))
+// Une section de la fiche, par son identifiant (« liens », « qualite »…).
+const foldOf = (view: PageView, id: string) => {
+  const block = view.blocks.find((each) => each.kind === 'section' && each.id === `exigences.fiche.${id}`)
+  return block?.kind === 'section' ? block : null
+}
+const listIn = (block: HomeBlock | null) => {
+  const list = block?.kind === 'section' ? block.blocks.find((each) => each.kind === 'list') : null
+  return list?.kind === 'list' ? list : null
+}
 
 afterEach(async () => {
   for (const module of [...MODULES].reverse()) await module.deactivate?.()
@@ -138,12 +149,24 @@ describe('la fiche d’une exigence, en page', () => {
     expect(view.actions?.map((action) => action.id)).toEqual(['edit', 'note'])
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => stat.label)).toEqual(['Qualité de la formulation', 'Type', 'Statut', 'Criticité'])
-    const wordings = view.blocks.find((block) => block.kind === 'cards')
+    expect(view.subtitle).toMatch(/^Exigence · SEC/)
+    // Les boutons secondaires sont dans le menu « … ».
+    expect(view.actions?.filter((action) => !action.more).map((action) => action.id)).toEqual(['edit'])
+    // Des sections repliables : les formulations et la qualité (faible) dépliées, la fiche, les liens (aucun) et l'historique repliés.
+    const sections = view.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.id}:${block.title}:${block.collapsed ? 'replié' : 'déplié'}`] : []))
+    expect(sections).toEqual([
+      'exigences.fiche.formulations:Formulations (2 langue(s)):déplié',
+      'exigences.fiche.qualite:Qualité, axe par axe : ★★☆☆☆:déplié',
+      'exigences.fiche.fiche:La fiche:replié',
+      'exigences.fiche.liens:Liens (0):replié',
+      'exigences.fiche.historique:Historique (0 révision(s)):replié'
+    ])
+    expect(foldOf(view, 'formulations')?.subtitle).toBe('traduction absente : EN')
+    const wordings = foldOf(view, 'formulations')!.blocks.find((block) => block.kind === 'cards')
     expect(wordings?.kind === 'cards' && wordings.cards.map((card) => `${card.title}:${card.badges![0]!.label}`)).toEqual(['FR:Langue source', 'EN:Traduction absente'])
     expect(wordings?.kind === 'cards' && wordings.cards[0]!).toMatchObject({ text: 'Les accès seront journalisés si possible.', wrap: true })
-    const lists = view.blocks.filter((block) => block.kind === 'list')
-    expect(lists.map((block) => block.kind === 'list' && block.title)).toEqual(['Qualité, axe par axe : ★★☆☆☆', 'La fiche', 'Liens (0)', 'Historique (0 révision(s))'])
-    const axes = lists[0]!.kind === 'list' ? lists[0]!.items : []
+    expect(listIn(foldOf(view, 'fiche'))?.fields).toBe(true)
+    const axes = listIn(foldOf(view, 'qualite'))?.items ?? []
     expect(axes.some((axis) => axis.tone !== 'success')).toBe(true)
     // Des mots, pas des codes : « aucune obligation (« doit ») », « formulation EN absente… ».
     const details = axes.map((axis) => axis.detail).join(' · ')
@@ -323,7 +346,7 @@ describe('importer des exigences, en page', () => {
     expect(shown).toEqual([])
     expect(platform.notices.at(-1)).toBe('Exigences client.csv : 2 exigence(s) créée(s), 0 mise(s) à jour.')
     const fiche = await views.pages().find((each) => each.id === 'exigences.fiche')!.load(encodeURIComponent('Exigences/REQ-CLI-0002.md'))
-    const origin = fiche.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.id === 'origin')!
+    const origin = flat(fiche.blocks).flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.id === 'origin')!
     expect(origin.open?.label).toBe('Toutes les exigences de ce fichier')
     await origin.open!.run()
     expect(shown.at(-1)).toBe(importParam('Exigences client.csv'))
@@ -728,8 +751,9 @@ describe('les liens d’une exigence, navigables en page', () => {
     const page = run.views.pages().find((each) => each.id === 'exigences.fiche')!
     const linksOf = async (path: string) => {
       const view = await page.load(encodeURIComponent(path))
-      const block = view.blocks.find((each) => each.kind === 'list' && each.title?.startsWith('Liens'))
-      return block?.kind === 'list' ? block : null
+      const fold = foldOf(view, 'liens')
+      const list = listIn(fold)
+      return fold && list ? { title: fold.title, items: list.items } : null
     }
     return { ...run, hot, log, linksOf }
   }

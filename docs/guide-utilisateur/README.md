@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.160.0)
+## Aujourd'hui (version 0.161.0)
+
+- **Les pages AO et Exigences reprises** : la fiche d'une analyse montre ses pièces une ligne
+  chacune (par destination, « Toutes lues » ou combien restent à lire), puis le calendrier, les
+  exigences, les questions et ce que l'analyse a produit en sections repliables ; la fiche d'une
+  exigence range ses formulations, sa qualité axe par axe, sa fiche, ses liens et son historique en
+  sections repliables ; les actions secondaires sont dans le menu « … ».
 
 - **Les pages Programmes, programme et projet reprises** : leurs chiffres en tête ; la page d'un projet
   montre ses phases d'emblée, ses affaires une ligne chacune, et « Le projet » en lignes ; un projet se

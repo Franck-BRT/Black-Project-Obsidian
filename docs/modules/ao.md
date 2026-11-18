@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ao` |
-| Version | 0.40.1 (Black Projects 0.136.13) |
+| Version | 0.41.0 (Black Projects 0.161.0) |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`), [Typage des pièces](typage-pieces.md) (`typage-pieces`), [Exigences](exigences.md) (`exigences`) |
 | S'appuie sur | [IA](ia.md) (`ia`), s'il est actif : questions au dossier, questionnaire, relecture |
 | Emplacement | `src/modules/ao/` |
@@ -14,6 +14,21 @@
 
 Documentation utilisateur (écrite dans le coffre) :
 `src/modules/ao/doc/Analyse d'appels d'offres.md`.
+
+## La fiche d'une analyse reprise (v0.41.0, Black Projects 0.161.0)
+
+- **En tête**, trois boutons : Importer des pièces, Vérifier, Interroger (avec l'IA) ; Mettre à jour,
+  Calendrier, Qualité du dossier, Questionnaire, Relire (IA) et Ouvrir la note sont dans « … ».
+- **Les pièces en lignes**, une section repliable par destination (appel d'offres, réponse, chaque
+  candidat) avec le nombre de pièces à lire (ou « Toutes lues ») : le nom ouvre la fiche de la pièce,
+  le type et les caractères lus dessous, l'état au bout ; Changer le type, Déplacer, Extraire les
+  exigences en boutons devant. Les filtres de la page s'appliquent aussi aux lignes.
+- **Calendrier**, **Exigences**, **Questions au dossier** et **Ce que l'analyse a produit** en
+  sections repliables (repliées quand elles sont vides), avec un résumé à droite (« Remise le … »,
+  « n exigence(s) faible(s) », « n note(s) »).
+- La page **Analyses** : Nouvelle analyse et Importer en tête, le reste dans « … » ; les cartes
+  n'ont plus de boutons quand la fiche s'ouvre en page (tout est sur la fiche).
+- La fiche d'un **candidat** : sa réponse en lignes, comme les pièces.
 
 ## La note de l'analyse, essentielle (v0.40.1, Black Projects 0.136.13)
 

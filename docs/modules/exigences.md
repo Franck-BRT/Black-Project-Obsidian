@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.27.0 (Black Projects 0.136.6) |
+| Version | 0.28.0 (Black Projects 0.161.0) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -14,6 +14,17 @@
 | Étape | 3 du [plan d'intégration](../plan-integration.md) — le socle des exigences |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/exigences/doc/Exigences.md`.
+
+## La page Exigences et la fiche d'une exigence reprises (v0.28.0, Black Projects 0.161.0)
+
+- **La bibliothèque** : Nouvelle exigence et Importer en tête ; Qualité, Traduire (IA) et les
+  traductions à relire dans « … ». Les cartes sont plus légères : le statut, la criticité si elle est
+  haute et ce qui reste à revoir (le type et la note en étoiles en double sont sur la fiche).
+- **La fiche** : « Exigence · catégorie · dossier » en sous-titre ; Modifier la fiche et Relire (IA)
+  en tête, Traduire (IA) et Ouvrir la note dans « … » ; des sections repliables : **Formulations**
+  (dépliée, « traduction absente : EN » ou « Toutes les langues »), la relecture par l'IA,
+  **Qualité, axe par axe** (dépliée si l'exigence est faible, « n axe(s) à améliorer »), **La fiche**
+  en lignes compactes, **Liens** (dépliés s'il y en a) et **Historique** (repliés).
 
 ## Les rappels du lundi en un seul workflow (v0.27.0, Black Projects 0.136.6)
 

@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les pages AO et Exigences reprises (v0.161.0)
+
+- [ ] Analyses : « Nouvelle analyse », « Importer » en tête, le reste dans « … » ; une carte n'a plus de
+      boutons, un clic ouvre la fiche
+- [ ] La fiche d'une analyse : Importer, Vérifier, Interroger en tête, le reste dans « … » ; « Appel
+      d'offres (n) » en lignes (« Toutes lues » ou « n à lire »), crayon, déplacer, extraire devant ;
+      Calendrier, Exigences, Questions, « Ce que l'analyse a produit » repliables
+- [ ] Un candidat : « Sa réponse » en lignes
+- [ ] Exigences : « Nouvelle exigence », « Importer » en tête ; Qualité, Traduire (IA) dans « … » ;
+      cartes sans le type ni les étoiles en double
+- [ ] La fiche d'une exigence : « Exigence · SEC · … » ; Modifier, Relire (IA) en tête ;
+      Formulations dépliées, Qualité dépliée si faible, La fiche / Liens / Historique repliés
+
 ## Les pages Programmes, programme et projet reprises (v0.160.0)
 
 - [ ] Programmes : les chiffres en tête (programmes, projets, en cours, phases en retard) ; « Types de

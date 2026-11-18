@@ -11,7 +11,7 @@
 
 import { localToday } from '../../core/dates'
 import { grouped, groupingOf, groupingSelector, type Group } from '../../core/grouping'
-import { pageWith, type Badge, type Card, type HomeSectionView, type ListItem, type PageView, type Stat, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
+import { pageWith, type Badge, type Card, type HomeBlock, type HomeSectionView, type IconName, type ListItem, type PageView, type Stat, type Tone, type ViewAction, type ViewsRegistrar } from '../../core/views'
 import { noteBlocks } from '../../core/markdown'
 import { acceptTranslation, lastReview, reviewRequirement, reviewSection, translateRequirement, translationNote } from './ai/actions'
 import { hasDrifted, quantityDrift } from './ai/translate'
@@ -97,10 +97,10 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
   const flags = [...(missing.length ? [t('exigences.page.missing', { langs: missing.join(', ').toUpperCase() })] : []), ...flagsOf(requirement, languages, t)]
   const path = requirement.filePath
   const statusTone: Badge['tone'] = requirement.status === 'rejected' || requirement.status === 'obsolete' ? 'neutral' : DONE_STATUSES.includes(requirement.status) ? 'success' : 'info'
+  // Peu de pastilles : son statut, une criticité haute, ce qui est à revoir (le reste est sur sa fiche).
   const badges: Badge[] = [
-    ...(requirement.type ? [{ label: vocabularyLabel('type', requirement.type, t), tone: 'neutral' as const }] : []),
     ...(requirement.status ? [{ label: vocabularyLabel('status', requirement.status, t), tone: statusTone }] : []),
-    ...(requirement.criticality ? [{ label: t('exigences.page.criticality', { value: vocabularyLabel('criticality', requirement.criticality, t) }), tone: requirement.criticality === 'high' ? ('warning' as const) : ('neutral' as const) }] : []),
+    ...(requirement.criticality === 'high' ? [{ label: t('exigences.page.criticality', { value: vocabularyLabel('criticality', requirement.criticality, t) }), tone: 'warning' as const }] : []),
     ...flags.map((flag) => ({ label: flag, tone: 'warning' as const })),
     ...(reviewed ? [{ label: reviewed.date ? t('exigences.qp.badge.reviewed.on', { date: reviewed.date }) : t('exigences.qp.badge.reviewed'), tone: 'success' as const }] : [])
   ]
@@ -158,7 +158,6 @@ function requirementCard(session: Session, requirement: Requirement, showPage?: 
     icon: 'list',
     badges,
     text: textOf(requirement, requirement.sourceLang)?.body ?? '',
-    rating: { stars: quality.stars, label: t('exigences.page.rating') },
     // Ses chiffres : en faits (les colonnes de la vue tableau).
     facts: [
       { label: t('exigences.page.fact.quality'), value: `${'★'.repeat(quality.stars)}${'☆'.repeat(5 - quality.stars)}\u00a0${Math.round(quality.score * 100)}\u00a0%`, ...(isWeak(quality) ? { tone: 'warning' as const } : {}) },
@@ -236,14 +235,14 @@ export async function libraryPage(
       { id: 'new', label: t('exigences.command.create'), icon: 'plus', primary: true, run: create ?? (() => run('nouvelle')) },
       { id: 'import', label: t('exigences.tile.import'), icon: 'upload', run: () => (imports ? imports.run() : run('importer')) },
       // Avec des pages, la qualité s'ouvre en page (rien n'est écrit) ; sinon, le rapport.
-      { id: 'quality', label: t('exigences.home.quality'), icon: 'star', run: () => (showPage ? showPage(QUALITY_PAGE) : run('qualite')) },
-      ...(session.ai?.() && settings.languages.length > 1 ? [{ id: 'translate', label: t('exigences.page.translate'), tooltip: t('exigences.command.translateMany'), icon: 'chat' as const, run: () => (translations ? translations.run() : run('traduire-ia-serie')) }] : []),
+      { id: 'quality', label: t('exigences.home.quality'), icon: 'star', more: true, run: () => (showPage ? showPage(QUALITY_PAGE) : run('qualite')) },
+      ...(session.ai?.() && settings.languages.length > 1 ? [{ id: 'translate', label: t('exigences.page.translate'), tooltip: t('exigences.command.translateMany'), icon: 'chat' as const, more: true, run: () => (translations ? translations.run() : run('traduire-ia-serie')) }] : []),
       // Des traductions de la machine à relire : leur page (la première langue qui en a).
       ...(() => {
         if (!showPage || !translations) return []
         const lang = settings.languages.find((each) => library.some((requirement) => requirement.sourceLang !== each && isUnreviewedMachine(requirement, each)))
         const count = lang ? library.filter((requirement) => Object.keys(requirement.text).some((each) => isUnreviewedMachine(requirement, each))).length : 0
-        return lang ? [{ id: 'translations', label: t('exigences.trp.open', { count }), icon: 'check' as const, run: () => showPage(translationsPageOf(lang)) }] : []
+        return lang ? [{ id: 'translations', label: t('exigences.trp.open', { count }), icon: 'check' as const, more: true, run: () => showPage(translationsPageOf(lang)) }] : []
       })()
     ],
     layouts: ['cards', 'list', 'table'],
@@ -330,10 +329,10 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
     ...(ai
       ? [
           { id: 'review', label: t('exigences.page.review'), icon: 'spark' as const, run: async () => void (await reviewRequirement(session, ai, path, localToday())) },
-          { id: 'translate', label: t('exigences.page.translate'), icon: 'chat' as const, run: async () => void (await translateRequirement(session, ai, path, { date: localToday() })) }
+          { id: 'translate', label: t('exigences.page.translate'), icon: 'chat' as const, more: true, run: async () => void (await translateRequirement(session, ai, path, { date: localToday() })) }
         ]
       : []),
-    { id: 'note', label: t('exigences.row.open'), icon: 'file', run: () => session.ui.openNote(path) }
+    { id: 'note', label: t('exigences.row.open'), icon: 'file', more: true, run: () => session.ui.openNote(path) }
   ]
 
   const stats: Stat[] = [
@@ -478,20 +477,32 @@ export async function requirementPage(sessionFor: (folder: string) => Session, s
 
   // La dernière relecture par l'IA, écrite dans la note : son avis, ses constats, ses propositions.
   const review = reviewSection(note)
+  const missingLangs = langs.filter((lang) => lang !== requirement.sourceLang && !requirement.text[lang])
+  const weakAxes = quality.axes.filter((axis) => axis.score < 0.99).length
+  /** Une section repliable de la fiche (dépliée si `open`). */
+  const fold = (id: string, title: string, subtitle: string, icon: IconName, blocks: HomeBlock[], open = true): HomeBlock => ({
+    kind: 'section',
+    id: `exigences.fiche.${id}`,
+    title,
+    ...(subtitle ? { subtitle } : {}),
+    icon,
+    ...(open ? {} : { collapsed: true }),
+    blocks
+  })
   return {
     title: requirement.title ? `${requirement.id} — ${requirement.title}` : requirement.id,
     back,
-    subtitle: [requirement.category, folderOf(path)].filter(Boolean).join(' · '),
+    subtitle: [t('exigences.fiche.one'), requirement.category, folderOf(path)].filter(Boolean).join(' · '),
     actions,
     blocks: [
       { kind: 'stats', stats },
-      { kind: 'cards', title: t('exigences.fiche.wordings', { count: langs.length }), cards: wordings },
+      fold('formulations', t('exigences.fiche.wordings', { count: langs.length }), missingLangs.length ? t('exigences.page.missing', { langs: missingLangs.join(', ').toUpperCase() }) : t('exigences.fiche.wordings.complete'), 'chat', [{ kind: 'cards', cards: wordings }]),
       // La relecture d'abord : c'est ce qu'on vient lire après « Relire (IA) ».
       ...(review ? noteBlocks(review, () => undefined) : []),
-      { kind: 'list', title: t('exigences.fiche.quality', { stars: stars(quality.stars) }), items: axes },
-      { kind: 'list', title: t('exigences.fiche.attributes'), items: attributes },
-      { kind: 'list', title: t('exigences.fiche.links', { count: links.length }), items: links, empty: t('exigences.fiche.links.none') },
-      { kind: 'list', title: t('exigences.fiche.history', { count: history.length }), items: history, empty: t('exigences.fiche.history.none') }
+      fold('qualite', t('exigences.fiche.quality', { stars: stars(quality.stars) }), weakAxes ? t('exigences.fiche.quality.toImprove', { count: weakAxes }) : t('exigences.fiche.axisOk'), 'star', [{ kind: 'list', items: axes }], isWeak(quality)),
+      fold('fiche', t('exigences.fiche.attributes'), [requirement.category, requirement.verification && requirement.verification !== 'none' ? t(`exigences.verification.${requirement.verification}`) : ''].filter(Boolean).join(' · '), 'info', [{ kind: 'list', fields: true, items: attributes }], false),
+      fold('liens', t('exigences.fiche.links', { count: links.length }), '', 'link', [{ kind: 'list', items: links, empty: t('exigences.fiche.links.none') }], links.length > 0),
+      fold('historique', t('exigences.fiche.history', { count: history.length }), history[0]?.when ?? '', 'clock', [{ kind: 'list', items: history, empty: t('exigences.fiche.history.none') }], false)
     ]
   }
 }

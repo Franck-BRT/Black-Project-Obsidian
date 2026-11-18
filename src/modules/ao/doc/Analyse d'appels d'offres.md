@@ -35,14 +35,17 @@ Un clic sur une analyse (page Analyses ou tableau de bord) ouvre sa **fiche**, e
 où tout se voit et où chaque bouton agit sur **cette** analyse — plus de « Dans quelle
 analyse ? » :
 
-- en tête : **Importer des pièces**, **Mettre à jour**, **Calendrier**, **Vérifier**,
-  **Qualité du dossier**, et avec l'IA **Interroger**, **Questionnaire**, **Relire (IA)** ;
-  **Ouvrir la note de l'analyse** ;
+- en tête : **Importer des pièces**, **Vérifier** et, avec l'IA, **Interroger** ; dans le
+  menu « … » : **Mettre à jour**, **Calendrier**, **Qualité du dossier**, **Questionnaire**,
+  **Relire (IA)**, **Ouvrir la note de l'analyse** ;
 - ses chiffres : la date limite de remise (jours restants), les pièces (lues ou non), les
   exigences, leur qualité ;
-- ses **pièces**, par destination (appel d'offres, réponse ou chaque candidat) : type,
-  état de lecture, caractères lus ; **Changer le type**, **Déplacer**, **Extraire les
-  exigences** ; le nom ouvre la **fiche de la pièce** : ce qui empêche de la lire s'il le
+- ses **pièces**, une ligne chacune, dans une section repliable par destination (appel
+  d'offres, réponse ou chaque candidat) qui dit combien restent à lire (ou « Toutes lues ») :
+  type et caractères lus dessous, état de lecture au bout ; **Changer le type**,
+  **Déplacer**, **Extraire les exigences** en boutons devant ; ensuite le **calendrier**,
+  les **exigences**, les **questions au dossier** et **ce que l'analyse a produit**, en
+  sections repliables (repliées quand elles sont vides) ; le nom ouvre la **fiche de la pièce** : ce qui empêche de la lire s'il le
   faut, ses chiffres (lecture, type, caractères lus, exigences extraites), le début de son
   texte (lisible, sans la syntaxe Markdown), les dates et délais relevés dans elle, les
   exigences qui en viennent (un clic ouvre leur fiche), et les boutons Changer le type,
