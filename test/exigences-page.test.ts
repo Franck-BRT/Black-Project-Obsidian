@@ -149,6 +149,8 @@ describe('la fiche d’une exigence, en page', () => {
     expect(view.actions?.map((action) => action.id)).toEqual(['edit', 'note'])
     const stats = view.blocks.find((block) => block.kind === 'stats')
     expect(stats?.kind === 'stats' && stats.stats.map((stat) => stat.label)).toEqual(['Qualité de la formulation', 'Type', 'Statut', 'Criticité'])
+    // Le type « security » se lit en français.
+    expect(stats?.kind === 'stats' && stats.stats[1]!.value).toBe('Sécurité SI')
     expect(view.subtitle).toMatch(/^Exigence · SEC/)
     // Les boutons secondaires sont dans le menu « … ».
     expect(view.actions?.filter((action) => !action.more).map((action) => action.id)).toEqual(['edit'])

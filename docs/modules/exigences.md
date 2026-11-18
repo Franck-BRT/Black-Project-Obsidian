@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `exigences` |
-| Version | 0.28.0 (Black Projects 0.161.0) |
+| Version | 0.28.1 (Black Projects 0.161.1) |
 | Emplacement | `src/modules/exigences/` |
 | Interface publique | `src/modules/exigences/index.ts` |
 | Requiert | [Lecture de fichiers](lecture-fichiers.md) (`lecture-fichiers`) |
@@ -14,6 +14,13 @@
 | Étape | 3 du [plan d'intégration](../plan-integration.md) — le socle des exigences |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/exigences/doc/Exigences.md`.
+
+## Le type « Sécurité SI » (v0.28.1, Black Projects 0.161.1)
+
+- Un nouveau type d'exigence, **Sécurité SI** (« security » dans la note), à côté de « Sécurité »
+  (« safety ») : il se lit en français sur la fiche, les cartes et dans les menus au lieu du code
+  brut. À l'import, « cybersécurité », « sécurité informatique », « sécurité des systèmes
+  d'information », « sécurité SI », « SSI » et « security » le donnent.
 
 ## La page Exigences et la fiche d'une exigence reprises (v0.28.0, Black Projects 0.161.0)
 

@@ -11,7 +11,7 @@
 import type { Choice } from '../../core/ports'
 import { VERIFICATION_METHODS } from './model/requirement'
 
-export const REQ_TYPES = ['functional', 'performance', 'interface', 'operational', 'constraint', 'safety'] as const
+export const REQ_TYPES = ['functional', 'performance', 'interface', 'operational', 'constraint', 'safety', 'security'] as const
 export const REQ_STATUSES = ['draft', 'proposed', 'approved', 'implemented', 'verified', 'rejected', 'obsolete'] as const
 export const REQ_CRITICALITIES = ['high', 'medium', 'low'] as const
 

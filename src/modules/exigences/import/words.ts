@@ -106,7 +106,15 @@ const VALUES: Record<XlsxEnumField, Record<string, string>> = {
     constraint: 'constraint',
     sécurité: 'safety',
     sûreté: 'safety',
-    safety: 'safety'
+    safety: 'safety',
+    cybersécurité: 'security',
+    'sécurité informatique': 'security',
+    'sécurité des systèmes d’information': 'security',
+    "sécurité des systèmes d'information": 'security',
+    ssi: 'security',
+    'sécurité si': 'security',
+    security: 'security',
+    cybersecurity: 'security'
   },
   status: {
     brouillon: 'draft',

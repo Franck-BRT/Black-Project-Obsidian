@@ -70,6 +70,11 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Le type « Sécurité SI » (v0.161.1)
+
+- [ ] Exigences › REQ-SEC-0001 : la case « Type » dit « Sécurité SI » (plus « security ») ;
+      « Modifier la fiche » le propose dans la liste des types
+
 ## Les pages AO et Exigences reprises (v0.161.0)
 
 - [ ] Analyses : « Nouvelle analyse », « Importer » en tête, le reste dans « … » ; une carte n'a plus de

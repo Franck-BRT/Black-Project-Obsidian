@@ -12,7 +12,8 @@ Palette de commandes → **Nouvelle exigence** :
 - **Catégorie** — elle forme l'identifiant : `SYS` donne `REQ-SYS-0001`. Les catégories
   déjà employées sont rappelées sous le champ ;
 - **Titre**, **Formulation** (dans la langue source, la première des langues réglées),
-  **Type**, **Statut**, **Criticité**, **Méthode de vérification**, **Source**,
+  **Type** (fonctionnelle, performance, interface, opérationnelle, contrainte, sécurité,
+  sécurité SI), **Statut**, **Criticité**, **Méthode de vérification**, **Source**,
   **Justification**.
 
 L'identifiant est attribué à la création, puis **ne change plus et n'est jamais

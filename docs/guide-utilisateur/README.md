@@ -12,7 +12,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.161.0)
+## Aujourd'hui (version 0.161.1)
+
+- **Le type d'exigence « Sécurité SI »** : il s'affiche en français (plus « security ») et se choisit
+  dans « Modifier la fiche » ; à l'import, « cybersécurité » ou « SSI » le donnent.
 
 - **Les pages AO et Exigences reprises** : la fiche d'une analyse montre ses pièces une ligne
   chacune (par destination, « Toutes lues » ou combien restent à lire), puis le calendrier, les
