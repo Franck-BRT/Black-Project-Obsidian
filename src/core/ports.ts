@@ -127,6 +127,11 @@ export type FormField =
       tooltip?: string
       options: readonly Choice[]
       value?: string
+      /**
+       * Un bouton à côté de la liste, pour y créer un choix (un type de pièce, par exemple) : sa
+       * fenêtre s'ouvre par-dessus ; le choix créé est ajouté à la liste, et choisi. `null` : rien.
+       */
+      create?: { label: string; tooltip?: string; run(): Promise<Choice | null> }
     }
   | {
       /** Un texte sur plusieurs lignes : la formulation d'une exigence, par exemple. */

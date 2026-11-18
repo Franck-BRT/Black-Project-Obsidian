@@ -42,6 +42,8 @@ export interface CompanyDoc {
   title: string
   detail: string
   toConfirm?: boolean
+  /** Le nom par lequel il la cite (sans y être relié). */
+  found?: string
 }
 
 /** Un document qui emploie un terme du glossaire : où il est, s'il y est relié (lien et rétrolien), la forme qu'il emploie. */
@@ -91,6 +93,10 @@ export interface EntriesHomeDeps {
   linkTermIn?(record: string): Promise<void>
   /** Une entreprise : les documents qu'elle émet, et ceux qui la citent (reliés à sa note). */
   companyDocuments?(entry: LibraryEntry): Promise<{ issued: CompanyDoc[]; cited: CompanyDoc[] }>
+  /** Une personne : les documents qui y sont reliés, et ceux qui la citent sans y être reliés. */
+  personDocuments?(entry: LibraryEntry): Promise<{ linked: CompanyDoc[]; cited: CompanyDoc[] }>
+  /** Relier un document à une note (la personne qu'il cite) : lien et rétrolien. */
+  linkNoteIn?(record: string, path: string, why: string): Promise<void>
   /** Ouvrir la fiche d'un document. */
   showDocument?(record: string): void
 }
@@ -243,6 +249,130 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
 
 /** Son texte à soi (la section des rétroliens est à part, `backlinks` : la page les dit ailleurs). */
 const ownText = (_deps: EntriesHomeDeps, entry: LibraryEntry): string => (entry.text ?? '').trim()
+
+/**
+ * **La fiche d'une personne** : ses chiffres en tête (documents qui la citent, collègues) ; la
+ * personne en lignes (nom, fonction, entreprise — un clic l'ouvre —, adresse, téléphone, catégorie,
+ * rangée), chacune avec son bouton ; les documents qui la citent — reliés (lien et rétrolien), ou
+ * seulement nommés, à relier d'un clic ; ses collègues de la même entreprise ; ses notes.
+ */
+async function personPage(deps: EntriesHomeDeps, entry: LibraryEntry, page: { back: ViewAction; actions: ViewAction[]; explorer?: Explorer }): Promise<PageView> {
+  const { t } = deps
+  const section = (id: string, title: string, subtitle: string, icon: 'user' | 'file' | 'users' | 'book', blocks: HomeBlock[], open = true): HomeBlock => ({
+    kind: 'section',
+    id: `bibliotheque.personne.${id}`,
+    title,
+    ...(subtitle ? { subtitle } : {}),
+    icon,
+    collapsed: !open,
+    blocks
+  })
+  const move = page.actions.find((action) => action.id === 'move')
+  const edit = page.actions.find((action) => action.id === 'edit')
+  const editTool = (field: string): ViewAction[] => (edit ? [{ ...edit, id: `edit-${field}`, label: t('bibliotheque.term.editField', { field: t(`bibliotheque.person.field.${field}`) }), primary: false }] : [])
+  const row = (id: string, value: string, tools: ViewAction[] = []): ListItem => ({ id, title: t(`bibliotheque.person.field.${id}`), detail: value || '—', ...(tools.length ? { tools } : {}) })
+  const companies = await deps.stores.issuer.all()
+  const company = entry.company ? companyOf(entry.company, companies) : undefined
+  const colleagues = company ? (await deps.stores.person.all()).filter((each) => each.path !== entry.path && each.company && companyOf(each.company, companies)?.path === company.path).sort((a, b) => a.name.localeCompare(b.name, 'fr')) : []
+  const { linked, cited } = deps.personDocuments ? await deps.personDocuments(entry) : { linked: [], cited: [] }
+  const why = t('bibliotheque.person.why', { name: entry.name })
+  const docItem = (doc: CompanyDoc): ListItem => ({
+    id: `document-${doc.record}`,
+    title: doc.title,
+    detail: [doc.detail, doc.found ? t('bibliotheque.person.cited', { form: doc.found }) : t('bibliotheque.term.linked')].filter(Boolean).join(' · '),
+    icon: doc.found ? 'file' : 'link',
+    tone: doc.found ? 'neutral' : 'success',
+    ...(deps.showDocument ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showDocument!(doc.record) } } : {}),
+    ...(doc.found && deps.linkNoteIn ? { actions: [{ id: `relier-${doc.record}`, label: t('bibliotheque.term.link'), tooltip: t('bibliotheque.person.link.tip'), icon: 'link' as const, run: () => deps.linkNoteIn!(doc.record, entry.path, why) }] } : {})
+  })
+  const companyRow: ListItem = {
+    ...row('company', entry.company ? companyLabel(entry.company, companies) + (company ? '' : ` — ${t('bibliotheque.person.companyOutside')}`) : '', editTool('company')),
+    ...(company && deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('issuer', company.path)) } } : {})
+  }
+  const notes = ownText(deps, entry)
+  return {
+    title: entryTitle(entry),
+    ...(page.explorer ? { explorer: page.explorer } : {}),
+    back: page.back,
+    subtitle: [t('bibliotheque.person.one'), personLine(entry, companies), entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
+    actions: page.actions,
+    blocks: [
+      // Ses chiffres, en tête.
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('bibliotheque.person.stat.documents'), value: String(linked.length + cited.length), icon: 'file' },
+          { label: t('bibliotheque.person.stat.colleagues'), value: String(colleagues.length), icon: 'users' }
+        ]
+      },
+      // La personne : qui elle est, comment la joindre, où est sa note.
+      section('personne', t('bibliotheque.person.section'), [entry.description, company ? company.code || company.name : entry.company ?? ''].filter(Boolean).join(' · '), 'user', [
+        {
+          kind: 'list',
+          fields: true,
+          items: [
+            row('name', entry.name, editTool('name')),
+            row('role', entry.description, editTool('role')),
+            companyRow,
+            row('email', entry.email ?? '', editTool('email')),
+            row('phone', entry.phone ?? '', editTool('phone')),
+            row('category', entry.category, editTool('category')),
+            row('place', placeName(deps.places.person.shelves(), entry.shelf, entry.directory) || placeLabel(deps.places.person, entry), move ? [{ ...move, primary: false }] : [])
+          ]
+        }
+      ]),
+      // Les documents qui la citent : reliés d'abord, puis nommés sans lien.
+      section(
+        'documents',
+        t('bibliotheque.person.documents', { count: linked.length + cited.length }),
+        [linked.length ? t('bibliotheque.term.uses.linked', { count: linked.length }) : '', cited.length ? t('bibliotheque.term.uses.cited', { count: cited.length }) : ''].filter(Boolean).join(' · '),
+        'file',
+        [
+          ...(cited.length > 1 && deps.linkNoteIn
+            ? [
+                {
+                  kind: 'message' as const,
+                  tone: 'info' as const,
+                  text: t('bibliotheque.person.citedOnly', { count: cited.length }),
+                  actions: [
+                    {
+                      id: 'relier-tous',
+                      label: t('bibliotheque.term.linkAll', { count: cited.length }),
+                      tooltip: t('bibliotheque.person.link.tip'),
+                      icon: 'link' as const,
+                      run: async () => {
+                        for (const doc of cited) await deps.linkNoteIn!(doc.record, entry.path, why)
+                      }
+                    }
+                  ]
+                }
+              ]
+            : []),
+          { kind: 'list', items: [...linked, ...cited].map(docItem), empty: t('bibliotheque.person.documents.none') }
+        ]
+      ),
+      // Ses collègues : la même entreprise.
+      ...(company && colleagues.length
+        ? [
+            section('collegues', t('bibliotheque.person.colleagues', { company: company.code || company.name, count: colleagues.length }), '', 'users', [
+              {
+                kind: 'list',
+                items: colleagues.map((each) => ({
+                  id: each.path,
+                  title: each.name,
+                  detail: [each.description, each.email, each.phone].filter(Boolean).join(' · '),
+                  icon: 'user' as const,
+                  ...(deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('person', each.path)) } } : {})
+                }))
+              }
+            ])
+          ]
+        : []),
+      // Ses notes.
+      section('notes', t('bibliotheque.person.text'), notes ? '' : t('bibliotheque.entry.noText'), 'book', [{ kind: 'markdown', text: notes, empty: t('bibliotheque.entry.noText') }], !!notes)
+    ]
+  }
+}
 
 /**
  * **La fiche d'une entreprise** : ses chiffres en tête (documents émis, documents qui la citent,
@@ -462,47 +592,6 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
   const home = entry?.shelf ? placePageOf(ENTRIES_PAGE[kind], { shelf: entry.shelf, directory: entry.directory ?? '' }) : ENTRIES_PAGE[kind]
   const back: ViewAction = { id: 'back', label: (entry && placeName(deps.places[kind].shelves(), entry.shelf, entry.directory)) || t(`bibliotheque.${kind}.title`), run: () => deps.showPage?.(home) }
   if (!entry) return { title: t(`bibliotheque.${kind}.missing.title`), back, blocks: [{ kind: 'message', tone: 'warning', text: t('bibliotheque.entry.missing') }] }
-  const companies = kind === 'person' || kind === 'issuer' ? await deps.stores.issuer.all() : []
-  // Une personne : ses coordonnées ; un clic sur son entreprise (de la liste) l'ouvre.
-  const company = kind === 'person' && entry.company ? companyOf(entry.company, companies) : undefined
-  const contact: HomeBlock[] =
-    kind === 'person'
-      ? [
-          {
-            kind: 'list',
-            title: t('bibliotheque.person.contact'),
-            items: [
-              {
-                id: 'company',
-                title: t('bibliotheque.person.field.company'),
-                detail: entry.company ? companyLabel(entry.company, companies) + (company ? '' : ` — ${t('bibliotheque.person.companyOutside')}`) : t('bibliotheque.person.none'),
-                ...(company && deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('issuer', company.path)) } } : {})
-              },
-              { id: 'role', title: t('bibliotheque.person.field.role'), detail: entry.description || t('bibliotheque.person.none') },
-              { id: 'email', title: t('bibliotheque.person.field.email'), detail: entry.email || t('bibliotheque.person.none') },
-              { id: 'phone', title: t('bibliotheque.person.field.phone'), detail: entry.phone || t('bibliotheque.person.none') }
-            ]
-          }
-        ]
-      : []
-  // Une entreprise : les personnes de la liste qui y travaillent.
-  const people = kind === 'issuer' ? (await deps.stores.person.all()).filter((each) => each.company && companyOf(each.company, companies)?.path === entry.path) : []
-  const staff: HomeBlock[] =
-    kind === 'issuer'
-      ? [
-          {
-            kind: 'list',
-            title: t('bibliotheque.issuer.people', { count: people.length }),
-            items: people.map((each) => ({
-              id: each.path,
-              title: each.name,
-              detail: [each.description, each.email, each.phone].filter(Boolean).join(' · '),
-              ...(deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('person', each.path)) } } : {})
-            })),
-            empty: t('bibliotheque.issuer.people.none')
-          }
-        ]
-      : []
   const explorer = await deps.explorer?.({ kind, shelf: entry.shelf ?? '', directory: entry.directory ?? '' })
   const actions: ViewAction[] = [
     {
@@ -553,26 +642,18 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
         ]
       : [])
   ]
-  // Un terme du glossaire, une entreprise : leur page à eux.
+  // Un terme du glossaire, une entreprise, une personne : leur page à eux.
   if (kind === 'glossary') return termPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   if (kind === 'issuer') return companyPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
+  if (kind === 'person') return personPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   return {
     title: entryTitle(entry),
     ...(explorer ? { explorer } : {}),
     back,
-    subtitle: [
-      t(`bibliotheque.${kind}.one`),
-      kind === 'person' ? personLine(entry, companies) : '',
-      entry.category,
-      entry.favorite ? t('bibliotheque.entry.favorite') : ''
-    ]
-      .filter(Boolean)
-      .join(' · '),
+    subtitle: [t(`bibliotheque.${kind}.one`), entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
     actions,
     blocks: [
-      ...(entry.description && kind !== 'person' ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
-      ...contact,
-      ...staff,
+      ...(entry.description ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
       // Le texte mis en forme : titres, listes, gras… (un prompt, un skill s'écrivent en Markdown).
       { kind: 'markdown', title: t(`bibliotheque.${kind}.text`), text: ownText(deps, entry), empty: t('bibliotheque.entry.noText') },
       // Un skill exécutable (le circuit des documents) : ce qu'il reçoit, ce qu'il rend, son seuil.

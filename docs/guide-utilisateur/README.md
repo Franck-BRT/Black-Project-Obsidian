@@ -12,7 +12,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.156.0)
+## Aujourd'hui (version 0.157.0)
+
+- **La fiche d'une personne reprise** : ses chiffres, la personne en lignes, les documents qui la
+  citent (à **Relier** d'un clic), ses collègues, ses notes.
+- **Nouveau type…** : dans « Modifier… » d'un document, à côté de la liste des types de pièce — le
+  type créé est choisi aussitôt.
+- **Un serveur d'IA trop lent** (504) : la relecture coupe le texte en morceaux plus petits au lieu
+  d'échouer ; le document n'est plus bloqué à l'ingestion.
 
 - **La fiche d'une entreprise reprise** : ses chiffres en tête ; l'entreprise en lignes (code, nom,
   rôle, catégorie, autres noms, où elle est rangée) ; les documents qu'elle émet, ceux qui la citent,

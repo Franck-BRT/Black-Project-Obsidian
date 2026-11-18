@@ -45,12 +45,12 @@ describe('les fenêtres du port Ui', () => {
         onDone={noop}
       />
     )
-    expect(html).toContain('<label class="bp-field-label" for="bp-field-title">Titre<span aria-hidden="true"> *</span></label>')
-    expect(html).toContain('id="bp-field-title"')
+    expect(html).toMatch(/<label class="bp-field-label" for="bp-form-\d+-title">Titre<span aria-hidden="true"> \*<\/span><\/label>/)
+    expect(html).toMatch(/id="bp-form-\d+-title"/)
     expect(html).toContain('aria-required="true"')
-    expect(html).toContain('aria-describedby="bp-field-text-desc"')
-    expect(html).toMatch(/<select class="bp-select" id="bp-field-type"/)
-    expect(html).toMatch(/type="checkbox" role="switch" id="bp-field-on"[^>]*checked/)
+    expect(html).toMatch(/aria-describedby="bp-form-\d+-text-desc"/)
+    expect(html).toMatch(/<select class="bp-select" id="bp-form-\d+-type"/)
+    expect(html).toMatch(/type="checkbox" role="switch" id="bp-form-\d+-on"[^>]*checked/)
     expect(html).toContain('>Annuler</button>')
     expect(html).toContain('>Créer</button>')
   })
@@ -79,10 +79,10 @@ describe('les fenêtres du port Ui', () => {
       />
     )
     // Un bouton (pas la liste du navigateur, qui ne sait pas montrer d'icône) : l'aperçu du choix à gauche de son nom.
-    expect(html).toMatch(/<div class="bp-pick"><button type="button" class="bp-select bp-choice-button" id="bp-field-color" aria-haspopup="listbox" aria-expanded="false"[^>]*><span class="bp-choice-swatch bp-tile-violet" aria-hidden="true"><\/span><span class="bp-choice-label">Violet<\/span><\/button><\/div>/)
-    expect(html).toMatch(/id="bp-field-icon"[^>]*><span class="bp-choice-swatch" aria-hidden="true"><svg[^>]*class="bp-icon[\s\S]*?<span class="bp-choice-label">Étoile<\/span>/)
+    expect(html).toMatch(/<div class="bp-pick"><button type="button" class="bp-select bp-choice-button" id="bp-form-\d+-color" aria-haspopup="listbox" aria-expanded="false"[^>]*><span class="bp-choice-swatch bp-tile-violet" aria-hidden="true"><\/span><span class="bp-choice-label">Violet<\/span><\/button><\/div>/)
+    expect(html).toMatch(/id="bp-form-\d+-icon"[^>]*><span class="bp-choice-swatch" aria-hidden="true"><svg[^>]*class="bp-icon[\s\S]*?<span class="bp-choice-label">Étoile<\/span>/)
     // Sans aperçu : la liste du navigateur.
-    expect(html).toMatch(/<select class="bp-select" id="bp-field-plain"/)
+    expect(html).toMatch(/<select class="bp-select" id="bp-form-\d+-plain"/)
   })
 
   it('un champ de date : le calendrier à côté (la date écrite AAAA-MM-JJ y est montrée) ; sans calendrier, le champ seul', () => {
@@ -101,12 +101,32 @@ describe('les fenêtres du port Ui', () => {
         onDone={noop}
       />
     )
-    expect(html).toMatch(/<div class="bp-input-row"><input class="bp-input" type="text" id="bp-field-date"[^>]*><span class="bp-calendar"><button type="button" class="bp-button bp-button-icon" title="Choisir dans le calendrier" aria-label="Choisir dans le calendrier">/)
+    expect(html).toMatch(/<div class="bp-input-row"><input class="bp-input" type="text" id="bp-form-\d+-date"[^>]*><span class="bp-calendar"><button type="button" class="bp-button bp-button-icon" title="Choisir dans le calendrier" aria-label="Choisir dans le calendrier">/)
     expect(html).toMatch(/class="bp-calendar-picker" type="date" tabindex="-1" aria-hidden="true" value="2026-03-12"/)
     // Écrite autrement : le calendrier s'ouvre sans date choisie.
-    expect(html).toMatch(/id="bp-field-other"[^]*?type="date" tabindex="-1" aria-hidden="true" value\/>/)
+    expect(html).toMatch(/id="bp-form-\d+-other"[^]*?type="date" tabindex="-1" aria-hidden="true" value\/>/)
     expect(html.match(/bp-input-row/g)).toHaveLength(2)
-    expect(html).toMatch(/<input class="bp-input" type="text" id="bp-field-plain"/)
+    expect(html).toMatch(/<input class="bp-input" type="text" id="bp-form-\d+-plain"/)
+  })
+
+  it('une liste avec « créer » : le bouton à côté (son libellé, son infobulle) ; deux formulaires ouverts n’ont pas les mêmes identifiants', () => {
+    const form = (key: string) =>
+      renderToString(
+        <FormDialog
+          form={{
+            title: 'Modifier',
+            fields: [{ kind: 'choice', key, label: 'Type de pièce', options: [{ value: '', label: '— Aucun —' }], create: { label: 'Nouveau type…', tooltip: 'Créer un type', run: async () => null } }],
+            submit: 'Enregistrer'
+          }}
+          t={t}
+          onDone={noop}
+        />
+      )
+    const first = form('category')
+    expect(first).toMatch(/<div class="bp-input-row"><select class="bp-select" id="bp-form-\d+-category"[^>]*>[\s\S]*?<\/select><button type="button" class="bp-button bp-field-create" title="Créer un type">[\s\S]*?<span>Nouveau type…<\/span><\/button><\/div>/)
+    const second = form('category')
+    const idOf = (html: string) => /<form id="(bp-form-\d+)"/.exec(html)![1]
+    expect(idOf(first)).not.toBe(idOf(second))
   })
 
   it('une confirmation qui détruit : le bouton rouge, le focus sur « Annuler »', () => {

@@ -579,6 +579,8 @@ button.bp-journey-tile:focus-visible { outline: 3px solid var(--bp-focus); outli
 .bp-textarea { min-height: 120px; resize: vertical; line-height: var(--bp-line); }
 .bp-input-row { display: flex; gap: 8px; align-items: stretch; }
 .bp-input-row .bp-input { flex: 1; min-width: 0; }
+.bp-input-row .bp-select { flex: 1; min-width: 0; }
+.bp-field-create { white-space: nowrap; }
 .bp-calendar { position: relative; display: flex; flex: none; }
 /* Le champ date du système, sous le bouton : invisible, mais son calendrier s'ouvre là. */
 .bp-calendar-picker { position: absolute; inset: auto 0 0 auto; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }

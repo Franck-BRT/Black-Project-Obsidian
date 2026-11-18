@@ -124,14 +124,18 @@ describe('le répertoire des personnes', () => {
     card.open!.run()
     const fiche = await load(shown.at(-1)!)
     expect(fiche.subtitle).toBe('Personne · Responsable qualité · ESA — Agence spatiale européenne · Client · Favori')
-    const contact = listsIn(fiche.blocks).find((list) => list.title === 'Coordonnées')!
+    const personSection = (view: { blocks: readonly HomeBlock[] }) => view.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.personne.personne')!
+    const contact = listsIn(personSection(fiche).blocks)[0]!
     expect(contact.items.map((item: ListItem) => [item.title, item.detail])).toEqual([
-      ['Entreprise', 'ESA — Agence spatiale européenne'],
+      ['Nom et prénom', 'Marie Dupont'],
       ['Fonction', 'Responsable qualité'],
+      ['Entreprise', 'ESA — Agence spatiale européenne'],
       ['Adresse électronique', 'marie.dupont@esa.int'],
-      ['Téléphone', '+33 1 23 45 67 89']
+      ['Téléphone', '+33 1 23 45 67 89'],
+      ['Catégorie', 'Client'],
+      ['Rangée', 'Personnes']
     ])
-    contact.items[0]!.open!.run()
+    contact.items.find((item) => item.id === 'company')!.open!.run()
     expect(shown.at(-1)).toBe(`bibliotheque.issuer?${encodeURIComponent('Bibliothèque/Entreprises/Agence spatiale européenne.md')}`)
     // La fiche de l'entreprise : ses personnes ; un clic mène à la personne.
     const esa = await load(shown.at(-1)!)
@@ -160,9 +164,9 @@ describe('le répertoire des personnes', () => {
     // Écrite à la main dans la note, une entreprise inconnue : gardée, dite hors de la liste.
     await platform.fs.writeText('Bibliothèque/Personnes/Léa Petit.md', '---\nbp-type: bibliotheque-personne\nnom: Léa Petit\nentreprise: Airbus\n---\n\n')
     const lea = await page('bibliotheque.person').load(encodeURIComponent('Bibliothèque/Personnes/Léa Petit.md'))
-    const contact = listsIn(lea.blocks).find((list) => list.title === 'Coordonnées')!
-    expect(contact.items.map((item) => item.detail)).toEqual(['Airbus — hors de la liste des entreprises', '—', '—', '—'])
-    expect(contact.items[0]!.open).toBeUndefined()
+    const contact = listsIn(lea.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.personne.personne')!.blocks)[0]!
+    expect(contact.items.map((item) => item.detail)).toEqual(['Léa Petit', '—', 'Airbus — hors de la liste des entreprises', '—', '—', '—', 'Personnes'])
+    expect(contact.items.find((item) => item.id === 'company')!.open).toBeUndefined()
     // La recherche trouve une personne par son entreprise, sa fonction, son adresse.
     const persons = await page('bibliotheque.persons').load()
     expect(persons.search?.placeholder).toBe('Nom, entreprise, fonction, adresse, téléphone…')

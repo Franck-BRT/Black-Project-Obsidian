@@ -32,6 +32,7 @@ export { forgetImageRefusals } from './reading'
 export { blendQuality, cleanPages, coverage, joinPages, letterCount, stripLayout, tidyContents, needsOcr, qualityLabel, qualityPercent, qualityStars, readsWhole, readVerdict, rejoinLines, stripFurniture, stripPageNumbers, tidy, type Verdict } from './reading'
 export { readCategoryAnswer, readDateAnswer, readIdentityAnswer, readIssuerAnswer, readLanguageAnswer, readTagsAnswer, readTitleAnswer } from './workflows'
 export { proofreadChunks, readProofread, readVisionPage, repetitionLoop, type RepetitionLoop } from './reading'
+export { halve, proofreadDocument, SPLIT_ABOVE, type TextReading } from './documentReading'
 export {
   buildChatBody,
   cosine,
@@ -302,7 +303,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.35.0',
+  version: '0.36.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),

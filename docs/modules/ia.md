@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.35.0 (Black Projects 0.154.0) |
+| Version | 0.36.0 (Black Projects 0.157.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -14,6 +14,17 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
 
+
+## Un serveur trop lent (504) : la relecture coupée, pas bloquée (v0.36.0, Black Projects 0.157.0)
+
+- `describeHttp` : 504, 524 et 408 disent un délai dépassé (et non « le modèle introuvable », gardé
+  pour 502) ; une page HTML de passerelle est réduite à son titre (`plainBody`). `timedOut(error)`.
+- `proofreadDocument` : une partie que le serveur ne relit pas à temps est coupée en deux (`halve` :
+  entre paragraphes au plus près du milieu, sinon entre phrases, sinon entre mots) tant qu'elle
+  dépasse `SPLIT_ABOVE` (800 caractères) ; en dessous, gardée telle qu'extraite (`TextReading.split`,
+  `.slow`). Aucune partie relue à temps : « le texte extrait est gardé tel quel (le circuit
+  continue) » — l'ingestion passe.
+- La vision (`askImage`) ne redemande pas une page après un délai dépassé (comme après un refus).
 
 ## « Arrêter le circuit » (v0.35.0, Black Projects 0.154.0)
 

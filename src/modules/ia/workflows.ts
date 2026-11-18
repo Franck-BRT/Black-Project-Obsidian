@@ -321,11 +321,12 @@ export function registerIaWorkflows(client: () => AiClient | null, fs: () => Fil
           const pageTexts = doc.file.toLowerCase().endsWith('.pdf') ? await pdfPageTexts(new Uint8Array(await fs().readBinary(doc.file))).catch(() => undefined) : undefined
           const read = await proofreadDocument(ai, base, text, pageTexts, context)
           if (read.looped) notifier.notify(t('ia.wf.proofread.looped', { title: doc.title, count: read.looped, parts: read.parts }), 20000)
+          if (read.slow && read.slow === read.parts) return say('ia.wf.proofread.allSlow', { title: doc.title })
           if (read.kept === read.parts && !read.removed) return say('ia.wf.proofread.allKept', { title: doc.title })
           if (read.text.replace(/\s+/g, ' ') === text.replace(/\s+/g, ' ')) return say('ia.wf.proofread.nothing', { title: doc.title })
           const version = await addTextVersionByAi(record, read.text, { model: base.connection.model, ...guided, ...(read.kept ? { kept: read.kept } : {}), ...(read.quality !== null ? { quality: read.quality } : {}) })
           if (!version) return say('ia.wf.proofread.noText', { title: doc.title })
-          return done(read.kept ? 'ia.wf.proofread.doneKept' : 'ia.wf.proofread.done', { title: doc.title, number: version.number, parts: read.parts, kept: read.kept }, [quality(read.quality)])
+          return done(read.kept ? 'ia.wf.proofread.doneKept' : 'ia.wf.proofread.done', { title: doc.title, number: version.number, parts: read.parts, kept: read.kept }, [quality(read.quality), read.slow ? t('ia.wf.proofread.slow', { count: read.slow }) : ''])
       }
     }
   })

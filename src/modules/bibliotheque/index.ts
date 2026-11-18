@@ -1070,7 +1070,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.70.0',
+  version: '0.71.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2321,6 +2321,18 @@ export const bibliothequeModule: BlackModule = {
         ...(pieceTyper?.add ? [{ value: NEW_TYPE, label: t('bibliotheque.category.add') }] : [])
       ]
     }
+    /** Le bouton « Nouveau type… » à côté de la liste des types de pièce (le module Typage des pièces actif) : le type créé est choisi. */
+    const typeCreate = () =>
+      pieceTyper?.add
+        ? {
+            label: t('bibliotheque.category.create'),
+            tooltip: t('bibliotheque.category.create.tip'),
+            run: async (): Promise<Choice | null> => {
+              const made = await pieceTypeMaker?.()
+              return made ? { value: made.code, label: pieceTypeText(made.code) } : null
+            }
+          }
+        : undefined
     /**
      * Le type de pièce d'un document, hors de la liste : l'y ajouter (un type personnalisé du
      * module Typage des pièces — son code proposé, son libellé) ; il devient celui du
@@ -2387,7 +2399,7 @@ export const bibliothequeModule: BlackModule = {
         intro: t('bibliotheque.classify.intro'),
         fields: [
           { kind: 'text', key: 'title', label: t('bibliotheque.field.title'), value: doc.title, required: true },
-          { kind: 'choice', key: 'category', label: t('bibliotheque.field.category'), value: doc.category, description: t('bibliotheque.classify.categories'), options: typeOptions(doc.category) },
+          { kind: 'choice', key: 'category', label: t('bibliotheque.field.category'), value: doc.category, description: t('bibliotheque.classify.categories'), options: typeOptions(doc.category), ...(typeCreate() ? { create: typeCreate()! } : {}) },
           { kind: 'text', key: 'reference', label: t('bibliotheque.field.reference'), value: doc.reference, placeholder: 'CCTP-2026-118' },
           { kind: 'text', key: 'edition', label: t('bibliotheque.field.edition'), value: doc.edition, placeholder: '2' },
           { kind: 'text', key: 'revision', label: t('bibliotheque.field.revision'), value: doc.revision, placeholder: 'B' },
@@ -2551,7 +2563,7 @@ export const bibliothequeModule: BlackModule = {
         title: t('bibliotheque.edit.title', { field: label, title: doc.title }),
         fields: [
           key === 'category'
-            ? { kind: 'choice', key: 'value', label, value: current, description: t('bibliotheque.classify.categories'), options: typeOptions(current) }
+            ? { kind: 'choice', key: 'value', label, value: current, description: t('bibliotheque.classify.categories'), options: typeOptions(current), ...(typeCreate() ? { create: typeCreate()! } : {}) }
             : key === 'issuer'
               ? { kind: 'choice', key: 'value', label, value: current, description: t('bibliotheque.issuer.choose'), options: issuerOptions(current, await knownIssuers()) }
               : { kind: 'text', key: 'value', label, value: current, ...(key === 'title' ? { required: true } : {}), ...(help[key] ? { description: help[key] } : {}), ...(key === 'date' ? { calendar: true, placeholder: '2026-03-12' } : {}) }
@@ -3229,7 +3241,40 @@ export const bibliothequeModule: BlackModule = {
         cited: all.filter((doc) => !mine(doc) && (doc.links ?? []).includes(entry.path)).map(row).sort(byTitle)
       }
     }
+    /**
+     * **Les documents d'une personne** : ceux qui y sont reliés (lien et rétrolien), et ceux qui la
+     * citent (son nom, en mot entier) sans y être reliés — à relier d'un clic.
+     */
+    const personDocuments = async (entry: LibraryEntry): Promise<{ linked: CompanyDoc[]; cited: CompanyDoc[] }> => {
+      const item: LinkSourceItem = { path: entry.path, label: entry.name, kind: 'person', names: [entry.name] }
+      const row = (doc: LibraryDoc, found?: string): CompanyDoc => ({
+        record: doc.record,
+        title: doc.title,
+        detail: [doc.category, doc.date, placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/')))].filter(Boolean).join(' · '),
+        ...(found ? { found } : {})
+      })
+      const linked: CompanyDoc[] = []
+      const cited: CompanyDoc[] = []
+      for (const doc of await store.all()) {
+        if ((doc.links ?? []).includes(entry.path)) linked.push(row(doc))
+        else {
+          const found = findCandidates(await docText(doc), [item], doc.record, 1)[0]?.found
+          if (found) cited.push(row(doc, found))
+        }
+      }
+      const byTitle = (a: CompanyDoc, b: CompanyDoc) => a.title.localeCompare(b.title, 'fr')
+      return { linked: linked.sort(byTitle), cited: cited.sort(byTitle) }
+    }
+    /** Relier un document à une note (une personne qu'il cite) : le lien dans sa fiche, le rétrolien dans la note. */
+    const linkNoteIn = async (record: string, path: string, why: string): Promise<void> => {
+      const links = await store.linksOf(record)
+      if (links.some((each) => each.path === path)) return
+      await store.setLinks(record, [...links, { path, why }])
+      pagesChanged()
+    }
     registerEntriesHome(context.views, {
+      personDocuments,
+      linkNoteIn,
       companyDocuments,
       documentsUsing,
       linkTermIn: async (record: string) => void (await searchGlossary(record)),

@@ -52,14 +52,29 @@ export interface AiConnection {
   maxTokens: number
 }
 
+/** Le corps d'une réponse en erreur, lisible : une page HTML (celle d'une passerelle, nginx…) réduite à son titre. */
+export function plainBody(body: string): string {
+  const text = body.trim()
+  if (!/^<(!doctype|html)/i.test(text) && !/<\/(html|body|head)>/i.test(text)) return text
+  const title = /<title>([\s\S]*?)<\/title>/i.exec(text)?.[1] ?? /<h1>([\s\S]*?)<\/h1>/i.exec(text)?.[1] ?? ''
+  return title.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/** Un délai dépassé (le serveur n'a pas répondu à temps) : une demande plus courte peut passer. */
+export function timedOut(error: unknown): boolean {
+  return error instanceof LlmError && (error.kind === 'timeout' || (error.kind === 'http' && (error.status === 504 || error.status === 524 || error.status === 408)))
+}
+
 /** Ce qu'un échec HTTP veut dire, en une phrase sur laquelle on peut agir. */
 export function describeHttp(status: number, body: string): string {
-  const detail = body.trim().slice(0, 200)
+  const detail = plainBody(body).slice(0, 200)
   const more = detail ? ` — ${detail}` : ''
+  // Un délai dépassé (le serveur, ou la passerelle devant lui, a cessé d'attendre le modèle) : la demande était trop longue pour lui.
+  if (status === 504 || status === 524 || status === 408) return `Le serveur d’IA a mis trop de temps à répondre (${status} : délai dépassé). La demande était sans doute trop longue pour lui.${more}`
   if (status === 404) return `Introuvable (404). Vérifiez que l’adresse se termine par /v1.${more}`
   if (status === 401 || status === 403) return `Refusé (${status}). Le serveur demande une clé : vérifiez celle du trousseau.`
   if (status === 400 || status === 422) return `Requête rejetée (${status}).${more}`
-  if (status === 502 || status === 504) return `Le serveur n’a pas pu joindre le modèle (${status}). Vérifiez le nom du modèle.${more}`
+  if (status === 502) return `Le serveur n’a pas pu joindre le modèle (502). Vérifiez le nom du modèle.${more}`
   if (status >= 500) return `Le serveur a échoué (${status}).${more}`
   return `Réponse inattendue (${status}).${more}`
 }

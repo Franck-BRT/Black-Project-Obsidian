@@ -5,13 +5,24 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.70.0 (Black Projects 0.156.0) |
+| Version | 0.71.0 (Black Projects 0.157.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La fiche d'une personne reprise ; « Nouveau type… » (v0.71.0, Black Projects 0.157.0)
+
+- `personPage` (`entriesHome.ts`) : des chiffres (documents qui la citent, collègues) ; les sections
+  `bibliotheque.personne.personne` (nom, fonction, entreprise — un clic l'ouvre —, adresse,
+  téléphone, catégorie, rangée), `.documents` (reliés en vert ; nommés sans lien, avec « Relier » ;
+  « Tout relier (n) »), `.collegues` (la même entreprise), `.notes`. `personDocuments(entry)` et
+  `linkNoteIn(record, path, why)` (lien et rétrolien). La page générique n'a plus de cas « personne »
+  ni « entreprise ».
+- Le type de pièce, dans « Modifier… » et la fenêtre du seul type : `create` sur le champ (le bouton
+  « Nouveau type… », `pieceTypeMaker`) — le type créé est ajouté à la liste et choisi.
 
 ## La fiche d'une entreprise reprise ; les rétroliens à part (v0.70.0, Black Projects 0.156.0)
 

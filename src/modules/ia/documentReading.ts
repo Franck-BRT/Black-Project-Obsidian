@@ -30,7 +30,7 @@
 
 import type { ChatMessage, ChatPart } from './protocol'
 import { LlmError } from './protocol'
-import type { AiClient } from './client'
+import { timedOut, type AiClient } from './client'
 import {
   blendQuality,
   cleanPages,
@@ -86,6 +86,30 @@ const CORRECT_BELOW = 85
 const REDO_BELOW = 70
 /** Une partie gardée telle quelle (la relecture la changeait trop) : lue, pas remise en forme. */
 const KEPT_SCORE = 60
+/** Une partie que le serveur n'a pas relue à temps est coupée en deux, tant qu'elle fait plus que cela (en caractères). */
+export const SPLIT_ABOVE = 800
+
+/** Le serveur n'a pas répondu à temps (un délai dépassé) : la partie, plus courte, peut passer. */
+class TooSlow extends Error {}
+
+/**
+ * Un texte coupé en deux, pour une demande plus courte : entre deux paragraphes au plus près du
+ * milieu, sinon entre deux phrases, sinon entre deux mots ; `null` : il ne se coupe pas.
+ */
+export function halve(text: string): [string, string] | null {
+  const middle = text.length / 2
+  for (const separator of [/\n\s*\n/g, /(?<=[.!?;:])\s+/g, /\s+/g]) {
+    let best: { at: number; end: number } | null = null
+    for (const match of text.matchAll(separator)) {
+      const at = match.index ?? 0
+      if (at === 0 || at + match[0].length >= text.length) continue
+      if (!best || Math.abs(at - middle) < Math.abs(best.at - middle)) best = { at, end: at + match[0].length }
+    }
+    // Une coupure trop loin du milieu ne fait pas gagner grand-chose : la suivante, plus fine.
+    if (best && Math.abs(best.at - middle) <= text.length / 4) return [text.slice(0, best.at).trim(), text.slice(best.end).trim()]
+  }
+  return null
+}
 
 export interface VisionReading {
   text: string
@@ -135,7 +159,8 @@ async function askImage(client: AiClient, model: string, text: string, image: st
       } catch (error) {
         last = error
         if (refusesImages(error)) throw new ImagesRefused(error)
-        if (error instanceof LlmError && error.kind === 'http' && (error.status ?? 500) < 500) break
+        // Un refus (4xx) ne changera pas ; un délai dépassé non plus, pour la même demande.
+        if ((error instanceof LlmError && error.kind === 'http' && (error.status ?? 500) < 500) || timedOut(error)) break
       }
     }
     if (!reply) {
@@ -332,6 +357,9 @@ export interface TextReading {
   /** Les lignes que les pages du fichier répétaient, retirées avant la relecture. */
   removed: number
   quality: number | null
+  /** Parties coupées en deux (le serveur ne les relisait pas à temps), et celles gardées telles quelles faute de réponse à temps. */
+  split: number
+  slow: number
 }
 
 /**
@@ -355,7 +383,10 @@ export async function proofreadDocument(ai: AiClient, judge: AiClient, source: s
   let kept = 0
   let looped = 0
   let redone = 0
-  for (const [index, chunk] of chunks.entries()) {
+  let split = 0
+  let slow = 0
+  for (let index = 0; index < chunks.length; index++) {
+    const chunk = chunks[index]!
     const part = index + 1
     const step = (key: string) => context.progress(t('ia.reading.stepPart', { step: t(key), part, parts: chunks.length }))
     if (index > 0) context.notify(t('ia.wf.proofread.progress', { title, part, parts: chunks.length }), 5000)
@@ -368,10 +399,32 @@ export async function proofreadDocument(ai: AiClient, judge: AiClient, source: s
           { role: 'user', content: chunks.length > 1 ? `${t('ia.wf.proofread.part', { part, parts: chunks.length })}\n\n${chunk}` : chunk }
         ], again ? 0.3 : 0)
       } catch (error) {
+        // Un délai dépassé : dit à part — la partie, coupée en deux, peut passer.
+        if (timedOut(error)) throw new TooSlow(context.describe(error))
         throw new Error(context.describe(error))
       }
     }
-    let reply = await relire(false)
+    let reply: { text: string; finish: string }
+    try {
+      reply = await relire(false)
+    } catch (error) {
+      if (!(error instanceof TooSlow)) throw error
+      // Le serveur n'a pas relu cette partie à temps : coupée en deux, chaque moitié relue à son tour ;
+      // trop courte pour l'être encore, elle reste telle qu'elle a été extraite (le document n'est pas bloqué).
+      const halves = chunk.length > SPLIT_ABOVE ? halve(chunk) : null
+      if (halves) {
+        chunks.splice(index, 1, ...halves)
+        split++
+        context.notify(t('ia.wf.proofread.split', { title, part }), 6000)
+        index--
+        continue
+      }
+      slow++
+      kept++
+      push(chunk)
+      scores.push({ score: KEPT_SCORE, weight: letterCount(chunk) })
+      continue
+    }
     if (repetitionLoop(reply.text, reply.finish === 'length')) {
       // Le modèle a bouclé : la partie relue une deuxième fois, autrement ; bouclée encore, elle reste telle quelle.
       context.notify(t('ia.wf.proofread.loopRetry', { title, part }), 6000)
@@ -419,5 +472,5 @@ export async function proofreadDocument(ai: AiClient, judge: AiClient, source: s
     push(read)
   }
   if (looped && looped === chunks.length) throw new Error(t('ia.wf.proofread.allLooped', { title, model: ai.connection.model }))
-  return { text: tidy(out.join('\n\n')), parts: chunks.length, kept, looped, redone, removed: furniture.length, quality: qualityPercent(scores) }
+  return { text: tidy(out.join('\n\n')), parts: chunks.length, kept, looped, redone, removed: furniture.length, quality: qualityPercent(scores), split, slow }
 }

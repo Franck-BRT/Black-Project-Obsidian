@@ -151,7 +151,17 @@ describe('à l’entrée, et sur la fiche', () => {
     // « Modifier… » aussi : une liste.
     platform.forms.push(null)
     await fiche.actions!.find((action) => action.id === 'classify')!.run()
-    expect(platform.asked.at(-1)!.fields.find((each) => each.key === 'category')?.kind).toBe('choice')
+    const category = platform.asked.at(-1)!.fields.find((each) => each.key === 'category')!
+    expect(category.kind).toBe('choice')
+    // À côté de la liste : « Nouveau type… » — sa fenêtre crée le type (module Typage des pièces), qui est choisi.
+    const create = category.kind === 'choice' ? category.create : undefined
+    expect(create).toMatchObject({ label: 'Nouveau type…' })
+    platform.forms.push({ code: 'PV', label: 'Procès-verbal' })
+    expect(await create!.run()).toEqual({ value: 'PV', label: 'PV — Procès-verbal' })
+    expect(platform.asked.at(-1)!.title).toBe('Nouveau type de pièce')
+    // Annulé : rien.
+    platform.forms.push(null)
+    expect(await create!.run()).toBeNull()
   })
 
   it('sans le module Typage des pièces : les catégories de la bibliothèque', async () => {

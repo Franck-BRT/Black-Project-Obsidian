@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'une personne ; « Nouveau type… » ; un serveur trop lent (v0.157.0)
+
+- [ ] Une personne (ESA), une collègue, un document qui la nomme : sa fiche — les chiffres, « La
+      personne » en lignes (un clic sur l'entreprise l'ouvre), « Documents qui la citent » avec
+      « Relier » (il passe en vert ; un rétrolien dans sa note), « Ses collègues », « Notes »
+- [ ] Fiche d'un document › « Modifier… » : « Nouveau type… » à côté de la liste des types ; sa
+      fenêtre par-dessus (code, libellé) ; « Ajouter » : le type est dans la liste et choisi, la
+      fenêtre « Modifier » reste ouverte
+- [ ] Un serveur d'IA qui dépasse son délai (504) sur un long texte : la relecture coupe la partie
+      en deux (message) et passe ; jamais à temps : le texte extrait gardé, le circuit continue ; le
+      message d'erreur dit « délai dépassé », sans HTML
+
 ## La fiche d'une entreprise (v0.156.0)
 
 - [ ] Une entreprise (ESA, autres noms « European Space Agency »), une personne de l'ESA, un document

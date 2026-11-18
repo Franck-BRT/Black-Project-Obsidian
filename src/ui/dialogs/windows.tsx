@@ -247,11 +247,33 @@ function PreviewChoice(props: { id: string; describedBy: string | undefined; tit
   )
 }
 
+/** Chaque formulaire a ses identifiants : une fenêtre ouverte par-dessus une autre (créer un choix) ne doit pas soumettre la première. */
+let formCount = 0
+
 export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; onDone: (values: Record<string, string> | null) => void }) {
   const [values, setValues] = useState(() => initialValues(form))
+  const formId = useMemo(() => `bp-form-${++formCount}`, [])
   const [missing, setMissing] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
-  const set = (key: string, value: string) => setValues({ ...values, [key]: value })
+  const set = (key: string, value: string) => setValues((before) => ({ ...before, [key]: value }))
+  // Les choix créés depuis le formulaire (le bouton à côté d'une liste) : ajoutés à leur liste.
+  const [created, setCreated] = useState<Record<string, Choice[]>>({})
+  const optionsOf = (spec: Extract<FormField, { kind: 'choice' }>): readonly Choice[] => [...spec.options, ...(created[spec.key] ?? []).filter((made) => !spec.options.some((option) => option.value === made.value))]
+  const choiceSelect = (spec: Extract<FormField, { kind: 'choice' }>, common: Record<string, unknown>, index: number) => (
+    <select class="bp-select" {...common} value={values[spec.key]} onChange={(event) => set(spec.key, (event.target as HTMLSelectElement).value)} data-autofocus={index === 0 ? true : undefined}>
+      {optionsOf(spec).map((option) => (
+        <option key={option.value} value={option.value} title={option.description}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  )
+  const createFor = async (spec: Extract<FormField, { kind: 'choice' }>) => {
+    const made = await spec.create?.run()
+    if (!made) return
+    setCreated((before) => ({ ...before, [spec.key]: [...(before[spec.key] ?? []), made] }))
+    set(spec.key, made.value)
+  }
   const submit = (event?: Event) => {
     event?.preventDefault()
     const empty = form.fields.filter((field) => (field.kind === 'text' || field.kind === 'textarea') && field.required && !(values[field.key] ?? '').trim()).map((field) => field.key)
@@ -278,7 +300,7 @@ export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; 
     />
   )
   const field = (spec: FormField, index: number) => {
-    const id = `bp-field-${spec.key}`
+    const id = `${formId}-${spec.key}`
     const descId = spec.description ? `${id}-desc` : undefined
     const invalid = missing.includes(spec.key)
     const common = { id, title: spec.tooltip, 'aria-describedby': [descId, invalid ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined }
@@ -317,14 +339,17 @@ export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; 
           spec.options.some((option) => option.preview) ? (
             // Des choix qui se voient (une couleur, une icône) : chacun montré à gauche de son nom.
             <PreviewChoice id={id} describedBy={common['aria-describedby']} title={spec.tooltip} options={spec.options} value={values[spec.key] ?? ''} onChange={(value) => set(spec.key, value)} autofocus={index === 0} />
+          ) : spec.create ? (
+            // Un bouton à côté de la liste : y créer un choix (sa fenêtre par-dessus), aussitôt choisi.
+            <div class="bp-input-row">
+              {choiceSelect(spec, common, index)}
+              <button type="button" class="bp-button bp-field-create" title={spec.create.tooltip ?? spec.create.label} onClick={() => void createFor(spec)}>
+                <Icon name="plus" />
+                <span>{spec.create.label}</span>
+              </button>
+            </div>
           ) : (
-            <select class="bp-select" {...common} value={values[spec.key]} onChange={(event) => set(spec.key, (event.target as HTMLSelectElement).value)} data-autofocus={index === 0 ? true : undefined}>
-              {spec.options.map((option) => (
-                <option key={option.value} value={option.value} title={option.description}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            choiceSelect(spec, common, index)
           )
         ) : spec.kind === 'textarea' ? (
           <textarea
@@ -365,7 +390,7 @@ export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; 
           <button type="button" class="bp-button" onClick={() => onDone(null)}>
             {t('ui.cancel')}
           </button>
-          <button type="submit" form="bp-form" class="bp-button bp-button-primary" title={form.submitTooltip}>
+          <button type="submit" form={formId} class="bp-button bp-button-primary" title={form.submitTooltip}>
             {form.submit}
           </button>
         </>
@@ -378,7 +403,7 @@ export function FormDialog({ form, t, onDone }: { form: FormView; t: Translate; 
           <div class="bp-message-body">{error}</div>
         </div>
       )}
-      <form id="bp-form" class="bp-checks" style={{ gap: '14px' }} onSubmit={submit} noValidate>
+      <form id={formId} class="bp-checks" style={{ gap: '14px' }} onSubmit={submit} noValidate>
         {form.fields.map(field)}
         {/* Entrée dans un champ texte valide le formulaire. */}
         <button type="submit" hidden />

@@ -126,6 +126,13 @@ texte, la fiche (section *Texte extrait*) et la note du document. Sans images, l
 est nettoyé, remis en forme par l'IA partie par partie, et chaque partie vérifiée contre
 l'original (relue une seconde fois sous 70).
 
+**Un serveur trop lent** (« délai dépassé », 504 : la passerelle devant le modèle a cessé
+d'attendre) : la partie qu'il ne relit pas à temps est **coupée en deux**, et chaque moitié relue à
+son tour ; encore trop lente une fois courte, elle reste **telle qu'extraite** — le document n'est
+plus bloqué à l'ingestion, et la fiche le dit. Pour la vision, une page qui dépasse le délai n'est
+pas redemandée telle quelle. Un délai plus long sur le serveur, ou un modèle plus rapide, y
+remédient.
+
 **Une lecture qui boucle** — le modèle répète le même passage encore et encore, jusqu'à sa limite
 de longueur — est repérée : la page (ou la partie) est **relue une deuxième fois**, autrement.
 Bouclée encore : ce qui précède la boucle est gardé, et la page est marquée dans le texte

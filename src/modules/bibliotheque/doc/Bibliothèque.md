@@ -383,8 +383,10 @@ celui du nom du fichier reste, **à confirmer** : la fiche propose celui que le 
 est réglée, choisit d'abord dans la liste des types. Le crayon du champ ouvre la liste. Un
 type **hors de la liste** (une ancienne catégorie) est dit tel ; le bouton **+** de sa ligne
 l'ajoute aux types de pièce du module *Typage des pièces* (un code proposé) : il devient le
-type du document, et des autres documents qui l'avaient. Plusieurs choses à confirmer : un
-seul encadré « À confirmer (n) » les rassemble sur la fiche.
+type du document, et des autres documents qui l'avaient. Dans la fenêtre **Modifier…** (et celle
+du seul type), à côté de la liste des types : **Nouveau type…** — sa fenêtre s'ouvre par-dessus (un
+code, un libellé), le type est ajouté au module *Typage des pièces* et aussitôt choisi. Plusieurs
+choses à confirmer : un seul encadré « À confirmer (n) » les rassemble sur la fiche.
 
 **La liste des étiquettes** (Bibliothèque › **Étiquettes**) : un vocabulaire commun — une
 note par étiquette, son nom (« antenne ») et ses autres formes, une par ligne (« antennes »).
@@ -435,8 +437,11 @@ nom et prénom, son **entreprise** (choisie dans la liste des entreprises — ou
 entreprise à la liste… », sa fenêtre s'ouvre), sa **fonction**, son **adresse électronique**
 (vérifiée), son **téléphone**, une catégorie (client, fournisseur, interne…), des notes ;
 favorite ou non. Sa carte dit sa fonction, son entreprise et ses coordonnées ; la recherche la
-trouve par chacun. Sur sa fiche, un clic sur son entreprise ouvre celle-ci ; la fiche d'une
-entreprise montre **ses personnes**. Comme les autres listes : des répertoires, d'autres
+trouve par chacun. **Sa fiche** : ses chiffres en tête (documents qui la citent, collègues) ; **La
+personne** en lignes — nom, fonction, entreprise (un clic l'ouvre), adresse, téléphone, catégorie,
+rangée —, chacune avec son bouton ; **Documents qui la citent** — reliés (lien et rétrolien) en vert,
+puis ceux qui la nomment sans y être reliés, avec **Relier** (ou **Tout relier**) ; **Ses collègues**
+(la même entreprise) ; ses **Notes**. La fiche d'une entreprise montre **ses personnes**. Comme les autres listes : des répertoires, d'autres
 bibliothèques, **Déplacer…**, **Retirer**, **Supprimer**.
 
 **L'entreprise** aussi : dite par le document (« Émetteur : », « Émis par », « Pouvoir
