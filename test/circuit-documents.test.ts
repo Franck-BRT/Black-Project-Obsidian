@@ -179,6 +179,11 @@ describe('l’étape « Exécuter un skill » : l’IA décide, l’application 
     const library = await load('bibliotheque.documents')
     expect(library.blocks[0]).toMatchObject({ kind: 'message', tone: 'warning', text: '1 document(s) à contrôler : l’IA n’a pas su les ranger avec assez de confiance.' })
     expect(cards(library).map((card) => card.title)).not.toContain('À contrôler')
+    // La bibliothèque « Documents de référence » n'en a pas : elle ne l'annonce pas (le Circuit, si).
+    const references = await load(`bibliotheque.documents?${encodeURIComponent('references:')}`)
+    expect(references.blocks.some((block) => block.kind === 'message' && block.text.includes('à contrôler'))).toBe(false)
+    const circuit = await load(`bibliotheque.documents?${encodeURIComponent('circuit:')}`)
+    expect(circuit.blocks[0]).toMatchObject({ kind: 'message', tone: 'warning', text: '1 document(s) à contrôler : l’IA n’a pas su les ranger avec assez de confiance.' })
     // La page À contrôler.
     const control = await load('bibliotheque.a-controler')
     const card = cards(control)[0]!

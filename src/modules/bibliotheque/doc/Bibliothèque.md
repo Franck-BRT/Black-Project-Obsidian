@@ -334,7 +334,8 @@ autres (langue, titre, date, référence, étiquettes) passent comme pour tout d
 Quand l'IA n'est **pas assez sûre** (confiance sous le seuil), qu'elle propose un dossier qui
 n'existe pas, ou que sa réponse est illisible, le document n'est pas rangé au hasard : il va
 dans `Bibliothèque/Circuit/À contrôler`, avec la **proposition** de l'IA, sa **raison** et sa
-**confiance**. La page des documents le signale (« 1 document(s) à contrôler », **Contrôler**) ;
+**confiance**. L'entrée de la bibliothèque et le Circuit le signalent (« 1 document(s) à
+contrôler », **Contrôler**) — une autre bibliothèque n'annonce que les siens ;
 la page **À contrôler** les montre, et sa fiche aussi. Pour chacun :
 
 - **Accepter** : il est rangé dans le dossier proposé ;

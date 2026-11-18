@@ -369,7 +369,8 @@ export async function libraryPage(deps: LibraryHomeDeps, param?: string): Promis
     ],
     blocks: [
       // Le circuit : des documents attendent qu'on les contrôle.
-      ...(await controlNotice(deps)),
+      // L'entrée de la bibliothèque (la racine de celle par défaut) les annonce tous ; ailleurs, seulement ceux du lieu.
+      ...(await controlNotice(deps, place.shelf.id === deps.places.defaultShelf().id && !place.directory ? () => true : (doc) => isUnder(doc, place))),
       // Ses répertoires ; en explorateur, sans le bouton « Ouvrir » (un clic sur la ligne y mène).
       ...(explorer ? top.blocks.map((block) => (block.kind === 'cards' ? { ...block, cards: block.cards.map((card) => ({ ...card, actions: (card.actions ?? []).filter((action) => action.id !== 'see') })) } : block)) : top.blocks),
       // La bibliothèque « Circuit » : les étapes de chacun de ses documents, et de quoi continuer.
@@ -499,12 +500,15 @@ export function qualityText(percent: number): string {
 }
 
 /** La fiche d'un document. */
-/** En tête de la page des documents : combien attendent d'être contrôlés (rien s'il n'y en a pas). */
-async function controlNotice(deps: LibraryHomeDeps): Promise<HomeBlock[]> {
+/**
+ * En tête de la page d'un lieu : combien de ses documents attendent d'être contrôlés (rien
+ * s'il n'y en a pas) — ceux d'une autre bibliothèque ne s'y annoncent pas.
+ */
+async function controlNotice(deps: LibraryHomeDeps, here: (doc: LibraryDoc) => boolean): Promise<HomeBlock[]> {
   const { t } = deps
   if (!deps.control) return []
-  const count = (await deps.control.list()).length
-  const pending = (await deps.control.pending?.())?.length ?? 0
+  const count = (await deps.control.list()).filter(here).length
+  const pending = ((await deps.control.pending?.()) ?? []).filter(here).length
   if (!count && !pending) return []
   const text = [count ? t('bibliotheque.control.notice', { count }) : '', pending ? t('bibliotheque.control.notice.pending', { count: pending }) : ''].filter(Boolean).join(' ')
   return [{ kind: 'message', tone: count ? 'warning' : 'info', text, actions: [{ id: 'control', label: t(count ? 'bibliotheque.control.open' : 'bibliotheque.control.see'), icon: 'flag', primary: !!count, run: () => deps.showPage?.(CONTROL_PAGE) }] }]

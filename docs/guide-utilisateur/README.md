@@ -12,7 +12,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.162.0)
+## Aujourd'hui (version 0.162.1)
+
+- **« À contrôler » seulement là où ils sont** : « Documents de référence » (ou une autre
+  bibliothèque) n'annonce plus un document à contrôler qui est dans le Circuit.
 
 - **Valider les échecs des workflows** : « Valider les échecs » (page Workflows, journal) et
   « Valider cet échec » (fiche d'une exécution) : les échecs vus et traités ne comptent plus

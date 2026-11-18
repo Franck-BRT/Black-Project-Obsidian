@@ -5,13 +5,20 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.73.0 (Black Projects 0.159.0) |
+| Version | 0.73.1 (Black Projects 0.162.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## « À contrôler » : seulement là où ils sont (v0.73.1, Black Projects 0.162.1)
+
+- L'encadré « n document(s) à contrôler » ne s'affiche plus sur une bibliothèque qui n'en a pas
+  (« Documents de référence » le montrait pour un document du Circuit) : chaque bibliothèque et
+  chaque répertoire n'annoncent que les leurs ; l'entrée de la bibliothèque (la racine de celle par
+  défaut) les annonce tous, comme avant.
 
 ## Les fiches des prompts, personas et skills ; l'index des mentions ; ne confirmer que ce qu'on change (v0.73.0, Black Projects 0.159.0)
 

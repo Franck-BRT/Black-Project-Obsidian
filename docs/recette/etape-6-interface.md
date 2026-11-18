@@ -70,6 +70,11 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## « À contrôler » seulement là où ils sont (v0.162.1)
+
+- [ ] Un document à contrôler dans le Circuit : « Documents de référence » (vide) ne montre plus
+      l'encadré ; « Documents » (l'entrée) et « Circuit » le montrent
+
 ## Valider les échecs des workflows (v0.162.0)
 
 - [ ] Workflows avec un échec dans le journal : « Échecs récents 1 », pastille rouge sur la tuile,
