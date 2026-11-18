@@ -5,13 +5,24 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.74.0 (Black Projects 0.163.0) |
+| Version | 0.75.0 (Black Projects 0.164.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## « Ranger » un document resté dans À classer (v0.75.0, Black Projects 0.164.0)
+
+- Un document du circuit encore dans « À classer » (versé, ingéré ou analysé), sans rien à
+  confirmer et que le circuit ne traite pas : **Ranger** (`fileAction`, `readyToFile` dans
+  `circuitSteps.ts`), en tête de sa fiche (un encadré) et à côté de son parcours (page Circuit, avant
+  « Continuer le circuit », qui passe en second).
+- Trois choix (`fileNow`) : **Choisir l'emplacement…** (comme « Ranger moi-même… »), **Laisser l'IA
+  regarder de nouveau** (l'étape « rangement » relancée ; absente sans IA ou le circuit coupé),
+  **Dans « Documents »** (la racine de la bibliothèque par défaut ; la section Circuit dit « Rangé dans
+  … (par défaut) »). Rangé : `circuit: range`, sa fiche ouverte.
 
 ## Où enregistrer l'export ; les types de document ; la vision d'abord (v0.74.0, Black Projects 0.163.0)
 

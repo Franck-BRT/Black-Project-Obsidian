@@ -21,7 +21,7 @@ import { diffParagraphs } from '../../core/diff'
 import { directoryGroupOf, isHere, isUnder, placeLabel, placeName, placePageOf, placeView, resolvePlace, type ShelfPlacesDeps } from './places'
 import { builtInShelf, CIRCUIT_SHELF, REFERENCE_SHELF, severalShelves } from './shelves'
 import { CONTROL_PAGE, controlMessage, controlPage, proposalMessages, type ControlDeps } from './controlHome'
-import { circuitJourney, continueAction, documentSteps, inCircuit, stopAction } from './circuitSteps'
+import { circuitJourney, continueAction, documentSteps, fileAction, inCircuit, stopAction } from './circuitSteps'
 import type { ExplorerPlace } from './explorer'
 
 export const LIBRARY_PAGE = 'bibliotheque.documents'
@@ -1036,6 +1036,10 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         : doc.circuitStopped && inCircuit(doc)
           ? [{ kind: 'message' as const, tone: 'warning' as const, text: t('bibliotheque.circuit.stopped.banner'), ...(deps.control ? { actions: [continueAction(t, deps.control, doc)].filter((action): action is ViewAction => !!action) } : {}) }]
           : []),
+      // Encore dans « À classer », tout confirmé : il ne reste qu'à le ranger.
+      ...(deps.control && fileAction(t, deps.control, doc)
+        ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.fileNow.banner'), actions: [fileAction(t, deps.control, doc, (moved) => deps.showPage?.(docPageOf(moved)))!] }]
+        : []),
       // Le circuit : l'IA n'a pas su le ranger — sa proposition, sa raison, et quoi faire.
       ...(doc.circuit === 'a-controler' && deps.control ? [controlMessage(t, deps.control, doc, (moved) => deps.showPage?.(moved ? docPageOf(moved) : CONTROL_PAGE))] : []),
       // Les entreprises et personnes inconnues qu'il cite : à créer, ou à écarter.

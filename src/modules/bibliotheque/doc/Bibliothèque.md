@@ -355,6 +355,13 @@ serveur : l'erreur est dite), ou à contrôler sans proposition ; **gris** : à 
 **Tout continuer** le fait pour tous ceux qui attendent (pas ceux à contrôler). Grisé, il dit
 pourquoi : pas d'IA réglée, ou le circuit désactivé.
 
+**Ranger** : un document resté dans « À classer » dont **tout est confirmé** (plus rien « à
+confirmer » sur sa fiche) a un bouton **Ranger** — sur sa fiche (« Tout est confirmé : il attend
+d'être rangé. ») et à côté de son parcours. Il propose : **Choisir l'emplacement…** (une
+bibliothèque ou un répertoire), **Laisser l'IA regarder de nouveau** (l'étape de rangement
+relancée : rangé si elle est sûre, sinon à contrôler ; absent sans IA) ou **Dans « Documents »**
+(la bibliothèque par défaut, à sa racine). Plus besoin de le déplacer à la main.
+
 Chaque décision s'écrit sur la fiche, dans la section **Circuit** (« rangé dans Normes
 (confiance 93 %) », « Contrôlé — proposition acceptée »). Une note `Bibliothèque/Règles de
 rangement.md`, si vous l'écrivez, est lue par le skill de rangement (« les normes vont dans

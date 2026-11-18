@@ -70,6 +70,15 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## « Ranger » un document resté dans À classer (v0.164.0)
+
+- [ ] Un document dans Circuit › À classer, tout confirmé : sa fiche dit « Tout est confirmé : il
+      attend d'être rangé. » avec **Ranger** ; la page Circuit le montre aussi à côté de son parcours
+- [ ] Encore un champ à confirmer : pas de « Ranger »
+- [ ] Ranger › Choisir l'emplacement… : la liste des bibliothèques et répertoires ; rangé là
+- [ ] Ranger › Laisser l'IA regarder de nouveau : l'étape de rangement relancée
+- [ ] Ranger › Dans « Documents » : rangé à la racine, « rangé dans Documents »
+
 ## Où enregistrer l'export ; types de document ; vision d'origine (v0.163.0)
 
 - [ ] Workflows › Exporter… : cocher, puis « Où enregistrer l'export ? » — Dossier « Black

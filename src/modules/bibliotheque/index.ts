@@ -1074,7 +1074,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.74.0',
+  version: '0.75.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2042,6 +2042,36 @@ export const bibliothequeModule: BlackModule = {
       platform.notifier.notify(t('bibliotheque.circuit.accepted', { title: doc.title, place }), 6000)
       return moved
     }
+    /**
+     * **Ranger** un document resté dans « À classer » (tout est confirmé) : choisir l'emplacement
+     * soi-même, redemander le rangement à l'IA (quand elle est là), ou le mettre dans « Documents »
+     * (la bibliothèque par défaut). Rend la fiche rangée ; `null` si l'on renonce, ou si c'est l'IA
+     * qui range (sa fiche suit le document).
+     */
+    const fileNow = async (record: string): Promise<string | null> => {
+      const doc = await store.load(record)
+      if (!doc) return null
+      const home = defaultShelf('document').folder
+      const homePlace = placeOfFolder(home)
+      const blocked = cannotContinue()
+      const choice = await platform.ui.pickOption(
+        [
+          { value: 'choisir', label: t('bibliotheque.fileNow.choose'), description: t('bibliotheque.fileNow.choose.desc') },
+          ...(blocked ? [] : [{ value: 'ia', label: t('bibliotheque.fileNow.ai'), description: t('bibliotheque.fileNow.ai.desc') }]),
+          { value: 'documents', label: t('bibliotheque.fileNow.default', { place: homePlace }), description: t('bibliotheque.fileNow.default.desc') }
+        ],
+        t('bibliotheque.fileNow.title', { title: doc.title })
+      )
+      if (choice === 'choisir') return fileElsewhere(record)
+      if (choice === 'ia') {
+        await relaunchStep(record, 'rangement')
+        return null
+      }
+      if (choice !== 'documents') return null
+      const moved = await fileInto(record, home, circuitLine('bibliotheque.circuit.line.default', { place: homePlace }))
+      platform.notifier.notify(t('bibliotheque.circuit.accepted', { title: doc.title, place: homePlace }), 6000)
+      return moved
+    }
     /** À contrôler : écarté — la fiche mise de côté (rien n'est effacé). */
     const discardControlled = async (record: string): Promise<boolean> => {
       const doc = await store.load(record)
@@ -2890,7 +2920,8 @@ export const bibliothequeModule: BlackModule = {
         relaunchStep,
         relaunchAll,
         running: (record) => circuitRunning.get(record) ?? null,
-        stopCircuit
+        stopCircuit,
+        fileNow
       },
       today: localToday,
       locale: i18n.language === 'en' ? 'en-GB' : 'fr-FR',

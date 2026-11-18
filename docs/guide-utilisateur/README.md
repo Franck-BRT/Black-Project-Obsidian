@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.163.0)
+## Aujourd'hui (version 0.164.0)
+
+- **Ranger** : un document resté dans « À classer » dont tout est confirmé a un bouton **Ranger** —
+  choisir l'emplacement, laisser l'IA regarder de nouveau, ou le mettre dans « Documents ». Plus
+  besoin de le déplacer à la main.
 
 - **Où enregistrer l'export** : chaque export (workflows, types de pièces, types de projet, une
   bibliothèque, toute la bibliothèque) demande le dossier et le nom du fichier, ceux d'habitude

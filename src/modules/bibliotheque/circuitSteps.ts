@@ -82,6 +82,35 @@ export interface CircuitStepsDeps {
   stopCircuit?(record: string): Promise<boolean>
   /** Ouvrir la fiche du document. */
   open?(record: string): void
+  /** « Ranger » : choisir l'emplacement, redemander à l'IA, ou dans « Documents » ; rend la fiche rangée (`null` : rien). */
+  fileNow?(record: string): Promise<string | null>
+}
+
+/** Ce qui reste à confirmer sur sa fiche (type, titre, entreprise, date, langue, référence, étiquettes). */
+export const toConfirm = (doc: LibraryDoc): boolean =>
+  !!(doc.languageToConfirm || doc.identityToConfirm || doc.titleToConfirm || doc.issuerToConfirm || doc.categoryToConfirm || doc.dateToConfirm || doc.tagsToConfirm)
+
+/**
+ * Prêt à ranger : encore dans « À classer » (versé, ingéré ou analysé), plus rien à confirmer, et le
+ * circuit ne le traite pas en ce moment — il ne reste qu'à le ranger.
+ */
+export const readyToFile = (doc: LibraryDoc, running: string | null): boolean =>
+  (doc.circuit === 'a-classer' || doc.circuit === 'ingere' || doc.circuit === 'analyse') && !running && !toConfirm(doc)
+
+/** Le bouton « Ranger » d'un document prêt à ranger ; `null` sinon. `after` : ce qu'on fait de la fiche rangée. */
+export function fileAction(t: Translate, deps: CircuitStepsDeps, doc: LibraryDoc, after?: (moved: string) => void): ViewAction | null {
+  if (!deps.fileNow || !readyToFile(doc, deps.running?.(doc.record) ?? null)) return null
+  return {
+    id: 'file-now',
+    label: t('bibliotheque.fileNow'),
+    tooltip: t('bibliotheque.fileNow.tip'),
+    icon: 'folder',
+    primary: true,
+    run: async () => {
+      const moved = await deps.fileNow!(doc.record)
+      if (moved) after?.(moved)
+    }
+  }
 }
 
 /** Le bouton « Arrêter le circuit » d'un document que le circuit traite en ce moment ; `null` : il n'est pas en cours. */
@@ -131,6 +160,8 @@ export function circuitJourney(t: Translate, deps: CircuitStepsDeps, doc: Librar
   const steps = circuitSteps(t, doc, deps.place, running)
   const stuck = steps.find((step) => step.state !== 'done' && step.state !== 'later')
   const action = continueAction(t, deps, doc)
+  // Plus rien à confirmer : « Ranger » à côté (choisir, l'IA de nouveau, ou dans « Documents »).
+  const file = fileAction(t, deps, doc)
   const state = running ? t('bibliotheque.circuit.running') : t(`bibliotheque.control.state.${doc.circuit ?? 'a-classer'}`)
   return {
     kind: 'journey',
@@ -153,7 +184,7 @@ export function circuitJourney(t: Translate, deps: CircuitStepsDeps, doc: Librar
       ]
     })),
     ...(titled ? {} : { legend: t('bibliotheque.circuit.steps.legend') }),
-    actions: [...(action ? [action] : []), ...extra]
+    actions: [...(file ? [file] : []), ...(action ? [{ ...action, ...(file ? { primary: false } : {}) }] : []), ...extra]
   }
 }
 

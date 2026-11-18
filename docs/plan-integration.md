@@ -683,6 +683,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
 - v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
+- v0.164.0 : **« Ranger » un document resté dans À classer** quand tout est confirmé : choisir l'emplacement, laisser l'IA regarder de nouveau, ou dans « Documents »
 - v0.163.0 : **où enregistrer l'export** (une fenêtre commune, le chemin habituel proposé), **les types de document** dans « Bibliothèques système », **la lecture par l'IA (vision) active d'origine**
 - v0.162.1 : **« À contrôler » seulement là où ils sont** : une bibliothèque sans document à contrôler ne l'annonce plus ; l'entrée de la bibliothèque les annonce tous
 - v0.162.0 : **valider les échecs des workflows** : « Valider les échecs » (page Workflows, journal) et « Valider cet échec » (fiche d'une exécution) ; vus et traités, ils ne comptent plus mais restent au journal, marqués

@@ -49,6 +49,8 @@ export interface ControlDeps {
   running?(record: string): string | null
   /** Arrêter le circuit d'un document en cours de traitement. */
   stopCircuit?(record: string): Promise<boolean>
+  /** **Ranger** un document resté dans « À classer » : choisir l'emplacement, redemander à l'IA, ou dans « Documents » ; rend la fiche, là où elle est (`null` : rien, ou l'IA s'en charge). */
+  fileNow?(record: string): Promise<string | null>
 }
 
 /** Une proposition en mots : « l'entreprise « ESA — Agence spatiale européenne » », « la personne « Marie Durand » (ESA) ». */

@@ -495,3 +495,77 @@ describe('la bibliothèque « Circuit » : À classer et À contrôler', () => {
     expect(read(platform, 'Bibliothèque/Entreprises/ACME.md')).toContain('[[Bibliothèque/Circuit/À contrôler/Vieux|Vieux]] — cité')
   })
 })
+
+/** Tout confirmé sur sa fiche (comme après « Confirmer » sur chaque champ). */
+const confirmAll = (platform: MemoryPlatform, record: string) => platform.files.set(record, bytes(read(platform, record).replace(/\n\w+AConfirmer: true(?=\n)/g, '')))
+
+describe('« Ranger » un document resté dans À classer, tout confirmé', () => {
+  /** Un document resté dans À classer : l'analyse en panne (il est ingéré), rien à confirmer. */
+  async function waiting() {
+    const platform = memoryPlatform()
+    const harness = await start(platform)
+    harness.answers.analyse = () => ({ status: 500, text: 'panne' })
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    await harness.pour('Norme.txt', 'Une norme.')
+    await workflowsIdle()
+    const record = 'Bibliothèque/Circuit/À classer/Norme.md'
+    confirmAll(platform, record)
+    const fiche = () => harness.load(`bibliotheque.document?${encodeURIComponent(record)}`)
+    const fileNow = (view: PageView) => deep(view.blocks).flatMap((block) => (block.kind === 'message' ? (block.actions ?? []) : [])).find((action) => action.id === 'file-now')
+    return { platform, harness, record, fiche, fileNow }
+  }
+
+  it('le bouton n’apparaît que si tout est confirmé ; il propose : choisir, l’IA de nouveau, ou dans « Documents »', async () => {
+    const { platform, record, fiche, fileNow } = await waiting()
+    const note = read(platform, record)
+    expect(note).toMatch(/\ncircuit: ingere\n/)
+    // Encore un champ à confirmer : pas de « Ranger ».
+    platform.files.set(record, bytes(note.replace(/\ncircuit: ingere\n/, '\ntitreAConfirmer: true\ncircuit: ingere\n')))
+    expect(fileNow(await fiche())).toBeUndefined()
+    platform.files.set(record, bytes(note))
+    const view = await fiche()
+    const action = fileNow(view)!
+    expect(action).toMatchObject({ label: 'Ranger', primary: true })
+    expect(deep(view.blocks).find((block) => block.kind === 'message' && block.text === 'Tout est confirmé : il attend d’être rangé.')).toBeDefined()
+    await action.run()
+    expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Choisir l’emplacement…', 'Laisser l’IA regarder de nouveau', 'Dans « Documents »'])
+    // Renoncé : il reste là.
+    expect(await platform.fs.exists(record)).toBe(true)
+  })
+
+  it('« Dans Documents » : rangé à la racine, sa fiche ouverte ; « Choisir l’emplacement » : là où on le dit', async () => {
+    const { platform, harness, record, fiche, fileNow } = await waiting()
+    platform.choices.push('documents')
+    await fileNow(await fiche())!.run()
+    expect(read(platform, 'Bibliothèque/Norme.md')).toMatch(/\ncircuit: range\n/)
+    expect(harness.shown.at(-1)).toBe(`bibliotheque.document?${encodeURIComponent('Bibliothèque/Norme.md')}`)
+    expect(platform.notices.at(-1)).toBe('« Norme » rangé dans Documents.')
+    expect(await platform.fs.exists(record)).toBe(false)
+    // Un second, rangé à la main dans Normes.
+    harness.answers.analyse = () => ({ status: 500, text: 'panne' })
+    await harness.pour('Autre.txt', 'Une autre norme.')
+    await workflowsIdle()
+    const other = 'Bibliothèque/Circuit/À classer/Autre.md'
+    confirmAll(platform, other)
+    platform.choices.push('choisir', 'Bibliothèque/Normes')
+    await fileNow(await harness.load(`bibliotheque.document?${encodeURIComponent(other)}`))!.run()
+    expect(read(platform, 'Bibliothèque/Normes/Autre.md')).toMatch(/\ncircuit: range\n/)
+  })
+
+  it('« Laisser l’IA regarder de nouveau » : l’étape de rangement relancée — sûre, rangé là où elle dit', async () => {
+    const { platform, harness, fiche, fileNow } = await waiting()
+    harness.answers.rangement = () => chat({ dossier: 'Bibliothèque/Normes', confiance: 0.95, raison: 'Une norme.', alternatives: [] })
+    platform.choices.push('ia')
+    await fileNow(await fiche())!.run()
+    await workflowsIdle()
+    expect(harness.asked.some((each) => each.kind === 'rangement')).toBe(true)
+    expect(read(platform, 'Bibliothèque/Normes/Norme.md')).toMatch(/\ncircuit: range\n/)
+  })
+
+  it('sur la page du circuit aussi : « Ranger » à côté de son parcours', async () => {
+    const { harness } = await waiting()
+    const circuit = await harness.load(`bibliotheque.documents?${encodeURIComponent('circuit:')}`)
+    const journey = deep(circuit.blocks).find((block) => block.kind === 'journey' && block.title === 'Norme')
+    expect(journey?.kind === 'journey' && journey.actions?.map((action) => `${action.id}:${action.primary ?? false}`)).toEqual(['file-now:true', 'circuit-continue:false'])
+  })
+})
