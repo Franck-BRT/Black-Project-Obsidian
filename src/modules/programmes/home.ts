@@ -37,6 +37,8 @@ export interface HomeDeps {
   openNote(path: string): Promise<void>
   newProgramme(): Promise<void>
   editProgramme(path: string): Promise<void>
+  /** Modifier un projet (sa description, sa couleur, son icône). */
+  editProject?(path: string): Promise<void>
   newProject(programme?: string, type?: string): Promise<void>
   newAffaire(project: string): Promise<void>
   chooseAffaireStatus(path: string): Promise<void>
@@ -347,6 +349,8 @@ async function programmesPage(deps: HomeDeps): Promise<PageView> {
       }
     })
   )
+  const allProjects = [...projectsOf.values()].flat()
+  const lateCount = allProjects.reduce((sum, project) => sum + project.phases.filter((phase) => isLate(phase, deps.today())).length, 0)
   const choice = viewChoice(deps, PROGRAMMES_PAGE)
   // Les projets : en parcours, ou en cartes (liste, tableau).
   const journeys: HomeBlock[] = []
@@ -365,16 +369,31 @@ async function programmesPage(deps: HomeDeps): Promise<PageView> {
     actions: [
       { id: 'new', label: t('programmes.programme.new'), icon: 'plus', primary: true, run: () => deps.newProgramme() },
       { id: 'project', label: t('programmes.project.new'), icon: 'flow', run: () => deps.newProject() },
-      ...(deps.showPage ? [{ id: 'types', label: t('programmes.types.title'), tooltip: t('programmes.types.tip'), icon: 'grid' as const, run: () => deps.showPage?.(TYPES_PAGE) }] : [])
+      ...(deps.showPage ? [{ id: 'types', label: t('programmes.types.title'), tooltip: t('programmes.types.tip'), icon: 'grid' as const, more: true, run: () => deps.showPage?.(TYPES_PAGE) }] : [])
     ],
     blocks: programmes.length
       ? [
+          // Les chiffres de tous les programmes, en tête.
+          {
+            kind: 'stats',
+            stats: [
+              { label: t('programmes.page.programmes'), value: String(programmes.length), icon: 'grid' },
+              { label: t('programmes.fact.projects'), value: String(allProjects.length), icon: 'flow' },
+              { label: t('programmes.fact.running'), value: String(allProjects.filter((project) => advance(project).current.length).length), icon: 'play' },
+              { label: t('programmes.fact.late'), value: String(lateCount), icon: 'clock', ...(lateCount ? { tone: 'danger' as const } : {}) }
+            ]
+          },
           { kind: 'cards', title: t('programmes.page.programmes'), cards },
           ...(projectCount ? [{ kind: 'section' as const, id: 'programmes.projets', title: t('programmes.page.projects'), subtitle: t('programmes.page.projects.count', { count: projectCount }), icon: 'flow' as const, blocks: projectBlocks }] : [])
         ]
       : [{ kind: 'message', tone: 'info', text: t('programmes.page.empty'), actions: [{ id: 'first', label: t('programmes.programme.new'), icon: 'plus', primary: true, run: () => deps.newProgramme() }] }],
     search: { label: t('programmes.page.search') }
   }
+}
+
+/** Le bouton d'une ligne : modifier ce champ (la fenêtre du programme ou du projet). */
+function editTool(deps: HomeDeps, field: string, run: () => Promise<void>): ViewAction {
+  return { id: `edit-${field}`, label: deps.t('programmes.editField', { field }), icon: 'edit', run }
 }
 
 function crumbs(deps: HomeDeps, items: { label: string; page?: string }[]): Breadcrumb {
@@ -389,10 +408,12 @@ async function programmePage(deps: HomeDeps, param?: string): Promise<PageView> 
   if (!programme) return { blocks: [{ kind: 'message', tone: 'warning', text: t('programmes.programme.missing') }] }
   const projects = await store.projects(programme)
   const affaires = (await Promise.all(projects.map((project) => store.affaires(project)))).flat()
+  const late = projects.reduce((sum, project) => sum + project.phases.filter((phase) => isLate(phase, deps.today())).length, 0)
   const stats: Stat[] = [
     { label: t('programmes.fact.projects'), value: String(projects.length), icon: 'flow' },
+    { label: t('programmes.fact.running'), value: String(projects.filter((project) => advance(project).current.length).length), icon: 'play' },
     { label: t('programmes.fact.affaires'), value: String(affaires.length), icon: 'building' },
-    { label: t('programmes.fact.running'), value: String(projects.filter((project) => advance(project).current.length).length), icon: 'play' }
+    { label: t('programmes.fact.late'), value: String(late), icon: 'clock', ...(late ? { tone: 'danger' as const } : {}) }
   ]
   const choice = viewChoice(deps, PROGRAMME_PAGE)
   // Ses projets : en parcours, ou en cartes (liste, tableau).
@@ -406,16 +427,47 @@ async function programmePage(deps: HomeDeps, param?: string): Promise<PageView> 
     layouts: choice.layouts,
     ...(documents.drop ? { drop: documents.drop } : {}),
     breadcrumb: crumbs(deps, [{ label: programme.name }]),
-    subtitle: [programme.code, programme.description].filter(Boolean).join(' · '),
+    subtitle: [t('programmes.programme.one'), programme.code, programme.description].filter(Boolean).join(' · '),
     actions: [
       { id: 'project', label: t('programmes.project.new'), icon: 'plus', primary: true, run: () => deps.newProject(programme.path) },
       { id: 'edit', label: t('programmes.programme.edit'), icon: 'edit', run: () => deps.editProgramme(programme.path) },
-      { id: 'note', label: t('programmes.note'), icon: 'book', run: () => deps.openNote(programme.path) },
-      ...(deps.deleteProgramme ? [{ id: 'delete', label: t('programmes.programme.delete'), tooltip: t('programmes.programme.delete.tip'), icon: 'trash' as const, run: () => deps.deleteProgramme!(programme.path) }] : [])
+      // Les actions secondaires : dans le menu « … ».
+      { id: 'note', label: t('programmes.note'), icon: 'book', more: true, run: () => deps.openNote(programme.path) },
+      ...(deps.deleteProgramme ? [{ id: 'delete', label: t('programmes.programme.delete'), tooltip: t('programmes.programme.delete.tip'), icon: 'trash' as const, more: true, run: () => deps.deleteProgramme!(programme.path) }] : [])
     ],
     blocks: [
       { kind: 'stats', stats },
-      ...(journeys.length ? journeys : [{ kind: 'message' as const, tone: 'info' as const, text: t('programmes.programme.empty'), actions: [{ id: 'first', label: t('programmes.project.new'), icon: 'plus' as const, primary: true, run: () => deps.newProject(programme.path) }] }]),
+      // Ses projets.
+      {
+        kind: 'section',
+        id: 'programmes.programme.projets',
+        title: t('programmes.programme.projects', { count: projects.length }),
+        subtitle: projects.map((project) => project.name).slice(0, 4).join(' · '),
+        icon: 'flow',
+        blocks: journeys.length ? journeys : [{ kind: 'message' as const, tone: 'info' as const, text: t('programmes.programme.empty'), actions: [{ id: 'first', label: t('programmes.project.new'), icon: 'plus' as const, primary: true, run: () => deps.newProject(programme.path) }] }]
+      },
+      // Le programme, en lignes.
+      {
+        kind: 'section',
+        id: 'programmes.programme.fiche',
+        title: t('programmes.programme.section'),
+        subtitle: [programme.code, programme.description].filter(Boolean).join(' · '),
+        icon: 'info',
+        collapsed: true,
+        blocks: [
+          {
+            kind: 'list',
+            fields: true,
+            items: [
+              { id: 'name', title: t('programmes.field.name'), detail: programme.name },
+              { id: 'code', title: t('programmes.field.code'), detail: programme.code || '—', tools: [editTool(deps, t('programmes.field.code'), () => deps.editProgramme(programme.path))] },
+              { id: 'description', title: t('programmes.field.description'), detail: programme.description || '—', tools: [editTool(deps, t('programmes.field.description'), () => deps.editProgramme(programme.path))] },
+              { id: 'folder', title: t('programmes.field.folder'), detail: programme.folder, open: { id: 'open', label: t('programmes.note'), run: () => deps.openNote(programme.path) } },
+              { id: 'created', title: t('programmes.field.created'), detail: programme.created ? shortDay(programme.created.slice(0, 10)) : '—' }
+            ]
+          }
+        ]
+      },
       ...documents.blocks,
       ...(await referencesSection(deps, programme, 'programme'))
     ]
@@ -450,6 +502,7 @@ async function referencesSection(deps: HomeDeps, owner: { path: string; referenc
       id: `programmes.${kind}.references`,
       title: t('programmes.refs.title'),
       subtitle: t('programmes.refs.count', { count: items.length }),
+      ...(items.length ? {} : { collapsed: true }),
       icon: 'star',
       blocks: [
         { kind: 'message', tone: 'info', text: t(items.length ? `programmes.refs.intro.${kind}` : `programmes.refs.none.${kind}`), actions: [{ ...choose, ...(items.length ? {} : { primary: true }) }] },
@@ -518,6 +571,8 @@ async function documentsSection(
         kind: 'section',
         id: `programmes.${kind}.documents`,
         title: t(`programmes.docs.title.${kind}`),
+        // Vide (et rien d'attendu) : repliée — son en-tête dit « 0 document ».
+        ...(items.length || expected.length ? {} : { collapsed: true }),
         subtitle: [t('programmes.refs.count', { count: items.length }), ...(awaited ? [t('programmes.folders.complete', { done: received, total: expected.filter((item) => item.tone !== 'neutral').length })] : [])].join(' · '),
         icon: 'file',
         blocks: [
@@ -548,9 +603,10 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
   const projectSlip = ends.length && initialEnds.length ? daysBetween(initialEnds.at(-1)!, ends.at(-1)!) : 0
   const late = project.phases.filter((phase) => isLate(phase, deps.today()))
   const stats: Stat[] = [
-    { label: t('programmes.project.advanceLabel'), value: t('programmes.project.advance', { done, total }), icon: 'check', ...(done === total && total ? { tone: 'success' as const } : {}) },
-    { label: t('programmes.project.currentLabel'), value: current.map((phase) => phase.name).join(', ') || (next ? t('programmes.project.next', { name: next.name }) : '—'), icon: 'play' },
-    { label: t('programmes.project.startLabel'), value: project.start ? shortDay(project.start) : t('programmes.project.notStarted'), icon: 'calendar' },
+    // Des valeurs courtes : le détail est dans les sections.
+    { label: t('programmes.project.advanceLabel'), value: `${done}/${total}`, icon: 'check', hint: t('programmes.project.phasesDone'), ...(done === total && total ? { tone: 'success' as const } : {}) },
+    { label: t(current.length ? 'programmes.project.currentLabel' : 'programmes.project.nextLabel'), value: current.map((phase) => phase.name).join(', ') || next?.name || '—', icon: 'play' },
+    { label: t('programmes.project.startLabel'), value: project.start ? shortDay(project.start) : '—', icon: 'calendar', ...(project.start ? {} : { hint: t('programmes.project.notStarted') }) },
     {
       label: t('programmes.project.endLabel'),
       value: ends.length ? shortDay(ends.at(-1)!) : '—',
@@ -564,15 +620,16 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     },
     { label: t('programmes.fact.affaires'), value: String(affaires.length), icon: 'building' }
   ]
-  const affaireCards: Card[] = affaires.map((affaire) => ({
+  // Ses affaires : une ligne chacune — son client, sa référence, son état ; ses boutons au bout.
+  const affaireItems: ListItem[] = affaires.map((affaire) => ({
     id: affaire.path,
     title: affaire.name,
+    detail: [affaire.client, affaire.reference].filter(Boolean).join(' · ') || t('programmes.affaire.noDetail'),
     icon: 'building',
-    color: project.color,
-    ...([affaire.client, affaire.reference].filter(Boolean).length ? { subtitle: [affaire.client, affaire.reference].filter(Boolean).join(' · ') } : {}),
-    badges: [{ label: t(`programmes.affaire.status.${affaire.status}`), tone: AFFAIRE_TONE[affaire.status] }],
+    tone: AFFAIRE_TONE[affaire.status] === 'info' ? 'neutral' : AFFAIRE_TONE[affaire.status],
+    when: t(`programmes.affaire.status.${affaire.status}`),
     open: { id: 'open', label: t('programmes.affaire.open'), run: () => deps.openNote(affaire.path) },
-    actions: [
+    tools: [
       { id: 'status', label: t('programmes.affaire.setStatus'), icon: 'edit', run: () => deps.chooseAffaireStatus(affaire.path) },
       ...(deps.deleteAffaire ? [{ id: 'delete', label: t('programmes.affaire.delete'), tooltip: t('programmes.affaire.delete.tip'), icon: 'trash' as const, run: () => deps.deleteAffaire!(affaire.path) }] : [])
     ]
@@ -591,8 +648,30 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     title: t('programmes.project.phases'),
     subtitle: [t('programmes.project.advance', { done, total }), current.map((phase) => phase.name).join(', ') || (next ? t('programmes.project.next', { name: next.name }) : '')].filter(Boolean).join(' · '),
     icon: 'flow',
-    collapsed: true,
     blocks: [phasesShown]
+  }
+  // Le projet, en lignes : son type, son programme, sa description, ses dates, son dossier.
+  const fiche: HomeBlock = {
+    kind: 'section',
+    id: 'programmes.projet.fiche',
+    title: t('programmes.project.section'),
+    subtitle: [project.typeName, programme?.name].filter(Boolean).join(' · '),
+    icon: 'info',
+    collapsed: true,
+    blocks: [
+      {
+        kind: 'list',
+        fields: true,
+        items: [
+          { id: 'type', title: t('programmes.field.type'), detail: project.typeName || '—' },
+          { id: 'programme', title: t('programmes.field.programme'), detail: programme?.name ?? '—', ...(programme && deps.showPage ? { open: { id: 'open', label: t('programmes.programme.open'), run: () => deps.showPage?.(programmePageOf(programme.path)) } } : {}) },
+          { id: 'description', title: t('programmes.field.description'), detail: project.description || '—', ...(deps.editProject ? { tools: [editTool(deps, t('programmes.field.description'), () => deps.editProject!(project.path))] } : {}) },
+          { id: 'start', title: t('programmes.project.startLabel'), detail: project.start ? shortDay(project.start) : t('programmes.project.notStarted'), tools: [{ id: 'start-date', label: t(project.start ? 'programmes.project.restart' : 'programmes.project.start'), icon: 'calendar', run: () => deps.startProject(project.path) }] },
+          { id: 'end', title: t('programmes.project.endLabel'), detail: ends.length ? shortDay(ends.at(-1)!) : '—', ...(late.length ? { tone: 'danger' as const } : {}) },
+          { id: 'folder', title: t('programmes.field.folder'), detail: project.folder, open: { id: 'open', label: t('programmes.note'), run: () => deps.openNote(project.path) } }
+        ]
+      }
+    ]
   }
   return {
     title: project.name,
@@ -600,12 +679,14 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
     layouts: choice.layouts,
     ...(documents.drop ? { drop: documents.drop } : {}),
     breadcrumb: crumbs(deps, [{ label: programme?.name ?? '—', ...(programme ? { page: programmePageOf(programme.path) } : {}) }, { label: project.name }]),
-    subtitle: [project.typeName, project.description].filter(Boolean).join(' · '),
+    subtitle: [t('programmes.project.one'), project.typeName, programme?.name, project.description].filter(Boolean).join(' · '),
     actions: [
-      { id: 'start', label: t(project.start ? 'programmes.project.restart' : 'programmes.project.start'), tooltip: t('programmes.project.start.tip'), icon: 'calendar', ...(project.start ? {} : { primary: true }), run: () => deps.startProject(project.path) },
+      { id: 'start', label: t(project.start ? 'programmes.project.restart' : 'programmes.project.start'), tooltip: t('programmes.project.start.tip'), icon: 'calendar', ...(project.start ? { more: true } : { primary: true }), run: () => deps.startProject(project.path) },
       { id: 'affaire', label: t('programmes.affaire.new'), icon: 'plus', ...(project.start ? { primary: true } : {}), run: () => deps.newAffaire(project.path) },
-      { id: 'note', label: t('programmes.note'), icon: 'book', run: () => deps.openNote(project.path) },
-      ...(deps.deleteProject ? [{ id: 'delete', label: t('programmes.project.delete'), tooltip: t('programmes.project.delete.tip'), icon: 'trash' as const, run: () => deps.deleteProject!(project.path) }] : [])
+      ...(deps.editProject ? [{ id: 'edit', label: t('programmes.project.edit'), icon: 'edit' as const, run: () => deps.editProject!(project.path) }] : []),
+      // Les actions secondaires : dans le menu « … ».
+      { id: 'note', label: t('programmes.note'), icon: 'book', more: true, run: () => deps.openNote(project.path) },
+      ...(deps.deleteProject ? [{ id: 'delete', label: t('programmes.project.delete'), tooltip: t('programmes.project.delete.tip'), icon: 'trash' as const, more: true, run: () => deps.deleteProject!(project.path) }] : [])
     ],
     blocks: [
       { kind: 'stats', stats },
@@ -616,8 +697,9 @@ async function projectPage(deps: HomeDeps, param?: string): Promise<PageView> {
         title: t('programmes.project.affairesTitle'),
         subtitle: t('programmes.project.affaires', { count: affaires.length }),
         icon: 'building',
-        blocks: affaireCards.length ? [{ kind: 'cards', cards: affaireCards }] : [{ kind: 'message', tone: 'info', text: t('programmes.affaire.none'), actions: [{ id: 'first', label: t('programmes.affaire.new'), icon: 'plus', run: () => deps.newAffaire(project.path) }] }]
+        blocks: affaireItems.length ? [{ kind: 'list', items: affaireItems }] : [{ kind: 'message', tone: 'info', text: t('programmes.affaire.none'), actions: [{ id: 'first', label: t('programmes.affaire.new'), icon: 'plus', run: () => deps.newAffaire(project.path) }] }]
       },
+      fiche,
       ...documents.blocks,
       ...(await referencesSection(deps, project, 'projet'))
     ]

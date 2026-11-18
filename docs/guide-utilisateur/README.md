@@ -12,7 +12,11 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.159.0)
+## Aujourd'hui (version 0.160.0)
+
+- **Les pages Programmes, programme et projet reprises** : leurs chiffres en tête ; la page d'un projet
+  montre ses phases d'emblée, ses affaires une ligne chacune, et « Le projet » en lignes ; un projet se
+  **modifie** (description, couleur, icône) ; les actions secondaires sont dans le menu « … ».
 
 - **Les fiches des prompts, personas et skills reprises** : leurs chiffres, leur texte mis en forme,
   un skill exécutable en lignes, et les **workflows qui s'en servent** (un clic les ouvre).

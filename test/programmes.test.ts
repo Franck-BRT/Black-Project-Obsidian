@@ -108,6 +108,57 @@ describe('les types de projet, dessinés', () => {
 })
 
 describe('programmes, projets, affaires', () => {
+  it('les pages reprises : le programme et le projet en lignes, « Modifier » le projet, ses affaires en lignes, les sections vides repliées', async () => {
+    const platform = memoryPlatform()
+    const { load, action, shown } = await start(platform)
+    platform.forms.push({ name: 'Spatial', code: 'SPA', description: 'Le spatial', color: 'violet', icon: 'star' })
+    await action(await load('programmes'), 'new')
+    const programmePage = shown.at(-1)!
+    platform.forms.push({ name: 'Station sol', programme: 'Programmes/Spatial/Spatial.md', type: 'reponse-ao', description: 'La station', affaire: 'true', client: 'CNES', reference: 'AO-2026-12' })
+    await action(await load(programmePage), 'project')
+    const projectPage = shown.at(-1)!
+    // Le programme : « Ses projets », « Le programme » en lignes ; ses actions secondaires dans « … ».
+    const programme = await load(programmePage)
+    expect(programme.subtitle).toBe('Programme · SPA · Le spatial')
+    expect(programme.actions!.filter((each) => each.more).map((each) => each.id)).toEqual(['note', 'delete'])
+    const sectionOf = (view: PageView, id: string) => view.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === id)!
+    expect(sectionOf(programme, 'programmes.programme.projets')).toMatchObject({ title: 'Ses projets (1)', subtitle: 'Station sol' })
+    const rows = (view: PageView, id: string) => sectionOf(view, id).blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    expect(rows(programme, 'programmes.programme.fiche').map((row) => [row.title, row.detail])).toEqual([
+      ['Nom', 'Spatial'],
+      ['Code', 'SPA'],
+      ['Description', 'Le spatial'],
+      ['Dossier', 'Programmes/Spatial'],
+      ['Créé le', expect.any(String)]
+    ])
+    // Le projet : des chiffres courts, ses phases dépliées, ses affaires en lignes, « Le projet » en lignes.
+    let project = await load(projectPage)
+    expect(project.subtitle).toBe('Projet · Réponse à un appel d’offres · Spatial · La station')
+    expect(project.actions!.map((each) => [each.id, !!each.more])).toEqual([['start', false], ['affaire', false], ['edit', false], ['note', true], ['delete', true]])
+    expect(project.blocks[0]!.kind === 'stats' && project.blocks[0].stats.map((stat) => [stat.label, stat.value])).toEqual([
+      ['Avancement', '0/9'],
+      ['Prochaine phase', 'Veille'],
+      ['Démarrage', '—'],
+      ['Fin prévue', '—'],
+      ['Affaires', '1']
+    ])
+    expect(rows(project, 'programmes.projet.fiche').map((row) => [row.title, row.detail])).toEqual([
+      ['Type de projet', 'Réponse à un appel d’offres'],
+      ['Programme', 'Spatial'],
+      ['Description', 'La station'],
+      ['Démarrage', 'pas démarré'],
+      ['Fin prévue', '—'],
+      ['Dossier', 'Programmes/Spatial/Station sol']
+    ])
+    // « Modifier » : sa description, sa couleur, son icône.
+    platform.forms.push({ description: 'La station sol de Kourou', color: 'teal', icon: 'flow' })
+    await project.actions!.find((each) => each.id === 'edit')!.run()
+    expect(platform.asked.at(-1)!.title).toBe('Modifier le projet « Station sol »')
+    project = await load(projectPage)
+    expect(project.subtitle).toBe('Projet · Réponse à un appel d’offres · Spatial · La station sol de Kourou')
+    expect(read(platform, 'Programmes/Spatial/Station sol/Station sol.md')).toMatch(/\ncouleur: teal\n/)
+  })
+
   it('un programme, un projet (les phases de son type), son affaire du même nom ; rangés dans le coffre', async () => {
     const platform = memoryPlatform()
     const { load, action, journey, shown } = await start(platform)
@@ -131,10 +182,12 @@ describe('programmes, projets, affaires', () => {
     expect(project.breadcrumb!.items.map((item) => item.label)).toEqual(['Programmes', 'Spatial', 'Station sol'])
     expect(journey(project).stages.map((stage) => stage.phases.map((phase) => phase.progress))).toEqual([['todo'], ['todo'], ['todo'], ['todo', 'todo'], ['todo'], ['todo'], ['todo'], ['todo']])
     const affaires = project.blocks.find((block) => block.kind === 'section' && block.id === 'programmes.projet.affaires')
-    expect(affaires?.kind === 'section' && affaires.blocks[0]?.kind === 'cards' && affaires.blocks[0].cards.map((card) => [card.title, card.subtitle])).toEqual([['Station sol', 'CNES · AO-2026-12']])
+    expect(affaires?.kind === 'section' && affaires.blocks[0]?.kind === 'list' && affaires.blocks[0].items.map((item) => [item.title, item.detail, item.when])).toEqual([['Station sol', 'CNES · AO-2026-12', 'En cours']])
     // L'accueil des programmes : la carte du programme, et le projet en miniature.
     const again = await load('programmes')
-    expect(again.blocks[0]!.kind === 'cards' && again.blocks[0].cards[0]).toMatchObject({ title: 'Spatial', color: 'violet', icon: 'star', facts: [{ value: '1' }, { value: '1' }, { value: '0' }] })
+    // En tête, les chiffres de tous les programmes ; puis leurs cartes.
+    expect(again.blocks[0]).toMatchObject({ kind: 'stats', stats: [{ label: 'Programmes', value: '1' }, { label: 'Projets', value: '1' }, { label: 'En cours', value: '0' }, { label: 'Phases en retard', value: '0' }] })
+    expect(again.blocks[1]!.kind === 'cards' && again.blocks[1].cards[0]).toMatchObject({ title: 'Spatial', color: 'violet', icon: 'star', facts: [{ value: '1' }, { value: '1' }, { value: '0' }] })
   })
 
   it('une phase : la commencer (début aujourd’hui), la terminer (fin aujourd’hui) ; le parcours le montre', async () => {
@@ -303,7 +356,7 @@ describe('le planning : des durées, un démarrage, des dates prévues', () => {
     const projectPage = shown.at(-1)!
     let project = await load(projectPage)
     expect(project.actions!.find((each) => each.id === 'start')).toMatchObject({ label: 'Démarrer le projet', primary: true })
-    expect(project.blocks[0]!.kind === 'stats' && project.blocks[0].stats.map((stat) => [stat.label, stat.value])).toContainEqual(['Démarrage', 'pas démarré'])
+    expect(project.blocks[0]!.kind === 'stats' && project.blocks[0].stats.map((stat) => [stat.label, stat.value])).toContainEqual(['Démarrage', '—'])
     // Démarré il y a 30 jours, rien commencé : tout part d'aujourd'hui (5 + 30 + 10 + 5 jours).
     platform.forms.push({ start: ago })
     await action(project, 'start')
@@ -480,12 +533,16 @@ describe('la vue des programmes, d’un programme, d’un projet', () => {
     await programme.grouping!.options.find((option) => option.id === 'table')!.run()
     programme = await load(programmePage)
     expect(programme.layouts).toEqual(['table'])
-    expect(programme.blocks.find((block) => block.kind === 'cards')).toMatchObject({ title: 'Projets', cards: [{ title: 'Q' }] })
+    const projets = programme.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'programmes.programme.projets')!
+    expect(projets.title).toBe('Ses projets (1)')
+    expect(projets.blocks.find((block) => block.kind === 'cards')).toMatchObject({ title: 'Projets', cards: [{ title: 'Q' }] })
     // Le projet : ses phases en cartes, étape après étape, leur état et leurs dates.
     // Elles sont dans une section « Ses phases », repliée d'origine, qui dit l'avancement.
     const phasesSection = (view: PageView) => view.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'programmes.projet.phases')!
     let project = await load(projectPage)
-    expect(phasesSection(project)).toMatchObject({ title: 'Ses phases', subtitle: '0/4 phases · à venir : Lancement', collapsed: true })
+    // Dépliée : les phases sont le cœur du projet.
+    expect(phasesSection(project)).toMatchObject({ title: 'Ses phases', subtitle: '0/4 phases · à venir : Lancement' })
+    expect(phasesSection(project).collapsed).toBeFalsy()
     expect(phasesSection(project).blocks.some((block) => block.kind === 'journey')).toBe(true)
     expect(project.blocks.some((block) => block.kind === 'journey')).toBe(false)
     await project.grouping!.options.find((option) => option.id === 'cards')!.run()

@@ -152,7 +152,7 @@ describe('supprimer un projet, un programme', () => {
     await run(await load(programmePage), 'project')
     platform.files.set('Programmes/P/Q/Compte rendu.md', bytes('# Mes notes'))
     const project = await load(projectPage)
-    expect(project.actions?.map((action) => action.id)).toEqual(['start', 'affaire', 'note', 'delete'])
+    expect(project.actions?.map((action) => action.id)).toEqual(['start', 'affaire', 'edit', 'note', 'delete'])
     // Renoncé : rien ne part.
     platform.confirmations.push(false)
     await run(project, 'delete')
@@ -168,7 +168,8 @@ describe('supprimer un projet, un programme', () => {
     expect(await platform.fs.exists('Programmes/P/R/R.md')).toBe(true)
     expect(platform.notices.at(-1)).toBe('Projet « Q » supprimé (à la corbeille du coffre).')
     expect(shown.at(-1)).toBe(programmePage)
-    expect((await load(programmePage)).blocks.filter((block) => block.kind === 'journey').map((block) => block.kind === 'journey' && block.title)).toEqual(['R'])
+    const left = (await load(programmePage)).blocks.flatMap((block) => (block.kind === 'section' && block.id === 'programmes.programme.projets' ? block.blocks : []))
+    expect(left.filter((block) => block.kind === 'journey').map((block) => block.kind === 'journey' && block.title)).toEqual(['R'])
   })
 
   it('un programme : après confirmation, son dossier, ses projets et leurs affaires à la corbeille ; les autres programmes restent', async () => {

@@ -5,13 +5,29 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.14.0 (Black Projects 0.137.0) |
+| Version | 0.15.0 (Black Projects 0.160.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Les pages reprises (v0.15.0, Black Projects 0.160.0)
+
+- La page Programmes : des chiffres en tête (programmes, projets, en cours, phases en retard) ;
+  « Types de projet » dans le menu « … ».
+- La page d'un programme : ses chiffres (avec les phases en retard) ; la section
+  `programmes.programme.projets` (« Ses projets (n) ») ; `programmes.programme.fiche` (« Le
+  programme » en lignes : nom, code, description, dossier, créé le) ; « Ouvrir sa note » et
+  « Supprimer » dans « … ».
+- La page d'un projet : des chiffres courts (« 0/9 », la phase en cours ou la prochaine, le
+  démarrage — « — » et « pas démarré » en dessous —, la fin prévue, les affaires) ; « Ses phases »
+  dépliée ; « Ses affaires » en lignes (état en bout de ligne, « Changer son état », « Supprimer »
+  en outils) ; `programmes.projet.fiche` (« Le projet » en lignes) ; « Modifier » (`editProject` :
+  description, couleur, icône — `store.updateProject`) ; « Ouvrir sa note », « Supprimer » (et
+  « Redémarrer » une fois démarré) dans « … ».
+- Les sections « Documents » et « Documents de référence » vides (rien d'attendu) : repliées.
 
 ## Les projets, des liens possibles (v0.14.0, Black Projects 0.137.0)
 

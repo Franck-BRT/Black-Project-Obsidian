@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les pages Programmes, programme et projet reprises (v0.160.0)
+
+- [ ] Programmes : les chiffres en tête (programmes, projets, en cours, phases en retard) ; « Types de
+      projet » dans « … »
+- [ ] Un programme : ses chiffres, « Ses projets (n) », « Le programme » en lignes ; « Ouvrir sa
+      note », « Supprimer » dans « … » ; documents et références repliés s'ils sont vides
+- [ ] Un projet : des chiffres courts ; « Ses phases » dépliées ; « Ses affaires » en lignes (état au
+      bout, crayon et corbeille) ; « Le projet » en lignes (un clic sur le programme l'ouvre) ;
+      « Modifier » : description, couleur, icône
+
 ## Les fiches des prompts, personas, skills ; l'index ; ne confirmer que ce qu'on change (v0.159.0)
 
 - [ ] Bibliothèque › Skills › « Ranger un document » : chiffres (1 workflow, mots, seuil 70 %), « En

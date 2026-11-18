@@ -60,7 +60,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.14.0',
+  version: '0.15.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -146,6 +146,27 @@ export const programmesModule: BlackModule = {
       if (!values) return
       await store.updateProgramme(path, {
         code: (values.code ?? '').trim(),
+        description: (values.description ?? '').trim(),
+        ...(TILE_COLORS.includes(values.color as never) ? { color: values.color as ProjectType['color'] } : {}),
+        ...(PHASE_ICONS.includes(values.icon as never) ? { icon: values.icon as ProjectType['icon'] } : {})
+      })
+    }
+
+    /** Modifier un projet : sa description, sa couleur, son icône (son nom et son type restent). */
+    const editProject = async (path: string): Promise<void> => {
+      const project = await store.project(path)
+      if (!project) return
+      const values = await ui.askForm({
+        title: t('programmes.project.edit.title', { name: project.name }),
+        fields: [
+          { kind: 'textarea', key: 'description', label: t('programmes.field.description'), value: project.description },
+          { kind: 'choice', key: 'color', label: t('programmes.field.color'), options: colorChoices, value: project.color },
+          { kind: 'choice', key: 'icon', label: t('programmes.field.icon'), options: iconChoices, value: project.icon }
+        ],
+        submit: t('programmes.save')
+      })
+      if (!values) return
+      await store.updateProject(path, {
         description: (values.description ?? '').trim(),
         ...(TILE_COLORS.includes(values.color as never) ? { color: values.color as ProjectType['color'] } : {}),
         ...(PHASE_ICONS.includes(values.icon as never) ? { icon: values.icon as ProjectType['icon'] } : {})
@@ -656,6 +677,7 @@ export const programmesModule: BlackModule = {
       openNote: (path) => (context.showNote ? context.showNote(path) : ui.openNote(path)),
       newProgramme: async () => void (await newProgramme()),
       editProgramme,
+      editProject,
       newProject,
       newAffaire,
       chooseAffaireStatus,

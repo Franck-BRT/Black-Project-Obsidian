@@ -139,10 +139,10 @@ describe('sur la page d’un projet : supprimer une affaire, un répertoire atte
   it('une affaire : après confirmation, sa note à la corbeille ; le projet reste', async () => {
     const platform = memoryPlatform()
     const { load, page } = await project(platform)
-    const affaire = cards(await load(page)).find((card) => card.title === 'Q')!
-    expect(affaire.actions!.map((action) => action.id)).toEqual(['status', 'delete'])
+    const affaire = deep((await load(page)).blocks).flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.title === 'Q')!
+    expect(affaire.tools!.map((action) => action.id)).toEqual(['status', 'delete'])
     platform.confirmations.push(true)
-    await affaire.actions!.find((action) => action.id === 'delete')!.run()
+    await affaire.tools!.find((action) => action.id === 'delete')!.run()
     expect(platform.confirmed.at(-1)).toMatchObject({ title: 'Supprimer l’affaire « Q » ?', danger: true })
     expect(await platform.fs.exists('Programmes/P/Q/Affaires/Q.md')).toBe(false)
     expect(await platform.fs.exists('Programmes/P/Q/Q.md')).toBe(true)

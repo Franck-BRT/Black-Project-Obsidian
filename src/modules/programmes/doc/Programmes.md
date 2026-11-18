@@ -16,8 +16,23 @@ une de ces phases.
 affaires et ce que vous y avez rangé. **Supprimer le programme** fait de même pour le programme,
 ses projets et leurs affaires. Une question est posée avant ; les documents dans la
 bibliothèque et les analyses d'appel d'offres restent. Depuis la corbeille d'Obsidian (ou celle
-du système), on peut les récupérer. Une **affaire** se supprime de même : **Supprimer l'affaire**,
-sur sa carte (sa note à la corbeille).
+du système), on peut les récupérer. Une **affaire** se supprime de même : la corbeille au bout de
+sa ligne (sa note à la corbeille). **Ouvrir sa note** et **Supprimer** sont dans le menu **…** de la
+page.
+
+**La page Programmes** : les chiffres de tous les programmes en tête (programmes, projets, projets en
+cours, phases en retard), les programmes en cartes, puis tous les projets. **Types de projet** est
+dans le menu **…**.
+
+**La page d'un programme** : ses chiffres (projets, en cours, affaires, phases en retard) ; **Ses
+projets** ; **Le programme** en lignes (nom, code, description, dossier, créé le) ; ses documents et
+ses documents de référence — repliés tant qu'il n'y en a pas.
+
+**La page d'un projet** : des chiffres courts (avancement, phase en cours ou prochaine, démarrage,
+fin prévue, affaires) ; **Ses phases**, dépliées ; **Ses affaires**, une ligne chacune (client,
+référence, état ; changer l'état, supprimer au bout) ; **Le projet** en lignes (type, programme — un
+clic l'ouvre —, description, démarrage, fin prévue, dossier) ; ses documents et documents de
+référence, repliés s'il n'y en a pas. **Modifier** change sa description, sa couleur et son icône.
 
 Sur **Programmes** et sur la page d'un programme, chaque projet est dessiné en miniature, ses
 phases **repliées** d'origine : son nom (un clic ouvre sa page) et son avancement restent ; le

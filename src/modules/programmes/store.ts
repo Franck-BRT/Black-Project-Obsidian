@@ -173,6 +173,13 @@ export class ProgrammeStore {
     return (await this.project(project.path))!
   }
 
+  /** Sa description, sa couleur, son icône. */
+  async updateProject(path: string, patch: Partial<Pick<Project, 'color' | 'icon' | 'description'>>): Promise<Project | null> {
+    const project = await this.project(path)
+    if (!project) return null
+    return this.saveProject({ ...project, ...patch })
+  }
+
   /** Les répertoires des documents d'un projet (un retiré n'est plus recréé). */
   async setFolders(path: string, folders: readonly FolderSpec[]): Promise<Project | null> {
     const project = await this.project(path)
