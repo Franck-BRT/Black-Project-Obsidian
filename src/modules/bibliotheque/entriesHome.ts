@@ -97,6 +97,10 @@ export interface EntriesHomeDeps {
   personDocuments?(entry: LibraryEntry): Promise<{ linked: CompanyDoc[]; cited: CompanyDoc[] }>
   /** Relier un document à une note (la personne qu'il cite) : lien et rétrolien. */
   linkNoteIn?(record: string, path: string, why: string): Promise<void>
+  /** Un prompt, un persona, un skill : les workflows dont une étape le nomme (champ « Prompt », « Persona », « Skill »). */
+  usedBy?(kind: 'prompt' | 'persona' | 'skill', name: string): readonly { id: string; name: string; enabled: boolean; system: boolean; steps: number[] }[]
+  /** Ouvrir la fiche d'un workflow. */
+  showWorkflow?(id: string): void
   /** Une étiquette : les documents qui la portent, et ceux où elle est suggérée (à confirmer). */
   tagDocuments?(entry: LibraryEntry): Promise<{ tagged: CompanyDoc[]; suggested: CompanyDoc[] }>
   /** Ajouter une étiquette à un document. */
@@ -251,8 +255,107 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
   }
 }
 
+/** Où une entrée est rangée, en mots : sa bibliothèque (à sa racine), sinon le chemin de son répertoire. */
+const placeText = (places: ShelfPlacesDeps, entry: LibraryEntry): string => (entry.directory ? placeLabel(places, entry) : placeName(places.shelves(), entry.shelf, entry.directory) || placeLabel(places, entry))
+
 /** Son texte à soi (la section des rétroliens est à part, `backlinks` : la page les dit ailleurs). */
 const ownText = (_deps: EntriesHomeDeps, entry: LibraryEntry): string => (entry.text ?? '').trim()
+
+/**
+ * **La fiche d'un prompt, d'un persona, d'un skill** : ses chiffres en tête (les workflows qui s'en
+ * servent ; un skill : son seuil, ce qu'il reçoit) ; son texte (la question, les consignes, la
+ * procédure), mis en forme ; l'entrée en lignes (nom, catégorie, description, rangée), chacune avec
+ * son bouton ; un skill exécutable : ce qu'il reçoit, ce qu'il rend, son seuil ; les workflows dont
+ * une étape le nomme — un clic ouvre le workflow.
+ */
+async function aiEntryPage(deps: EntriesHomeDeps, entry: LibraryEntry, kind: EntryKind, page: { back: ViewAction; actions: ViewAction[]; explorer?: Explorer }): Promise<PageView> {
+  const { t } = deps
+  const section = (id: string, title: string, subtitle: string, icon: 'book' | 'info' | 'flow' | 'settings', blocks: HomeBlock[], open = true): HomeBlock => ({
+    kind: 'section',
+    id: `bibliotheque.entree.${id}`,
+    title,
+    ...(subtitle ? { subtitle } : {}),
+    icon,
+    collapsed: !open,
+    blocks
+  })
+  const move = page.actions.find((action) => action.id === 'move')
+  const edit = page.actions.find((action) => action.id === 'edit')
+  const editTool = (title: string): ViewAction[] => (edit ? [{ ...edit, id: `edit-${title}`, label: t('bibliotheque.term.editField', { field: title }), primary: false }] : [])
+  const row = (id: string, title: string, value: string, tools: ViewAction[] = editTool(title)): ListItem => ({ id, title, detail: value || '—', ...(tools.length ? { tools } : {}) })
+  const uses = kind === 'prompt' || kind === 'persona' || kind === 'skill' ? (deps.usedBy?.(kind, entry.name) ?? []) : []
+  const skill = kind === 'skill'
+  const executable = skill && (!!entry.context?.length || !!entry.output)
+  const threshold = `${Math.round((entry.threshold ?? DEFAULT_THRESHOLD) * 100)} %`
+  const text = ownText(deps, entry)
+  const words = text ? text.split(/\s+/).filter(Boolean).length : 0
+  return {
+    title: entryTitle(entry),
+    ...(page.explorer ? { explorer: page.explorer } : {}),
+    back: page.back,
+    subtitle: [t(`bibliotheque.${kind}.one`), entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
+    actions: page.actions,
+    blocks: [
+      // Ses chiffres, en tête.
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('bibliotheque.aiEntry.stat.workflows'), value: String(uses.length), icon: 'flow' },
+          { label: t('bibliotheque.aiEntry.stat.words'), value: String(words), icon: 'book' },
+          ...(executable ? [{ label: t('bibliotheque.aiEntry.stat.threshold'), value: threshold, icon: 'gauge' as const }] : [])
+        ]
+      },
+      // Sa description, en une phrase, s'il en a une.
+      ...(entry.description ? [{ kind: 'text' as const, title: t('bibliotheque.aiEntry.description'), paragraphs: [entry.description] }] : []),
+      // Son texte, mis en forme : titres, listes, gras…
+      section('texte', t(`bibliotheque.${kind}.text`), words ? t('bibliotheque.aiEntry.words', { count: words }) : t('bibliotheque.entry.noText'), 'book', [{ kind: 'markdown', text, empty: t('bibliotheque.entry.noText') }]),
+      // Un skill exécutable : ce qu'il reçoit, ce qu'il rend, son seuil.
+      ...(executable
+        ? [
+            section('execution', t('bibliotheque.skill.executable'), t(entry.output ? `bibliotheque.skill.output.${entry.output}` : 'bibliotheque.skill.output.none'), 'settings', [
+              {
+                kind: 'list',
+                fields: true,
+                items: [
+                  row('contexte', t('bibliotheque.aiEntry.field.context'), (entry.context ?? []).map((key) => deps.skillContextLabel?.(key) ?? key).join(', ')),
+                  row('sortie', t('bibliotheque.aiEntry.field.output'), t(entry.output ? `bibliotheque.skill.output.${entry.output}` : 'bibliotheque.skill.output.none')),
+                  row('seuil', t('bibliotheque.aiEntry.field.threshold'), t('bibliotheque.aiEntry.threshold', { threshold }))
+                ]
+              }
+            ])
+          ]
+        : []),
+      // L'entrée : son nom, sa catégorie, sa description, où elle est.
+      section('entree', t(`bibliotheque.aiEntry.section.${kind}`), entry.category, 'info', [
+        {
+          kind: 'list',
+          fields: true,
+          items: [
+            row('name', t('bibliotheque.aiEntry.field.name'), entry.name),
+            row('category', t('bibliotheque.aiEntry.field.category'), entry.category),
+            row('description', t('bibliotheque.aiEntry.field.description'), entry.description),
+            row('place', t('bibliotheque.aiEntry.field.place'), placeText(deps.places[kind], entry), move ? [{ ...move, primary: false }] : [])
+          ]
+        }
+      ], false),
+      // Les workflows qui s'en servent : un clic ouvre le workflow.
+      section('workflows', t('bibliotheque.aiEntry.workflows', { count: uses.length }), '', 'flow', [
+        {
+          kind: 'list',
+          items: uses.map((use) => ({
+            id: `workflow-${use.id}`,
+            title: use.name,
+            detail: [t('bibliotheque.aiEntry.steps', { steps: use.steps.join(', '), count: use.steps.length }), t(use.enabled ? 'bibliotheque.aiEntry.enabled' : 'bibliotheque.aiEntry.disabled'), use.system ? t('bibliotheque.aiEntry.system') : ''].filter(Boolean).join(' · '),
+            icon: 'flow' as const,
+            tone: use.enabled ? ('success' as const) : ('neutral' as const),
+            ...(deps.showWorkflow ? { open: { id: 'open', label: t('bibliotheque.aiEntry.openWorkflow'), run: () => deps.showWorkflow!(use.id) } } : {})
+          })),
+          empty: t(`bibliotheque.aiEntry.workflows.none.${kind}`)
+        }
+      ])
+    ]
+  }
+}
 
 /**
  * **La fiche d'une étiquette** : ses chiffres en tête (documents qui la portent, où elle est
@@ -315,7 +418,7 @@ async function tagPage(deps: EntriesHomeDeps, entry: LibraryEntry, page: { back:
             { ...row('forms', forms.join(', '), editTool('forms')), ...(forms.length ? {} : { detail: t('bibliotheque.tagPage.noForms') }) },
             row('category', entry.category, editTool('category')),
             row('description', entry.description, editTool('description')),
-            row('place', placeName(deps.places.tag.shelves(), entry.shelf, entry.directory) || placeLabel(deps.places.tag, entry), move ? [{ ...move, primary: false }] : [])
+            row('place', placeText(deps.places.tag, entry), move ? [{ ...move, primary: false }] : [])
           ]
         }
       ]),
@@ -442,7 +545,7 @@ async function personPage(deps: EntriesHomeDeps, entry: LibraryEntry, page: { ba
             row('email', entry.email ?? '', editTool('email')),
             row('phone', entry.phone ?? '', editTool('phone')),
             row('category', entry.category, editTool('category')),
-            row('place', placeName(deps.places.person.shelves(), entry.shelf, entry.directory) || placeLabel(deps.places.person, entry), move ? [{ ...move, primary: false }] : [])
+            row('place', placeText(deps.places.person, entry), move ? [{ ...move, primary: false }] : [])
           ]
         }
       ]),
@@ -563,7 +666,7 @@ async function companyPage(deps: EntriesHomeDeps, entry: LibraryEntry, page: { b
             row('role', entry.description, editTool('role')),
             row('category', entry.category, editTool('category')),
             { ...row('names', names.join(', '), editTool('names')), ...(names.length ? {} : { detail: t('bibliotheque.company.noNames') }) },
-            row('place', placeName(deps.places.issuer.shelves(), entry.shelf, entry.directory) || placeLabel(deps.places.issuer, entry), move ? [{ ...move, primary: false }] : [])
+            row('place', placeText(deps.places.issuer, entry), move ? [{ ...move, primary: false }] : [])
           ]
         }
       ]),
@@ -650,7 +753,7 @@ async function termPage(deps: EntriesHomeDeps, entry: LibraryEntry, page: { back
             row('code', entry.code ?? '', editTool('code')),
             row('category', entry.category, editTool('category')),
             { ...row('aliases', forms.join(', '), editTool('aliases')), ...(forms.length ? {} : { detail: t('bibliotheque.term.noForms') }) },
-            row('place', placeName(deps.places.glossary.shelves(), entry.shelf, entry.directory) || placeLabel(deps.places.glossary, entry), move ? [{ ...move, primary: false }] : [])
+            row('place', placeText(deps.places.glossary, entry), move ? [{ ...move, primary: false }] : [])
           ]
         }
       ]),
@@ -772,33 +875,7 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
   if (kind === 'issuer') return companyPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   if (kind === 'person') return personPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   if (kind === 'tag') return tagPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
-  return {
-    title: entryTitle(entry),
-    ...(explorer ? { explorer } : {}),
-    back,
-    subtitle: [t(`bibliotheque.${kind}.one`), entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
-    actions,
-    blocks: [
-      ...(entry.description ? [{ kind: 'message' as const, tone: 'info' as const, text: entry.description }] : []),
-      // Le texte mis en forme : titres, listes, gras… (un prompt, un skill s'écrivent en Markdown).
-      { kind: 'markdown', title: t(`bibliotheque.${kind}.text`), text: ownText(deps, entry), empty: t('bibliotheque.entry.noText') },
-      // Un skill exécutable (le circuit des documents) : ce qu'il reçoit, ce qu'il rend, son seuil.
-      ...(kind === 'skill' && (entry.context?.length || entry.output)
-        ? [
-            {
-              kind: 'text' as const,
-              title: t('bibliotheque.skill.executable'),
-              paragraphs: [
-                t('bibliotheque.skill.executable.context', { list: (entry.context ?? []).map((key) => deps.skillContextLabel?.(key) ?? key).join(', ') || '—' }),
-                t('bibliotheque.skill.executable.output', { output: t(entry.output ? `bibliotheque.skill.output.${entry.output}` : 'bibliotheque.skill.output.none') }),
-                t('bibliotheque.skill.executable.threshold', { threshold: `${Math.round((entry.threshold ?? DEFAULT_THRESHOLD) * 100)} %` })
-              ]
-            }
-          ]
-        : []),
-      { kind: 'text', title: t('bibliotheque.entry.where'), paragraphs: [t('bibliotheque.entry.placed', { place: placeLabel(deps.places[kind], entry) }), t(`bibliotheque.${kind}.where`)] }
-    ]
-  }
+  return aiEntryPage(deps, entry, kind, { back, actions, ...(explorer ? { explorer } : {}) })
 }
 
 /** La page d'accueil de la bibliothèque : ses trois bibliothèques. */

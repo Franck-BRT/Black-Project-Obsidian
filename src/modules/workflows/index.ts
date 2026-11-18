@@ -242,7 +242,7 @@ export const workflowsModule: BlackModule = {
   id: WORKFLOWS,
   nameKey: 'workflows.name',
   descriptionKey: 'workflows.description',
-  version: '0.28.0',
+  version: '0.29.0',
   requires: [],
   texts: { fr: workflowsFr, en: workflowsEn },
   details: () => workflowsFeatures(),
@@ -409,3 +409,30 @@ export const workflowsModule: BlackModule = {
 
 /** La session des fenêtres, pour les tests. */
 export const workflowsSession = (): Session | null => session
+
+/** Un workflow qui se sert d'une entrée de la bibliothèque : lequel, ses étapes qui la nomment, s'il est actif, système. */
+export interface WorkflowUse {
+  id: string
+  name: string
+  enabled: boolean
+  system: boolean
+  steps: number[]
+}
+
+/**
+ * Les workflows (utilisables : leur module actif) dont une étape nomme une entrée de la
+ * bibliothèque dans un champ — un prompt, un persona, un skill (`field` : `prompt`, `persona`,
+ * `skill`), par son nom (sans tenir compte des accents ni de la casse).
+ */
+export function workflowsUsing(field: string, name: string): WorkflowUse[] {
+  if (!session || !name.trim()) return []
+  const fold = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
+  const wanted = fold(name)
+  return session.load().flatMap((workflow) => {
+    const steps = workflow.actions.flatMap((action, index) => (fold(action.fields[field] ?? '') === wanted ? [index + 1] : []))
+    return steps.length ? [{ id: workflow.id, name: workflow.name, enabled: workflow.enabled, system: !!workflow.system, steps }] : []
+  })
+}
+
+/** La page d'un workflow (sa fiche). */
+export const workflowPageOf = (id: string): string => pageWith(WORKFLOW_PAGE, id)

@@ -181,4 +181,41 @@ describe('le glossaire', () => {
     expect(JSON.stringify(notes)).not.toContain('Liens (Black Projects)')
     expect(first).toBeTruthy()
   })
+
+  it('l’index : une seconde visite ne relit pas le texte des documents ; un document changé : lui seul relu, et pris en compte', async () => {
+    const platform = memoryPlatform()
+    const { load } = await start(platform)
+    await addStarterEntries('glossary', 'fr')
+    const records: string[] = []
+    for (const [name, text] of [['Note station.txt', 'Le CCTP de la station sol.'], ['Revue.txt', 'Revue du CCTP.'], ['Divers.txt', 'Rien de particulier.']] as const) {
+      records.push((await pourIntoLibrary([{ name, bytes: enc(text) }], { module: 'bibliotheque', label: '' }))!.added[0]!.record)
+    }
+    const cctp = (await libraryEntries('glossary')).find((term) => term.code === 'CCTP')!
+    // Combien de fois le texte des documents est lu.
+    let reads = 0
+    const readText = platform.fs.readText.bind(platform.fs)
+    platform.fs.readText = async (path: string) => {
+      if (records.includes(path)) reads++
+      return readText(path)
+    }
+    const used = async () => {
+      const page = await load(`bibliotheque.terme?${encodeURIComponent(cctp.path)}`)
+      return sections(page.blocks).find((section) => section.id === 'bibliotheque.terme.documents')!.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).map((item) => item.title)
+    }
+    expect(await used()).toEqual(['Note station', 'Revue'])
+    const first = reads
+    reads = 0
+    expect(await used()).toEqual(['Note station', 'Revue'])
+    // La seconde fois : les fiches parcourues, mais aucun texte relu (une lecture par fiche, pas deux).
+    expect(reads).toBe(first - records.length)
+    const visit = reads
+    // Un document changé (son titre cite le terme) : lui seul relu, et pris en compte.
+    const divers = records[2]!
+    await platform.fs.writeText(divers, (await readText(divers)).replace(/\ntitre: Divers\n/, '\ntitre: Divers CCTP\n'))
+    // (Ce que le module fait de lui-même quand une fiche change : laissé passer avant de compter.)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    reads = 0
+    expect(await used()).toEqual(['Divers CCTP', 'Note station', 'Revue'])
+    expect(reads).toBe(visit + 1)
+  })
 })

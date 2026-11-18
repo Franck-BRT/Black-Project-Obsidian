@@ -219,7 +219,8 @@ describe('plusieurs bibliothèques, des répertoires', () => {
     expect((await libraryEntries('prompt')).map((each) => each.name)).toEqual(['Cohérence'])
     // Déplacer : vers la principale.
     const fiche = await current()
-    expect(fiche.blocks.find((block) => block.kind === 'text' && block.title === 'Où il sert')).toMatchObject({ paragraphs: [expect.stringMatching(/^Rangé : Relecture › Technique\./), expect.any(String)] })
+    const entree = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.entree.entree')!
+    expect(entree.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).find((item) => item.id === 'place')).toMatchObject({ detail: 'Relecture › Technique' })
     platform.choices.push('Bibliothèque/Prompts')
     await fiche.actions!.find((each) => each.id === 'move')!.run()
     expect(await platform.fs.exists('Bibliothèque/Prompts/Cohérence.md')).toBe(true)

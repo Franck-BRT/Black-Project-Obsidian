@@ -246,6 +246,13 @@ Markdown (titres, listes, **gras**) : la fiche le montre mis en forme. Sur la fi
 rien n'est effacé), **Supprimer** (aussi sur sa carte : après une question, sa note part à la
 corbeille du coffre ; les étapes de workflow qui l'utilisent par son nom ne le trouvent plus).
 
+**Sa fiche** : ses chiffres en tête (les workflows qui s'en servent, son nombre de mots ; un skill
+exécutable, son seuil) ; sa description (« En bref ») ; son **texte**, mis en forme ; un skill
+exécutable, ce qu'il reçoit, ce qu'il rend et son seuil, en lignes ; l'entrée en lignes (nom,
+catégorie, description, rangé), chacune avec son bouton ; **Workflows qui s'en servent** — ceux dont
+une étape le nomme (champ « Prompt », « Persona » ou « Skill »), avec le numéro de l'étape, actif ou
+non ; un clic ouvre le workflow.
+
 **Un skill exécutable** (le circuit des documents) : dans sa fenêtre, cochez ce qu'il **reçoit**
 avec un document (sa fiche, son texte, les types de pièce, les entreprises connues, les dossiers où
 ranger, les règles de rangement ; avec le module Programmes, les projets en cours et leurs
@@ -402,6 +409,10 @@ sont à confirmer et qui la suggèrent (elle ou une autre forme) : **Ajouter** l
 tous** s'ils sont plusieurs), leurs autres suggestions restant à confirmer ; **Dans la même
 catégorie** — les autres étiquettes, un clic ouvre la leur.
 
+**Ne confirmer que ce qu'on change** : dans **Modifier…**, seuls les champs que vous changez sont
+confirmés — ceux que vous laissez tels quels, s'ils étaient à confirmer, le restent. Dans **À
+confirmer (n)**, le **Modifier…** d'une ligne n'ouvre que ce champ.
+
 **Les étiquettes** aussi : dites par le document (« Mots-clés : », « Étiquettes : »), elles
 sont données. Sinon elles sont **à confirmer** : la fiche propose les mots qui reviennent le
 plus au début du texte (**Prendre ces étiquettes**), **Pas d'étiquettes**, ou **Modifier…** ;
@@ -553,6 +564,8 @@ cherchées comme lui ; sa carte et sa page les disent (« Autres formes : … »
 - la fiche d'un document a une section **Glossaire (n)** : les termes qu'il emploie (dans son titre ou
   son texte, le terme, son sigle ou une autre forme, en mot entier), chacun avec sa définition ; un clic ouvre le terme ;
 - la page d'un terme dit **Documents qui l'emploient (n)** ; un clic ouvre leur fiche (voir sa fiche ci-dessous) ;
+  ce que chaque document cite est gardé en mémoire (un index) : il n'est relu que s'il change, ou si le
+  glossaire change — la fiche s'ouvre vite, même avec beaucoup de documents ;
 - le circuit des documents les **relie lui-même**, sans IA, à l'étape **Recherche dans le glossaire**
   (après l'ingestion) : le lien dans la fiche, un rétrolien dans la note du terme ; pour un document
   versé hors du circuit, le bouton ⟳ de cette étape, dans son parcours, le fait.

@@ -12,7 +12,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.158.0)
+## Aujourd'hui (version 0.159.0)
+
+- **Les fiches des prompts, personas et skills reprises** : leurs chiffres, leur texte mis en forme,
+  un skill exécutable en lignes, et les **workflows qui s'en servent** (un clic les ouvre).
+- **Plus rapide** : les fiches d'un terme du glossaire et d'une personne ne relisent plus tous les
+  documents à chaque fois (un index en mémoire).
+- **Ne confirmer que ce qu'on change** : « Modifier… » ne valide plus les champs à confirmer que vous
+  n'avez pas touchés ; dans « À confirmer », « Modifier… » n'ouvre que la ligne concernée.
 
 - **La fiche d'une étiquette reprise** : ses chiffres, l'étiquette en lignes, les documents qui la
   portent, ceux où elle est suggérée (à **Ajouter** d'un clic), les autres étiquettes de sa catégorie.

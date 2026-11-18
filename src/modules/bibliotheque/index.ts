@@ -23,7 +23,7 @@ import { fillTemplate } from '../../core/docs'
 import type { BlackModule, BooleanField, ModuleContext, ModuleDetails, ModuleFeature, TextField } from '../../core/modules/module'
 import type { Choice, FormField, Ui } from '../../core/ports'
 import { cleanFolder } from '../../core/settings'
-import { emitWorkflowEvent, NO_SUBJECT, onRunningChange, registerFieldSource, registerTrigger, runActionNow, runningSteps, runSystemWorkflow, stopRunning, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
+import { emitWorkflowEvent, NO_SUBJECT, onRunningChange, workflowPageOf, workflowsUsing, registerFieldSource, registerTrigger, runActionNow, runningSteps, runSystemWorkflow, stopRunning, systemWorkflowManages, workflowRunning, type Subject } from '../workflows'
 import page from './doc/Bibliothèque.md'
 import { AI_ENTRY_KINDS, ENTRY_KINDS, EntryStore, findIn, type EntryDraft, type EntryKind, type LibraryEntry } from './entries'
 import { entryPageOf, entryTitle, HUB_PAGE as ENTRIES_HUB_PAGE, registerEntriesHome, type CompanyDoc, type TermUse } from './entriesHome'
@@ -32,6 +32,7 @@ import { docPageOf, LIBRARY_PAGE, registerLibraryHome, textVersionInfo, textVers
 import { previousStarterTexts, startersFor } from './starters'
 import type { EntityProposal } from './model'
 import { DEFAULT_THRESHOLD, readThreshold, SKILL_CONTEXTS, SKILL_OUTPUTS, thresholdLabel, type AnalysisDecision, type FilingDecision } from './skills'
+import { MentionIndex } from './mentions'
 import { findCandidates, type LinkCandidate, type LinkSourceItem } from './links'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, readRecord, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
@@ -1070,7 +1071,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.72.0',
+  version: '0.73.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2435,44 +2436,49 @@ export const bibliothequeModule: BlackModule = {
         .split(',')
         .map((each) => each.trim())
         .filter(Boolean)
-      // La langue choisie : confirmée ; laissée vide, ce qu'elle était (à confirmer, ou inconnue).
+      // La langue choisie (changée) : confirmée ; vidée, retirée ; la même, ce qu'elle était (à confirmer, ou non).
       const language = isLanguage(values.language) ? values.language : ''
-      const languageFields = language
-        ? { language, languageToConfirm: undefined, languageProbable: undefined }
-        : doc.language
-          ? { language: undefined }
-          : {}
+      const languageFields =
+        language === (doc.language ?? '')
+          ? {}
+          : language
+            ? { language, languageToConfirm: undefined, languageProbable: undefined }
+            : { language: undefined }
       // La date : écrite comme on veut (« 12/03/2026 », « 12 mars 2026 ») ; illisible, celle qu'il avait reste.
       const typedDate = (values.date ?? '').trim()
       const date = typedDate ? parseDocDate(typedDate) || doc.date : undefined
+      const title = (values.title ?? '').trim() || doc.title
+      const category = values.category === NEW_TYPE ? doc.category : (values.category ?? '').trim()
+      const reference = (values.reference ?? '').trim()
+      const edition = (values.edition ?? '').trim()
+      const revision = (values.revision ?? '').trim()
+      const issuer = values.issuer === NEW_ISSUER ? doc.issuer : (values.issuer ?? '').trim()
+      // Seul ce que vous avez changé est confirmé : le reste, encore à confirmer, le reste.
+      const sameTags = tags.length === doc.tags.length && tags.every((tag) => doc.tags.some((each) => each.toLowerCase() === tag.toLowerCase()))
+      const changed = {
+        title: title !== doc.title,
+        category: category !== doc.category || values.category === NEW_TYPE,
+        identity: reference !== doc.reference || edition !== doc.edition || revision !== doc.revision,
+        issuer: issuer !== doc.issuer || values.issuer === NEW_ISSUER,
+        tags: !sameTags,
+        date: (date ?? '') !== (doc.date ?? '')
+      }
       await store.save({
         ...doc,
         ...languageFields,
         date,
-        dateToConfirm: undefined,
-        dateProbable: undefined,
-        dateByAi: undefined,
-        // Classé à la main : le titre, la référence et la version sont confirmés.
-        identityToConfirm: undefined,
-        identityByAi: undefined,
-        titleToConfirm: undefined,
-        titleProbable: undefined,
-        titleByAi: undefined,
-        issuerToConfirm: undefined,
-        issuerProbable: undefined,
-        issuerByAi: undefined,
-        categoryToConfirm: undefined,
-        categoryProbable: undefined,
-        categoryByAi: undefined,
-        tagsToConfirm: undefined,
-        tagsProbable: undefined,
-        tagsByAi: undefined,
-        title: (values.title ?? '').trim() || doc.title,
-        category: values.category === NEW_TYPE ? doc.category : (values.category ?? '').trim(),
-        reference: (values.reference ?? '').trim(),
-        edition: (values.edition ?? '').trim(),
-        revision: (values.revision ?? '').trim(),
-        issuer: values.issuer === NEW_ISSUER ? doc.issuer : (values.issuer ?? '').trim(),
+        ...(changed.date ? { dateToConfirm: undefined, dateProbable: undefined, dateByAi: undefined } : {}),
+        ...(changed.identity ? { identityToConfirm: undefined, identityByAi: undefined } : {}),
+        ...(changed.title ? { titleToConfirm: undefined, titleProbable: undefined, titleByAi: undefined } : {}),
+        ...(changed.issuer ? { issuerToConfirm: undefined, issuerProbable: undefined, issuerByAi: undefined } : {}),
+        ...(changed.category ? { categoryToConfirm: undefined, categoryProbable: undefined, categoryByAi: undefined } : {}),
+        ...(changed.tags ? { tagsToConfirm: undefined, tagsProbable: undefined, tagsByAi: undefined } : {}),
+        title,
+        category,
+        reference,
+        edition,
+        revision,
+        issuer,
         tags
       })
       // « Ajouter un émetteur à la liste… » : sa fenêtre, puis il devient celui du document.
@@ -2760,23 +2766,27 @@ export const bibliothequeModule: BlackModule = {
     const glossaryItems = async (): Promise<(LinkSourceItem & { entry: LibraryEntry })[]> =>
       (await entries.glossary.all()).map((entry) => ({ path: entry.path, label: entryTitle(entry), kind: 'glossary', names: [entry.name, entry.code ?? '', ...(entry.aliases ?? [])].filter(Boolean), entry }))
     const docText = async (doc: LibraryDoc): Promise<string> => [doc.title, doc.reading === 'lue' ? ((await store.transcriptText(doc.record)) ?? '') : ''].join('\n')
+    /** Ce que chaque document cite (termes, personnes) : relu seulement quand le document ou la source change. */
+    const mentions = new MentionIndex(docText)
     const glossaryOf = async (record: string): Promise<{ path: string; label: string; definition: string }[]> => {
       const doc = await store.load(record)
       if (!doc) return []
       const items = await glossaryItems()
       if (!items.length) return []
       // Dans l'ordre où le document les emploie ; puis ceux que le circuit y a reliés.
-      const found = new Set(findCandidates(await docText(doc), items, '', 200).map((candidate) => candidate.path))
+      const found = new Set((await mentions.of('glossaire', doc, items)).map((candidate) => candidate.path))
       for (const link of doc.links ?? []) if (items.some((item) => item.path === link)) found.add(link)
       return [...found].map((path) => items.find((item) => item.path === path)!).map((item) => ({ path: item.path, label: item.label, definition: item.entry.description }))
     }
     const documentsUsing = async (path: string): Promise<TermUse[]> => {
-      const item = (await glossaryItems()).find((each) => each.path === path)
-      if (!item) return []
+      const items = await glossaryItems()
+      if (!items.some((each) => each.path === path)) return []
       const out: TermUse[] = []
-      for (const doc of await store.all()) {
+      const all = await store.all()
+      mentions.keep(new Set(all.map((doc) => doc.record)))
+      for (const doc of all) {
         const linked = (doc.links ?? []).includes(path)
-        const found = findCandidates(await docText(doc), [item], doc.record, 1)[0]?.found
+        const found = (await mentions.of('glossaire', doc, items)).find((candidate) => candidate.path === path)?.found
         if (linked || found) out.push({ record: doc.record, title: doc.title, detail: placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/'))), linked, ...(found ? { found } : {}) })
       }
       return out.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
@@ -2791,7 +2801,7 @@ export const bibliothequeModule: BlackModule = {
       const doc = await store.load(record)
       if (!doc) return null
       const items = await glossaryItems()
-      const found = items.length ? findCandidates(await docText(doc), items, record, 200) : []
+      const found = await mentions.of('glossaire', doc, items)
       const links = await store.linksOf(record)
       const added = found.filter((candidate) => !links.some((link) => link.path === candidate.path)).map((candidate) => ({ path: candidate.path, why: t('bibliotheque.glossary.why', { found: candidate.found }) }))
       if (added.length) await store.setLinks(record, [...links, ...added])
@@ -3260,7 +3270,8 @@ export const bibliothequeModule: BlackModule = {
      * citent (son nom, en mot entier) sans y être reliés — à relier d'un clic.
      */
     const personDocuments = async (entry: LibraryEntry): Promise<{ linked: CompanyDoc[]; cited: CompanyDoc[] }> => {
-      const item: LinkSourceItem = { path: entry.path, label: entry.name, kind: 'person', names: [entry.name] }
+      // Toutes les personnes, en une source : l'index sert à la fiche de chacune.
+      const persons: LinkSourceItem[] = (await entries.person.all()).map((each) => ({ path: each.path, label: each.name, kind: 'person', names: [each.name] }))
       const row = (doc: LibraryDoc, found?: string): CompanyDoc => ({
         record: doc.record,
         title: doc.title,
@@ -3269,10 +3280,12 @@ export const bibliothequeModule: BlackModule = {
       })
       const linked: CompanyDoc[] = []
       const cited: CompanyDoc[] = []
-      for (const doc of await store.all()) {
+      const all = await store.all()
+      mentions.keep(new Set(all.map((doc) => doc.record)))
+      for (const doc of all) {
         if ((doc.links ?? []).includes(entry.path)) linked.push(row(doc))
         else {
-          const found = findCandidates(await docText(doc), [item], doc.record, 1)[0]?.found
+          const found = (await mentions.of('personnes', doc, persons)).find((candidate) => candidate.path === entry.path)?.found
           if (found) cited.push(row(doc, found))
         }
       }
@@ -3315,6 +3328,8 @@ export const bibliothequeModule: BlackModule = {
       pagesChanged()
     }
     registerEntriesHome(context.views, {
+      usedBy: (kind, name) => workflowsUsing(kind, name),
+      showWorkflow: (id) => showPage?.(workflowPageOf(id)),
       tagDocuments,
       tagDocument,
       personDocuments,

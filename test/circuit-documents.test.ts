@@ -115,12 +115,14 @@ describe('un skill exécutable', () => {
     const skill = (await libraryEntries('skill')).find((entry) => entry.name === 'Ranger un document')!
     expect(skill).toMatchObject({ context: ['fiche', 'texte', 'dossiers', 'projets', 'repertoires-attendus', 'regles-de-rangement'], output: 'rangement', threshold: 0.7 })
     const page = await load(`bibliotheque.skill?${encodeURIComponent(skill.path)}`)
-    const executable = page.blocks.find((block) => block.kind === 'text' && block.title === 'Exécutable')
-    expect(executable?.kind === 'text' && executable.paragraphs).toEqual([
-      'Il reçoit : Sa fiche, Son texte, Les dossiers où ranger, Les projets en cours, Les répertoires attendus des projets, Les règles de rangement.',
-      'Il rend : Une décision de rangement (un dossier, une confiance, une raison).',
-      'Seuil de confiance : 70 % — en dessous, le document va dans « À contrôler ».'
+    const executable = page.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.entree.execution')!
+    expect(executable.title).toBe('Exécutable')
+    expect(executable.blocks.flatMap((block) => (block.kind === 'list' ? block.items : [])).map((item) => [item.title, item.detail])).toEqual([
+      ['Ce qu’il reçoit', 'Sa fiche, Son texte, Les dossiers où ranger, Les projets en cours, Les répertoires attendus des projets, Les règles de rangement'],
+      ['Ce qu’il rend', 'Une décision de rangement (un dossier, une confiance, une raison)'],
+      ['Seuil', '70 % — en dessous, le document va dans « À contrôler »']
     ])
+    expect(page.blocks[0]).toMatchObject({ kind: 'stats', stats: [{ label: 'Workflows qui s’en servent' }, { label: 'Mots' }, { label: 'Seuil de confiance', value: '70 %' }] })
     // Modifié (sa fenêtre) : le texte comme le reste ; seuil changé, un contexte en moins.
     platform.forms.push({ name: 'Ranger un document', category: 'Circuit', description: '', text: 'Range.', favorite: 'false', 'contexte:fiche': 'true', 'contexte:texte': 'false', 'contexte:dossiers': 'true', 'contexte:regles-de-rangement': 'true', sortie: 'rangement', seuil: '80 %' })
     await page.actions!.find((action) => action.id === 'edit')!.run()

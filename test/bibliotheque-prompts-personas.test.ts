@@ -130,7 +130,7 @@ describe('les bibliothèques de prompts et de personas', () => {
     const platform = memoryPlatform()
     const { page } = await start(platform)
     const fiche = await page('bibliotheque.skill').load(encodeURIComponent('Bibliothèque/Skills/Analyser un document.md'))
-    const text = fiche.blocks.find((block) => block.kind === 'markdown')
+    const text = fiche.blocks.flatMap((block) => (block.kind === 'section' && block.id === 'bibliotheque.entree.texte' ? block.blocks : [])).find((block) => block.kind === 'markdown')
     expect(text).toMatchObject({ kind: 'markdown', text: expect.stringContaining('\n1. Son **type de pièce**') })
     const card = cardsOf(await page('bibliotheque.skills').load()).find((each) => each.title === 'Analyser un document')!
     expect(card.text).toMatch(/^Tu analyses un document qui entre dans la bibliothèque\. Lis sa fiche et le début de son texte, puis : Son type de pièce : un code/)
@@ -149,7 +149,9 @@ describe('les bibliothèques de prompts et de personas', () => {
     expect(view.filters?.map((filter) => filter.id)).toEqual(['favoris', 'categorie-analyse', 'categorie-consultation', 'categorie-contrat', 'categorie-planning'])
     const fiche = await page('bibliotheque.prompt').load(encodeURIComponent('Bibliothèque/Prompts/Pénalités.md'))
     expect(fiche.title).toBe('Pénalités')
-    expect(fiche.blocks.find((block) => block.kind === 'markdown' && block.title === 'La question')).toMatchObject({ text: expect.stringMatching(/^Quelles pénalités le dossier prévoit-il/) })
+    const question = fiche.blocks.find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.entree.texte')!
+    expect(question.title).toBe('La question')
+    expect(question.blocks[0]).toMatchObject({ kind: 'markdown', text: expect.stringMatching(/^Quelles pénalités le dossier prévoit-il/) })
     // Modifier : le nom change, la note est renommée, la fiche suit.
     platform.forms.push({ name: 'Pénalités et plafonds', category: 'Contrat', description: '', text: 'Quelles pénalités, et leur plafond ?', favorite: 'true' })
     await fiche.actions!.find((action) => action.id === 'edit')!.run()

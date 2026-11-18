@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.28.0 (Black Projects 0.154.0) |
+| Version | 0.29.0 (Black Projects 0.159.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -13,6 +13,12 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/workflows/doc/Workflows.md`.
 
+
+## Qui se sert d'une entrée de la bibliothèque (v0.29.0, Black Projects 0.159.0)
+
+- `workflowsUsing(field, name)` : les workflows (utilisables) dont une étape nomme une entrée dans
+  un champ (`prompt`, `persona`, `skill`), sans tenir compte des accents ni de la casse — leurs
+  étapes, actifs ou non, système ou non. `workflowPageOf(id)` : la page d'un workflow.
 
 ## Ce qui s'exécute en ce moment ; arrêter (v0.28.0, Black Projects 0.154.0)
 

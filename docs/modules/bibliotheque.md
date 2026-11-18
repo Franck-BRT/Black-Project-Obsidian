@@ -5,13 +5,32 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.72.0 (Black Projects 0.158.0) |
+| Version | 0.73.0 (Black Projects 0.159.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Les fiches des prompts, personas et skills ; l'index des mentions ; ne confirmer que ce qu'on change (v0.73.0, Black Projects 0.159.0)
+
+- `aiEntryPage` (`entriesHome.ts`), pour les trois : des chiffres (workflows qui s'en servent, mots ;
+  un skill exécutable, son seuil) ; « En bref » (sa description) ; les sections
+  `bibliotheque.entree.texte` (le texte, en Markdown), `.execution` (un skill exécutable : reçoit,
+  rend, seuil, en lignes), `.entree` (nom, catégorie, description, rangé ; repliée), `.workflows`
+  (`usedBy` → `workflowsUsing` du module Workflows : les workflows dont une étape le nomme, un clic
+  les ouvre). La page générique d'une entrée n'existe plus : chaque sorte a la sienne. « Rangé » dit
+  le chemin d'un répertoire (`placeText`).
+- **L'index des mentions** (`mentions.ts`, `MentionIndex`) : pour chaque document, ce que son titre
+  et son texte citent d'une source (le glossaire, les personnes), gardé tant que ni le document
+  (sha256, version du texte, lecture, caractères, titre) ni la source (ses entrées et leurs noms) ne
+  changent. `glossaryOf`, `documentsUsing`, `searchGlossary`, `personDocuments` s'en servent : une
+  seconde visite ne relit plus le texte des documents.
+- **Ne confirmer que ce qu'on change** : « Modifier… » (`classify`) ne lève les « à confirmer » que
+  des champs changés (titre, type, référence et version, entreprise, étiquettes, date, langue) ;
+  avant, il les levait tous. Dans « À confirmer », le « Modifier… » d'une ligne (titre, type,
+  étiquettes, entreprise, date) ouvre la fenêtre de ce seul champ (`editField`).
 
 ## La fiche d'une étiquette reprise ; « Nouvelle entreprise… » (v0.72.0, Black Projects 0.158.0)
 

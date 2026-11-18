@@ -579,7 +579,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                 ? [{ id: 'use-title', label: t('bibliotheque.title.use', { title: doc.titleProbable }), icon: 'check' as const, primary: true, run: () => deps.confirmTitle(doc.record, doc.titleProbable!) }]
                 : []),
               { id: 'keep-title', label: t(doc.titleProbable ? 'bibliotheque.title.keep' : 'bibliotheque.identity.confirm'), icon: doc.titleProbable ? ('cross' as const) : ('check' as const), ...(doc.titleProbable ? {} : { primary: true }), run: () => deps.confirmTitle(doc.record, null) },
-              { id: 'classify-title', label: t('bibliotheque.classify'), icon: 'edit' as const, run: () => deps.classify(doc.record) }
+              { id: 'classify-title', label: t('bibliotheque.classify'), icon: 'edit' as const, run: () => deps.editField(doc.record, 'title') }
             ]
           }
         ]
@@ -608,7 +608,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                 ...(doc.category && !doc.categoryProbable ? { primary: true } : {}),
                 run: () => deps.confirmCategory(doc.record, null)
               },
-              { id: 'classify-category', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.category || doc.categoryProbable ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+              { id: 'classify-category', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.category || doc.categoryProbable ? {} : { primary: true }), run: () => deps.editField(doc.record, 'category') }
             ]
           }
         ]
@@ -633,7 +633,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                   ]
                 : []),
               { id: 'keep-tags', label: t(doc.tags.length ? 'bibliotheque.identity.confirm' : 'bibliotheque.tags.none'), icon: 'cross' as const, run: () => deps.confirmTags(doc.record, null) },
-              { id: 'classify-tags', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.tagsProbable?.length ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+              { id: 'classify-tags', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.tagsProbable?.length ? {} : { primary: true }), run: () => deps.editField(doc.record, 'tags') }
             ]
           }
         ]
@@ -650,7 +650,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                 ? [{ id: 'use-issuer', label: t('bibliotheque.issuer.use', { issuer: issuerText(doc.issuerProbable) }), icon: 'check' as const, primary: true, run: () => deps.confirmIssuer(doc.record, doc.issuerProbable!) }]
                 : []),
               { id: 'keep-issuer', label: t(doc.issuer ? 'bibliotheque.identity.confirm' : 'bibliotheque.issuer.none'), icon: 'cross' as const, run: () => deps.confirmIssuer(doc.record, null) },
-              { id: 'classify-issuer', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.issuerProbable ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+              { id: 'classify-issuer', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.issuerProbable ? {} : { primary: true }), run: () => deps.editField(doc.record, 'issuer') }
             ]
           }
         ]
@@ -667,7 +667,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                 ? [{ id: 'use-date', label: t('bibliotheque.issuer.use', { issuer: docDateLabel(doc.dateProbable, deps.locale) }), icon: 'check' as const, primary: true, run: () => deps.confirmDate(doc.record, doc.dateProbable!) }]
                 : []),
               { id: 'keep-date', label: t(doc.date ? 'bibliotheque.identity.confirm' : 'bibliotheque.date.none'), icon: 'cross' as const, run: () => deps.confirmDate(doc.record, null) },
-              { id: 'classify-date', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.dateProbable ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+              { id: 'classify-date', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.dateProbable ? {} : { primary: true }), run: () => deps.editField(doc.record, 'date') }
             ]
           }
         ]

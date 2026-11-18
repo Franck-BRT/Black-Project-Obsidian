@@ -70,6 +70,19 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Les fiches des prompts, personas, skills ; l'index ; ne confirmer que ce qu'on change (v0.159.0)
+
+- [ ] Bibliothèque › Skills › « Ranger un document » : chiffres (1 workflow, mots, seuil 70 %), « En
+      bref », sa méthode mise en forme, « Exécutable » en lignes, « Workflows qui s'en servent » —
+      « Circuit des documents », étape 4 ; un clic ouvre le workflow
+- [ ] Un prompt, un persona : même fiche (sans « Exécutable ») ; aucun workflow : dit, avec où le
+      choisir
+- [ ] Glossaire : ouvrir deux fois la fiche d'un terme avec beaucoup de documents — la seconde est
+      immédiate ; modifier un document, le terme le voit
+- [ ] Un document avec plusieurs champs à confirmer : « Modifier… », ne changer que le titre — le
+      titre confirmé, les autres toujours à confirmer ; dans « À confirmer », « Modifier… » sur la
+      ligne Titre n'ouvre que le titre
+
 ## La fiche d'une étiquette ; « Nouvelle entreprise… » (v0.158.0)
 
 - [ ] Une étiquette « antenne » (autre forme « antennes », catégorie Matériel), une autre de la même
