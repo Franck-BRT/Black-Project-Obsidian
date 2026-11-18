@@ -1070,7 +1070,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.71.0',
+  version: '0.72.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2283,6 +2283,19 @@ export const bibliothequeModule: BlackModule = {
       await entries.issuer.create(draft)
       return draft
     }
+    /** Le bouton « Nouvelle entreprise… » à côté de la liste des entreprises : sa fenêtre par-dessus ; l'entreprise créée est choisie. */
+    const issuerCreate = () => ({
+      label: t('bibliotheque.issuer.create'),
+      tooltip: t('bibliotheque.issuer.create.tip'),
+      run: async (): Promise<Choice | null> => {
+        const draft = await newIssuer('')
+        if (!draft) return null
+        const code = draft.code || draft.name
+        platform.notifier.notify(t('bibliotheque.issuer.created', { name: entryTitle(draft) }), 5000)
+        pagesChanged()
+        return { value: code, label: issuerLabelIn(code, await knownIssuers()) }
+      }
+    })
     /**
      * L'émetteur d'un document, hors de la liste : l'y ajouter (sa fenêtre, son nom et un code
      * proposés) ; il devient celui du document — et des autres documents qui portaient ce nom.
@@ -2403,7 +2416,7 @@ export const bibliothequeModule: BlackModule = {
           { kind: 'text', key: 'reference', label: t('bibliotheque.field.reference'), value: doc.reference, placeholder: 'CCTP-2026-118' },
           { kind: 'text', key: 'edition', label: t('bibliotheque.field.edition'), value: doc.edition, placeholder: '2' },
           { kind: 'text', key: 'revision', label: t('bibliotheque.field.revision'), value: doc.revision, placeholder: 'B' },
-          { kind: 'choice', key: 'issuer', label: t('bibliotheque.field.issuer'), value: doc.issuer, description: t('bibliotheque.issuer.choose'), options: issuerOptions(doc.issuer, await knownIssuers()) },
+          { kind: 'choice', key: 'issuer', label: t('bibliotheque.field.issuer'), value: doc.issuer, description: t('bibliotheque.issuer.choose'), options: issuerOptions(doc.issuer, await knownIssuers()), create: issuerCreate() },
           { kind: 'text', key: 'date', label: t('bibliotheque.field.date'), value: doc.date ?? '', placeholder: '2026-03-12', description: t('bibliotheque.classify.date'), calendar: true },
           {
             kind: 'choice',
@@ -2565,7 +2578,7 @@ export const bibliothequeModule: BlackModule = {
           key === 'category'
             ? { kind: 'choice', key: 'value', label, value: current, description: t('bibliotheque.classify.categories'), options: typeOptions(current), ...(typeCreate() ? { create: typeCreate()! } : {}) }
             : key === 'issuer'
-              ? { kind: 'choice', key: 'value', label, value: current, description: t('bibliotheque.issuer.choose'), options: issuerOptions(current, await knownIssuers()) }
+              ? { kind: 'choice', key: 'value', label, value: current, description: t('bibliotheque.issuer.choose'), options: issuerOptions(current, await knownIssuers()), create: issuerCreate() }
               : { kind: 'text', key: 'value', label, value: current, ...(key === 'title' ? { required: true } : {}), ...(help[key] ? { description: help[key] } : {}), ...(key === 'date' ? { calendar: true, placeholder: '2026-03-12' } : {}) }
         ],
         submit: t('bibliotheque.edit.submit')
@@ -3174,6 +3187,7 @@ export const bibliothequeModule: BlackModule = {
             label: t('bibliotheque.person.field.company'),
             value: listed ?? company,
             description: t('bibliotheque.person.field.company.desc'),
+            create: issuerCreate(),
             options: [
               { value: '', label: t('bibliotheque.issuer.unset') },
               ...[...known].sort((a, b) => a.code.localeCompare(b.code, 'fr')).map((each) => ({ value: each.code, label: issuerLabelIn(each.code, known) })),
@@ -3272,7 +3286,37 @@ export const bibliothequeModule: BlackModule = {
       await store.setLinks(record, [...links, { path, why }])
       pagesChanged()
     }
+    /**
+     * **Les documents d'une étiquette** : ceux qui la portent (elle, ou une de ses autres formes), et
+     * ceux où elle est suggérée (leurs étiquettes à confirmer) sans y être encore — à ajouter d'un clic.
+     */
+    const tagDocuments = async (entry: LibraryEntry): Promise<{ tagged: CompanyDoc[]; suggested: CompanyDoc[] }> => {
+      const forms = [entry.name, ...entry.text.split('\n').map((line) => line.replace(/^[-*•]\s*/, '').trim())].filter(Boolean)
+      const isIt = (tag: string) => forms.some((form) => sameName(form, tag))
+      const row = (doc: LibraryDoc): CompanyDoc => ({ record: doc.record, title: doc.title, detail: [doc.category, doc.date, placeOfFolder(doc.record.slice(0, doc.record.lastIndexOf('/')))].filter(Boolean).join(' · ') })
+      const byTitle = (a: CompanyDoc, b: CompanyDoc) => a.title.localeCompare(b.title, 'fr')
+      const all = await store.all()
+      return {
+        tagged: all.filter((doc) => doc.tags.some(isIt)).map(row).sort(byTitle),
+        suggested: all.filter((doc) => !doc.tags.some(isIt) && !!doc.tagsToConfirm && (doc.tagsProbable ?? []).some(isIt)).map(row).sort(byTitle)
+      }
+    }
+    /** Ajouter une étiquette à un document (gardée sous son nom). */
+    const tagDocument = async (record: string, name: string): Promise<void> => {
+      const doc = await store.load(record)
+      if (!doc || doc.tags.some((tag) => sameName(tag, name))) return
+      const saved = await store.setTags(record, [...doc.tags, name])
+      // Ses autres étiquettes suggérées restent à confirmer (seule celle-ci, sous toutes ses formes, est donnée).
+      const entry = (await entries.tag.all()).find((each) => sameName(each.name, name))
+      const forms = [name, ...(entry?.text ?? '').split('\n').map((line) => line.replace(/^[-*•]\s*/, '').trim())].filter(Boolean)
+      const rest = (doc.tagsProbable ?? []).filter((tag) => !forms.some((form) => sameName(form, tag)) && !doc.tags.some((each) => sameName(each, tag)))
+      if (saved && doc.tagsToConfirm && rest.length) await store.save({ ...saved, tagsToConfirm: true, tagsProbable: rest })
+      platform.notifier.notify(t('bibliotheque.tagPage.added', { tag: name, title: doc.title }), 5000)
+      pagesChanged()
+    }
     registerEntriesHome(context.views, {
+      tagDocuments,
+      tagDocument,
       personDocuments,
       linkNoteIn,
       companyDocuments,

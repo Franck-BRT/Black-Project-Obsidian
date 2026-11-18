@@ -12,7 +12,12 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.157.0)
+## Aujourd'hui (version 0.158.0)
+
+- **La fiche d'une étiquette reprise** : ses chiffres, l'étiquette en lignes, les documents qui la
+  portent, ceux où elle est suggérée (à **Ajouter** d'un clic), les autres étiquettes de sa catégorie.
+- **Nouvelle entreprise…** : à côté de la liste des entreprises (« Modifier… » d'un document, fenêtre
+  d'une personne) — l'entreprise créée est choisie aussitôt.
 
 - **La fiche d'une personne reprise** : ses chiffres, la personne en lignes, les documents qui la
   citent (à **Relier** d'un clic), ses collègues, ses notes.

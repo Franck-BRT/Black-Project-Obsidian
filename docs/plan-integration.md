@@ -683,6 +683,7 @@ qualité analysée dès l'extraction des exigences (`test/ao-workflows.test.ts`)
 - v0.136.14 : **le circuit des documents activé d'origine**, s'il y a une IA réglée (sans IA, versement direct comme avant)
 - v0.137.0 : **le circuit des documents, version C — les liens** : candidats sans IA (documents, entreprises, personnes, projets), liens choisis par l'IA dans la fiche, rétroliens dans les notes citées, entretien du lundi
 - v0.138.0 : **les entreprises et personnes inconnues, proposées** par l'analyse (jamais créées seules) : sur la fiche, dans À contrôler ; « Créer » (liée au document) ou « Écarter »
+- v0.158.0 : **la fiche d'une étiquette reprise** (documents qui la portent, où elle est suggérée — « Ajouter ») ; « Nouvelle entreprise… » à côté de la liste des entreprises
 - v0.157.0 : **la fiche d'une personne reprise** ; « Nouveau type… » à côté de la liste des types de pièce ; un serveur d'IA trop lent (504) ne bloque plus l'ingestion (la partie coupée en deux)
 - v0.156.0 : **la fiche d'une entreprise reprise** (chiffres, l'entreprise en lignes, documents émis, documents qui la citent, personnes) ; les rétroliens d'une note à part de son texte
 - v0.155.0 : **la fiche d'un terme du glossaire reprise** : définition en tête, le terme en lignes, les documents reliés ou seulement cités (« Relier »), son domaine, ses notes sans les rétroliens

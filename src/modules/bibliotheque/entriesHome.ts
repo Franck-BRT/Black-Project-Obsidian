@@ -97,6 +97,10 @@ export interface EntriesHomeDeps {
   personDocuments?(entry: LibraryEntry): Promise<{ linked: CompanyDoc[]; cited: CompanyDoc[] }>
   /** Relier un document à une note (la personne qu'il cite) : lien et rétrolien. */
   linkNoteIn?(record: string, path: string, why: string): Promise<void>
+  /** Une étiquette : les documents qui la portent, et ceux où elle est suggérée (à confirmer). */
+  tagDocuments?(entry: LibraryEntry): Promise<{ tagged: CompanyDoc[]; suggested: CompanyDoc[] }>
+  /** Ajouter une étiquette à un document. */
+  tagDocument?(record: string, name: string): Promise<void>
   /** Ouvrir la fiche d'un document. */
   showDocument?(record: string): void
 }
@@ -249,6 +253,127 @@ export async function entriesPage(deps: EntriesHomeDeps, kind: EntryKind, param?
 
 /** Son texte à soi (la section des rétroliens est à part, `backlinks` : la page les dit ailleurs). */
 const ownText = (_deps: EntriesHomeDeps, entry: LibraryEntry): string => (entry.text ?? '').trim()
+
+/**
+ * **La fiche d'une étiquette** : ses chiffres en tête (documents qui la portent, où elle est
+ * suggérée) ; l'étiquette en lignes (nom, autres formes, catégorie, description, rangée), chacune avec
+ * son bouton ; les documents qui la portent ; ceux où elle est suggérée — « Ajouter » la leur donne ;
+ * les autres étiquettes de sa catégorie.
+ */
+async function tagPage(deps: EntriesHomeDeps, entry: LibraryEntry, page: { back: ViewAction; actions: ViewAction[]; explorer?: Explorer }): Promise<PageView> {
+  const { t } = deps
+  const section = (id: string, title: string, subtitle: string, icon: 'tag' | 'file' | 'bulb', blocks: HomeBlock[], open = true): HomeBlock => ({
+    kind: 'section',
+    id: `bibliotheque.etiquette.${id}`,
+    title,
+    ...(subtitle ? { subtitle } : {}),
+    icon,
+    collapsed: !open,
+    blocks
+  })
+  const move = page.actions.find((action) => action.id === 'move')
+  const edit = page.actions.find((action) => action.id === 'edit')
+  const editTool = (field: string): ViewAction[] => (edit ? [{ ...edit, id: `edit-${field}`, label: t('bibliotheque.term.editField', { field: t(`bibliotheque.tagPage.field.${field}`) }), primary: false }] : [])
+  const row = (id: string, value: string, tools: ViewAction[] = []): ListItem => ({ id, title: t(`bibliotheque.tagPage.field.${id}`), detail: value || '—', ...(tools.length ? { tools } : {}) })
+  const forms = entry.text
+    .split('\n')
+    .map((line) => line.replace(/^[-*•]\s*/, '').trim())
+    .filter((line) => line && !line.startsWith('#'))
+  const { tagged, suggested } = deps.tagDocuments ? await deps.tagDocuments(entry) : { tagged: [], suggested: [] }
+  const docItem = (doc: CompanyDoc, suggestion: boolean): ListItem => ({
+    id: `document-${doc.record}`,
+    title: doc.title,
+    detail: [doc.detail, suggestion ? t('bibliotheque.tagPage.suggestedHere') : ''].filter(Boolean).join(' · '),
+    icon: suggestion ? 'alert' : 'tag',
+    tone: suggestion ? 'warning' : 'success',
+    ...(deps.showDocument ? { open: { id: 'open', label: t('bibliotheque.doc.open'), run: () => deps.showDocument!(doc.record) } } : {}),
+    ...(suggestion && deps.tagDocument ? { actions: [{ id: `ajouter-${doc.record}`, label: t('bibliotheque.tagPage.add'), tooltip: t('bibliotheque.tagPage.add.tip', { tag: entry.name }), icon: 'plus' as const, run: () => deps.tagDocument!(doc.record, entry.name) }] } : {})
+  })
+  const neighbours = entry.category ? (await deps.stores.tag.all()).filter((each) => each.path !== entry.path && each.category === entry.category).sort((a, b) => a.name.localeCompare(b.name, 'fr')) : []
+  return {
+    title: entryTitle(entry),
+    ...(page.explorer ? { explorer: page.explorer } : {}),
+    back: page.back,
+    subtitle: [t('bibliotheque.tag.one'), entry.category, entry.favorite ? t('bibliotheque.entry.favorite') : ''].filter(Boolean).join(' · '),
+    actions: page.actions,
+    blocks: [
+      // Ses chiffres, en tête.
+      {
+        kind: 'stats',
+        stats: [
+          { label: t('bibliotheque.tagPage.stat.tagged'), value: String(tagged.length), icon: 'tag' },
+          { label: t('bibliotheque.tagPage.stat.suggested'), value: String(suggested.length), icon: 'alert' }
+        ]
+      },
+      // L'étiquette : ce qui la désigne, et où elle est.
+      section('etiquette', t('bibliotheque.tagPage.section'), forms.length ? t('bibliotheque.term.forms.count', { count: forms.length }) : '', 'tag', [
+        {
+          kind: 'list',
+          fields: true,
+          items: [
+            row('name', entry.name, editTool('name')),
+            { ...row('forms', forms.join(', '), editTool('forms')), ...(forms.length ? {} : { detail: t('bibliotheque.tagPage.noForms') }) },
+            row('category', entry.category, editTool('category')),
+            row('description', entry.description, editTool('description')),
+            row('place', placeName(deps.places.tag.shelves(), entry.shelf, entry.directory) || placeLabel(deps.places.tag, entry), move ? [{ ...move, primary: false }] : [])
+          ]
+        }
+      ]),
+      // Les documents qui la portent.
+      section('documents', t('bibliotheque.tagPage.tagged', { count: tagged.length }), '', 'file', [{ kind: 'list', items: tagged.map((doc) => docItem(doc, false)), empty: t('bibliotheque.tagPage.tagged.none') }]),
+      // Ceux où elle est suggérée : « Ajouter » la leur donne.
+      ...(suggested.length
+        ? [
+            section('suggeree', t('bibliotheque.tagPage.suggested', { count: suggested.length }), t('bibliotheque.tagPage.suggested.sub'), 'file', [
+              ...(suggested.length > 1 && deps.tagDocument
+                ? [
+                    {
+                      kind: 'actions' as const,
+                      actions: [
+                        {
+                          id: 'ajouter-tous',
+                          label: t('bibliotheque.tagPage.addAll', { count: suggested.length }),
+                          tooltip: t('bibliotheque.tagPage.add.tip', { tag: entry.name }),
+                          icon: 'plus' as const,
+                          run: async () => {
+                            for (const doc of suggested) await deps.tagDocument!(doc.record, entry.name)
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                : []),
+              { kind: 'list', items: suggested.map((doc) => docItem(doc, true)) }
+            ])
+          ]
+        : []),
+      // Les autres étiquettes de sa catégorie.
+      ...(neighbours.length
+        ? [
+            section(
+              'voisines',
+              t('bibliotheque.tagPage.neighbours', { category: entry.category, count: neighbours.length }),
+              neighbours.slice(0, 8).map((each) => each.name).join(' · '),
+              'tag',
+              [
+                {
+                  kind: 'list',
+                  items: neighbours.map((each) => ({
+                    id: `etiquette-${each.path}`,
+                    title: each.name,
+                    ...(each.description ? { detail: each.description } : {}),
+                    icon: 'tag' as const,
+                    ...(deps.showPage ? { open: { id: 'open', label: t('bibliotheque.entry.open'), run: () => deps.showPage?.(entryPageOf('tag', each.path)) } } : {})
+                  }))
+                }
+              ],
+              false
+            )
+          ]
+        : [])
+    ]
+  }
+}
 
 /**
  * **La fiche d'une personne** : ses chiffres en tête (documents qui la citent, collègues) ; la
@@ -642,10 +767,11 @@ export async function entryPage(deps: EntriesHomeDeps, kind: EntryKind, param: s
         ]
       : [])
   ]
-  // Un terme du glossaire, une entreprise, une personne : leur page à eux.
+  // Un terme du glossaire, une entreprise, une personne, une étiquette : leur page à eux.
   if (kind === 'glossary') return termPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   if (kind === 'issuer') return companyPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   if (kind === 'person') return personPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
+  if (kind === 'tag') return tagPage(deps, entry, { back, actions, ...(explorer ? { explorer } : {}) })
   return {
     title: entryTitle(entry),
     ...(explorer ? { explorer } : {}),

@@ -70,6 +70,17 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## La fiche d'une étiquette ; « Nouvelle entreprise… » (v0.158.0)
+
+- [ ] Une étiquette « antenne » (autre forme « antennes », catégorie Matériel), une autre de la même
+      catégorie ; un document étiqueté, un autre dont les étiquettes à confirmer la suggèrent
+- [ ] Sa fiche : les chiffres ; « L'étiquette » en lignes ; « Documents qui la portent » ; « Suggérée
+      sur » — « Ajouter » : l'étiquette donnée, ses autres suggestions toujours à confirmer ; « Dans la
+      même catégorie »
+- [ ] Fiche d'un document › « Modifier… » : « Nouvelle entreprise… » à côté de la liste ; sa fenêtre
+      (code, nom…) ; « Créer » : l'entreprise est dans la liste et choisie ; idem dans la fenêtre
+      d'une personne
+
 ## La fiche d'une personne ; « Nouveau type… » ; un serveur trop lent (v0.157.0)
 
 - [ ] Une personne (ESA), une collègue, un document qui la nomme : sa fiche — les chiffres, « La

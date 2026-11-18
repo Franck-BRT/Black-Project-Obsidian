@@ -395,6 +395,13 @@ dans le texte, **se cochent** (le crayon du champ ; « ＋ Autre(s) étiquette(s
 écrire, ajoutées à la liste) ; celles **hors de la liste** sont dites, et le bouton **+** les
 y ajoute.
 
+**La fiche d'une étiquette** : ses chiffres en tête (documents étiquetés, documents où elle est
+suggérée) ; **L'étiquette** en lignes — nom, autres formes, catégorie, description, rangée —, chacune
+avec son bouton ; **Documents qui la portent** ; **Suggérée sur** — les documents dont les étiquettes
+sont à confirmer et qui la suggèrent (elle ou une autre forme) : **Ajouter** la leur donne (**Ajouter à
+tous** s'ils sont plusieurs), leurs autres suggestions restant à confirmer ; **Dans la même
+catégorie** — les autres étiquettes, un clic ouvre la leur.
+
 **Les étiquettes** aussi : dites par le document (« Mots-clés : », « Étiquettes : »), elles
 sont données. Sinon elles sont **à confirmer** : la fiche propose les mots qui reviennent le
 plus au début du texte (**Prendre ces étiquettes**), **Pas d'étiquettes**, ou **Modifier…** ;
@@ -417,7 +424,9 @@ européenne ») — et, s'il le faut, les autres noms sous lesquels elle signe, 
 à l'ouverture, ses notes avec). L'entreprise
 d'un document y est **reconnue** (son nom, un autre nom, ou son code en tête du document),
 **s'y choisit** (le crayon du champ, *Modifier…* : une liste, et « ＋ Ajouter une entreprise à
-la liste… », son nom proposé) et se lit « ESA — Agence spatiale européenne ». Une entreprise
+la liste… », son nom proposé ; ou, à côté de la liste, **Nouvelle entreprise…** : sa fenêtre
+s'ouvre par-dessus, l'entreprise créée est aussitôt choisie — dans la fenêtre d'une personne aussi)
+et se lit « ESA — Agence spatiale européenne ». Une entreprise
 **hors de la liste** est dite telle sur la fiche ; le bouton **+** de sa ligne l'y ajoute (son
 nom et un code proposés — « TAS » pour Thales Alenia Space) : elle devient l'entreprise du
 document, et des autres documents qui portaient ce nom.

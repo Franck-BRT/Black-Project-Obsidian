@@ -5,13 +5,25 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.71.0 (Black Projects 0.157.0) |
+| Version | 0.72.0 (Black Projects 0.158.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## La fiche d'une étiquette reprise ; « Nouvelle entreprise… » (v0.72.0, Black Projects 0.158.0)
+
+- `tagPage` (`entriesHome.ts`) : des chiffres (documents étiquetés, suggérée sur) ; les sections
+  `bibliotheque.etiquette.etiquette` (nom, autres formes, catégorie, description, rangée),
+  `.documents` (ceux qui la portent — elle ou une autre forme), `.suggeree` (étiquettes à confirmer
+  qui la suggèrent ; « Ajouter », « Ajouter à tous »), `.voisines` (la même catégorie).
+  `tagDocuments(entry)` et `tagDocument(record, name)` : l'étiquette donnée, les autres suggestions
+  du document gardées à confirmer (`setTags` les ôtait toutes).
+- Le champ « Entreprise » (« Modifier… », la fenêtre du seul champ, la fenêtre d'une personne) :
+  `create` (« Nouvelle entreprise… », `newIssuer`) — l'entreprise créée est ajoutée à la liste et
+  choisie.
 
 ## La fiche d'une personne reprise ; « Nouveau type… » (v0.71.0, Black Projects 0.157.0)
 
