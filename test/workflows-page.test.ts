@@ -11,7 +11,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
-import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
+import { ACCEPT_FORM, memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
 import { forgetDeclarations, workflowsModule, type Workflow } from '../src/modules/workflows'
 
@@ -453,10 +453,27 @@ describe('exécuter et créer un workflow, en page', () => {
   })
 })
 
+describe('exporter des workflows : où l’enregistrer', () => {
+  it('la fenêtre propose « Black Projects/Échanges » ; un autre dossier est pris ; renoncer n’écrit rien', async () => {
+    const platform = memoryPlatform()
+    const { run } = await start(platform, true)
+    platform.manyAnswers.push(['wf-1'])
+    platform.forms.push({ folder: 'Partage', name: 'Pour l’équipe' })
+    await run('exporter')
+    expect(platform.asked.at(-1)?.fields.find((field) => field.key === 'folder')).toMatchObject({ value: 'Black Projects/Échanges' })
+    expect(platform.files.has('Partage/Pour l’équipe.json')).toBe(true)
+    const before = platform.files.size
+    platform.manyAnswers.push(['wf-1'])
+    await run('exporter')
+    expect(platform.files.size).toBe(before)
+  })
+})
+
 describe('importer des workflows, en page', () => {
   /** Exporter des workflows (par la commande), et rendre le chemin du fichier écrit. */
   async function exported(platform: MemoryPlatform, run: (id: string) => unknown, ids: string[]): Promise<string> {
     platform.manyAnswers.push(ids)
+    platform.forms.push(ACCEPT_FORM)
     await run('exporter')
     return [...platform.files.keys()].find((path) => path.startsWith('Black Projects/Échanges/') && path.endsWith('.json'))!
   }

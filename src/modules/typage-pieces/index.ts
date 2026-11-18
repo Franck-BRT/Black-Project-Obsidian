@@ -14,6 +14,7 @@
  */
 
 import { pourIntoLibrary, setPieceTyper } from '../bibliotheque'
+import { askExportPath } from '../../core/exportPath'
 import { localToday } from '../../core/dates'
 import { fillTemplate } from '../../core/docs'
 import { modulePageOf } from '../../core/settingsPage'
@@ -270,9 +271,9 @@ async function exportCommand(context: ModuleContext): Promise<void> {
   })
   if (!chosen || chosen.length === 0) return
   const today = localToday()
-  const folder = exchangeFolder(settings.get())
-  let path = `${folder}/${exportFileName(today)}`
-  for (let index = 2; await platform.fs.exists(path); index++) path = `${folder}/${exportFileName(`${today} (${index})`)}`
+  // Où l'enregistrer : d'office, le dossier des échanges réglé et le nom habituel.
+  const path = await askExportPath({ ui: platform.ui, fs: platform.fs, t }, { folder: exchangeFolder(settings.get()), name: exportFileName(today).replace(/\.json$/, ''), extension: 'json' })
+  if (!path) return
   await platform.fs.writeText(path, `${JSON.stringify(exportTypes(custom, chosen, today, moduleExtras), null, 2)}\n`)
   // Obsidian ne montre pas les .json par défaut : dire où le trouver quand même.
   const hidden = platform.display?.kind('json') === 'hidden'
@@ -371,7 +372,7 @@ export const typagePiecesModule: BlackModule = {
   id: TYPAGE_PIECES,
   nameKey: 'typage-pieces.name',
   descriptionKey: 'typage-pieces.description',
-  version: '0.10.0',
+  version: '0.11.0',
   requires: [],
   texts: { fr: typageFr, en: typageEn },
   details: (settings) => typingDetails(readCustomKeywords(settings)),
@@ -408,6 +409,8 @@ export const typagePiecesModule: BlackModule = {
     // La bibliothèque de documents : le « type de pièce » de chaque document, dans cette liste (vos types compris, sans les désactivés).
     const label = (key: string, vars?: Record<string, string>) => context.i18n.t(key, vars)
     setPieceTyper({
+      // Leur page : un accès rapide depuis la bibliothèque (Bibliothèques système).
+      ...(showPage ? { page: types } : {}),
       types: () => activeTypes().map((type) => ({ code: type.code, label: typeLabel(type.code, label) })),
       ofName: (fileName) => {
         const code = classifyPiece(fileName, '')

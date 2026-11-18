@@ -10,7 +10,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { ModuleContext } from '../src/core/modules/module'
-import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
+import { ACCEPT_FORM, memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type PageView } from '../src/core/views'
 import { addStarterEntries, bibliothequeModule, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { lectureFichiersModule } from '../src/modules/lecture-fichiers'
@@ -60,6 +60,7 @@ describe('se passer une bibliothèque', () => {
     const prompts = await a.load('bibliotheque.prompts')
     expect(prompts.actions?.map((action) => action.id)).toEqual(expect.arrayContaining(['export-shelf', 'import-shelf']))
     expect(prompts.actions?.map((action) => action.id)).not.toContain('new-shelf')
+    mine.forms.push(ACCEPT_FORM)
     await a.run(prompts, 'export-shelf')
     const zip = exported(mine)
     expect(zip.name).toMatch(/^Bibliothèque Prompts \d{4}-\d{2}-\d{2}\.zip$/)
@@ -101,10 +102,12 @@ describe('se passer une bibliothèque', () => {
     await pourIntoLibrary([{ name: 'Plan.pdf', bytes: bytes('plan') }], { module: 'bibliotheque', label: '' })
     // Ce que l'utilisateur a dit de la norme, dans sa fiche.
     mine.files.set(norme!.record, bytes(read(mine, norme!.record).replace('titre: ECSS', 'titre: Norme ECSS-E-ST-10C').replace('reference: ""', 'reference: ECSS-E-ST-10C')))
+    mine.forms.push(ACCEPT_FORM)
     await a.run(await a.load('bibliotheque.documents'), 'export-shelf')
     const zip = exported(mine)
     expect(mine.notices.at(-1)).toMatch(/^2 documents exporté\(s\) dans Échanges\/Bibliothèques\/Bibliothèque Documents /)
     // Un répertoire seul s'exporte aussi.
+    mine.forms.push(ACCEPT_FORM)
     await a.run(await a.load('bibliotheque.documents', encodeURIComponent('principale:Normes')), 'export-shelf')
     expect(exported(mine).name).toMatch(/^Bibliothèque Documents Normes /)
     await a.stop()
@@ -133,6 +136,7 @@ describe('se passer une bibliothèque', () => {
     await pourIntoLibrary([{ name: 'Vieux plan.pdf', bytes: bytes('vieux') }], { module: 'bibliotheque', label: '' }, { folder: 'Archives' })
     const hub = await a.load('bibliotheque.accueil')
     expect(hub.actions?.map((action) => action.id)).toEqual(['export-all', 'import-all'])
+    mine.forms.push(ACCEPT_FORM)
     await a.run(hub, 'export-all')
     const zip = exported(mine)
     expect(zip.name).toMatch(/^Bibliothèque complète \d{4}-\d{2}-\d{2}\.zip$/)

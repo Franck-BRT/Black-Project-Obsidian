@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { createI18n } from '../../core/i18n'
 import type { ModuleCommand, ModuleContext } from '../../core/modules/module'
-import { memoryPlatform } from '../../core/testing/memoryPlatform'
+import { ACCEPT_FORM, memoryPlatform } from '../../core/testing/memoryPlatform'
 import { typagePiecesModule } from '.'
 import { readCustomKeywords } from './custom'
 import { applyImport, exportableCodes, exportTypes, moduleValues, parseTypesFile, planImport, type TypesFile } from './exchange'
@@ -148,6 +148,7 @@ describe('commandes', () => {
   it('exporte les types cochés dans le dossier des échanges, puis les réimporte ailleurs', async () => {
     const one = await setup(settings)
     one.platform.manyAnswers.push(['PAQ', 'CCTP'])
+    one.platform.forms.push(ACCEPT_FORM)
     await one.run('exporter-types')
     const path = [...one.platform.files.keys()].find((each) => each.startsWith('Black Projects/Échanges/'))
     expect(path).toMatch(/^Black Projects\/Échanges\/types-de-pieces-\d{4}-\d{2}-\d{2}\.json$/)
@@ -244,6 +245,7 @@ describe('le message d’export', () => {
       commands: { register: (command) => void commands.push(command) }
     })
     platform.manyAnswers.push(['PAQ'])
+    platform.forms.push(ACCEPT_FORM)
     await commands.find((command) => command.id === 'exporter-types')!.run()
     expect(platform.notices.at(-1)).toContain('Obsidian ne montre pas les fichiers .json')
     await typagePiecesModule.deactivate?.()

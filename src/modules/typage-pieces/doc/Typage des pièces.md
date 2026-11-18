@@ -77,7 +77,7 @@ Dans la page **Workflows** (filtre *Système*), vous pouvez le désactiver ou le
 En tête de la fenêtre, **Exporter** et **Importer** (aussi en commandes : « Exporter des
 types de pièces », « Importer des types de pièces ») :
 
-- **Exporter** : cochez un ou plusieurs types — vos types, et ceux du module que vous
+- **Exporter** : une fenêtre **« Où enregistrer l'export ? »** propose le dossier et le nom du fichier, ceux d'habitude : changez-les ou validez tels quels (un fichier déjà là n'est jamais écrasé : « (2) » est ajouté) ; cochez d'abord un ou plusieurs types — vos types, et ceux du module que vous
   avez modifiés (mots-clés, désactivation), ou que l'analyse d'appels d'offres range
   (où va le type : AO, Réponse AO, ou les deux — il voyage avec). Ils sont écrits dans un fichier
   `types-de-pieces-AAAA-MM-JJ.json` du dossier des échanges (par défaut `Black

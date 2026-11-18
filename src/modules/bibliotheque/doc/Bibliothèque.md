@@ -130,7 +130,7 @@ qu'un clic déplie ou replie (l'état est gardé d'une ouverture à l'autre) :
 | --- | --- |
 | **Bibliothèques de documents** | les documents, les documents de référence, les documents projet, les vôtres |
 | **Bibliothèques système IA** | les prompts, les personas, les skills |
-| **Bibliothèques système** | les étiquettes |
+| **Bibliothèques système** | les étiquettes, le glossaire, et les **types de document** (un accès rapide à leur page : les voir, en ajouter, les modifier) |
 | **Annuaire** | les entreprises, les personnes |
 
 Les groupes des documents et de l'annuaire ont leurs boutons **Nouvelle bibliothèque de…** (la
@@ -138,7 +138,7 @@ bibliothèque créée s'ouvre aussitôt) ; les prompts, personas, skills et éti
 une seule bibliothèque, où l'on ajoute ses entrées.
 
 **Se passer une bibliothèque** : sur la page d'une bibliothèque (ou de l'un de ses
-répertoires), **Exporter** écrit une archive ZIP dans `Échanges/Bibliothèques` — ses notes, ou
+répertoires), **Exporter** écrit une archive ZIP — une fenêtre **« Où enregistrer l'export ? »** propose le dossier et le nom du fichier, ceux d'habitude : changez-les ou validez tels quels (un fichier déjà là n'est jamais écrasé : « (2) » est ajouté), d'office `Échanges/Bibliothèques` — ses notes, ou
 ses documents avec leur fiche. Passez ce fichier ; chez l'autre, **Importer…**, sur la page de
 la même sorte de bibliothèque, le reprend (de l'ordinateur ou du coffre) : une note déjà là à
 l'identique n'est pas réécrite (différente, la nouvelle est gardée à côté) ; un document déjà

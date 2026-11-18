@@ -138,8 +138,8 @@ de longueur — est repérée : la page (ou la partie) est **relue une deuxième
 Bouclée encore : ce qui précède la boucle est gardé, et la page est marquée dans le texte
 (« la lecture par l'IA a bouclé deux fois… ») ; une notice le dit. Rien que des boucles : un
 message d'erreur, et le texte de la fiche ne change pas — essayez un autre modèle de vision.
-Sur la fiche, **Relire avec l'IA** fait choisir le modèle : **simple** (le texte extrait) ou **avec
-la vision** (la lecture complète ci-dessus — plus sûr, plus lent) ; l'étape du workflow a le même
+Ce workflow est **actif d'origine** (un workflow essentiel). Sur la fiche, **Relire avec l'IA** fait choisir le modèle — **avec
+la vision** proposé en premier — ou **simple** (le texte extrait) ; avec la vision : (la lecture complète ci-dessus — plus sûr, plus lent) ; l'étape du workflow a le même
 choix (champ *Modèle* : **Automatique** d'origine, la vision quand le document se montre en
 images). Un document sans texte (un
 scan, une image) est **lu avec la vision dès son dépôt** — par le même workflow système, « Relire

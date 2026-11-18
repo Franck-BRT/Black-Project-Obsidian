@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../../core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../../core/modules/module'
-import { memoryPlatform, type MemoryPlatform } from '../../core/testing/memoryPlatform'
+import { ACCEPT_FORM, memoryPlatform, type MemoryPlatform } from '../../core/testing/memoryPlatform'
 import { typagePiecesModule } from '../typage-pieces'
 import { aoModule } from '.'
 import { aoFr } from './i18n'
@@ -52,6 +52,7 @@ describe('le rangement dans les fichiers de types', () => {
       { typesPerso: { PAQ: 'Plan d’assurance qualité' } },
       { [RANGEMENT_KEY]: { BPU: 'reponse', CCTP: 'appel-d-offres', PAQ: 'les-deux' } }
     )
+    one.platform.forms.push(ACCEPT_FORM)
     await one.run('exporter-types')
     // Proposés : le type ajouté, et les types que seul le rangement distingue.
     const offered = one.platform.manyAsked.at(-1)!.choices
@@ -81,6 +82,7 @@ describe('le rangement dans les fichiers de types', () => {
 
   it('module AO absent du coffre qui importe : le rangement est ignoré, et on le dit', async () => {
     const one = await vault({}, { [RANGEMENT_KEY]: { BPU: 'reponse' } })
+    one.platform.forms.push(ACCEPT_FORM)
     await one.run('exporter-types')
     const bytes = exported(one.platform)
     await close()

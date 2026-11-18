@@ -191,7 +191,7 @@ export async function placeView(
 }
 
 /** Les cartes des bibliothèques d'une sorte, pour l'accueil : combien chacune contient, laquelle est par défaut. */
-export function shelfCards(deps: Pick<ShelfPlacesDeps, 't' | 'kind' | 'page' | 'shelves' | 'defaultShelf' | 'showPage'>, items: readonly Placed[], icon: 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow' | 'bulb'): Card[] {
+export function shelfCards(deps: Pick<ShelfPlacesDeps, 't' | 'kind' | 'page' | 'shelves' | 'defaultShelf' | 'showPage'>, items: readonly Placed[], icon: 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow' | 'bulb' | 'file'): Card[] {
   const { t, kind } = deps
   const chosen = deps.defaultShelf().id
   const several = severalShelves(deps.shelves())

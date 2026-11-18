@@ -95,7 +95,12 @@ describe('les bibliothèques de prompts et de personas', () => {
     const cards = cardsOf(hub)
     // Par groupe : les documents, l'IA, le système, les personnelles — chacun une section qu'on déplie ou replie.
     expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? [`${block.title}|${block.collapsed ?? false}`] : []))).toEqual(['Bibliothèques de documents|false', 'Bibliothèques système IA|false', 'Bibliothèques système|false', 'Annuaire|false'])
-    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Documents projet', 'Circuit', 'Prompts', 'Personas', 'Skills', 'Étiquettes', 'Glossaire', 'Entreprises', 'Personnes'])
+    expect(cards.map((card) => card.title)).toEqual(['Documents', 'Documents de référence', 'Documents projet', 'Circuit', 'Prompts', 'Personas', 'Skills', 'Étiquettes', 'Glossaire', 'Types de document', 'Entreprises', 'Personnes'])
+    // Les types de document : un accès rapide à leur page (celle du module Typage des pièces).
+    const types = cards.find((card) => card.title === 'Types de document')!
+    expect(types.subtitle).toMatch(/^\d+ type\(s\)$/)
+    await types.open!.run()
+    expect(shown.at(-1)).toBe('core.fonctions?typage-pieces')
     // Chaque groupe : de quoi créer une bibliothèque de chacune de ses sortes.
     expect(hub.blocks.flatMap((block) => (block.kind === 'section' ? block.blocks : [])).flatMap((block) => (block.kind === 'cards' ? (block.actions ?? []).map((action) => action.label) : []))).toEqual([
       'Nouvelle bibliothèque de documents',

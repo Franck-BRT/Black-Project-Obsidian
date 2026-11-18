@@ -303,7 +303,7 @@ export const iaModule: BlackModule = {
   id: IA,
   nameKey: 'ia.name',
   descriptionKey: 'ia.description',
-  version: '0.36.0',
+  version: '0.37.0',
   requires: [],
   texts: { fr: iaFr, en: iaEn },
   details: () => iaFeatures(),
@@ -483,6 +483,8 @@ export const iaModule: BlackModule = {
       id: PROOFREAD_SYSTEM,
       moduleKey: 'ia.name',
       enabledByDefault: true,
+      // Essentiel : actif d'origine (la lecture par l'IA, avec la vision quand le fichier se montre en images).
+      essential: true,
       replaces: [SCAN_SYSTEM_RETIRED],
       make: (tr) => ({
         name: tr('ia.sys.relire-textes'),

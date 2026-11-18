@@ -311,5 +311,16 @@ export const en: Record<string, string> = {
   'docs.page.missing.title': 'Page not found',
   'docs.page.missing': 'This page is not (or no longer) in the documentation: a module may have been removed.',
   'settings.page.docs.read': 'Read the documentation',
-  'module.failed.notice': 'Black Projects: the “{name}” module could not load. Everything else works.'
+  'module.failed.notice': 'Black Projects: the “{name}” module could not load. Everything else works.',
+  'export.where.title': 'Where to save the export?',
+  'export.where.intro': 'The file (.{extension}) is written in the vault. The suggested folder and name are the usual ones: change them, or confirm as they are.',
+  'export.where.folder': 'Folder',
+  'export.where.folder.desc': 'A vault folder; created if it does not exist yet. Empty: at the vault root.',
+  'export.where.folder.root': '(vault root)',
+  'export.where.name': 'File name',
+  'export.where.name.desc': 'Without the extension (.{extension}). If it already exists, “(2)” is added: nothing is overwritten.',
+  'export.where.submit': 'Export',
+  'export.where.problem.folder': 'The folder cannot contain “.” or “..”.',
+  'export.where.problem.empty': 'Give the file a name.',
+  'export.where.problem.name': 'The name cannot contain \\ / : * ? " < > | # ^ [ ].'
 }

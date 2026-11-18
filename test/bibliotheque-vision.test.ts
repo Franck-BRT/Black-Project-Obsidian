@@ -514,7 +514,7 @@ describe('un PDF avec du texte : le modèle à choisir', () => {
     expect(workflows().find((each) => each.system === 'sys.ia.relire-textes')!.actions[0]!.kind).toBe('ia.relire-texte')
     platform.choices.push('vision')
     await (await textActions(doc.record)).find((action) => action.id === 'proofread')!.run()
-    expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Modèle simple', 'Modèle avec la vision'])
+    expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['Modèle avec la vision', 'Modèle simple'])
     expect(seen.map((one) => one.image)).toEqual(['data:image/jpeg;base64,UDE=', 'data:image/jpeg;base64,UDI='])
     expect(seen[0]!.text).toContain('Voici la page 1 sur 2 d’un document')
     expect(seen[0]!.text).toContain('et corrige-le d’après l’image :\n\nPlan qualite\nLe pre- sent plan')

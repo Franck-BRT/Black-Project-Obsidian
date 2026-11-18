@@ -25,6 +25,9 @@ import type {
 } from '../ports'
 
 /** Dans une réponse à `pickMany` (tests) : cliquer le bouton de création de la fenêtre. */
+
+/** À mettre dans `forms` : la prochaine fenêtre est validée telle qu'elle est proposée (ses valeurs d'office). */
+export const ACCEPT_FORM: Record<string, string> = Object.freeze({ '(valider tel quel)': 'oui' })
 export const CREATE_IN_PICK = '+'
 
 export interface MemoryPlatform extends Platform {
@@ -190,7 +193,9 @@ export function memoryPlatform(files: Record<string, string | Uint8Array> = {}):
       pickExternalFiles: async () => platform.externalFiles.shift() ?? [],
       askForm: async (form) => {
         platform.asked.push(form)
-        const answer = platform.forms.shift() ?? null
+        const queued = platform.forms.shift() ?? null
+        // `ACCEPT_FORM` : la fenêtre validée telle qu'elle est proposée (ses valeurs d'office).
+        const answer = queued === ACCEPT_FORM ? Object.fromEntries(form.fields.map((field) => [field.key, field.kind === 'toggle' ? String(field.value ?? false) : (field.value ?? '')])) : queued
         if (answer && form.validate) {
           const error = form.validate(answer)
           if (error) throw new Error(`Formulaire refusé : ${error}`)

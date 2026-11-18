@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../../core/i18n'
 import type { ModuleCommand, ModuleContext } from '../../core/modules/module'
-import { memoryPlatform, type MemoryPlatform } from '../../core/testing/memoryPlatform'
+import { ACCEPT_FORM, memoryPlatform, type MemoryPlatform } from '../../core/testing/memoryPlatform'
 import { emitWorkflowEvent, registerAction, registerTrigger, runDueWorkflows, workflowsModule, WORKFLOWS_KEY, type Subject, type Workflow } from '.'
 import { forgetDeclarations } from './registry'
 
@@ -213,6 +213,7 @@ describe('l’échange', () => {
     const platform = memoryPlatform()
     const wf = await activate(platform)
     wf.set([rule({ actions: [{ kind: 'test.resumer', fields: {} }, { kind: 'module.absent', fields: {} }], runs: 3, lastRun: '2026-02-01T00:00:00Z' })])
+    platform.forms.push(ACCEPT_FORM)
     await wf.run('exporter')
     const path = [...platform.files.keys()].find((key) => key.startsWith('Black Projects/Échanges/Workflows'))!
     const exported = JSON.parse(read(platform, path)) as { workflows: Record<string, unknown>[] }

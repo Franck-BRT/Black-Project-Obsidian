@@ -73,7 +73,7 @@ Palette de commandes :
   validé ». Sur la fiche d'une exécution en échec : **Valider cet échec**. Un nouvel échec
   compte de nouveau ;
 - **Exporter des workflows** / **Importer des workflows** — un fichier JSON pour un autre
-  coffre ; un workflow importé arrive **désactivé**, à relire avant de l'activer. Depuis la
+  coffre (à l'export, une fenêtre **« Où enregistrer l'export ? »** propose le dossier et le nom du fichier, ceux d'habitude : changez-les ou validez tels quels (un fichier déjà là n'est jamais écrasé : « (2) » est ajouté), d'office `Black Projects/Échanges`) ; un workflow importé arrive **désactivé**, à relire avant de l'activer. Depuis la
   page Workflows, **Importer** finit sur la fiche du workflow importé (s'il n'y en a qu'un)
   ou sur la liste : les importés en tête, marqués « Importé — désactivé, à relire », un
   filtre « Importés », et un message tant qu'il en reste à activer.

@@ -312,5 +312,16 @@ export const fr: Record<string, string> = {
   'docs.page.missing.title': 'Page introuvable',
   'docs.page.missing': 'Cette page n’est pas (ou plus) dans la documentation : un module a pu être retiré.',
   'settings.page.docs.read': 'Lire la documentation',
-  'module.failed.notice': 'Black Projects : le module « {name} » n’a pas pu se charger. Les autres fonctionnent.'
+  'module.failed.notice': 'Black Projects : le module « {name} » n’a pas pu se charger. Les autres fonctionnent.',
+  'export.where.title': 'Où enregistrer l’export ?',
+  'export.where.intro': 'Le fichier (.{extension}) est écrit dans le coffre. Le dossier et le nom proposés sont ceux d’habitude : changez-les, ou validez tels quels.',
+  'export.where.folder': 'Dossier',
+  'export.where.folder.desc': 'Un dossier du coffre ; créé s’il n’existe pas encore. Vide : à la racine du coffre.',
+  'export.where.folder.root': '(racine du coffre)',
+  'export.where.name': 'Nom du fichier',
+  'export.where.name.desc': 'Sans l’extension (.{extension}). S’il existe déjà, « (2) » est ajouté : rien n’est écrasé.',
+  'export.where.submit': 'Exporter',
+  'export.where.problem.folder': 'Le dossier ne peut pas contenir « . » ni « .. ».',
+  'export.where.problem.empty': 'Donnez un nom au fichier.',
+  'export.where.problem.name': 'Le nom ne peut pas contenir \\ / : * ? " < > | # ^ [ ].'
 }

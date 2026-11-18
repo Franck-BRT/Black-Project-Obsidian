@@ -10,6 +10,7 @@
  */
 
 import { pourIntoLibrary } from '../bibliotheque'
+import { askExportPath } from '../../core/exportPath'
 import type { FileSystem, FormField, ListRow, ListState, Notifier, Ui } from '../../core/ports'
 import { journalPath, type WorkflowEngine } from './engine'
 import {
@@ -653,7 +654,9 @@ export async function exportToFile(session: Session): Promise<string | null> {
   })
   if (!chosen?.length) return null
   const now = session.now()
-  const path = `Black Projects/Échanges/${t('workflows.export.file', { date: now.toISOString().slice(0, 10) })}.json`
+  // Où l'enregistrer : d'office, comme avant, dans « Black Projects/Échanges ».
+  const path = await askExportPath({ ui, fs, t }, { folder: 'Black Projects/Échanges', name: t('workflows.export.file', { date: now.toISOString().slice(0, 10) }), extension: 'json' })
+  if (!path) return null
   await fs.writeText(path, exportWorkflows(workflows.filter((workflow) => chosen.includes(workflow.id)), now))
   notifier.notify(t('workflows.export.done', { count: chosen.length, path }), 10000)
   return path

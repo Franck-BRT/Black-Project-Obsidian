@@ -338,6 +338,12 @@ describe('les bibliothèques en explorateur de fichiers (le réglage d’origine
     expect(explorer.nodes.map((node) => node.label)).toEqual(['Bibliothèque', 'Bibliothèques de documents', 'Bibliothèques système IA', 'Bibliothèques système', 'Annuaire'])
     expect(nodeOf(explorer.nodes, 'Bibliothèques de documents')!.children!.map((node) => `${node.label} (${node.count})`)).toEqual(['Documents (2)', 'Documents de référence (0)', 'Documents projet (0)', 'Circuit (0)'])
     expect(nodeOf(explorer.nodes, 'Bibliothèques système IA')!.children!.map((node) => node.label)).toEqual(['Prompts', 'Personas', 'Skills'])
+    // Bibliothèques système : les étiquettes, le glossaire, et un accès rapide aux types de document (leur page).
+    expect(nodeOf(explorer.nodes, 'Bibliothèques système')!.children!.map((node) => node.label)).toEqual(['Étiquettes', 'Glossaire', 'Types de document'])
+    const types = nodeOf(explorer.nodes, 'Types de document')!
+    expect(types).toMatchObject({ icon: 'file', count: expect.stringMatching(/^\d+$/) })
+    await types.open!.run()
+    expect(shown.at(-1)).toBe('core.fonctions?typage-pieces')
     expect(nodeOf(explorer.nodes, 'Documents')!.children!.map((node) => [node.label, node.icon, node.count])).toEqual([['Normes', 'folder', '0']])
     expect(nodeOf(explorer.nodes, 'Circuit')!.children!.map((node) => node.label)).toEqual(['À classer', 'À contrôler'])
     expect(currents(explorer.nodes)).toEqual(['Documents'])

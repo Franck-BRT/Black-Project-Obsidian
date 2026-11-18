@@ -8,6 +8,7 @@
  * d'offres est une phase d'un projet, que le module AO mène.
  */
 
+import { askExportPath } from '../../core/exportPath'
 import { localToday } from '../../core/dates'
 import { canCreatePieceType, chooseReferenceDocuments, createPieceType, documentsIn, removeLibraryDirectory, dropDocumentsInto, libraryActive, libraryDocPage, libraryDocument, libraryFolderPage, libraryPieceTypes, pieceTypeText, pourDocumentsInto, projectDocumentsFolder, registerReferenceCallers, libraryDoc, projectDocumentsPath, registerLinkSource, registerSkillContext } from '../bibliotheque'
 import { fillTemplate } from '../../core/docs'
@@ -60,7 +61,7 @@ export const programmesModule: BlackModule = {
   id: PROGRAMMES,
   nameKey: 'programmes.name',
   descriptionKey: 'programmes.description',
-  version: '0.15.0',
+  version: '0.16.0',
   requires: [],
   texts: { fr: programmesFr, en: programmesEn },
   settingsFields: [folderField],
@@ -605,7 +606,7 @@ export const programmesModule: BlackModule = {
     }
 
     // ── Se passer des types de projet ───────────────────────────────────────────
-    /** Exporter un type (ou tous) : un fichier JSON dans `Échanges/Types de projet`, à se passer. */
+    /** Exporter un type (ou tous) : un fichier JSON, d'office dans `Échanges/Types de projet` (la fenêtre propose où), à se passer. */
     const exportTypes = async (id?: string): Promise<void> => {
       const chosen = id ? types().filter((each) => each.id === id) : types()
       if (!chosen.length) {
@@ -613,10 +614,9 @@ export const programmesModule: BlackModule = {
         return
       }
       const day = localToday()
-      await platform.fs.ensureFolder(TYPES_EXCHANGE_FOLDER)
-      const base = typesFileName(day, id ? chosen[0]!.name : undefined).replace(/\.json$/, '')
-      let path = `${TYPES_EXCHANGE_FOLDER}/${base}.json`
-      for (let index = 2; await platform.fs.exists(path); index++) path = `${TYPES_EXCHANGE_FOLDER}/${base} (${index}).json`
+      // Où l'enregistrer : d'office, comme avant, dans « Échanges/Types de projet ».
+      const path = await askExportPath({ ui, fs: platform.fs, t }, { folder: TYPES_EXCHANGE_FOLDER, name: typesFileName(day, id ? chosen[0]!.name : undefined).replace(/\.json$/, ''), extension: 'json' })
+      if (!path) return
       await platform.fs.writeText(path, typesFile(chosen, day))
       const hidden = platform.display?.kind('json') === 'hidden'
       notify([t('programmes.types.exchange.exported', { count: chosen.length, path }), ...(hidden ? [t('programmes.types.exchange.hidden')] : [])].join(' '), hidden ? 15000 : 10000)

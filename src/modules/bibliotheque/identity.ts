@@ -331,6 +331,8 @@ export interface PieceTyper {
   add?(code: string, label: string): Promise<{ code: string } | { error: string }>
   /** Pourquoi ce code et ce libellé ne peuvent pas être ajoutés (`null` : ils le peuvent). */
   check?(code: string, label: string): string | null
+  /** La page de la liste des types (les voir, les modifier), pour un accès rapide depuis la bibliothèque. */
+  page?: string
 }
 
 /** Sans le module Typage des pièces : les catégories de la bibliothèque. */

@@ -26,6 +26,8 @@ export interface ExplorerDeps {
   places: Readonly<Record<ShelfKind, ShelfPlacesDeps>>
   /** Ce qui est rangé, sorte par sorte (leur lieu), pour compter. */
   items(kind: ShelfKind): Promise<readonly Placed[]>
+  /** Les types de document (leur page, combien), en accès rapide dans le groupe système ; `null` : pas d'accès. */
+  pieceTypes?(): { page: string; count: number } | null
   showPage?(id: string): void
 }
 
@@ -93,13 +95,20 @@ export async function libraryExplorer(deps: ExplorerDeps, current: ExplorerPlace
       })
     )
   }
+  /** Les types de document : un accès rapide à leur page (ils ne sont pas rangés en bibliothèque). */
+  const pieceTypesNode = (): ExplorerNode[] => {
+    const types = deps.pieceTypes?.()
+    if (!types) return []
+    const label = t('bibliotheque.hub.pieceTypes')
+    return [{ id: 'types-de-document', label, icon: 'file', count: String(types.count), open: { id: 'open', label: t('bibliotheque.explorer.open', { name: label }), run: () => deps.showPage?.(types.page) } }]
+  }
   const groups = await Promise.all(
     GROUPS.map(async (group): Promise<ExplorerNode> => ({
       id: `groupe.${group.id}`,
       label: t(`bibliotheque.hub.group.${group.id}`),
       icon: group.icon,
       expanded: true,
-      children: (await Promise.all(group.kinds.map(shelvesOf))).flat()
+      children: [...(await Promise.all(group.kinds.map(shelvesOf))).flat(), ...(group.id === 'systeme' ? pieceTypesNode() : [])]
     }))
   )
   return {

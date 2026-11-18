@@ -167,6 +167,8 @@ describe('d’origine, seuls les workflows essentiels sont actifs', () => {
         'sys.bibliotheque.ranger-fichiers',
         'sys.bibliotheque.relancer-circuit',
         'sys.ia.circuit',
+        // La lecture par l'IA (avec la vision quand le fichier se montre en images) : active d'origine.
+        'sys.ia.relire-textes',
         'sys.workflows.casses'
       ].sort()
     )

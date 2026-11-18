@@ -33,7 +33,7 @@ export const ENTRIES_PAGE: Readonly<Record<EntryKind, string>> = {
 export const ENTRY_PAGE: Readonly<Record<EntryKind, string>> = { prompt: 'bibliotheque.prompt', persona: 'bibliotheque.persona', skill: 'bibliotheque.skill', issuer: 'bibliotheque.issuer', tag: 'bibliotheque.tag', person: 'bibliotheque.person', glossary: 'bibliotheque.terme' }
 export const entryPageOf = (kind: EntryKind, path: string): string => pageWith(ENTRY_PAGE[kind], encodeURIComponent(path))
 
-type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow' | 'bulb'
+type KindIcon = 'book' | 'chat' | 'spark' | 'list' | 'building' | 'tag' | 'user' | 'star' | 'briefcase' | 'flow' | 'bulb' | 'file'
 const ICON: Readonly<Record<EntryKind, KindIcon>> = { prompt: 'chat', persona: 'spark', skill: 'list', issuer: 'building', tag: 'tag', person: 'user', glossary: 'bulb' }
 
 /** Un document d'une entreprise : où il est (son type, sa date, son lieu), et si l'entreprise y est à confirmer. */
@@ -57,6 +57,8 @@ export interface TermUse {
 
 export interface EntriesHomeDeps {
   t: Translate
+  /** Les types de document (leur page, combien), en accès rapide dans « Bibliothèques système » ; `null` : pas d'accès. */
+  pieceTypes?(): { page: string; count: number } | null
   /** L'arborescence des bibliothèques (la colonne de gauche), le lieu montré marqué ; absente : l'affichage en cartes. */
   explorer?(current: ExplorerPlace): Promise<Explorer | undefined>
   stores: Readonly<Record<EntryKind, EntryStore>>
@@ -913,6 +915,17 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
       { label: t('bibliotheque.hub.glossarys'), value: String(glossary.length), icon: 'bulb' }
     ]
   }
+  // Les types de document : pas une bibliothèque, mais un accès rapide à leur page, avec le système.
+  const pieceTypes = deps.pieceTypes?.() ?? null
+  const pieceTypesCard = (types: { page: string; count: number }): Card => ({
+    id: 'pieceTypes',
+    title: t('bibliotheque.hub.pieceTypes'),
+    subtitle: t('bibliotheque.hub.pieceTypes.count', { count: types.count }),
+    icon: 'file',
+    text: t('bibliotheque.hub.pieceTypes.desc'),
+    open: go(types.page),
+    actions: [{ ...go(types.page), id: 'see', icon: 'chevron' }]
+  })
   const likely: HomeBlock[] = documents.likely ? [{ kind: 'message', tone: 'warning', text: t('bibliotheque.home.likely', { count: documents.likely }) }] : []
   /**
    * Les bibliothèques, **regroupées** en sections qu'on déplie ou replie : les documents (et
@@ -948,7 +961,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         ...likely,
         group('documents', 'book', [shelvesOf('document', 'book', placed)], documents.count),
         group('ia', 'spark', [shelvesOf('prompt', 'chat', prompts), shelvesOf('persona', 'spark', personas), shelvesOf('skill', 'list', skills)], prompts.length + personas.length + skills.length),
-        group('systeme', 'tag', [shelvesOf('tag', 'tag', tags), shelvesOf('glossary', 'bulb', glossary)], tags.length + glossary.length),
+        group('systeme', 'tag', [shelvesOf('tag', 'tag', tags), shelvesOf('glossary', 'bulb', glossary), ...(pieceTypes ? [{ kind: 'cards' as const, title: t('bibliotheque.hub.pieceTypes'), cards: [pieceTypesCard(pieceTypes)] }] : [])], tags.length + glossary.length),
         group('annuaire', 'user', [shelvesOf('issuer', 'building', issuers), shelvesOf('person', 'user', persons)], issuers.length + persons.length)
       ]
     }
@@ -998,7 +1011,7 @@ export async function hubPage(deps: EntriesHomeDeps): Promise<PageView> {
         documents.count
       ),
       group('ia', 'spark', cards([card('prompts', 'chat', prompts.length, ENTRIES_PAGE.prompt), card('personas', 'spark', personas.length, ENTRIES_PAGE.persona), card('skills', 'list', skills.length, ENTRIES_PAGE.skill)], []), prompts.length + personas.length + skills.length),
-      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag), card('glossarys', 'bulb', glossary.length, ENTRIES_PAGE.glossary)], []), tags.length + glossary.length),
+      group('systeme', 'tag', cards([card('tags', 'tag', tags.length, ENTRIES_PAGE.tag), card('glossarys', 'bulb', glossary.length, ENTRIES_PAGE.glossary), ...(pieceTypes ? [pieceTypesCard(pieceTypes)] : [])], []), tags.length + glossary.length),
       group('annuaire', 'user', cards([card('issuers', 'building', issuers.length, ENTRIES_PAGE.issuer), card('persons', 'user', persons.length, ENTRIES_PAGE.person)], ['issuer', 'person']), issuers.length + persons.length)
     ]
   }

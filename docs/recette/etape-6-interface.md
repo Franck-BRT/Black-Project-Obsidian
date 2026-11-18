@@ -70,6 +70,18 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Où enregistrer l'export ; types de document ; vision d'origine (v0.163.0)
+
+- [ ] Workflows › Exporter… : cocher, puis « Où enregistrer l'export ? » — Dossier « Black
+      Projects/Échanges », nom « Workflows AAAA-MM-JJ » ; changer le dossier : le fichier y est écrit ;
+      Annuler : rien
+- [ ] Même fenêtre pour les types de pièces, les types de projet, une bibliothèque, toute la
+      bibliothèque (d'office leurs dossiers habituels)
+- [ ] Bibliothèque › Bibliothèques système : « Types de document (n) » ; un clic ouvre la page des
+      types de pièces ; aussi en carte sur l'accueil de la bibliothèque
+- [ ] Workflows : « Relire avec l'IA le texte d'un document versé… » actif d'origine ; sur une fiche,
+      « Relire avec l'IA » propose « Modèle avec la vision » en premier
+
 ## « À contrôler » seulement là où ils sont (v0.162.1)
 
 - [ ] Un document à contrôler dans le Circuit : « Documents de référence » (vide) ne montre plus

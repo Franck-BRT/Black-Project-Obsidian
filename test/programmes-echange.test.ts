@@ -11,7 +11,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { ModuleContext } from '../src/core/modules/module'
-import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
+import { ACCEPT_FORM, memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type HomeBlock, type PageView } from '../src/core/views'
 import { programmesModule } from '../src/modules/programmes'
 
@@ -66,6 +66,7 @@ describe('se passer des types de projet', () => {
     await a.run(await a.load('programmes.types'), 'new')
     const types = await a.load('programmes.types')
     expect(types.actions?.map((action) => action.id)).toEqual(['new', 'export-types', 'import-types'])
+    mine.forms.push(ACCEPT_FORM)
     await a.run(types, 'export-types')
     const file = exported(mine)
     expect(file.name).toMatch(/^Types de projet \d{4}-\d{2}-\d{2}\.json$/)
@@ -74,11 +75,13 @@ describe('se passer des types de projet', () => {
     expect(data).toMatchObject({ format: 1, sorte: 'types-de-projet' })
     expect(data.types.map((type: { name: string }) => type.name)).toEqual(['Réponse à un appel d’offres', 'Projet simple', 'Étude amont'])
     // Un seul type, depuis sa page.
+    mine.forms.push(ACCEPT_FORM)
     await a.run(await a.load(`programmes.type?${encodeURIComponent('etude-amont')}`), 'export-type')
     const one = exported(mine)
     expect(one.name).toMatch(/^Type de projet Étude amont \d{4}-\d{2}-\d{2}\.json$/)
     expect(JSON.parse(new TextDecoder().decode(one.bytes)).types).toHaveLength(1)
     // Exporté encore le même jour : un autre fichier, pas écrasé.
+    mine.forms.push(ACCEPT_FORM)
     await a.run(await a.load('programmes.types'), 'export-types')
     expect(exported(mine).name).toMatch(/^Types de projet \d{4}-\d{2}-\d{2} \(2\)\.json$/)
     await a.stop()

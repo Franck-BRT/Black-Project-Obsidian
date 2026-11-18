@@ -12,7 +12,14 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.162.1)
+## Aujourd'hui (version 0.163.0)
+
+- **Où enregistrer l'export** : chaque export (workflows, types de pièces, types de projet, une
+  bibliothèque, toute la bibliothèque) demande le dossier et le nom du fichier, ceux d'habitude
+  proposés ; rien n'est écrasé.
+- **Types de document** dans Bibliothèque › Bibliothèques système : un accès rapide à leur page.
+- **La lecture par l'IA, avec la vision, active d'origine** ; « Relire avec l'IA » propose d'abord
+  le modèle avec la vision.
 
 - **« À contrôler » seulement là où ils sont** : « Documents de référence » (ou une autre
   bibliothèque) n'annonce plus un document à contrôler qui est dans le Circuit.

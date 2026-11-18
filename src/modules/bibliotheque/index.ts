@@ -15,6 +15,7 @@
  * rien. Voir README.md pour la maintenance.
  */
 
+import { askExportPath } from '../../core/exportPath'
 import { completeLists } from '../../core/lists'
 import { completeTables } from '../../core/tables'
 import { localToday } from '../../core/dates'
@@ -713,6 +714,8 @@ export const libraryPieceTypes = (): readonly { code: string; label: string }[] 
 let pieceTypeMaker: (() => Promise<{ code: string; label: string } | null>) | null = null
 
 /** Pour les autres modules : peut-on créer un type de pièce (le module Typage des pièces actif) ? */
+/** L'accès rapide aux types de document (Bibliothèques système) : leur page et combien ; `null` sans page. */
+const pieceTypesShortcut = (): { page: string; count: number } | null => (pieceTyper?.page ? { page: pieceTyper.page, count: pieceTyper.types().length } : null)
 export const canCreatePieceType = (): boolean => !!pieceTyper?.add && pieceTypeMaker !== null
 
 /** Pour les autres modules : créer un type de pièce, par sa fenêtre (code, libellé) ; rend le type créé. */
@@ -1071,7 +1074,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.73.1',
+  version: '0.74.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -1565,11 +1568,13 @@ export const bibliothequeModule: BlackModule = {
       }
       return { zipped, documents }
     }
-    /** Écrire une archive dans `Échanges/Bibliothèques` (un nom libre) ; rend son chemin. */
-    const writeArchive = async (name: string, manifest: Manifest, zipped: ZipEntry[]): Promise<string> => {
-      await platform.fs.ensureFolder(EXCHANGE_FOLDER)
-      let path = `${EXCHANGE_FOLDER}/${archiveName(name, manifest.exporte)}`
-      for (let index = 2; await platform.fs.exists(path); index++) path = `${EXCHANGE_FOLDER}/${archiveName(`${name} (${index})`, manifest.exporte)}`
+    /**
+     * Écrire une archive : la fenêtre propose où (d'office `Échanges/Bibliothèques`, son nom
+     * habituel ; un nom libre) ; rend son chemin, `null` si l'on renonce (rien n'est écrit).
+     */
+    const writeArchive = async (name: string, manifest: Manifest, zipped: ZipEntry[]): Promise<string | null> => {
+      const path = await askExportPath({ ui: platform.ui, fs: platform.fs, t }, { folder: EXCHANGE_FOLDER, name: archiveName(name, manifest.exporte).replace(/\.zip$/, ''), extension: 'zip' })
+      if (!path) return null
       await platform.fs.writeBinary(path, archive(manifest, zipped, new Date()).slice().buffer)
       return path
     }
@@ -1586,6 +1591,7 @@ export const bibliothequeModule: BlackModule = {
       }
       const name = directory ? `${shelf.name} ${directory.split('/').join(' ')}` : shelf.name
       const path = await writeArchive(name, { format: EXCHANGE_FORMAT, sorte: kind, nom: name, exporte: localToday(), ...(kind === 'document' ? { documents } : {}) }, zipped)
+      if (!path) return
       const count = kind === 'document' ? documents.length : zipped.length
       platform.notifier.notify([t('bibliotheque.exchange.exported', { count, kind: kindName(kind), path }), ...(hiddenZip() ? [t('bibliotheque.exchange.hidden')] : [])].join(' '), hiddenZip() ? 15000 : 10000)
     }
@@ -1725,6 +1731,7 @@ export const bibliothequeModule: BlackModule = {
       }
       const name = t('bibliotheque.exchange.whole')
       const path = await writeArchive(name, { format: EXCHANGE_FORMAT, sorte: WHOLE, nom: name, exporte: localToday(), bibliotheques: parts }, zipped)
+      if (!path) return
       const what = [...counts].map(([kind, count]) => `${count} ${kindName(kind)}`).join(', ')
       platform.notifier.notify([t('bibliotheque.exchange.allExported', { what, path }), ...(hiddenZip() ? [t('bibliotheque.exchange.hidden')] : [])].join(' '), hiddenZip() ? 15000 : 10000)
     }
@@ -1789,7 +1796,7 @@ export const bibliothequeModule: BlackModule = {
     const explorerFor = async (current: ExplorerPlace) =>
       settings.get()[EXPLORER_KEY] === false
         ? undefined
-        : libraryExplorer({ t, hub: ENTRIES_HUB_PAGE, places, items: (kind) => (kind === 'document' ? store.all() : entries[kind].all()), ...(showPage ? { showPage } : {}) }, current)
+        : libraryExplorer({ t, hub: ENTRIES_HUB_PAGE, places, items: (kind) => (kind === 'document' ? store.all() : entries[kind].all()), pieceTypes: pieceTypesShortcut, ...(showPage ? { showPage } : {}) }, current)
     /** Choisir où ranger : chaque bibliothèque de la sorte, chacun de ses répertoires (sauf là où c'est déjà). */
     const pickPlace = async (kind: ShelfKind, current: string, title: string): Promise<string | null> => {
       const options = (await allPlaces(shelves(kind), subdirectories(kind)))
@@ -2987,9 +2994,10 @@ export const bibliothequeModule: BlackModule = {
         let mode: 'texte' | 'vision' = withText ? 'texte' : 'vision'
         if (withText && aiVision?.(doc.file)) {
           const chosen = await platform.ui.pickOption(
+            // La vision d'abord : le choix proposé d'office.
             [
-              { value: 'texte', label: t('bibliotheque.text.proofread.texte'), description: t('bibliotheque.text.proofread.texte.desc') },
-              { value: 'vision', label: t('bibliotheque.text.proofread.vision'), description: t('bibliotheque.text.proofread.vision.desc') }
+              { value: 'vision', label: t('bibliotheque.text.proofread.vision'), description: t('bibliotheque.text.proofread.vision.desc') },
+              { value: 'texte', label: t('bibliotheque.text.proofread.texte'), description: t('bibliotheque.text.proofread.texte.desc') }
             ],
             t('bibliotheque.text.proofread.choose')
           )
@@ -3349,6 +3357,7 @@ export const bibliothequeModule: BlackModule = {
       },
       places,
       placedDocuments: () => store.all(),
+      pieceTypes: pieceTypesShortcut,
       exportAll,
       importAll,
       ...(showPage ? { showPage } : {}),

@@ -5,13 +5,22 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.73.1 (Black Projects 0.162.1) |
+| Version | 0.74.0 (Black Projects 0.163.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Où enregistrer l'export ; les types de document ; la vision d'abord (v0.74.0, Black Projects 0.163.0)
+
+- **Exporter** (une bibliothèque, un répertoire) et **Tout exporter** : la fenêtre « Où enregistrer
+  l'export ? » propose `Échanges/Bibliothèques` et le nom habituel de l'archive ; renoncer n'écrit rien.
+- **Types de document** dans « Bibliothèques système » : un nœud de l'arborescence (avec leur nombre)
+  et une carte sur l'accueil de la bibliothèque, qui mènent à la page des types de pièces (quand le
+  module Typage des pièces la donne).
+- **Relire avec l'IA** : « Modèle avec la vision » est proposé en premier.
 
 ## « À contrôler » : seulement là où ils sont (v0.73.1, Black Projects 0.162.1)
 

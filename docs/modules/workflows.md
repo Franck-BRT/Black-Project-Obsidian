@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `workflows` |
-| Version | 0.30.0 (Black Projects 0.162.0) |
+| Version | 0.31.0 (Black Projects 0.163.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md), [Exigences](exigences.md), [IA](ia.md) : leurs déclencheurs, actions et workflows prêts à l'emploi |
 | Emplacement | `src/modules/workflows/` |
@@ -13,6 +13,13 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/workflows/doc/Workflows.md`.
 
+
+## Où enregistrer l'export (v0.31.0, Black Projects 0.163.0)
+
+- **Exporter des workflows** : après le choix des workflows, la fenêtre commune « Où enregistrer
+  l'export ? » (`src/core/exportPath.ts`) propose le dossier (`Black Projects/Échanges`) et le nom
+  habituels ; un autre dossier est créé ; un fichier déjà là n'est plus écrasé (« (2) ») ; renoncer
+  n'écrit rien.
 
 ## Valider les échecs (v0.30.0, Black Projects 0.162.0)
 

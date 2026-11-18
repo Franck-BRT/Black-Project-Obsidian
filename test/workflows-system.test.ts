@@ -11,7 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleCommand, ModuleContext } from '../src/core/modules/module'
-import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
+import { ACCEPT_FORM, memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type Card, type HomeBlock, type PageView } from '../src/core/views'
 import {
   emitWorkflowEvent,
@@ -143,6 +143,7 @@ describe('les workflows système', () => {
     expect(copy.base).toBeUndefined()
     expect((await run.page('workflows.fiche').load(copy.id)).actions?.some((action) => action.id === 'delete')).toBe(true)
     platform.manyAnswers.push(['sys.test.prevenir'])
+    platform.forms.push(ACCEPT_FORM)
     await run.run('exporter')
     const exported = [...platform.files.entries()].find(([path]) => path.endsWith('.json'))!
     expect(new TextDecoder().decode(exported[1])).not.toMatch(/"system"|"base"/)

@@ -5,13 +5,18 @@
 | | |
 | --- | --- |
 | Identifiant | `programmes` |
-| Version | 0.15.0 (Black Projects 0.160.0) |
+| Version | 0.16.0 (Black Projects 0.163.0) |
 | Emplacement | `src/modules/programmes/` |
 | Interface publique | `src/modules/programmes/index.ts` |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (la sorte de phase « Analyse d'appel d'offres ») |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/programmes/doc/Programmes.md`.
+
+## Où enregistrer l'export (v0.16.0, Black Projects 0.163.0)
+
+- **Exporter** un type de projet, **Tout exporter** : la fenêtre « Où enregistrer l'export ? »
+  propose `Échanges/Types de projet` et le nom habituel ; renoncer n'écrit rien.
 
 ## Les pages reprises (v0.15.0, Black Projects 0.160.0)
 

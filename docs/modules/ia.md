@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `ia` |
-| Version | 0.36.0 (Black Projects 0.157.0) |
+| Version | 0.37.0 (Black Projects 0.163.0) |
 | Requiert | — |
 | Utilisé par | [Exigences](exigences.md) (relecture, traduction, doublons par le sens), [Analyse d'appels d'offres](ao.md) (questions au dossier, questionnaire, relecture des exigences du dossier) |
 | Emplacement | `src/modules/ia/` |
@@ -14,6 +14,13 @@
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/ia/doc/IA.md`.
 
+
+## La lecture par l'IA active d'origine (v0.37.0, Black Projects 0.163.0)
+
+- Le workflow système « Relire avec l'IA le texte d'un document versé (la vision pour un scan) »
+  devient **essentiel** : actif d'origine (y compris sur un coffre déjà installé en « essentiels
+  seulement »). En mode Automatique, il lit avec la **vision** quand le fichier se montre en images
+  et qu'un modèle de vision est réglé ; sinon le texte extrait.
 
 ## Un serveur trop lent (504) : la relecture coupée, pas bloquée (v0.36.0, Black Projects 0.157.0)
 

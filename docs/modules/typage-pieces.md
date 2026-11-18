@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | Identifiant | `typage-pieces` |
-| Version | 0.10.0 (Black Projects 0.136.8) |
+| Version | 0.11.0 (Black Projects 0.163.0) |
 | Emplacement | `src/modules/typage-pieces/` |
 | Interface publique | `src/modules/typage-pieces/index.ts` |
 | Guide de maintenance | [`src/modules/typage-pieces/README.md`](../../src/modules/typage-pieces/README.md) |
@@ -13,6 +13,13 @@
 | Utilisé par | Analyse d'appels d'offres (`ao`) |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/typage-pieces/doc/Typage des pièces.md`.
+
+## Où enregistrer l'export ; accès depuis la bibliothèque (v0.11.0, Black Projects 0.163.0)
+
+- **Exporter des types de pièces** : la fenêtre « Où enregistrer l'export ? » propose le dossier des
+  échanges réglé et le nom habituel.
+- La page des types est donnée à la bibliothèque (`PieceTyper.page`) : « Types de document » dans
+  « Bibliothèques système » (arborescence et accueil de la bibliothèque) y mène.
 
 ## Les pièces sans type : une étape d'un workflow de l'analyse (v0.10.0, Black Projects 0.136.8)
 

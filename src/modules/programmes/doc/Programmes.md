@@ -110,8 +110,8 @@ Sur **Types de projet**, chaque type est dessiné ; un clic sur son titre ouvre 
 
 **Se passer des types de projet** : sur la page d'un type, **Exporter** l'écrit dans un fichier
 `.json` (ses étapes, ses phases, ses phases englobantes, ses documents attendus, ses
-répertoires) ; sur **Types de projet**, **Tout exporter** les écrit tous. Les fichiers sont
-rangés dans `Échanges/Types de projet`. **Importer…** reprend un tel fichier (de l'ordinateur ou
+répertoires) ; sur **Types de projet**, **Tout exporter** les écrit tous. Avant d'écrire, une fenêtre **« Où enregistrer l'export ? »** propose le dossier et le nom du fichier, ceux d'habitude : changez-les ou validez tels quels (un fichier déjà là n'est jamais écrasé : « (2) » est ajouté) — d'office
+`Échanges/Types de projet`. **Importer…** reprend un tel fichier (de l'ordinateur ou
 du coffre) : un type déjà là à l'identique n'est pas ajouté une seconde fois ; un autre qui
 porte le nom d'un type du coffre arrive à côté, sous « <nom> (importé) ». Obsidian ne montre pas
 les `.json` par défaut : ils sont dans le dossier du coffre, ou activez « Détecter toutes les
