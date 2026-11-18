@@ -11,7 +11,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createI18n } from '../src/core/i18n'
 import type { BlackModule, ModuleContext } from '../src/core/modules/module'
-import { memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
+import { ACCEPT_FORM, memoryPlatform, type MemoryPlatform } from '../src/core/testing/memoryPlatform'
 import { ViewsRegistry, type Card, type HomeBlock, type ListItem, type PageView } from '../src/core/views'
 import { bibliothequeModule, libraryEntries, pourIntoLibrary } from '../src/modules/bibliotheque'
 import { iaModule } from '../src/modules/ia'
@@ -567,5 +567,54 @@ describe('« Ranger » un document resté dans À classer, tout confirmé', () =
     const circuit = await harness.load(`bibliotheque.documents?${encodeURIComponent('circuit:')}`)
     const journey = deep(circuit.blocks).find((block) => block.kind === 'journey' && block.title === 'Norme')
     expect(journey?.kind === 'journey' && journey.actions?.map((action) => `${action.id}:${action.primary ?? false}`)).toEqual(['file-now:true', 'circuit-continue:false'])
+  })
+})
+
+describe('« Ranger » après avoir tout confirmé sur la fiche, ligne par ligne', () => {
+  it('chaque ligne « À confirmer » a de quoi la valider telle quelle (« Pas de référence » compris) ; tout validé, « Ranger » apparaît', async () => {
+    const platform = memoryPlatform()
+    const harness = await start(platform)
+    harness.answers.rangement = () => ({ status: 500, text: 'panne' })
+    harness.answers.analyse = () => chat({ typePiece: 'CCTP', emetteur: '', projet: '', confiance: 0.9, raison: 'Un CCTP.' })
+    await harness.pour('CCTP station.txt', 'Cahier des clauses techniques particulieres de la station sol.')
+    await workflowsIdle()
+    const record = 'Bibliothèque/Circuit/À classer/CCTP station.md'
+    expect(read(platform, record)).toMatch(/\nidentiteAConfirmer: true\n/)
+    const fiche = () => harness.load(`bibliotheque.document?${encodeURIComponent(record)}`)
+    const clicked: string[] = []
+    for (let i = 0; i < 10; i++) {
+      const section = deep((await fiche()).blocks).find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')
+      const list = section?.kind === 'section' ? section.blocks[0] : undefined
+      const item = list?.kind === 'list' ? list.items[0] : undefined
+      if (!item) break
+      // Le premier bouton de la ligne : la valeur proposée, ou « Pas de … » (la langue : choisie dans la liste).
+      const action = item.actions![0]!
+      clicked.push(`${item.title} : ${action.label}`)
+      platform.choices.push('fr')
+      await action.run()
+    }
+    expect(clicked).toContain('Référence et version : Pas de référence')
+    expect(read(platform, record)).not.toMatch(/AConfirmer: true/)
+    const banner = deep((await fiche()).blocks).find((block) => block.kind === 'message' && block.text === 'Tout est confirmé : il attend d’être rangé.')
+    expect(banner?.kind === 'message' && banner.actions?.map((action) => action.label)).toEqual(['Ranger'])
+  })
+
+  it('« Modifier… » de la ligne « Référence et version », enregistré sans rien changer : la référence est validée (et elle seule)', async () => {
+    const platform = memoryPlatform()
+    const harness = await start(platform)
+    harness.answers.rangement = () => ({ status: 500, text: 'panne' })
+    await harness.pour('Note.txt', 'Une note sans référence.')
+    await workflowsIdle()
+    const record = 'Bibliothèque/Circuit/À classer/Note.md'
+    const view = await harness.load(`bibliotheque.document?${encodeURIComponent(record)}`)
+    const section = deep(view.blocks).find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')
+    const items = section?.kind === 'section' && section.blocks[0]?.kind === 'list' ? section.blocks[0].items : []
+    const identity = items.find((item) => item.title === 'Référence et version')!
+    expect(identity.actions!.map((action) => action.label)).toEqual(['Pas de référence', 'Modifier…'])
+    platform.forms.push(ACCEPT_FORM)
+    await identity.actions![1]!.run()
+    const note = read(platform, record)
+    expect(note).not.toMatch(/\nidentiteAConfirmer: true\n/)
+    expect(note).toMatch(/\ndateAConfirmer: true\n/)
   })
 })

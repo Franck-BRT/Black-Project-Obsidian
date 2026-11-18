@@ -70,6 +70,12 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## « Pas de référence » ; « Ranger » enfin visible (v0.164.1)
+
+- [ ] Un document sans référence dans À classer : la ligne « Référence et version » a « Pas de
+      référence » ; un clic la valide ; tout validé, « Ranger » apparaît
+- [ ] « Modifier… » de cette ligne, enregistré sans rien changer : la ligne disparaît
+
 ## « Ranger » un document resté dans À classer (v0.164.0)
 
 - [ ] Un document dans Circuit › À classer, tout confirmé : sa fiche dit « Tout est confirmé : il

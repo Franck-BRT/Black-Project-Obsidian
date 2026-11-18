@@ -12,7 +12,10 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.164.0)
+## Aujourd'hui (version 0.164.1)
+
+- **« Pas de référence »** : la ligne « Référence et version » à confirmer se valide d'un clic quand
+  le document n'en a pas ; ensuite, le bouton **Ranger** apparaît.
 
 - **Ranger** : un document resté dans « À classer » dont tout est confirmé a un bouton **Ranger** —
   choisir l'emplacement, laisser l'IA regarder de nouveau, ou le mettre dans « Documents ». Plus

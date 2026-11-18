@@ -361,6 +361,8 @@ d'être rangé. ») et à côté de son parcours. Il propose : **Choisir l'empla
 bibliothèque ou un répertoire), **Laisser l'IA regarder de nouveau** (l'étape de rangement
 relancée : rangé si elle est sûre, sinon à contrôler ; absent sans IA) ou **Dans « Documents »**
 (la bibliothèque par défaut, à sa racine). Plus besoin de le déplacer à la main.
+Chaque ligne « À confirmer » se valide telle quelle — « Pas de date », « Pas d'entreprise »,
+« Pas de référence »… ; « Modifier… » depuis une ligne la valide aussi à l'enregistrement.
 
 Chaque décision s'écrit sur la fiche, dans la section **Circuit** (« rangé dans Normes
 (confiance 93 %) », « Contrôlé — proposition acceptée »). Une note `Bibliothèque/Règles de

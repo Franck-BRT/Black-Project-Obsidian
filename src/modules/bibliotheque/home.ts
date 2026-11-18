@@ -64,8 +64,8 @@ export interface LibraryHomeDeps {
   removeGhost(path: string): Promise<void>
   /** Déplacer un document (le choix du lieu) ; rend le nouveau chemin de sa fiche, ou null. */
   move(record: string): Promise<string | null>
-  /** Classer un document : sa fiche en fenêtre (titre, catégorie, référence…). */
-  classify(record: string): Promise<void>
+  /** Classer un document : sa fiche en fenêtre (titre, catégorie, référence…). `confirm` : ce champ-là est validé à l'enregistrement, même inchangé (ouvert depuis sa ligne « À confirmer »). */
+  classify(record: string, confirm?: 'identity'): Promise<void>
   /** Le dire nouvelle version d'un autre document (choisi). */
   newVersionOf(record: string): Promise<void>
   /** Choisir sa langue (ou la détecter de nouveau, ou aucune). */
@@ -687,10 +687,11 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
                 ? t('bibliotheque.identity.confirm.found', { found: [doc.reference, versionLabel(doc) ? t('bibliotheque.identity.version', { version: versionLabel(doc) }) : ''].filter(Boolean).join(', ') })
                 : t('bibliotheque.identity.confirm.none'),
             actions: [
-              ...(doc.reference || versionLabel(doc)
-                ? [{ id: 'confirm-identity', label: t('bibliotheque.identity.confirm'), icon: 'check' as const, primary: true, run: () => deps.confirmIdentity(doc.record) }]
-                : []),
-              { id: 'classify-identity', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.reference || versionLabel(doc) ? {} : { primary: true }), run: () => deps.classify(doc.record) }
+              // Lues : « C'est juste » ; rien de lu : « Pas de référence » (le document n'en a pas) — sinon la ligne resterait à confirmer.
+              doc.reference || versionLabel(doc)
+                ? { id: 'confirm-identity', label: t('bibliotheque.identity.confirm'), icon: 'check' as const, primary: true, run: () => deps.confirmIdentity(doc.record) }
+                : { id: 'confirm-identity', label: t('bibliotheque.identity.none'), icon: 'cross' as const, run: () => deps.confirmIdentity(doc.record) },
+              { id: 'classify-identity', label: t('bibliotheque.classify'), icon: 'edit' as const, ...(doc.reference || versionLabel(doc) ? {} : { primary: true }), run: () => deps.classify(doc.record, 'identity') }
             ]
           }
         ]

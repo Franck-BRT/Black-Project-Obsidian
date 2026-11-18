@@ -1074,7 +1074,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.75.0',
+  version: '0.75.1',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2442,7 +2442,7 @@ export const bibliothequeModule: BlackModule = {
       return { code: added.code, label: libraryPieceTypes().find((type) => type.code === added.code)?.label ?? (values.label ?? '').trim() }
     }
 
-    const classify = async (record: string): Promise<void> => {
+    const classify = async (record: string, confirm?: 'identity'): Promise<void> => {
       const doc = await store.load(record)
       if (!doc) return
       const values = await platform.ui.askForm({
@@ -2495,7 +2495,8 @@ export const bibliothequeModule: BlackModule = {
       const changed = {
         title: title !== doc.title,
         category: category !== doc.category || values.category === NEW_TYPE,
-        identity: reference !== doc.reference || edition !== doc.edition || revision !== doc.revision,
+        // Ouvert depuis la ligne « Référence et version » : l'enregistrer la valide, même inchangée.
+        identity: confirm === 'identity' || reference !== doc.reference || edition !== doc.edition || revision !== doc.revision,
         issuer: issuer !== doc.issuer || values.issuer === NEW_ISSUER,
         tags: !sameTags,
         date: (date ?? '') !== (doc.date ?? '')

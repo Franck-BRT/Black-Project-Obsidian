@@ -5,13 +5,22 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.75.0 (Black Projects 0.164.0) |
+| Version | 0.75.1 (Black Projects 0.164.1) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## « Référence et version » se valide aussi sans référence (v0.75.1, Black Projects 0.164.1)
+
+- La ligne « Référence et version » à confirmer, rien de lu : un bouton **Pas de référence** (comme
+  « Pas de date », « Pas d'entreprise »). Avant, seul « Modifier… » restait, et l'enregistrer sans
+  rien changer ne la validait pas (depuis 0.159.0, seuls les champs changés sont confirmés) : la ligne
+  restait à confirmer pour toujours, et « Ranger » n'apparaissait jamais.
+- « Modifier… » ouvert depuis cette ligne (`classify(record, 'identity')`) : l'enregistrer valide la
+  référence, même inchangée (et elle seule).
 
 ## « Ranger » un document resté dans À classer (v0.75.0, Black Projects 0.164.0)
 
