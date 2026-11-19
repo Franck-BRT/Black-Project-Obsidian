@@ -180,7 +180,7 @@ describe('la page Bibliothèque et la fiche d’un document', () => {
     const doc = (await pourIntoLibrary([{ name: 'Courrier acheteur.pdf', bytes: enc('c') }], { module: 'ao', label: 'Station sol', link: "Appels d'offres/Station sol/Station sol.md" }))!.added[0]!
     const fiche = await page('bibliotheque.document').load(encodeURIComponent(doc.record))
     expect(fiche.title).toBe('Courrier acheteur')
-    expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'language', 'version', 'move', 'to-references', 'note', 'aside', 'delete'])
+    expect(fiche.actions?.map((action) => action.id)).toEqual(['file', 'classify', 'language', 'version', 'link-document', 'move', 'to-references', 'note', 'aside', 'delete'])
     // Identification (dépliée d'origine : l'essentiel), le fichier, d'où il vient, les versions : des sections repliables, leur en-tête en dit l'essentiel.
     // Ce qui reste à confirmer : ensemble, dans une section dépliée, que l'en-tête résume.
     expect(fiche.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.a-confirmer')).toMatchObject({
@@ -379,7 +379,7 @@ describe('les bibliothèques en explorateur de fichiers (le réglage d’origine
     expect(currents(fiche.explorer!.nodes)).toEqual(['Documents'])
     // La fiche : ouvrir, modifier, déplacer, visibles ; le reste dans « … ».
     expect(fiche.actions!.filter((action) => !action.more).map((action) => action.id)).toEqual(['file', 'classify', 'move'])
-    expect(fiche.actions!.filter((action) => action.more).map((action) => action.id)).toEqual(['language', 'version', 'to-references', 'note', 'aside', 'delete'])
+    expect(fiche.actions!.filter((action) => action.more).map((action) => action.id)).toEqual(['language', 'version', 'link-document', 'to-references', 'note', 'aside', 'delete'])
     expect(currents((await page('bibliotheque.accueil').load()).explorer!.nodes)).toEqual(['Bibliothèque'])
     expect(currents((await page('bibliotheque.prompts').load()).explorer!.nodes)).toEqual(['Prompts'])
     // Le réglage coupé : l'affichage en cartes, comme avant.

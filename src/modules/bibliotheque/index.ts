@@ -34,7 +34,7 @@ import { previousStarterTexts, startersFor } from './starters'
 import type { EntityProposal } from './model'
 import { DEFAULT_THRESHOLD, readThreshold, SKILL_CONTEXTS, SKILL_OUTPUTS, thresholdLabel, type AnalysisDecision, type FilingDecision } from './skills'
 import { MentionIndex } from './mentions'
-import { findCandidates, type LinkCandidate, type LinkSourceItem } from './links'
+import { findCandidates, type DocLink, type LinkCandidate, type LinkRelation, type LinkSourceItem } from './links'
 import { bibliothequeEn, bibliothequeFr } from './i18n'
 import { baseName, CATEGORIES, nestHeadings, readRecord, versionLabel, type AiReading, type DocOrigin, type LibraryDoc, type TextVersion, type Transcript } from './model'
 import { CIRCUIT_FOLDER, LibraryStore, RESEARCH_KEYS, type PourItem, type PourOptions, type PourReport, type ResearchField } from './store'
@@ -1074,7 +1074,7 @@ export const bibliothequeModule: BlackModule = {
   id: BIBLIOTHEQUE,
   nameKey: 'bibliotheque.name',
   descriptionKey: 'bibliotheque.description',
-  version: '0.75.1',
+  version: '0.76.0',
   requires: [],
   texts: { fr: bibliothequeFr, en: bibliothequeEn },
   details: () => bibliothequeFeatures(),
@@ -2072,6 +2072,50 @@ export const bibliothequeModule: BlackModule = {
       platform.notifier.notify(t('bibliotheque.circuit.accepted', { title: doc.title, place: homePlace }), 6000)
       return moved
     }
+    /**
+     * La **relation** d'un lien vers un autre document : celui-ci « est la source de » l'autre, ou
+     * « a pour source » l'autre, ou un simple lien. L'inverse est écrit sur l'autre document. Pas
+     * encore lié : le lien est ajouté.
+     */
+    const setLinkRelation = async (record: string, path: string): Promise<void> => {
+      const doc = await store.load(record)
+      const other = await store.load(path)
+      if (!doc || !other) return
+      const links = await store.linksOf(record)
+      const current = links.find((each) => each.path === path)
+      const mark = (relation: LinkRelation | undefined) => (current && current.relation === relation ? { description: t('bibliotheque.links.relation.current') } : {})
+      const chosen = await platform.ui.pickOption(
+        [
+          { value: 'source-de', label: t('bibliotheque.links.relation.pick.source-de', { title: doc.title, other: other.title }), ...mark('source-de') },
+          { value: 'a-pour-source', label: t('bibliotheque.links.relation.pick.a-pour-source', { title: doc.title, other: other.title }), ...mark('a-pour-source') },
+          { value: 'aucune', label: t('bibliotheque.links.relation.pick.none'), ...mark(undefined) }
+        ],
+        t('bibliotheque.links.relation.title', { title: doc.title, other: other.title })
+      )
+      if (!chosen) return
+      const relation: LinkRelation | undefined = chosen === 'source-de' || chosen === 'a-pour-source' ? chosen : undefined
+      const why = current?.why ?? ''
+      const next: DocLink[] = current ? links.map((each) => (each.path === path ? { path, why: each.why, ...(relation ? { relation } : {}) } : each)) : [...links, { path, why, ...(relation ? { relation } : {}) }]
+      await store.setLinks(record, next)
+      pagesChanged()
+      platform.notifier.notify(relation ? t(`bibliotheque.links.relation.done.${relation}`, { title: doc.title, other: other.title }) : t('bibliotheque.links.relation.done.none', { title: doc.title, other: other.title }), 6000)
+    }
+    /** Lier ce document à un autre de la bibliothèque : le choisir, puis la relation. */
+    const linkDocument = async (record: string): Promise<void> => {
+      const doc = await store.load(record)
+      if (!doc) return
+      const linked = new Set(doc.links ?? [])
+      const others = (await store.all()).filter((each) => each.record !== record).sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+      if (!others.length) {
+        platform.notifier.notify(t('bibliotheque.links.link.none'), 6000)
+        return
+      }
+      const picked = await platform.ui.pickOption(
+        others.map((each) => ({ value: each.record, label: each.title, description: [placeOfFolder(each.record.slice(0, each.record.lastIndexOf('/'))), linked.has(each.record) ? t('bibliotheque.links.link.already') : ''].filter(Boolean).join(' · ') })),
+        t('bibliotheque.links.link.pick', { title: doc.title })
+      )
+      if (picked) await setLinkRelation(record, picked)
+    }
     /** À contrôler : écarté — la fiche mise de côté (rien n'est effacé). */
     const discardControlled = async (record: string): Promise<boolean> => {
       const doc = await store.load(record)
@@ -2956,6 +3000,8 @@ export const bibliothequeModule: BlackModule = {
         if (report?.added.length === 1 && report.already.length === 0) showPage?.(docPageOf(report.added[0]!.record))
       },
       classify,
+      setLinkRelation,
+      linkDocument,
       newVersionOf,
       chooseLanguage,
       confirmCategory: async (record, category) => {

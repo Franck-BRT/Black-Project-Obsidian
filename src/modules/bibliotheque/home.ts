@@ -64,6 +64,10 @@ export interface LibraryHomeDeps {
   removeGhost(path: string): Promise<void>
   /** Déplacer un document (le choix du lieu) ; rend le nouveau chemin de sa fiche, ou null. */
   move(record: string): Promise<string | null>
+  /** La relation d'un lien vers un autre document : « est la source de », « a pour source », ou aucune (l'inverse est écrit sur l'autre). */
+  setLinkRelation?(record: string, path: string): Promise<void>
+  /** Lier ce document à un autre de la bibliothèque (choisi), avec sa relation. */
+  linkDocument?(record: string): Promise<void>
   /** Classer un document : sa fiche en fenêtre (titre, catégorie, référence…). `confirm` : ce champ-là est validé à l'enregistrement, même inchangé (ouvert depuis sa ligne « À confirmer »). */
   classify(record: string, confirm?: 'identity'): Promise<void>
   /** Le dire nouvelle version d'un autre document (choisi). */
@@ -960,6 +964,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       run: () => control.relaunchStep!(doc.record, id)
     }
   }
+  // L'historique du circuit (sa note), montré sous les étapes du parcours.
+  const circuitHistory = doc.circuit ? await deps.store.circuitHistory(doc.record, t('bibliotheque.circuit.heading')) : []
   const explorer = await deps.explorer?.({ kind: 'document', shelf: doc.shelf ?? '', directory: doc.directory ?? '' })
   return {
     ...(explorer ? { explorer } : {}),
@@ -982,6 +988,7 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       // Les actions secondaires : dans le menu « … ».
       { id: 'language', label: t('bibliotheque.lang.choose'), tooltip: t('bibliotheque.lang.choose.tip'), icon: 'chat', more: true, run: () => deps.chooseLanguage(doc.record) },
       { id: 'version', label: t('bibliotheque.newVersionOf'), tooltip: t('bibliotheque.newVersionOf.tip'), icon: 'flow', more: true, run: () => deps.newVersionOf(doc.record) },
+      ...(deps.linkDocument ? [{ id: 'link-document', label: t('bibliotheque.links.link'), tooltip: t('bibliotheque.links.link.tip'), icon: 'link' as const, more: true, run: () => deps.linkDocument!(doc.record) }] : []),
       {
         id: 'move',
         label: t('bibliotheque.move.doc'),
@@ -1065,7 +1072,8 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
       ...(newer.length ? [{ kind: 'message' as const, tone: 'info' as const, text: t('bibliotheque.replaced', { title: newer.at(-1)!.title }), actions: [{ ...open(newer.at(-1)!), label: t('bibliotheque.replaced.open') }] }] : []),
       // Ses fantômes (montré aussi ailleurs) : les seuls chiffres qui restent en tête.
       ...(ghosts.length ? [{ kind: 'stats' as const, stats: stats.filter((stat) => stat.icon === 'ghost') }] : []),
-      // Son parcours, dès sa création : une ligne par étape, en couleur (et « Continuer le circuit » où il s'est arrêté).
+      // Son parcours, dès sa création : une ligne par étape, en couleur (et « Continuer le circuit » où il s'est arrêté) ;
+      // dans le circuit, son historique dessous (ce qui était la section « Circuit »).
       fold(
         'parcours',
         t('bibliotheque.steps.section'),
@@ -1089,6 +1097,17 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             relaunch: (id, title) => relaunchStepAction(id, title)
           })
         },
+          // Dans le circuit : ce qui a été fait, décision par décision (l'historique de sa note) — sous ses étapes, plus une section à part.
+          ...(doc.circuit
+            ? [
+                {
+                  kind: 'list' as const,
+                  title: t('bibliotheque.circuit.history'),
+                  items: circuitHistory.map((line, index) => ({ id: `circuit-${index}`, title: line, icon: 'flow' as const })),
+                  empty: t('bibliotheque.circuit.empty')
+                }
+              ]
+            : []),
           // Tout recommencer : remis au début du circuit (après une question).
           ...(deps.control?.relaunchAll
             ? [
@@ -1146,16 +1165,6 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
         ]
       }),
       fold('origines', t('bibliotheque.section.origins', { count: origins.length }), originText(t, doc), 'upload', { kind: 'list', items: origins, empty: t('bibliotheque.origins.none') }),
-      // Le circuit des documents : où il en est, ce qui a été fait (l'historique de sa note).
-      ...(doc.circuit
-        ? [
-            fold('circuit', t('bibliotheque.circuit.heading'), t(`bibliotheque.control.state.${doc.circuit}`), 'flow', {
-              kind: 'list',
-              items: (await deps.store.circuitHistory(doc.record, t('bibliotheque.circuit.heading'))).map((line, index) => ({ id: `circuit-${index}`, title: line })),
-              empty: t('bibliotheque.circuit.empty')
-            })
-          ]
-        : []),
       // Le glossaire : les termes qu'il emploie, leur définition ; un clic ouvre le terme.
       ...(await (async () => {
         const terms = glossaryTerms
@@ -1181,12 +1190,20 @@ export async function docPage(deps: LibraryHomeDeps, param: string | undefined):
             return [
               fold('liens', t('bibliotheque.links.section', { count: links.length }), links.map((each) => name(each.path)).join(' · '), 'link', {
                 kind: 'list' as const,
-                items: links.map((link) => ({
-                  id: `lien-${link.path}`,
-                  title: name(link.path),
-                  ...(link.why ? { detail: link.why } : {}),
-                  open: { id: 'open', label: t('bibliotheque.links.open'), run: () => deps.showNote(link.path) }
-                }))
+                items: links.map((link) => {
+                  // Vers un autre document : sa relation (« Est la source de », « A pour source »), et de quoi la changer.
+                  const isDoc = all.some((each) => each.record === link.path)
+                  return {
+                    id: `lien-${link.path}`,
+                    title: name(link.path),
+                    ...(link.why ? { detail: link.why } : {}),
+                    ...(link.relation ? { when: t(`bibliotheque.links.relation.${link.relation}`), tone: 'info' as const } : {}),
+                    ...(isDoc && deps.setLinkRelation
+                      ? { tools: [{ id: 'relation', label: t('bibliotheque.links.relation'), tooltip: t('bibliotheque.links.relation.tip'), icon: 'flow' as const, run: () => deps.setLinkRelation!(doc.record, link.path) }] }
+                      : {}),
+                    open: { id: 'open', label: t('bibliotheque.links.open'), run: () => (isDoc && deps.showPage ? deps.showPage(docPageOf(link.path)) : deps.showNote(link.path)) }
+                  }
+                })
               })
             ]
           })()

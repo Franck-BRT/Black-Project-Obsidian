@@ -380,3 +380,87 @@ describe('les entreprises et personnes inconnues : proposées, jamais créées s
     expect(deep((await load('bibliotheque.a-controler')).blocks).some((block) => block.kind === 'section' && block.id === 'bibliotheque.circuit.a-creer')).toBe(false)
   })
 })
+
+describe('la relation entre deux documents : « est la source de », « a pour source »', () => {
+  it('la réponse d’analyse : la relation d’un lien (« est-la-source-de », « a-pour-source ») ; vide ou inconnue : aucune', () => {
+    const decision = readAnalysisAnswer(
+      {
+        typePiece: '',
+        emetteur: '',
+        projet: '',
+        liens: [
+          { vers: 'D/Spec.md', pourquoi: 'il y répond', relation: 'a-pour-source' },
+          { vers: 'D/Réponse.md', pourquoi: 'elle en découle', relation: 'est-la-source-de' },
+          { vers: 'D/Autre.md', pourquoi: 'cité', relation: '' },
+          { vers: 'D/Drôle.md', pourquoi: 'cité', relation: 'cousin' }
+        ],
+        confiance: 0.9,
+        raison: 'r'
+      },
+      { types: [], issuers: [], candidates: ['D/Spec.md', 'D/Réponse.md', 'D/Autre.md', 'D/Drôle.md'].map((path) => ({ path, label: path })) }
+    )
+    expect(decision!.links).toEqual([
+      { path: 'D/Spec.md', why: 'il y répond', relation: 'a-pour-source' },
+      { path: 'D/Réponse.md', why: 'elle en découle', relation: 'source-de' },
+      { path: 'D/Autre.md', why: 'cité' },
+      { path: 'D/Drôle.md', why: 'cité' }
+    ])
+  })
+
+  it('le circuit la détecte : « a pour source » sur le document analysé, « est la source de » écrit sur l’autre ; sur les deux fiches ; vers une entreprise, pas de relation', async () => {
+    const platform = memoryPlatform()
+    const harness = await start(platform)
+    await entities(harness, platform)
+    // Une spécification déjà rangée, avec sa référence (c'est par elle qu'elle est trouvée dans le texte).
+    await platform.fs.ensureFolder('Bibliothèque/Normes')
+    await harness.pour('Spec.txt', 'La spécification.', 'Bibliothèque/Normes')
+    const spec = 'Bibliothèque/Normes/Spec.md'
+    platform.files.set(spec, bytes(read(platform, spec).replace('reference: ""', 'reference: SPEC-2026-01')))
+    harness.answers.analyse = () =>
+      chat({ typePiece: '', emetteur: '', projet: '', liens: [{ vers: spec, pourquoi: 'il répond à la spécification', relation: 'a-pour-source' }, { vers: CNES, pourquoi: 'le client', relation: 'est-la-source-de' }], confiance: 0.9, raison: 'r' })
+    harness.answers.rangement = () => chat({ dossier: '', confiance: 0.2, raison: '—', alternatives: [] })
+    await harness.pour('Réponse.txt', 'Notre réponse à la SPEC-2026-01 pour le CNES.')
+    await workflowsIdle()
+    const record = 'Bibliothèque/Circuit/À contrôler/Réponse.md'
+    const answer = read(platform, record)
+    expect(answer).toMatch(/\na-pour-source:\n- "\[\[Bibliothèque\/Normes\/Spec\.md\]\]"\n/)
+    expect(answer).not.toMatch(/\nest-la-source-de:/)
+    // L'inverse, sur la spécification : liée à la réponse, « est la source de ».
+    const source = read(platform, spec)
+    expect(source).toMatch(/\nest-la-source-de:\n- "\[\[Bibliothèque\/Circuit\/À contrôler\/Réponse\.md\]\]"\n/)
+    expect(source).toContain('[[Bibliothèque/Circuit/À contrôler/Réponse|Réponse]] — il répond à la spécification')
+    // Sur les fiches : la relation au bout de chaque lien.
+    const linksOf = async (path: string) => {
+      const view = await harness.load(`bibliotheque.document?${encodeURIComponent(path)}`)
+      const fold = view.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.liens')
+      return fold?.kind === 'section' && fold.blocks[0]?.kind === 'list' ? fold.blocks[0].items : []
+    }
+    expect((await linksOf(record)).map((item) => `${item.title}:${item.when ?? ''}:${(item.tools ?? []).map((tool) => tool.id).join(',')}`)).toEqual(['Spec:A pour source:relation', 'Centre national d’études spatiales::'])
+    expect((await linksOf(spec)).map((item) => `${item.title}:${item.when ?? ''}`)).toEqual(['Réponse:Est la source de'])
+  })
+
+  it('à la main : « Lier un document… » puis la relation ; changée en simple lien, l’inverse aussi', async () => {
+    const platform = memoryPlatform()
+    const harness = await start(platform, false)
+    await harness.pour('Spec.txt', 'La spécification.')
+    await harness.pour('Réponse.txt', 'La réponse.')
+    const spec = 'Bibliothèque/Spec.md'
+    const answer = 'Bibliothèque/Réponse.md'
+    const fiche = () => harness.load(`bibliotheque.document?${encodeURIComponent(answer)}`)
+    platform.choices.push(spec, 'a-pour-source')
+    await harness.run(await fiche(), 'link-document')
+    expect(platform.offered.at(-1)!.map((choice) => choice.label)).toEqual(['« Réponse » est la source de « Spec »', '« Réponse » a pour source « Spec »', 'Un simple lien, sans relation'])
+    expect(platform.notices.at(-1)).toBe('« Réponse » a pour source « Spec » (dit aussi sur « Spec »).')
+    expect(read(platform, answer)).toMatch(/\na-pour-source:\n/)
+    expect(read(platform, spec)).toMatch(/\nest-la-source-de:\n/)
+    // « Relation… » sur le lien : un simple lien — des deux côtés.
+    const view = await fiche()
+    const fold = view.blocks.find((block) => block.kind === 'section' && block.id === 'bibliotheque.document.liens')
+    const item = fold?.kind === 'section' && fold.blocks[0]?.kind === 'list' ? fold.blocks[0].items[0]! : null
+    platform.choices.push('aucune')
+    await item!.tools![0]!.run()
+    expect(read(platform, answer)).not.toMatch(/\na-pour-source:/)
+    expect(read(platform, spec)).not.toMatch(/\nest-la-source-de:/)
+    expect(read(platform, spec)).toMatch(/\nliens:\n- "\[\[Bibliothèque\/Réponse\.md\]\]"\n/)
+  })
+})

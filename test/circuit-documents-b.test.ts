@@ -295,7 +295,12 @@ describe('le workflow système « Circuit des documents »', () => {
     const steps = deep(fiche.blocks).find((block): block is Extract<HomeBlock, { kind: 'section' }> => block.kind === 'section' && block.id === 'bibliotheque.document.parcours')!
     expect(steps).toMatchObject({ title: 'Le parcours du document', subtitle: 'Ingéré, à analyser' })
     expect(steps).not.toHaveProperty('collapsed', true)
-    const lines = steps.blocks.flatMap((block) => (block.kind === 'list' ? block.items : []))
+    // Les étapes (la première liste) ; dessous, l'historique du circuit (ce qui était la section « Circuit »).
+    const lists = steps.blocks.filter((block) => block.kind === 'list')
+    expect(lists.map((block) => block.kind === 'list' && (block.title ?? ''))).toEqual(['', 'Historique du circuit'])
+    expect(lists[1]!.kind === 'list' && lists[1]!.items.length).toBeGreaterThan(0)
+    expect(deep(fiche.blocks).some((block) => block.kind === 'section' && block.id === 'bibliotheque.document.circuit')).toBe(false)
+    const lines = lists[0]!.kind === 'list' ? lists[0]!.items : []
     expect(lines.map((line) => [line.title, line.tone, line.when, line.level ?? 0])).toEqual([
       ['Contrôle des doublons', 'success', 'Fait', 0],
       ['Mise dans « À classer »', 'success', 'Fait', 0],

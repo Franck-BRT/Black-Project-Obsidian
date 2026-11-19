@@ -12,7 +12,13 @@ Le guide s'écrit au fil des étapes du [plan d'intégration](../plan-integratio
 | 04 — Interroger le dossier avec l'IA | 6 ✅ (pages *IA* et *Analyse d'appels d'offres* dans le coffre) |
 | 05 — Produire les livrables | 7 |
 
-## Aujourd'hui (version 0.164.1)
+## Aujourd'hui (version 0.165.0)
+
+- **Le parcours et le circuit réunis** : sur la fiche d'un document, « Le parcours du document »
+  montre ses étapes et, dessous, l'historique du circuit (plus de section « Circuit » à part).
+- **« Est la source de » / « A pour source »** : entre deux documents liés, la relation se lit au
+  bout du lien et s'écrit des deux côtés ; « Lier un document… » (menu « … ») et « Relation… » la
+  donnent à la main ; l'analyse du circuit la détecte quand le texte la dit.
 
 - **« Pas de référence »** : la ligne « Référence et version » à confirmer se valide d'un clic quand
   le document n'en a pas ; ensuite, le bouton **Ranger** apparaît.

@@ -5,13 +5,29 @@
 | | |
 | --- | --- |
 | Identifiant | `bibliotheque` |
-| Version | 0.75.1 (Black Projects 0.164.1) |
+| Version | 0.76.0 (Black Projects 0.165.0) |
 | Requiert | — |
 | Utilisé par | [Analyse d'appels d'offres](ao.md) (pièces importées, déposées à la main), [Exigences](exigences.md) (fichier importé), [Typage des pièces](typage-pieces.md) et [Workflows](workflows.md) (fichiers d'échange) |
 | Emplacement | `src/modules/bibliotheque/` |
 | Interface publique | `src/modules/bibliotheque/index.ts` |
 
 Documentation utilisateur (écrite dans le coffre) : `src/modules/bibliotheque/doc/Bibliothèque.md`.
+
+## Le parcours et le circuit réunis ; « est la source de » (v0.76.0, Black Projects 0.165.0)
+
+- **Une seule section** sur la fiche : « Le parcours du document » (ses étapes) a, dessous, la liste
+  **Historique du circuit** (l'ancienne section « Circuit », retirée).
+- **La relation entre deux documents liés** (`LinkRelation` : `source-de`, `a-pour-source`, dans
+  `links.ts`) : écrite dans l'en-tête de la fiche (`est-la-source-de`, `a-pour-source`, des liens
+  `[[…]]`), relue par `linksOf` ; `setLinks` pose l'inverse sur l'autre document (`mirror`) — seulement
+  entre documents de la bibliothèque (vers une entreprise, une personne : écartée).
+- **Le circuit la détecte** : la réponse d'analyse a, pour chaque lien, `relation`
+  (« est-la-source-de », « a-pour-source » ou vide ; `readRelation`) ; le skill livré « Analyser un
+  document » le demande (l'ancien texte, resté tel quel, est mis à jour).
+- **À la main** : « Lier un document… » (menu « … » de la fiche) et **Relation…** sur un lien vers un
+  document (« est la source de », « a pour source », un simple lien).
+- **Déplacé, un document reste lié** : les documents qui le citent (leurs liens, leurs relations)
+  suivent son nouveau chemin.
 
 ## « Référence et version » se valide aussi sans référence (v0.75.1, Black Projects 0.164.1)
 

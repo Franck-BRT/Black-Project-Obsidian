@@ -288,7 +288,8 @@ pas. Le texte des documents est envoyé à l'IA réglée dans le module IA. Arr�
 coupée, Obsidian fermé), un document reprend **à l'ouverture** (workflow **Relancer le circuit des
 documents**) ; en attendant, la page **À contrôler** le montre dans **En cours dans le circuit**,
 avec **Ranger moi-même…**. Chaque lundi, un rappel dit s'il reste des documents à contrôler. La
-fiche d'un document du circuit a une section **Circuit** : où il en est, ce qui a été fait.
+fiche d'un document du circuit montre, dans **Le parcours du document**, où il en est (ses étapes)
+et, dessous, l'**historique du circuit** : ce qui a été fait, décision par décision.
 
 L'ancien dossier `À verser` est repris : il devient `À classer`.
 
@@ -311,7 +312,16 @@ comptent — elle n'en invente pas — et dit pourquoi. Si elle est assez sûre 
   section **Liens**, d'où on les ouvre ;
 - chaque note citée (l'entreprise, la personne, le projet, l'autre document) reçoit une ligne dans
   sa section **Liens (Black Projects)** : le document qui la cite, et pourquoi. Black Projects
-  n'écrit que dans cette section ; le reste de la note n'est jamais touché.
+  n'écrit que dans cette section ; le reste de la note n'est jamais touché ;
+- entre deux documents, l'IA dit aussi la **relation** quand le texte la dit clairement : ce
+  document **a pour source** l'autre (il y répond, le reprend, le traduit, en est tiré) ou en
+  **est la source** (l'autre en découle). Elle s'écrit dans l'en-tête de la fiche (`a-pour-source`,
+  `est-la-source-de`) et l'inverse sur l'autre document ; sur la fiche, elle se lit au bout du lien.
+
+**À la main** : sur la fiche d'un document, « … » › **Lier un document…** — choisir l'autre
+document, puis « … est la source de … », « … a pour source … » ou un simple lien ; sur un lien vers
+un document, **Relation…** la change (l'inverse suit sur l'autre document). Déplacé, un document
+reste lié : les documents qui le citent suivent.
 
 Quand le document est rangé ailleurs, ses rétroliens le suivent ; supprimé, ils partent. Chaque
 lundi, l'**entretien des liens** (une étape des rappels de la bibliothèque) retire les liens vers
@@ -364,7 +374,7 @@ relancée : rangé si elle est sûre, sinon à contrôler ; absent sans IA) ou *
 Chaque ligne « À confirmer » se valide telle quelle — « Pas de date », « Pas d'entreprise »,
 « Pas de référence »… ; « Modifier… » depuis une ligne la valide aussi à l'enregistrement.
 
-Chaque décision s'écrit sur la fiche, dans la section **Circuit** (« rangé dans Normes
+Chaque décision s'écrit sur la fiche, dans l'**historique du circuit** (« rangé dans Normes
 (confiance 93 %) », « Contrôlé — proposition acceptée »). Une note `Bibliothèque/Règles de
 rangement.md`, si vous l'écrivez, est lue par le skill de rangement (« les normes vont dans
 Normes »…). `À contrôler` n'est pas un répertoire où l'on range : il n'a pas de carte, et

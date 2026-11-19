@@ -70,6 +70,16 @@ Sur le coffre de test.
       Black Projects ») : les sections d'informations (analyses et échéances, IA,
       exigences, workflows)
 
+## Parcours et circuit réunis ; « est la source de » (v0.165.0)
+
+- [ ] La fiche d'un document du circuit : plus de section « Circuit » ; « Le parcours du document » a,
+      sous ses étapes, « Historique du circuit »
+- [ ] « … » › Lier un document… : choisir un autre document, puis « … a pour source … » — le lien dit
+      « A pour source » ; la fiche de l'autre dit « Est la source de »
+- [ ] « Relation… » sur ce lien › Un simple lien : la relation part des deux côtés
+- [ ] Le circuit : une réponse qui cite la référence d'un autre document — l'analyse peut dire
+      « a pour source » (sur les deux fiches)
+
 ## « Pas de référence » ; « Ranger » enfin visible (v0.164.1)
 
 - [ ] Un document sans référence dans À classer : la ligne « Référence et version » a « Pas de

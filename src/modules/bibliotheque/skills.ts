@@ -12,7 +12,7 @@
  * Des fonctions pures.
  */
 
-import { candidatePath } from './links'
+import { candidatePath, readRelation, type LinkRelation } from './links'
 import type { EntityProposal } from './model'
 
 /** Ce qu'un skill peut recevoir, livré par la bibliothèque (d'autres modules en ajoutent). */
@@ -105,8 +105,8 @@ export interface AnalysisDecision {
   issuer: string
   /** La note du projet concerné (un chemin), vide : aucun. */
   project: string
-  /** Ses liens : parmi les candidats seulement (les autres écartés), chacun avec sa raison. */
-  links: { path: string; why: string }[]
+  /** Ses liens : parmi les candidats seulement (les autres écartés), chacun avec sa raison ; vers un document, sa relation si l'IA la dit. */
+  links: { path: string; why: string; relation?: LinkRelation }[]
   /** Les entreprises et personnes citées que la bibliothèque ne connaît pas : proposées, jamais créées seules. */
   proposals: EntityProposal[]
   confidence: number
@@ -124,7 +124,13 @@ export const ANALYSIS_SCHEMA = {
       projet: { type: 'string' },
       liens: {
         type: 'array',
-        items: { type: 'object', properties: { vers: { type: 'string' }, pourquoi: { type: 'string' } }, required: ['vers', 'pourquoi'], additionalProperties: false }
+        items: {
+          type: 'object',
+          // La relation (entre deux documents) : « est-la-source-de », « a-pour-source », ou vide.
+          properties: { vers: { type: 'string' }, pourquoi: { type: 'string' }, relation: { type: 'string', enum: ['', 'est-la-source-de', 'a-pour-source'] } },
+          required: ['vers', 'pourquoi', 'relation'],
+          additionalProperties: false
+        }
       },
       nouveaux: {
         type: 'array',
@@ -176,11 +182,14 @@ export function readAnalysisAnswer(
   const head = (value: string) => fold(value.split(/\s+[—–(-]\s*/)[0] ?? value)
   const type = said.type ? lists.types.find((each) => [each.code, each.label].some((name) => fold(name) === fold(said.type) || fold(name) === head(said.type))) : undefined
   const issuer = said.issuer ? lists.issuers.find((each) => [each.code, each.name, ...each.aliases].some((name) => fold(name) === fold(said.issuer) || fold(name) === head(said.issuer))) : undefined
-  const links: { path: string; why: string }[] = []
+  const links: { path: string; why: string; relation?: LinkRelation }[] = []
   for (const raw of Array.isArray(data.liens) ? data.liens : []) {
     const item = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
     const path = candidatePath(text(item.vers), lists.candidates ?? [])
-    if (path && !links.some((each) => each.path === path)) links.push({ path, why: text(item.pourquoi) })
+    if (!path || links.some((each) => each.path === path)) continue
+    // Sa relation (entre deux documents : la bibliothèque l'écarte vers une entreprise, une personne…).
+    const relation = readRelation(item.relation)
+    links.push({ path, why: text(item.pourquoi), ...(relation ? { relation } : {}) })
   }
   // Les inconnues proposées : ni une entreprise, ni une personne connues ; une fois chacune.
   const proposals: EntityProposal[] = []

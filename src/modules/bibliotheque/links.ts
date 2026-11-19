@@ -33,10 +33,33 @@ export interface LinkCandidate {
   found: string
 }
 
-/** Un lien d'un document : la note citée, et pourquoi (une phrase). */
+/**
+ * La relation entre deux documents liés : celui-ci **est la source de** l'autre (l'autre en
+ * découle), ou il **a pour source** l'autre. L'une est l'inverse de l'autre.
+ */
+export type LinkRelation = 'source-de' | 'a-pour-source'
+export const LINK_RELATIONS: readonly LinkRelation[] = ['source-de', 'a-pour-source']
+
+/** La relation vue depuis l'autre document. */
+export const inverseRelation = (relation: LinkRelation): LinkRelation => (relation === 'source-de' ? 'a-pour-source' : 'source-de')
+
+/** Un lien d'un document : la note citée, pourquoi (une phrase), et sa relation (entre deux documents). */
 export interface DocLink {
   path: string
   why: string
+  relation?: LinkRelation
+}
+
+/**
+ * Relire la relation d'un lien telle que l'IA la dit (« est-la-source-de », « a-pour-source »,
+ * « source de »…) ; vide ou inconnue : aucune.
+ */
+export function readRelation(value: unknown): LinkRelation | undefined {
+  const said = typeof value === 'string' ? fold(value).replace(/[\s_]+/g, '-') : ''
+  if (!said) return undefined
+  if (said === 'a-pour-source' || said === 'source' || said === 'derive-de' || said === 'decoule-de') return 'a-pour-source'
+  if (said === 'est-la-source-de' || said === 'source-de' || said === 'est-source-de' || said === 'origine-de') return 'source-de'
+  return undefined
 }
 
 const fold = (value: string): string =>

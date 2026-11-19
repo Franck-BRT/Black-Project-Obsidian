@@ -20,7 +20,7 @@ import { ghostContent, ghostTarget, readGhost, type LibraryGhost } from './ghost
 import { CATEGORY_TYPER, guessDocCategory, guessDocDate, type KnownIssuer, type KnownTag, type PieceTyper, guessIdentity, guessIssuer, guessTags, guessTitle, type DocIdentity } from './identity'
 import { detectLanguage, type LanguageCode } from './language'
 import { MAIN_SHELF, shelfOfPath, type Shelf } from './shelves'
-import { hasBacklink, sectionLines, withBacklink, withLinkSection, withoutBacklink, wikiLink, type DocLink } from './links'
+import { hasBacklink, inverseRelation, sectionLines, withBacklink, withLinkSection, withoutBacklink, wikiLink, type DocLink, type LinkRelation } from './links'
 import {
   baseName,
   familyOf,
@@ -746,6 +746,16 @@ export class LibraryStore {
     for (const { ghost } of ghosts) if (!inPlace(ghost.path)) await fs.writeText(ghost.path, (await fs.readText(ghost.path)).split(`[[${record}`).join(`[[${target}`))
     // Ses rétroliens, dans les notes qu'il cite, le suivent.
     await this.retargetBacklinks(doc.links ?? [], record, target)
+    // Les documents qui le citent (leurs liens, leurs relations « est la source de », « a pour source ») : le suivent aussi.
+    const from = record.replace(/\.md$/, '')
+    const to = target.replace(/\.md$/, '')
+    const cites = new RegExp(`\\[\\[${from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\.md\\]\\]|\\||\\]\\]|#)`, 'g')
+    for (const other of await this.all()) {
+      if (!other.links?.includes(record)) continue
+      const text = await fs.readText(other.record)
+      const next = text.replace(cites, `[[${to}`)
+      if (next !== text) await fs.writeText(other.record, next)
+    }
     for (const other of await this.all()) {
       if (other.previous !== record && other.likelyPrevious !== record) continue
       await this.save({ ...other, ...(other.previous === record ? { previous: target } : {}), ...(other.likelyPrevious === record ? { likelyPrevious: target } : {}) })
@@ -766,7 +776,8 @@ export class LibraryStore {
     return doc.links.map((path) => {
       const target = path.replace(/\.md$/, '')
       const line = lines.find((each) => each.includes(`[[${target}|`) || each.includes(`[[${target}]]`))
-      return { path, why: line?.split(' — ').slice(1).join(' — ').trim() ?? '' }
+      const relation = doc.sourceOf?.includes(path) ? ('source-de' as const) : doc.sourcedFrom?.includes(path) ? ('a-pour-source' as const) : undefined
+      return { path, why: line?.split(' — ').slice(1).join(' — ').trim() ?? '', ...(relation ? { relation } : {}) }
     })
   }
 
@@ -775,22 +786,50 @@ export class LibraryStore {
    * la section Liens) ; un rétrolien dans chaque note citée (sa section réservée) ; ceux qui ne
    * sont plus cités perdent le leur. Rend les liens écrits.
    */
-  async setLinks(record: string, links: readonly DocLink[]): Promise<DocLink[]> {
+  async setLinks(record: string, links: readonly DocLink[], propagate = true): Promise<DocLink[]> {
     const { fs, yaml } = this.deps
     const doc = await this.load(record)
     if (!doc) return []
     const kept: DocLink[] = []
-    for (const link of links) if (link.path !== record && !kept.some((each) => each.path === link.path) && (await fs.exists(link.path))) kept.push(link)
+    for (const link of links) {
+      if (link.path === record || kept.some((each) => each.path === link.path) || !(await fs.exists(link.path))) continue
+      // Une relation seulement entre deux documents de la bibliothèque (pas vers une entreprise, une personne, un projet).
+      if (link.relation && !(await this.load(link.path))) kept.push({ path: link.path, why: link.why })
+      else kept.push(link)
+    }
     const before = doc.links ?? []
     const next: LibraryDoc = { ...doc }
     if (kept.length) next.links = kept.map((each) => each.path)
     else delete next.links
+    // Les relations entre documents : « est la source de », « a pour source ».
+    const sourceOf = kept.filter((each) => each.relation === 'source-de').map((each) => each.path)
+    const sourcedFrom = kept.filter((each) => each.relation === 'a-pour-source').map((each) => each.path)
+    if (sourceOf.length) next.sourceOf = sourceOf
+    else delete next.sourceOf
+    if (sourcedFrom.length) next.sourcedFrom = sourcedFrom
+    else delete next.sourcedFrom
     const label = (path: string) => baseName(path).replace(/\.md$/, '')
     const body = withLinkSection(readYamlFrontmatter(yaml, await fs.readText(record)).body, this.linksTitle(), kept.map((each) => `${wikiLink(each.path, label(each.path))}${each.why ? ` — ${each.why}` : ''}`))
     await fs.writeText(record, recordContent(next, this.deps.notesHeading(), body))
     for (const link of kept) await this.writeBacklink(link, record, doc.title)
     await this.dropBacklinks(before.filter((path) => !kept.some((each) => each.path === path)), record)
+    // L'inverse, sur l'autre document (un document de la bibliothèque) : « a pour source » ↔ « est la source de ».
+    if (propagate) {
+      const had = new Map<string, LinkRelation | undefined>([...(doc.sourceOf ?? []).map((path) => [path, 'source-de'] as const), ...(doc.sourcedFrom ?? []).map((path) => [path, 'a-pour-source'] as const)])
+      for (const link of kept) if (link.relation !== had.get(link.path)) await this.mirror(link.path, record, link.relation ? inverseRelation(link.relation) : undefined, link.why)
+    }
     return kept
+  }
+
+  /** Sur l'autre document : son lien vers celui-ci, avec la relation inverse (ou sans relation). Pas un document : rien. */
+  private async mirror(other: string, record: string, relation: LinkRelation | undefined, why: string): Promise<void> {
+    const target = await this.load(other)
+    if (!target) return
+    const links = await this.linksOf(other)
+    const current = links.find((each) => each.path === record)
+    if (current ? current.relation === relation : !relation) return
+    const next = current ? links.map((each) => (each.path === record ? { path: record, why: each.why || why, ...(relation ? { relation } : {}) } : each)) : [...links, { path: record, why, ...(relation ? { relation } : {}) }]
+    await this.setLinks(other, next, false)
   }
 
   private async writeBacklink(link: DocLink, record: string, title: string): Promise<void> {

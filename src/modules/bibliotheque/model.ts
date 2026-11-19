@@ -323,6 +323,10 @@ export interface LibraryDoc {
   circuitStopped?: boolean
   /** Ses liens (le circuit, version C) : les notes qu'il cite — leur raison est dans la section Liens de la note. */
   links?: string[]
+  /** Parmi ses liens, les documents dont il **est la source** (ils en découlent) ; l'inverse est écrit sur chacun. */
+  sourceOf?: string[]
+  /** Parmi ses liens, les documents qui sont **sa source** (il en découle) ; l'inverse est écrit sur chacun. */
+  sourcedFrom?: string[]
   /** Les entreprises et personnes **inconnues** qu'il cite, que l'analyse propose de créer (l'utilisateur décide). */
   proposals?: EntityProposal[]
   /** La recherche dans le glossaire (une étape du circuit) : faite, et combien de termes elle a trouvés (reliés à sa fiche). Absente : pas encore faite. */
@@ -433,6 +437,8 @@ export function recordContent(doc: Omit<LibraryDoc, 'record'> & { record?: strin
     ...(doc.circuit && doc.circuitStopped ? { 'circuit-arrete': true } : {}),
     ...(doc.circuitProject ? { 'circuit-projet': link(doc.circuitProject) } : {}),
     ...(doc.links?.length ? { liens: doc.links.map(link) } : {}),
+    ...(doc.sourceOf?.length ? { 'est-la-source-de': doc.sourceOf.map(link) } : {}),
+    ...(doc.sourcedFrom?.length ? { 'a-pour-source': doc.sourcedFrom.map(link) } : {}),
     ...(doc.glossarySearched !== undefined ? { 'glossaire-termes': doc.glossarySearched } : {}),
     ...(doc.proposals?.length
       ? { 'entites-proposees': doc.proposals.map((each) => ({ sorte: each.kind === 'issuer' ? 'entreprise' : 'personne', nom: each.name, ...(each.code ? { code: each.code } : {}), ...(each.company ? { entreprise: each.company } : {}), ...(each.why ? { pourquoi: each.why } : {}) })) }
@@ -513,6 +519,8 @@ export function readRecord(record: string, data: Record<string, unknown> | null)
       : {}),
     ...(unlink(data['circuit-projet']) ? { circuitProject: unlink(data['circuit-projet']) } : {}),
     ...(Array.isArray(data.liens) && data.liens.map(unlink).filter(Boolean).length ? { links: data.liens.map(unlink).filter(Boolean) } : {}),
+    ...(Array.isArray(data['est-la-source-de']) && data['est-la-source-de'].map(unlink).filter(Boolean).length ? { sourceOf: data['est-la-source-de'].map(unlink).filter(Boolean) } : {}),
+    ...(Array.isArray(data['a-pour-source']) && data['a-pour-source'].map(unlink).filter(Boolean).length ? { sourcedFrom: data['a-pour-source'].map(unlink).filter(Boolean) } : {}),
     ...(typeof data['glossaire-termes'] === 'number' && data['glossaire-termes'] >= 0 ? { glossarySearched: data['glossaire-termes'] } : {}),
     ...(readProposals(data['entites-proposees']).length ? { proposals: readProposals(data['entites-proposees']) } : {})
   }

@@ -172,7 +172,7 @@ const SKILLS: Record<Language, EntryDraft[]> = {
           '1. Son **type de pièce** : un code de la liste des types de pièce (CCTP, CCAP…), sinon vide.',
           '2. Son **émetteur** : une entreprise de la liste (son code), sinon vide.',
           '3. Le **projet** qu’il concerne : le chemin exact d’un projet de la liste (son nom, son client, sa référence apparaissent dans le document), sinon vide.',
-          '4. Ses **liens** : parmi « Les liens possibles », ceux qui comptent vraiment pour ce document (une norme ou un autre document cité, l’entreprise qui l’émet, une personne, le projet…) — le chemin exact, et une phrase pourquoi ; aucun autre.',
+          '4. Ses **liens** : parmi « Les liens possibles », ceux qui comptent vraiment pour ce document (une norme ou un autre document cité, l’entreprise qui l’émet, une personne, le projet…) — le chemin exact, et une phrase pourquoi ; aucun autre. Pour un lien vers un **autre document**, sa **relation** si le texte la dit clairement : « est-la-source-de » (l’autre en découle : une réponse, une version, une traduction, un document établi à partir de celui-ci) ou « a-pour-source » (celui-ci découle de l’autre : il y répond, le reprend, le traduit, en est tiré) ; sinon vide.',
           '5. Les **entreprises et personnes nouvelles** : celles que le document cite clairement (son émetteur, son client, un signataire, un contact) mais qui ne sont ni dans les listes ni dans les liens possibles — à proposer, pas à lier : leur sorte, leur nom, le code d’une entreprise s’il est écrit, l’entreprise d’une personne si elle est dite, et pourquoi. Dans le doute, n’en propose pas.',
           '6. Ta **confiance**, de 0 à 1, et ta **raison** en une phrase.',
           'N’invente rien : ce qui n’est pas dans les listes reste vide.'
@@ -251,7 +251,7 @@ const SKILLS: Record<Language, EntryDraft[]> = {
           '1. Its **document type**: a code from the list of document types, otherwise empty.',
           '2. Its **issuer**: a company from the list (its code), otherwise empty.',
           '3. The **project** it concerns: the exact path of a project from the list (its name, client or reference appear in the document), otherwise empty.',
-          '4. Its **links**: among “The possible links”, those that really matter for this document (a standard or another document cited, the issuing company, a person, the project…) — the exact path, and one sentence why; no other.',
+          '4. Its **links**: among “The possible links”, those that really matter for this document (a standard or another document cited, the issuing company, a person, the project…) — the exact path, and one sentence why; no other. For a link to **another document**, its **relation** if the text clearly says it: “est-la-source-de” (the other derives from it: an answer, a version, a translation, a document drawn up from this one) or “a-pour-source” (this one derives from the other: it answers it, takes it up, translates it, is drawn from it); otherwise empty.',
           '5. The **new companies and people**: those the document clearly cites (its issuer, its client, a signatory, a contact) but that are neither in the lists nor among the possible links — to propose, not to link: their kind, their name, a company’s code if written, a person’s company if stated, and why. When in doubt, propose none.',
           '6. Your **confidence**, from 0 to 1, and your **reason** in one sentence.',
           'Invent nothing: what is not in the lists stays empty.'
@@ -340,6 +340,17 @@ const PREVIOUS: Record<Language, Record<string, string[]>> = {
           '4. Ses **liens** : parmi « Les liens possibles », ceux qui comptent vraiment pour ce document (une norme ou un autre document cité, l’entreprise qui l’émet, une personne, le projet…) — le chemin exact, et une phrase pourquoi ; aucun autre.',
           '5. Ta **confiance**, de 0 à 1, et ta **raison** en une phrase.',
           'N’invente rien : ce qui n’est pas dans les listes reste vide.'
+      ].join('\n'),
+      // Avec les entités nouvelles (0.138.0), sans la relation entre documents.
+      [
+          'Tu analyses un document qui entre dans la bibliothèque. Lis sa fiche et le début de son texte, puis :',
+          '1. Son **type de pièce** : un code de la liste des types de pièce (CCTP, CCAP…), sinon vide.',
+          '2. Son **émetteur** : une entreprise de la liste (son code), sinon vide.',
+          '3. Le **projet** qu’il concerne : le chemin exact d’un projet de la liste (son nom, son client, sa référence apparaissent dans le document), sinon vide.',
+          '4. Ses **liens** : parmi « Les liens possibles », ceux qui comptent vraiment pour ce document (une norme ou un autre document cité, l’entreprise qui l’émet, une personne, le projet…) — le chemin exact, et une phrase pourquoi ; aucun autre.',
+          '5. Les **entreprises et personnes nouvelles** : celles que le document cite clairement (son émetteur, son client, un signataire, un contact) mais qui ne sont ni dans les listes ni dans les liens possibles — à proposer, pas à lier : leur sorte, leur nom, le code d’une entreprise s’il est écrit, l’entreprise d’une personne si elle est dite, et pourquoi. Dans le doute, n’en propose pas.',
+          '6. Ta **confiance**, de 0 à 1, et ta **raison** en une phrase.',
+          'N’invente rien : ce qui n’est pas dans les listes reste vide.'
       ].join('\n')
     ]
   },
@@ -360,6 +371,16 @@ const PREVIOUS: Record<Language, Record<string, string[]>> = {
         '3. The **project** it concerns: the exact path of a project from the list (its name, client or reference appear in the document), otherwise empty.',
           '4. Its **links**: among “The possible links”, those that really matter for this document (a standard or another document cited, the issuing company, a person, the project…) — the exact path, and one sentence why; no other.',
           '5. Your **confidence**, from 0 to 1, and your **reason** in one sentence.',
+          'Invent nothing: what is not in the lists stays empty.'
+      ].join('\n'),
+      [
+          'You analyse a document entering the library. Read its record and the beginning of its text, then:',
+          '1. Its **document type**: a code from the list of document types, otherwise empty.',
+          '2. Its **issuer**: a company from the list (its code), otherwise empty.',
+          '3. The **project** it concerns: the exact path of a project from the list (its name, client or reference appear in the document), otherwise empty.',
+          '4. Its **links**: among “The possible links”, those that really matter for this document (a standard or another document cited, the issuing company, a person, the project…) — the exact path, and one sentence why; no other.',
+          '5. The **new companies and people**: those the document clearly cites (its issuer, its client, a signatory, a contact) but that are neither in the lists nor among the possible links — to propose, not to link: their kind, their name, a company’s code if written, a person’s company if stated, and why. When in doubt, propose none.',
+          '6. Your **confidence**, from 0 to 1, and your **reason** in one sentence.',
           'Invent nothing: what is not in the lists stays empty.'
       ].join('\n')
     ]
